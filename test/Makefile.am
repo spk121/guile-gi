@@ -3,6 +3,7 @@ CLEANFILES=
 noinst_LTLIBRARIES = libgirtest.la
 
 libgirtest_la_SOURCES = \
+ girtest.h \
  GirtestTriv.c GirtestTriv.h
 
 libgirtest_la_CFLAGS = \

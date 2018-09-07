@@ -2,13 +2,13 @@ ACLOCAL_AMFLAGS = --install -I m4 ${ACLOCAL_FLAGS}
 
 EXTRA_DIST = \
  COPYING \
- bootstrap.sh \
- m4/introspection.m4
+ bootstrap.sh
 
 SUBDIRS = \
  src \
  test \
- docs
+ docs \
+ m4
 
 DISTCHECK_CONFIGURE_FLAGS = --enable-introspection
 

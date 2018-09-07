@@ -1,0 +1,32 @@
+commit cb37c56610ff28844c0ba46f0d049b43d1a80604
+Author: Mike Gran <spk121@yahoo.com>
+Date:   Fri Sep 7 05:47:34 2018 -0700
+
+    autotools skeleton
+
+ AUTHORS            |   1 +
+ COPYING            | 504 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ Makefile.am        |  26 +++
+ NEWS               |   1 +
+ bootstrap.sh       |  11 ++
+ configure.ac       | 152 ++++++++++++++++
+ docs/Makefile.am   |   0
+ git.mk             | 400 ++++++++++++++++++++++++++++++++++++++++++
+ src/Makefile.am    |  13 ++
+ src/gir.c          |   0
+ test/GirtestTriv.c |  31 ++++
+ test/GirtestTriv.h |  36 ++++
+ test/Makefile.am   |  36 ++++
+ test/girtest.h     |   4 +
+ 14 files changed, 1215 insertions(+)
+
+commit dd7763071dd84d91bb9a80693a3c1f54fe98a4c3
+Author: Mike Gran <spk121@yahoo.com>
+Date:   Wed Sep 5 17:22:10 2018 +0000
+
+    Initial commit
+
+ .gitignore |  52 +++++
+ LICENSE    | 674 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ README.md  |   2 +
+ 3 files changed, 728 insertions(+)

@@ -148,5 +148,6 @@ AC_CONFIG_FILES([
  Makefile
  src/Makefile
  test/Makefile
+ m4/Makefile
  docs/Makefile])
 AC_OUTPUT
