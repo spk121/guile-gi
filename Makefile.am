@@ -7,8 +7,9 @@ EXTRA_DIST = \
 SUBDIRS = \
  src \
  test \
- docs \
- m4
+ doc \
+ m4 \
+ build-aux
 
 DISTCHECK_CONFIGURE_FLAGS = --enable-introspection
 

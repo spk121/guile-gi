@@ -1,128 +1,108 @@
-m4_define([version_major],0)
-m4_define([version_minor],1)
-m4_define([version_micro],0)
-m4_define([version_triplet],version_major.version_minor.version_micro)
+dnl Process this file with autoconf to produce a configure script
 
-AC_PREREQ([2.63])
-AC_INIT([guile-gir], [version_triplet], [spk121@yahoo.com], [guile-gir])
+dnl Copyright (C) Michael L. Gran
 
-AC_CONFIG_MACRO_DIR([m4])
-AC_CONFIG_SRCDIR([src/gir.c])
-AC_CONFIG_HEADERS([config.h])
+
+################
+# Package Info
+
+AC_INIT([Guile GI], [0.0.1], [spk121@yahoo.com], [guile-gi])
+
 AC_CONFIG_AUX_DIR([build-aux])
-
 AM_INIT_AUTOMAKE([foreign parallel-tests -Wno-portability])
 
-m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
+AC_PREREQ([2.63])
+AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_SRCDIR([src/gir.c])
+AC_CONFIG_MACRO_DIR([m4])
 
-
-
-################################################################################
+################
 # Libtool versioning
 
-m4_define([lt_revision], m4_if(m4_eval(version_minor%2),1,0,version_micro))
-m4_define([lt_age], m4_eval(version_minor*100+version_micro-lt_revision))
-m4_define([lt_current], m4_eval(version_major+lt_age))
-m4_define([lt_triplet],lt_current:lt_revision:lt_age)
+LIBGUILE_GI_INTERFACE="0:0:0"
+AC_SUBST([LIBGUILE_GI_INTERFACE])
 
-LT_VERSION_INFO="lt_triplet()"
-AC_SUBST([LT_VERSION_INFO])
-
-################################################################################
+################
 # Check for programs
 
 PKG_PROG_PKG_CONFIG
 AC_PROG_CC
-AC_USE_SYSTEM_EXTENSIONS
+dnl AC_USE_SYSTEM_EXTENSIONS
 AC_HEADER_STDC
 AM_PROG_CC_C_O
 AC_PROG_SED
 
-# Initialize libtool
+# from guile.m4
+GUILE_PKG([2.2])
+GUILE_PROGS
+GUILE_FLAGS
+GUILE_SITE_DIR
+
+AC_MSG_CHECKING([the Guile effective version])
+guile_effective_version = "`$GUILE -c '(display (effective-version))'`"
+AC_MSG_RESULT([$guile_effective_version])
+
+################
+# Guile has three directories that don't follow the GNU Filesystem
+# Hierarchy Standards.  If one follows the GNU FHS, files get installed
+# in directories in which Guile does not search for them by default.
+AC_ARG_WITH([guile-directories],
+            [AS_HELP_STRING([--with-guile-directories],
+                            [Query Guile to discover the correct install directories for scripts and extensions, and ignore the GNU Filesystem Hierarchy when installing])])
+
+case "x$with_guile_directories" in
+     xyes)
+       # Get the installation directories from Guile
+       # Installed .scm scheme libraries go here
+       AC_MSG_CHECKING([Guile site directory])
+       guilesitedir=$GUILE_SITE
+       AC_MSG_RESULT([$guilesitedir])
+       AC_SUBST(guilesitedir)
+
+       # Compiled libguile-*.so extension libraries go here
+       AC_MSG_CHECKING([Guile extension directory])
+       guileextensiondir=$GUILE_EXTENSION
+       AC_MSG_RESULT([$guileextensiondir])
+       AC_SUBST(guileextensiondir)
+
+       # Compiled .go scheme libraries go here
+       AC_MSG_CHECKING([Guile object directory])
+       guileobjectdir=$GUILE_SITE_CCACHE
+       AC_MSG_RESULT([$guileobjectdir])
+       AC_SUBST(guileobjectdir)
+       ;;
+     *)
+       # Follow the GNU Filesystem Hierarchy Standard correctly
+       # Installed .scm scheme libraries go here
+       AC_MSG_CHECKING([Guile site directory])
+       guilesitedir="\$(datadir)/guile/site/$guile_effective_version"
+       AC_MSG_RESULT([$guilesitedir])
+       AC_SUBST(guilesitedir)
+
+       # Compiled libguile-*.so extension libraries go here
+       AC_MSG_CHECKING([Guile extension directory])
+       guileextensiondir="$libdir/guile/$guile_effective_version"
+       AC_MSG_RESULT([$guileextensiondir])
+       AC_SUBST(guileextensiondir)
+
+       # Compiled .go scheme libraries go here
+       AC_MSG_CHECKING([Guile object directory])
+       guileobjectdir="$libdir/guile/$guile_effective_version/site-ccache"
+       AC_MSG_RESULT([$guileobjectdir])
+       AC_SUBST(guileobjectdir)
+       ;;
+esac
+
+################
+# Check for Libtool
 LT_PREREQ([2.2])
-LT_INIT
-LT_LANG([C])
+LT_INIT([dlopen disable-fast-install disable-static win32-dll])
 
-AM_CONDITIONAL([HAVE_GCC],[test "$GCC" = "yes"])
+################
+# Initial guess of platform specific options
 
-AM_MAINTAINER_MODE([enable])
-AC_PROG_CC
-LT_INIT
-PKG_PROG_PKG_CONFIG
-
-################################################################################
-# Enable debugging messages and additional run-time checks.
-################################################################################
-
-AC_ARG_ENABLE([debug],
-              [AS_HELP_STRING([--enable-debug],
-                              [enable extra debugging checks and logging messages])],
-              [],[enable_debug=no])
-
-if test "x$enable_debug" = "xyes" ; then
-        AC_MSG_RESULT([enabling debug checks and messages])
-        AC_DEFINE(GIR_DEBUG,1,[Enable debugging messages.])
-fi
-
-################################################################################
-# Compilation
-################################################################################
-
-m4_define([compiler_flags_common],[ dnl
-  -pipe dnl
-  -Wall dnl
-  -Wcast-align dnl
-  -Wendif-labels dnl
-  -Werror=declaration-after-statement dnl
-  "-Werror=format=2 -Werror=format-nonliteral -Werror=format-security" dnl
-  -Werror=implicit-function-declaration dnl
-  -Werror=init-self dnl
-  -Werror=missing-include-dirs dnl
-  -Werror=missing-prototypes dnl
-  -Werror=pointer-arith dnl
-  -Wextra dnl
-  -Wfloat-equal dnl
-  -Wlogical-op dnl
-  -Wmisleading-indentation dnl
-  -Wmissing-declarations dnl
-  -Wmissing-include-dirs dnl
-  -Wmissing-format-attribute dnl
-  -Wmissing-noreturn dnl
-  -Wno-missing-field-initializers dnl
-  -Wno-switch-enum dnl
-  -Wno-unused-parameter dnl
-  -Wno-packed dnl
-  -Wshadow dnl
-  -Wsign-compare dnl
-  -Wstrict-aliasing=2 dnl
-  -Wundef dnl
-  -Wuninitialized dnl
-  -Wunsafe-loop-optimizations dnl
-  -Wwrite-strings dnl
-  -fno-common dnl
-  -fdiagnostics-show-option dnl
-  -fno-strict-aliasing dnl
-  -fstack-protector dnl
-  -fstack-protector-strong dnl
-  -fno-semantic-interposition dnl
-  -Wno-deprecated-declarations dnl
-  -Waggregate-return dnl
-  -Wimplicit dnl
-  -Wnested-externs dnl
-  -Wold-style-definition dnl
-  -Wstrict-prototypes dnl
-])
-
-CC_CHECK_CFLAGS_APPEND([AM_CFLAGS],[CFLAGS],[compiler_flags_common])
-
-
-################################################################################
-# Core
-################################################################################
-
-# Check for headers.
-
-AC_CHECK_HEADERS([sys/select.h sys/syslimits.h sys/termios.h sys/wait.h stropts.h termios.h util.h wchar.h pty.h])
+################
+# Check for libraries
 
 PKG_CHECK_MODULES(GLIB, [glib-2.0 >= 2.48.0])
 PKG_CHECK_MODULES(GOBJECT, [gobject-2.0])
@@ -130,26 +110,100 @@ PKG_CHECK_MODULES(GUILE, [guile-2.2])
 PKG_CHECK_MODULES(GOBJECT_INTROSPECTION, [gobject-introspection-1.0])
 GOBJECT_INTROSPECTION_CHECK([1.30.0])
 
-################################################################
+################
+# Check for header files
 
-dnl GTK_DOC_CHECK([1.19], [--flavour no-tmpl])
+################
+# Check for types, structures, compiler characteristics
+AX_C___ATTRIBUTE__
 
-################################################################
+m4_define([compiler_flags_common],[ dnl
+  -pipe dnl
+  -Wall dnl
+  -Wextra dnl
+  -Waggregate-return dnl
+  -Wcast-align dnl
+  -Wdeclaration-after-statement dnl
+  -Werror=missing-include-dirs dnl
+  -Werror=pointer-arith dnl
+  -Wfloat-equal dnl
+  -Wformat=2 dnl
+  -Winit-self dnl
+  -Wlogical-op dnl
+  -Wmissing-declarations dnl
+  -Wmissing-include-dirs dnl
+  -Wmissing-prototypes dnl
+  -Wnested-externs dnl
+  -Wno-missing-field-initializers dnl
+  -Wno-packed dnl
+  -Wno-switch-enum dnl
+  -Wno-unused-parameter dnl
+  -Wold-style-definition dnl
+  -Wshadow dnl
+  -Wstrict-prototypes dnl
+  -Wsuggest-attribute=format dnl
+  -Wsuggest-attribute=malloc dnl
+  -Wsuggest-attribute=noreturn dnl
+  -Wsuggest-attribute=pure dnl
+  -Wundef dnl
+  -Wuninitialized dnl
+  -Wwrite-strings dnl
+  -fdiagnostics-show-option dnl
+  -fno-strict-aliasing dnl
+  -fstack-protector dnl
+  -fstack-protector-strong dnl
+  -fno-semantic-interposition dnl
+  -fsanitize=address dnl        AddressSanitizer
+  -fno-omit-frame-pointer dnl   AddressSanitizer
+  -fno-common dnl               AddressSanitizer
+  -fsanitize=leak dnl           LeakSanatizer
+  -fsanitize=undefined dnl      UndefinedBehaviorSanitizer
+  -fsanitize=bounds-strict dnl  UndefinedBEhaviorSanitizer
+])
 
-AC_SUBST([GIR_MAJOR_VERSION_NUMBER],[version_major])
-AC_SUBST([GIR_MINOR_VERSION_NUMBER],[version_minor])
-AC_SUBST([GIR_MICRO_VERSION_NUMBER],[version_micro])
-AC_SUBST([AM_CPPFLAGS])
-AC_SUBST([AM_CFLAGS])
+AC_ARG_WITH([so-many-warnings],
+            [AS_HELP_STRING([--with-so-many-warnings],
+                            [Compile with ALL THE WARNINGS!])])
+case "x$with_so_many_warnings" in
+     xyes)
+     CC_CHECK_CFLAGS_APPEND([compiler_flags_common])
+     ;;
+esac
 
-################################################################
+################
+# Check for C library functions
+
+################
+# Check for system services
+
+################
+# Output
 
 AC_CONFIG_FILES([
  Makefile
  src/Makefile
  test/Makefile
  m4/Makefile
- docs/Makefile])
-
+ build-aux/Makefile
+ doc/Makefile])
 AC_REQUIRE_AUX_FILE([tap-driver.sh])
 AC_OUTPUT
+
+if test "x$with_guile_directories" = "xyes"; then
+   AC_MSG_NOTICE([]
+   [The Guile modules will be installed in $guilesitedir.]
+   [The Guile extension libraries will be installed in $guileextensiondir.]
+   [The compiled modules will be installed in $guileobjectdir.]
+   [This is because you ran configure with the `--with-guile-directories' flag]
+   [These directories are the ones expected by $GUILE])
+else
+   # Guile may have a different prefix than this module
+   AC_MSG_WARN([]
+   [The Guile modules will be installed in $guilesitedir.]
+   [The Guile extension libraries will be installed in $guileextensiondir.]
+   [The compiled modules will be installed in $guileobjectdir.]
+   []
+   [Remember that you may have to adjust the `GUILE_LOAD_PATH' environment]
+   [variable.])
+fi
+AC_SUBST([guilesitedir])
