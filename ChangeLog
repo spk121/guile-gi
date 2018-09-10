@@ -1,3 +1,41 @@
+commit 31ebde56ee3a450102ea978adf15b07ea2871c5b
+Author: Mike Gran <spk121@yahoo.com>
+Date:   Sun Sep 9 20:13:28 2018 -0700
+
+    add gi.Repository class and methods
+
+ src/Makefile.am         |  21 ++-
+ src/gir/_error.scm      |   4 +
+ src/gir/_repository.scm |  75 +++++++++++
+ src/gir_error.c         | 136 ++++++++++++++++++++
+ src/gir_error.h         |   3 +
+ src/gir_foreign.c       |  16 +++
+ src/gir_foreign.h       |   3 +
+ src/gir_info.c          |  96 ++++++++++++++
+ src/gir_info.h          |   8 ++
+ src/gir_module.c        |  53 ++++++++
+ src/gir_repository.c    | 336 ++++++++++++++++++++++++++++++++++++++++++++++++
+ src/gir_repository.h    |  15 +++
+ src/gir_type.c          |  45 +++++++
+ src/gir_type.h          |  21 +++
+ 14 files changed, 829 insertions(+), 3 deletions(-)
+
+commit 474912f75f4da80b2e6919e1076d12d863d785c2
+Author: Mike Gran <spk121@yahoo.com>
+Date:   Fri Sep 7 06:00:00 2018 -0700
+
+    more skeleton
+
+ .gitignore       | 83 ++++++++++++++++++++++----------------------------------
+ ChangeLog        | 32 ++++++++++++++++++++++
+ Makefile.am      |  6 ++--
+ README.md        |  1 +
+ configure.ac     |  1 +
+ docs/Makefile.am |  2 ++
+ test/Makefile.am |  1 +
+ test/girtest.h   |  2 +-
+ 8 files changed, 73 insertions(+), 55 deletions(-)
+
 commit cb37c56610ff28844c0ba46f0d049b43d1a80604
 Author: Mike Gran <spk121@yahoo.com>
 Date:   Fri Sep 7 05:47:34 2018 -0700

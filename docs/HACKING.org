@@ -1,0 +1,105 @@
+* Hacking this Guile GObject Introspection library
+  
+** Types are complicated
+
+*** Making a GType
+
+Mostly, we're not making any GTypes.  We are using existing GObject
+types.
+
+The functionality to make a new GType goes like this.
+
+We use the g_type_register_static() procedure to make a new type.
+Since we're not doing any abstract classes or anything like that, we
+just need
+- a parent GType ID
+- a type name
+- a GClassInitFunc class_init function, where you set properties,
+  callbacks, an signals for the class
+- a GInstanceInitFunc instance_init function, where you set reasonable
+  default values
+
+
+In the class_init_function, we override the class->set_property and
+class->get_property procedures to the shims gir_object_set_property
+and gir_object_get_property.  These shims then call the Guile
+procedures of the form (do-set-property spec value) and (do-get-property spec).
+
+Also in the class_init function, we take a hash table of signals
+to create or overrride.
+
+Also in the class_init function, we take a hash table of properties
+to install.
+
+We end up wrapping a C GType as Guile GOOPS class.
+The GOOPS class has these slots
+- __name__: the name of the GType
+- __init__: a procedure called on a newly constructed GObject of this type
+- __gtype__: the C GType
+- __doc__: maybe a docstring?
+- __gproperties__: the hash table of properties
+- __gsignals__: 
+- do_set_property: a procedure to set a property
+- do_get_property: a procedure to get a property
+
+Then, so that we have access to the GOOPS class from C, we stuff a
+reference to the GOOPS class in the QData of the GType
+
+In the instance_init function, we install the do-set-property and 
+do-get-property wrapper in the QData of instance.  Then we call
+the init procedure on the instance.
+
+In the instance_init function, 
+
+
+3. a GTypeInfo structure
+
+This last one 
+GIR follows a strategy used in PyGObject for expressing GObject types
+as Guile types.
+
+Innermost, you have a GObject type.
+
+First call to g_object_new
+1. It runs the class_init function.  The class init should initialize
+   or override class methods (that is, assign to each class' method
+   its function pointer) and to create the signals and properties
+   associated to your object.
+
+Each call to g_object_new
+1. It calls the target type's class constructor method.  Usually you
+   don't do anything here.
+2. It calls the instance_init function.  Each instance_init is called
+   from the base class up to this class.  This is the standard
+   constructor.
+3. The target type's constructed method is where you would handle
+   post-construction duties.  Probably don't to anything here, either.
+
+Each call to g_object_unref
+1. the target type's dispose function should release any references to
+   other objects.  Dispose can be executed more than once.  Dispose
+   should chain up to its parent implementation.  Also, any functions
+   registered as g_object_weak_ref, or pointers registered by
+   g_object_add_weak_pointer are removed here.
+2. The target type's finalize completes destruction by freeing the 
+   last of self's objects
+
+
+- GType: a numerical value which represents the unique identifier of a
+  registered type.
+- class_init: initializers
+- base_finalize and class_finalize: destructors
+- copy functions
+- type characteristics
+
+GObjects have their own memory management, based on reference
+counting.  Do g_object_unref to properly free an object.
+
+g_object_weak_ref add a callback that is called during 'dispose'
+
+The 'dispose' is when the gobject releases all references to other
+member objects.  Dispose may be called multiple times.
+
+The 'finalize' is when the gobject completes its own destruction.
+
+g_object_unref kicks of both dispose and finalize.

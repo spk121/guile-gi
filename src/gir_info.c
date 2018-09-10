@@ -3,23 +3,75 @@
 #include <glib-object.h>
 #include <girepository.h>
 
+/* A GIBaseInfo *, or subclass of it */
 #define GIR_BASE_INFO_INFO_SLOT (0)
-#define GIR_BASE_INFO_WEAKREFLIST_SLOT (1)
+/* A Guile weak-vector */
+#define GIR_BASE_INFO_INST_WEAKREFLIST_SLOT (1)
+/* A ScmGICallableCache in an SCM */
 #define GIR_BASE_INFO_CACHE_SLOT (2)
+
+/* ?? */
+#define GIR_CALLABLE_INFO_UNBOUND_INFO_SLOT (3)
+/* An SCM, it holds a bound argument for instance, class, and vfunc
+   methods. */
+#define GIR_CALLABLE_INFO_BOUND_ARG_SLOT (4)
+
+SCM scm_class_name_proc;
 
 SCM ScmGIBaseInfo_Type;
 SCM ScmGIBaseInfo_Type_Store;
 
 
+/* BaseInfo */
+
+/* We need to be careful about calling g_base_info_get_name because
+ * calling it with a GI_INFO_TYPE_TYPE will crash.
+ * See: https://bugzilla.gnome.org/show_bug.cgi?id=709456
+ */
+static const char *
+_safe_base_info_get_name (GIBaseInfo *info)
+{
+    if (g_base_info_get_type (info) == GI_INFO_TYPE_TYPE) {
+        return "type_type_instance";
+    } else {
+        return g_base_info_get_name (info);
+    }
+}
+
 static void
 _base_info_dealloc (SCM self)
 {
-  /* FIXME: Do something about a weakreflist */
+    SCM inst_weakreflist;
 
-  g_base_info_unref (scm_foreign_object_ref (self, GIR_BASE_INFO_INFO_SLOT));
-  scm_foreign_object_set_x (self, GIR_BASE_INFO_INFO_SLOT, SCM_BOOL_F);
+    /* MLG: is it sufficient to just release a reference to the weak vector?. */
+    scm_foreign_object_set_x (self, GIR_BASE_INFO_INST_WEAKREFLIST_SLOT, SCM_BOOL_F);
+    
 
-  /* FIXME: Do something about the callable cache */
+    g_base_info_unref (scm_foreign_object_ref (self, GIR_BASE_INFO_INFO_SLOT));
+    scm_foreign_object_set_x (self, GIR_BASE_INFO_INFO_SLOT, SCM_BOOL_F);
+
+    /* FIXME: Do something about the callable cache */
+#if 0
+    SCM cache = scm_foreign_object_ref (self, GIR_BASE_INFO_CACHE_SLOT);
+    if (scm_is_true (cache))
+	gir_callable_cache_free (cache);
+    scm_foreign_object_set_x (self, GIR_BASE_INFO_CACHE_SLOT, SCM_BOOL_F);
+#endif
+}
+
+SCM
+_base_info_repr (SCM self)
+{
+    const char *base_info_name
+	= _safe_base_info_get_name (scm_foreign_object_ref (self, GIR_BASE_INFO_INFO_SLOT));
+    char *scm_type_name
+	= scm_to_utf8_string (scm_call_1 (scm_class_name_proc, self));
+
+    char *joined_names = g_strdup_printf ("%s(%s)", scm_type_name, base_info_name);
+    SCM ret = scm_from_utf8_string (joined_names);
+    free (joined_names);
+    free (scm_type_name);
+    return ret;
 }
 
 gboolean
@@ -88,9 +140,10 @@ gir_info_register_types(void)
     = scm_permanent_object (scm_c_define ("gi.BaseInfo",
 					  ScmGIBaseInfo_Type));
 
-  // FIXME: figure out to to mockup PyErr_NewException
-  // scm_c_export ("Repository", NULL);
-  
+  scm_class_name_proc = scm_c_public_ref ("oop goops", "class-name");
   scm_c_define_gsubr ("%base-info-get-type", 1, 0, 0, _wrap_g_base_info_get_type);
+  // scm_c_define_gsubr ("%base-info-get-name", 1, 0, 0, _wrap_g_base_info_get_name);
+  // scm_c_define_gsubr ("%base-info-get-unescaped", 1, 0, 0, _wrap_g_base_info_get_name_unescaped);
+  
 }
 

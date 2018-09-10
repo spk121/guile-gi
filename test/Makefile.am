@@ -1,4 +1,8 @@
 CLEANFILES=
+EXTRA_DIST=
+
+################################################################
+# Set up the test libraries that we will use for testing
 
 noinst_LTLIBRARIES = libgirtest.la
 
@@ -14,6 +18,10 @@ libgirtest_la_CFLAGS = \
 libgirtest_la_LDFLAGS = -Wl,--no-as-needed
 
 libgirtest_la_LIBADD = $(GLIB_LIBS)
+
+
+################################################################
+# GObject Introspection of test libraries
 
 -include $(INTROSPECTION_MAKEFILE)
 INTROSPECTION_GIRS =
@@ -32,6 +40,14 @@ INTROSPECTION_GIRS += Girtest-1.0.gir
 noinst_DATA = $(INTROSPECTION_GIRS) $(INTROSPECTION_GIRS:.gir=.typelib)
 CLEANFILES += $(noinst_DATA)
 endif
+
+################################################################
+# Test driver
+
+TEST_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' GUILE_AUTO_COMPILE=0 $(SHELL) \
+                  $(top_srcdir)/build-aux/tap-driver.sh
+TESTS = test-gi-repository.scm 
+EXTRA_DIST += $(TESTS)
 
 -include $(top_srcdir)/git.mk
 
