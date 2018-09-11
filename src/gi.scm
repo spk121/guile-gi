@@ -72,4 +72,4 @@ Example:
   ((@ (gi _gi) require-foreign) namespace symbol)
   (import-module "gi.repository" namespace))
 
-(load-extension ".libs/libguile-gir.so" "gir_init")
+(load-extension ".libs/libguile-gi.so" "gir_init")

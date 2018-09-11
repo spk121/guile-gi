@@ -116,47 +116,48 @@ GOBJECT_INTROSPECTION_CHECK([1.30.0])
 AX_C___ATTRIBUTE__
 
 m4_define([compiler_flags_common],[ dnl
-  -pipe dnl
-  -Wall dnl
-  -Wextra dnl
-  -Waggregate-return dnl
-  -Wcast-align dnl
-  -Wdeclaration-after-statement dnl
-  -Werror=missing-include-dirs dnl
-  -Werror=pointer-arith dnl
-  -Wfloat-equal dnl
-  -Wformat=2 dnl
-  -Winit-self dnl
-  -Wlogical-op dnl
-  -Wmissing-declarations dnl
-  -Wmissing-include-dirs dnl
-  -Wmissing-prototypes dnl
-  -Wnested-externs dnl
-  -Wno-missing-field-initializers dnl
-  -Wno-packed dnl
-  -Wno-switch-enum dnl
-  -Wno-unused-parameter dnl
-  -Wold-style-definition dnl
-  -Wshadow dnl
-  -Wstrict-prototypes dnl
-  -Wsuggest-attribute=format dnl
-  -Wsuggest-attribute=malloc dnl
-  -Wsuggest-attribute=noreturn dnl
-  -Wsuggest-attribute=pure dnl
-  -Wundef dnl
-  -Wuninitialized dnl
-  -Wwrite-strings dnl
-  -fdiagnostics-show-option dnl
-  -fno-strict-aliasing dnl
-  -fstack-protector dnl
-  -fstack-protector-strong dnl
-  -fno-semantic-interposition dnl
-  -fsanitize=address dnl        AddressSanitizer
-  -fno-omit-frame-pointer dnl   AddressSanitizer
-  -fno-common dnl               AddressSanitizer
-  -fsanitize=leak dnl           LeakSanatizer
-  -fsanitize=undefined dnl      UndefinedBehaviorSanitizer
-  -fsanitize=bounds-strict dnl  UndefinedBEhaviorSanitizer
+ -pipe dnl
+ -g dnl
+ -Wall dnl
+ -Wextra dnl
+ -Waggregate-return dnl
+ -Wcast-align dnl
+ -Wdeclaration-after-statement dnl
+ -Werror=missing-include-dirs dnl
+ -Werror=pointer-arith dnl
+ -Wfloat-equal dnl
+ -Wformat=2 dnl
+ -Winit-self dnl
+ -Wlogical-op dnl
+ -Wmissing-declarations dnl
+ -Wmissing-include-dirs dnl
+ -Wmissing-prototypes dnl
+ -Wnested-externs dnl
+ -Wno-missing-field-initializers dnl
+ -Wno-packed dnl
+ -Wno-switch-enum dnl
+ -Wno-unused-parameter dnl
+ -Wold-style-definition dnl
+ -Wshadow dnl
+ -Wstrict-prototypes dnl
+ -Wsuggest-attribute=format dnl
+ -Wsuggest-attribute=malloc dnl
+ -Wsuggest-attribute=noreturn dnl
+ -Wsuggest-attribute=pure dnl
+ -Wundef dnl
+ -Wuninitialized dnl
+ -Wwrite-strings dnl
+ -fdiagnostics-show-option dnl
+ -fno-strict-aliasing dnl
+ -fstack-protector dnl
+ -fstack-protector-strong dnl
+ -fno-semantic-interposition dnl
+ -fsanitize=address dnl        AddressSanitizer
+ -fno-omit-frame-pointer dnl   AddressSanitizer
+ -fno-common dnl               AddressSanitizer
+ -fsanitize=leak dnl           LeakSanatizer
+ -fsanitize=undefined dnl      UndefinedBehaviorSanitizer
+ -fsanitize=bounds-strict dnl  UndefinedBEhaviorSanitizer
 ])
 
 AC_ARG_ENABLE([all-the-warnings],

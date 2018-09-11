@@ -44,7 +44,7 @@ dist_guilesite_DATA = \
 ################################################################
 # Set up the test libraries that we will use for testing
 
-noinst_LTLIBRARIES = libgirtest.la
+check_LTLIBRARIES = libgirtest.la
 
 libgirtest_la_SOURCES = \
  test/girtest.h \
@@ -55,7 +55,7 @@ libgirtest_la_CFLAGS = \
  $(GLIB_CFLAGS)
 
 #libgirtest_la_LDFLAGS = -no-undefined Wl,--no-undefined
-libgirtest_la_LDFLAGS = -Wl,--no-as-needed
+libgirtest_la_LDFLAGS = -Wl,--no-as-needed -no-undefined -no-install
 
 libgirtest_la_LIBADD = $(GLIB_LIBS)
 
@@ -77,7 +77,7 @@ Girtest_1_0_gir_CFLAGS = $(INCLUDES)
 Girtest_1_0_gir_LIBS = libgirtest.la
 Girtest_1_0_gir_FILES = $(introspection_sources)
 INTROSPECTION_GIRS += Girtest-1.0.gir
-noinst_DATA = $(INTROSPECTION_GIRS) $(INTROSPECTION_GIRS:.gir=.typelib)
+check_DATA = $(INTROSPECTION_GIRS) $(INTROSPECTION_GIRS:.gir=.typelib)
 CLEANFILES += $(noinst_DATA)
 endif
 
@@ -86,7 +86,13 @@ endif
 
 TEST_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' GUILE_AUTO_COMPILE=0 $(SHELL) \
                   $(top_srcdir)/build-aux/tap-driver.sh
-TESTS = test/test-gi-repository.scm
+AM_TESTS_ENVIRONMENT = LD_LIBRARY_PATH="$(top_builddir)/.libs"; export LD_LIBRARY_PATH;
+TESTS = \
+ test/test-setup.scm \
+ test/test-gi-repository.scm
+TEST_EXTENSIONS = .scm
+SCM_LOG_COMPILER = $(GUILE)
+AM_SCM_LOG_FLAGS = --no-auto-compile -L $(top_srcdir)/src
 
 EXTRA_DIST = \
   $(TESTS) \

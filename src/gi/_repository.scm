@@ -1,4 +1,4 @@
-(define-module (gir _repository)
+(define-module (gi _repository)
   #:use-module (oop goops)
   #:use-module (system foreign-object)
   ;; #:use-module (gir _ir)
@@ -23,7 +23,7 @@
 
 ;;   #:finalizer finalize-repository)
 
-(load-extension "libguile-gir.so" "gir_module_init")
+(load-extension "libguile-gi.so" "gir_module_init")
 
 (define (make-repository)
   (%irepository-get-default))

@@ -128,7 +128,7 @@ scmgerror_to_gvalue (GValue *value, SCM scmerror)
 
 void gir_error_register_types(void)
 {
-  ScmGError = scm_c_public_ref ("gir _error", "GError");
+  ScmGError = scm_c_public_ref ("gi _error", "GError");
   scm_glib_error_key = scm_permanent_object (scm_from_utf8_symbol ("glib-error"));
   gir_register_gtype_custom (G_TYPE_ERROR,
 			     scmgerror_from_gvalue,

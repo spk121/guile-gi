@@ -1,4 +1,4 @@
-(define-module (gir _error)
+(define-module (gi _error)
   #:export (GError))
 
 (define GError #t)

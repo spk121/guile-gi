@@ -1,17 +1,12 @@
-#!/usr/bin/env sh
-exec guile --no-auto-compile -l test-setup.scm -e '(@ (test-setup) main)' -s "$0" "$@"
-!#
-(define-module (test-setup)
-  #:use-module (gi)
-  #:export (main))
-
-(define (t-require-version n)
-  (require-version "Girtest" "1.0")
-  (format #t "ok ~A - dummy test~%" n))
+(define (show-environment n)
+  (format #t "PWD = ~S~%" (system "pwd"))
+  (format #t "LD_LIBRARY_PATH = ~S~%" (getenv "LD_LIBRARY_PATH"))
+  (format #t "GUILE_AUTO_COMPILE = ~S~%" (getenv "GUILE_AUTO_COMPILE"))
+  (format #t "ok ~A - show-environment ~%" n))
 
 (define TESTS
   (list
-   dummy))
+   show-environment))
 
 (define (main . args)
   (let ((n-tests (length TESTS)))
@@ -21,6 +16,7 @@ exec guile --no-auto-compile -l test-setup.scm -e '(@ (test-setup) main)' -s "$0
       (let ((test (list-ref TESTS (1- i))))
 	(test i)))))
 
+(main)
 ;; Local Variables:
 ;; mode: scheme
 ;; End:
