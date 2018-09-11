@@ -15,4 +15,6 @@ Guile GI has two primary components
 Guile GI is heavily based on PyGObject, and most of the code is a transliteration
 of the code in PyGObject.
 
-For the moment, the docs are at https://spk121.github.io/
+This is pre-alpha code.  It does not work at all.
+
+For the moment, the docs are at https://spk121.github.io/guile-gi/
