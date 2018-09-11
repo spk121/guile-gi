@@ -1,6 +1,6 @@
 #include <libguile.h>
 #include <glib-object.h>
-#include "gir_type.h"
+#include "gugi-type.h"
 
 static GQuark gir_type_marshal_key = 0;
 static GQuark gir_type_marshal_helper_key = 0;

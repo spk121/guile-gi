@@ -69,6 +69,7 @@ Example:
   (import cairo)
   (require-foreign \"cairo\")
 "
-  (error "unimplemented"))
+  ((@ (gi _gi) require-foreign) namespace symbol)
+  (import-module "gi.repository" namespace))
 
 (load-extension ".libs/libguile-gir.so" "gir_init")

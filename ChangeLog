@@ -1,3 +1,120 @@
+commit e60475c41b0fad10c5308d21b83e5ecefb22780c
+Merge: be990b1 946d19f
+Author: Mike Gran <spk121@yahoo.com>
+Date:   Tue Sep 11 07:27:31 2018 -0700
+
+    Merge branch 'master' of github.com:spk121/guile-gobject-introspection
+
+commit be990b1e42c8db2bc8e52df80a083d87bb62c681
+Author: Mike Gran <spk121@yahoo.com>
+Date:   Tue Sep 11 07:27:20 2018 -0700
+
+    [html] add stylesheet
+
+ docs/Application-Deployment.html             |   1 +
+ docs/Debugging-and-Profiling.html            |   1 +
+ docs/Example-1.html                          |   1 +
+ docs/Further-Resources-and-Contact-Info.html |   1 +
+ docs/Getting-Started.html                    |   1 +
+ docs/Index.html                              |   1 +
+ docs/Installation.html                       |   1 +
+ docs/Preface.html                            |   1 +
+ docs/Reference-Guide.html                    |   1 +
+ docs/Sample-Applications.html                |   1 +
+ docs/Testing-and-Continuous-Integration.html |   1 +
+ docs/Threads-and-Concurrency.html            |   1 +
+ docs/Tutorials.html                          |   1 +
+ docs/document-1.0.1.css                      | 221 +++++++++++++++++++++++++++
+ docs/gi-module.html                          |   1 +
+ docs/gobject-module.html                     |   1 +
+ docs/index.html                              |   1 +
+ 17 files changed, 237 insertions(+)
+
+commit 946d19f193e07b309d124e358ca7697263e62277
+Author: Mike Gran <spk121@yahoo.com>
+Date:   Tue Sep 11 07:20:43 2018 -0700
+
+    Set theme jekyll-theme-slate
+
+ docs/_config.yml | 1 +
+ 1 file changed, 1 insertion(+)
+
+commit 83ea36c8db3aac37601a91495d1518de2166a47c
+Author: Mike Gran <spk121@yahoo.com>
+Date:   Tue Sep 11 07:19:47 2018 -0700
+
+    Update README.md
+
+ README.md | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit 69cb40f44a2f3e866d68e7e00f107e7865ad27a4
+Author: Mike Gran <spk121@yahoo.com>
+Date:   Tue Sep 11 07:13:52 2018 -0700
+
+    update html docs
+
+ docs/Application-Deployment.html             |  65 +++++++++++
+ docs/Debugging-and-Profiling.html            |  65 +++++++++++
+ docs/Example-1.html                          |  65 +++++++++++
+ docs/Further-Resources-and-Contact-Info.html |  65 +++++++++++
+ docs/Getting-Started.html                    |  94 ++++++++++++++++
+ docs/Index.html                              |  65 +++++++++++
+ docs/Installation.html                       |  65 +++++++++++
+ docs/Preface.html                            |  79 +++++++++++++
+ docs/Reference-Guide.html                    |  80 ++++++++++++++
+ docs/Sample-Applications.html                |  70 ++++++++++++
+ docs/Testing-and-Continuous-Integration.html |  65 +++++++++++
+ docs/Threads-and-Concurrency.html            |  65 +++++++++++
+ docs/Tutorials.html                          |  76 +++++++++++++
+ docs/gi-module.html                          | 154 ++++++++++++++++++++++++++
+ docs/gobject-module.html                     | 159 +++++++++++++++++++++++++++
+ docs/index.html                              | 153 ++++++++++++++++++++++++++
+ 16 files changed, 1385 insertions(+)
+
+commit db5c45712a1915a1808442c48dabc9fed5a3ee0e
+Author: Mike Gran <spk121@yahoo.com>
+Date:   Tue Sep 11 06:42:02 2018 -0700
+
+    [info] sketch out API
+
+ doc/guile-gi.texi               | 299 +++++++++++++++++++++++++++++++++++++++-
+ src/{gir => gi}/_error.scm      |   0
+ src/{gir => gi}/_repository.scm |   0
+ 3 files changed, 294 insertions(+), 5 deletions(-)
+
+commit 314e7a321afe40ff33f1c2b86885e30b69afd022
+Author: Mike Gran <spk121@yahoo.com>
+Date:   Mon Sep 10 10:51:04 2018 -0700
+
+    tweak autotools and skeleton
+
+ Makefile.am               |   5 +-
+ build-aux/Makefile.am     |   1 +
+ build-aux/config.rpath    | 684 ++++++++++++++++++++++++++++++++++++++++++++++
+ configure.ac              | 244 ++++++++++-------
+ {docs => doc}/HACKING.org |   0
+ doc/Makefile.am           |   4 +
+ doc/guile-gi.texi         |  44 +++
+ docs/Makefile.am          |   2 -
+ src/gi.scm                |  74 +++++
+ 9 files changed, 959 insertions(+), 99 deletions(-)
+
+commit 88eff2f7d00b58b37d81ce3baaae2dac5ec4d3eb
+Author: Mike Gran <spk121@yahoo.com>
+Date:   Mon Sep 10 07:21:58 2018 -0700
+
+    begin sketching out tests and top-level gi.scm
+
+ ChangeLog                   |  38 ++++++++++++++++
+ configure.ac                |   2 +
+ docs/HACKING.org            | 105 ++++++++++++++++++++++++++++++++++++++++++++
+ src/gir_info.c              |  69 +++++++++++++++++++++++++----
+ test/Makefile.am            |  16 +++++++
+ test/test-gi-repository.scm |  25 +++++++++++
+ test/test-setup.scm         |  25 +++++++++++
+ 7 files changed, 272 insertions(+), 8 deletions(-)
+
 commit 31ebde56ee3a450102ea978adf15b07ea2871c5b
 Author: Mike Gran <spk121@yahoo.com>
 Date:   Sun Sep 9 20:13:28 2018 -0700

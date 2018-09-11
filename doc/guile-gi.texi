@@ -266,7 +266,7 @@ in @code{make-gobject-type}.
 Makes a new Guile foreign object type for use with GObject. @var{name}
 is a symbol naming the type. The @code{superclass} is a GObject type
 that this class inherits from.  Every class must descend from another
-class.  (See @ref{Object}).
+class.  (See Object).
 
 After the name and the superclass, you may add property specifiers and
 signal specifiers.  Each property specifier adds a variable to the

@@ -9,12 +9,14 @@ dnl Copyright (C) Michael L. Gran
 AC_INIT([Guile GI], [0.0.1], [spk121@yahoo.com], [guile-gi])
 
 AC_CONFIG_AUX_DIR([build-aux])
-AM_INIT_AUTOMAKE([foreign parallel-tests -Wno-portability])
+AM_INIT_AUTOMAKE([foreign subdir-objects check-news silent-rules parallel-tests -Wno-portability -Wall -Werror])
+AM_MAINTAINER_MODE
 
 AC_PREREQ([2.63])
-AC_CONFIG_HEADERS([config.h])
-AC_CONFIG_SRCDIR([src/gir.c])
 AC_CONFIG_MACRO_DIR([m4])
+
+AC_CONFIG_HEADERS([src/gi/config.h])
+# AC_CONFIG_SRCDIR([src/gir.c])
 
 ################
 # Libtool versioning
@@ -31,16 +33,13 @@ dnl AC_USE_SYSTEM_EXTENSIONS
 AC_HEADER_STDC
 AM_PROG_CC_C_O
 AC_PROG_SED
+AM_PROG_AR
 
 # from guile.m4
 GUILE_PKG([2.2])
 GUILE_PROGS
 GUILE_FLAGS
 GUILE_SITE_DIR
-
-AC_MSG_CHECKING([the Guile effective version])
-guile_effective_version = "`$GUILE -c '(display (effective-version))'`"
-AC_MSG_RESULT([$guile_effective_version])
 
 ################
 # Guile has three directories that don't follow the GNU Filesystem
@@ -106,7 +105,6 @@ LT_INIT([dlopen disable-fast-install disable-static win32-dll])
 
 PKG_CHECK_MODULES(GLIB, [glib-2.0 >= 2.48.0])
 PKG_CHECK_MODULES(GOBJECT, [gobject-2.0])
-PKG_CHECK_MODULES(GUILE, [guile-2.2])
 PKG_CHECK_MODULES(GOBJECT_INTROSPECTION, [gobject-introspection-1.0])
 GOBJECT_INTROSPECTION_CHECK([1.30.0])
 
@@ -161,10 +159,10 @@ m4_define([compiler_flags_common],[ dnl
   -fsanitize=bounds-strict dnl  UndefinedBEhaviorSanitizer
 ])
 
-AC_ARG_WITH([so-many-warnings],
-            [AS_HELP_STRING([--with-so-many-warnings],
+AC_ARG_ENABLE([all-the-warnings],
+            [AS_HELP_STRING([--enable-all-the-warnings],
                             [Compile with ALL THE WARNINGS!])])
-case "x$with_so_many_warnings" in
+case "x$enable_all_the_warnings" in
      xyes)
      CC_CHECK_CFLAGS_APPEND([compiler_flags_common])
      ;;
@@ -181,11 +179,7 @@ esac
 
 AC_CONFIG_FILES([
  Makefile
- src/Makefile
- test/Makefile
- m4/Makefile
- build-aux/Makefile
- doc/Makefile])
+ ])
 AC_REQUIRE_AUX_FILE([tap-driver.sh])
 AC_OUTPUT
 

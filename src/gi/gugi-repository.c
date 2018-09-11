@@ -2,7 +2,7 @@
 #include <libguile.h>
 #include <glib-object.h>
 #include <girepository.h>
-#include "gir_info.h"
+#include "gugi-info.h"
 
 #define SCM_LIST_APPEND(collection, entry) \
     collection = scm_append (scm_list_2 ((collection), scm_list_1 (entry)))

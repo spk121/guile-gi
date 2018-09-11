@@ -1,10 +1,10 @@
 #include <libguile.h>
 #include <glib-object.h>
-#include "gir_error.h"
-#include "gir_foreign.h"
-#include "gir_info.h"
-#include "gir_repository.h"
-#include "gir_type.h"
+#include "gugi-error.h"
+#include "gugi-foreign.h"
+#include "gugi-info.h"
+#include "gugi-repository.h"
+#include "gugi-type.h"
 
 void
 gir_log_handler (const gchar *log_domain,

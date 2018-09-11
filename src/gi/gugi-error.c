@@ -1,6 +1,6 @@
 #include <libguile.h>
 #include <glib-object.h>
-#include "gir_type.h"
+#include "gugi-type.h"
 
 SCM ScmGError = SCM_UNSPECIFIED;
 
