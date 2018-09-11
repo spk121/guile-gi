@@ -1,11 +1,12 @@
 #!/usr/bin/env sh
-exec guile --no-auto-compile -l 0-test-setup.scm -e '(@ (test-setup) main)' -s "$0" "$@"
+exec guile --no-auto-compile -l test-setup.scm -e '(@ (test-setup) main)' -s "$0" "$@"
 !#
-(define-module (test-gi-repository)
-  #:use-module (gi _repository)
+(define-module (test-setup)
+  #:use-module (gi)
   #:export (main))
 
-(define (dummy n)
+(define (t-require-version n)
+  (require-version "Girtest" "1.0")
   (format #t "ok ~A - dummy test~%" n))
 
 (define TESTS

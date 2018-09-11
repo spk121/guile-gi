@@ -51,6 +51,11 @@ Tutorials
 * Application Deployment::
 * Testing and Continuous Integration::
 
+Reference Guide
+
+* gi module::
+* gobject module::
+
 @end detailmenu
 @end menu
 
@@ -148,7 +153,12 @@ classes and instances in Guile.  These two modules allow one to write
 programs using GObject-based C libraries like GTK3 or WebKitGTK.
 
 @c -----------------------------------------------------------------
-@node gi module
+@menu
+* gi module::
+* gobject module::
+@end menu
+
+@node gi module, gobject module, Reference Guide, Reference Guide
 @section The @file{(gi)} module
 
 The @code{(gi)} module contains procedures that dynamically create
@@ -229,7 +239,7 @@ version of Guile GI.
 @end defvr
 
 
-@node gobject module
+@node gobject module,  , gi module, Reference Guide
 @section The @file{(gobject)} module 
 
 The @code{(gobject)} module lets you interact with the C type system
