@@ -102,6 +102,7 @@ EXTRA_DIST = \
   bootstrap.sh \
   build-aux/config.rpath \
   m4/attributes.m4 \
+  m4/ax_c___attribute__.m4 \
   docs/document-1.0.1.css
 
 MAINTAINERCLEANFILES = \
