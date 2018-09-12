@@ -14,7 +14,9 @@ libguile_gi_la_SOURCES = \
  src/gi/gugi-foreign.c src/gi/gugi-foreign.h \
  src/gi/gugi-info.c src/gi/gugi-info.h \
  src/gi/gugi-repository.c src/gi/gugi-repository.h \
- src/gi/gugi-type.c src/gi/gugi-type.h
+ src/gi/gugi-type.c src/gi/gugi-type.h \
+ src/gi/gugi-util.c src/gi/gugi-util.h \
+ src/gi/pycompat.c src/gi/pycompat.h
 
 libguile_gi_la_CFLAGS = \
  -std=c11 \
@@ -78,7 +80,7 @@ Girtest_1_0_gir_LIBS = libgirtest.la
 Girtest_1_0_gir_FILES = $(introspection_sources)
 INTROSPECTION_GIRS += Girtest-1.0.gir
 check_DATA = $(INTROSPECTION_GIRS) $(INTROSPECTION_GIRS:.gir=.typelib)
-CLEANFILES += $(noinst_DATA)
+CLEANFILES += $(check_DATA)
 endif
 
 ################################################################
