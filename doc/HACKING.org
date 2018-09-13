@@ -1,4 +1,195 @@
+#+TITLE: Hacking this Guile GObject Introspection Library
+#+AUTHOR: Michael Gran
+
+* Header Files with no dependencies
+
+pygi-argument.h
+pygi-foreign-api.h
+pygi-invoke-state-struct.h
+pygi-struct.h
+pygi-value.h
+pygobject.h
+pygoptiongroup.h
+pygparamspec.h
+pygpointer.h
+
+
+* pygobject as a standalone library
+
+  pygobject-object.c
+
+* Python Types
+  
+  The PyTypeObject (which holds the information about a Python
+  foreign-object type) and the Guile foreign-object type serve the
+  same purpose.  They allow the host language to define a type that
+  wraps an arbitrary C or native language type.  But their approaches
+  are quite different.
+
+  The Guile foreign-object type is just
+  - the name of the type
+  - the count and names of the slots
+  - and an optional finalizer procedure.
+
+  The slots on a Guile foreign-object type are just boxes; they can
+  contain anything.
+
+  Python types store a trememdous amount of information about the
+  types in the types themselves, whilst in Guile foreign-object type,
+  the metadata is limited.
+
+  Python types contain references to 
+
+  - tp_name: a pointer to a NUL-terminated string containing the name of
+    the type
+  - tp_dealloc: a pointer to the instance destructor function, which
+    is called if the reference count reaches zero
+  - tp_flags:
+    + Py_TPFLAGS_HEAPTYPE: the type object itself is allocated on the
+      heap
+    + Py_TPFLAGS_BASETYPE: the type can be used as the base type of
+      another type
+    + Py_TPFLAGS_HAVE_GC: the type supported garbage collection
+  - tp_doc: a pointer to a NUL-terminated C string giving the
+    docstring for this stype object
+  - tp_dict: a dictionary containing initial attributes for the type.
+  - tp_getattro: a procedure to get attributes for the type.
+  - tp_setattro: a procedure to set attributes for the type.
+
+  and many, many more.
+
+  The pragmatic part of this is that a Python class type has enough
+  introspection information that, given a PyTypeObject, one can
+  completely create and destroy instances, including the instantiation
+  of any Python objects, C pointers, variables, or structs it may
+  contain.  A Guile foreign-object class instance only contains named
+  slots.  It requires an additional procedure to populate those slots
+  with valid data.
+
+  To mock up PyGObject, will we need to add additional information to
+  Guile foreign-object types so that a type has enough information to
+  create an instance and populate it with default values?  It will
+  need a refcnt slot as explained below, as well as a finalizer that
+  can be run multiple times on the same object.
+
+* Instances of Python Types
+
+  Instances of Python types have an refcnt, initialized to 1 when the
+  instance is constructed.  When the refcount reaches zero, the type's
+  destructor is called.
+
+  To mock up instances of Python Types in Guile, the Guile
+  foreign-object types will need to have a refcnt slot, which is
+  initizalized to 1.  And they will need to have a destructor that can
+  be run multiple times, e.g. when the refcnt reaches zero as well as
+  when the instance is garbage collected.
+
+* PyGObject Types
+
+  PyGObject Types are Python types that hold a GObject pointer that
+  itself holds an instance of a GObject-based class.  There is a
+  Python class instance envelope about a GObject class instance.
+
+  Now, The GObject class itself holds a set of properties 
+  and signals.
+
+  From PyGObject, the C structure that will form the contents of a
+  PyGObject type will have a PyObject_HEAD entry.  Replace
+  PyObject_HEAD with ssize_t ob_refcnt and SCM ob_type.  ob
+
+  PyObject_HEAD
+  -->
+  ssize ob_refcnt;
+  SCM ob_type;      // holds the Guile type of this type
+
+* Instances of PyGObject Types
+
+  In addition to the refcnt that is required for all instances of
+  PyObject types, instances of PyGObject types also have slot that
+  contains a 
+  - a GObject pointer
+  - an instance dictionary, which is initially set to the contents of
+    the PyGObject Type's default dictionary
+  - a weak ref list
+  - some GObject Flags
+
+** Glib GList -> Guile list
+** Glib GSList -> Guile list
+
+** Python Weak Ref List -> Guile weak-vector
+   There is a Python weak ref list in PyGObject, but,
+   is isn't used in PyGObject itself.
+
+** Python Dictionaries -> Guile hash tables
+
+** C PyObject * -> regular SCM of any type
+   Usually a pointer to a PyObject on the heap.
+
+** C PyTypeObject * ->
+
+** C struct _PyGClosure -> C struct _GuGClosure
+   - GClosure closure: ??
+   - PyObject *callback -> SCM callback - a procedure of ??
+   - PyObject *extra_args -> SCM extra_args: an SCM list
+   - PyObject *swap_data -> SCM swap_data: ??
+   - GuClosureExceptionHandler exception handler: ??
+
+** C PyObject_HEAD > c struct fragment
+   - ssize_t ob_refcount
+   - PyTypeObject *ob_type -> SCM ob_type
+
+** C PyGObject * -> C GuGObject * struct
+   Slots
+   - ssize_t ob_refcount
+   - PyTypeObject *ob_type
+   1. GObject *obj: a C pointer
+   2. SCM inst_dict: SCM containing a Guile hash-table
+   3. SCM weakreflist: SCM containing a weak-vector
+   4. GuGObjectFlags flags: a C enum
+
+** C struct PyGBoxed -> C struct GuGBoxed;
+   Slots
+   - ssize_t ob_refcount
+   - PyTypeObject *ob_type
+   1. gpointer boxed: a C pointer to any type of data that has a GType ID
+   2. GType gtype: the GType ID of the data pointed to by 'boxed'
+   3. gboolean free_on_dealloc: a C boolean
+
+** Python 'Boxed' -> Guile foreign object type 'Boxed'
+
+** PyGPointer -> a foreign object type
+   Slots
+   - ssize_t ob_refcount
+   - PyTypeObject *ob_type
+   1. gpointer pointer: a C pointer to any type of data with a GType ID
+   2. GType gtype: the GType ID of the data in 'pointer'
+
+** C struct PyGParamSpec -> C struct GuGParamSpec
+   - ssize_t ob_refcount
+   - PyTypeObject *ob_type
+
+   - GParamSpec *pspec;
+
+** Python ParamSpec
 * Hacking this Guile GObject Introspection library
+
+
+* Specific functions
+
+PyTuple_Size(tuple)
+-> scm_to_ssize_t (scm_length (list))
+
+PyArgs_ParseTuple
+-> GuArg_ParseList
+
+PyTuple_GetItem
+-> scm_list_ref (list, scm_from_ssize_t (x))
+
+PYGLIB_PyLong_Check
+-> scm_is_exact_integer
+
+pygi_gint_from_py
+scm_to_int
   
 ** Types are complicated
 

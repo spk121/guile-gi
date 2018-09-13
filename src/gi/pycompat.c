@@ -2,8 +2,8 @@
 #include <ctype.h>
 #include "pycompat.h"
 
-SCM scm_none_type;
-SCM scm_none;
+SCM Gu_None_Type;
+SCM Gu_None;
 
 int
 scm_is_none (SCM arg)
@@ -11,12 +11,42 @@ scm_is_none (SCM arg)
   return scm_is_true (scm_eq_p (scm_none, arg));
 }
 
+/* Iterate over all key-value pairs in the hash table P. The ssize_t
+   referred to by POS must be initialized to 0 prior to the first call
+   to this function to start the iteration; the function returns TRUE
+   for each pair in the hash table, and FALSE once all pairs have been
+   reported. The value is POS will be incremented. The parameters KEY
+   and VALUE will be filled in with each key and value,
+   respectively. */
+int GuDict_Next(SCM p, ssize_t *pos, SCM key, SCM value)
+{
+    SCM buckets = SCM_HASHTABLE_VECTOR (p);
+    long n = scm_c_vector_length (buckets);
+    if (*pos >= n)
+	return FALSE;
+
+    SCM ls = scm_c_vector_ref (buckets, *pos);
+    key = scm_car (ls);
+    value = scm_cdr (ls);
+    *pos = *pos + 1;
+    return TRUE;
+}
 
 /* Adds an integer constant to the given Guile module */
 void
 GuModule_AddIntConstant (SCM module, const char *name, long value)
 {
   scm_c_module_define (module, name, scm_from_long (value));
+}
+
+SCM GuSequence_GetSlice (SCM obj, Gu_ssize_t i1, Gu_ssize_t i2)
+{
+    SCM ret = SCM_EOL;
+    for (ssize_t i = i1, i < i2; i ++) {
+	SCM entry = scm_list_ref (obj, scm_from_ssize_t (i));
+	ret = scm_append (scm_list_2 (ret, scm_list_1 (entry)));
+    }
+    return ret;
 }
 
 char ParseTupleError[256];
@@ -233,10 +263,23 @@ GuArg_ParseTuple(SCM args, const char *format, ...)
 }
 
 
+static char *GuErr_LastMessage;
+static SCM GuErr_LastType;
+
+void
+GuErr_SetString(SCM type, const char *message)
+{
+    GuErr_LastType = type;
+    free (GuErr_LastMessage);
+    GuErr_LastMessage = NULL;
+    if (message)
+	GuErr_LastMessage = strdup(message);
+}
+
 void
 init_pycompat (void)
 {
-  scm_none_type = scm_make_foreign_object_type (scm_from_utf8_string ("$NONE"),
+  Gu_None_Type = scm_make_foreign_object_type (scm_from_utf8_string ("$NONE"),
 						SCM_EOL, NULL);
-  scm_none = scm_permanent_object (scm_make_foreign_object_0 (scm_none_type));
+  Gu_None = scm_permanent_object (scm_make_foreign_object_0 (Gu_None_Type));
 }

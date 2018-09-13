@@ -8,6 +8,11 @@ info_TEXINFOS = doc/guile-gi.texi
 
 guileextension_LTLIBRARIES = libguile-gi.la
 
+nodist_PROGS = guile-gi
+
+guile_gi_SOURCES = \
+ src/gi/gimodule.c
+
 libguile_gi_la_SOURCES = \
  src/gi/gimodule.c src/gi/gimodule.h \
  src/gi/gugi-error.c src/gi/gugi-error.h \
