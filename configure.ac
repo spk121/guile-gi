@@ -9,7 +9,7 @@ dnl Copyright (C) Michael L. Gran
 AC_INIT([Guile GI], [0.0.1], [spk121@yahoo.com], [guile-gi])
 
 AC_CONFIG_AUX_DIR([build-aux])
-AM_INIT_AUTOMAKE([foreign subdir-objects check-news silent-rules parallel-tests -Wno-portability -Wall -Werror])
+AM_INIT_AUTOMAKE([foreign subdir-objects check-news silent-rules parallel-tests -Wno-portability -Wall])
 AM_MAINTAINER_MODE
 
 AC_PREREQ([2.63])

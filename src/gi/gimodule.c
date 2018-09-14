@@ -2,6 +2,7 @@
 
 #include <libguile.h>
 #include <glib-object.h>
+#include "gimodule.h"
 #include "gugobject.h"
 #include "pycompat.h"
 #include "gugenum.h"
@@ -13,6 +14,12 @@
 #include "gugi-type.h"
 #include "gugi-util.h"
 #include "gugi-value.h"
+#include "stubs.h"
+#include "gugobject-object.h"
+
+SCM GuGIWarning;
+SCM GuGIDeprecationWarning;
+SCM _GuGIDefaultArgPlaceholder;
 
 /* Returns a new flag/enum type or %NULL */
 static SCM
@@ -119,6 +126,23 @@ gug_flags_add_constants(SCM module, GType flags_type,
 
     g_type_class_unref(fclass);
 }
+
+/**
+ * pyg_set_thread_block_funcs:
+ * Deprecated, only available for ABI compatibility.
+ */
+#if 0
+static void
+_gug_set_thread_block_funcs (PyGThreadBlockFunc block_threads_func,
+			     PyGThreadBlockFunc unblock_threads_func)
+{
+    PyGILState_STATE state = PyGILState_Ensure ();
+    PyErr_Warn (PyExc_DeprecationWarning,
+                "Using pyg_set_thread_block_funcs is not longer needed. "
+                "PyGObject always uses Py_BLOCK/UNBLOCK_THREADS.");
+    PyGILState_Release (state);
+}
+#endif
 
 static GParamSpec *
 create_property (const gchar  *prop_name,
@@ -431,7 +455,7 @@ pyg_parse_constructor_args(GType        obj_type,
 {
     guint arg_i, param_i;
     GObjectClass *oclass;
-    int n_args;
+    unsigned n_args;
 
     oclass = g_type_class_ref(obj_type);
     g_return_val_if_fail(oclass, FALSE);
@@ -473,7 +497,7 @@ gug_register_class_init(GType gtype, GuGClassInitFunc class_init)
 
     list = g_type_get_qdata(gtype, gugobject_class_init_key);
     list = g_slist_prepend(list, class_init);
-    g_type_set_qdata(gtype, pygobject_class_init_key, list);
+    g_type_set_qdata(gtype, gugobject_class_init_key, list);
 }
 
 static gboolean
@@ -642,7 +666,7 @@ _gug_signal_accumulator(GSignalInvocationHint *ihint,
                 GuErr_Print();
             }
         }
-        Gu_DECREF(gi_retval);
+        Gu_DECREF(gu_retval);
     }
     GuGILState_Release(state);
     return retval;
@@ -655,7 +679,6 @@ create_signal (GType instance_type, const gchar *signal_name, SCM list)
     SCM gu_return_type, gu_param_types;
     GType return_type;
     guint n_params, i;
-    ssize_t gu_n_params;
     GType *param_types;
     guint signal_id;
     GSignalAccumulator accumulator = NULL;
@@ -688,7 +711,7 @@ create_signal (GType instance_type, const gchar *signal_name, SCM list)
     return_type = gug_type_from_object(gu_return_type);
     if (!return_type)
 	return FALSE;
-    if (!scm_is_list(gu_param_types)) {
+    if (!scm_is_true(scm_list_p(gu_param_types))) {
 	gchar buf[128];
 
 	g_snprintf(buf, sizeof(buf),
@@ -747,7 +770,7 @@ add_signals (GObjectClass *klass, SCM signals)
     GType instance_type = G_OBJECT_CLASS_TYPE (klass);
 
     overridden_signals = scm_c_make_hash_table (10);
-    while (GuDict_Next(signals, &pos, &key, &value)) {
+    while (GuDict_Next(signals, &pos, key, value)) {
 	gchar *signal_name;
         gchar *signal_name_canon, *c;
 	gboolean override = FALSE;
@@ -877,6 +900,7 @@ gug_object_class_init(GObjectClass *class, SCM gu_class)
     SCM gproperties, gsignals, overridden_signals;
     SCM class_dict;
 
+    #define GOBJECT_TYPE_DICT_SLOT 0
     class_dict = scm_foreign_object_ref (gu_class, GOBJECT_TYPE_DICT_SLOT);
 
     class->set_property = gug_object_set_property;
@@ -954,7 +978,7 @@ G_GNUC_BEGIN_IGNORE_DEPRECATIONS
                         n_parameters, parameters);
 G_GNUC_END_IGNORE_DEPRECATIONS
     if (g_object_is_floating (obj))
-        self->private_flags.flags |= GUGOBJECT_GOBJECT_WAS_FLOATING;
+        self->flags |= GUGOBJECT_GOBJECT_WAS_FLOATING;
     gugobject_sink (obj);
 
     gugobject_init_wrapper_set(NULL);
@@ -969,7 +993,7 @@ gugobject__g_instance_init(GTypeInstance   *instance,
                            gpointer         g_class)
 {
     GObject *object = (GObject *) instance;
-    SCM wrapper, *result;
+    SCM wrapper, result;
     GuGILState_STATE state;
 
     wrapper = g_object_get_qdata(object, gugobject_wrapper_key);
@@ -1049,7 +1073,8 @@ gug_type_add_interfaces(SCM class, /* Contains a foreign object type */
         if (!GuType_Check(base))
             continue;
 
-        if (!GuType_IsSubtype((GuTypeObject*) base, &GuGInterface_Type))
+        if (!GuType_IsSubtype(base, /* A type object */
+			      GuGInterface_Type))
             continue;
 
         itype = gug_type_from_object(base);
@@ -1067,8 +1092,8 @@ gug_type_add_interfaces(SCM class, /* Contains a foreign object type */
                                     ((GuTypeObject *) base)->tp_name);
 
 #else
-            error = g_strdup_printf("Interface type %s "
-                                    "has no Guthon implementation support");
+            error = g_strdup_printf("Interface type "
+                                    "has no Guile implementation support");
 #endif
             GuErr_Warn(GuExc_RuntimeWarning, error);
             g_free(error);
@@ -1082,7 +1107,9 @@ gug_type_add_interfaces(SCM class, /* Contains a foreign object type */
 }
 
 static int
-gug_run_class_init(GType gtype, gpointer gclass, GuTypeObject *guclass)
+gug_run_class_init(GType gtype, gpointer gclass,
+		   SCM guclass /* a type */
+		   )
 {
     GSList *list;
     GuGClassInitFunc class_init;
@@ -1124,9 +1151,9 @@ get_type_name_for_class(SCM class /* contains a Guile foreign object type */
 	g_free(type_name);
 	g_snprintf(name_serial_str, 16, "-v%i", name_serial);
 	module = GuObject_GetAttrString((SCM )class, "__module__");
-	if (module && GUGLIB_GuUnicode_Check(module)) {
+	if (module && scm_is_string(module)) {
 	    type_name = g_strconcat(GUGLIB_GuUnicode_AsString(module), ".",
-				    class->tp_name,
+				    gug_foreign_object_type_get_name(class),
 				    name_serial > 1 ? name_serial_str : NULL,
 				    NULL);
 	    Gu_DECREF(module);
@@ -1140,7 +1167,7 @@ get_type_name_for_class(SCM class /* contains a Guile foreign object type */
 				    name_serial > 1 ? name_serial_str : NULL,
 				    NULL);
 #else
-	    type_name = g_strconcat(gug_get_name_from_class (class),
+	    type_name = g_strconcat(gug_foreign_object_type_get_name (class),
 				    name_serial > 1 ? name_serial_str : NULL,
 				    NULL);
 #endif
@@ -1237,8 +1264,8 @@ gug_type_register(SCM class, /* contains a Guile type */
     Gu_DECREF(gtype);
 
     /* if no __doc__, set it to the auto doc descriptor */
-    if (GuDict_GetItemString(class->tp_dict, "__doc__") == NULL) {
-	GuDict_SetItemString(class->tp_dict, "__doc__",
+    if (GuDict_GetItemString(gug_foreign_object_type_get_dict(class), "__doc__") == NULL) {
+	GuDict_SetItemString(gug_foreign_object_type_get_dict(class), "__doc__",
 			     gug_object_descr_doc_get());
     }
 
@@ -1248,7 +1275,7 @@ gug_type_register(SCM class, /* contains a Guile type */
      *
      * See also comment above gug_type_add_interfaces().
      */
-    gug_type_add_interfaces(class, instance_type, gug_get_bases_from_class(class),
+    gug_type_add_interfaces(class, instance_type, gug_foreign_object_type_get_bases(class),
                             parent_interfaces, n_parent_interfaces);
 
 
@@ -1275,21 +1302,21 @@ gug_type_register(SCM class, /* contains a Guile type */
 static SCM 
 _wrap_gug_type_register(SCM self, SCM args)
 {
-    GuTypeObject *class;
+    SCM class; /* a type */
     char *type_name = NULL;
 
     if (!GuArg_ParseTuple(args, "O!|z:gobject.type_register",
 			  &GuType_Type, &class, &type_name))
 	return NULL;
-    if (!GuType_IsSubtype(class, &GuGObject_Type)) {
+    if (!GuType_IsSubtype(class, GuGObject_Type)) {
 	GuErr_SetString(GuExc_TypeError,
 			"argument must be a GObject subclass");
 	return NULL;
     }
 
       /* Check if type already registered */
-    if (gug_type_from_object((SCM ) class) ==
-        gug_type_from_object((SCM ) gug_get_base_from_class(class))
+    if (gug_type_from_object((SCM) class) ==
+        gug_type_from_object(gug_foreign_object_type_get_base(class)))
     {
         if (gug_type_register(class, type_name))
             return NULL;
@@ -1330,7 +1357,7 @@ _log_func(const gchar *log_domain,
 
 static void
 add_warning_redirection(const char *domain,
-                        GuObject   *warning)
+                        SCM warning)
 {
     g_return_if_fail(domain != NULL);
     g_return_if_fail(warning != NULL);
@@ -1623,7 +1650,7 @@ _wrap_gug_flags_register_new_gtype_and_add (SCM self,
 }
 
 static void
-initialize_interface (GTypeInterface *iface, GuTypeObject *gutype)
+initialize_interface (GTypeInterface *iface, SCM gutype /* a type */)
 {
     /* gugobject prints a warning if interface_init is NULL */
 }
@@ -1834,7 +1861,7 @@ _wrap_gug_variant_type_from_string (SCM self, SCM args)
 
     gu_type = gugi_type_import_by_name ("GLib", "VariantType");
 
-    gu_variant = gugi_boxed_new ( (GuTypeObject *) gu_type, type_string, FALSE, 0);
+    gu_variant = gugi_boxed_new (gu_type, type_string, FALSE, 0);
 
     return gu_variant;
 }
@@ -1845,7 +1872,7 @@ static SCM
 gug_channel_read(SCM  self, SCM args, SCM kwargs)
 {
     int max_count = -1;
-    SCM gu_iochannel, *ret_obj = NULL;
+    SCM gu_iochannel, ret_obj = SCM_BOOL_F;
     gsize total_read = 0;
     GError* error = NULL;
     GIOStatus status = G_IO_STATUS_NORMAL;
@@ -1884,7 +1911,7 @@ gug_channel_read(SCM  self, SCM args, SCM kwargs)
 		goto failure;
 	}
 	else if (buf_size + total_read > (gsize)GUGLIB_GuBytes_Size(ret_obj)) {
-	    if (GUGLIB_GuBytes_Resize(&ret_obj, buf_size + total_read) == -1)
+	    if (GUGLIB_GuBytes_Resize(ret_obj, buf_size + total_read) == -1)
 		goto failure;
 	}
        
@@ -1901,7 +1928,7 @@ gug_channel_read(SCM  self, SCM args, SCM kwargs)
     }
 	
     if ( total_read != (gsize)GUGLIB_GuBytes_Size(ret_obj) ) {
-	if (GUGLIB_GuBytes_Resize(&ret_obj, total_read) == -1)
+	if (GUGLIB_GuBytes_Resize(ret_obj, total_read) == -1)
 	    goto failure;
     }
 
@@ -1920,7 +1947,7 @@ marshal_emission_hook(GSignalInvocationHint *ihint,
 {
     GuGILState_STATE state;
     gboolean retval = FALSE;
-    SCM func, *args;
+    SCM func, args;
     SCM retobj;
     SCM params;
     guint i;
@@ -1953,7 +1980,7 @@ marshal_emission_hook(GSignalInvocationHint *ihint,
         GuErr_Print();
     }
 
-    retval = (retobj == Gu_True ? TRUE : FALSE);
+    retval = (scm_is_true(retobj) ? TRUE : FALSE);
     Gu_XDECREF(retobj);
 out:
     GuGILState_Release(state);
@@ -1981,7 +2008,7 @@ gug_destroy_notify(gpointer user_data)
 static SCM 
 gug_add_emission_hook(GuGObject *self, SCM args)
 {
-    SCM first, *callback, *extra_args, *data, *repr;
+    SCM first, callback, extra_args, data, repr;
     gchar *name;
     gulong hook_id;
     guint sigid;
@@ -2033,7 +2060,7 @@ gug_add_emission_hook(GuGObject *self, SCM args)
 					 data,
 					 (GDestroyNotify)gug_destroy_notify);
 
-    return gugi_gulong_to_gu (hook_id);
+    return scm_from_ulong (hook_id);
 }
 
 static SCM 
@@ -2043,7 +2070,7 @@ gug_signal_new(SCM self, SCM args)
     SCM gu_type;
     GSignalFlags signal_flags;
     GType return_type;
-    SCM gu_return_type, *gu_param_types;
+    SCM gu_return_type, gu_param_types;
 
     GType instance_type = 0;
     Gu_ssize_t gu_n_params;
@@ -2080,8 +2107,7 @@ gug_signal_new(SCM self, SCM args)
     if (gu_n_params < 0)
         return FALSE;
 
-    if (!gugi_guint_from_gussize (gu_n_params, &n_params))
-        return FALSE;
+    n_params = gu_n_params;
 
     param_types = g_new(GType, n_params);
     for (i = 0; i < n_params; i++) {
@@ -2106,7 +2132,7 @@ gug_signal_new(SCM self, SCM args)
 			      return_type, n_params, param_types);
     g_free(param_types);
     if (signal_id != 0)
-	return gugi_guint_to_gu (signal_id);
+	return scm_from_uint (signal_id);
     GuErr_SetString(GuExc_RuntimeError, "could not create signal");
     return NULL;
 }
@@ -2115,7 +2141,7 @@ static SCM
 gug_object_class_list_properties (SCM self, SCM args)
 {
     GParamSpec **specs;
-    SCM gu_itype, *list;
+    SCM gu_itype, list;
     GType itype;
     GObjectClass *class = NULL;
     gpointer iface = NULL;
@@ -2169,13 +2195,14 @@ gug_object_class_list_properties (SCM self, SCM args)
 }
 
 static SCM 
-gug__install_metaclass(SCM dummy, GuTypeObject *metaclass)
+gug__install_metaclass(SCM dummy, SCM metaclass /* a type */)
 {
     Gu_INCREF(metaclass);
     GuGObject_MetaType = metaclass;
     Gu_INCREF(metaclass);
 
-    Gu_TYPE(&GuGObject_Type) = metaclass;
+    //Gu_TYPE(&GuGObject_Type) = metaclass;
+    gug_foreign_object_type_set_type (GuGObject_Type, metaclass);
 
     Gu_INCREF(Gu_None);
     return Gu_None;
@@ -2189,25 +2216,27 @@ _wrap_guig_guos_getsig (SCM self, SCM args)
     if (!GuArg_ParseTuple (args, "i:guos_getsig", &sig_num))
         return NULL;
 
-    return GuLong_FromVoidPtr ((void *)(GuOS_getsig (sig_num)));
+    // return GuLong_FromVoidPtr ((void *)(GuOS_getsig (sig_num)));
+    return scm_from_size_t ((size_t)(void *) (GuOS_getsig (sig_num)));
 }
 
 static SCM 
 _wrap_gugobject_new_full (SCM self, SCM args)
 {
-    SCM ptr_value, *long_value;
+    SCM ptr_value, long_value;
     SCM steal;
     GObject *obj;
 
     if (!GuArg_ParseTuple (args, "OO", &ptr_value, &steal))
         return NULL;
 
-    long_value = GuNumber_Long (ptr_value);
+    // Convert pointer to long? 
+    long_value = ptr_value;
     if (!long_value) {
         GuErr_SetString (GuExc_TypeError, "first argument must be an integer");
         return NULL;
     }
-    obj = GuLong_AsVoidPtr (long_value);
+    obj = (void *)scm_to_size_t (long_value);
     Gu_DECREF (long_value);
 
     if (!G_IS_OBJECT (obj)) {
@@ -2215,7 +2244,7 @@ _wrap_gugobject_new_full (SCM self, SCM args)
         return NULL;
     }
 
-    return gugobject_new_full (obj, GuObject_IsTrue (steal), NULL);
+    return gugobject_new_full (obj, scm_is_true (steal), NULL);
 }
 
 static GuMethodDef _gi_functions[] = {
@@ -2234,7 +2263,7 @@ static GuMethodDef _gi_functions[] = {
     { "io_channel_read", (GuCFunction) gug_channel_read, METH_VARARGS },
     { "require_foreign", (GuCFunction) gugi_require_foreign, METH_VARARGS | METH_KEYWORDS },
     { "spawn_async",
-      (GuCFunction)guglib_spawn_async, METH_VARARGS|METH_KEYWORDS,
+      (GuCFunction) guglib_spawn_async, METH_VARARGS|METH_KEYWORDS,
       "spawn_async(argv, envp=None, working_directory=None,\n"
       "            flags=0, child_setup=None, user_data=None,\n"
       "            standard_input=None, standard_output=None,\n"
@@ -2298,7 +2327,7 @@ struct _GuGObject_Functions gugobject_api_functions = {
 
   gugi_error_check,
 
-  _gug_set_thread_block_funcs,
+  0, /* _gug_set_thread_block_funcs */
   (GuGThreadBlockFunc)0, /* block_threads */
   (GuGThreadBlockFunc)0, /* unblock_threads */
 
@@ -2306,24 +2335,24 @@ struct _GuGObject_Functions gugobject_api_functions = {
   gug_param_spec_new,
   gug_param_spec_from_object,
 
-  gug_guobj_to_unichar_conv,
-  gug_parse_constructor_args,
+  0, /*gug_guobj_to_unichar_conv, */
+  0, /*gug_parse_constructor_args, */
   gug_param_gvalue_as_guobject,
   gug_param_gvalue_from_guobject,
 
   &GuGEnum_Type,
   gug_enum_add,
-  gug_enum_from_gtype,
+  0, /* gug_enum_from_gtype,*/
 
   &GuGFlags_Type,
   gug_flags_add,
-  gug_flags_from_gtype,
+  0, /*gug_flags_from_gtype, */
 
   TRUE, /* threads_enabled */
 
-  gugobject_enable_threads,
-  gugobject_gil_state_ensure,
-  gugobject_gil_state_release,
+  0, /*gugobject_enable_threads,*/
+  0, /*gugobject_gil_state_ensure,*/
+  0, /*gugobject_gil_state_release,*/
   gug_register_class_init,
   gug_register_interface_info,
 
@@ -2334,9 +2363,9 @@ struct _GuGObject_Functions gugobject_api_functions = {
 
   NULL, /* previously type_register_custom */
 
-  gugi_gerror_exception_check,
+  0, /*gugi_gerror_exception_check,*/
 
-  gug_option_group_new,
+  0, /*gug_option_group_new,*/
   gug_type_from_object_strict,
 
   gugobject_new_full,
@@ -2368,24 +2397,24 @@ static int
 gugi_register_constants(SCM m)
 {
     /* GuFloat_ return a new ref, and add object takes the ref */
-    GuModule_AddObject(m,       "G_MINFLOAT", gugi_gfloat_to_gu (G_MINFLOAT));
-    GuModule_AddObject(m,       "G_MAXFLOAT", gugi_gfloat_to_gu (G_MAXFLOAT));
-    GuModule_AddObject(m,       "G_MINDOUBLE", gugi_gdouble_to_gu (G_MINDOUBLE));
-    GuModule_AddObject(m,       "G_MAXDOUBLE", gugi_gdouble_to_gu (G_MAXDOUBLE));
+    GuModule_AddObject(m,       "G_MINFLOAT", scm_from_double (G_MINFLOAT));
+    GuModule_AddObject(m,       "G_MAXFLOAT", scm_from_double (G_MAXFLOAT));
+    GuModule_AddObject(m,       "G_MINDOUBLE", scm_from_double (G_MINDOUBLE));
+    GuModule_AddObject(m,       "G_MAXDOUBLE", scm_from_double (G_MAXDOUBLE));
     GuModule_AddIntConstant(m,  "G_MINSHORT", G_MINSHORT);
     GuModule_AddIntConstant(m,  "G_MAXSHORT", G_MAXSHORT);
     GuModule_AddIntConstant(m,  "G_MAXUSHORT", G_MAXUSHORT);
     GuModule_AddIntConstant(m,  "G_MININT", G_MININT);
     GuModule_AddIntConstant(m,  "G_MAXINT", G_MAXINT);
-    GuModule_AddObject(m,       "G_MAXUINT", gugi_guint_to_gu (G_MAXUINT));
-    GuModule_AddObject(m,       "G_MINLONG", gugi_glong_to_gu (G_MINLONG));
-    GuModule_AddObject(m,       "G_MAXLONG", gugi_glong_to_gu (G_MAXLONG));
-    GuModule_AddObject(m,       "G_MAXULONG", gugi_gulong_to_gu (G_MAXULONG));
-    GuModule_AddObject(m,       "G_MAXSIZE", gugi_gsize_to_gu (G_MAXSIZE));
-    GuModule_AddObject(m,       "G_MAXSSIZE", gugi_gssize_to_gu (G_MAXSSIZE));
-    GuModule_AddObject(m,       "G_MINSSIZE", gugi_gssize_to_gu (G_MINSSIZE));
-    GuModule_AddObject(m,       "G_MINOFFSET", gugi_gint64_to_gu (G_MINOFFSET));
-    GuModule_AddObject(m,       "G_MAXOFFSET", gugi_gint64_to_gu (G_MAXOFFSET));
+    GuModule_AddObject(m,       "G_MAXUINT", scm_from_uint (G_MAXUINT));
+    GuModule_AddObject(m,       "G_MINLONG", scm_from_long (G_MINLONG));
+    GuModule_AddObject(m,       "G_MAXLONG", scm_from_long (G_MAXLONG));
+    GuModule_AddObject(m,       "G_MAXULONG", scm_from_ulong (G_MAXULONG));
+    GuModule_AddObject(m,       "G_MAXSIZE", scm_from_size_t (G_MAXSIZE));
+    GuModule_AddObject(m,       "G_MAXSSIZE", scm_from_ssize_t (G_MAXSSIZE));
+    GuModule_AddObject(m,       "G_MINSSIZE", scm_from_ssize_t (G_MINSSIZE));
+    GuModule_AddObject(m,       "G_MINOFFSET", scm_from_int64 (G_MINOFFSET));
+    GuModule_AddObject(m,       "G_MAXOFFSET", scm_from_int64 (G_MAXOFFSET));
 
     GuModule_AddIntConstant(m, "SIGNAL_RUN_FIRST", G_SIGNAL_RUN_FIRST);
     GuModule_AddIntConstant(m, "PARAM_READWRITE", G_PARAM_READWRITE);
@@ -2428,7 +2457,7 @@ GUGLIB_MODULE_START(_gi, "_gi")
     GuEval_InitThreads ();
 
     GuModule_AddStringConstant(module, "__package__", "gi._gi");
-
+#if 0
     if (gugi_foreign_init () < 0)
         return GUGLIB_MODULE_ERROR_RETURN;
     if (gugi_error_register_types (module) < 0)
@@ -2511,6 +2540,7 @@ GUGLIB_MODULE_START(_gi, "_gi")
         return GUGLIB_MODULE_ERROR_RETURN;
     }
     GuModule_AddObject (module, "_API", api);
+#endif
 }
 GUGLIB_MODULE_END
 

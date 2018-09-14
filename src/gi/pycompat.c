@@ -5,6 +5,13 @@
 SCM Gu_None_Type;
 SCM Gu_None;
 
+SCM GuExc_RuntimeError = SCM_BOOL_F;
+SCM GuExc_TypeError = SCM_BOOL_F;
+SCM GuExc_ImportError = SCM_BOOL_F;
+SCM GuExc_RuntimeWarning = SCM_BOOL_F;
+SCM GuExc_Warning = SCM_BOOL_F;
+
+
 int
 scm_is_none (SCM arg)
 {
@@ -276,6 +283,144 @@ GuErr_SetString(SCM type, const char *message)
 	GuErr_LastMessage = strdup(message);
 }
 
+void GuErr_SetObject(SCM type, SCM value)
+{
+    g_debug("In stub version of GuErr_SetObject");
+}
+
+void GuErr_Restore(SCM type, SCM value, SCM traceback)
+{
+    g_debug("In stub version of GuErr_Restore");
+}
+
+void Gu_INCREF(SCM x)
+{
+    g_debug("In stub versionof Gu_INCREF");
+}
+
+void GuErr_PrintEx(int set_sys_last_vars)
+{
+    g_debug("In stub version of GuErr_PrintEx");
+}
+
+void GuGILState_Release(GuGILState_STATE x)
+{
+    g_debug("In stub version of GuGILState_Release");
+}
+
+void GuErr_Clear(void)
+{
+    g_debug("In stub version of GuErr_Clear");
+}
+
+int GuCallable_Check(SCM o)
+{
+    g_debug("In stub version of GuCallable_Check");
+    return 0;
+}
+
+void Gu_XINCREF(SCM x)
+{
+    g_debug("In stub versionof Gu_XINCREF");
+}
+
+int GuDict_SetItemString(SCM p, const char *key, SCM val)
+{
+    g_debug("In stub version of GuDict_SetItemString");
+    return FALSE;
+}
+
+SCM GuObject_CallMethod(SCM obj, const char *name, const char *format, ...)
+{
+    g_debug("In stub version of GuObject_CallMethod")
+	;
+    return SCM_UNSPECIFIED;
+}
+
+SCM GuDict_GetItemString(SCM p, const char *key)
+{
+    g_debug("In stub version of GuDict_GetItemString()");
+    return SCM_UNSPECIFIED;
+}
+
+int GuDict_Check(SCM p)
+{
+    g_debug("In stub version of GuDict_Check");
+    return FALSE;
+}
+
+int GuDict_DelItemString(SCM p, const char *key)
+{
+    g_debug("In stub version of GuDict_DelItemString");
+    return  -1;
+}
+
+int GuObject_HasAttrString(SCM obj, const char *attr_name)
+{
+    g_debug("In stub version of GuObject_HasAttrString");
+    return FALSE;
+}
+
+ssize_t GuTuple_GET_SIZE(SCM p)
+{
+    g_debug("In stub version of GuTuple_GET_SIZE");
+    return 0;
+}
+
+SCM GuTuple_GET_ITEM(SCM p, ssize_t pos)
+{
+    g_debug("In stub version of GuTuple_GET_ITEM");
+    return SCM_UNSPECIFIED;
+}
+
+int GuType_Check(SCM o)
+{
+    g_debug ("In stub version of GType_Check");
+    return FALSE;
+}
+
+int GuType_IsSubtype(SCM a, SCM b)
+{
+    g_debug("In stub version of GuType_IsSubtype");
+    return FALSE;
+}
+
+int GuErr_WarnEx(SCM category, const char* message, ssize_t stack_level)
+{
+    g_debug("In stub version of GuErr_WarnEx");
+    return 0;
+}
+    
+int GuObject_SetAttrString(SCM o, const char *attr_name, SCM v)
+{
+    g_debug ("In the stub version of GuObject_SetAttrString");
+    return 0;
+}
+
+int Gu_IsInitialized(void)
+{
+    g_debug("In the stub version of Gu_IsInitialized");
+    return 1;
+}
+
+SCM GuErr_NewException(const char *name, SCM base, SCM dict)
+{
+    g_debug("In the stub version of GuErr_NewException");
+    return SCM_UNSPECIFIED;
+}
+
+int GuArg_ParseTupleAndKeywords(SCM args, SCM keywords, const char *format, char *keywords[], ...)
+{
+    g_debug("In the stub version of GuArg_ParseTupleAndKeywords");
+}
+
+int GuObject_TypeCheck(SCM o, SCM type)
+{
+    g_debug("In the stub version of GuObject_TypeCheck");
+    return FALSE;
+}
+
+
 void
 init_pycompat (void)
 {
@@ -283,3 +428,5 @@ init_pycompat (void)
 						SCM_EOL, NULL);
   Gu_None = scm_permanent_object (scm_make_foreign_object_0 (Gu_None_Type));
 }
+
+

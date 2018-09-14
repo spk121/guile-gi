@@ -6,33 +6,49 @@ BUILT_SOURCES = docs/index.html
 
 info_TEXINFOS = doc/guile-gi.texi
 
-guileextension_LTLIBRARIES = libguile-gi.la
+# guileextension_LTLIBRARIES = libguile-gi.la
 
-nodist_PROGS = guile-gi
+noinst_PROGRAMS = guile-gi
 
 guile_gi_SOURCES = \
- src/gi/gimodule.c
+ src/gi/gimodule.c \
+ src/gi/stubs.c
 
-libguile_gi_la_SOURCES = \
- src/gi/gimodule.c src/gi/gimodule.h \
- src/gi/gugi-error.c src/gi/gugi-error.h \
- src/gi/gugi-foreign.c src/gi/gugi-foreign.h \
- src/gi/gugi-info.c src/gi/gugi-info.h \
- src/gi/gugi-repository.c src/gi/gugi-repository.h \
- src/gi/gugi-type.c src/gi/gugi-type.h \
- src/gi/gugi-util.c src/gi/gugi-util.h \
- src/gi/pycompat.c src/gi/pycompat.h
+# src/gi/gugobject-object.c \
+# src/gi/gugi-object.c
 
-libguile_gi_la_CFLAGS = \
- -std=c11 \
- $(GUILE_CFLAGS) \
- $(GLIB_CFLAGS) \
- $(GOBJECT_CFLAGS) \
- $(GOBJECT_INTROSPECTION_CFLAGS) \
- -DG_LOG_DOMAIN=\"GuileGI\"
+guile_gi_CFLAGS = \
+  -std=c11 \
+  $(GUILE_CFLAGS) \
+  $(GLIB_CFLAGS) \
+  $(GOBJECT_CFLAGS) \
+  $(GOBJECT_INTROSPECTION_CFLAGS) \
+  -DG_LOG_DOMAIN=\"GuileGI\"
 
-libguile_gi_la_LDFLAGS = -no-undefined -version-info 0:0:0
-libguile_gi_la_LIBADD = $(GUILE_LIBS) $(GOBJECT_INTROSPECTION_LIBS) $(GLIB_LIBS) $(GOBJECT_LIBS)
+guile_gi_LDFLAGS = -no-undefined -version-info 0:0:0
+guile_gi_LDADD = $(GUILE_LIBS) $(GOBJECT_INTROSPECTION_LIBS) $(GLIB_LIBS) $(GOBJECT_LIBS)
+
+
+# libguile_gi_la_SOURCES = \
+#  src/gi/gimodule.c src/gi/gimodule.h \
+#  src/gi/gugi-error.c src/gi/gugi-error.h \
+#  src/gi/gugi-foreign.c src/gi/gugi-foreign.h \
+#  src/gi/gugi-info.c src/gi/gugi-info.h \
+#  src/gi/gugi-repository.c src/gi/gugi-repository.h \
+#  src/gi/gugi-type.c src/gi/gugi-type.h \
+#  src/gi/gugi-util.c src/gi/gugi-util.h \
+#  src/gi/pycompat.c src/gi/pycompat.h
+
+# libguile_gi_la_CFLAGS = \
+#  -std=c11 \
+#  $(GUILE_CFLAGS) \
+#  $(GLIB_CFLAGS) \
+#  $(GOBJECT_CFLAGS) \
+#  $(GOBJECT_INTROSPECTION_CFLAGS) \
+#  -DG_LOG_DOMAIN=\"GuileGI\"
+
+# libguile_gi_la_LDFLAGS = -no-undefined -version-info 0:0:0
+# libguile_gi_la_LIBADD = $(GUILE_LIBS) $(GOBJECT_INTROSPECTION_LIBS) $(GLIB_LIBS) $(GOBJECT_LIBS)
 
 # Build ChangeLog from GIT  history
 dist: ChangeLog

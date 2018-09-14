@@ -56,8 +56,8 @@ void gug_register_gtype_custom(GType gtype,
 
 int gugi_type_register_types(PyObject *d);
 
-PyObject *gug_object_descr_doc_get(void);
-PyObject *gug_type_wrapper_new (GType type);
+SCM gug_object_descr_doc_get(void);
+SCM gug_type_wrapper_new (GType type);
 GType     gug_type_from_object_strict (PyObject *obj, gboolean strict);
 GType     gug_type_from_object (SCM obj);
 
@@ -68,10 +68,10 @@ GClosure *gug_signal_class_closure_get(void);
 void      gug_closure_set_exception_handler(GClosure *closure,
                                             GuClosureExceptionHandler handler);
 
-PyObject *gugi_type_import_by_g_type (GType g_type);
-PyObject *gugi_type_import_by_name (const char *namespace_, const char *name);
-PyObject *gugi_type_import_by_gi_info (GIBaseInfo *info);
-PyObject *gugi_type_get_from_g_type (GType g_type);
+SCM gugi_type_import_by_g_type (GType g_type);
+SCM gugi_type_import_by_name (const char *namespace_, const char *name);
+SCM gugi_type_import_by_gi_info (GIBaseInfo *info);
+SCM gugi_type_get_from_g_type (GType g_type);
 
 #endif /* __GUGI_TYPE_H__ */
 

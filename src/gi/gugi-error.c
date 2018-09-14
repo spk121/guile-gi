@@ -107,7 +107,7 @@ scmgerror_from_gvalue (const GValue *value)
     GError *gerror = (GError *) g_value_get_boxed (value);
     SCM scmerr = gir_error_marshal_to_scm (&gerror);
     if (scmerr == SCM_BOOL_F) {
-      return gir_NONE;
+      return Gu_None;
     } else {
       return scmerr;
     }
