@@ -11,8 +11,12 @@ info_TEXINFOS = doc/guile-gi.texi
 noinst_PROGRAMS = guile-gi
 
 guile_gi_SOURCES = \
- src/gi/gimodule.c \
- src/gi/stubs.c
+ src/gi/stubs.c \
+ src/gi/pycompat.c \
+ src/gi/gugobject-object.c \
+ src/gi/gugi-type.c
+
+# src/gi/gimodule.c
 
 # src/gi/gugobject-object.c \
 # src/gi/gugi-object.c
@@ -23,9 +27,10 @@ guile_gi_CFLAGS = \
   $(GLIB_CFLAGS) \
   $(GOBJECT_CFLAGS) \
   $(GOBJECT_INTROSPECTION_CFLAGS) \
+  -DGUILE_GI_CORE \
   -DG_LOG_DOMAIN=\"GuileGI\"
 
-guile_gi_LDFLAGS = -no-undefined -version-info 0:0:0
+guile_gi_LDFLAGS = -no-undefined
 guile_gi_LDADD = $(GUILE_LIBS) $(GOBJECT_INTROSPECTION_LIBS) $(GLIB_LIBS) $(GOBJECT_LIBS)
 
 

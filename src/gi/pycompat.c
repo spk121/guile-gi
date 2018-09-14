@@ -15,7 +15,7 @@ SCM GuExc_Warning = SCM_BOOL_F;
 int
 scm_is_none (SCM arg)
 {
-  return scm_is_true (scm_eq_p (scm_none, arg));
+  return scm_is_true (scm_eq_p (Gu_None, arg));
 }
 
 /* Iterate over all key-value pairs in the hash table P. The ssize_t
@@ -49,7 +49,7 @@ GuModule_AddIntConstant (SCM module, const char *name, long value)
 SCM GuSequence_GetSlice (SCM obj, Gu_ssize_t i1, Gu_ssize_t i2)
 {
     SCM ret = SCM_EOL;
-    for (ssize_t i = i1, i < i2; i ++) {
+    for (ssize_t i = i1; i < i2; i ++) {
 	SCM entry = scm_list_ref (obj, scm_from_ssize_t (i));
 	ret = scm_append (scm_list_2 (ret, scm_list_1 (entry)));
     }
@@ -183,7 +183,7 @@ GuArg_ParseTuple(SCM args, const char *format, ...)
       if (i_arg < n_args_provided)
 	entry = scm_list_ref (args, scm_from_size_t (i_arg));
       else
-	entry = scm_none;
+	entry = Gu_None;
       switch (format[i_fmt]) {
       case 'c':
 	if (scm_is_none (entry))
@@ -280,7 +280,7 @@ GuErr_SetString(SCM type, const char *message)
     free (GuErr_LastMessage);
     GuErr_LastMessage = NULL;
     if (message)
-	GuErr_LastMessage = strdup(message);
+	GuErr_LastMessage = g_strdup(message);
 }
 
 void GuErr_SetObject(SCM type, SCM value)
@@ -409,7 +409,7 @@ SCM GuErr_NewException(const char *name, SCM base, SCM dict)
     return SCM_UNSPECIFIED;
 }
 
-int GuArg_ParseTupleAndKeywords(SCM args, SCM keywords, const char *format, char *keywords[], ...)
+int GuArg_ParseTupleAndKeywords(SCM args, SCM kb, const char *format, char *keywords[], ...)
 {
     g_debug("In the stub version of GuArg_ParseTupleAndKeywords");
 }
