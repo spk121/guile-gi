@@ -10,25 +10,50 @@
 
 G_BEGIN_DECLS
 
-#define PyObject_HEAD SCM __fixme;
-struct _GuBadType {
-  void *x;
-};
-typedef struct _GuBadType PyTypeObject;
-typedef struct _GuBadType PyObject;
-
-/* PyGClosure is a _private_ structure */
 typedef void (* GuClosureExceptionHandler) (GValue *ret, guint n_param_values, const GValue *params);
-typedef struct _PyGClosure PyGClosure;
-typedef struct _PyGObjectData PyGObjectData;
 
-struct _GuGClosure {
+typedef struct _GuGClosure {
     GClosure closure;
     SCM callback;
     SCM extra_args; /* list of extra args to pass to callback */
     SCM swap_data; /* other object for gtk_signal_connect__object */
     GuClosureExceptionHandler exception_handler;
-};
+} GuGClosure;
+
+/* Data that belongs to the GObject instance, not the Guile wrapper */
+typedef struct _GuGObjectData {
+    SCM type; /* wrapper type for this instance */
+    GSList *closures;   /* A list of GuGClosures */
+} GuGObjectData;
+
+////////////////////////////////////////////////////////////////
+/* GuType Type: A foreign object type that is an envelope for a
+    a grip of type-related things*/
+extern SCM GuType_Type;
+typedef SCM SCM_TYPE;
+
+/* GuObject Instance: A foreign object with the following slots
+   - slot 0: 'ob_type', the SCM foreign-object type used to create this instance
+   - slot 1: 'ob_refcnt', an SCM exact integer reference count
+   - FIXME
+*/
+#define MAKE_GUTYPE_TYPE						\
+    do {								\
+	GuType_Type =						\
+	    scm_make_foreign_object(scm_from_latin1_symbol("<Type>"), \
+				    scm_list_2 (scm_from_latin1_symbol ("ob_type"), \
+						scm_from_latin1_symbol ("ob_refcnt")), \
+				    NULL);				\
+    } while(FALSE)
+
+#define GUTYPE_OB_TYPE_SLOT 0
+#define GUTYPE_OB_REFCNT_SLOT 1
+
+////////////////////////////////////////////////////////////////
+/* GuGObject Type: A foreign object type that is an envelope for
+   GObject* types */
+extern SCM GuGObject_Type;
+typedef SCM SCM_GOBJECT;
 
 typedef enum {
     GUGOBJECT_USING_TOGGLE_REF = 1 << 0,
@@ -36,370 +61,333 @@ typedef enum {
     GUGOBJECT_GOBJECT_WAS_FLOATING = 1 << 2
 } GuGObjectFlags;
 
-typedef struct {
-    ssize_t ob_refcnt;
-    SCM ob_type;
-    GObject *obj;
-    SCM inst_dict; /* the instance dictionary */
-    SCM weakreflist; /* list of weak references */
-    GuGObjectFlags flags;
-} GuGObject;
+/* GuGObject Instance: A foreign object with the following slots
+   - slot 0: 'ob_type', the SCM foreign-object type used to create this instance
+   - slot 1: 'ob_refcnt', an SCM exact integer reference count
+   - slot 2: 'obj', a C GObject* pointer
+   - slot 3: 'inst_dict', an SCM hash-table
+   - slot 4: 'weakreflist', an SCM weak-vector
+   - slot 5: flags, an SCM exact-integer of GuGObjectFlags
+*/
+#define MAKE_GUGOBJECT_TYPE						\
+    do {								\
+	GuGObject_Type =						\
+	    scm_make_foreign_object(scm_from_latin1_symbol("<GObject>"), \
+				    scm_list_n (scm_from_latin1_symbol ("ob_type"), \
+						scm_from_latin1_symbol ("ob_refcnt"), \
+						scm_from_latin1_symbol ("obj"), \
+						scm_from_latin1_symbol ("inst_dict"), \
+						scm_from_latin1_symbol ("weakreflist"), \
+						scm_from_latin1_symbol ("flags"), \
+						NULL),			\
+				    NULL);				\
+    } while(FALSE)
 
-#define gugobject_get(v) (((GuGObject *)(v))->obj)
-//#define pygobject_check(v,base) (scm_is_true (scm_eq_p (((GuGObject *)(v))->ob_ty
+#define GUGOBJECT_OB_TYPE_SLOT 0
+#define GUGOBJECT_OB_REFCNT_SLOT 1
+#define GUGOBJECT_OBJ_SLOT 2
+#define GUGOBJECT_INST_DICT_SLOT 3
+#define GUGOBJECT_WEAKREFLIST_SLOT 4
+#define GUGOBJECT_FLAGS_SLOT 5
 
-typedef struct {
-    ssize_t ob_refcnt;
-    SCM ob_type;
-    gpointer boxed;
-    GType gtype;
-    gboolean free_on_dealloc;
-} GuGBoxed;
+#define gugobject_get(v) ((GObject *)scm_foreign_object_ref((v), GUGOBJECT_OBJ_SLOT))
+#define gugobject_get_ob_type(v) ((GObject *)scm_foreign_object_ref((v), GUGOBJECT_OB_TYPE_SLOT))
+#define gugobject_check(v,base) (scm_is_eq(scm_foreign_object_ref((v), GUGOBJECT_OB_TYPE_SLOT), base))
 
-#define gug_boxed_get(v,t)      ((t *)((GuGBoxed *)(v))->boxed)
-#define gug_boxed_get_ptr(v)    (((GuGBoxed *)(v))->boxed)
-#define gug_boxed_set_ptr(v,p)  (((GuGBoxed *)(v))->boxed = (gpointer)p)
-#define gug_boxed_check(v,typecode) (GuObject_TypeCheck(v, GuGBoxed_Type) && gug_foreign_object_type_get_gtype(v) == typecode)
+////////////////////////////////////////////////////////////////
+/* GuGBoxed Type: A foreign object type that is an envelope for
+   generic pointers tagged with a GType */
+extern SCM GuGBoxed_Type;
+typedef SCM SCM_GBOXED;
 
-typedef struct {
-    ssize_t ob_refcnt;
-    SCM ob_type;
-    gpointer pointer;
-    GType gtype;
-} GuGPointer;
+/* GuGBoxed Instance: A foreign object with the following slots
+   - slot 0: 'ob_type', the SCM foreign-object type used to create this instance
+   - slot 1: 'ob_refcnt', an SCM exact integer reference count
+   - slot 2: 'boxed', a C void* 
+   - slot 3: 'gtype', an SCM exact-integer holding a GType
+   - slot 4: 'free_on_dealloc', an SCM boolean
+*/
+#define MAKE_GUGBOXED_TYPE						\
+    do {								\
+	GuGBoxed_Type =						\
+	    scm_make_foreign_object(scm_from_latin1_symbol("<GBoxed>"), \
+				    scm_list_n (scm_from_latin1_symbol ("ob_type"), \
+						scm_from_latin1_symbol ("ob_refcnt"), \
+						scm_from_latin1_symbol ("boxed"), \
+						scm_from_latin1_symbol ("gtype"), \
+						scm_from_latin1_symbol ("free_on_dealloc"), \
+						NULL),			\
+				    NULL);				\
+    } while(FALSE)
 
-#define gug_pointer_get(v,t)      ((t *)((GuGPointer *)(v))->pointer)
-#define gug_pointer_get_ptr(v)    (((GuGPointer *)(v))->pointer)
-#define gug_pointer_set_ptr(v,p)  (((GuGPointer *)(v))->pointer = (gpointer)p)
-//#define gug_pointer_check(v,typecode) (PyObject_TypeCheck(v, &PyGPointer_Type) && ((PyGPointer *)(v))->gtype == typecode)
-#define gug_pointer_check(v,typecode) (((GuGPointer *)(v))->gtype == typecode)
+#define GUGBOXED_OB_TYPE_SLOT 0
+#define GUGBOXED_OB_REFCNT_SLOT 1
+#define GUGBOXED_BOXED_SLOT 2
+#define GUGBOXED_GTYPE_SLOT 3
+#define GUGBOXED_FREE_ON_DEALLOC_SLOT 4
+
+#define gug_boxed_get_ptr(v)  ((gpointer)scm_foreign_object_ref((v), GUGBOXED_BOXED_SLOT))
+#define gug_boxed_get(v,t)  ((t *)gug_boxed_get_ptr(v))
+#define gug_boxed_set_ptr(v,p)  (scm_foreign_object_set_x((v), GUGBOXED_BOXED_SLOT, (gpointer)p))
+#define gug_boxed_get_ob_type(v) (scm_foreign_object_ref((v), GUGBOXED_OB_TYPE_SLOT))
+#define gug_boxed_get_gtype(v)  (scm_foreign_object_ref((v), GUGBOXED_GTYPE_SLOT))
+#define gug_boxed_check(v,typecode) (scm_is_eq(gug_boxed_get_ob_type(v), GuGBoxed_Type) \
+				     && (gug_boxed_get_gtype(v) == typecode))
+
+////////////////////////////////////////////////////////////////
+/* GuGPointer Type: A foreign object type that is an envelope for
+   generic pointers tagged with a GType */
+extern SCM GuGPointer_Type;
+typedef SCM SCM_GPOINTER;
+
+/* GuGPointer Instance: A foreign object with the following slots
+   - slot 0: 'ob_type', the SCM foreign-object type used to create this instance
+   - slot 1: 'ob_refcnt', an SCM exact integer reference count
+   - slot 2: 'pointer', a C void* 
+   - slot 3: 'gtype', an SCM exact-integer holding a GType
+*/
+#define MAKE_GUGPOINTER_TYPE						\
+    do {								\
+	GuGPointer_Type =						\
+	    scm_make_foreign_object(scm_from_latin1_symbol("<GPointer>"), \
+				    scm_list_n (scm_from_latin1_symbol ("ob_type"), \
+						scm_from_latin1_symbol ("ob_refcnt"), \
+						scm_from_latin1_symbol ("pointer"), \
+						scm_from_latin1_symbol ("gtype"), \
+						NULL),			\
+				    NULL);				\
+    } while(FALSE)
+
+#define GUGPOINTER_OB_TYPE_SLOT 0
+#define GUGPOINTER_OB_REFCNT_SLOT 1
+#define GUGPOINTER_POINTER_SLOT 2
+#define GUGPOINTER_GTYPE_SLOT 3
+
+#define gug_pointer_get_ptr(v)  ((gpointer)scm_foreign_object_ref((v), GUGPOINTER_POINTER_SLOT))
+#define gug_pointer_get(v,t)  ((t *)gug_pointer_get_ptr(v))
+#define gug_pointer_set_ptr(v,p)  (scm_foreign_object_set_x((v), GUGPOINTER_POINTER_SLOT, (gpointer)p))
+#define gug_pointer_get_ob_type(v) (scm_foreign_object_ref((v), GUGPOINTER_OB_TYPE_SLOT))
+#define gug_pointer_get_gtype(v)  (scm_foreign_object_ref((v), GUGPOINTER_GTYPE_SLOT))
+#define gug_pointer_check(v,typecode) (scm_is_eq(gug_pointer_get_ob_type(v), GuGPointer_Type) \
+				     && (gug_pointer_get_gtype(v) == typecode))
+
+
+////////////////////////////////////////////////////////////////
+/* GuGParamSpec Type: A foreign object type that is an envelope for a
+   GParamSpec* */
+extern SCM GuGParamSpec_Type;
+typedef SCM SCM_GPARAMSPEC;
 
 typedef void (*GuGFatalExceptionFunc) (void);
 typedef void (*GuGThreadBlockFunc) (void);
 
-typedef struct {
-    ssize_t ob_refcnt;
-    GParamSpec *pspec;
-} PyGParamSpec;
+/* GuGParamSpec Instance: A foreign object with the following slots
+   - slot 0: 'ob_type', the SCM foreign-object type used to create this instance
+   - slot 1: 'ob_refcnt', an SCM exact integer reference count
+   - slot 2: 'pspec', a C GParamSpec*
+*/
+#define MAKE_GUGPARAMSPEC_TYPE						\
+    do {								\
+	GuGParamSpec_Type = \
+	    scm_make_foreign_object(scm_from_latin1_symbol("<GParamSpec>"), \
+				    scm_list_n (scm_from_latin1_symbol ("ob_type"), \
+						scm_from_latin1_symbol ("ob_refcnt"), \
+						scm_from_latin1_symbol ("pspec"), \
+						NULL),			\
+				    NULL);				\
+    } while(FALSE)
 
-#define gug_param_spec_get(v)    (((GuGParamSpec *)v)->pspec)
-#define gug_param_spec_set(v,p)  (((GuGParamSpec *)v)->pspec = (GParamSpec*)p)
-#define gug_param_spec_check(v)  (PyObject_TypeCheck(v, &PyGParamSpec_Type))
+#define GUGPARAMSPEC_OB_TYPE_SLOT 0
+#define GUGPARAMSPEC_OB_REFCNT_SLOT 1
+#define GUGPARAMSPEC_PSPEC_SLOT 2
 
-/* Deprecated in favor of lower case with underscore macros above. */
-#define GuGParamSpec_Get    gug_param_spec_get
-#define GuGParamSpec_Check  gug_param_spec_check
+#define gug_param_spec_get(v)  ((GParamSpec *)scm_foreign_object_ref((v), GUGPARAMSPEC_PSPEC_SLOT))
+#define gug_param_spec_set(v,p)  (scm_foreign_object_set_x((v), GUGPARAMSPEC_PSPEC_SLOT, (gpointer)p))
+#define gug_param_spec_get_ob_type(v) (scm_foreign_object_ref((v), GUGPARAMSPEC_OB_TYPE_SLOT))
+#define gug_param_spec_check(v) (scm_is_eq(gug_param_spec_get_ob_type(v), GuGParamSpec_Type))
 
+////////////////////////////////////////////////////////////////
+/* GuGObjectWeakRef_Type */
+extern SCM_TYPE GuGObjectWeakRef_Type;
+typedef SCM SCM_GUGOBJECTWEAKREF;
+
+/* GuGObjectWeakRef:
+   - slot 0: 'ob_type', the SCM foreign-object type used to create this instance
+   - slot 1: 'ob_refcnt', an SCM exact integer reference count
+   - slot 2: 'obj', a C GObject*
+   - slot 3: 'callback', an SCM (maybe gets pased to a visitproc?)
+   - slot 4: 'user_data', an SCM (maybe gets pased to a visitproc?)
+   - slot 5: 'have_floating_ref', an SCM boolean
+*/
+#define MAKE_GUGOBJECTWEAKREF_TYPE						\
+    do {								\
+	GuGObjectWeakRef_Type = 						\
+	    scm_make_foreign_object(scm_from_latin1_symbol("<GObjectWeakRef>"), \
+				    scm_list_n (scm_from_latin1_symbol ("ob_type"), \
+						scm_from_latin1_symbol ("ob_refcnt"), \
+						scm_from_latin1_symbol ("obj"), \
+						scm_from_latin1_symbol ("callback"), \
+						scm_from_latin1_symbol ("user_data"), \
+						scm_from_latin1_symbol ("have_floating_ref"), \
+						NULL),			\
+				    NULL);				\
+    } while(FALSE)
+
+#define GUGOBJECTWEAKREF_OB_TYPE_SLOT 0
+#define GUGOBJECTWEAKREF_OB_REFCNT_SLOT 1
+#define GUGOBJECTWEAKREF_OBJ_SLOT 2
+#define GUGOBJECTWEAKREF_CALLBACK_SLOT 3
+#define GUGOBJECTWEAKREF_USER_DATA_SLOT 4
+#define GUGOBJECTWEAKREF_HAVE_FLOATING_REF_SLOT 5
+
+////////////////////////////////////////////////////////////////
+/* GuGPropsIter_Type */
+extern SCM_TYPE GuGPropsIter_Type;
+typedef SCM SCM_GUGPROPSITER;
+void gug_props_iter_finalize(SCM_GUGPROPSITER self);
+
+/* GuGPropsIter:
+   - slot 0: 'ob_type', the SCM foreign-object type used to create this instance
+   - slot 1: 'ob_refcnt', an SCM exact integer reference count
+   - slot 2: 'props' C GParamSpec**
+   - slot 3: 'n_props', an SCM exact integer
+   - slot 4: 'index', an SCM exact integer
+*/
+#define MAKE_GUGPROPSITER_TYPE \
+    do {								\
+	GuGPropsIter_Type = 						\
+	    scm_make_foreign_object(scm_from_latin1_symbol("<GPropsIter>"), \
+				    scm_list_n (scm_from_latin1_symbol ("ob_type"), \
+						scm_from_latin1_symbol ("ob_refcnt"), \
+						scm_from_latin1_symbol ("props"), \
+						scm_from_latin1_symbol ("n_props"), \
+						scm_from_latin1_symbol ("index"), \
+						NULL),			\
+				    gug_props_iter_finalize);				\
+    } while(FALSE)
+
+#define GUGPROPSITER_OB_TYPE 0
+#define GUGPROPSITER_OB_REFCNT_SLOT 1
+#define GUGPROPSITER_PROPS_SLOT 2
+#define GUGPROPSITER_N_PROPS_SLOT 3
+#define GUGPROPSITER_INDEX_SLOT 4
+
+#define gugpropsiter_get_props(v) ((GParamSpec **)scm_foreign_object_ref((v), GUGPROPSITER_PROPS_SLOT))
+#define gugpropsiter_set_props(v,x) (scm_foreign_object_set_x((v), GUGPROPSITER_PROPS_SLOT, (x)))
+#define gugpropsiter_get_index(v) (scm_to_int(scm_foreign_object_ref((v), GUGPROPSITER_INDEX_SLOT)))
+#define gugpropsiter_set_index(v,x) (scm_foreign_object_set_x((v), GUGPROPSITER_INDEX_SLOT, scm_from_int (x)))
+#define gugpropsiter_get_n_props(v) (scm_to_int(scm_foreign_object_ref((v), GUGPROPSITER_N_PROPS_SLOT)))
+
+////////////////////////////////////////////////////////////////
+/* GuGPropsIter_Type */
+extern SCM_TYPE GuGPropsDescr_Type;
+typedef SCM SCM_GUGPROPSDESCR;
+
+/* GuGPropsDescr:
+   - slot 0: 'ob_type', the SCM foreign-object type used to create this instance
+   - slot 1: 'ob_refcnt', an SCM exact integer reference count
+   - slot 2: 'descr', an SCM
+*/
+#define MAKE_GUGPROPSDESCR_TYPE \
+    do {								\
+	GuGPropsDescr_Type = 						\
+	    scm_make_foreign_object(scm_from_latin1_symbol("<GPropsDescr>"), \
+				    scm_list_n (scm_from_latin1_symbol ("ob_type"), \
+						scm_from_latin1_symbol ("ob_refcnt"), \
+						scm_from_latin1_symbol ("descr"), \
+						NULL),			\
+				    NULL);				\
+    } while(FALSE)
+
+#define GUGPROPSDESCR_OB_TYPE 0
+#define GUGPROPSDESCR_OB_REFCNT_SLOT 1
+#define GUGPROPSDESCR_DESCR_SLOT 2
+
+////////////////////////////////////////////////////////////////
+/* GuGProps_Type */
+extern SCM_TYPE GuGProps_Type;
+typedef SCM SCM_GUGPROPS;
+
+/* GuGPropsDescr:
+   - slot 0: 'ob_type', the SCM foreign-object type used to create this instance
+   - slot 1: 'ob_refcnt', an SCM exact integer reference count
+   - slot 2: 'obj', an SCM
+   - slot 3: 'gtype', an SCM exact integer
+*/
+#define MAKE_GUGPROPS_TYPE \
+    do {								\
+	GuGProps_Type = 						\
+	    scm_make_foreign_object(scm_from_latin1_symbol("<GProps>"), \
+				    scm_list_n (scm_from_latin1_symbol ("ob_type"), \
+						scm_from_latin1_symbol ("ob_refcnt"), \
+						scm_from_latin1_symbol ("obj"), \
+						scm_from_latin1_symbol ("gtype"), \
+						NULL),			\
+				    NULL);				\
+    } while(FALSE)
+
+#define GUGPROPS_OB_TYPE 0
+#define GUGPROPS_OB_REFCNT_SLOT 1
+#define GUGPROPS_OBJ_SLOT 2
+#define GUGPROPS_GTYPE_SLOT 3
+	
+////////////////////////////////////////////////////////////////
 typedef int (*GuGClassInitFunc) (gpointer gclass,
-				 SCM guclass /* contains a SCM foreign-object type */
-				 );
+				 SCM_TYPE guclass);
 
 /* Returns an SCM containing a foreign-object type */
-typedef SCM (*GuGTypeRegistrationFunction) (const gchar *name,
-					    gpointer data);
+typedef SCM_TYPE (*GuGTypeRegistrationFunction) (const gchar *name,
+						 gpointer data);
 
-struct _GuGObject_Functions {
-    /* 
-     * All field names in here are considered private,
-     * use the macros below instead, which provides stability
-     */
-    void (* register_class)(SCM dict,
-			    const gchar *class_name,
-			    GType gtype,
-			    SCM type, /* contains a SCM foreign-object type */
-			    SCM bases);
-    void (* register_wrapper)(SCM self);
+////////////////////////////////////////////////////////////////
 
-    /* Returns an SCM foreign-object class */
-    SCM(* lookup_class)(GType type);
-    SCM (* newgobj)(GObject *obj);
+extern GType Gu_TYPE_OBJECT;
+extern GQuark gugobject_instance_data_key;
+extern GQuark gugobject_custom_key;
+extern GQuark gugobject_wrapper_key;
+extern GQuark gugobject_class_key;
+extern GQuark gugobject_class_init_key;
 
-    GClosure *(* closure_new)(SCM callback, SCM extra_args,
-			      SCM swap_data);
-    void      (* object_watch_closure)(SCM self, GClosure *closure);
-    GDestroyNotify destroy_notify;
+extern SCM_TYPE GuGObjectWeakRef_Type;
+extern SCM_TYPE GuGPropsIter_Type;
+extern SCM_TYPE GuGPropsDescr_Type;
+extern SCM_TYPE GuGProps_Type;
+extern SCM_TYPE GuGObject_Type;
+extern SCM_TYPE *GuGObject_MetaType;
 
-    GType (* type_from_object)(SCM obj);
-    SCM (* type_wrapper_new)(GType type);
+////////////////////////////////////////////////////////////////
+GuGObjectData *gug_object_peek_inst_data(GObject *obj);
+gboolean      gugobject_prepare_construct_properties  (GObjectClass *class,
+                                                       SCM kwargs,
+                                                       guint *n_params,
+                                                       GParameter **params);
+void          gugobject_register_class   (SCM dict,
+                                          const gchar *type_name,
+                                          GType gtype, SCM_TYPE type,
+                                          SCM bases);
+void          gugobject_register_wrapper (SCM self);
+SCM           gugobject_new              (GObject *obj);
+SCM           gugobject_new_full         (GObject *obj, gboolean steal, gpointer g_class);
+void          gugobject_sink             (GObject *obj);
+SCM_TYPE      gugobject_lookup_class     (GType gtype);
+void          gugobject_watch_closure    (SCM self, GClosure *closure);
+int           gui_object_register_types  (SCM d);
+void          gugobject_ref_float        (SCM_GOBJECT self);
+void          gugobject_ref_sink         (SCM_GOBJECT self);
+SCM           gug_object_new             (SCM self, SCM args, SCM kwargs);
 
-    gint (* enum_get_value)(GType enum_type, SCM obj, gint *val);
-    gint (* flags_get_value)(GType flag_type, SCM obj, guint *val);
-    void (* register_gtype_custom)(GType gtype,
-			    SCM (* from_func)(const GValue *value),
-			    int (* to_func)(GValue *value, SCM obj));
-    int (* value_from_guobject)(GValue *value, SCM obj);
-    SCM (* value_as_guobject)(const GValue *value, gboolean copy_boxed);
+GClosure *    gclosure_from_gufunc(SCM_GOBJECT object, SCM func);
+void          gugobject_register_class(SCM dict, const gchar *type_name,
+				       GType gtype, SCM_TYPE type,
+				       SCM static_bases);
+void          gugobject_register_wrapper(SCM self);
+SCM_TYPE      gugobject_lookup_class(GType gtype);
+SCM           gugobject_new(GObject *obj);
+void          gugobject_watch_closure(SCM self, GClosure *closure);
+SCM           gugobject_new_full(GObject *obj, gboolean steal, gpointer g_class);
 
-    void (* register_interface)(SCM dict, const gchar *class_name,
-				GType gtype,
-				SCM type /* contains a SCM foreign-object type */
-				);
+SCM           gugobject_init(int req_major, int req_minor, int req_micro);
 
-    SCM boxed_type;
-    void (* register_boxed)(SCM dict, const gchar *class_name,
-			    GType boxed_type,
-			    SCM type);
-    SCM (* boxed_new)(GType boxed_type, gpointer boxed,
-			    gboolean copy_boxed, gboolean own_ref);
-
-    SCM pointer_type;
-    void (* register_pointer)(SCM dict, const gchar *class_name,
-			      GType pointer_type, SCM type);
-    SCM (* pointer_new)(GType boxed_type, gpointer pointer);
-
-    void (* enum_add_constants)(SCM module, GType enum_type,
-				const gchar *strip_prefix);
-    void (* flags_add_constants)(SCM module, GType flags_type,
-				 const gchar *strip_prefix);
-
-    const gchar *(* constant_strip_prefix)(const gchar *name,
-				     const gchar *strip_prefix);
-
-    gboolean (* error_check)(GError **error);
-
-    /* hooks to register handlers for getting GDK threads to cooperate
-     * with python threading */
-    void (* set_thread_block_funcs) (GuGThreadBlockFunc block_threads_func,
-				     GuGThreadBlockFunc unblock_threads_func);
-    GuGThreadBlockFunc block_threads;
-    GuGThreadBlockFunc unblock_threads;
-
-    SCM paramspec_type;
-    SCM (* paramspec_new)(GParamSpec *spec);
-    GParamSpec *(*paramspec_get)(SCM tuple);
-    int (*pyobj_to_unichar_conv)(SCM pyobj, void* ptr);
-    gboolean (*parse_constructor_args)(GType        obj_type,
-                                       char       **arg_names,
-                                       char       **prop_names,
-                                       GParameter  *params,
-                                       guint       *nparams,
-				       SCM        gu_args   /* SCM list of arguments */
-				       );
-
-    SCM (* param_gvalue_as_pyobject) (const GValue* gvalue, 
-				      gboolean copy_boxed,
-				      const GParamSpec* pspec);
-    int (* gvalue_from_param_pyobject) (GValue* value, 
-                                        SCM py_obj, 
-					const GParamSpec* pspec);
-    SCM enum_type;
-    SCM (*enum_add)(SCM module,
-			  const char *type_name_,
-			  const char *strip_prefix,
-			  GType gtype);
-    SCM (*enum_from_gtype)(GType gtype, int value);
-    
-    SCM flags_type;
-    SCM (*flags_add)(SCM module,
-		     const char *type_name_,
-		     const char *strip_prefix,
-		     GType gtype);
-    PyObject* (*flags_from_gtype)(GType gtype, guint value);
-
-    gboolean threads_enabled;
-    int       (*enable_threads) (void);
-
-    int       (*gil_state_ensure) (void);
-    void      (*gil_state_release) (int flag);
-    
-    void      (*register_class_init) (GType gtype, GuGClassInitFunc class_init);
-    void      (*register_interface_info) (GType gtype, const GInterfaceInfo *info);
-    void      (*closure_set_exception_handler) (GClosure *closure, GuClosureExceptionHandler handler);
-
-    void      (*add_warning_redirection) (const char *domain,
-                                          SCM warning);
-    void      (*disable_warning_redirections) (void);
-
-    /* type_register_custom API now removed, but leave a pointer here to not
-     * break ABI. */
-    void      *_type_register_custom;
-
-    gboolean  (*gerror_exception_check) (GError **error);
-    SCM (*option_group_new) (GOptionGroup *group);
-    GType (* type_from_object_strict) (SCM obj, gboolean strict);
-
-    SCM (* newgobj_full)(GObject *obj, gboolean steal, gpointer g_class);
-    SCM object_type;
-    int (* value_from_pyobject_with_error)(GValue *value, SCM obj);
-};
-
-
-/* Deprecated, only available for API compatibility. */
-#define gug_threads_enabled           TRUE
-#define gug_gil_state_ensure          GugILState_Ensure
-#define gug_gil_state_release         GugILState_Release
-#define gug_begin_allow_threads       Py_BEGIN_ALLOW_THREADS
-#define gug_end_allow_threads         Py_END_ALLOW_THREADS
-#define gug_enable_threads()
-#define gug_set_thread_block_funcs(a, b)
-#define gug_block_threads()
-#define gug_unblock_threads()
-
-
-#ifndef _INSIDE_GUGOBJECT_
-
-#if defined(NO_IMPORT) || defined(NO_IMPORT_GUGOBJECT)
-extern struct _GuGObject_Functions *_GuGObject_API;
-#else
-struct _GuGObject_Functions *_GuGObject_API;
-#endif
-
-#if 0
-#define gugobject_register_class    (_GuGObject_API->register_class)
-#define gugobject_register_wrapper  (_GuGObject_API->register_wrapper)
-#define gugobject_lookup_class      (_GuGObject_API->lookup_class)
-#define gugobject_new               (_GuGObject_API->newgobj)
-#define gugobject_new_full          (_GuGObject_API->newgobj_full)
-#define GuGObject_Type              (*_GuGObject_API->object_type)
-#define gug_closure_new             (_GuGObject_API->closure_new)
-#define gugobject_watch_closure     (_GuGObject_API->object_watch_closure)
-#define gug_closure_set_exception_handler (_GuGObject_API->closure_set_exception_handler)
-#define gug_destroy_notify          (_GuGObject_API->destroy_notify)
-#define gug_type_from_object_strict   (_GuGObject_API->type_from_object_strict)
-#define gug_type_from_object        (_GuGObject_API->type_from_object)
-//#define gug_type_wrapper_new        (_GuGObject_API->type_wrapper_new)
-//#define gug_enum_get_value          (_GuGObject_API->enum_get_value)
-//#define gug_flags_get_value         (_GuGObject_API->flags_get_value)
-#define gug_register_gtype_custom   (_GuGObject_API->register_gtype_custom)
-#define gug_value_from_pyobject     (_GuGObject_API->value_from_pyobject)
-#define gug_value_from_pyobject_with_error (_GuGObject_API->value_from_pyobject_with_error)
-#define gug_value_as_pyobject       (_GuGObject_API->value_as_pyobject)
-#define gug_register_interface      (_GuGObject_API->register_interface)
-#define GugBoxed_Type               (*_GuGObject_API->boxed_type)
-#define gug_register_boxed          (_GuGObject_API->register_boxed)
-#define gug_boxed_new               (_GuGObject_API->boxed_new)
-#define GugPointer_Type             (*_GuGObject_API->pointer_type)
-#define gug_register_pointer        (_GuGObject_API->register_pointer)
-#define gug_pointer_new             (_GuGObject_API->pointer_new)
-#define gug_enum_add_constants      (_GuGObject_API->enum_add_constants)
-#define gug_flags_add_constants     (_GuGObject_API->flags_add_constants)
-#define gug_constant_strip_prefix   (_GuGObject_API->constant_strip_prefix)
-#define gug_error_check             (_GuGObject_API->error_check)
-#define GugParamSpec_Type           (*_GuGObject_API->paramspec_type)
-#define gug_param_spec_new          (_GuGObject_API->paramspec_new)
-#define gug_param_spec_from_object  (_GuGObject_API->paramspec_get)
-#define gug_pyobj_to_unichar_conv   (_GuGObject_API->pyobj_to_unichar_conv)
-//#define gug_parse_constructor_args  (_GuGObject_API->parse_constructor_args)
-#define gug_param_gvalue_as_pyobject   (_GuGObject_API->value_as_pyobject)
-#define gug_param_gvalue_from_pyobject (_GuGObject_API->gvalue_from_param_pyobject)
-#define GugEnum_Type                (*_GuGObject_API->enum_type)
-#define gug_enum_add                (_GuGObject_API->enum_add)
-#define gug_enum_from_gtype         (_GuGObject_API->enum_from_gtype)
-#define GugFlags_Type               (*_GuGObject_API->flags_type)
-#define gug_flags_add               (_GuGObject_API->flags_add)
-#define gug_flags_from_gtype        (_GuGObject_API->flags_from_gtype)
-#define gug_register_class_init     (_GuGObject_API->register_class_init)
-#define gug_register_interface_info (_GuGObject_API->register_interface_info)
-#define gug_add_warning_redirection   (_GuGObject_API->add_warning_redirection)
-#define gug_disable_warning_redirections (_GuGObject_API->disable_warning_redirections)
-#define gug_gerror_exception_check (_GuGObject_API->gerror_exception_check)
-#define gug_option_group_new       (_GuGObject_API->option_group_new)
-#endif
-
-/**
- * gugobject_init:
- * @req_major: minimum version major number, or -1
- * @req_minor: minimum version minor number, or -1
- * @req_micro: minimum version micro number, or -1
- * 
- * Imports and initializes the 'gobject' python module.  Can
- * optionally check for a required minimum version if @req_major,
- * @req_minor, and @req_micro are all different from -1.
- * 
- * Returns: a new reference to the gobject module on success, NULL in
- * case of failure (and raises ImportError).
- **/
-static inline SCM 
-gugobject_init(int req_major, int req_minor, int req_micro)
-{
-    SCM gobject, cobject;
-    
-    gobject = GuImport_ImportModule("gi._gobject");
-    if (!gobject) {
-        if (GuErr_Occurred())
-        {
-            SCM type, value, traceback;
-            SCM py_orig_exc;
-            GuErr_Fetch(&type, &value, &traceback);
-            py_orig_exc = GuObject_Repr(value);
-            Gu_XDECREF(type);
-            Gu_XDECREF(value);
-            Gu_XDECREF(traceback);
-
-
-            {
-                /* Can not use GuErr_Format because it doesn't have
-                 * a format string for dealing with PyUnicode objects
-                 * like PyUnicode_FromFormat has
-                 */
-                /* SCM errmsg = PyUnicode_FromFormat("could not import gobject (error was: %U)", */
-                /*                                         py_orig_exc); */
-		// FIXME: fix format 
-		SCM errmsg = scm_from_utf8_string("could not import gobject");
-                if (errmsg) {
-                   GuErr_SetObject(GuExc_ImportError,
-                                   errmsg);
-                   Gu_DECREF(errmsg);
-                }
-                /* if errmsg is NULL then we might have OOM
-                 * PyErr should already be set and trying to
-                 * return our own error would be futile
-                 */
-            }
-            Gu_DECREF(py_orig_exc);
-        } else {
-            GuErr_SetString(GuExc_ImportError,
-                            "could not import gobject (no error given)");
-        }
-        return NULL;
-    }
-
-    cobject = GuObject_GetAttrString(gobject, "_GuGObject_API");
-    if (cobject && GuCapsule_CheckExact(cobject)) {
-        _GuGObject_API = (struct _GuGObject_Functions *) GuCapsule_GetPointer(cobject, "gobject._GuGObject_API");
-        Gu_DECREF (cobject);
-    } else {
-        GuErr_SetString(GuExc_ImportError,
-                        "could not import gobject (could not find _GuGObject_API object)");
-        Gu_XDECREF (cobject);
-        Gu_DECREF(gobject);
-        return NULL;
-    }
-
-    if (req_major != -1)
-    {
-        int found_major, found_minor, found_micro;
-        SCM version;
-
-        version = GuObject_GetAttrString(gobject, "gugobject_version");
-        if (!version) {
-            GuErr_SetString(GuExc_ImportError,
-                            "could not import gobject (version too old)");
-            Gu_DECREF(gobject);
-            return NULL;
-        }
-        if (!GuArg_ParseTuple(version, "iii",
-                              &found_major, &found_minor, &found_micro)) {
-            GuErr_SetString(GuExc_ImportError,
-                            "could not import gobject (version has invalid format)");
-            Gu_DECREF(version);
-            Gu_DECREF(gobject);
-            return NULL;
-        }
-        Gu_DECREF(version);
-        if (req_major != found_major ||
-            req_minor >  found_minor ||
-            (req_minor == found_minor && req_micro > found_micro)) {
-            GuErr_Format(GuExc_ImportError,
-                         "could not import gobject (version mismatch, %d.%d.%d is required, "
-                         "found %d.%d.%d)", req_major, req_minor, req_micro,
-                         found_major, found_minor, found_micro);
-            Gu_DECREF(gobject);
-            return NULL;
-        }
-    }
-    return gobject;
-}
 
 /**
  * PYLIST_FROMGLIBLIST:
@@ -550,7 +538,7 @@ G_STMT_START \
             return errorreturn; \
         } \
         list = prefix##_prepend(list, convert_func); \
-    }; \
+    };			    \
         Gu_DECREF(py_list); \
         list =  prefix##_reverse(list); \
 } \
@@ -643,30 +631,6 @@ G_STMT_END
         PYLIST_ASGLIBLIST(GSList,g_slist,py_list,list,check_func,convert_func,\
                           child_free_func,errormsg,errorreturn)
 
-#endif /* !_INSIDE_GUGOBJECT_ */
-
 G_END_DECLS
 
 #endif /* !_GUGOBJECT_H_ */
-
-#if 0
-typedef struct {
-    PyObject_HEAD
-    gpointer boxed;
-    GType gtype;
-    gboolean free_on_dealloc;
-} GugBoxed;
-
-// FIXME: these shoudl be slot set/get on a foreign object
-
-#define gug_boxed_get(v,t)      ((t *)((GugBoxed *)(v))->boxed)
-#define gug_boxed_get_ptr(v)    (((GugBoxed *)(v))->boxed)
-#define gug_boxed_set_ptr(v,p)  (((GugBoxed *)(v))->boxed = (gpointer)p)
-#define gug_boxed_check(v,typecode) (PyObject_TypeCheck(v, &GugBoxed_Type) && ((GugBoxed *)(v))->gtype == typecode)
-
-gpointer
-_gug_boxed_get (SCM v);
-
-#define gug_boxed_get(v, t) ((t *)_gug_boxed_get(v))
-#endif
-

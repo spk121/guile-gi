@@ -36,6 +36,7 @@ void Gu_XDECREF(SCM x);
 void Gu_INCREF(SCM x);
 void Gu_XINCREF(SCM x);
 int Gu_IsInitialized(void);
+SCM Gu_TYPE(SCM x);
 
 int GuArg_ParseTuple(SCM args, const char *format, ...);
 int GuArg_ParseTupleAndKeywords(SCM args, SCM kw, const char *format, char *keywords[], ...);

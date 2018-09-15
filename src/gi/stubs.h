@@ -4,6 +4,9 @@
 #include <glib-object.h>
 #include <girepository.h>
 
+typedef SCM SCM_OBJECT;
+typedef SCM SCM_GOBJECT;
+
 extern SCM GuGInterface_Type; // a Type
 extern SCM GuGIBaseInfo_Type;
 extern SCM GuType_Type; // a type

@@ -39,6 +39,36 @@ int GuDict_Next(SCM p, ssize_t *pos, SCM key, SCM value)
     return TRUE;
 }
 
+/* If this this is an object using GuObject conventions, it is a class
+   instance with a slot named 'ob_type'. */
+SCM
+Gu_TYPE(SCM x)
+{
+    return scm_foreign_object_ref(x, 0);
+}
+
+void
+Gu_INCREF(SCM x)
+{
+    int i = scm_to_int (scm_foreign_object_ref(x, 1));
+    scm_foreign_object_set_x (x, 1, scm_from_int (1 + i));
+}
+
+void Gu_DECREF(SCM x)
+{
+    scm_t_struct_finalize func;
+    int i = scm_to_int (scm_foreign_object_ref(x, 1));
+    if (i > 0) {
+	i--;
+	scm_foreign_object_set_x (x, 1, scm_from_int (i));
+	if (i == 0) {
+	    func = SCM_VTABLE_INSTANCE_FINALIZER(x);
+	    func(x);
+	}
+    }
+}
+
+
 /* Adds an integer constant to the given Guile module */
 void
 GuModule_AddIntConstant (SCM module, const char *name, long value)
@@ -291,11 +321,6 @@ void GuErr_SetObject(SCM type, SCM value)
 void GuErr_Restore(SCM type, SCM value, SCM traceback)
 {
     g_debug("In stub version of GuErr_Restore");
-}
-
-void Gu_INCREF(SCM x)
-{
-    g_debug("In stub versionof Gu_INCREF");
 }
 
 void GuErr_PrintEx(int set_sys_last_vars)

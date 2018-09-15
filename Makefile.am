@@ -13,8 +13,7 @@ noinst_PROGRAMS = guile-gi
 guile_gi_SOURCES = \
  src/gi/stubs.c \
  src/gi/pycompat.c \
- src/gi/gugobject-object.c \
- src/gi/gugi-type.c
+ src/gi/gugobject.c
 
 # src/gi/gimodule.c
 
