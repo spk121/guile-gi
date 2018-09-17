@@ -217,6 +217,7 @@ int main(int argc, char **argv)
   gui_object_register_types(SCM_BOOL_F);
   gir_init_g_type();
   gir_init_g_value();
+  gir_init_gobject();
   scm_shell(argc, argv);
   return 0;
 }

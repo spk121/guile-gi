@@ -48,7 +48,7 @@ gir_g_value_holds_p (SCM gvalue, SCM gtype)
     scm_assert_foreign_object_type (GuGType_Type, gtype);
 
     value = gu_g_value_get_value(gvalue);
-    type = gu_g_type_get_type(gtype);
+    type = GType_get_type(gtype);
     ret = G_VALUE_HOLDS(value, type);
     return scm_from_bool(ret);
 }
@@ -396,7 +396,7 @@ gir_make_GValue (SCM gobject, SCM gtype)
        even though it is just going to be overwriten. */
     memcpy(val, &empty, sizeof(GValue));
 	   
-    type = gu_g_type_get_type (gtype);
+    type = GType_get_type (gtype);
     g_value_init(val, type);
     
     int ret = gug_value_from_scm_with_error(val, gobject);
