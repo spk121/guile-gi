@@ -37,6 +37,12 @@ scm_is_foreign_object_type (SCM type)
 }
 
 int
+scm_is_list (SCM x)
+{
+    return scm_is_true (scm_list_p (x));
+}
+
+int
 scm_is_struct (SCM x)
 {
   return scm_is_true (scm_struct_p (x));

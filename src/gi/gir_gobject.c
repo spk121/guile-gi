@@ -4,18 +4,9 @@
 #include <glib-object.h>
 #include "gir_xguile.h"
 #include "gir_g_type.h"
+#include "gir_gobject.h"
 
-/* Data that belongs to the GObject instance, not the Python wrapper */
-typedef struct _GuGObjectData {
-    SCM type; /* wrapper type for this instance */
-    GSList *closures;
-} GuGObjectData;
-
-////////////////////////////////////////////////////////////////
-/* GuGObject Type: A foreign object type that is an envelope for
-   GObject* types */
-SCM GuGObject_Type;
-SCM GuGObject_Type_Store;
+static void gugobject_finalize(SCM x);
 
 GType PY_TYPE_OBJECT = 0;
 GQuark gugobject_custom_key;
@@ -25,20 +16,26 @@ GQuark gugobject_wrapper_key;
 GQuark gugobject_has_updated_constructor_key;
 GQuark gugobject_instance_data_key;
 
+/* Data that belongs to the GObject instance, not the Python wrapper */
+typedef struct _GuGObjectData {
+    SCM type; /* wrapper type for this instance */
 
+    /* This list contains SCM of type GuGClosure */
+    GSList *closures;
+} GuGObjectData;
 
-void gugobject_finalize (SCM x);
+static GuGObjectData *GuGObject_peek_inst_data(GObject *obj);
 
-typedef enum {
-	      GUGOBJECT_USING_TOGGLE_REF = 1 << 0,
-	      GUGOBJECT_IS_FLOATING_REF = 1 << 1,
-	      GUGOBJECT_GOBJECT_WAS_FLOATING = 1 << 2
-} GuGObjectFlags;
+////////////////////////////////////////////////////////////////
+/* GuGObject Type: A foreign object type that is an envelope for
+   GObject* types */
+SCM GuGObject_Type;
+SCM GuGObject_Type_Store;
 
 /* GuGObject Instance: A foreign object with the following slots
    - slot 0: 'ob_type', the SCM foreign-object type used to create this instance
-   - slot 1: 'ob_refcnt', an SCM exact integer reference count
-   - slot 2: 'obj', a C GObject* pointer
+   - slot 1: 'ob_refcnt', an SCM exact integer holding a C ssize_t
+   - slot 2: 'obj', an SCM pointer object holding a C GObject* pointer
    - slot 3: 'inst_dict', an SCM hash-table
    - slot 4: 'weakreflist', an SCM weak-vector
    - slot 5: flags, an SCM exact-integer of GuGObjectFlags
@@ -65,19 +62,114 @@ typedef enum {
 #define GUGOBJECT_FLAGS_SLOT 5
 #define GUGOBJECT_N_SLOTS 6
 
+SCM
+GuGObject_get_ob_type(SCM gobj)
+{
+    void *ptr;
+    g_assert (SCM_IS_A_P (GuGObject_Type, gobj));
+
+    ptr = scm_foreign_object_ref (gobj, GUGOBJECT_OB_TYPE_SLOT);
+    if (ptr == NULL)
+	return SCM_NONE;
+    return SCM_PACK_POINTER (ptr);
+}
+
+void
+GuGObject_set_ob_type(SCM gobj, SCM ob_type)
+{
+    g_assert (SCM_IS_A_P (GuGObject_Type, gobj));
+    scm_foreign_object_set_x (gobj, GUGOBJECT_OB_TYPE_SLOT, ob_type);
+}
+
+ssize_t
+GuGObject_get_ob_refcnt(SCM gobj)
+{
+    void *ptr;
+    g_assert (SCM_IS_A_P (GuGObject_Type, gobj));
+    ptr = scm_foreign_object_ref (gobj, GUGOBJECT_OB_REFCNT_SLOT);
+    if (!ptr)
+	return 0;
+
+    return scm_to_ssize_t (SCM_PACK_POINTER (ptr));
+}
+
+void
+GuGObject_set_ob_refcnt(SCM gobj, ssize_t refcnt)
+{
+    void *ptr;
+    g_assert (SCM_IS_A_P (GuGObject_Type, gobj));
+    g_assert (refcnt >= 0);
+    scm_foreign_object_set_x (gobj, GUGOBJECT_OB_REFCNT_SLOT,
+			      scm_from_ssize_t (refcnt));
+}
+
+GObject *
+GuGObject_get_obj (SCM gobj)
+{
+	void *ptr;
+	g_assert (SCM_IS_A_P(GuGObject_Type, gobj));
+
+	ptr = scm_foreign_object_ref (gobj, GUGOBJECT_OBJ_SLOT);
+	if (!ptr)
+	    return NULL;
+		  
+	return (GObject *) scm_to_pointer (SCM_PACK_POINTER (ptr));
+}
+
+void
+GuGObject_set_obj (SCM gobj, GObject *ptr, scm_t_pointer_finalizer finalizer)
+{
+	SCM val;
+	g_assert (SCM_IS_A_P(GuGObject_Type, gobj));
+	val = scm_from_pointer(ptr, finalizer);
+	scm_foreign_object_set_x (gobj, GUGOBJECT_OBJ_SLOT, val);
+}
+
+GuGObjectFlags
+GuGObject_get_flags (SCM gobj)
+{
+	void *ptr;
+	g_assert (SCM_IS_A_P(GuGObject_Type, gobj));
+
+	ptr = scm_foreign_object_ref (gobj, GUGOBJECT_FLAGS_SLOT);
+	if (!ptr)
+	    return 0;
+		  
+	return (GuGObjectFlags) scm_to_uint (SCM_PACK_POINTER (ptr));
+}
+
+void
+GuGObject_set_flags (SCM gobj, GuGObjectFlags flags)
+{
+	SCM val;
+	g_assert (SCM_IS_A_P(GuGObject_Type, gobj));
+	val = scm_from_uint (flags);
+	scm_foreign_object_set_x (gobj, GUGOBJECT_FLAGS_SLOT, SCM_PACK_POINTER (val));
+}
+
+SCM
+GuGObject_get_inst_dict (SCM gobj)
+{
+    void *ptr;
+    g_assert (SCM_IS_A_P(GuGObject_Type, gobj));
+    ptr = scm_foreign_object_ref (gobj, GUGOBJECT_INST_DICT_SLOT);
+    if (!ptr)
+	return SCM_NONE;
+    return SCM_PACK_POINTER (ptr);
+}
+	      
 static void
-GObject_decref (SCM gobj)
+GuGObject_decref (SCM gobj)
 {
 	void *ptr;
 	int refcnt;
 	scm_t_struct_finalize func;
 	g_assert (SCM_IS_A_P(GuGObject_Type, gobj));
 
-	ptr = scm_foreign_object_ref (gobj, GUGOBJECT_OB_REFCNT_SLOT);
-	if (!ptr) {
-		refcnt = scm_to_int (SCM_PACK_POINTER (ptr));
+	refcnt = GuGObject_get_ob_refcnt (gobj);
+	if (refcnt > 0) {
 		refcnt --;
-		scm_foreign_object_set_x (gobj, GUGOBJECT_OB_REFCNT_SLOT, SCM_UNPACK_PTR (scm_from_int (refcnt)));
+		GuGObject_set_ob_refcnt (gobj, refcnt);
 		if (refcnt == 0) {
 			gugobject_finalize(gobj);
 		}
@@ -85,7 +177,7 @@ GObject_decref (SCM gobj)
 }
 
 static void
-GObject_incref (SCM gobj)
+GuGObject_incref (SCM gobj)
 {
 	void *ptr;
 	int refcnt;
@@ -93,40 +185,56 @@ GObject_incref (SCM gobj)
 
 	ptr = scm_foreign_object_ref (gobj, GUGOBJECT_OB_REFCNT_SLOT);
 	if (!ptr) {
-		refcnt = scm_to_int (SCM_PACK_PTR(ptr));
+		refcnt = scm_to_int (SCM_PACK_POINTER(ptr));
 		refcnt ++;
-		scm_foreign_object_set_x (gobj, GUGOBJECT_OB_REFCNT_SLOT, SCM_UNPACK_PTR (scm_from_int (refcnt)));
+		scm_foreign_object_set_x (gobj, GUGOBJECT_OB_REFCNT_SLOT,
+					  SCM_UNPACK_POINTER (scm_from_int (refcnt)));
 	}
 }
 
-static GObject *
-GObject_get_obj (SCM gobj)
-{
-	void *ptr;
-	scm_assert_foreign_object_type(GuGObject_Type, gobj);
+////////////////////////////////////////////////////////////////
 
-	ptr = scm_foreign_object_ref (gobj, GUGOBJECT_OBJ_SLOT);
-	if (!ptr)
-		return NULL;
-	return (GObject *) ptr;
-}
-static SCM
-pyg_object_peek_inst_data(GObject *obj)
+/* re gclosure_from_pyfunc */
+GClosure *
+GuGObject_get_closure_from_proc(SCM gobj, SCM gfunc)
 {
-    return SCM_PACK_POINTER (g_object_get_qdata(obj, gugobject_instance_data_key));
+    GuGObjectData *inst_data;
+    GSList *l;
+
+    g_return_val_if_reached (NULL);
+#if 0    
+    inst_data = GuGObject_peek_inst_data (GuGObject_get_obj (gobj));
+    if (inst_data) {
+	for (l = inst_data->closures; l ; l = l->next) {
+	    SCM closure = l->data;
+	    g_assert (SCM_IS_A_P(GuGClosure_Type, closure));
+	    if (scm_is_equal(closure, gfunc)) {
+		return GuGClosure_get_callback(closure);
+	    }
+	}
+    }
+    return NULL;
+#endif
+}
+    
+
+static GuGObjectData *
+GObject_peek_inst_data(GObject *obj)
+{
+    return g_object_get_qdata(obj, gugobject_instance_data_key);
 }
 
 static inline gboolean
-gugobject_toggle_ref_is_active (SCM self)
+GuGObject_toggle_ref_is_active (SCM self)
 {
 	scm_assert_foreign_object_type(GuGObject_Type, self);
-	GObject_set_flags(self, GObject_get_flags(self) & GUGOBJECT_USING_TOGGLE_REF);
+	GuGObject_set_flags(self, GuGObject_get_flags(self) & GUGOBJECT_USING_TOGGLE_REF);
 }
 
 static inline gboolean
-gugobject_toggle_ref_is_required (SCM self)
+GuGOobject_toggle_ref_is_required (SCM self)
 {
-	return (GObject_get_inst_dict(self) != NULL);
+	return (GuGObject_get_inst_dict(self) != SCM_NONE);
 }
 
 static void
@@ -137,11 +245,11 @@ gug_toggle_notify (gpointer data, GObject *object, gboolean is_last_ref)
 
     ptr = g_object_get_qdata (object, gugobject_wrapper_key);
     if (ptr) {
-		self = SCM_UNPACK_POINTER(ptr);
+		self = SCM_PACK_POINTER(ptr);
         if (is_last_ref)
-            GObject_decref(self);
+            GuGObject_decref(self);
         else
-            GObject_incref(self);
+            GuGObject_incref(self);
     }
 }
 
@@ -155,23 +263,23 @@ static inline void
 gugobject_toggle_ref_ensure (SCM self)
 {
 	GObject *obj;
-    if (gugobject_toggle_ref_is_active (self))
+    if (GuGObject_toggle_ref_is_active (self))
         return;
 
-    if (!gugobject_toggle_ref_is_required (self))
+    if (!GuGOobject_toggle_ref_is_required (self))
         return;
 
-	obj = GObject_get_obj (self);
+	obj = GuGObject_get_obj (self);
     if (obj == NULL)
         return;
 
     g_assert(obj->ref_count >= 1);
 
-	GObject_set_flags(self, GObject_get_flags(self) | GUGOBJECT_USING_TOGGLE_REF);
+	GuGObject_set_flags(self, GuGObject_get_flags(self) | GUGOBJECT_USING_TOGGLE_REF);
     /* Note that add_toggle_ref will never immediately call back into 
          pyg_toggle_notify */
 
-    Gu_INCREF(self);
+	GuGObject_incref(self);
     g_object_add_toggle_ref(obj, gug_toggle_notify, NULL);
     g_object_unref(obj);
 }
@@ -192,13 +300,57 @@ gugobject_register_wrapper(SCM self)
     g_return_if_fail(self != NULL);
     g_return_if_fail(SCM_IS_A_P (self, GuGObject_Type));
 
-    g_assert(GObject_get_refcnt(self) >= 1);
+    g_assert(GuGObject_get_ob_refcnt(self) >= 1);
 
     /* save wrapper pointer so we can access it later */
-    g_object_set_qdata_full(GObject_get_obj(self), gugobject_wrapper_key, self, NULL);
+    g_object_set_qdata_full(GuGObject_get_obj(self), gugobject_wrapper_key, self, NULL);
 
     gugobject_toggle_ref_ensure (self);
 }
+
+/**
+ * pygobject_lookup_class:
+ * @gtype: the GType of the GObject subclass.
+ *
+ * This function looks up the wrapper class used to represent
+ * instances of a GObject represented by @gtype.  If no wrapper class
+ * or interface has been registered for the given GType, then a new
+ * type will be created.
+ *
+ * Does not set an exception when NULL is returned.
+ *
+ * Returns: The wrapper class for the GObject or NULL if the
+ *          GType has no registered type and a new type couldn't be created
+ */
+/* re pygobject_lookup_class */
+SCM
+GType_lookup_class(GType gtype)
+{
+    SCM gu_type;
+
+    if (gtype == G_TYPE_INTERFACE)
+        return &GuGInterface_Type;
+    
+    gu_type = g_type_get_qdata(gtype, gugobject_class_key);
+    if (gu_type == NULL) {
+        gu_type = g_type_get_qdata(gtype, guginterface_type_key);
+
+        if (gu_type == NULL) {
+            gu_type = pygi_type_import_by_g_type(gtype);
+            PyErr_Clear ();
+        }
+
+        if (gu_type == NULL) {
+            gu_type = gugobject_new_with_interfaces(gtype);
+            PyErr_Clear ();
+            g_type_set_qdata(gtype, guginterface_type_key, gu_type);
+        }
+    }
+    
+    return py_type;
+}
+
+
 
 /**
  * pygobject_new_full:
@@ -241,22 +393,22 @@ gu_g_object_new_full(GObject *obj, gboolean steal, gpointer g_class)
     } else {
 
 	/* create wrapper */
-	GuGObjectData *inst_data = pyg_object_peek_inst_data(obj);
+	GuGObjectData *inst_data = GObject_peek_inst_data(obj);
 	SCM tp;
 	if (inst_data)
 	    tp = inst_data->type;
 	else {
 	    if (g_class)
-			tp = pygobject_lookup_class(G_OBJECT_CLASS_TYPE(g_class));
+			tp = GType_lookup_class(G_OBJECT_CLASS_TYPE(g_class));
 	    else
-			tp = pygobject_lookup_class(G_OBJECT_TYPE(obj));
+			tp = GType_lookup_class(G_OBJECT_TYPE(obj));
 	}
 	g_assert(tp != NULL);
         
 	/* need to bump type refcount if created with
 	   pygobject_new_with_interfaces(). fixes bug #141042 */
 	if (GType_get_tp_flags(tp) & GU_TPFLAGS_HEAPTYPE)
-	    GU_INCREF(tp);
+	    GuGObject_incref(tp);
 	void *vals[GUGOBJECT_N_SLOTS];
 	vals[GUGOBJECT_OB_TYPE_SLOT] = NULL;
 	vals[GUGOBJECT_OB_REFCNT_SLOT] = SCM_PACK_POINTER (scm_from_int(1));
@@ -297,7 +449,7 @@ gir_make_GObject (SCM gtype, SCM args_alist)
     GValue *values;
     size_t n_params;
   
-    scm_assert_foreign_object_type (GuGType_Type, type);
+    scm_assert_foreign_object_type (GuGType_Type, gtype);
 
     type = gu_type_from_object (gtype);
     if (G_TYPE_IS_ABSTRACT(type)) {
