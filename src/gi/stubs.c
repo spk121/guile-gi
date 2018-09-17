@@ -3,6 +3,8 @@
 #include <glib-object.h>
 #include "pycompat.h"
 #include "stubs.h"
+#include "gugobject.h"
+
 SCM GuGInterface_Type = SCM_BOOL_F; // a Type
 SCM GuType_Type = SCM_BOOL_F; // a type
 
@@ -211,5 +213,10 @@ void gug_register_interface_info(GType gtype, const
 
 int main(int argc, char **argv)
 {
+  scm_init_guile();
+  gui_object_register_types(SCM_BOOL_F);
+  gir_init_g_type();
+  gir_init_g_value();
+  scm_shell(argc, argv);
   return 0;
 }

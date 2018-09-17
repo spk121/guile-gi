@@ -35,25 +35,39 @@ typedef SCM SCM_TYPE;
 /* GuObject Instance: A foreign object with the following slots
    - slot 0: 'ob_type', the SCM foreign-object type used to create this instance
    - slot 1: 'ob_refcnt', an SCM exact integer reference count
+   - slot 2: 'tp_name', an SCM string of the type name
+   - slot 2: 'tp_type', an SCM foreign object type
+   - slot 3: 'tp_dict', a hash table 
    - FIXME
 */
 #define MAKE_GUTYPE_TYPE						\
     do {								\
-	GuType_Type =						\
-	    scm_make_foreign_object(scm_from_latin1_symbol("<Type>"), \
-				    scm_list_2 (scm_from_latin1_symbol ("ob_type"), \
-						scm_from_latin1_symbol ("ob_refcnt")), \
-				    NULL);				\
+	GuType_Type =							\
+	    scm_make_foreign_object_type(scm_from_latin1_symbol("<Type>"), \
+					 scm_list_n (scm_from_latin1_symbol("ob_type"), \
+						     scm_from_latin1_symbol("ob_refcnt"), \
+						     scm_from_latin1_symbol("tp_name"), \
+						     scm_from_latin1_symbol("tp_type"), \
+						     scm_from_latin1_symbol("tp_dict"), \
+						     SCM_UNDEFINED),	\
+					 NULL);				\
     } while(FALSE)
 
 #define GUTYPE_OB_TYPE_SLOT 0
 #define GUTYPE_OB_REFCNT_SLOT 1
+#define GUTYPE_TP_NAME_SLOT 2
+#define GUTYPE_TP_TYPE_SLOT 3
+#define GUTYPE_TP_DICT_SLOT 4
+
+#define gutype_get_tp_name(v) (scm_to_utf8_string(scm_foreign_object_ref((v), GUTYPE_TP_NAME_SLOT)))
+#define gutype_get_tp_dict(v) (scm_foreign_object_ref((v), GUTYPE_TP_DICT_SLOT))
 
 ////////////////////////////////////////////////////////////////
 /* GuGObject Type: A foreign object type that is an envelope for
    GObject* types */
 extern SCM GuGObject_Type;
 typedef SCM SCM_GOBJECT;
+void gugobject_finalize (SCM x);
 
 typedef enum {
     GUGOBJECT_USING_TOGGLE_REF = 1 << 0,
@@ -72,15 +86,15 @@ typedef enum {
 #define MAKE_GUGOBJECT_TYPE						\
     do {								\
 	GuGObject_Type =						\
-	    scm_make_foreign_object(scm_from_latin1_symbol("<GObject>"), \
-				    scm_list_n (scm_from_latin1_symbol ("ob_type"), \
-						scm_from_latin1_symbol ("ob_refcnt"), \
-						scm_from_latin1_symbol ("obj"), \
-						scm_from_latin1_symbol ("inst_dict"), \
-						scm_from_latin1_symbol ("weakreflist"), \
-						scm_from_latin1_symbol ("flags"), \
-						NULL),			\
-				    NULL);				\
+	    scm_make_foreign_object_type(scm_from_latin1_symbol("<GObject>"), \
+					 scm_list_n (scm_from_latin1_symbol ("ob_type"), \
+						     scm_from_latin1_symbol ("ob_refcnt"), \
+						     scm_from_latin1_symbol ("obj"), \
+						     scm_from_latin1_symbol ("inst_dict"), \
+						     scm_from_latin1_symbol ("weakreflist"), \
+						     scm_from_latin1_symbol ("flags"), \
+						     SCM_UNDEFINED),	\
+					 gugobject_finalize);		\
     } while(FALSE)
 
 #define GUGOBJECT_OB_TYPE_SLOT 0
@@ -91,8 +105,15 @@ typedef enum {
 #define GUGOBJECT_FLAGS_SLOT 5
 
 #define gugobject_get(v) ((GObject *)scm_foreign_object_ref((v), GUGOBJECT_OBJ_SLOT))
-#define gugobject_get_ob_type(v) ((GObject *)scm_foreign_object_ref((v), GUGOBJECT_OB_TYPE_SLOT))
+#define gugobject_set(x,v) (scm_foreign_object_set_x((x),GUGOBJECT_OBJ_SLOT,(v)))
+#define gugobject_get_ob_type(v) (SCM_PACK_POINTER(scm_foreign_object_ref((v), GUGOBJECT_OB_TYPE_SLOT)))
 #define gugobject_check(v,base) (scm_is_eq(scm_foreign_object_ref((v), GUGOBJECT_OB_TYPE_SLOT), base))
+#define gugobject_get_weakreflist(v) (scm_foreign_object_ref((v), GUGOBJECT_WEAKREFLIST_SLOT))
+#define gugobject_set_weakreflist(v,x) (scm_foreign_object_set_x((v),GUGOBJECT_WEAKREFLIST_SLOT,(x)))
+#define gugobject_get_flags(x) (scm_to_long(scm_foreign_object_ref((x), GUGOBJECT_FLAGS_SLOT)))
+#define gugobject_set_flags(x,v) (scm_foreign_object_set_x((x),GUGOBJECT_FLAGS_SLOT,scm_from_long(v)))
+#define gugobject_get_inst_dict(v) (scm_foreign_object_ref((v), GUGOBJECT_INST_DICT_SLOT))
+#define gugobject_set_inst_dict(v,x) (scm_foreign_object_set_x((v),GUGOBJECT_INST_DICT_SLOT,(x)))
 
 ////////////////////////////////////////////////////////////////
 /* GuGBoxed Type: A foreign object type that is an envelope for
@@ -116,7 +137,7 @@ typedef SCM SCM_GBOXED;
 						scm_from_latin1_symbol ("boxed"), \
 						scm_from_latin1_symbol ("gtype"), \
 						scm_from_latin1_symbol ("free_on_dealloc"), \
-						NULL),			\
+						SCM_UNDEFINED),			\
 				    NULL);				\
     } while(FALSE)
 
@@ -154,7 +175,7 @@ typedef SCM SCM_GPOINTER;
 						scm_from_latin1_symbol ("ob_refcnt"), \
 						scm_from_latin1_symbol ("pointer"), \
 						scm_from_latin1_symbol ("gtype"), \
-						NULL),			\
+						SCM_UNDEFINED),			\
 				    NULL);				\
     } while(FALSE)
 
@@ -193,7 +214,7 @@ typedef void (*GuGThreadBlockFunc) (void);
 				    scm_list_n (scm_from_latin1_symbol ("ob_type"), \
 						scm_from_latin1_symbol ("ob_refcnt"), \
 						scm_from_latin1_symbol ("pspec"), \
-						NULL),			\
+						SCM_UNDEFINED),			\
 				    NULL);				\
     } while(FALSE)
 
@@ -209,7 +230,7 @@ typedef void (*GuGThreadBlockFunc) (void);
 ////////////////////////////////////////////////////////////////
 /* GuGObjectWeakRef_Type */
 extern SCM_TYPE GuGObjectWeakRef_Type;
-typedef SCM SCM_GUGOBJECTWEAKREF;
+typedef SCM SCM_GOBJECTWEAKREF;
 
 /* GuGObjectWeakRef:
    - slot 0: 'ob_type', the SCM foreign-object type used to create this instance
@@ -243,8 +264,8 @@ typedef SCM SCM_GUGOBJECTWEAKREF;
 ////////////////////////////////////////////////////////////////
 /* GuGPropsIter_Type */
 extern SCM_TYPE GuGPropsIter_Type;
-typedef SCM SCM_GUGPROPSITER;
-void gug_props_iter_finalize(SCM_GUGPROPSITER self);
+typedef SCM SCM_GPROPSITER;
+void gug_props_iter_finalize(SCM_GPROPSITER self);
 
 /* GuGPropsIter:
    - slot 0: 'ob_type', the SCM foreign-object type used to create this instance
@@ -262,7 +283,7 @@ void gug_props_iter_finalize(SCM_GUGPROPSITER self);
 						scm_from_latin1_symbol ("props"), \
 						scm_from_latin1_symbol ("n_props"), \
 						scm_from_latin1_symbol ("index"), \
-						NULL),			\
+						SCM_UNDEFINED),			\
 				    gug_props_iter_finalize);				\
     } while(FALSE)
 
@@ -281,7 +302,7 @@ void gug_props_iter_finalize(SCM_GUGPROPSITER self);
 ////////////////////////////////////////////////////////////////
 /* GuGPropsIter_Type */
 extern SCM_TYPE GuGPropsDescr_Type;
-typedef SCM SCM_GUGPROPSDESCR;
+typedef SCM SCM_GPROPSDESCR;
 
 /* GuGPropsDescr:
    - slot 0: 'ob_type', the SCM foreign-object type used to create this instance
@@ -295,7 +316,7 @@ typedef SCM SCM_GUGPROPSDESCR;
 				    scm_list_n (scm_from_latin1_symbol ("ob_type"), \
 						scm_from_latin1_symbol ("ob_refcnt"), \
 						scm_from_latin1_symbol ("descr"), \
-						NULL),			\
+						SCM_UNDEFINED),			\
 				    NULL);				\
     } while(FALSE)
 
@@ -306,7 +327,8 @@ typedef SCM SCM_GUGPROPSDESCR;
 ////////////////////////////////////////////////////////////////
 /* GuGProps_Type */
 extern SCM_TYPE GuGProps_Type;
-typedef SCM SCM_GUGPROPS;
+typedef SCM SCM_GPROPS;
+void gugobject_gprops_finalize(SCM_GPROPS self);
 
 /* GuGPropsDescr:
    - slot 0: 'ob_type', the SCM foreign-object type used to create this instance
@@ -322,15 +344,19 @@ typedef SCM SCM_GUGPROPS;
 						scm_from_latin1_symbol ("ob_refcnt"), \
 						scm_from_latin1_symbol ("obj"), \
 						scm_from_latin1_symbol ("gtype"), \
-						NULL),			\
-				    NULL);				\
+						SCM_UNDEFINED),			\
+				    gugobject_gprops_finalize);				\
     } while(FALSE)
 
 #define GUGPROPS_OB_TYPE 0
 #define GUGPROPS_OB_REFCNT_SLOT 1
 #define GUGPROPS_OBJ_SLOT 2
 #define GUGPROPS_GTYPE_SLOT 3
-	
+
+#define gugprops_get_obj(v) ((SCM)scm_foreign_object_ref((v), GUGPROPS_OBJ_SLOT))
+#define gugprops_set_obj(v,x) (scm_foreign_object_set_x((v), GUGPROPS_OBJ_SLOT, (x)))
+#define gugprops_get_gtype(v) ((GType)scm_to_int(scm_foreign_object_ref((v), GUGPROPS_GTYPE_SLOT)))
+
 ////////////////////////////////////////////////////////////////
 typedef int (*GuGClassInitFunc) (gpointer gclass,
 				 SCM_TYPE guclass);

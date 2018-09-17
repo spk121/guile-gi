@@ -1,9 +1,8 @@
 /* -*- Mode: C; c-basic-offset: 4 -*- */
 #include <ctype.h>
+#include "gir_xguile.h"
 #include "pycompat.h"
 
-SCM Gu_None_Type;
-SCM Gu_None;
 
 SCM GuExc_RuntimeError = SCM_BOOL_F;
 SCM GuExc_TypeError = SCM_BOOL_F;
@@ -15,7 +14,7 @@ SCM GuExc_Warning = SCM_BOOL_F;
 int
 scm_is_none (SCM arg)
 {
-  return scm_is_true (scm_eq_p (Gu_None, arg));
+  return scm_is_true (scm_eq_p (SCM_NONE, arg));
 }
 
 /* Iterate over all key-value pairs in the hash table P. The ssize_t
@@ -213,7 +212,7 @@ GuArg_ParseTuple(SCM args, const char *format, ...)
       if (i_arg < n_args_provided)
 	entry = scm_list_ref (args, scm_from_size_t (i_arg));
       else
-	entry = Gu_None;
+	entry = SCM_NONE;
       switch (format[i_fmt]) {
       case 'c':
 	if (scm_is_none (entry))
@@ -445,13 +444,15 @@ int GuObject_TypeCheck(SCM o, SCM type)
     return FALSE;
 }
 
+SCM GuObject_GenericGetAttr(SCM self, SCM attr)
+{
+    g_debug("In the stub version of GuObject_GenericGetAttr");
+    return SCM_BOOL_F;
+}
 
 void
 init_pycompat (void)
 {
-  Gu_None_Type = scm_make_foreign_object_type (scm_from_utf8_string ("$NONE"),
-						SCM_EOL, NULL);
-  Gu_None = scm_permanent_object (scm_make_foreign_object_0 (Gu_None_Type));
 }
 
 

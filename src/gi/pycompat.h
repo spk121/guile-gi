@@ -84,6 +84,7 @@ int GuObject_HasAttrString(SCM obj, const char *attr_name);
 int GuObject_SetAttrString(SCM o, const char *attr_name, SCM v);
 int GuObject_TypeCheck(SCM o, SCM type);
 SCM GuObject_CallObject(SCM callable, SCM args);
+SCM GuObject_GenericGetAttr(SCM self, SCM attr);
 
 void (*GuOS_getsig(int i))(int);
 

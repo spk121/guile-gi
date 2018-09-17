@@ -21,6 +21,8 @@
 #include <config.h>
 
 #include "gugobject.h"
+#include "stubs.h"
+#include "gir_xguile.h"
 #ifndef GUILE_GI_CORE
 #include "pyginterface.h"
 #include "pygparamspec.h"
@@ -40,7 +42,6 @@ extern SCM GuGIDeprecationWarning;
 
 typedef int (*visitproc)(SCM, void *);
 
-static void gugobject_dealloc(SCM self);
 static int  gugobject_traverse(SCM self, visitproc visit, void *arg);
 static SCM gug_type_get_bases(GType gtype);
 static int gugobject_clear(SCM self);
@@ -50,12 +51,20 @@ static void gugobject_inherit_slots(SCM_TYPE type, SCM bases,
 static void gugobject_find_slot_for(SCM_TYPE type, SCM bases, int slot_offset,
 				    gboolean check_for_present);
 GType GU_TYPE_OBJECT = 0;
-GQuark gggobject_custom_key;
+GQuark gugobject_custom_key;
 GQuark gugobject_class_key;
 GQuark gugobject_class_init_key;
 GQuark gugobject_wrapper_key;
 GQuark gugobject_has_updated_constructor_key;
 GQuark gugobject_instance_data_key;
+
+SCM GuType_Type;
+SCM GuType_Type_Store;
+
+SCM GuGObject_Type;
+SCM GuGObject_Type_Store;
+SCM GuGObject_Type_Metadata;
+SCM GuGObject_Type_Metadata_Store;
 
 GuGObjectData *
 gug_object_peek_inst_data(GObject *obj)
@@ -104,6 +113,32 @@ canonicalize_key (gchar *key)
 }
 
 /* -------------- class <-> wrapper manipulation --------------- */
+
+static SCM
+gugobject_get_attr_string (SCM_GOBJECT self, const char *_key)
+{
+    // First, try the dictionary that is from the parent type
+    SCM ob_type;
+    SCM tp_dict;
+    SCM key;
+    SCM val;
+
+    g_return_val_if_fail (_key != NULL && (strlen(_key) > 0), SCM_BOOL_F);
+    g_return_val_if_fail (scm_is_gobject(self), SCM_BOOL_F);
+    
+    ob_type = gugobject_get_ob_type(self);
+    tp_dict = gutype_get_tp_dict(ob_type);
+    key = scm_from_utf8_symbol(_key);
+    val = scm_hash_ref(tp_dict, key, SCM_BOOL_F);
+
+    if (scm_is_false (val)) {
+	// Next, try the dictionary in the instance
+	SCM inst_dict = gugobject_get_inst_dict(self);
+	val = scm_hash_ref(inst_dict, key, SCM_BOOL_F);
+    }
+    // FIXME: to I upref val if it is a GObject?
+    return val;
+}
 
 static void
 gugobject_data_free(GuGObjectData *data)
@@ -177,7 +212,7 @@ SCM_TYPE *GuGObject_MetaType = NULL;
  * references on objects on construction.
  **/
 void
-pygobject_sink(GObject *obj)
+gugobject_sink(GObject *obj)
 {
     /* The default behaviour for GInitiallyUnowned subclasses is to call ref_sink().
      * - if the object is new and owned by someone else, its ref has been sunk and
@@ -191,14 +226,14 @@ pygobject_sink(GObject *obj)
 }
 
 void
-gug_props_iter_finalize(SCM_GUGPROPSITER self)
+gug_props_iter_finalize(SCM_GPROPSITER self)
 {
     g_free(gugpropsiter_get_props(self));
     gugpropsiter_set_props(self, NULL);
 }
 
 static SCM
-pygobject_props_iter_next(SCM_GUGPROPSITER iter)
+gugobject_props_iter_next(SCM_GPROPSITER iter)
 {
     int index;
     int n_props;
@@ -220,47 +255,34 @@ pygobject_props_iter_next(SCM_GUGPROPSITER iter)
     }
 }
 
-#ifndef GUILE_GI_CORE
 
-typedef struct {
-    PyObject_HEAD
-    /* a reference to the object containing the properties */
-    PyGObject *pygobject;
-    GType      gtype;
-} PyGProps;
-
-static void
-PyGProps_dealloc(PyGProps* self)
+void
+gugobject_gprops_finalize(SCM_GPROPS self)
 {
-    PyGObject *tmp;
+    SCM_GOBJECT tmp;
 
-    PyObject_GC_UnTrack((PyObject*)self);
-
-    tmp = self->pygobject;
-    self->pygobject = NULL;
-    Py_XDECREF(tmp);
-
-    PyObject_GC_Del((PyObject*)self);
+    tmp = gugprops_get_obj(self);
+    gugprops_set_obj(self, SCM_BOOL_F);
+    Gu_DECREF(tmp);
 }
 
-static PyObject*
+
+static SCM
 build_parameter_list(GObjectClass *class)
 {
     GParamSpec **props;
     guint n_props = 0, i;
-    PyObject *prop_str;
-    PyObject *props_list;
+    SCM prop_str;
+    SCM props_list = SCM_EOL;
 
     props = g_object_class_list_properties(class, &n_props);
-    props_list = PyList_New(n_props);
     for (i = 0; i < n_props; i++) {
 	char *name;
 	name = g_strdup(g_param_spec_get_name(props[i]));
 	/* hyphens cannot belong in identifiers */
 	g_strdelimit(name, "-", '_');
-	prop_str = PYGLIB_PyUnicode_FromString(name);
-	
-	PyList_SetItem(props_list, i, prop_str);
+	prop_str = scm_from_utf8_string (name);
+	props_list = scm_append (scm_list_2 (props_list, scm_list_1(prop_str)));
 	g_free(name);
     }
 
@@ -270,24 +292,30 @@ build_parameter_list(GObjectClass *class)
     return props_list;
 }
 
-static PyObject*
-PyGProps_getattro(PyGProps *self, PyObject *attr)
+#ifndef GUILE_GI_CORE
+
+SCM
+gug_props_getattro(SCM_GPROPS self, SCM attr)
 {
     char *attr_name, *property_name;
     GObjectClass *class;
     GParamSpec *pspec;
+    GType type;
+    SCM obj;
 
-    attr_name = PYGLIB_PyUnicode_AsString(attr);
-    if (!attr_name) {
-        PyErr_Clear();
-        return PyObject_GenericGetAttr((PyObject *)self, attr);
+    scm_assert_foreign_object_type(self, GuGProps_Type);
+
+    if (!scm_is_string (attr)) {
+	return GuObject_GenericGetAttr(self, attr);
     }
+    
+    attr_name = scm_to_utf8_string (attr);
+    type = gugprops_get_gtype(self);
+    class = g_type_class_ref(type);
 
-    class = g_type_class_ref(self->gtype);
-
-    /* g_object_class_find_property recurses through the class hierarchy,
-     * so the resulting pspec tells us the owner_type that owns the property
-     * we're dealing with. */
+    /* g_object_class_find_property recurses through the class
+     * hierarchy, so the resulting pspec tells us the owner_type that
+     * owns the property we're dealing with. */
     property_name = g_strdup(attr_name);
     canonicalize_key(property_name);
     pspec = g_object_class_find_property(class, property_name);
@@ -295,87 +323,90 @@ PyGProps_getattro(PyGProps *self, PyObject *attr)
     g_type_class_unref(class);
 
     if (!pspec) {
-	return PyObject_GenericGetAttr((PyObject *)self, attr);
+	return GuObject_GenericGetAttr(self, attr);
     }
 
-    if (!self->pygobject) {
+    obj = gugprops_get_obj(self);
+    if (scm_is_false(obj)) {
         /* If we're doing it without an instance, return a GParamSpec */
-        return pyg_param_spec_new(pspec);
+        return gug_param_spec_new(pspec);
     }
 
-    return pygi_get_property_value (self->pygobject, pspec);
+    return gugi_get_property_value (obj, pspec);
 }
+
 
 static gboolean
 set_property_from_pspec(GObject *obj,
 			GParamSpec *pspec,
-			PyObject *pvalue)
+			SCM pvalue)
 {
     GValue value = { 0, };
 
     if (pspec->flags & G_PARAM_CONSTRUCT_ONLY) {
-	PyErr_Format(PyExc_TypeError,
+	GuErr_Format(GuExc_TypeError,
 		     "property '%s' can only be set in constructor",
 		     pspec->name);
 	return FALSE;
     }	
 
     if (!(pspec->flags & G_PARAM_WRITABLE)) {
-	PyErr_Format(PyExc_TypeError,
+	GuErr_Format(GuExc_TypeError,
 		     "property '%s' is not writable", pspec->name);
 	return FALSE;
     }	
 
     g_value_init(&value, G_PARAM_SPEC_VALUE_TYPE(pspec));
-    if (pyg_param_gvalue_from_pyobject(&value, pvalue, pspec) < 0) {
-        PyObject *pvalue_str = PyObject_Repr(pvalue);
-	PyErr_Format(PyExc_TypeError,
+    if (gug_param_gvalue_from_pyobject(&value, pvalue, pspec) < 0) {
+        SCM pvalue_str = GuObject_Repr(pvalue);
+	char *str = scm_to_utf8_string (pvalue_str);
+	GuErr_Format(GuExc_TypeError,
 	             "could not convert %s to type '%s' when setting property '%s.%s'",
-	             PYGLIB_PyUnicode_AsString(pvalue_str),
+	             str,
 	             g_type_name(G_PARAM_SPEC_VALUE_TYPE(pspec)),
 	             G_OBJECT_TYPE_NAME(obj),
 	             pspec->name);
-	Py_DECREF(pvalue_str);
+	free (str);
+	Gu_DECREF(pvalue_str);
 	return FALSE;
     }
 
-    Py_BEGIN_ALLOW_THREADS;
+    Gu_BEGIN_ALLOW_THREADS;
     g_object_set_property(obj, pspec->name, &value);
     g_value_unset(&value);
-    Py_END_ALLOW_THREADS;
+    Gu_END_ALLOW_THREADS;
 
     return TRUE;
 }
 
-PYGLIB_DEFINE_TYPE("gi._gi.GProps", PyGProps_Type, PyGProps);
+
 
 static int
-PyGProps_setattro(PyGProps *self, PyObject *attr, PyObject *pvalue)
+PyGProps_setattro(SCM_GPROPS self, SCM attr, SCM pvalue)
 {
     GParamSpec *pspec;
     char *attr_name, *property_name;
     GObject *obj;
     int ret = -1;
     
-    if (pvalue == NULL) {
-	PyErr_SetString(PyExc_TypeError, "properties cannot be "
+    if (pvalue == Gu_None) {
+	GuErr_SetString(GuExc_TypeError, "properties cannot be "
 			"deleted");
 	return -1;
     }
 
-    attr_name = PYGLIB_PyUnicode_AsString(attr);
-    if (!attr_name) {
-        PyErr_Clear();
-        return PyObject_GenericSetAttr((PyObject *)self, attr, pvalue);
-    }
+    if (!scm_is_string (attr))
+	return GuObject_GenericSetAttr(self, attr, pvalue);
+	
+    attr_name = scm_to_utf8_string (attr);
 
-    if (!self->pygobject) {
-        PyErr_SetString(PyExc_TypeError,
+    if (gugprobs_get_obj(SCM_BOOL_F)) {
+        GuErr_SetString(GuExc_TypeError,
 			"cannot set GOject properties without an instance");
         return -1;
     }
 
-    obj = self->pygobject->obj;
+    obj = gugprobs_get_obj(self)->obj;
 
     property_name = g_strdup(attr_name);
     canonicalize_key(property_name);
@@ -406,6 +437,8 @@ PyGProps_setattro(PyGProps *self, PyObject *attr, PyObject *pvalue)
 				  
     return 0;
 }
+
+
 
 static int
 pygobject_props_traverse(PyGProps *self, visitproc visit, void *arg)
@@ -486,7 +519,7 @@ pyg_props_descr_descr_get(PyObject *self, PyObject *obj, PyObject *type)
         gprops->gtype = pyg_type_from_object(type);
     } else {
         if (!PyObject_IsInstance(obj, (PyObject *) &PyGObject_Type)) {
-            PyErr_SetString(PyExc_TypeError, "cannot use GObject property"
+            PyErr_SetString(GuExc_TypeError, "cannot use GObject property"
                             " descriptor on non-GObject instances");
             return NULL;
         }
@@ -595,30 +628,27 @@ pygobject_register_class(PyObject *dict, const gchar *type_name,
 
     PyDict_SetItemString(dict, (char *)class_name, (PyObject *)type);
 }
+#endif
 
 static void
-pyg_toggle_notify (gpointer data, GObject *object, gboolean is_last_ref)
+gug_toggle_notify (gpointer data, GObject *object, gboolean is_last_ref)
 {
-    PyGObject *self;
-    PyGILState_STATE state;
-
-    state = PyGILState_Ensure();
+    SCM self;
 
     /* Avoid thread safety problems by using qdata for wrapper retrieval
      * instead of the user data argument.
      * See: https://bugzilla.gnome.org/show_bug.cgi?id=709223
      */
-    self = (PyGObject *)g_object_get_qdata (object, pygobject_wrapper_key);
-    if (self) {
+    self = SCM_PACK_POINTER (g_object_get_qdata (object, gugobject_wrapper_key));
+    if (scm_is_true (self)) {
         if (is_last_ref)
-            Py_DECREF(self);
+            Gu_DECREF(self);
         else
-            Py_INCREF(self);
+            Gu_INCREF(self);
     }
-
-    PyGILState_Release(state);
 }
 
+#ifndef GUILE_GI_CORE
 static inline gboolean
 pygobject_toggle_ref_is_required (PyGObject *self)
 {
@@ -637,12 +667,16 @@ pygobject_toggle_ref_is_required (PyGObject *self)
     return result;
 #endif
 }
+#endif
 
-static inline gboolean
-pygobject_toggle_ref_is_active (PyGObject *self)
+static gboolean
+gugobject_toggle_ref_is_active (SCM self)
 {
-    return self->private_flags.flags & PYGOBJECT_USING_TOGGLE_REF;
+    long flags = gugobject_get_flags(self);
+    gugobject_set_flags(self, flags & GUGOBJECT_USING_TOGGLE_REF);
 }
+
+#ifndef GUILE_GI_CORE
 
   /* Called when the inst_dict is first created; switches the 
      reference counting strategy to start using toggle ref to keep the
@@ -716,7 +750,7 @@ pygobject_register_wrapper(PyObject *self)
 
     g_assert(gself->obj->ref_count >= 1);
       /* save wrapper pointer so we can access it later */
-    g_object_set_qdata_full(gself->obj, pygobject_wrapper_key, gself, NULL);
+    g_object_set_qdata_full(gself->obj, gugobject_wrapper_key, gself, NULL);
 
     pygobject_toggle_ref_ensure (gself);
 }
@@ -996,7 +1030,7 @@ pygobject_new_full(GObject *obj, gboolean steal, gpointer g_class)
 
     /* If the GObject already has a PyObject wrapper stashed in its qdata, re-use it.
      */
-    self = (PyGObject *)g_object_get_qdata(obj, pygobject_wrapper_key);
+    self = (PyGObject *)g_object_get_qdata(obj, gugobject_wrapper_key);
     if (self != NULL) {
         /* Note the use of "pygobject_ref_sink" here only deals with PyObject
          * wrapper ref counts and has nothing to do with GObject.
@@ -1101,34 +1135,34 @@ pygobject_watch_closure(PyObject *self, GClosure *closure)
     data->closures = g_slist_prepend(data->closures, closure);
     g_closure_add_invalidate_notifier(closure, data, pygobject_unwatch_closure);
 }
-
+#endif
 
 /* -------------- PyGObject behaviour ----------------- */
 
-PYGLIB_DEFINE_TYPE("gi._gi.GObject", PyGObject_Type, PyGObject);
-
-static void
-pygobject_dealloc(PyGObject *self)
+void
+gugobject_finalize(SCM self)
 {
     /* Untrack must be done first. This is because followup calls such as
      * ClearWeakRefs could call into Python and cause new allocations to
      * happen, which could in turn could trigger the garbage collector,
      * which would then get confused as it is tracking this half-deallocated
      * object. */
-    PyObject_GC_UnTrack((PyObject *)self);
+    //PyObject_GC_UnTrack((PyObject *)self);
 
-    if (self->weakreflist != NULL)
-        PyObject_ClearWeakRefs((PyObject *)self);
+    SCM weakreflist = gugobject_get_weakreflist(self);
+    // Do I need to iterate over the weak-vector for some reason?
+    gugobject_set_weakreflist(self, SCM_BOOL_F);
 
-      /* this forces inst_data->type to be updated, which could prove
+    /* this forces inst_data->type to be updated, which could prove
        * important if a new wrapper has to be created and it is of a
        * unregistered type */
-    pygobject_get_inst_data(self);
-    pygobject_clear(self);
+    gugobject_get_inst_data(self);
+    gugobject_clear(self);
     /* the following causes problems with subclassed types */
     /* Py_TYPE(self)->tp_free((PyObject *)self); */
-    PyObject_GC_Del(self);
+    //PyObject_GC_Del(self);
 }
+#ifndef GUILE_GI_CORE
 
 static PyObject*
 pygobject_richcompare(PyObject *self, PyObject *other, int op)
@@ -1160,39 +1194,44 @@ pygobject_hash(PyGObject *self)
 {
     return PYGLIB_Py_hash_t_FromVoidPtr (self->obj);
 }
+#endif
 
-static PyObject *
-pygobject_repr(PyGObject *self)
+static SCM
+gugobject_repr(SCM_GOBJECT self)
 {
-    PyObject *module, *repr;
+    SCM module, repr;
     gchar *module_str, *namespace;
+    gchar *repr_str;
 
-    module = PyObject_GetAttrString ((PyObject *)self, "__module__");
-    if (module == NULL)
-        return NULL;
-
-    if (!PYGLIB_PyUnicode_Check (module)) {
-        Py_DECREF (module);
-        return NULL;
+    // scm_assert_foreign_object_type (self, GuGObject_Type);
+    
+    module = gugobject_get_attr_string (self, "__module__");
+    if (!scm_is_string (module)) {
+	return SCM_BOOL_F;
     }
 
-    module_str = PYGLIB_PyUnicode_AsString (module);
+    module_str = scm_to_utf8_string (module);
     namespace = g_strrstr (module_str, ".");
     if (namespace == NULL) {
         namespace = module_str;
     } else {
         namespace += 1;
     }
-
-    repr = PYGLIB_PyUnicode_FromFormat ("<%s.%s object at %p (%s at %p)>",
-                                        namespace, Py_TYPE (self)->tp_name, self,
-                                        self->obj ? G_OBJECT_TYPE_NAME (self->obj) : "uninitialized",
-                                        self->obj);
-    Py_DECREF (module);
+    SCM type = gugobject_get_ob_type(self);
+    char *type_name = gutype_get_tp_name(type);
+    GObject *obj = gugobject_get(self);
+    repr_str = g_strdup_printf("<%s.%s object at %p (%s at %p)>",
+			       namespace, type_name, SCM_UNPACK_POINTER(self),
+                                         obj ? G_OBJECT_TYPE_NAME (obj) : "uninitialized",
+                                        obj);
+    free (type_name);
+    free (module_str);
+    repr = scm_from_utf8_string (repr_str);
+    free (repr_str);
     return repr;
 }
 
-
+#ifndef GUILE_GI_CORE
 static int
 pygobject_traverse(PyGObject *self, visitproc visit, void *arg)
 {
@@ -1222,25 +1261,34 @@ pygobject_traverse(PyGObject *self, visitproc visit, void *arg)
     }
     return ret;
 }
+#endif
 
-static inline int
-pygobject_clear(PyGObject *self)
+static int
+gugobject_clear(SCM self)
 {
-    if (self->obj) {
-        g_object_set_qdata_full(self->obj, pygobject_wrapper_key, NULL, NULL);
-        if (pygobject_toggle_ref_is_active (self)) {
-            g_object_remove_toggle_ref(self->obj, pyg_toggle_notify, NULL);
-            self->private_flags.flags &= ~PYGOBJECT_USING_TOGGLE_REF;
+    GObject *obj = gugobject_get (self);
+    if (obj) {
+        g_object_set_qdata_full(obj, gugobject_wrapper_key, NULL, NULL);
+        if (gugobject_toggle_ref_is_active (self)) {
+            g_object_remove_toggle_ref(obj, gug_toggle_notify, NULL);
+	    gugobject_set_flags (self, gugobject_get_flags(self) & (~GUGOBJECT_USING_TOGGLE_REF));
         } else {
-            Py_BEGIN_ALLOW_THREADS;
-            g_object_unref(self->obj);
-            Py_END_ALLOW_THREADS;
+            Gu_BEGIN_ALLOW_THREADS;
+            g_object_unref(obj);
+            Gu_END_ALLOW_THREADS;
         }
-        self->obj = NULL;
+	gugobject_set(self, NULL);
     }
-    Py_CLEAR(self->inst_dict);
+    SCM inst_dict = gugobject_get_inst_dict(self);
+    if (scm_is_true (inst_dict)) {
+	// Do I need to iterate over inst_dict when clearing it?
+	;
+    }
+    gugobject_set_inst_dict(self, SCM_BOOL_F);
     return 0;
 }
+
+#ifndef GUILE_GI_CORE
 
 static void
 pygobject_free(PyObject *op)
@@ -1268,14 +1316,14 @@ pygobject_prepare_construct_properties(GObjectClass *class, PyObject *kwargs,
 
             pspec = g_object_class_find_property(class, key_str);
             if (!pspec) {
-                PyErr_Format(PyExc_TypeError,
+                PyErr_Format(GuExc_TypeError,
                              "gobject `%s' doesn't support property `%s'",
                              G_OBJECT_CLASS_NAME(class), key_str);
                 return FALSE;
             }
             g_value_init(&param->value, G_PARAM_SPEC_VALUE_TYPE(pspec));
             if (pyg_param_gvalue_from_pyobject(&param->value, value, pspec) < 0) {
-                PyErr_Format(PyExc_TypeError,
+                PyErr_Format(GuExc_TypeError,
                              "could not convert value for property `%s' from %s to %s",
                              key_str, Py_TYPE(value)->tp_name,
                              g_type_name(G_PARAM_SPEC_VALUE_TYPE(pspec)));
@@ -1318,13 +1366,13 @@ pygobject_init(PyGObject *self, PyObject *args, PyObject *kwargs)
 	return -1;
 
     if (G_TYPE_IS_ABSTRACT(object_type)) {
-	PyErr_Format(PyExc_TypeError, "cannot create instance of abstract "
+	PyErr_Format(GuExc_TypeError, "cannot create instance of abstract "
 		     "(non-instantiable) type `%s'", g_type_name(object_type));
 	return -1;
     }
 
     if ((class = g_type_class_ref (object_type)) == NULL) {
-	PyErr_SetString(PyExc_TypeError,
+	PyErr_SetString(GuExc_TypeError,
 			"could not get a reference to type class");
 	return -1;
     }
@@ -1348,7 +1396,7 @@ pygobject_init(PyGObject *self, PyObject *args, PyObject *kwargs)
 
 #define CHECK_GOBJECT(self) \
     if (!G_IS_OBJECT(self->obj)) {                                           \
-	PyErr_Format(PyExc_TypeError,                                        \
+	PyErr_Format(GuExc_TypeError,                                        \
                      "object at %p of type %s is not initialized",	     \
                      self, Py_TYPE(self)->tp_name);			     \
 	return NULL;                                                         \
@@ -1375,7 +1423,7 @@ pygobject_get_properties(PyGObject *self, PyObject *args)
     PyObject *tuple;
 
     if ((len = PyTuple_Size(args)) < 1) {
-        PyErr_SetString(PyExc_TypeError, "requires at least one argument");
+        PyErr_SetString(GuExc_TypeError, "requires at least one argument");
         return NULL;
     }
 
@@ -1386,7 +1434,7 @@ pygobject_get_properties(PyGObject *self, PyObject *args)
         PyObject *item;
 
         if (!PYGLIB_PyUnicode_Check(py_property)) {
-            PyErr_SetString(PyExc_TypeError,
+            PyErr_SetString(GuExc_TypeError,
                             "Expected string argument for property.");
             goto fail;
         }
@@ -1420,7 +1468,7 @@ pygobject_set_property(PyGObject *self, PyObject *args)
     pspec = g_object_class_find_property(G_OBJECT_GET_CLASS(self->obj),
 					 param_name);
     if (!pspec) {
-	PyErr_Format(PyExc_TypeError,
+	PyErr_Format(GuExc_TypeError,
 		     "object of type `%s' does not have property `%s'",
 		     g_type_name(G_OBJECT_TYPE(self->obj)), param_name);
 	return NULL;
@@ -1469,7 +1517,7 @@ pygobject_set_properties(PyGObject *self, PyObject *args, PyObject *kwargs)
 	    g_snprintf(buf, sizeof(buf),
 		       "object `%s' doesn't support property `%s'",
 		       g_type_name(G_OBJECT_TYPE(self->obj)), key_str);
-	    PyErr_SetString(PyExc_TypeError, buf);
+	    PyErr_SetString(GuExc_TypeError, buf);
 	    goto exit;
 	}
 
@@ -1605,13 +1653,13 @@ pygobject_bind_property(PyGObject *self, PyObject *args)
 
 	CHECK_GOBJECT(self);
 	if (!PyObject_TypeCheck(target, &PyGObject_Type)) {
-		PyErr_SetString(PyExc_TypeError, "Second argument must be a GObject");
+		PyErr_SetString(GuExc_TypeError, "Second argument must be a GObject");
 		return NULL;
 	}
 
 	if (transform_to && transform_to != Py_None) {
 		if (!PyCallable_Check (transform_to)) {
-			PyErr_SetString (PyExc_TypeError,
+			PyErr_SetString (GuExc_TypeError,
 					 "transform_to must be callable or None");
 			return NULL;
 		}
@@ -1620,7 +1668,7 @@ pygobject_bind_property(PyGObject *self, PyObject *args)
 
 	if (transform_from && transform_from != Py_None) {
 		if (!PyCallable_Check (transform_from)) {
-			PyErr_SetString (PyExc_TypeError,
+			PyErr_SetString (GuExc_TypeError,
 					 "transform_from must be callable or None");
 			return NULL;
 		}
@@ -1641,7 +1689,7 @@ pygobject_bind_property(PyGObject *self, PyObject *args)
 	if (binding == NULL) {
 		source_repr = PyObject_Repr((PyObject*)self);
 		target_repr = PyObject_Repr(target);
-		PyErr_Format(PyExc_TypeError, "Cannot create binding from %s.%s to %s.%s",
+		PyErr_Format(GuExc_TypeError, "Cannot create binding from %s.%s to %s.%s",
 			     PYGLIB_PyUnicode_AsString(source_repr), source_name,
 			     PYGLIB_PyUnicode_AsString(target_repr), target_name);
 		Py_DECREF(source_repr);
@@ -1664,7 +1712,7 @@ connect_helper(PyGObject *self, gchar *name, PyObject *callback, PyObject *extra
     if (!g_signal_parse_name(name, G_OBJECT_TYPE(self->obj),
 			     &sigid, &detail, TRUE)) {
 	PyObject *repr = PyObject_Repr((PyObject*)self);
-	PyErr_Format(PyExc_TypeError, "%s: unknown signal name: %s",
+	PyErr_Format(GuExc_TypeError, "%s: unknown signal name: %s",
 		     PYGLIB_PyUnicode_AsString(repr),
 		     name);
 	Py_DECREF(repr);
@@ -1710,7 +1758,7 @@ pygobject_connect(PyGObject *self, PyObject *args)
 
     len = PyTuple_Size(args);
     if (len < 2) {
-	PyErr_SetString(PyExc_TypeError,
+	PyErr_SetString(GuExc_TypeError,
 			"GObject.connect requires at least 2 arguments");
 	return NULL;
     }
@@ -1721,7 +1769,7 @@ pygobject_connect(PyGObject *self, PyObject *args)
     }
     Py_DECREF(first);
     if (!PyCallable_Check(callback)) {
-	PyErr_SetString(PyExc_TypeError, "second argument must be callable");
+	PyErr_SetString(GuExc_TypeError, "second argument must be callable");
 	return NULL;
     }
     
@@ -1745,7 +1793,7 @@ pygobject_connect_after(PyGObject *self, PyObject *args)
 
     len = PyTuple_Size(args);
     if (len < 2) {
-	PyErr_SetString(PyExc_TypeError,
+	PyErr_SetString(GuExc_TypeError,
 			"GObject.connect_after requires at least 2 arguments");
 	return NULL;
     }
@@ -1757,7 +1805,7 @@ pygobject_connect_after(PyGObject *self, PyObject *args)
     }
     Py_DECREF(first);
     if (!PyCallable_Check(callback)) {
-	PyErr_SetString(PyExc_TypeError, "second argument must be callable");
+	PyErr_SetString(GuExc_TypeError, "second argument must be callable");
 	return NULL;
     }
     
@@ -1781,7 +1829,7 @@ pygobject_connect_object(PyGObject *self, PyObject *args)
 
     len = PyTuple_Size(args);
     if (len < 3) {
-	PyErr_SetString(PyExc_TypeError,
+	PyErr_SetString(GuExc_TypeError,
 		"GObject.connect_object requires at least 3 arguments");
 	return NULL;
     }
@@ -1793,7 +1841,7 @@ pygobject_connect_object(PyGObject *self, PyObject *args)
     }
     Py_DECREF(first);
     if (!PyCallable_Check(callback)) {
-	PyErr_SetString(PyExc_TypeError, "second argument must be callable");
+	PyErr_SetString(GuExc_TypeError, "second argument must be callable");
 	return NULL;
     }
     
@@ -1817,7 +1865,7 @@ pygobject_connect_object_after(PyGObject *self, PyObject *args)
 
     len = PyTuple_Size(args);
     if (len < 3) {
-	PyErr_SetString(PyExc_TypeError,
+	PyErr_SetString(GuExc_TypeError,
 		"GObject.connect_object_after requires at least 3 arguments");
 	return NULL;
     }
@@ -1829,7 +1877,7 @@ pygobject_connect_object_after(PyGObject *self, PyObject *args)
     }
     Py_DECREF(first);
     if (!PyCallable_Check(callback)) {
-	PyErr_SetString(PyExc_TypeError, "second argument must be callable");
+	PyErr_SetString(GuExc_TypeError, "second argument must be callable");
 	return NULL;
     }
     
@@ -1857,7 +1905,7 @@ pygobject_emit(PyGObject *self, PyObject *args)
     
     len = PyTuple_Size(args);
     if (len < 1) {
-	PyErr_SetString(PyExc_TypeError,"GObject.emit needs at least one arg");
+	PyErr_SetString(GuExc_TypeError,"GObject.emit needs at least one arg");
 	return NULL;
     }
     first = PySequence_GetSlice(args, 0, 1);
@@ -1872,7 +1920,7 @@ pygobject_emit(PyGObject *self, PyObject *args)
     if (!g_signal_parse_name(name, G_OBJECT_TYPE(self->obj),
 			     &signal_id, &detail, TRUE)) {
 	repr = PyObject_Repr((PyObject*)self);
-	PyErr_Format(PyExc_TypeError, "%s: unknown signal name: %s",
+	PyErr_Format(GuExc_TypeError, "%s: unknown signal name: %s",
 		     PYGLIB_PyUnicode_AsString(repr),
 		     name);
 	Py_DECREF(repr);
@@ -1885,7 +1933,7 @@ pygobject_emit(PyGObject *self, PyObject *args)
 	g_snprintf(buf, sizeof(buf),
 		   "%d parameters needed for signal %s; %ld given",
 		   query.n_params, name, (long int) (len - 1));
-	PyErr_SetString(PyExc_TypeError, buf);
+	PyErr_SetString(GuExc_TypeError, buf);
 	return NULL;
     }
 
@@ -1905,7 +1953,7 @@ pygobject_emit(PyGObject *self, PyObject *args)
 		       "could not convert type %s to %s required for parameter %d",
 		       Py_TYPE(item)->tp_name,
                        G_VALUE_TYPE_NAME(&params[i+1]), i);
-	    PyErr_SetString(PyExc_TypeError, buf);
+	    PyErr_SetString(GuExc_TypeError, buf);
 
 	    for (j = 0; j <= i; j++)
 		g_value_unset(&params[j]);
@@ -1952,7 +2000,7 @@ pygobject_chain_from_overridden(PyGObject *self, PyObject *args)
     
     ihint = g_signal_get_invocation_hint(self->obj);
     if (!ihint) {
-	PyErr_SetString(PyExc_TypeError, "could not find signal invocation "
+	PyErr_SetString(GuExc_TypeError, "could not find signal invocation "
 			"information for this object.");
 	return NULL;
     }
@@ -1962,7 +2010,7 @@ pygobject_chain_from_overridden(PyGObject *self, PyObject *args)
 
     len = PyTuple_Size(args);
     if (signal_id == 0) {
-	PyErr_SetString(PyExc_TypeError, "unknown signal name");
+	PyErr_SetString(GuExc_TypeError, "unknown signal name");
 	return NULL;
     }
     g_signal_query(signal_id, &query);
@@ -1972,7 +2020,7 @@ pygobject_chain_from_overridden(PyGObject *self, PyObject *args)
 	g_snprintf(buf, sizeof(buf),
 		   "%d parameters needed for signal %s; %ld given",
 		   query.n_params, name, (long int) len);
-	PyErr_SetString(PyExc_TypeError, buf);
+	PyErr_SetString(GuExc_TypeError, buf);
 	return NULL;
     }
     params = g_new0(GValue, query.n_params + 1);
@@ -1995,7 +2043,7 @@ pygobject_chain_from_overridden(PyGObject *self, PyObject *args)
 		       "could not convert type %s to %s required for parameter %d",
 		       Py_TYPE(item)->tp_name,
 		       g_type_name(G_VALUE_TYPE(&params[i+1])), i);
-	    PyErr_SetString(PyExc_TypeError, buf);
+	    PyErr_SetString(GuExc_TypeError, buf);
 	    for (i = 0; i < query.n_params + 1; i++)
 		g_value_unset(&params[i]);
 	    g_free(params);
@@ -2042,7 +2090,7 @@ pygobject_weak_ref(PyGObject *self, PyObject *args)
 static PyObject *
 pygobject_copy(PyGObject *self)
 {
-    PyErr_SetString(PyExc_TypeError,
+    PyErr_SetString(GuExc_TypeError,
 		    "GObject descendants' instances are non-copyable");
     return NULL;
 }
@@ -2050,7 +2098,7 @@ pygobject_copy(PyGObject *self)
 static PyObject *
 pygobject_deepcopy(PyGObject *self, PyObject *args)
 {
-    PyErr_SetString(PyExc_TypeError,
+    PyErr_SetString(GuExc_TypeError,
 		    "GObject descendants' instances are non-copyable");
     return NULL;
 }
@@ -2069,14 +2117,14 @@ pygobject_disconnect_by_func(PyGObject *self, PyObject *args)
 	return NULL;
 
     if (!PyCallable_Check(pyfunc)) {
-	PyErr_SetString(PyExc_TypeError, "first argument must be callable");
+	PyErr_SetString(GuExc_TypeError, "first argument must be callable");
 	return NULL;
     }
 
     closure = gclosure_from_pyfunc(self, pyfunc);
     if (!closure) {
 	repr = PyObject_Repr((PyObject*)pyfunc);
-	PyErr_Format(PyExc_TypeError, "nothing connected to %s",
+	PyErr_Format(GuExc_TypeError, "nothing connected to %s",
 		     PYGLIB_PyUnicode_AsString(repr));
 	Py_DECREF(repr);
 	return NULL;
@@ -2103,14 +2151,14 @@ pygobject_handler_block_by_func(PyGObject *self, PyObject *args)
 	return NULL;
 
     if (!PyCallable_Check(pyfunc)) {
-	PyErr_SetString(PyExc_TypeError, "first argument must be callable");
+	PyErr_SetString(GuExc_TypeError, "first argument must be callable");
 	return NULL;
     }
 
     closure = gclosure_from_pyfunc(self, pyfunc);
     if (!closure) {
 	repr = PyObject_Repr((PyObject*)pyfunc);
-	PyErr_Format(PyExc_TypeError, "nothing connected to %s",
+	PyErr_Format(GuExc_TypeError, "nothing connected to %s",
 		     PYGLIB_PyUnicode_AsString(repr));
 	Py_DECREF(repr);
 	return NULL;
@@ -2137,14 +2185,14 @@ pygobject_handler_unblock_by_func(PyGObject *self, PyObject *args)
 	return NULL;
 
     if (!PyCallable_Check(pyfunc)) {
-	PyErr_SetString(PyExc_TypeError, "first argument must be callable");
+	PyErr_SetString(GuExc_TypeError, "first argument must be callable");
 	return NULL;
     }
 
     closure = gclosure_from_pyfunc(self, pyfunc);
     if (!closure) {
 	repr = PyObject_Repr((PyObject*)pyfunc);
-	PyErr_Format(PyExc_TypeError, "nothing connected to %s",
+	PyErr_Format(GuExc_TypeError, "nothing connected to %s",
 		     PYGLIB_PyUnicode_AsString(repr));
 	Py_DECREF(repr);
 	return NULL;
@@ -2197,7 +2245,7 @@ static PyObject *
 pygobject_get_refcount(PyGObject *self, void *closure)
 {
     if (self->obj == NULL) {
-        PyErr_Format(PyExc_TypeError, "GObject instance is not yet created");
+        PyErr_Format(GuExc_TypeError, "GObject instance is not yet created");
         return NULL;
     }
     return pygi_guint_to_py (self->obj->ref_count);
@@ -2261,7 +2309,7 @@ pygobject_weak_ref_notify(PyGObjectWeakRef *self, GObject *dummy)
         retval = PyObject_Call(self->callback, self->user_data, NULL);
         if (retval) {
             if (retval != Py_None)
-                PyErr_Format(PyExc_TypeError,
+                PyErr_Format(GuExc_TypeError,
                              "GObject weak notify callback returned a value"
                              " of type %s, should return None",
                              Py_TYPE(retval)->tp_name);
@@ -2357,54 +2405,64 @@ pygobject_weak_ref_call(PyGObjectWeakRef *self, PyObject *args, PyObject *kw)
         return Py_None;
     }
 }
+#endif
 
+/* Shallow-copying should just be increasing the refcount on the SCM? */
 static gpointer
 pyobject_copy(gpointer boxed)
 {
-    PyObject *object = boxed;
-    PyGILState_STATE state;
-
-    state = PyGILState_Ensure();
-    Py_INCREF(object);
-    PyGILState_Release(state);
-    return object;
+    SCM object = SCM_PACK_POINTER (boxed);
+    Gu_INCREF(object);
+    return SCM_UNPACK_POINTER (object);
 }
 
 static void
 pyobject_free(gpointer boxed)
 {
-    PyObject *object = boxed;
-    PyGILState_STATE state;
-
-    state = PyGILState_Ensure();
-    Py_DECREF(object);
-    PyGILState_Release(state);
+    SCM object = SCM_PACK_POINTER (boxed);
+    Gu_DECREF(object);
 }
 
 /**
  * Returns 0 on success, or -1 and sets an exception.
  */
 int
-pyi_object_register_types(PyObject *d)
+gui_object_register_types(SCM d)
 {
-    PyObject *o, *descr;
+    SCM o, descr;
 
-    pygobject_custom_key = g_quark_from_static_string("PyGObject::custom");
-    pygobject_class_key = g_quark_from_static_string("PyGObject::class");
-    pygobject_class_init_key = g_quark_from_static_string("PyGObject::class-init");
-    pygobject_wrapper_key = g_quark_from_static_string("PyGObject::wrapper");
-    pygobject_has_updated_constructor_key =
-        g_quark_from_static_string("PyGObject::has-updated-constructor");
-    pygobject_instance_data_key = g_quark_from_static_string("PyGObject::instance-data");
+    gugobject_custom_key = g_quark_from_static_string("GuGObject::custom");
+    gugobject_class_key = g_quark_from_static_string("GuGObject::class");
+    gugobject_class_init_key = g_quark_from_static_string("GuGObject::class-init");
+    gugobject_wrapper_key = g_quark_from_static_string("GuGObject::wrapper");
+    gugobject_has_updated_constructor_key =
+        g_quark_from_static_string("GuGObject::has-updated-constructor");
+    gugobject_instance_data_key = g_quark_from_static_string("GuGObject::instance-data");
 
     /* GObject */
-    if (!PY_TYPE_OBJECT)
-	PY_TYPE_OBJECT = g_boxed_type_register_static("PyObject",
+    if (!GU_TYPE_OBJECT)
+	GU_TYPE_OBJECT = g_boxed_type_register_static("PyObject",
 						      pyobject_copy,
 						      pyobject_free);
-    PyGObject_Type.tp_dealloc = (destructor)pygobject_dealloc;
-    PyGObject_Type.tp_richcompare = pygobject_richcompare;
-    PyGObject_Type.tp_repr = (reprfunc)pygobject_repr;
+
+    MAKE_GUTYPE_TYPE;
+    GuType_Type_Store = scm_c_define("<Type>", GuType_Type);
+    MAKE_GUGOBJECT_TYPE;
+    GuGObject_Type_Store = scm_c_define("<GObject>", GuGObject_Type);
+    void *GuGObject_Type_Attributes[5] = {SCM_UNPACK_POINTER(GuType_Type), /* ob_type */
+					  SCM_UNPACK_POINTER(scm_from_int(1)), /* ob_refcnt */
+					  SCM_UNPACK_POINTER(scm_from_latin1_string("<GObject>")), /* tp_name */
+					  SCM_UNPACK_POINTER(GuGObject_Type), /* tp_type */
+					  SCM_UNPACK_POINTER(scm_c_make_hash_table(10))}; /* tp_dict */
+					  
+    GuGObject_Type_Metadata = scm_make_foreign_object_n(GuType_Type,
+							4,
+							GuGObject_Type_Attributes);
+
+    GuGObject_Type_Metadata_Store = scm_c_define("<GObjectType>", GuGObject_Type_Metadata);
+    scm_c_define_gsubr("gobject-repr", 1, 0, 0, gugobject_repr);
+    
+#ifndef GUILE_GI_CORE  
     PyGObject_Type.tp_hash = (hashfunc)pygobject_hash;
     PyGObject_Type.tp_setattro = (setattrofunc)pygobject_setattro;
     PyGObject_Type.tp_flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
@@ -2427,18 +2485,21 @@ pyi_object_register_types(PyObject *d)
 			 pyg_object_descr_doc_get());
 
     /* GProps */
-    PyGProps_Type.tp_dealloc = (destructor)PyGProps_dealloc;
-    PyGProps_Type.tp_as_sequence = (PySequenceMethods*)&_PyGProps_as_sequence;
-    PyGProps_Type.tp_getattro = (getattrofunc)PyGProps_getattro;
-    PyGProps_Type.tp_setattro = (setattrofunc)PyGProps_setattro;
-    PyGProps_Type.tp_flags = Py_TPFLAGS_DEFAULT|Py_TPFLAGS_HAVE_GC;
-    PyGProps_Type.tp_doc = "The properties of the GObject accessible as "
-	"Python attributes.";
-    PyGProps_Type.tp_traverse = (traverseproc)pygobject_props_traverse;
-    PyGProps_Type.tp_iter = (getiterfunc)pygobject_props_get_iter;
-    PyGProps_Type.tp_methods = pygobject_props_methods;
-    if (PyType_Ready(&PyGProps_Type) < 0)
-        return -1;
+    MAKE_GUGPROPS_TYPE;
+    // PyGProps_Type.tp_dealloc = (destructor)PyGProps_dealloc;
+    // PyGProps_Type.tp_as_sequence = (PySequenceMethods*)&_PyGProps_as_sequence;
+    // PyGProps_Type.tp_getattro = (getattrofunc)PyGProps_getattro;
+    // PyGProps_Type.tp_setattro = (setattrofunc)PyGProps_setattro;
+    // PyGProps_Type.tp_flags = Py_TPFLAGS_DEFAULT|Py_TPFLAGS_HAVE_GC;
+    // PyGProps_Type.tp_doc = "The properties of the GObject accessible as "
+    //	"Python attributes.";
+    // PyGProps_Type.tp_traverse = (traverseproc)pygobject_props_traverse;
+    // PyGProps_Type.tp_iter = (getiterfunc)pygobject_props_get_iter;
+    //PyGProps_Type.tp_methods = pygobject_props_methods;
+    // if (PyType_Ready(&PyGProps_Type) < 0)
+    //    return -1;
+    scm_c_define_gsubr("props-getattro", 2, 0, 0, gug_props_getattro);
+    
 
     /* GPropsDescr */
     PyGPropsDescr_Type.tp_flags = Py_TPFLAGS_DEFAULT;
@@ -2471,10 +2532,12 @@ pyi_object_register_types(PyObject *d)
     if (PyType_Ready(&PyGObjectWeakRef_Type) < 0)
         return -1;
     PyDict_SetItemString(d, "GObjectWeakRef", (PyObject *) &PyGObjectWeakRef_Type);
-
+#endif
+    
     return 0;
 }
 
+#ifndef GUILE_GI_CORE
 PyObject *
 pyg_object_new (PyGObject *self, PyObject *args, PyObject *kwargs)
 {
@@ -2493,13 +2556,13 @@ pyg_object_new (PyGObject *self, PyObject *args, PyObject *kwargs)
 	return NULL;
 
     if (G_TYPE_IS_ABSTRACT(type)) {
-	PyErr_Format(PyExc_TypeError, "cannot create instance of abstract "
+	PyErr_Format(GuExc_TypeError, "cannot create instance of abstract "
 		     "(non-instantiable) type `%s'", g_type_name(type));
 	return NULL;
     }
 
     if ((class = g_type_class_ref (type)) == NULL) {
-	PyErr_SetString(PyExc_TypeError,
+	PyErr_SetString(GuExc_TypeError,
 			"could not get a reference to type class");
 	return NULL;
     }
