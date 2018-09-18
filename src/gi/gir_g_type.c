@@ -2,10 +2,19 @@
 #include <libguile.h>
 #include <glib.h>
 #include <glib-object.h>
+#include <girepository.h>
+
+#include "gir_g_type.h"
 #include "gir_xguile.h"
+#include "gir_gobject.h"
+
+extern GQuark guginterface_type_key;
+extern SCM GuGInterface_Type;
 
 SCM GuGType_Type;
 SCM GuGType_Type_Store;
+SCM GType_Lookup_Table;
+SCM GType_Lookup_Table_Store;
 
 ////////////////////////////////////////////////////////////////
 // GType_Type: A foreign object that is an envelope for a GType, which
@@ -54,7 +63,7 @@ SCM GuGType_Type_Store;
 #define GTYPE_N_SLOTS 7
 
 GType
-GType_get_type (SCM gtype)
+GuGType_get_type (SCM gtype)
 {
     void *ptr;
     GType type;
@@ -112,12 +121,117 @@ gir_GType_to_integer(SCM gtype)
     GType type;
 
     scm_assert_foreign_object_type(GuGType_Type, gtype);
-    type = GType_get_type (gtype);
+    type = GuGType_get_type (gtype);
     return scm_from_size_t(type);
 }
 
 
+
+
+/* re pygi_type_import_by_name */
+SCM
+GuGType_import_by_name (const char *namespace_, const char *name)
+{
+    gchar *module_name;
+    SCM s_module;
+    SCM s_object;
+
+    /* In pygi_type_import_by_name, this proc would import a
+       dynamically created module named "gi.repository.{namespace_},
+       and then search for a wrapper using the {name} as a key.  This
+       doesn't translate directly in Guile because Guile modules can't
+       be purely virtual, e.g., they need to always have a file on the
+       filesystem.  So, unless we actually create modules like (gi
+       repository {namespace}) with files on the filesystem, this
+       strategy won't work.
+
+       As a workaround, we'll create a hashtable mapping namespace/name
+       to GuGType, for now.
+    */
+    
+    module_name = g_strconcat("gi.repository.", namespace_, name, NULL);
+    s_module = scm_from_utf8_string (module_name);
+    s_object = scm_hash_ref(GType_Lookup_Table, s_module, SCM_BOOL_F);
+    g_free (module_name);
+
+    return s_object;
+}
+
+/* re pygi_type_import_by_g_type */
+SCM
+GuGType_import_by_GType (GType g_type)
+{
+    GIRepository *repository;
+    GIBaseInfo *info;
+    SCM type;
+
+    repository = g_irepository_get_default();
+
+    info = g_irepository_find_by_gtype (repository, g_type);
+    if (info == NULL) {
+        return SCM_NONE;
+    }
+
+    type = GuGType_import_by_GIBaseInfo (info);
+    g_base_info_unref (info);
+
+    return type;
+}
+
+/* re pygi_type_import_by_gi_info */
+SCM
+GuGType_import_by_GIBaseInfo (GIBaseInfo *info)
+{
+    return GuGType_import_by_name (g_base_info_get_namespace (info),
+				   g_base_info_get_name (info));
+}
+
+/**
+ * pygobject_lookup_class:
+ * @gtype: the GType of the GObject subclass.
+ *
+ * This function looks up the wrapper class used to represent
+ * instances of a GObject represented by @gtype.  If no wrapper class
+ * or interface has been registered for the given GType, then a new
+ * type will be created.
+ *
+ * Does not set an exception when NULL is returned.
+ *
+ * Returns: The wrapper class for the GObject or NULL if the
+ *          GType has no registered type and a new type couldn't be created
+ */
+/* re pygobject_lookup_class */
+SCM
+GuGType_lookup_by_GType(GType gtype)
+{
+    SCM gu_type;
+
+    if (gtype == G_TYPE_INTERFACE)
+        return GuGInterface_Type;
+    
+    gu_type = g_type_get_qdata(gtype, gugobject_class_key);
+    if (gu_type == NULL) {
+        gu_type = g_type_get_qdata(gtype, guginterface_type_key);
+
+        if (gu_type == NULL) {
+            gu_type = GuGType_import_by_GType(gtype);
+        }
+
+        if (scm_is_false (gu_type)) {
+            gu_type = gugobject_new_with_interfaces(gtype);
+            // PyErr_Clear ();
+            g_type_set_qdata(gtype, guginterface_type_key, gu_type);
+        }
+    }
+    
+    return gu_type;
+}
+
+
+
+
 ////////////////////////////////////////////////////////////////
+
 /* If OBJ is a string, we look for a GType by that name.
    Otherwise, check that it is one of our GObject wrapper types. */
 GType
@@ -125,6 +239,7 @@ gu_type_from_object(SCM obj)
 {
     SCM gtype;
     GType type;
+    SCM ref;
 
     g_return_val_if_fail (obj != NULL, 0);
 
@@ -142,13 +257,13 @@ gu_type_from_object(SCM obj)
     }
 
     if (SCM_IS_A_P (obj, GuGType_Type))
-        return GType_get_type (obj);
+        return GuGType_get_type (obj);
 
     /* Finally, look for a __gtype__ attribute on the object itself.  If
        it exists, it should contain a GType. */
-    SCM ref = scm_slot_ref (obj, scm_from_latin1_symbol("__gtype__"));
+    ref = scm_slot_ref (obj, scm_from_latin1_symbol("__gtype__"));
     if (scm_is_true (ref) && SCM_IS_A_P (ref, GuGType_Type))
-        return GType_get_type (gtype);
+        return GuGType_get_type (ref);
 
     scm_misc_error (NULL, "Cannot infer the GType of '~A'", obj);
     return 0;
@@ -196,7 +311,7 @@ gir_GType_get_scheme_type (SCM self)
     SCM scm_type;
 
     scm_assert_foreign_object_type (GuGType_Type, self);
-    type = GType_get_type (self);
+    type = GuGType_get_type (self);
     key = gu_type_key (type);
     ptr = g_type_get_qdata(type, key);
     if (!ptr)
@@ -217,7 +332,7 @@ gir_GType_set_scheme_type_x (SCM self, SCM value)
     SCM scm_type;
 
     scm_assert_foreign_object_type (GuGType_Type, self);
-    type = GType_get_type (self);
+    type = GuGType_get_type (self);
     key = gu_type_key (type);
     if (value == SCM_NONE)
         g_type_set_qdata(type, key, NULL);
@@ -238,7 +353,7 @@ gir_GType_get_name (SCM self)
     const char *name;
 
     scm_assert_foreign_object_type (GuGType_Type, self);
-    type = GType_get_type (self);
+    type = GuGType_get_type (self);
     name = g_type_name(type);
     if (name)
         return scm_from_utf8_string (name);
@@ -251,7 +366,7 @@ gir_GType_get_parent (SCM self)
 {
     GType type;
     scm_assert_foreign_object_type (GuGType_Type, self);
-    type = GType_get_type (self);
+    type = GuGType_get_type (self);
     return scm_from_uint (g_type_parent (type));
 }
 
@@ -260,7 +375,7 @@ gir_GType_get_fundamental (SCM self)
 {
     GType type;
     scm_assert_foreign_object_type (GuGType_Type, self);
-    type = GType_get_type (self);
+    type = GuGType_get_type (self);
     return scm_from_uint (g_type_fundamental (type));
 }
 
@@ -273,7 +388,7 @@ gir_GType_get_children (SCM self)
     SCM entry, ret;
 
     scm_assert_foreign_object_type (GuGType_Type, self);
-    type = GType_get_type (self);
+    type = GuGType_get_type (self);
     children = g_type_children(type, &n_children);
     ret = SCM_EOL;
     for (i = 0; i < n_children; i ++) {
@@ -294,7 +409,7 @@ gir_GType_get_interfaces (SCM self)
     SCM entry, ret;
 
     scm_assert_foreign_object_type (GuGType_Type, self);
-    type = GType_get_type (self);
+    type = GuGType_get_type (self);
     interfaces = g_type_interfaces(type, &n_interfaces);
     ret = SCM_EOL;
     for (i = 0; i < n_interfaces; i ++) {
@@ -311,7 +426,7 @@ gir_GType_get_depth (SCM self)
 {
     GType type;
     scm_assert_foreign_object_type (GuGType_Type, self);
-    type = GType_get_type (self);
+    type = GuGType_get_type (self);
     return scm_from_uint (g_type_depth (type));
 }
 
@@ -320,7 +435,7 @@ gir_GType_is_interface_p (SCM self)
 {
     GType type;
     scm_assert_foreign_object_type (GuGType_Type, self);
-    type = GType_get_type (self);
+    type = GuGType_get_type (self);
     return scm_from_bool (G_TYPE_IS_INTERFACE (type));
 }
 
@@ -329,7 +444,7 @@ gir_GType_is_classed_p (SCM self)
 {
     GType type;
     scm_assert_foreign_object_type (GuGType_Type, self);
-    type = GType_get_type (self);
+    type = GuGType_get_type (self);
     return scm_from_bool (G_TYPE_IS_CLASSED (type));
 }
 
@@ -338,7 +453,7 @@ gir_GType_is_instantiatable_p (SCM self)
 {
     GType type;
     scm_assert_foreign_object_type (GuGType_Type, self);
-    type = GType_get_type (self);
+    type = GuGType_get_type (self);
     return scm_from_bool (G_TYPE_IS_INSTANTIATABLE (type));
 }
 
@@ -347,7 +462,7 @@ gir_GType_is_derivable_p (SCM self)
 {
     GType type;
     scm_assert_foreign_object_type (GuGType_Type, self);
-    type = GType_get_type (self);
+    type = GuGType_get_type (self);
     return scm_from_bool (G_TYPE_IS_DERIVABLE (type));
 }
 
@@ -356,7 +471,7 @@ gir_GType_is_deep_derivable_p (SCM self)
 {
     GType type;
     scm_assert_foreign_object_type (GuGType_Type, self);
-    type = GType_get_type (self);
+    type = GuGType_get_type (self);
     return scm_from_bool (G_TYPE_IS_DEEP_DERIVABLE (type));
 }
 
@@ -365,7 +480,7 @@ gir_GType_is_abstract_p (SCM self)
 {
     GType type;
     scm_assert_foreign_object_type (GuGType_Type, self);
-    type = GType_get_type (self);
+    type = GuGType_get_type (self);
     return scm_from_bool (G_TYPE_IS_ABSTRACT (type));
 }
 
@@ -374,7 +489,7 @@ gir_GType_is_value_abstract_p (SCM self)
 {
     GType type;
     scm_assert_foreign_object_type (GuGType_Type, self);
-    type = GType_get_type (self);
+    type = GuGType_get_type (self);
     return scm_from_bool (G_TYPE_IS_VALUE_ABSTRACT (type));
 }
 
@@ -383,7 +498,7 @@ gir_GType_is_value_type_p (SCM self)
 {
     GType type;
     scm_assert_foreign_object_type (GuGType_Type, self);
-    type = GType_get_type (self);
+    type = GuGType_get_type (self);
     return scm_from_bool (G_TYPE_IS_VALUE_TYPE (type));
 }
 
@@ -392,7 +507,7 @@ gir_GType_has_value_table_p (SCM self)
 {
     GType type;
     scm_assert_foreign_object_type (GuGType_Type, self);
-    type = GType_get_type (self);
+    type = GuGType_get_type (self);
     return scm_from_bool (G_TYPE_HAS_VALUE_TABLE (type));
 }
 
@@ -422,7 +537,7 @@ gir_GType_is_a_p (SCM self, SCM gparent)
     parent = gu_type_from_object(gparent);
     if (parent == 0)
         scm_misc_error ("GType-is-a?", "Cannot infer a GType from ~A", scm_list_1 (gparent));
-    child = GType_get_type (self);
+    child = GuGType_get_type (self);
     return scm_from_bool (g_type_is_a(child, parent));
 }
 
@@ -432,7 +547,9 @@ gir_init_g_type(void)
 {
     MAKE_GTYPE_TYPE;
     GuGType_Type_Store = scm_c_define ("<GType>", GuGType_Type);
-
+    GType_Lookup_Table = scm_c_make_hash_table(37);
+    GType_Lookup_Table_Store = scm_c_define("*Type-Lookup-Table*", GType_Lookup_Table);
+    
 #define D(x) scm_permanent_object(scm_c_define(#x, scm_make_foreign_object_1(GuGType_Type, scm_from_size_t(x))))
     D(G_TYPE_INVALID);
     D(G_TYPE_NONE);

@@ -17,7 +17,8 @@ guile_gi_SOURCES = \
  src/gi/gir_xguile.c src/gi/gir_xguile.h \
  src/gi/gir_g_type.c \
  src/gi/gir_g_value.c \
- src/gi/gir_gobject.c
+ src/gi/gir_gobject.c src/gi/gir_gobject.h \
+ src/gi/gir_ginterface.c src/gi/gir_ginterface.h
 
 # src/gi/gimodule.c
 

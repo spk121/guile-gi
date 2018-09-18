@@ -3,5 +3,6 @@
 
 extern SCM GuGValue_Type;
 typedef SCM SCM_GVALUE;
+int gug_value_from_scm_with_error(GValue *value, SCM obj);
 void gir_init_g_value (void);
 #endif

@@ -5,6 +5,7 @@
 #include "gir_xguile.h"
 #include "gir_g_type.h"
 #include "gir_gobject.h"
+#include "gir_ginterface.h"
 
 static void gugobject_finalize(SCM x);
 
@@ -96,7 +97,6 @@ GuGObject_get_ob_refcnt(SCM gobj)
 void
 GuGObject_set_ob_refcnt(SCM gobj, ssize_t refcnt)
 {
-    void *ptr;
     g_assert (SCM_IS_A_P (GuGObject_Type, gobj));
     g_assert (refcnt >= 0);
     scm_foreign_object_set_x (gobj, GUGOBJECT_OB_REFCNT_SLOT,
@@ -161,9 +161,8 @@ GuGObject_get_inst_dict (SCM gobj)
 static void
 GuGObject_decref (SCM gobj)
 {
-	void *ptr;
 	int refcnt;
-	scm_t_struct_finalize func;
+
 	g_assert (SCM_IS_A_P(GuGObject_Type, gobj));
 
 	refcnt = GuGObject_get_ob_refcnt (gobj);
@@ -224,15 +223,16 @@ GObject_peek_inst_data(GObject *obj)
     return g_object_get_qdata(obj, gugobject_instance_data_key);
 }
 
+/* re pygobject_toggle_ref_is_active */
 static inline gboolean
 GuGObject_toggle_ref_is_active (SCM self)
 {
 	scm_assert_foreign_object_type(GuGObject_Type, self);
-	GuGObject_set_flags(self, GuGObject_get_flags(self) & GUGOBJECT_USING_TOGGLE_REF);
+	return (GuGObject_get_flags(self) & GUGOBJECT_USING_TOGGLE_REF);
 }
 
 static inline gboolean
-GuGOobject_toggle_ref_is_required (SCM self)
+GuGObject_toggle_ref_is_required (SCM self)
 {
 	return (GuGObject_get_inst_dict(self) != SCM_NONE);
 }
@@ -262,14 +262,14 @@ gug_toggle_notify (gpointer data, GObject *object, gboolean is_last_ref)
 static inline void
 gugobject_toggle_ref_ensure (SCM self)
 {
-	GObject *obj;
+    GObject *obj;
     if (GuGObject_toggle_ref_is_active (self))
         return;
 
-    if (!GuGOobject_toggle_ref_is_required (self))
+    if (!GuGObject_toggle_ref_is_required (self))
         return;
 
-	obj = GuGObject_get_obj (self);
+    obj = GuGObject_get_obj (self);
     if (obj == NULL)
         return;
 
@@ -307,49 +307,6 @@ gugobject_register_wrapper(SCM self)
 
     gugobject_toggle_ref_ensure (self);
 }
-
-/**
- * pygobject_lookup_class:
- * @gtype: the GType of the GObject subclass.
- *
- * This function looks up the wrapper class used to represent
- * instances of a GObject represented by @gtype.  If no wrapper class
- * or interface has been registered for the given GType, then a new
- * type will be created.
- *
- * Does not set an exception when NULL is returned.
- *
- * Returns: The wrapper class for the GObject or NULL if the
- *          GType has no registered type and a new type couldn't be created
- */
-/* re pygobject_lookup_class */
-SCM
-GType_lookup_class(GType gtype)
-{
-    SCM gu_type;
-
-    if (gtype == G_TYPE_INTERFACE)
-        return &GuGInterface_Type;
-    
-    gu_type = g_type_get_qdata(gtype, gugobject_class_key);
-    if (gu_type == NULL) {
-        gu_type = g_type_get_qdata(gtype, guginterface_type_key);
-
-        if (gu_type == NULL) {
-            gu_type = pygi_type_import_by_g_type(gtype);
-            PyErr_Clear ();
-        }
-
-        if (gu_type == NULL) {
-            gu_type = gugobject_new_with_interfaces(gtype);
-            PyErr_Clear ();
-            g_type_set_qdata(gtype, guginterface_type_key, gu_type);
-        }
-    }
-    
-    return py_type;
-}
-
 
 
 /**
@@ -399,9 +356,9 @@ gu_g_object_new_full(GObject *obj, gboolean steal, gpointer g_class)
 	    tp = inst_data->type;
 	else {
 	    if (g_class)
-			tp = GType_lookup_class(G_OBJECT_CLASS_TYPE(g_class));
+		tp = GuGType_lookup_by_GType(g_class);
 	    else
-			tp = GType_lookup_class(G_OBJECT_TYPE(obj));
+		tp = GuGType_lookup_by_GType(G_OBJECT_TYPE(obj));
 	}
 	g_assert(tp != NULL);
         

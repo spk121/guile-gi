@@ -158,6 +158,7 @@ m4_define([compiler_flags_common],[ dnl
  -fsanitize=leak dnl           LeakSanatizer
  -fsanitize=undefined dnl      UndefinedBehaviorSanitizer
  -fsanitize=bounds-strict dnl  UndefinedBEhaviorSanitizer
+ -fdiagnostics-color=auto dnl
 ])
 
 AC_ARG_ENABLE([all-the-warnings],
