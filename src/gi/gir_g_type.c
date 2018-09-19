@@ -10,6 +10,8 @@
 
 extern GQuark guginterface_type_key;
 extern SCM GuGInterface_Type;
+static SCM GuGType_new_with_interfaces(GType gtype);
+static SCM GType_get_bases(GType gtype);
 
 SCM GuGType_Type;
 SCM GuGType_Type_Store;
@@ -62,6 +64,7 @@ SCM GType_Lookup_Table_Store;
 #define GTYPE_GTYPE_SLOT 6
 #define GTYPE_N_SLOTS 7
 
+
 GType
 GuGType_get_type (SCM gtype)
 {
@@ -79,7 +82,6 @@ GuGType_get_type (SCM gtype)
 unsigned
 GType_get_tp_flags (SCM gtype)
 {
-    unsigned flags;
     void *ptr;
 
     scm_assert_foreign_object_type (GuGType_Type, gtype);
@@ -90,19 +92,40 @@ GType_get_tp_flags (SCM gtype)
         return scm_to_uint(SCM_PACK_POINTER(ptr));
 }
 
-static SCM
-gir_integer_to_GType(SCM sval)
+static void GuGType_incref (SCM self)
 {
-    size_t val;
+    void *ptr;
+    unsigned refcnt;
+    ptr = scm_foreign_object_ref (self, GTYPE_OB_REFCNT_SLOT);
+    if (!ptr) {
+	refcnt = scm_to_uint (SCM_PACK_POINTER (ptr));
+	scm_foreign_object_set_x (self, GTYPE_OB_REFCNT_SLOT, scm_from_uint(refcnt + 1));
+    }
+}
+static void
+GuGType_set_tp_name (SCM self, const char *name)
+{
+    SCM sname = scm_from_utf8_string (name);
+    scm_assert_foreign_object_type (GuGType_Type, self);
+    scm_foreign_object_set_x (self, GTYPE_TP_NAME_SLOT, sname);
+}
+
+static void
+GuGType_set_tp_dict (SCM self, SCM dict)
+{
+    scm_assert_foreign_object_type (GuGType_Type, self);
+    scm_foreign_object_set_x (self, GTYPE_TP_DICT_SLOT, dict);
+}
+
+
+static SCM
+GuGType_make_from_GType(GType val)
+{
     SCM ret;
     char *name;
     void *slots[GTYPE_N_SLOTS];
 
-    SCM_ASSERT_TYPE(scm_is_exact_integer(sval), sval, SCM_ARG1, "integer->GType", "exact integer");
-    val = scm_to_size_t (sval);
-    g_debug("gir_integer_to_GType: val is %zu", val);
     name = g_strdup_printf("Integer %zu", val);
-
     slots[GTYPE_OB_TYPE_SLOT] = NULL;
     slots[GTYPE_OB_REFCNT_SLOT] = SCM_UNPACK_POINTER (scm_from_int (1));
     slots[GTYPE_TP_NAME_SLOT] = SCM_UNPACK_POINTER (scm_from_utf8_string(name));
@@ -113,6 +136,19 @@ gir_integer_to_GType(SCM sval)
     ret = scm_make_foreign_object_n(GuGType_Type, GTYPE_N_SLOTS, slots);
     free (name);
     return ret;
+}
+
+
+static SCM
+gir_integer_to_GuGType(SCM sval)
+{
+    size_t val;
+
+    SCM_ASSERT_TYPE(scm_is_exact_integer(sval), sval, SCM_ARG1, "integer->GType", "exact integer");
+    val = scm_to_size_t (sval);
+    g_debug("gir_integer_to_GType: val is %zu", val);
+
+    return GuGType_make_from_GType(val);;
 }
 
 static SCM
@@ -218,7 +254,7 @@ GuGType_lookup_by_GType(GType gtype)
         }
 
         if (scm_is_false (gu_type)) {
-            gu_type = gugobject_new_with_interfaces(gtype);
+            gu_type = GuGType_new_with_interfaces(gtype);
             // PyErr_Clear ();
             g_type_set_qdata(gtype, guginterface_type_key, gu_type);
         }
@@ -227,6 +263,90 @@ GuGType_lookup_by_GType(GType gtype)
     return gu_type;
 }
 
+
+SCM
+GType_get_bases(GType gtype)
+{
+    GType *interfaces;
+    GType parent_type, interface_type;
+    guint n_interfaces;
+    SCM gu_parent_type, gu_interface_type;
+    SCM bases = SCM_EOL;
+    guint i;
+    
+    if (G_UNLIKELY(gtype == G_TYPE_OBJECT))
+        return NULL;
+
+    /* Lookup the parent type */
+    parent_type = g_type_parent(gtype);
+    gu_parent_type = GuGType_lookup_by_GType(parent_type);
+    interfaces = g_type_interfaces(gtype, &n_interfaces);
+
+    /* We will always put the parent at the first position in bases */
+    GuGType_incref(gu_parent_type);  /* GuTuple_SetItem steals a reference */
+    bases = scm_list_1 (gu_parent_type);
+
+    /* And traverse interfaces */
+    if (n_interfaces) {
+	for (i = 0; i < n_interfaces; i++) {
+	    interface_type = interfaces[i];
+	    gu_interface_type = GuGType_lookup_by_GType(interface_type);
+            GuGType_incref(gu_interface_type); /* PyTuple_SetItem steals a reference */
+	    bases = scm_list_append(bases, gu_interface_type);
+	}
+    }
+    g_free(interfaces);
+    return bases;
+}
+
+
+/**
+ * pygobject_new_with_interfaces
+ * @gtype: the GType of the GObject subclass.
+ *
+ * Creates a new PyTypeObject from the given GType with interfaces attached in
+ * bases.
+ *
+ * Returns: a PyTypeObject for the new type or NULL if it couldn't be created
+ */
+static SCM
+GuGType_new_with_interfaces(GType gtype)
+{
+    // PyGILState_STATE state;
+    SCM type;
+    SCM dict;
+    SCM gu_parent_type;
+    SCM bases;
+
+    // state = PyGILState_Ensure();
+
+    bases = GType_get_bases(gtype);
+    if (scm_is_false(bases))
+	return SCM_NONE;
+
+    type = GuGType_make_from_GType(gtype);
+
+    gu_parent_type = scm_c_list_ref (bases, 0);
+
+    dict = scm_c_make_hash_table (10);
+    scm_hash_set_x (dict, scm_from_latin1_string("__gtype__"), type);
+    
+    /* set up __doc__ descriptor on type */
+    scm_hash_set_x (dict, scm_from_latin1_string("__doc__"), scm_from_latin1_string("FIXME"));
+    //scm_hash_set_x (dict, scm_from_latin1_string("__doc__"), pyg_object_descr_doc_get());
+
+    /* Something special to point out that it's not accessible through
+     * gi.repository */
+    scm_hash_set_x (dict,
+		    scm_from_latin1_string("__module__"),
+		    scm_from_latin1_string("__gi__"));
+
+    GuGType_set_tp_name (type, g_type_name (gtype));
+    GuGType_set_tp_dict (type, dict);
+    g_type_set_qdata(gtype, gugobject_class_key, type);
+    
+    return type;
+}
 
 
 
@@ -237,9 +357,8 @@ GuGType_lookup_by_GType(GType gtype)
 GType
 gu_type_from_object(SCM obj)
 {
-    SCM gtype;
     GType type;
-    SCM ref;
+    SCM dict, ref;
 
     g_return_val_if_fail (obj != NULL, 0);
 
@@ -261,20 +380,26 @@ gu_type_from_object(SCM obj)
 
     /* Finally, look for a __gtype__ attribute on the object itself.  If
        it exists, it should contain a GType. */
-    ref = scm_slot_ref (obj, scm_from_latin1_symbol("__gtype__"));
-    if (scm_is_true (ref) && SCM_IS_A_P (ref, GuGType_Type))
-        return GuGType_get_type (ref);
+    if (SCM_IS_A_P (obj, GuGObject_Type)) {
+	dict = scm_slot_ref (obj, scm_from_latin1_symbol("tp_dict"));
+	if (scm_is_hash_table (dict)) {
+	    ref = scm_hash_ref (dict, scm_from_latin1_string("__gtype__"),
+				SCM_BOOL_F);
+	    if (scm_is_true (ref) && SCM_IS_A_P (ref, GuGType_Type))
+		return GuGType_get_type (ref);
+	}
+    }
 
-    scm_misc_error (NULL, "Cannot infer the GType of '~A'", obj);
+    scm_misc_error (NULL, "Cannot infer the GType of '~A'", scm_list_1 (obj));
     return 0;
 }
 
-SCM
-gir_to_GType (SCM obj)
+static SCM
+gir_to_GuGType (SCM obj)
 {
     GType type = gu_type_from_object(obj);
     if (type)
-        return gir_integer_to_GType (scm_from_int (type));
+        return gir_integer_to_GuGType (scm_from_int (type));
     return SCM_BOOL_F;
 }
 
@@ -524,7 +649,7 @@ gir_string_to_GType (SCM s_type_name)
     if (type == 0)
         scm_misc_error ("GType-from-name", "unknown type name '~A'", scm_list_1 (s_type_name));
 
-    return scm_make_foreign_object_1 (GuGType_Type, scm_from_size_t (type));
+    return GuGType_make_from_GType (type);
 }
 
 static SCM
@@ -575,9 +700,9 @@ gir_init_g_type(void)
     D(G_TYPE_VARIANT);
     D(G_TYPE_CHECKSUM);
 
-    scm_c_define_gsubr("integer->GType", 1, 0, 0, gir_integer_to_GType);
+    scm_c_define_gsubr("integer->GType", 1, 0, 0, gir_integer_to_GuGType);
     scm_c_define_gsubr("GType->integer", 1, 0, 0, gir_GType_to_integer);
-    scm_c_define_gsubr("->GType", 1, 0, 0, gir_to_GType);
+    scm_c_define_gsubr("->GType", 1, 0, 0, gir_to_GuGType);
     scm_c_define_gsubr("GType-get-scheme-type", 1, 0, 0, gir_GType_get_scheme_type);
     scm_c_define_gsubr("GType-set-scheme-type!", 2, 0, 0, gir_GType_set_scheme_type_x);
     scm_c_define_gsubr("GType-get-name", 1, 0, 0, gir_GType_get_name);

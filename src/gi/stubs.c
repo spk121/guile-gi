@@ -6,8 +6,8 @@
 #include "gir_gobject.h"
 #include "gir_g_type.h"
 #include "gir_g_value.h"
+#include "gir_xguile.h"
 
-SCM GuGInterface_Type = SCM_BOOL_F; // a Type
 SCM GuType_Type = SCM_BOOL_F; // a type
 
 
@@ -21,10 +21,12 @@ gug_enum_add (SCM module,
 	      const char * strip_prefix,
 	      GType        gtype)
 {
+#if 0
     GuGILState_STATE state;
     SCM instance_dict, stub, values, o;
     GEnumClass *eclass;
     guint i;
+#endif
 
     g_debug ("In stub version of gug_enum_add");
     return SCM_UNSPECIFIED;
@@ -112,10 +114,12 @@ gug_flags_add (SCM module,
 	      const char * strip_prefix,
 	      GType        gtype)
 {
+#if 0
     GuGILState_STATE state;
     SCM instance_dict, stub, values, o;
     GEnumClass *eclass;
     guint i;
+#endif
 
     g_debug ("In stub version of gug_flags_add");
     return SCM_UNSPECIFIED;
@@ -220,6 +224,7 @@ int main(int argc, char **argv)
   gir_init_g_type();
   gir_init_g_value();
   gir_init_gobject();
+  gir_init_xguile();
   scm_shell(argc, argv);
   return 0;
 }

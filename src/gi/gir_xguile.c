@@ -3,9 +3,16 @@
 #define XGUILE_H
 
 #include <libguile.h>
+#include "gir_xguile.h"
 
-SCM Gu_None_Type;
-SCM SCM_NONE;
+SCM GuNone_Type = SCM_BOOL_F;
+SCM SCM_NONE = SCM_BOOL_F;
+SCM SCM_NONE_Store = SCM_BOOL_F;
+
+SCM scm_c_list_ref (SCM list, size_t k)
+{
+    return scm_list_ref (list, scm_from_size_t (k));
+}
 
 /* I think this test is "necessary but not complete". */
 int
@@ -37,9 +44,34 @@ scm_is_foreign_object_type (SCM type)
 }
 
 int
+scm_is_gobject (SCM x)
+{
+  SCM ref = scm_slot_ref (x, scm_from_latin1_symbol("ob_type"));
+  return scm_is_true (ref);
+}
+
+int
+scm_is_hash_table (SCM x)
+{
+    return scm_is_true (scm_hash_table_p (x));
+}
+
+int
 scm_is_list (SCM x)
 {
     return scm_is_true (scm_list_p (x));
+}
+
+int
+scm_is_none (SCM x)
+{
+    return x == SCM_NONE;
+}
+
+int
+scm_is_procedure (SCM x)
+{
+    return scm_is_true (scm_procedure_p (x));
 }
 
 int
@@ -48,20 +80,15 @@ scm_is_struct (SCM x)
   return scm_is_true (scm_struct_p (x));
 }
 
-int
-scm_is_gobject (SCM x)
-{
-  
-  SCM ref = scm_slot_ref (x, scm_from_latin1_symbol("ob_type"));
-  return scm_is_true (ref);
-}
-
 void
 gir_init_xguile (void)
 {
-  Gu_None_Type = scm_make_foreign_object_type (scm_from_utf8_string ("$NONE"),
-						SCM_EOL, NULL);
-  SCM_NONE = scm_permanent_object (scm_make_foreign_object_0 (Gu_None_Type));
+  GuNone_Type = scm_make_foreign_object_type (scm_from_utf8_symbol ("$NONE"),
+					      SCM_EOL, NULL);
+  SCM_NONE = scm_permanent_object (scm_make_foreign_object_0 (GuNone_Type));
+  SCM_NONE_Store = scm_c_define("$NONE", SCM_NONE);
+  scm_c_export ("$NONE",
+		NULL);
 }
 
 

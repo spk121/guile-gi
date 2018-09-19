@@ -7,7 +7,7 @@
 #include "gir_gobject.h"
 #include "gir_ginterface.h"
 
-static void gugobject_finalize(SCM x);
+static void gugobject_finalize(SCM x) {};
 
 GType PY_TYPE_OBJECT = 0;
 GQuark gugobject_custom_key;
@@ -16,14 +16,6 @@ GQuark gugobject_class_init_key;
 GQuark gugobject_wrapper_key;
 GQuark gugobject_has_updated_constructor_key;
 GQuark gugobject_instance_data_key;
-
-/* Data that belongs to the GObject instance, not the Python wrapper */
-typedef struct _GuGObjectData {
-    SCM type; /* wrapper type for this instance */
-
-    /* This list contains SCM of type GuGClosure */
-    GSList *closures;
-} GuGObjectData;
 
 static GuGObjectData *GuGObject_peek_inst_data(GObject *obj);
 
@@ -193,6 +185,13 @@ GuGObject_incref (SCM gobj)
 
 ////////////////////////////////////////////////////////////////
 
+/* re pyg_object_peek_inst_data */
+GuGObjectData *
+GObject_peek_inst_data(GObject *obj)
+{
+    return g_object_get_qdata(obj, gugobject_instance_data_key);
+}
+
 /* re gclosure_from_pyfunc */
 GClosure *
 GuGObject_get_closure_from_proc(SCM gobj, SCM gfunc)
@@ -215,13 +214,7 @@ GuGObject_get_closure_from_proc(SCM gobj, SCM gfunc)
     return NULL;
 #endif
 }
-    
-
-static GuGObjectData *
-GObject_peek_inst_data(GObject *obj)
-{
-    return g_object_get_qdata(obj, gugobject_instance_data_key);
-}
+   
 
 /* re pygobject_toggle_ref_is_active */
 static inline gboolean
@@ -283,6 +276,7 @@ gugobject_toggle_ref_ensure (SCM self)
     g_object_add_toggle_ref(obj, gug_toggle_notify, NULL);
     g_object_unref(obj);
 }
+
 
 /**
  * pygobject_register_wrapper:

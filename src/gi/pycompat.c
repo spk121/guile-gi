@@ -11,12 +11,6 @@ SCM GuExc_RuntimeWarning = SCM_BOOL_F;
 SCM GuExc_Warning = SCM_BOOL_F;
 
 
-int
-scm_is_none (SCM arg)
-{
-  return scm_is_true (scm_eq_p (SCM_NONE, arg));
-}
-
 /* Iterate over all key-value pairs in the hash table P. The ssize_t
    referred to by POS must be initialized to 0 prior to the first call
    to this function to start the iteration; the function returns TRUE
@@ -28,10 +22,12 @@ int GuDict_Next(SCM p, ssize_t *pos, SCM key, SCM value)
 {
     SCM buckets = SCM_HASHTABLE_VECTOR (p);
     long n = scm_c_vector_length (buckets);
+    SCM ls;
+    
     if (*pos >= n)
 	return FALSE;
 
-    SCM ls = scm_c_vector_ref (buckets, *pos);
+    ls = scm_c_vector_ref (buckets, *pos);
     key = scm_car (ls);
     value = scm_cdr (ls);
     *pos = *pos + 1;
@@ -436,6 +432,7 @@ SCM GuErr_NewException(const char *name, SCM base, SCM dict)
 int GuArg_ParseTupleAndKeywords(SCM args, SCM kb, const char *format, char *keywords[], ...)
 {
     g_debug("In the stub version of GuArg_ParseTupleAndKeywords");
+    return 0;
 }
 
 int GuObject_TypeCheck(SCM o, SCM type)
