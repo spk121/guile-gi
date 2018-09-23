@@ -65,7 +65,7 @@ small Guile script called <samp>hello.scm</samp> with the following content
 and save it somewhere (FIXME, this doesn&rsquo;t work):
 </p>
 <div class="lisp">
-<pre class="lisp">(use-modules (gi))
+<pre class="lisp">(use-modules (gi introspection))
 (require-version &quot;Gtk&quot; &quot;3.0&quot;)
 (import &quot;Gtk&quot;)
 
@@ -76,7 +76,7 @@ and save it somewhere (FIXME, this doesn&rsquo;t work):
 </pre></div>
 
 <p>Before we can run the example application, we need to install Guile
-GI, GTK+, and their dependencies.
+GI, GTK+, and their dependencioes.
 </p>
 <p>When it is run, it will create an empty window with a title.  Are you
 impressed?

@@ -669,11 +669,13 @@ pygobject_toggle_ref_is_required (PyGObject *self)
 }
 #endif
 
+/* re pygobject_toggle_ref_is_active */
 static gboolean
-gugobject_toggle_ref_is_active (SCM self)
+GuGObject_toggle_ref_is_active (SCM self)
 {
     long flags = gugobject_get_flags(self);
-    gugobject_set_flags(self, flags & GUGOBJECT_USING_TOGGLE_REF);
+    return flags & GUGOBJECT_USING_TOGGLE_REF;
+
 }
 
 #ifndef GUILE_GI_CORE
@@ -1269,7 +1271,7 @@ gugobject_clear(SCM self)
     GObject *obj = gugobject_get (self);
     if (obj) {
         g_object_set_qdata_full(obj, gugobject_wrapper_key, NULL, NULL);
-        if (gugobject_toggle_ref_is_active (self)) {
+        if (GuGObject_toggle_ref_is_active (self)) {
             g_object_remove_toggle_ref(obj, gug_toggle_notify, NULL);
 	    gugobject_set_flags (self, gugobject_get_flags(self) & (~GUGOBJECT_USING_TOGGLE_REF));
         } else {

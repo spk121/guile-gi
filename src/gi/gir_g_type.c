@@ -6,7 +6,7 @@
 
 #include "gir_g_type.h"
 #include "gir_xguile.h"
-#include "gir_gobject.h"
+#include "gir-object.h"
 
 extern GQuark guginterface_type_key;
 extern SCM GuGInterface_Type;

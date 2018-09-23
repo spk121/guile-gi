@@ -8,16 +8,50 @@ info_TEXINFOS = doc/guile-gi.texi
 
 # guileextension_LTLIBRARIES = libguile-gi.la
 
-noinst_PROGRAMS = guile-gi
+noinst_PROGRAMS = guile-gi fo_gen
+
+fo_gen_SOURCES = \
+ src/gi/fo_gen.c
+
+fo_gen_CFLAGS = \
+  -std=c11 \
+  $(GUILE_CFLAGS) \
+  $(GLIB_CFLAGS) \
+  $(GOBJECT_CFLAGS) \
+  $(GOBJECT_INTROSPECTION_CFLAGS) \
+  -DGUILE_GI_CORE \
+  -DG_LOG_DOMAIN=\"GuileGI\"
+fo_gen_LDADD = $(GUILE_LIBS) $(GOBJECT_INTROSPECTION_LIBS) $(GLIB_LIBS) $(GOBJECT_LIBS)
+
+BUILT_SOURCES += \
+ src/gi/__gi_gboxed.h src/gi/__gi_gboxed.c \
+ src/gi/__gi_genum.h src/gi/__gi_genum.c \
+ src/gi/__gi_gflags.h src/gi/__gi_gflags.c
+
+src/gi/__gi_gboxed.c: $(builddir)/fo_gen src/gi/foreign-object-types.ini
+src/gi/__gi_gboxed.h: $(builddir)/fo_gen src/gi/foreign-object-types.ini
+src/gi/__gi_genum.c: $(builddir)/fo_gen src/gi/foreign-object-types.ini
+src/gi/__gi_genum.h: $(builddir)/fo_gen src/gi/foreign-object-types.ini
+src/gi/__gi_gflags.h: $(builddir)/fo_gen src/gi/foreign-object-types.ini
+src/gi/__gi_gflags.c: $(builddir)/fo_gen src/gi/foreign-object-types.ini
+	$(builddir)/fo_gen $(top_srcdir)/src/gi/foreign-object-types.ini $(top_srcdir)/src/gi
 
 guile_gi_SOURCES = \
+ src/gi/__gi_gboxed.h src/gi/__gi_gboxed.c \
+ src/gi/gi_gboxed.h src/gi/gi_gboxed.c \
+ src/gi/__gi_genum.h src/gi/__gi_genum.c \
+ src/gi/gi_genum.h src/gi/gi_genum.c \
+ src/gi/__gi_gflags.h src/gi/__gi_gflags.c \
+ src/gi/gi_genum.h src/gi/gi_genum.c \
  src/gi/stubs.c \
  src/gi/pycompat.c \
  src/gi/gir_xguile.c src/gi/gir_xguile.h \
  src/gi/gir_g_type.c \
  src/gi/gir_g_value.c \
- src/gi/gir_gobject.c src/gi/gir_gobject.h \
- src/gi/gir_ginterface.c src/gi/gir_ginterface.h
+ src/gi/gir-object.c src/gi/gir-object.h \
+ src/gi/gir_ginterface.c src/gi/gir_ginterface.h \
+ src/gi/gimodule.c src/gi/gimodule.h \
+ src/gi/gir_util.c src/gi/gir_util.h
 
 # src/gi/gimodule.c
 # src/gi/gugobject.c

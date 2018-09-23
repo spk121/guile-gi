@@ -18,6 +18,10 @@ pygpointer.h
 
   pygobject-object.c
 
+* The GObject Wrapper Class
+
+  
+
 * Python Types
   
   The PyTypeObject (which holds the information about a Python
@@ -72,6 +76,9 @@ pygpointer.h
   need a refcnt slot as explained below, as well as a finalizer that
   can be run multiple times on the same object.
 
+  GuGObject slots
+  - ob_type: holds the type of which this class is an instance
+
 * Instances of Python Types
 
   Instances of Python types have an refcnt, initialized to 1 when the
@@ -83,6 +90,25 @@ pygpointer.h
   initizalized to 1.  And they will need to have a destructor that can
   be run multiple times, e.g. when the refcnt reaches zero as well as
   when the instance is garbage collected.
+
+  Slots
+  - SCM ob_type: The Guile foreign object type of which this object is an instance
+  - SCM ob_refcnt: The reference count of this object
+  - type: The GType of the contents
+  - obj: A pointer to the (probably GObject *) contents
+  - inst_dict: Another mostly unused hash table
+  - weakreflist: an mostly unused weak-vector
+  - flags: the GuGObjectFlags
+
+  ** Dictionaries and attributes
+  There are a lot of dictionaries in Python types: tp_dict, tp_dictoffset, inst_dict.
+  As near as I can tell, when you use the GetAttr type functions, we want to
+  - First, look it up in the Class's tp_dict
+  - If not found, look it up in the instance's inst_dict
+  Not sure what happens if an object is a type
+
+  But, SetAttr type functions of an instance only modify the inst_dict, and 
+  can't override anything defined in the ty_dict of the type.
 
 * PyGObject Types
 
