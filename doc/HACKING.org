@@ -320,3 +320,41 @@ member objects.  Dispose may be called multiple times.
 The 'finalize' is when the gobject completes its own destruction.
 
 g_object_unref kicks of both dispose and finalize.
+
+* Prospective R5RS-like API
+
+A type definition
+("name"
+ GType-of-parent
+ ((name nick blurb min max default flags)
+  (name nick blurb min max default flags))
+ ((name returntype (paramtype paramtype) accum data)
+  (name returntype (paramtype paramtype) accum data))
+ finalizer)
+
+(string->gtype "gint")
+
+struct _GiObject
+{
+  <ParentType> parent which is GObject + parent params
+  <param-store> -> #('typename GType pointer-to-GiObject offset-to-start-of-param-store
+                      refcnt finalizer param param param ...)
+}
+
+The GObjectGetPropertyFunc get a property-id so you can index into the param store to
+get the param
+
+(make-gobject GType [param1] [param2] [param3] ...)
+
+  returns a vector #('typename GType pointer offset refcnt finalizer param param param)
+
+I guess properly constructed gobject has a non-zero pointer, offset
+
+Maybe if you made such a vector by hand like #('gobject typename gtype NULL NULL finalizer param param param)
+you could have a procedure like
+(vector->gobject vector) which then returns a new vector with the pointer and offset filled in
+
+(set-property-value! <gobj> "name" value)
+(get-property-value <gobj> "name")  ; usually copies the thing
+
+Params could be boxed types, or variants
