@@ -10,6 +10,7 @@
 .*.sw[nop]
 .deps
 .dirstamp
+.libs
 
 GPATH
 GRTAGS
@@ -51,3 +52,22 @@ texinfo.tex
 /m4/ltsugar.m4
 /m4/ltversion.m4
 /m4/lt~obsolete.m4
+
+# build source
+__gi*.c
+__gi*.h
+
+# executables
+fo_gen
+gi2
+guile-gi
+a.out
+*.gir
+*.typelib
+
+# logs
+gir-log.txt
+*.trs
+*.log
+\#*\#
+

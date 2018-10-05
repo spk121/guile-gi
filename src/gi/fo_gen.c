@@ -10,18 +10,20 @@ getter (const char *self, const char *type, int n)
       || (!strcmp (type, "gpointer")))
     return g_strdup_printf ("(%s) scm_foreign_object_ref (%s, %d)", type, self, n);
   else if (!strcmp (type, "GType") || !strcmp (type, "ssize_t"))
-    return g_strdup_printf ("(%s) scm_to_ssize_t (SCM_UNPACK_POINTER (scm_foreign_object_ref (%s, %d)))",
+    return g_strdup_printf ("(%s) scm_to_ssize_t (scm_foreign_object_ref (%s, %d))",
 			    type, self, n);
   else if (!strcmp (type, "gboolean") || !strcmp (type, "bool"))
-    return g_strdup_printf ("(%s) scm_to_bool (SCM_UNPACK_POINTER (scm_foreign_object_ref (%s, %d)))",
+    return g_strdup_printf ("(%s) scm_to_bool (scm_foreign_object_ref (%s, %d))",
 			    type, self, n);
   else if (!strcmp (type, "gint") || !strcmp (type, "int"))
-    return g_strdup_printf ("(%s) scm_to_int (SCM_UNPACK_POINTER (scm_foreign_object_ref (%s, %d)))",
+    return g_strdup_printf ("(%s) scm_to_int (scm_foreign_object_ref (%s, %d))",
 			    type, self, n);
   else if (!strcmp (type, "SCM"))
-    return g_strdup_printf ("SCM_UNPACK_POINTER (scm_foreign_object_ref (%s, %d))", self, n);
-  else
     return g_strdup_printf ("scm_foreign_object_ref (%s, %d)", self, n);
+  else {
+    fprintf (stderr, "UNKNOWN TYPE %s\n", type);
+    return g_strdup_printf ("scm_foreign_object_ref (%s, %d)", self, n);
+  }
 }
 
 static char *
@@ -29,21 +31,24 @@ setter (const char *self, const char *var, const char *type, int n)
 {
   if ((strlen (type) > 2 && type[strlen(type)-1] == '*')
       || (!strcmp (type, "gpointer")))
-    return g_strdup_printf ("(%s) scm_foreign_object_ref (%s, %d)", type, self, n);
+    return g_strdup_printf ("scm_foreign_object_set_x (%s, %d, %s)", self, n, var);
   else if (!strcmp (type, "GType") || !strcmp (type, "ssize_t"))
-    return g_strdup_printf ("scm_foreign_object_set_x (%s, SCM_PACK_POINTER (scm_from_ssize_t ((ssize_t) %s)), scm_from_int (%d))",
-			    self, var, n);
+    return g_strdup_printf ("scm_foreign_object_set_x (%s, %d, scm_from_ssize_t ((ssize_t) %s))",
+			    self, n, var);
   else if (!strcmp (type, "gboolean") || !strcmp (type, "bool"))
-    return g_strdup_printf ("scm_foreign_object_set_x (%s, SCM_PACK_POINTER (scm_from_bool ((size_t) %s)), scm_from_int (%d))",
-			    self, var, n);
+    return g_strdup_printf ("scm_foreign_object_set_x (%s, %d, scm_from_bool ((size_t) %s))",
+			    self, n, var);
   else if (!strcmp (type, "gint") || !strcmp (type, "int"))
-    return g_strdup_printf ("scm_foreign_object_set_x (%s, SCM_PACK_POINTER (scm_from_int ((int) %s)), scm_from_int (%d))",
-			    self, var, n);
+    return g_strdup_printf ("scm_foreign_object_set_x (%s, %d, scm_from_int ((int) %s))",
+			    self, n, var);
   else if (!strcmp (type, "SCM"))
-    return g_strdup_printf ("scm_foreign_object_set_x (%s, SCM_PACK_POINTER (%s), scm_from_int (%d))",
-			    self, var, n);
-  else
-    return g_strdup_printf ("scm_foreign_object_set_x (%s, %s, scm_from_int (%d))", self, var, n);
+    return g_strdup_printf ("scm_foreign_object_set_x (%s, %d, %s)",
+			    self, n, var);
+  else {
+    fprintf (stderr, "UNKNOWN TYPE %s\n", type);
+    
+    return g_strdup_printf ("scm_foreign_object_set_x (%s, %d, %s)", self, n, var);
+  }
 }
 
 static void
@@ -105,6 +110,24 @@ do_header_declaration (const gchar *name, gsize n, gchar **fields, gboolean fina
   fprintf(fp, "\n");
   g_free (lower);
   g_free (upper);
+}
+
+static void
+do_predicate (const gchar *name)
+{
+  gchar *lower = g_ascii_strdown (name, -1);
+  fprintf (fp, "SCM gi_%s_p (SCM self)\n", lower);
+  fprintf (fp, "{\n");
+  fprintf (fp, "  return scm_from_bool (SCM_IS_A_P (self, gi_%s_type));\n",
+	   lower);
+  fprintf (fp, "}\n");
+}
+
+static void
+do_header_predicate (const gchar *name)
+{
+  gchar *lower = g_ascii_strdown (name, -1);
+  fprintf (fp, "SCM gi_%s_p (SCM self);\n", lower);
 }
 
 static void
@@ -196,21 +219,23 @@ do_init (const gchar *name, gsize n, gchar **fields, gboolean finalizer)
   fprintf (fp, "%s (void)\n", func_name);
   fprintf (fp, "{\n");
   fprintf (fp, "\tSCM name, slots;\n");
-  fprintf (fp, "\tname = scm_from_utf8_symbol(\"%s\");\n", name);
+  fprintf (fp, "\tname = scm_from_utf8_symbol(\"<%s>\");\n", name);
   fprintf (fp, "\tslots = scm_list_n(\n");
   for (gsize i = 0; i < n; i ++)
     {
       fprintf(fp, "\t\tscm_from_utf8_symbol (\"%s\"),\n", fields[i]);
     }
   fprintf (fp, "\t\tSCM_UNDEFINED);\n");
-  fprintf (fp, "\tgi_%s_type = scm_make_foriegn_object_type (name, slots, ", lower);
+  fprintf (fp, "\tgi_%s_type = scm_make_foreign_object_type (name, slots, ", lower);
   if (finalizer)
     fprintf (fp, "gi_%s_finalizer", lower);
   else
     fprintf (fp, "NULL");
   fprintf (fp, ");\n");
-  fprintf (fp, "\tgi_%s_type_store = scm_c_define (\"%s\", gi_%s_type);\n", lower, name, lower);
-  fprintf (fp, "\tscm_c_export (\"%s\", NULL);\n", name);
+  fprintf (fp, "\tgi_%s_type_store = scm_c_define (\"<%s>\", gi_%s_type);\n", lower, name, lower);
+  fprintf (fp, "\tscm_c_define_gsubr (\"%s?\", 1, 0, 0, gi_%s_p);\n",
+	   lower, lower);
+  fprintf (fp, "\tscm_c_export (\"%s\", \"%s?\", NULL);\n", name, lower);
   fprintf (fp, "}\n");
   g_free (lower);
   g_free (func_name);
@@ -277,6 +302,7 @@ int main(int argc, char **argv)
       do_declaration(name, n_fields, fields, finalizer);
       do_getters(name, n_fields, fields, types);
       do_setters(name, n_fields, fields, types);
+      do_predicate(name);
       do_init(name, n_fields, fields, finalizer);
 
       fclose (fp);
@@ -285,12 +311,13 @@ int main(int argc, char **argv)
 
       filename = g_strdup_printf("__gi_%s.h", lowercase);
       filepath = g_build_filename(argv[2], filename, NULL);
-      fp = fopen(filename, "wt");
+      fp = fopen(filepath, "wt");
 
       do_header_includes(name);
       do_header_declaration(name, n_fields, fields, finalizer);
       do_header_getters(name, n_fields, fields, types);
       do_header_setters(name, n_fields, fields, types);
+      do_header_predicate(name);
       do_header_init(name, n_fields, fields, finalizer);
 
       fclose (fp);

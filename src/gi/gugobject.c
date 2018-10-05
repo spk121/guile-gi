@@ -1,8 +1,10 @@
 /* -*- Mode: C; c-basic-offset: 4 -*-
- * pygtk- Python bindings for the GTK toolkit.
+ * guile-gi- Guile bindings for GLIB GObject
+ * adapted from PyGObject pygobject-object.c
  * Copyright (C) 1998-2003  James Henstridge
+ * Copyright (C) 2018 Michael Gran
  *
- *   pygobject.c: wrapper for the GObject type.
+ *   gugobject.c: wrapper for the GObject type.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -38,7 +40,7 @@
 #include "pygi-basictype.h"
 #endif /*!GUILE_GI_CORE */
 
-extern SCM GuGIDeprecationWarning;
+// extern SCM GuGIDeprecationWarning;
 
 typedef int (*visitproc)(SCM, void *);
 
@@ -69,13 +71,16 @@ SCM GuGObject_Type_Metadata_Store;
 GuGObjectData *
 gug_object_peek_inst_data(GObject *obj)
 {
-  return ((GuGObjectData *)g_object_get_qdata(obj, gugobject_instance_data_key));
+    gpointer ptr;
+    ptr = g_object_get_qdata(obj, gugobject_instance_data_key);
+    return (GuGObjectData *) ptr;
 }
 
 GClosure *
-gclosure_from_gufunc(SCM_GOBJECT object, SCM func)
+gclosure_from_gufunc(SCM object, SCM func)
 {
     GSList *l;
+    
     GObject *obj;
     GuGObjectData *inst_data;
     obj = gugobject_get(object);

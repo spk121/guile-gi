@@ -1,7 +1,7 @@
 (define (show-environment n)
-  (format #t "PWD = ~S~%" (system "pwd"))
-  (format #t "LD_LIBRARY_PATH = ~S~%" (getenv "LD_LIBRARY_PATH"))
-  (format #t "GUILE_AUTO_COMPILE = ~S~%" (getenv "GUILE_AUTO_COMPILE"))
+  (format #t "# PWD = ~S~%" (system "pwd"))
+  (format #t "# LD_LIBRARY_PATH = ~S~%" (getenv "LD_LIBRARY_PATH"))
+  (format #t "# GUILE_AUTO_COMPILE = ~S~%" (getenv "GUILE_AUTO_COMPILE"))
   (format #t "ok ~A - show-environment ~%" n))
 
 (define TESTS

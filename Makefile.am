@@ -1,3 +1,4 @@
+#        +         +         +         +         +         +         +         |
 ACLOCAL_AMFLAGS = -I m4 ${ACLOCAL_FLAGS}
 DISTCHECK_CONFIGURE_FLAGS = --enable-introspection
 CLEANFILES=
@@ -6,7 +7,7 @@ BUILT_SOURCES = docs/index.html
 
 info_TEXINFOS = doc/guile-gi.texi
 
-# guileextension_LTLIBRARIES = libguile-gi.la
+guileextension_LTLIBRARIES = libguile-gi.la
 
 noinst_PROGRAMS = guile-gi fo_gen
 
@@ -26,32 +27,63 @@ fo_gen_LDADD = $(GUILE_LIBS) $(GOBJECT_INTROSPECTION_LIBS) $(GLIB_LIBS) $(GOBJEC
 BUILT_SOURCES += \
  src/gi/__gi_gboxed.h src/gi/__gi_gboxed.c \
  src/gi/__gi_genum.h src/gi/__gi_genum.c \
- src/gi/__gi_gflags.h src/gi/__gi_gflags.c
+ src/gi/__gi_genumcollection.h src/gi/__gi_genumcollection.c \
+ src/gi/__gi_gflags.h src/gi/__gi_gflags.c \
+ src/gi/__gi_gflagscollection.h src/gi/__gi_gflagscollection.c \
+ src/gi/__gi_gobject.h src/gi/__gi_gobject.c \
+ src/gi/__gi_gtype.h src/gi/__gi_gtype.c \
+ src/gi/__gi_gvalue.h src/gi/__gi_gvalue.c \
+ src/gi/__gi_gparamspec.h src/gi/__gi_gparamspec.c
 
 src/gi/__gi_gboxed.c: $(builddir)/fo_gen src/gi/foreign-object-types.ini
 src/gi/__gi_gboxed.h: $(builddir)/fo_gen src/gi/foreign-object-types.ini
 src/gi/__gi_genum.c: $(builddir)/fo_gen src/gi/foreign-object-types.ini
 src/gi/__gi_genum.h: $(builddir)/fo_gen src/gi/foreign-object-types.ini
+src/gi/__gi_genumcollection.c: $(builddir)/fo_gen src/gi/foreign-object-types.ini
+src/gi/__gi_genumcollection.h: $(builddir)/fo_gen src/gi/foreign-object-types.ini
 src/gi/__gi_gflags.h: $(builddir)/fo_gen src/gi/foreign-object-types.ini
 src/gi/__gi_gflags.c: $(builddir)/fo_gen src/gi/foreign-object-types.ini
+src/gi/__gi_gflagscollection.c: $(builddir)/fo_gen src/gi/foreign-object-types.ini
+src/gi/__gi_gflagscollection.h: $(builddir)/fo_gen src/gi/foreign-object-types.ini
+src/gi/__gi_gobject.h: $(builddir)/fo_gen src/gi/foreign-object-types.ini
+src/gi/__gi_gobject.c: $(builddir)/fo_gen src/gi/foreign-object-types.ini
+src/gi/__gi_gtype.h: $(builddir)/fo_gen src/gi/foreign-object-types.ini
+src/gi/__gi_gtype.c: $(builddir)/fo_gen src/gi/foreign-object-types.ini
+src/gi/__gi_gvalue.h: $(builddir)/fo_gen src/gi/foreign-object-types.ini
+src/gi/__gi_gvalue.c: $(builddir)/fo_gen src/gi/foreign-object-types.ini
+src/gi/__gi_gparamspec.h: $(builddir)/fo_gen src/gi/foreign-object-types.ini
+src/gi/__gi_gparamspec.c: $(builddir)/fo_gen src/gi/foreign-object-types.ini
 	$(builddir)/fo_gen $(top_srcdir)/src/gi/foreign-object-types.ini $(top_srcdir)/src/gi
 
 guile_gi_SOURCES = \
- src/gi/__gi_gboxed.h src/gi/__gi_gboxed.c \
- src/gi/gi_gboxed.h src/gi/gi_gboxed.c \
- src/gi/__gi_genum.h src/gi/__gi_genum.c \
- src/gi/gi_genum.h src/gi/gi_genum.c \
- src/gi/__gi_gflags.h src/gi/__gi_gflags.c \
- src/gi/gi_genum.h src/gi/gi_genum.c \
- src/gi/stubs.c \
- src/gi/pycompat.c \
- src/gi/gir_xguile.c src/gi/gir_xguile.h \
- src/gi/gir_g_type.c \
- src/gi/gir_g_value.c \
- src/gi/gir-object.c src/gi/gir-object.h \
- src/gi/gir_ginterface.c src/gi/gir_ginterface.h \
- src/gi/gimodule.c src/gi/gimodule.h \
- src/gi/gir_util.c src/gi/gir_util.h
+ src/gi/__gi_gobject.h src/gi/__gi_gobject.c \
+ src/gi/gi_gobject.h src/gi/gi_gobject.c \
+ src/gi/__gi_gvalue.h src/gi/__gi_gvalue.c \
+ src/gi/gi_gvalue.h src/gi/gi_gvalue.c \
+ src/gi/__gi_gtype.h src/gi/__gi_gtype.c \
+ src/gi/gi_gtype.h src/gi/gi_gtype.c \
+ src/gi/__gi_gparamspec.h src/gi/__gi_gparamspec.c \
+ src/gi/gi_gparamspec.h src/gi/gi_gparamspec.c \
+ src/gi/gi_gsignal.h src/gi/gi_gsignal.c
+
+# src/gi/__gi_gboxed.h src/gi/__gi_gboxed.c \
+ # src/gi/gi_gboxed.h src/gi/gi_gboxed.c \
+ # src/gi/__gi_genum.h src/gi/__gi_genum.c \
+ # src/gi/gi_genum.h src/gi/gi_genum.c \
+ # scr/gi/__gi_genumcollection.h src/gi/__gi_genumcollection.c \
+ # src/gi/__gi_gflags.h src/gi/__gi_gflags.c \
+ # src/gi/gi_gflags.h src/gi/gi_gflags.c \
+ # src/gi/__gi_gflagscollection.h src/gi/__gi_gflagscollection.c \
+ # src/gi/gi_gvalue.h src/gi/gi_gvalue.c \
+ # src/gi/stubs.c \
+ # src/gi/pycompat.c \
+ # src/gi/gir_xguile.c src/gi/gir_xguile.h \
+ # src/gi/gir_g_type.c \
+ # src/gi/gir_g_value.c \
+ # src/gi/gir-object.c src/gi/gir-object.h \
+ # src/gi/gir_ginterface.c src/gi/gir_ginterface.h \
+ # src/gi/gimodule.c src/gi/gimodule.h \
+ # src/gi/gi_util.c src/gi/gi_util.h
 
 # src/gi/gimodule.c
 # src/gi/gugobject.c
@@ -66,32 +98,33 @@ guile_gi_CFLAGS = \
   $(GOBJECT_CFLAGS) \
   $(GOBJECT_INTROSPECTION_CFLAGS) \
   -DGUILE_GI_CORE \
+  -DSTANDALONE \
   -DG_LOG_DOMAIN=\"GuileGI\"
 
 guile_gi_LDFLAGS = -no-undefined
 guile_gi_LDADD = $(GUILE_LIBS) $(GOBJECT_INTROSPECTION_LIBS) $(GLIB_LIBS) $(GOBJECT_LIBS)
 
+libguile_gi_la_SOURCES = \
+ src/gi/__gi_gobject.h src/gi/__gi_gobject.c \
+ src/gi/gi_gobject.h src/gi/gi_gobject.c \
+ src/gi/__gi_gvalue.h src/gi/__gi_gvalue.c \
+ src/gi/gi_gvalue.h src/gi/gi_gvalue.c \
+ src/gi/__gi_gtype.h src/gi/__gi_gtype.c \
+ src/gi/gi_gtype.h src/gi/gi_gtype.c \
+ src/gi/__gi_gparamspec.h src/gi/__gi_gparamspec.c \
+ src/gi/gi_gparamspec.h src/gi/gi_gparamspec.c \
+ src/gi/gi_gsignal.h src/gi/gi_gsignal.c
 
-# libguile_gi_la_SOURCES = \
-#  src/gi/gimodule.c src/gi/gimodule.h \
-#  src/gi/gugi-error.c src/gi/gugi-error.h \
-#  src/gi/gugi-foreign.c src/gi/gugi-foreign.h \
-#  src/gi/gugi-info.c src/gi/gugi-info.h \
-#  src/gi/gugi-repository.c src/gi/gugi-repository.h \
-#  src/gi/gugi-type.c src/gi/gugi-type.h \
-#  src/gi/gugi-util.c src/gi/gugi-util.h \
-#  src/gi/pycompat.c src/gi/pycompat.h
+libguile_gi_la_CFLAGS = \
+  -std=c11 \
+  $(GUILE_CFLAGS) \
+  $(GLIB_CFLAGS) \
+  $(GOBJECT_CFLAGS) \
+  $(GOBJECT_INTROSPECTION_CFLAGS) \
+  -DG_LOG_DOMAIN=\"GuileGI\"
 
-# libguile_gi_la_CFLAGS = \
-#  -std=c11 \
-#  $(GUILE_CFLAGS) \
-#  $(GLIB_CFLAGS) \
-#  $(GOBJECT_CFLAGS) \
-#  $(GOBJECT_INTROSPECTION_CFLAGS) \
-#  -DG_LOG_DOMAIN=\"GuileGI\"
-
-# libguile_gi_la_LDFLAGS = -no-undefined -version-info 0:0:0
-# libguile_gi_la_LIBADD = $(GUILE_LIBS) $(GOBJECT_INTROSPECTION_LIBS) $(GLIB_LIBS) $(GOBJECT_LIBS)
+libguile_gi_la_LDFLAGS = -no-undefined -version-info 0:0:0
+libguile_gi_la_LIBADD = $(GUILE_LIBS) $(GOBJECT_INTROSPECTION_LIBS) $(GLIB_LIBS) $(GOBJECT_LIBS)
 
 # Build ChangeLog from GIT  history
 dist: ChangeLog
@@ -148,17 +181,33 @@ CLEANFILES += $(check_DATA)
 endif
 
 ################################################################
+# FLYMAKE
+
+.PHONY: check-syntax
+check-syntax:
+	$(CC)  -std=c11 $(GUILE_CFLAGS) $(GLIB_CFLAGS) $(GOBJECT_CFLAGS) \
+	 $(GOBJECT_INTROSPECTION_CFLAGS) \
+	 -DGUILE_GI_CORE -DG_LOG_DOMAIN=\"GuileGI\" $(CFLAGS) -fsyntax-only $(CHK_SOURCES)
+
+
+################################################################
 # Test driver
 
-TEST_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' GUILE_AUTO_COMPILE=0 $(SHELL) \
-                  $(top_srcdir)/build-aux/tap-driver.sh
+# TEST_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' GUILE_AUTO_COMPILE=0 $(SHELL) \
+#                   $(top_srcdir)/build-aux/tap-driver.sh
 AM_TESTS_ENVIRONMENT = LD_LIBRARY_PATH="$(top_builddir)/.libs"; export LD_LIBRARY_PATH;
 TESTS = \
  test/test-setup.scm \
- test/test-gi-repository.scm
+ test/test-gobject.scm \
+ test/test-test.scm
+
 TEST_EXTENSIONS = .scm
+#SCM_LOG_COMPILER = ${top_builddir}/libtool \
+#    -dlopen ${top_builddir}/src/gi/libguile-gi.la \
+#    --mode=execute guile
+AM_SCM_LOG_FLAGS = --no-auto-compile -L ${top_srcdir}/src -L ${top_srcdir}/test/. -s
 SCM_LOG_COMPILER = $(GUILE)
-AM_SCM_LOG_FLAGS = --no-auto-compile -L $(top_srcdir)/src
+# AM_SCM_LOG_FLAGS = --no-auto-compile -L $(top_srcdir)/src
 
 EXTRA_DIST = \
   $(TESTS) \

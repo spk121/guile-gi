@@ -23,6 +23,8 @@ void scm_module_add_int_constant (SCM module, const char *name, long val);
 void scm_module_add_string_constant (SCM module, const char *name, const char *val);
 const char *scm_get_parse_error (void);
 int scm_parse_list (SCM args, const char *format, ...);
+SCM scm_build_list (const char *format, ...);
+SCM scm_sublist (SCM list, size_t start, size_t end);
 
 void gir_init_xguile (void);
 #endif

@@ -1,0 +1,21 @@
+#ifndef _GI_GVALUE_H_
+#define _GI_GVALUE_H_
+
+#include <glib.h>
+#include <libguile.h>
+#include <glib-object.h>
+#include "__gi_gvalue.h"
+
+SCM gi_gvalue_to_scm_basic_type (const GValue *value, GType fundamental, gboolean *handled);
+
+SCM gi_gvalue_c2g (GValue *val);
+SCM gi_param_gvalue_as_scm (const GValue *gvalue,
+			    gboolean copy_boxed,
+			    const GParamSpec *pspec);
+
+SCM gi_gvalue_as_scm (const GValue *value, gboolean copy_boxed);
+int gi_gvalue_from_scm_with_error(GValue *value, SCM obj);
+int gi_gvalue_from_scm (GValue *value, SCM obj);
+
+void gi_init_gvalue (void);
+#endif

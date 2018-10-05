@@ -9,6 +9,76 @@
 	    ;; import
 	    ))
 
+(define (find-duplicate l)
+  (match l
+    (() #f)
+    ((head . tail)
+     (if (memq head tail)
+	 head
+	 (find-duplicate tail)))))
+
+(define (slot-spec->name slot-spec)
+  (match slot-spec
+    (((? symbol? name) . args) name)
+    ((? slot? slot) (%slot-definition-name slot))))
+
+(define (make-gobject-class name
+			    supers
+			    slots
+			    signals)
+  "Create a new GOOPS class with GObject functionality.  NAME is a
+symbol that names the class.  SUPERS are the superclasses of this
+class.  If SUPERS is not specified, the default GObject class with be
+the superclass.  IF SUPERS is specified, then one (and only one)
+superclass must be a GObject-based class.  The rest must be
+non-GObject based classes.  SLOTS are a list of GOOPS slots, but, if
+the slots have the special #:type key, the slots will also be GObject
+properties for this class.  SIGNALS is a list of events to which
+callback procedures can be attached.
+
+On top of the regular slot options, if a slot has a #:type, it will be a
+GObject property for this, in which case, there are additionally
+#:type	  - a GType of a GObject-class that maps to a GType
+#:flags   - GObject.ParamFlags property configuration flags
+#:minimum - minimum value, depends on type
+#:maximum - maximum value, depends on type
+
+The signals options are
+#:flags   - GObject.Signal flags  (default RUN_FIRST)
+#:return-type - a GType or a GObject-class that maps to a GType  (default the NONE type)
+#:arg-types - A list of GTypes, or '() or #f if the signal takes no arguments
+(#:accumulator)
+(#:accu_data)
+"
+  (let* ((supers (if (not (or-map (lambda (class)
+				    (memq <object>
+					  (class-precedence-list class)))
+				  supers))
+		     (append supers (list <object>))
+		     supers))
+	 (metaclass (ensure-metaclass supers)))
+
+    ;; Verify that all direct slots and properties are different and that we
+    ;; don't inherit several times from the same class.
+    (let ((tmp1 (find-duplicate (append (list gobject-super) other-supers)))
+	  (tmp2 (find-duplicate (append (map slot-spec->name slots)
+					(map parameters-spec->name parameters)))))
+      (when tmp1
+	(goops-error "make-gobject-class: super class ~S is duplicate in class ~S"
+		     tmp1 name))
+      (when tmp2
+	(goops-error "make-gobject-class: slot or property ~S is duplicate in class ~S"
+		     tmp2 name)))
+
+    (let ((new-type (type-register name gobject-super parameters signals))
+	  (parameter-slots (map parameter->slot parameters)))
+      
+      ;; Build the class
+      (apply make metaclass
+             #:dsupers (append (list gobject-super) supers)
+             #:slots (append parameter-slots slots)
+             #:name name))))
+	  
 ;; An association-list of namespaces and versions
 ;; e.g. (("Gtk" . "3.0"))
 (define _versions '())

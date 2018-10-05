@@ -3,7 +3,10 @@
 #include <glib-object.h>
 #include "pycompat.h"
 #include "stubs.h"
-#include "gir_gobject.h"
+#include "gi_gboxed.h"
+#include "gi_genum.h"
+#include "gi_gflags.h"
+#include "gir-object.h"
 #include "gir_g_type.h"
 #include "gir_g_value.h"
 #include "gir_xguile.h"
@@ -221,6 +224,9 @@ int main(int argc, char **argv)
 {
   scm_init_guile();
   // gui_object_register_types(SCM_BOOL_F);
+  gi_init_gboxed_type();
+  gi_init_gflags_type();
+  gi_init_genum_type();
   gir_init_g_type();
   gir_init_g_value();
   gir_init_gobject();

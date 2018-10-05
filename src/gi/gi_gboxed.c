@@ -2,7 +2,6 @@
 #include <libguile.h>
 #include <glib.h>
 #include "gir_xguile.h"
-#include "__gi_gboxed.h"
 #include "gi_gboxed.h"
 
 GQuark gugboxed_type_key;
@@ -48,16 +47,16 @@ gi_gboxed_new (GType boxed_type, gpointer boxed, gboolean copy_boxed, gboolean o
 	return SCM_NONE;
     }
     ptr = g_type_get_qdata(boxed_type, gugboxed_type_key);
-    if (!ptr)
-	ptr = gi_gtype_import_by_g_type (boxed_type);
+    /* if (!ptr) */
+    /* 	ptr = gi_gtype_import_by_g_type (boxed_type); */
     if (ptr)
 	tp = SCM_PACK_POINTER (ptr);
     else
 	tp = gi_gboxed_type;
 
-    if (!gi_gtype_is_subtype (tp, gi_gboxed_type))
-	scm_misc_error ("gi_gboxed_new",
-			"~S isn't a GBoxed", scm_list_1 (tp));
+    /* if (!gi_gtype_is_subtype (tp, gi_gboxed_type)) */
+    /* 	scm_misc_error ("gi_gboxed_new", */
+    /* 			"~S isn't a GBoxed", scm_list_1 (tp)); */
     
     self = scm_make_foreign_object_0 (gi_gboxed_type);
     
@@ -79,8 +78,9 @@ _wrap_gi_gboxed_copy (SCM self)
 }
 
 void
-gi_gboxed_init (void)
+gi_init_gboxed (void)
 {
+    gi_init_gboxed_type ();
     gugboxed_type_key = g_quark_from_static_string("guile-gi::gboxed");
     scm_c_define_gsubr ("gboxed-copy", 1, 0, 0, _wrap_gi_gboxed_copy);
     scm_c_export ("gboxed-copy",

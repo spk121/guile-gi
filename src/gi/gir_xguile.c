@@ -363,6 +363,31 @@ scm_parse_list (SCM args, const char *format, ...)
     return true;
 }
 
+SCM
+scm_build_list (const char *format, ...)
+{
+    // s = utf8 string
+    // l = long
+    // N = object (but do no increase reference count)
+    // i = integer
+    // c = 8-bit char
+    // parens and brackets = make a list
+    // space and comma are ignored
+    g_return_val_if_fail (format != NULL && strlen(format) > 0, SCM_BOOL_F);
+    g_return_val_if_reached (SCM_BOOL_F);
+}
+
+SCM
+scm_sublist (SCM list, size_t start, size_t end)
+{
+    SCM output, entry;
+    output = SCM_EOL;
+    for (size_t i = start; i < end; i ++) {
+	entry = scm_c_list_ref (list, i);
+	list = scm_append(scm_list_2(output, scm_list_1(entry)));
+    }
+    return list;
+}
 
 void
 gir_init_xguile (void)
@@ -371,8 +396,8 @@ gir_init_xguile (void)
 						SCM_EOL, NULL);
     SCM_NONE = scm_permanent_object (scm_make_foreign_object_0 (GuNone_Type));
     SCM_NONE_Store = scm_c_define("$NONE", SCM_NONE);
-    var_make_standard_class = scm_c_lookup ("make-standard-class");
-    class_class = scm_variable_ref (scm_c_lookup ("<class>"));
+    // var_make_standard_class = scm_c_lookup ("make-standard-class");
+    // class_class = scm_variable_ref (scm_c_lookup ("<class>"));
 
     scm_c_export ("$NONE",
 		  NULL);

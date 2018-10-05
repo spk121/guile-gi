@@ -4,7 +4,7 @@
 #include <glib-object.h>
 #include "gir_xguile.h"
 #include "gir_g_type.h"
-#include "gir_gobject.h"
+#include "gir-object.h"
 #include "gir_ginterface.h"
 
 static void gugobject_finalize(SCM x) {};

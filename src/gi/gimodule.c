@@ -2,6 +2,15 @@
 
 #include <libguile.h>
 #include <glib-object.h>
+#include <girepository.h>
+#include "gi_util.h"
+#include "gir_xguile.h"
+#include "gi_genum.h"
+#include "gi_gflags.h"
+#include "gi_gboxed.h"
+#include "gi_gtype.h"
+#include "gi_gvalue.h"
+#if 0
 #include "gimodule.h"
 #include "gugobject.h"
 #include "pycompat.h"
@@ -16,6 +25,8 @@
 #include "gugi-value.h"
 #include "stubs.h"
 #include "gugobject-object.h"
+#endif
+
 
 SCM GuGIWarning;
 SCM GuGIDeprecationWarning;
@@ -46,7 +57,7 @@ flags_enum_from_gtype (GType g_type,
 }
 
 static void
-gug_flags_add_constants (SCM module, GType flags_type,
+gi_gflags_add_constants (GType flags_type,
 			 const gchar *strip_prefix);
 
 /**
@@ -59,7 +70,7 @@ gug_flags_add_constants (SCM module, GType flags_type,
  * the enumeration.  A prefix will be stripped from each enum name.
  */
 static void
-gug_enum_add_constants (SCM module, GType enum_type,
+gi_genum_add_constants (GType enum_type,
 			const gchar *strip_prefix)
 {
     GEnumClass *eclass;
@@ -67,7 +78,7 @@ gug_enum_add_constants (SCM module, GType enum_type,
 
     if (!G_TYPE_IS_ENUM(enum_type)) {
 	if (G_TYPE_IS_FLAGS(enum_type))
-	    gug_flags_add_constants(module, enum_type, strip_prefix);
+	    gi_gflags_add_constants( enum_type, strip_prefix);
 	else
 	    g_warning("`%s' is not an enum type", g_type_name(enum_type));
 	return;
@@ -80,9 +91,8 @@ gug_enum_add_constants (SCM module, GType enum_type,
 	const gchar *name = eclass->values[i].value_name;
 	gint value = eclass->values[i].value;
 
-	GuModule_AddIntConstant(module,
-				(char *) gug_constant_strip_prefix(name, strip_prefix),
-				(long) value);
+	scm_add_int_constant((char *) gi_constant_strip_prefix(name, strip_prefix),
+			     (long) value);
     }
 
     g_type_class_unref(eclass);
@@ -98,7 +108,7 @@ gug_enum_add_constants (SCM module, GType enum_type,
  * the flags set.  A prefix will be stripped from each flag name.
  */
 static void
-gug_flags_add_constants(SCM module, GType flags_type,
+gi_gflags_add_constants(GType flags_type,
 			const gchar *strip_prefix)
 {
     GFlagsClass *fclass;
@@ -106,7 +116,7 @@ gug_flags_add_constants(SCM module, GType flags_type,
 
     if (!G_TYPE_IS_FLAGS(flags_type)) {
 	if (G_TYPE_IS_ENUM(flags_type))
-	    gug_enum_add_constants(module, flags_type, strip_prefix);
+	    gi_genum_add_constants(flags_type, strip_prefix);
 	else
 	    g_warning("`%s' is not an flags type", g_type_name(flags_type));
 	return;
@@ -119,9 +129,8 @@ gug_flags_add_constants(SCM module, GType flags_type,
 	const gchar *name = fclass->values[i].value_name;
 	guint value = fclass->values[i].value;
 
-	GuModule_AddIntConstant(module,
-				(char*) gug_constant_strip_prefix(name, strip_prefix),
-				(long) value);
+	scm_add_int_constant((char*) gi_constant_strip_prefix(name, strip_prefix),
+			     (long) value);
     }
 
     g_type_class_unref(fclass);
@@ -159,7 +168,7 @@ create_property (const gchar  *prop_name,
 	{
 	    gchar minimum, maximum, default_value;
 
-	    if (!GuArg_ParseTuple(args, "ccc", &minimum, &maximum,
+	    if (!scm_parse_list(args, "ccc", &minimum, &maximum,
 				  &default_value))
 		return NULL;
 	    pspec = g_param_spec_char (prop_name, nick, blurb, minimum,
@@ -170,7 +179,7 @@ create_property (const gchar  *prop_name,
 	{
 	    gchar minimum, maximum, default_value;
 
-	    if (!GuArg_ParseTuple(args, "ccc", &minimum, &maximum,
+	    if (!scm_parse_list(args, "ccc", &minimum, &maximum,
 				  &default_value))
 		return NULL;
 	    pspec = g_param_spec_uchar (prop_name, nick, blurb, minimum,
@@ -181,7 +190,7 @@ create_property (const gchar  *prop_name,
 	{
 	    gboolean default_value;
 
-	    if (!GuArg_ParseTuple(args, "i", &default_value))
+	    if (!scm_parse_list(args, "i", &default_value))
 		return NULL;
 	    pspec = g_param_spec_boolean (prop_name, nick, blurb,
 					  default_value, flags);
@@ -191,7 +200,7 @@ create_property (const gchar  *prop_name,
 	{
 	    gint minimum, maximum, default_value;
 
-	    if (!GuArg_ParseTuple(args, "iii", &minimum, &maximum,
+	    if (!scm_parse_list(args, "iii", &minimum, &maximum,
 				  &default_value))
 		return NULL;
 	    pspec = g_param_spec_int (prop_name, nick, blurb, minimum,
@@ -202,7 +211,7 @@ create_property (const gchar  *prop_name,
 	{
 	    guint minimum, maximum, default_value;
 
-	    if (!GuArg_ParseTuple(args, "III", &minimum, &maximum,
+	    if (!scm_parse_list(args, "III", &minimum, &maximum,
 				  &default_value))
 		return NULL;
 	    pspec = g_param_spec_uint (prop_name, nick, blurb, minimum,
@@ -213,7 +222,7 @@ create_property (const gchar  *prop_name,
 	{
 	    glong minimum, maximum, default_value;
 
-	    if (!GuArg_ParseTuple(args, "lll", &minimum, &maximum,
+	    if (!scm_parse_list(args, "lll", &minimum, &maximum,
 				  &default_value))
 		return NULL;
 	    pspec = g_param_spec_long (prop_name, nick, blurb, minimum,
@@ -224,7 +233,7 @@ create_property (const gchar  *prop_name,
 	{
 	    gulong minimum, maximum, default_value;
 
-	    if (!GuArg_ParseTuple(args, "kkk", &minimum, &maximum,
+	    if (!scm_parse_list(args, "kkk", &minimum, &maximum,
 				  &default_value))
 		return NULL;
 	    pspec = g_param_spec_ulong (prop_name, nick, blurb, minimum,
@@ -235,7 +244,7 @@ create_property (const gchar  *prop_name,
 	{
 	    gint64 minimum, maximum, default_value;
 
-	    if (!GuArg_ParseTuple(args, "LLL", &minimum, &maximum,
+	    if (!scm_parse_list(args, "LLL", &minimum, &maximum,
 				  &default_value))
 		return NULL;
 	    pspec = g_param_spec_int64 (prop_name, nick, blurb, minimum,
@@ -246,7 +255,7 @@ create_property (const gchar  *prop_name,
 	{
 	    guint64 minimum, maximum, default_value;
 
-	    if (!GuArg_ParseTuple(args, "KKK", &minimum, &maximum,
+	    if (!scm_parse_list(args, "KKK", &minimum, &maximum,
 				  &default_value))
 		return NULL;
 	    pspec = g_param_spec_uint64 (prop_name, nick, blurb, minimum,
@@ -258,11 +267,10 @@ create_property (const gchar  *prop_name,
 	    gint default_value;
 	    SCM gudefault;
 
-	    if (!GuArg_ParseTuple(args, "O", &gudefault))
+	    if (!scm_parse_list(args, "O", &gudefault))
 		return NULL;
-
-	    if (gug_enum_get_value(prop_type, gudefault,
-				   (gint *)&default_value))
+	    if (gi_enum_get_value(prop_type, gudefault,
+				  (gint *)&default_value))
 		return NULL;
 
 	    pspec = g_param_spec_enum (prop_name, nick, blurb,
@@ -274,11 +282,11 @@ create_property (const gchar  *prop_name,
 	    guint default_value;
 	    SCM gudefault;
 
-	    if (!GuArg_ParseTuple(args, "O", &gudefault))
+	    if (!scm_parse_list(args, "O", &gudefault))
 		return NULL;
 
-	    if (gug_flags_get_value(prop_type, gudefault,
-				    &default_value))
+	    if (gi_flags_get_value(prop_type, gudefault,
+				   &default_value))
 		return NULL;
 
 	    pspec = g_param_spec_flags (prop_name, nick, blurb,
@@ -289,7 +297,7 @@ create_property (const gchar  *prop_name,
 	{
 	    gfloat minimum, maximum, default_value;
 
-	    if (!GuArg_ParseTuple(args, "fff", &minimum, &maximum,
+	    if (!scm_parse_list(args, "fff", &minimum, &maximum,
 				  &default_value))
 		return NULL;
 	    pspec = g_param_spec_float (prop_name, nick, blurb, minimum,
@@ -300,7 +308,7 @@ create_property (const gchar  *prop_name,
 	{
 	    gdouble minimum, maximum, default_value;
 
-	    if (!GuArg_ParseTuple(args, "ddd", &minimum, &maximum,
+	    if (!scm_parse_list(args, "ddd", &minimum, &maximum,
 				  &default_value))
 		return NULL;
 	    pspec = g_param_spec_double (prop_name, nick, blurb, minimum,
@@ -311,24 +319,24 @@ create_property (const gchar  *prop_name,
 	{
 	    const gchar *default_value;
 
-	    if (!GuArg_ParseTuple(args, "z", &default_value))
+	    if (!scm_parse_list(args, "z", &default_value))
 		return NULL;
 	    pspec = g_param_spec_string (prop_name, nick, blurb,
 					 default_value, flags);
 	}
 	break;
     case G_TYPE_PARAM:
-	if (!GuArg_ParseTuple(args, ""))
+	if (!scm_parse_list(args, ""))
 	    return NULL;
 	pspec = g_param_spec_param (prop_name, nick, blurb, prop_type, flags);
 	break;
     case G_TYPE_BOXED:
-	if (!GuArg_ParseTuple(args, ""))
+	if (!scm_parse_list(args, ""))
 	    return NULL;
 	pspec = g_param_spec_boxed (prop_name, nick, blurb, prop_type, flags);
 	break;
     case G_TYPE_POINTER:
-	if (!GuArg_ParseTuple(args, ""))
+	if (!scm_parse_list(args, ""))
 	    return NULL;
 	if (prop_type == G_TYPE_GTYPE)
 	    pspec = g_param_spec_gtype (prop_name, nick, blurb, G_TYPE_NONE, flags);
@@ -337,7 +345,7 @@ create_property (const gchar  *prop_name,
 	break;
     case G_TYPE_OBJECT:
     case G_TYPE_INTERFACE:
-	if (!GuArg_ParseTuple(args, ""))
+	if (!scm_parse_list(args, ""))
 	    return NULL;
 	pspec = g_param_spec_object (prop_name, nick, blurb, prop_type, flags);
 	break;
@@ -346,12 +354,10 @@ create_property (const gchar  *prop_name,
 	    SCM gudefault;
             GVariant *default_value = NULL;
 
-	    if (!GuArg_ParseTuple(args, "O", &gudefault))
+	    if (!scm_parse_list(args, "O", &gudefault))
 		return NULL;
-            if (gudefault != Gu_None) {
-		#define GUGOBJECT_SLOT_DATA 0
-		GuGBoxed *data = scm_foreign_object_ref (gudefault, GUGOBJECT_SLOT_DATA);
-                default_value = gug_boxed_get (data, GVariant);
+            if (!scm_is_none(gudefault)) {
+		default_value = gi_gboxed_get_ptr (gudefault);
 	    }
 	    pspec = g_param_spec_variant (prop_name, nick, blurb, G_VARIANT_TYPE_ANY, default_value, flags);
 	}
@@ -362,19 +368,18 @@ create_property (const gchar  *prop_name,
     }
 
     if (!pspec) {
-	char buf[128];
-
-	g_snprintf(buf, sizeof(buf), "could not create param spec for type %s",
-		   g_type_name(prop_type));
-	GuErr_SetString(GuExc_TypeError, buf);
+	scm_misc_error ("create_property", "could not create param spec for type '~S'",
+			scm_list_1 (scm_from_utf8_string (g_type_name (prop_type))));
 	return NULL;
     }
 
     return pspec;
 }
 
+/* This converts a Scheme list of that describes a parameter into
+ * a newly allocated GParamSpec */
 static GParamSpec *
-gug_param_spec_from_object (SCM list)
+gi_gparam_spec_from_object (SCM list)
 {
     ssize_t val_length;
     const gchar *prop_name;
@@ -386,39 +391,34 @@ gug_param_spec_from_object (SCM list)
 
     val_length = scm_to_ssize_t (scm_length (list));
     if (val_length < 4) {
-	GuErr_SetString(GuExc_TypeError,
-			"paramspec lists must be at least 4 elements long");
+	scm_misc_error ("gi_gparam_spec_from_object",
+			"paramspec lists must be at least 4 elements long '~S'",
+			scm_list_1(list));
 	return NULL;
     }
 
-    slice = GuSequence_GetSlice(list, 0, 4);
-    if (!slice) {
+    slice = scm_sublist (list, 0, 4);
+    if (!scm_parse_list(slice, "sOzz", &prop_name, &gu_prop_type, &nick, &blurb)) {
 	return NULL;
     }
 
-    if (!GuArg_ParseTuple(slice, "sOzz", &prop_name, &gu_prop_type, &nick, &blurb)) {
-	Gu_DECREF(slice);
-	return NULL;
-    }
-
-    Gu_DECREF(slice);
-
-    prop_type = gug_type_from_object(gu_prop_type);
+    prop_type = gi_gtype_from_scm(gu_prop_type);
     if (!prop_type) {
 	return NULL;
     }
 
     item = scm_list_ref (list, scm_from_ssize_t (val_length - 1));
     if (!scm_is_exact_integer(item)) {
-	GuErr_SetString(GuExc_TypeError,
-			"last element in list must be an int");
+	scm_misc_error ("gi_gparam_spec_from_object",
+			"last element in list must be an integer",
+			SCM_EOL);
 	return NULL;
     }
 
     intvalue = scm_to_int (item);
 
     /* slice is the extra items in the list */
-    slice = GuSequence_GetSlice(list, 4, val_length-1);
+    slice = scm_sublist (list, 4, val_length - 1);
     pspec = create_property(prop_name, prop_type,
 			    nick, blurb, slice,
 			    intvalue);
@@ -426,6 +426,7 @@ gug_param_spec_from_object (SCM list)
     return pspec;
 }
 
+#if 0
 
 /**
  * gug_parse_constructor_args: helper function for GuGObject constructors
@@ -444,6 +445,7 @@ gug_param_spec_from_object (SCM list)
  * Return value: %TRUE if all is successful, otherwise %FALSE and
  * python exception set.
  **/
+/* MLG - this is unused? */
 static gboolean
 pyg_parse_constructor_args(GType        obj_type,
                            char       **arg_names,
@@ -468,8 +470,8 @@ pyg_parse_constructor_args(GType        obj_type,
 	if (arg_i < n_args)
 	    entry = scm_list_ref (gu_args, scm_from_uint (arg_i));
 	else
-	    entry = Gu_None;
-        if (entry == Gu_None)
+	    entry = SCM_NONE;
+        if (entry == SCM_NONE)
             continue;
         spec = g_object_class_find_property(oclass, prop_names[arg_i]);
         params[param_i].name = prop_names[arg_i];
@@ -490,6 +492,10 @@ pyg_parse_constructor_args(GType        obj_type,
     return TRUE;
 }
 
+
+/* MLG - This adds a proc to the type that gets called with the class
+   init initualized.  Seems unused.  Might be useful.. later, make a
+   SCM function for this purpose */
 static void
 gug_register_class_init(GType gtype, GuGClassInitFunc class_init)
 {
@@ -499,16 +505,24 @@ gug_register_class_init(GType gtype, GuGClassInitFunc class_init)
     list = g_slist_prepend(list, class_init);
     g_type_set_qdata(gtype, gugobject_class_init_key, list);
 }
+#endif
 
+/* MLG - for Guile, this takes a list of lists of property
+   information, usually something like (list name type nick blurb min
+   max default flags) but it depends on the type.  See
+   create_property().  It adds the properties to the C GObjectClass
+   side of a Guile-defined GObject type. */
 static gboolean
 add_properties (GObjectClass *klass, SCM properties)
 {
     gboolean ret = TRUE;
-    ssize_t pos = 0;
+    ssize_t pos = 0, len;
     SCM key = SCM_BOOL_F;
     SCM value = SCM_BOOL_F;
+    SCM entry;
 
-    while (GuDict_Next(properties, &pos, key, value)) {
+    len = scm_to_ssize_t (scm_length (properties));
+    for (pos = 0; pos < len; pos ++) {
 	char *prop_name;
 	GType prop_type;
 	const gchar *nick, *blurb;
@@ -517,64 +531,71 @@ add_properties (GObjectClass *klass, SCM properties)
 	SCM slice, item, gu_prop_type;
 	GParamSpec *pspec;
 
+	entry = scm_c_list_ref (properties, pos);
+	key = scm_car (entry);
+	value = scm_car (entry);
 	/* values are of format (type,nick,blurb, type_specific_args, flags) */
 
 	if (!scm_is_string(key)) {
-	    GuErr_SetString(GuExc_TypeError,
-			    "__gproperties__ keys must be strings");
+	    scm_misc_error("add_properties",
+			   "Property keys must be strings",
+			   SCM_EOL);
 	    ret = FALSE;
 	    break;
 	}
 	prop_name = scm_to_utf8_string (key);
 
 	if (!scm_is_true (scm_list_p (value))) {
-	    GuErr_SetString(GuExc_TypeError,
-			    "__gproperties__ values must be tuples");
+	    scm_misc_error ("add_properties",
+			    "properties values must be lists",
+			    SCM_EOL);
 	    ret = FALSE;
 	    break;
 	}
 	val_length = scm_to_ssize_t(scm_length (value));
 	if (val_length < 4) {
-	    GuErr_SetString(GuExc_TypeError,
-			    "__gproperties__ values must be at least 4 elements long");
+	    scm_misc_error ("add_properties",
+			    "properties values must be at least 4 elements long", SCM_EOL);
 	    ret = FALSE;
 	    break;
 	}
 
-	slice = GuSequence_GetSlice(value, 0, 3);
+	slice = scm_sublist(value, 0, 3);
 	if (scm_is_false (slice)) {
 	    ret = FALSE;
 	    break;
 	}
-	if (!GuArg_ParseTuple(slice, "Ozz", &gu_prop_type, &nick, &blurb)) {
-	    Gu_DECREF(slice);
+	if (!scm_parse_list(slice, "Ozz", &gu_prop_type, &nick, &blurb)) {
+	    // Gu_DECREF(slice);
 	    ret = FALSE;
 	    break;
 	}
-	Gu_DECREF(slice);
-	prop_type = gug_type_from_object(gu_prop_type);
+	// Gu_DECREF(slice);
+	prop_type = gi_gtype_from_scm(gu_prop_type);
 	if (!prop_type) {
 	    ret = FALSE;
 	    break;
 	}
 	item = scm_list_ref(value, scm_from_ssize_t (val_length-1));
 	if (!scm_is_exact_integer (item)) {
-	    GuErr_SetString(GuExc_TypeError,
-		"last element in __gproperties__ value tuple must be an int");
+	    scm_misc_error ("add_properties",
+			    "last element in __gproperties__ value tuple must be an int",
+			    SCM_EOL);
 	    ret = FALSE;
 	    break;
 	}
 	flags = scm_to_long (item);
 
 	/* slice is the extra items in the tuple */
-	slice = GuSequence_GetSlice(value, 3, val_length-1);
+	slice = scm_sublist(value, 3, val_length-1);
 	pspec = create_property(prop_name, prop_type, nick, blurb,
 				slice, flags);
-	Gu_DECREF(slice);
+	// Gu_DECREF(slice);
 
 	if (pspec) {
 	    g_object_class_install_property(klass, 1, pspec);
 	} else {
+#if 0
 	    SCM type, pvalue, traceback;
 	    ret = FALSE;
             GuErr_Fetch(&type, &pvalue, &traceback);
@@ -591,12 +612,14 @@ add_properties (GObjectClass *klass, SCM properties)
                 value = scm_from_utf8_string(msg);
             }
             GuErr_Restore(type, pvalue, traceback);
+#endif	    
 	    break;
 	}
     }
 
     return ret;
 }
+
 
 static gboolean
 override_signal(GType instance_type, const gchar *signal_name)
@@ -605,14 +628,13 @@ override_signal(GType instance_type, const gchar *signal_name)
 
     signal_id = g_signal_lookup(signal_name, instance_type);
     if (!signal_id) {
-	gchar buf[128];
-
-	g_snprintf(buf, sizeof(buf), "could not look up %s", signal_name);
-	GuErr_SetString(GuExc_TypeError, buf);
+	scm_misc_error ("override_signal",
+			"could not look up '~A'",
+			scm_list_1 (scm_from_utf8_string (signal_name)));
 	return FALSE;
     }
     g_signal_override_class_closure(signal_id, instance_type,
-				    gug_signal_class_closure_get());
+				    gi_gsignal_class_closure_get());
     return TRUE;
 }
 
@@ -632,43 +654,59 @@ _gug_signal_accumulator(GSignalInvocationHint *ihint,
     SCM gu_retval;
     gboolean retval = FALSE;
     GuGSignalAccumulatorData *data = _data;
-    GuGILState_STATE state;
+    // GuGILState_STATE state;
 
-    state = GuGILState_Ensure();
+    // state = GuGILState_Ensure();
     if (ihint->detail)
         gu_detail = scm_from_utf8_string(g_quark_to_string(ihint->detail));
     else {
-        Gu_INCREF(Gu_None);
-        gu_detail = Gu_None;
+        // Gu_INCREF(SCM_NONE);
+        gu_detail = SCM_NONE;
     }
 
-    gu_ihint = Gu_BuildValue("lNi", (long int) ihint->signal_id,
-                             gu_detail, ihint->run_type);
-    gu_handler_return = gug_value_as_scm(handler_return, TRUE);
-    gu_return_accu = gug_value_as_scm(return_accu, FALSE);
+    /* gu_ihint = Gu_BuildValue("lNi", (long int) ihint->signal_id, */
+    /*                          gu_detail, ihint->run_type); */
+    gu_ihint = scm_list_3 (scm_from_long (ihint->signal_id),
+			   gu_detail,
+			   scm_from_int (ihint->run_type));
+    
+    gu_handler_return = gi_gvalue_as_scm(handler_return, TRUE);
+    gu_return_accu = gi_gvalue_as_scm(return_accu, FALSE);
     if (data->user_data)
-        gu_retval = GuObject_CallFunction(data->callable, "NNNO", gu_ihint,
-                                          gu_return_accu, gu_handler_return,
-                                          data->user_data);
+        /* gu_retval = GuObject_CallFunction(data->callable, "NNNO", gu_ihint, */
+        /*                                   gu_return_accu, gu_handler_return, */
+        /*                                   data->user_data); */
+	gu_retval = scm_call_4 (data->callable,
+				gu_ihint,
+				gu_return_accu,
+				gu_handler_return,
+				data->user_data);
     else
-        gu_retval = GuObject_CallFunction(data->callable, "NNN", gu_ihint,
-                                          gu_return_accu, gu_handler_return);
+        /* gu_retval = GuObject_CallFunction(data->callable, "NNN", gu_ihint, */
+        /*                                   gu_return_accu, gu_handler_return); */
+	gu_retval = scm_call_3 (data->callable,
+				gu_ihint,
+				gu_return_accu,
+				gu_handler_return);
     if (!gu_retval)
-	GuErr_Print();
+	// GuErr_Print();
+	;
     else {
-        if (!GuTuple_Check(gu_retval) || GuTuple_Size(gu_retval) != 2) {
-            GuErr_SetString(GuExc_TypeError, "accumulator function must return"
-                            " a (bool, object) tuple");
-            GuErr_Print();
+	if (!scm_is_list (gu_retval) || scm_to_int (scm_length (gu_retval)) != 2) {
+	    scm_misc_error ("signal_accumulator",
+			    "accumulator function must return a (bool object) list",
+			    SCM_EOL);
         } else {
             retval = scm_is_true(scm_list_ref(gu_retval, scm_from_int (0)));
-            if (gug_value_from_scm(return_accu, scm_list_ref(gu_retval, scm_from_int (1)))) {
-                GuErr_Print();
+            if (gi_gvalue_from_scm(return_accu, scm_list_ref(gu_retval, scm_from_int (1)))) {
+                scm_misc_error ("signal_accumulator",
+				"some sort of error",
+				SCM_EOL);
             }
         }
-        Gu_DECREF(gu_retval);
+        // Gu_DECREF(gu_retval);
     }
-    GuGILState_Release(state);
+    // GuGILState_Release(state);
     return retval;
 }
 
@@ -686,37 +724,48 @@ create_signal (GType instance_type, const gchar *signal_name, SCM list)
     SCM gu_accum = SCM_BOOL_F;
     SCM gu_accum_data = SCM_BOOL_F;
 
-    if (!GuArg_ParseList(list, "iOO|OO", &signal_flags, &gu_return_type,
+    if (!scm_parse_list(list, "iOO|OO", &signal_flags, &gu_return_type,
 			 &gu_param_types, &gu_accum, &gu_accum_data))
     {
-	gchar buf[128];
+	/* gchar buf[128]; */
 
-	GuErr_Clear();
-	g_snprintf(buf, sizeof(buf),
-		   "value for __gsignals__['%s'] not in correct format", signal_name);
-	GuErr_SetString(GuExc_TypeError, buf);
+	/* GuErr_Clear(); */
+	/* g_snprintf(buf, sizeof(buf), */
+	/* 	   "value for __gsignals__['%s'] not in correct format", signal_name); */
+	/* GuErr_SetString(GuExc_TypeError, buf); */
+	scm_misc_error ("create_signal",
+			"value for '~S' is not in correct format",
+			scm_list_1 (scm_from_utf8_string (signal_name)));
 	return FALSE;
     }
 
-    if (gu_accum && gu_accum != Gu_None && !GuCallable_Check(gu_accum))
+    if (gu_accum && gu_accum != SCM_NONE && !scm_is_procedure (gu_accum))
     {
-	gchar buf[128];
+	/* gchar buf[128]; */
 
-	g_snprintf(buf, sizeof(buf),
-		   "accumulator for __gsignals__['%s'] must be callable", signal_name);
-	GuErr_SetString(GuExc_TypeError, buf);
+	/* g_snprintf(buf, sizeof(buf), */
+	/* 	   "accumulator for __gsignals__['%s'] must be callable", signal_name); */
+	/* GuErr_SetString(GuExc_TypeError, buf); */
+	scm_misc_error ("create_signal",
+			"accumulator for '~S' must be callable",
+			scm_list_1 (scm_from_utf8_string (signal_name)));
+	
 	return FALSE;
     }
 
-    return_type = gug_type_from_object(gu_return_type);
+    return_type = gi_gtype_from_object(gu_return_type);
     if (!return_type)
 	return FALSE;
     if (!scm_is_true(scm_list_p(gu_param_types))) {
-	gchar buf[128];
+	/* gchar buf[128]; */
 
-	g_snprintf(buf, sizeof(buf),
-		   "third element of __gsignals__['%s'] list must be a list", signal_name);
-	GuErr_SetString(GuExc_TypeError, buf);
+	/* g_snprintf(buf, sizeof(buf), */
+	/* 	   "third element of __gsignals__['%s'] list must be a list", signal_name); */
+	/* GuErr_SetString(GuExc_TypeError, buf); */
+	scm_misc_error ("create_signal",
+			"3rd element '~S' must be a list",
+			scm_list_1 (scm_from_utf8_string (signal_name)));
+	
 	return FALSE;
     }
     n_params = scm_to_uint (scm_length (gu_param_types));
@@ -725,65 +774,82 @@ create_signal (GType instance_type, const gchar *signal_name, SCM list)
     for (i = 0; i < n_params; i++) {
 	SCM item = scm_list_ref (gu_param_types, scm_from_uint (i));
 
-	param_types[i] = gug_type_from_object(item);
+	param_types[i] = gi_gtype_from_object(item);
 	if (param_types[i] == 0) {
-	    Gu_DECREF(item);
+	    // Gu_DECREF(item);
 	    g_free(param_types);
 	    return FALSE;
 	}
-	Gu_DECREF(item);
+	// Gu_DECREF(item);
     }
 
-    if (gu_accum != NULL && gu_accum != Gu_None) {
+    if (gu_accum != NULL && gu_accum != SCM_NONE) {
         accum_data = g_new(GuGSignalAccumulatorData, 1);
         accum_data->callable = gu_accum;
-        Gu_INCREF(gu_accum);
+        // Gu_INCREF(gu_accum);
         accum_data->user_data = gu_accum_data;
-        Gu_XINCREF(gu_accum_data);
+        // Gu_XINCREF(gu_accum_data);
         accumulator = _gug_signal_accumulator;
     }
 
     signal_id = g_signal_newv(signal_name, instance_type, signal_flags,
-			      gug_signal_class_closure_get(),
+			      gi_gsignal_class_closure_get(),
 			      accumulator, accum_data,
 			      gi_cclosure_marshal_generic,
 			      return_type, n_params, param_types);
     g_free(param_types);
 
     if (signal_id == 0) {
-	gchar buf[128];
+	/* gchar buf[128]; */
 
-	g_snprintf(buf, sizeof(buf), "could not create signal for %s",
-		   signal_name);
-	GuErr_SetString(GuExc_RuntimeError, buf);
+	/* g_snprintf(buf, sizeof(buf), "could not create signal for %s", */
+	/* 	   signal_name); */
+	/* GuErr_SetString(GuExc_RuntimeError, buf); */
+	scm_misc_error ("create_signal",
+			"could not create a signal for '~S'",
+			scm_from_utf8_string (signal_name));
+	
 	return FALSE;
     }
     return TRUE;
 }
 
+/* MLG - this adds some signals the C GObjectClass side of a
+   Guile-defined GObject class.  SIGNALS is a list of lists, where each list
+   is information about a signal.  Usually a signal is (list name flags return_type
+   list_of_param_types [accumulator_func accumulator_func_data]). */
 static SCM
 add_signals (GObjectClass *klass, SCM signals)
 {
     gboolean ret = TRUE;
-    Gu_ssize_t pos = 0;
+    ssize_t pos = 0;
     SCM key, value, overridden_signals;
+    size_t len, i;
     GType instance_type = G_OBJECT_CLASS_TYPE (klass);
 
     overridden_signals = scm_c_make_hash_table (10);
-    while (GuDict_Next(signals, &pos, key, value)) {
+    len = scm_to_size_t (scm_length (signals));
+    for (i = 0; i < len ; i ++) {
+	SCM entry = scm_c_list_ref (signals, i);
 	gchar *signal_name;
         gchar *signal_name_canon, *c;
 	gboolean override = FALSE;
 
+	key = scm_car (entry);
+	value = scm_cdr (entry);
+
 	if (!scm_is_string (key)) {
-	    GuErr_SetString(GuExc_TypeError,
-			    "__gsignals__ keys must be strings");
+	    /* GuErr_SetString(GuExc_TypeError, */
+	    /* 		    "__gsignals__ keys must be strings"); */
+	    scm_misc_error ("add_signals",
+			    "signals keys must be strings",
+			    SCM_EOL);
 	    ret = FALSE;
 	    break;
 	}
 	signal_name = scm_to_utf8_string (key);
 
-	if (value == Gu_None)
+	if (value == SCM_NONE)
 	    override = TRUE;
 	if (scm_is_string (value)) {
 	    gchar *value_str;
@@ -823,6 +889,7 @@ add_signals (GObjectClass *klass, SCM signals)
     }
 }
 
+#if 0
 static void
 gug_object_get_property (GObject *object, guint property_id,
 			 GValue *value, GParamSpec *pspec)
@@ -1305,7 +1372,7 @@ _wrap_gug_type_register(SCM self, SCM args)
     SCM class; /* a type */
     char *type_name = NULL;
 
-    if (!GuArg_ParseTuple(args, "O!|z:gobject.type_register",
+    if (!scm_parse_list(args, "O!|z:gobject.type_register",
 			  &GuType_Type, &class, &type_name))
 	return NULL;
     if (!GuType_IsSubtype(class, GuGObject_Type)) {
@@ -1420,7 +1487,7 @@ _wrap_gug_enum_add (SCM self,
     SCM gu_g_type;
     GType g_type;
 
-    if (!GuArg_ParseTupleAndKeywords (args, kwargs,
+    if (!scm_parse_listAndKeywords (args, kwargs,
                                       "O!:enum_add",
                                       kwlist, &GuGTypeWrapper_Type, &gu_g_type)) {
         return NULL;
@@ -1439,7 +1506,7 @@ _wrap_gug_enum_register_new_gtype_and_add (SCM self,
                                            SCM args,
                                            SCM kwargs)
 {
-    static char *kwlist[] = { "info", NULL };
+g    static char *kwlist[] = { "info", NULL };
     GuGIBaseInfo *gu_info;
     GIEnumInfo *info;
     gint n_values;
@@ -1450,7 +1517,7 @@ _wrap_gug_enum_register_new_gtype_and_add (SCM self,
     gchar *full_name;
     GType g_type;
 
-    if (!GuArg_ParseTupleAndKeywords (args, kwargs,
+    if (!scm_parse_listAndKeywords (args, kwargs,
                                       "O:enum_add_make_new_gtype",
                                       kwlist, (SCM )&gu_info)) {
         return NULL;
@@ -1539,7 +1606,7 @@ _wrap_gug_flags_add (SCM self,
     SCM gu_g_type;
     GType g_type;
 
-    if (!GuArg_ParseTupleAndKeywords (args, kwargs,
+    if (!scm_parse_listAndKeywords (args, kwargs,
                                       "O!:flags_add",
                                       kwlist, &GuGTypeWrapper_Type, &gu_g_type)) {
         return NULL;
@@ -1569,7 +1636,7 @@ _wrap_gug_flags_register_new_gtype_and_add (SCM self,
     gchar *full_name;
     GType g_type;
 
-    if (!GuArg_ParseTupleAndKeywords (args, kwargs,
+    if (!scm_parse_listAndKeywords (args, kwargs,
                                       "O:flags_add_make_new_gtype",
                                       kwlist, (SCM )&gu_info)) {
         return NULL;
@@ -1662,7 +1729,7 @@ _wrap_gug_register_interface_info (SCM self, SCM args)
     GType g_type;
     GInterfaceInfo *info;
 
-    if (!GuArg_ParseTuple (args, "O!:register_interface_info",
+    if (!scm_parse_list (args, "O!:register_interface_info",
                            &GuGTypeWrapper_Type, &gu_g_type)) {
         return NULL;
     }
@@ -1765,7 +1832,7 @@ _wrap_gug_hook_up_vfunc_implementation (SCM self, SCM args)
     GuGICClosure *closure = NULL;
     GuGIClosureCache *cache = NULL;
 
-    if (!GuArg_ParseTuple (args, "O!O!O:hook_up_vfunc_implementation",
+    if (!scm_parse_list (args, "O!O!O:hook_up_vfunc_implementation",
                            &GuGIBaseInfo_Type, &gu_info,
                            &GuGTypeWrapper_Type, &gu_type,
                            &gu_function))
@@ -1818,7 +1885,7 @@ _wrap_gug_has_vfunc_implementation (SCM self, SCM args)
     GType implementor_gtype = 0;
     GIFieldInfo *field_info = NULL;
 
-    if (!GuArg_ParseTuple (args, "O!O!:has_vfunc_implementation",
+    if (!scm_parse_list (args, "O!O!:has_vfunc_implementation",
                            &GuGIBaseInfo_Type, &gu_info,
                            &GuGTypeWrapper_Type, &gu_type))
         return NULL;
@@ -1854,7 +1921,7 @@ _wrap_gug_variant_type_from_string (SCM self, SCM args)
     SCM gu_type;
     SCM gu_variant = NULL;
 
-    if (!GuArg_ParseTuple (args, "s:variant_type_from_string",
+    if (!scm_parse_list (args, "s:variant_type_from_string",
                            &type_string)) {
         return NULL;
     }
@@ -1878,7 +1945,7 @@ gug_channel_read(SCM  self, SCM args, SCM kwargs)
     GIOStatus status = G_IO_STATUS_NORMAL;
     GIOChannel *iochannel = NULL;
 
-    if (!GuArg_ParseTuple (args, "Oi:gug_channel_read", &gu_iochannel, &max_count)) {
+    if (!scm_parse_list (args, "Oi:gug_channel_read", &gu_iochannel, &max_count)) {
         return NULL;
     }
     if (!gug_boxed_check (gu_iochannel, G_TYPE_IO_CHANNEL)) {
@@ -2024,7 +2091,7 @@ gug_add_emission_hook(GuGObject *self, SCM args)
 	return NULL;
     }
     first = GuSequence_GetSlice(args, 0, 3);
-    if (!GuArg_ParseTuple(first, "OsO:add_emission_hook",
+    if (!scm_parse_list(first, "OsO:add_emission_hook",
 			  &gugtype, &name, &callback)) {
 	Gu_DECREF(first);
 	return NULL;
@@ -2079,7 +2146,7 @@ gug_signal_new(SCM self, SCM args)
 
     guint signal_id;
 
-    if (!GuArg_ParseTuple(args, "sOiOO:gobject.signal_new", &signal_name,
+    if (!scm_parse_list(args, "sOiOO:gobject.signal_new", &signal_name,
 			  &gu_type, &signal_flags, &gu_return_type,
 			  &gu_param_types))
 	return NULL;
@@ -2148,7 +2215,7 @@ gug_object_class_list_properties (SCM self, SCM args)
     guint nprops;
     guint i;
 
-    if (!GuArg_ParseTuple(args, "O:gobject.list_properties",
+    if (!scm_parse_list(args, "O:gobject.list_properties",
 			  &gu_itype))
 	return NULL;
     if ((itype = gug_type_from_object(gu_itype)) == 0)
@@ -2204,8 +2271,8 @@ gug__install_metaclass(SCM dummy, SCM metaclass /* a type */)
     //Gu_TYPE(&GuGObject_Type) = metaclass;
     gug_foreign_object_type_set_type (GuGObject_Type, metaclass);
 
-    Gu_INCREF(Gu_None);
-    return Gu_None;
+    Gu_INCREF(SCM_NONE);
+    return SCM_NONE;
 }
 
 static SCM 
@@ -2213,7 +2280,7 @@ _wrap_guig_guos_getsig (SCM self, SCM args)
 {
     int sig_num;
 
-    if (!GuArg_ParseTuple (args, "i:guos_getsig", &sig_num))
+    if (!scm_parse_list (args, "i:guos_getsig", &sig_num))
         return NULL;
 
     // return GuLong_FromVoidPtr ((void *)(GuOS_getsig (sig_num)));
@@ -2227,7 +2294,7 @@ _wrap_gugobject_new_full (SCM self, SCM args)
     SCM steal;
     GObject *obj;
 
-    if (!GuArg_ParseTuple (args, "OO", &ptr_value, &steal))
+    if (!scm_parse_list (args, "OO", &ptr_value, &steal))
         return NULL;
 
     // Convert pointer to long? 
@@ -2323,7 +2390,7 @@ struct _GuGObject_Functions gugobject_api_functions = {
   gug_enum_add_constants,
   gug_flags_add_constants,
 
-  gug_constant_strip_prefix,
+  gi_constant_strip_prefix,
 
   gugi_error_check,
 
@@ -2401,11 +2468,11 @@ gugi_register_constants(SCM m)
     GuModule_AddObject(m,       "G_MAXFLOAT", scm_from_double (G_MAXFLOAT));
     GuModule_AddObject(m,       "G_MINDOUBLE", scm_from_double (G_MINDOUBLE));
     GuModule_AddObject(m,       "G_MAXDOUBLE", scm_from_double (G_MAXDOUBLE));
-    GuModule_AddIntConstant(m,  "G_MINSHORT", G_MINSHORT);
-    GuModule_AddIntConstant(m,  "G_MAXSHORT", G_MAXSHORT);
-    GuModule_AddIntConstant(m,  "G_MAXUSHORT", G_MAXUSHORT);
-    GuModule_AddIntConstant(m,  "G_MININT", G_MININT);
-    GuModule_AddIntConstant(m,  "G_MAXINT", G_MAXINT);
+    scm_module_add_int_constant(m,  "G_MINSHORT", G_MINSHORT);
+    scm_module_add_int_constant(m,  "G_MAXSHORT", G_MAXSHORT);
+    scm_module_add_int_constant(m,  "G_MAXUSHORT", G_MAXUSHORT);
+    scm_module_add_int_constant(m,  "G_MININT", G_MININT);
+    scm_module_add_int_constant(m,  "G_MAXINT", G_MAXINT);
     GuModule_AddObject(m,       "G_MAXUINT", scm_from_uint (G_MAXUINT));
     GuModule_AddObject(m,       "G_MINLONG", scm_from_long (G_MINLONG));
     GuModule_AddObject(m,       "G_MAXLONG", scm_from_long (G_MAXLONG));
@@ -2416,8 +2483,8 @@ gugi_register_constants(SCM m)
     GuModule_AddObject(m,       "G_MINOFFSET", scm_from_int64 (G_MINOFFSET));
     GuModule_AddObject(m,       "G_MAXOFFSET", scm_from_int64 (G_MAXOFFSET));
 
-    GuModule_AddIntConstant(m, "SIGNAL_RUN_FIRST", G_SIGNAL_RUN_FIRST);
-    GuModule_AddIntConstant(m, "PARAM_READWRITE", G_PARAM_READWRITE);
+    scm_module_add_int_constant(m, "SIGNAL_RUN_FIRST", G_SIGNAL_RUN_FIRST);
+    scm_module_add_int_constant(m, "PARAM_READWRITE", G_PARAM_READWRITE);
 
     /* The rest of the types are set in __init__.gu */
     GuModule_AddObject(m, "TYPE_INVALID", gug_type_wrapper_new(G_TYPE_INVALID));
@@ -2563,14 +2630,6 @@ gir_log_handler (const gchar *log_domain,
   fclose (fp);
 }
 
-static void
-scm_add_string_constant (const char *name, const char *val)
-{
-  SCM var = scm_c_define (name, scm_from_utf8_string (val));
-  scm_permanent_object (var);
-  scm_c_export (name, NULL);
-}
-
 void gir_module_init(void)
 {
   SCM api;
@@ -2592,4 +2651,5 @@ void gir_module_init(void)
   gir_info_register_types();
   g_debug ("end initialization");
 }
+#endif
 #endif

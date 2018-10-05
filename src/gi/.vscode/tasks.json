@@ -1,0 +1,57 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "environments": [
+        {
+            "MINGW_PREFIX": "C:/msys64/mingw32",
+            "MINGW_CHOST": "x86_64-w64-mingw32",
+            "MINGW_PACKAGE_PREFIX": "mingw-w64-i686",
+            "MSYSTEM": "MINGW64",
+            "MSYSTEM_CARCH": "x64_64",
+            "MSYSTEM_PREFIX": "${env.MINGW_PREFIX}",
+            "SHELL": "${env.MINGW_PREFIX}/../usr/bin/bash",
+            "TEMP": "${env.MINGW_PREFIX}/../tmp",
+            "TMP": "${env.TEMP}",
+            "PATH": "${env.MINGW_PREFIX}/bin;${env.MINGW_PREFIX}/../usr/local/bin;${env.MINGW_PREFIX}/../usr/bin;${env.PATH}",
+            "INCLUDE": "project/lib/include;${env.MINGW_PREFIX}/mingw/include"
+        }
+    ],    
+    "tasks": [
+        {
+            "label": "Engine Make",
+            "type": "shell",
+            "command": "mingw32-make",
+        // use options.cwd property if the Makefile is not in the project root ${workspaceRoot} dir
+        "options": {
+            "cwd": "${workspaceRoot}"
+        },
+        // start the build without prompting for task selection, use "group": "build" otherwise
+        "group": {
+            "kind": "build",
+            "isDefault": true
+        },
+        "presentation": {
+            "echo": true,
+            "reveal": "always",
+            "focus": false,
+            "panel": "shared"
+        },
+        // arg passing example: in this case is executed make QUIET=0
+        "args": ["QUIET=0"],
+        // Use the standard less compilation problem matcher.
+        "problemMatcher": {
+            "owner": "cpp",
+            "fileLocation": ["absolute"],
+            "pattern": {
+                "regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+                "file": 1,
+                "line": 2,
+                "column": 3,
+                "severity": 4,
+                "message": 5
+            }
+        }
+    }
+    ]
+}

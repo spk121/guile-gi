@@ -1,5 +1,5 @@
 (define-module (test-gi-repository)
-  #:use-module (gi _repository)
+  #:use-module (gi introspection)
   #:export (main))
 
 (define (dummy n)
