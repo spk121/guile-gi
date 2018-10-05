@@ -1,6 +1,9 @@
+/* -*- Mode: C; c-basic-offset: 4 -*- */
 #include "gi_giargument.h"
-
-/* -*- Mode: C; c-basic-offset: 4 -*-
+#include <libguile.h>
+#include "gi_basictype.h"
+#include "gi_gvalue.h"
+/* 
  * vim: tabstop=4 shiftwidth=4 expandtab
  *
  * Copyright (C) 2005-2009 Johan Dahlin <johan@gnome.org>
@@ -23,145 +26,150 @@
 
 
 gboolean
-pygi_argument_to_gssize (GIArgument *arg_in,
+gi_giargument_to_gssize (const char *func,
+			 GIArgument *arg_in,
                          GITypeTag  type_tag,
                          gssize *gssize_out)
 {
+    const gchar *type_name = g_type_tag_to_string (type_tag);
+	    
     switch (type_tag) {
-      case GI_TYPE_TAG_INT8:
-          *gssize_out = arg_in->v_int8;
-          return TRUE;
-      case GI_TYPE_TAG_UINT8:
-          *gssize_out = arg_in->v_uint8;
-          return TRUE;
-      case GI_TYPE_TAG_INT16:
-          *gssize_out = arg_in->v_int16;
-          return TRUE;
-      case GI_TYPE_TAG_UINT16:
-          *gssize_out = arg_in->v_uint16;
-          return TRUE;
-      case GI_TYPE_TAG_INT32:
-          *gssize_out = arg_in->v_int32;
-          return TRUE;
-      case GI_TYPE_TAG_UINT32:
-          *gssize_out = arg_in->v_uint32;
-          return TRUE;
-      case GI_TYPE_TAG_INT64:
-          if (arg_in->v_int64 > G_MAXSSIZE || arg_in->v_int64 < G_MINSSIZE) {
-              PyErr_Format (PyExc_TypeError,
-                            "Unable to marshal %s to gssize",
-                            g_type_tag_to_string(type_tag));
-              return FALSE;
+    case GI_TYPE_TAG_INT8:
+	*gssize_out = arg_in->v_int8;
+	return TRUE;
+    case GI_TYPE_TAG_UINT8:
+	*gssize_out = arg_in->v_uint8;
+	return TRUE;
+    case GI_TYPE_TAG_INT16:
+	*gssize_out = arg_in->v_int16;
+	return TRUE;
+    case GI_TYPE_TAG_UINT16:
+	*gssize_out = arg_in->v_uint16;
+	return TRUE;
+    case GI_TYPE_TAG_INT32:
+	*gssize_out = arg_in->v_int32;
+	return TRUE;
+    case GI_TYPE_TAG_UINT32:
+	*gssize_out = arg_in->v_uint32;
+	return TRUE;
+    case GI_TYPE_TAG_INT64:
+	if (arg_in->v_int64 > G_MAXSSIZE || arg_in->v_int64 < G_MINSSIZE) {
+	    scm_misc_error (func,
+			    "Unable to marshal ~A to gssize",
+			    scm_list_1 (scm_from_utf8_string (type_name)));
+	    return FALSE;
+	}
+	*gssize_out = (gssize)arg_in->v_int64;
+	return TRUE;
+    case GI_TYPE_TAG_UINT64:
+	if (arg_in->v_uint64 > G_MAXSSIZE) {
+	    scm_misc_error (func,
+			    "Unable to marshal ~A to gssize",
+			    scm_list_1 (scm_from_utf8_string (type_name)));
+	    return FALSE;
           }
-          *gssize_out = (gssize)arg_in->v_int64;
-          return TRUE;
-      case GI_TYPE_TAG_UINT64:
-          if (arg_in->v_uint64 > G_MAXSSIZE) {
-              PyErr_Format (PyExc_TypeError,
-                            "Unable to marshal %s to gssize",
-                            g_type_tag_to_string(type_tag));
-              return FALSE;
-          }
-          *gssize_out = (gssize)arg_in->v_uint64;
-          return TRUE;
-      default:
-          PyErr_Format (PyExc_TypeError,
-                        "Unable to marshal %s to gssize",
-                        g_type_tag_to_string(type_tag));
-          return FALSE;
+	*gssize_out = (gssize)arg_in->v_uint64;
+	return TRUE;
+    default:
+	scm_misc_error (func,
+			"Unable to marshall ~A to gssize",
+			scm_list_1 (scm_from_utf8_string (type_name)));
+	return FALSE;
     }
 }
 
 static GITypeTag
-_pygi_get_storage_type (GITypeInfo *type_info)
+get_storage_type (GITypeInfo *type_info)
 {
     GITypeTag type_tag = g_type_info_get_tag (type_info);
 
     if (type_tag == GI_TYPE_TAG_INTERFACE) {
         GIBaseInfo *interface = g_type_info_get_interface (type_info);
         switch (g_base_info_get_type (interface)) {
-            case GI_INFO_TYPE_ENUM:
-            case GI_INFO_TYPE_FLAGS:
-                type_tag = g_enum_info_get_storage_type ((GIEnumInfo *)interface);
-                break;
-            default:
-                /* FIXME: we might have something to do for other types */
-                break;
+	case GI_INFO_TYPE_ENUM:
+	case GI_INFO_TYPE_FLAGS:
+	    type_tag = g_enum_info_get_storage_type ((GIEnumInfo *)interface);
+	    break;
+	default:
+	    /* FIXME: we might have something to do for other types */
+	    break;
         }
         g_base_info_unref (interface);
     }
     return type_tag;
 }
 
-void
-_pygi_hash_pointer_to_arg (GIArgument *arg,
-                           GITypeInfo *type_info)
+#if 0
+static void
+hash_pointer_to_arg (GIArgument *arg,
+		     GITypeInfo *type_info)
 {
-    GITypeTag type_tag = _pygi_get_storage_type (type_info);
+    GITypeTag type_tag = get_storage_type (type_info);
 
     switch (type_tag) {
-        case GI_TYPE_TAG_INT8:
-            arg->v_int8 = (gint8)GPOINTER_TO_INT (arg->v_pointer);
-            break;
-        case GI_TYPE_TAG_INT16:
-            arg->v_int16 = (gint16)GPOINTER_TO_INT (arg->v_pointer);
-            break;
-        case GI_TYPE_TAG_INT32:
-            arg->v_int32 = (gint32)GPOINTER_TO_INT (arg->v_pointer);
-            break;
-        case GI_TYPE_TAG_UINT8:
-            arg->v_uint8 = (guint8)GPOINTER_TO_UINT (arg->v_pointer);
-            break;
-        case GI_TYPE_TAG_UINT16:
-            arg->v_uint16 = (guint16)GPOINTER_TO_UINT (arg->v_pointer);
-            break;
-        case GI_TYPE_TAG_UINT32:
-            arg->v_uint32 = (guint32)GPOINTER_TO_UINT (arg->v_pointer);
-            break;
-        case GI_TYPE_TAG_GTYPE:
-            arg->v_size = GPOINTER_TO_SIZE (arg->v_pointer);
-            break;
-        case GI_TYPE_TAG_UTF8:
-        case GI_TYPE_TAG_FILENAME:
-        case GI_TYPE_TAG_INTERFACE:
-        case GI_TYPE_TAG_ARRAY:
-            break;
-        default:
-            g_critical ("Unsupported type %s", g_type_tag_to_string(type_tag));
+    case GI_TYPE_TAG_INT8:
+	arg->v_int8 = (gint8)GPOINTER_TO_INT (arg->v_pointer);
+	break;
+    case GI_TYPE_TAG_INT16:
+	arg->v_int16 = (gint16)GPOINTER_TO_INT (arg->v_pointer);
+	break;
+    case GI_TYPE_TAG_INT32:
+	arg->v_int32 = (gint32)GPOINTER_TO_INT (arg->v_pointer);
+	break;
+    case GI_TYPE_TAG_UINT8:
+	arg->v_uint8 = (guint8)GPOINTER_TO_UINT (arg->v_pointer);
+	break;
+    case GI_TYPE_TAG_UINT16:
+	arg->v_uint16 = (guint16)GPOINTER_TO_UINT (arg->v_pointer);
+	break;
+    case GI_TYPE_TAG_UINT32:
+	arg->v_uint32 = (guint32)GPOINTER_TO_UINT (arg->v_pointer);
+	break;
+    case GI_TYPE_TAG_GTYPE:
+	arg->v_size = GPOINTER_TO_SIZE (arg->v_pointer);
+	break;
+    case GI_TYPE_TAG_UTF8:
+    case GI_TYPE_TAG_FILENAME:
+    case GI_TYPE_TAG_INTERFACE:
+    case GI_TYPE_TAG_ARRAY:
+	break;
+    default:
+	g_critical ("Unsupported type %s", g_type_tag_to_string(type_tag));
     }
 }
 
-gpointer
-_pygi_arg_to_hash_pointer (const GIArgument *arg,
-                           GITypeInfo       *type_info)
+static gpointer
+arg_to_hash_pointer (const GIArgument *arg,
+		     GITypeInfo       *type_info)
 {
-    GITypeTag type_tag = _pygi_get_storage_type (type_info);
-
+    GITypeTag type_tag = gi_get_storage_type (type_info);
+    
     switch (type_tag) {
-        case GI_TYPE_TAG_INT8:
-            return GINT_TO_POINTER (arg->v_int8);
-        case GI_TYPE_TAG_UINT8:
-            return GINT_TO_POINTER (arg->v_uint8);
-        case GI_TYPE_TAG_INT16:
-            return GINT_TO_POINTER (arg->v_int16);
-        case GI_TYPE_TAG_UINT16:
-            return GINT_TO_POINTER (arg->v_uint16);
-        case GI_TYPE_TAG_INT32:
-            return GINT_TO_POINTER (arg->v_int32);
-        case GI_TYPE_TAG_UINT32:
-            return GINT_TO_POINTER (arg->v_uint32);
-        case GI_TYPE_TAG_GTYPE:
-            return GSIZE_TO_POINTER (arg->v_size);
-        case GI_TYPE_TAG_UTF8:
-        case GI_TYPE_TAG_FILENAME:
-        case GI_TYPE_TAG_INTERFACE:
-        case GI_TYPE_TAG_ARRAY:
-            return arg->v_pointer;
-        default:
-            g_critical ("Unsupported type %s", g_type_tag_to_string(type_tag));
-            return arg->v_pointer;
+    case GI_TYPE_TAG_INT8:
+	return GINT_TO_POINTER (arg->v_int8);
+    case GI_TYPE_TAG_UINT8:
+	return GINT_TO_POINTER (arg->v_uint8);
+    case GI_TYPE_TAG_INT16:
+	return GINT_TO_POINTER (arg->v_int16);
+    case GI_TYPE_TAG_UINT16:
+	return GINT_TO_POINTER (arg->v_uint16);
+    case GI_TYPE_TAG_INT32:
+	return GINT_TO_POINTER (arg->v_int32);
+    case GI_TYPE_TAG_UINT32:
+	return GINT_TO_POINTER (arg->v_uint32);
+    case GI_TYPE_TAG_GTYPE:
+	return GSIZE_TO_POINTER (arg->v_size);
+    case GI_TYPE_TAG_UTF8:
+    case GI_TYPE_TAG_FILENAME:
+    case GI_TYPE_TAG_INTERFACE:
+    case GI_TYPE_TAG_ARRAY:
+	return arg->v_pointer;
+    default:
+	g_critical ("Unsupported type %s", g_type_tag_to_string(type_tag));
+	return arg->v_pointer;
     }
 }
+#endif
 
 
 /**
@@ -175,9 +183,9 @@ _pygi_arg_to_hash_pointer (const GIArgument *arg,
  * Returns: The length of the array or -1 on failure.
  */
 gssize
-_pygi_argument_array_length_marshal (gsize length_arg_index,
-                                     void *user_data1,
-                                     void *user_data2)
+gi_argument_array_length_marshal (gsize length_arg_index,
+				  void *user_data1,
+				  void *user_data2)
 {
     GIArgInfo length_arg_info;
     GITypeInfo length_type_info;
@@ -186,14 +194,16 @@ _pygi_argument_array_length_marshal (gsize length_arg_index,
     GValue *values = (GValue *)user_data1;
     GICallableInfo *callable_info = (GICallableInfo *)user_data2;
 
-    g_callable_info_load_arg (callable_info, (gint)length_arg_index, &length_arg_info);
+    g_callable_info_load_arg (callable_info,
+			      (gint)length_arg_index, &length_arg_info);
     g_arg_info_load_type (&length_arg_info, &length_type_info);
 
-    length_arg = _pygi_argument_from_g_value (&(values[length_arg_index]),
+    length_arg = gi_giargument_from_g_value ( &(values[length_arg_index]),
                                               &length_type_info);
-    if (!pygi_argument_to_gssize (&length_arg,
-                                  g_type_info_get_tag (&length_type_info),
-                                  &array_len)) {
+    if (!gi_giargument_to_gssize (NULL,
+				  &length_arg,
+				g_type_info_get_tag (&length_type_info),
+				&array_len)) {
         return -1;
     }
 
@@ -220,13 +230,14 @@ _pygi_argument_array_length_marshal (gsize length_arg_index,
  *          free the array with g_array_free() without freeing the data members.
  *          Otherwise don't free the array.
  */
+#if 0
 GArray *
-_pygi_argument_to_array (GIArgument  *arg,
-                         PyGIArgArrayLengthPolicy array_length_policy,
-                         void        *user_data1,
-                         void        *user_data2,
-                         GITypeInfo  *type_info,
-                         gboolean    *out_free_array)
+gi_giargument_to_array (GIArgument  *arg,
+		      GuGIArgArrayLengthPolicy array_length_policy,
+		      void        *user_data1,
+		      void        *user_data2,
+		      GITypeInfo  *type_info,
+		      gboolean    *out_free_array)
 {
     GITypeInfo *item_type_info;
     gboolean is_zero_terminated;
@@ -259,7 +270,9 @@ _pygi_argument_to_array (GIArgument  *arg,
                     if (G_UNLIKELY (array_length_policy == NULL)) {
                         g_critical ("Unable to determine array length for %p",
                                     arg->v_pointer);
-                        g_array = g_array_new (is_zero_terminated, FALSE, (guint)item_size);
+                        g_array = g_array_new (is_zero_terminated,
+					       FALSE,
+					       (guint)item_size);
                         *out_free_array = TRUE;
                         return g_array;
                     }
@@ -267,7 +280,9 @@ _pygi_argument_to_array (GIArgument  *arg,
                     length_arg_pos = g_type_info_get_array_length (type_info);
                     g_assert (length_arg_pos >= 0);
 
-                    length = array_length_policy (length_arg_pos, user_data1, user_data2);
+                    length = array_length_policy (length_arg_pos,
+						  user_data1,
+						  user_data2);
                     if (length < 0) {
                         return NULL;
                     }
@@ -276,7 +291,9 @@ _pygi_argument_to_array (GIArgument  *arg,
 
             g_assert (length >= 0);
 
-            g_array = g_array_new (is_zero_terminated, FALSE, (guint)item_size);
+            g_array = g_array_new (is_zero_terminated,
+				   FALSE,
+				   (guint)item_size);
 
             g_free (g_array->data);
             g_array->data = arg->v_pointer;
@@ -309,9 +326,11 @@ _pygi_argument_to_array (GIArgument  *arg,
 
     return g_array;
 }
+#endif
 
 static GIArgument
-gi_argument_from_object (PyObject   *object,
+gi_argument_from_object (const char *func,
+			 SCM object,
 			 GITypeInfo *type_info,
 			 GITransfer  transfer)
 {
@@ -323,9 +342,10 @@ gi_argument_from_object (PyObject   *object,
     type_tag = g_type_info_get_tag (type_info);
 
     switch (type_tag) {
+#if 0	
         case GI_TYPE_TAG_ARRAY:
         {
-            Py_ssize_t py_length;
+            ssize_t slength;
             guint length, i;
             gboolean is_zero_terminated;
             GITypeInfo *item_type_info;
@@ -333,28 +353,16 @@ gi_argument_from_object (PyObject   *object,
             GArray *array;
             GITransfer item_transfer;
 
-            if (object == Py_None) {
+            if (object == SCM_BOOL_F || object == SCM_EOL) {
                 arg.v_pointer = NULL;
                 break;
             }
 
             /* Note, strings are sequences, but we cannot accept them here */
-            if (!PySequence_Check (object) || 
-#if PY_VERSION_HEX < 0x03000000
-                PyString_Check (object) || 
-#endif
-                PyUnicode_Check (object)) {
-                PyErr_SetString (PyExc_TypeError, "expected sequence");
-                break;
-            }
+	    if (!scm_is_bytevector (object))
+		scm_misc_error (func, "expected bytevector", SCM_EOL);
 
-            py_length = PySequence_Length (object);
-            if (py_length < 0)
-                break;
-
-            if (!pygi_guint_from_pyssize (py_length, &length))
-                break;
-
+            slength = scm_to_ssize_t (scm_bytevector_length (object));
             is_zero_terminated = g_type_info_is_zero_terminated (type_info);
             item_type_info = g_type_info_get_param_type (type_info, 0);
 
@@ -364,21 +372,19 @@ gi_argument_from_object (PyObject   *object,
             else
                item_size = sizeof (GIArgument);
 
-            array = g_array_sized_new (is_zero_terminated, FALSE, (guint)item_size, length);
+            array = g_array_sized_new (is_zero_terminated,
+				       FALSE, (guint)item_size, length);
             if (array == NULL) {
                 g_base_info_unref ( (GIBaseInfo *) item_type_info);
-                PyErr_NoMemory();
+		scm_misc_error (func, "allocation error", SCM_EOL);
                 break;
             }
 
-            if (g_type_info_get_tag (item_type_info) == GI_TYPE_TAG_UINT8 &&
-                PYGLIB_PyBytes_Check(object)) {
-
-                memcpy(array->data, PYGLIB_PyBytes_AsString(object), length);
+            if (g_type_info_get_tag (item_type_info) == GI_TYPE_TAG_UINT8) {
+                memcpy(array->data, SCM_BYTEVECTOR_CONTENTS(object), length);
                 array->len = length;
                 goto array_success;
             }
-
 
             item_transfer = transfer == GI_TRANSFER_CONTAINER ? GI_TRANSFER_NOTHING : transfer;
 
@@ -633,7 +639,7 @@ list_item_error:
                 }
 
                 g_hash_table_insert (hash_table, key.v_pointer,
-                                     _pygi_arg_to_hash_pointer (&value, value_type_info));
+                                     arg_to_hash_pointer (&value, value_type_info));
                 continue;
 
 hash_table_item_error:
@@ -656,12 +662,15 @@ hash_table_release:
             break;
         }
         case GI_TYPE_TAG_ERROR:
-            PyErr_SetString (PyExc_NotImplementedError, "error marshalling is not supported yet");
+            PyErr_SetString (PyExc_NotImplementedError,
+			     "error marshalling is not supported yet");
             /* TODO */
             break;
+#endif
         default:
             /* Ignores cleanup data for now. */
-            pygi_marshal_from_py_basic_type (object, &arg, type_tag, transfer, &cleanup_data);
+            gi_marshal_from_scm_basic_type (object, &arg, type_tag, transfer,
+					    &cleanup_data);
             break;
     }
 
@@ -680,13 +689,13 @@ hash_table_release:
  *
  * Returns: A PyObject representing @arg
  */
-PyObject *
-_pygi_argument_to_object (GIArgument  *arg,
-                          GITypeInfo *type_info,
-                          GITransfer transfer)
+SCM
+gi_giargument_to_object (GIArgument  *arg,
+			 GITypeInfo *type_info,
+			 GITransfer transfer)
 {
     GITypeTag type_tag;
-    PyObject *object = NULL;
+    SCM object = SCM_BOOL_F;
 
     type_tag = g_type_info_get_tag (type_info);
 
@@ -695,10 +704,12 @@ _pygi_argument_to_object (GIArgument  *arg,
         {
             if (g_type_info_is_pointer (type_info)) {
                 g_warn_if_fail (transfer == GI_TRANSFER_NOTHING);
-                object = PyLong_FromVoidPtr (arg->v_pointer);
+		
+                object = scm_from_pointer (arg->v_pointer, NULL);
             }
             break;
         }
+#if 0	
         case GI_TYPE_TAG_ARRAY:
         {
             /* Arrays are assumed to be packed in a GArray */
@@ -926,7 +937,7 @@ _pygi_argument_to_object (GIArgument  *arg,
                     break;
                 }
 
-                _pygi_hash_pointer_to_arg (&value, value_type_info);
+                hash_pointer_to_arg (&value, value_type_info);
                 py_value = _pygi_argument_to_object (&value, value_type_info, item_transfer);
                 if (py_value == NULL) {
                     Py_DECREF (py_key);
@@ -973,9 +984,10 @@ _pygi_argument_to_object (GIArgument  *arg,
             }
             break;
         }
-        default:
+#endif
+    default:
         {
-            object = pygi_marshal_to_py_basic_type (arg, type_tag, transfer);
+            object = gi_marshal_to_scm_basic_type (arg, type_tag, transfer);
         }
     }
 
@@ -983,7 +995,7 @@ _pygi_argument_to_object (GIArgument  *arg,
 }
 
 void
-_pygi_argument_release (GIArgument   *arg,
+gi_giargument_release (GIArgument   *arg,
                         GITypeInfo  *type_info,
                         GITransfer   transfer,
                         GIDirection  direction)
@@ -1020,6 +1032,7 @@ _pygi_argument_release (GIArgument   *arg,
                 g_free (arg->v_string);
             }
             break;
+#if 0
         case GI_TYPE_TAG_ARRAY:
         {
             GArray *array;
@@ -1057,6 +1070,7 @@ _pygi_argument_release (GIArgument   *arg,
 
             break;
         }
+#if 0
         case GI_TYPE_TAG_INTERFACE:
         {
             GIBaseInfo *info;
@@ -1111,6 +1125,7 @@ _pygi_argument_release (GIArgument   *arg,
 
                     break;
                 }
+#endif
                 case GI_INFO_TYPE_ENUM:
                 case GI_INFO_TYPE_FLAGS:
                     break;
@@ -1245,6 +1260,7 @@ _pygi_argument_release (GIArgument   *arg,
             g_slice_free (GError *, arg->v_pointer);
             break;
         }
+#endif
         default:
             break;
     }

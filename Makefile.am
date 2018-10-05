@@ -64,7 +64,9 @@ guile_gi_SOURCES = \
  src/gi/gi_gtype.h src/gi/gi_gtype.c \
  src/gi/__gi_gparamspec.h src/gi/__gi_gparamspec.c \
  src/gi/gi_gparamspec.h src/gi/gi_gparamspec.c \
- src/gi/gi_gsignal.h src/gi/gi_gsignal.c
+ src/gi/gi_gsignal.h src/gi/gi_gsignal.c \
+ src/gi/gi_giargument.h src/gi/gi_giargument.c \
+ src/gi/gi_basictype.h src/gi/gi_basictype.c
 
 # src/gi/__gi_gboxed.h src/gi/__gi_gboxed.c \
  # src/gi/gi_gboxed.h src/gi/gi_gboxed.c \

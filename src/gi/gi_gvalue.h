@@ -4,6 +4,7 @@
 #include <glib.h>
 #include <libguile.h>
 #include <glib-object.h>
+#include <girepository.h>
 #include "__gi_gvalue.h"
 
 SCM gi_gvalue_to_scm_basic_type (const GValue *value, GType fundamental, gboolean *handled);
@@ -16,6 +17,8 @@ SCM gi_param_gvalue_as_scm (const GValue *gvalue,
 SCM gi_gvalue_as_scm (const GValue *value, gboolean copy_boxed);
 int gi_gvalue_from_scm_with_error(GValue *value, SCM obj);
 int gi_gvalue_from_scm (GValue *value, SCM obj);
+GIArgument gi_giargument_from_g_value(const GValue *value,
+				      GITypeInfo *type_info);
 
 void gi_init_gvalue (void);
 #endif

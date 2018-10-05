@@ -27,10 +27,9 @@ gi_param_gvalue_as_scm (const GValue *gvalue,
 }
 
 
-#if 0
-static GIArgument
-_pygi_argument_from_g_value(const GValue *value,
-                            GITypeInfo *type_info)
+GIArgument
+gi_giargument_from_g_value(const GValue *value,
+			 GITypeInfo *type_info)
 {
     GIArgument arg = { 0, };
 
@@ -168,7 +167,6 @@ _pygi_argument_from_g_value(const GValue *value,
 
     return arg;
 }
-#endif
 
 static int
 gi_gvalue_array_from_scm_list(GValue *value, SCM list)
