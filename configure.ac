@@ -115,6 +115,8 @@ GOBJECT_INTROSPECTION_CHECK([1.30.0])
 # Check for types, structures, compiler characteristics
 AX_C___ATTRIBUTE__
 
+# -Wdeclaration-after-statement dnl
+
 m4_define([compiler_flags_common],[ dnl
  -pipe dnl
  -g dnl
@@ -122,7 +124,6 @@ m4_define([compiler_flags_common],[ dnl
  -Wextra dnl
  -Waggregate-return dnl
  -Wcast-align dnl
- -Wdeclaration-after-statement dnl
  -Werror=missing-include-dirs dnl
  -Werror=pointer-arith dnl
  -Wfloat-equal dnl
@@ -182,7 +183,6 @@ esac
 AC_CONFIG_FILES([
  Makefile
  ])
-AC_REQUIRE_AUX_FILE([tap-driver.sh])
 AC_OUTPUT
 
 if test "x$with_guile_directories" = "xyes"; then

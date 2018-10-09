@@ -66,7 +66,11 @@ guile_gi_SOURCES = \
  src/gi/gi_gparamspec.h src/gi/gi_gparamspec.c \
  src/gi/gi_gsignal.h src/gi/gi_gsignal.c \
  src/gi/gi_giargument.h src/gi/gi_giargument.c \
- src/gi/gi_basictype.h src/gi/gi_basictype.c
+ src/gi/gi_basictype.h src/gi/gi_basictype.c \
+ src/gi/gir_func.h src/gi/gir_func.c \
+ src/gi/gir_func2.h src/gi/gir_func2.c \
+ src/gi/gir_type.h src/gi/gir_type.c 
+
 
 # src/gi/__gi_gboxed.h src/gi/__gi_gboxed.c \
  # src/gi/gi_gboxed.h src/gi/gi_gboxed.c \
@@ -115,7 +119,13 @@ libguile_gi_la_SOURCES = \
  src/gi/gi_gtype.h src/gi/gi_gtype.c \
  src/gi/__gi_gparamspec.h src/gi/__gi_gparamspec.c \
  src/gi/gi_gparamspec.h src/gi/gi_gparamspec.c \
- src/gi/gi_gsignal.h src/gi/gi_gsignal.c
+ src/gi/gi_gsignal.h src/gi/gi_gsignal.c \
+ src/gi/gi_giargument.h src/gi/gi_giargument.c \
+ src/gi/gi_basictype.h src/gi/gi_basictype.c \
+ src/gi/gir_func.h src/gi/gir_func.c \
+ src/gi/gir_type.h src/gi/gir_type.c \
+ src/gi/gir_func2.h src/gi/gir_func2.c
+
 
 libguile_gi_la_CFLAGS = \
   -std=c11 \
@@ -201,14 +211,14 @@ AM_TESTS_ENVIRONMENT = LD_LIBRARY_PATH="$(top_builddir)/.libs"; export LD_LIBRAR
 TESTS = \
  test/test-setup.scm \
  test/test-gobject.scm \
- test/test-test.scm
+ test/test-glib.scm
 
 TEST_EXTENSIONS = .scm
 #SCM_LOG_COMPILER = ${top_builddir}/libtool \
 #    -dlopen ${top_builddir}/src/gi/libguile-gi.la \
 #    --mode=execute guile
 AM_SCM_LOG_FLAGS = --no-auto-compile -L ${top_srcdir}/src -L ${top_srcdir}/test/. -s
-SCM_LOG_COMPILER = $(GUILE)
+SCM_LOG_COMPILER = $(top_builddir)/guile-gi
 # AM_SCM_LOG_FLAGS = --no-auto-compile -L $(top_srcdir)/src
 
 EXTRA_DIST = \

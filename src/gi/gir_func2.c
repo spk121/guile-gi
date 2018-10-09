@@ -105,8 +105,8 @@ scm_gi_load_repository (SCM s_namespace, SCM s_version)
   GITypelib *tl;
   GError *error = NULL;
 
-  SCM_ASSERT (scm_is_string (s_namespace), s_namespace, SCM_ARG1, "irepository-load");
-  SCM_ASSERT (scm_is_string (s_version), s_version, SCM_ARG2, "irepository-load");
+  SCM_ASSERT (scm_is_string (s_namespace), s_namespace, SCM_ARG1, "gi-load-repository");
+  SCM_ASSERT (scm_is_string (s_version), s_version, SCM_ARG2, "gi-load-repository");
 
   namespace_ = scm_to_utf8_string (s_namespace);
   version = scm_to_utf8_string (s_version);
@@ -637,7 +637,11 @@ function_info_typecheck_args (GIFunctionInfo *func_info, SCM s_args, char **errs
       i_input ++;
     }
     g_base_info_unref (arg_info);
-    if (!type_ok)
+    if (!type_ok) {
+      char *tmp = *errstr;
+      *errstr = g_strdup_printf("In arg %d %s", i+1, tmp);
+      g_free (tmp);
+    }
       break;
   }
   return type_ok;
@@ -673,6 +677,34 @@ function_info_convert_args (GIFunctionInfo *func_info, SCM s_args)
   return in_args;
 }
 
+static void
+function_info_release_args (GIFunctionInfo *func_info, GIArgument *args)
+{
+  GIDirection dir;
+  GIArgInfo *arg_info;
+  GITypeInfo *type_info;
+  
+  int n_args = g_callable_info_get_n_args ((GICallableInfo *) func_info);
+  int i_input = 0;
+  
+  for (int i = 0; i < n_args; i ++) {
+    arg_info = g_callable_info_get_arg ((GICallableInfo *) func_info, i);
+    type_info = g_arg_info_get_type (arg_info);
+    
+    dir = g_arg_info_get_direction (arg_info);
+    
+    if (dir == GI_DIRECTION_IN || dir == GI_DIRECTION_INOUT) {
+      gi_giargument_release (&(args[i]),
+			     type_info,
+			     g_arg_info_get_ownership_transfer (arg_info),
+			     dir);
+      i_input ++;
+    }
+    g_base_info_unref (arg_info);
+    g_base_info_unref (type_info);
+  }
+  
+}
 
 static SCM
 scm_gi_function_invoke (SCM s_namespace, SCM s_name, SCM s_args)
@@ -751,10 +783,7 @@ scm_gi_function_invoke (SCM s_namespace, SCM s_name, SCM s_args)
 					&return_arg, &err);
 
   /* Free any allocated input */
-  for (int i = 0; i < n_input_args_received; i ++) {
-    // free (in_args_free);
-    // FIXME: do this
-  }
+  function_info_release_args (info, in_args);
   g_free (in_args);
   in_args = NULL;
   
@@ -804,7 +833,10 @@ scm_gi_function_invoke (SCM s_namespace, SCM s_name, SCM s_args)
     g_base_info_unref (arg_info);
   }
 
-  return output;
+  if (n_output_args == 0)
+    return s_return;
+  else
+    return output;
 }
 
 static void

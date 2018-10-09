@@ -19,9 +19,9 @@ gi_gparamspec_typecheck_scm (const char *func, SCM x)
 	scm_misc_error (func, "first element of property list should be a string name: ~S", scm_list_1 (x));
     if (!SCM_IS_A_P (scm_list_ref (x, scm_from_size_t (1)), gi_gtype_type))
 	scm_misc_error (func, "second element of property list should be a parent type: ~S", scm_list_1 (x));
-    if (!scm_is_a_string (scm_list_ref (x, scm_from_size_t (2))))
+    if (!scm_is_string (scm_list_ref (x, scm_from_size_t (2))))
 	scm_misc_error (func, "third element of property list should be a string blurb: ~S", scm_list_1 (x));
-    if (!scm_is_a_string (scm_list_ref (x, scm_from_size_t (3))))
+    if (!scm_is_string (scm_list_ref (x, scm_from_size_t (3))))
 	scm_misc_error (func, "fourth element of property list should be a string description: ~S", scm_list_1 (x));
 }
 

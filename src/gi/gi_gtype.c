@@ -89,7 +89,10 @@ gi_gtype_from_scm(SCM obj)
 	    return val;
     }
 
-    return 0;
+    scm_misc_error ("gi_gtype_from_scm",
+		    "cannot convert '~a' to a GType",
+		    scm_list_1 (obj));
+    g_return_val_if_reached (0);
 }
 
 GType

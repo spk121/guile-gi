@@ -31,7 +31,11 @@ GArray* _pygi_argument_to_array (GIArgument  *arg,
                                  GITypeInfo  *type_info,
                                  gboolean    *out_free_array);
 
-SCM
+gboolean
+gi_giargument_check_scm_type(SCM obj, GIArgInfo *ai, char **errstr);
+
+
+  SCM
 gi_giargument_to_object (GIArgument  *arg,
 			 GITypeInfo *type_info,
 			 GITransfer transfer);
@@ -40,4 +44,9 @@ gi_giargument_release (GIArgument   *arg,
                         GITypeInfo  *type_info,
                         GITransfer   transfer,
 		       GIDirection  direction);
+GIArgument
+gi_argument_from_object (const char *func,
+			 SCM object,
+			 GITypeInfo *type_info,
+			 GITransfer  transfer);
 #endif

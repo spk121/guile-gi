@@ -1,9 +1,10 @@
 /* -*- Mode: C; c-basic-offset: 4 -*- */
 #include "gi_giargument.h"
 #include <libguile.h>
+#include <math.h>
 #include "gi_basictype.h"
 #include "gi_gvalue.h"
-/* 
+/*
  * vim: tabstop=4 shiftwidth=4 expandtab
  *
  * Copyright (C) 2005-2009 Johan Dahlin <johan@gnome.org>
@@ -24,6 +25,131 @@
  * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
+static const intmax_t intmin[GI_TYPE_TAG_N_TYPES] =
+    {[GI_TYPE_TAG_INT8] = INT8_MIN,
+     [GI_TYPE_TAG_INT16] = INT16_MIN,
+     [GI_TYPE_TAG_INT32] = INT32_MIN,
+     [GI_TYPE_TAG_INT64] = INT64_MIN};
+
+static const intmax_t intmax[GI_TYPE_TAG_N_TYPES] =
+    {[GI_TYPE_TAG_INT8] = INT8_MAX,
+     [GI_TYPE_TAG_INT16] = INT16_MAX,
+     [GI_TYPE_TAG_INT32] = INT32_MAX,
+     [GI_TYPE_TAG_INT64] = INT64_MAX};
+
+static const uintmax_t uintmax[GI_TYPE_TAG_N_TYPES] =
+    {[GI_TYPE_TAG_UINT8] = UINT8_MAX,
+     [GI_TYPE_TAG_UINT16] = UINT16_MAX,
+     [GI_TYPE_TAG_UINT32] = UINT32_MAX,
+     [GI_TYPE_TAG_UINT64] = UINT64_MAX,
+     [GI_TYPE_TAG_UNICHAR] = 0x10FFFF};
+
+#define TYPE_TAG_IS_EXACT_INTEGER(x)		\
+    ((x) == GI_TYPE_TAG_INT8			\
+     || (x) == GI_TYPE_TAG_UINT8		\
+     || (x) == GI_TYPE_TAG_INT16		\
+     || (x) == GI_TYPE_TAG_UINT16		\
+     || (x) == GI_TYPE_TAG_INT32		\
+     || (x) == GI_TYPE_TAG_UINT32		\
+     || (x) == GI_TYPE_TAG_INT64		\
+     || (x) == GI_TYPE_TAG_UINT64)
+
+#define TYPE_TAG_IS_SIGNED_INTEGER(x)		\
+    ((x) == GI_TYPE_TAG_INT8			\
+     || (x) == GI_TYPE_TAG_INT16		\
+     || (x) == GI_TYPE_TAG_INT32		\
+     || (x) == GI_TYPE_TAG_INT64)
+
+#define TYPE_TAG_IS_REAL_NUMBER(x)		\
+    ((x) == GI_TYPE_TAG_FLOAT			\
+     || (x) == GI_TYPE_TAG_DOUBLE)
+
+
+gboolean
+gi_giargument_check_scm_type(SCM obj, GIArgInfo *ai, char **errstr)
+{
+    GITypeInfo *ti = g_arg_info_get_type (ai);
+    GITransfer transfer = g_arg_info_get_ownership_transfer (ai);
+    GIDirection dir = g_arg_info_get_direction (ai);
+    GITypeTag type_tag = g_type_info_get_tag (ti);
+    gboolean is_ptr = g_type_info_is_pointer (ti);
+    gboolean ok;
+
+    g_assert (dir == GI_DIRECTION_IN || dir == GI_DIRECTION_INOUT);
+
+    if (!is_ptr) {
+	if (TYPE_TAG_IS_EXACT_INTEGER(type_tag)) {
+	    if (!scm_is_exact_integer (obj)) {
+		*errstr = g_strdup_printf ("expected exact integer");
+		ok = FALSE;
+	    } else {
+		if (TYPE_TAG_IS_SIGNED_INTEGER (type_tag)) {
+		    intmax_t val = scm_to_intmax (obj);
+		    if (val < intmin[type_tag] || val > intmax[type_tag]) {
+			*errstr = g_strdup_printf ("integer out of range");
+			ok = FALSE;
+		    } else
+			ok = TRUE;
+		} else {
+		    uintmax_t val = scm_to_uintmax (obj);
+		    if (val > uintmax[type_tag]) {
+			*errstr = g_strdup_printf ("unsigned integer out of range");
+			ok = FALSE;
+		    } else
+			ok = TRUE;
+		}
+	    }
+	} else if (TYPE_TAG_IS_REAL_NUMBER (type_tag)) {
+	    if (!scm_is_real (obj)) {
+		*errstr = g_strdup_printf ("expected real number");
+		ok = FALSE;
+	    } else {
+		// FIXME, if you really wanted to, you could make a scheme integer
+		// bigger than DBL_MAX, so this would throw.
+		double val = scm_to_double (obj);
+		if (!isfinite (val)) {
+		    *errstr = g_strdup_printf ("real number is infinite");
+		    ok = FALSE;
+		} else if (type_tag == GI_TYPE_TAG_FLOAT) {
+		    if (val < -FLT_MAX || val > FLT_MAX) {
+			*errstr = g_strdup_printf ("real number out of range");
+			ok = FALSE;
+		    } else
+			ok = TRUE;
+		} else
+		    ok = TRUE;
+	    }
+	} else if (type_tag == GI_TYPE_TAG_BOOLEAN) {
+	    if (obj != SCM_BOOL_F && obj != SCM_BOOL_T) {
+		*errstr = g_strdup_printf ("expected boolean");
+		ok = FALSE;
+	    } else
+		ok = TRUE;
+	} else {
+	    *errstr = g_strdup_printf ("unhandled type %u", type_tag);
+	    ok = FALSE;
+	}
+    } else /* is_ptr */ {
+	if (TYPE_TAG_IS_EXACT_INTEGER (type_tag) || TYPE_TAG_IS_REAL_NUMBER (type_tag)
+	    || type_tag == GI_TYPE_TAG_UTF8 || type_tag == GI_TYPE_TAG_FILENAME || type_tag == GI_TYPE_TAG_VOID) {
+	    if (!scm_is_bytevector (obj) && !scm_is_string (obj)) {
+		*errstr = g_strdup_printf ("expected bytevector or string");
+		ok = FALSE;
+	    } else
+		ok = TRUE;
+	/* } else if (type_tag == GI_TYPE_TAG_VOID) { */
+	/*     if (!SCM_POINTER_P (obj)) { */
+	/* 	*errstr = g_strdup_printf ("expected pointer"); */
+	/* 	ok = FALSE; */
+	/*     } else */
+	/* 	ok = TRUE; */
+	} else {
+	    *errstr = g_strdup_printf ("unhandled type %u", type_tag);
+	    ok = FALSE;
+	}
+    }
+    return ok;
+}
 
 gboolean
 gi_giargument_to_gssize (const char *func,
@@ -32,7 +158,7 @@ gi_giargument_to_gssize (const char *func,
                          gssize *gssize_out)
 {
     const gchar *type_name = g_type_tag_to_string (type_tag);
-	    
+
     switch (type_tag) {
     case GI_TYPE_TAG_INT8:
 	*gssize_out = arg_in->v_int8;
@@ -143,7 +269,7 @@ arg_to_hash_pointer (const GIArgument *arg,
 		     GITypeInfo       *type_info)
 {
     GITypeTag type_tag = gi_get_storage_type (type_info);
-    
+
     switch (type_tag) {
     case GI_TYPE_TAG_INT8:
 	return GINT_TO_POINTER (arg->v_int8);
@@ -244,13 +370,13 @@ gi_giargument_to_array (GIArgument  *arg,
     gsize item_size;
     gssize length;
     GArray *g_array;
-    
+
     g_return_val_if_fail (g_type_info_get_tag (type_info) == GI_TYPE_TAG_ARRAY, NULL);
 
     if (arg->v_pointer == NULL) {
         return NULL;
     }
-    
+
     switch (g_type_info_get_array_type (type_info)) {
         case GI_ARRAY_TYPE_C:
             is_zero_terminated = g_type_info_is_zero_terminated (type_info);
@@ -328,7 +454,7 @@ gi_giargument_to_array (GIArgument  *arg,
 }
 #endif
 
-static GIArgument
+GIArgument
 gi_argument_from_object (const char *func,
 			 SCM object,
 			 GITypeInfo *type_info,
@@ -337,12 +463,14 @@ gi_argument_from_object (const char *func,
     GIArgument arg;
     GITypeTag type_tag;
     gpointer cleanup_data = NULL;
+    gboolean is_ptr;
 
     memset(&arg, 0, sizeof(GIArgument));
     type_tag = g_type_info_get_tag (type_info);
+    is_ptr = g_type_info_is_pointer (type_info);
 
     switch (type_tag) {
-#if 0	
+#if 0
         case GI_TYPE_TAG_ARRAY:
         {
             ssize_t slength;
@@ -669,7 +797,7 @@ hash_table_release:
 #endif
         default:
             /* Ignores cleanup data for now. */
-            gi_marshal_from_scm_basic_type (object, &arg, type_tag, transfer,
+	    gi_marshal_from_scm_basic_type (object, &arg, type_tag, is_ptr, transfer,
 					    &cleanup_data);
             break;
     }
@@ -704,12 +832,12 @@ gi_giargument_to_object (GIArgument  *arg,
         {
             if (g_type_info_is_pointer (type_info)) {
                 g_warn_if_fail (transfer == GI_TRANSFER_NOTHING);
-		
+
                 object = scm_from_pointer (arg->v_pointer, NULL);
             }
             break;
         }
-#if 0	
+#if 0
         case GI_TYPE_TAG_ARRAY:
         {
             /* Arrays are assumed to be packed in a GArray */
@@ -721,16 +849,16 @@ gi_giargument_to_object (GIArgument  *arg,
 
             if (arg->v_pointer == NULL)
                 return PyList_New (0);
-            
+
             item_type_info = g_type_info_get_param_type (type_info, 0);
             g_assert (item_type_info != NULL);
 
             item_type_tag = g_type_info_get_tag (item_type_info);
             item_transfer = transfer == GI_TRANSFER_CONTAINER ? GI_TRANSFER_NOTHING : transfer;
-            
+
             array = arg->v_pointer;
             item_size = g_array_get_element_size (array);
-            
+
             if (G_UNLIKELY (item_size > sizeof(GIArgument))) {
                 g_critical ("Stack overflow protection. "
                             "Can't copy array element into GIArgument.");
@@ -751,7 +879,7 @@ gi_giargument_to_object (GIArgument  *arg,
                 for (i = 0; i < array->len; i++) {
                     GIArgument item = { 0 };
                     PyObject *py_item;
-                    
+
                     memcpy (&item, array->data + i * item_size, item_size);
 
                     py_item = _pygi_argument_to_object (&item, item_type_info, item_transfer);
@@ -1265,4 +1393,3 @@ gi_giargument_release (GIArgument   *arg,
             break;
     }
 }
-

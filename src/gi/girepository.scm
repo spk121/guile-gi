@@ -64,6 +64,7 @@
 	    function-info-throws?
 	    function-info-get-property
 	    function-info-get-symbol
+	    function-invoke
 	    
 	    %function-info-get-flags
 	    irepository-get-n-infos
@@ -88,6 +89,12 @@
 	    struct-info-is-gtype-struct?
 	    struct-info-get-fields
 	    struct-info-get-methods
+
+	    ;; FUNC2
+	    load-repository
+	    unload-repositories
+	    gi-constant-value
+	    gi-flag-value
 	    ))
 
 (defmacro function-info-is (__TYPE __FLAG)
@@ -126,4 +133,4 @@ with 'irepository-require'"
 namespace must first have been loaded with 'irepository-require'"
   (%irepository-get-infos namespace))
 
-(load-extension "libguile-girepository.so" "gir_init")
+(load-extension "libguile-gi.so" "gi_init_gobject")

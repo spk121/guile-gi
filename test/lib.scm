@@ -45,7 +45,7 @@
 
  ;; Reporting results in various ways.
  register-reporter unregister-reporter reporter-registered?
- make-count-reporter print-counts
+ make-count-reporter print-counts exit-value
  make-log-reporter
  full-reporter
  user-reporter))
@@ -519,6 +519,20 @@
 				"no total available for `" (car tag) "'"))))
      result-tags)
     (newline port)))
+
+;; Set an exit value based on a count reporter's results.
+(define (exit-value results)
+  (let ((fail (assoc-ref results 'fail))
+	(upass (assoc-ref results 'upass))
+	(err (assoc-ref results 'error)))
+    (cond
+     ((or (and (integer? fail) (> fail 0))
+	  (and (integer? upass) (> upass 0)))
+      (primitive-exit 1))
+     ((and (integer? err) (> err 0))
+      (primitive-exit 99))
+     (else
+      (primitive-exit 0)))))
 
 ;;; Return a reporter procedure which prints all results to the file
 ;;; FILE, in human-readable form.  FILE may be a filename, or a port.

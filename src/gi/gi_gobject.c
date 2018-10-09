@@ -5,6 +5,8 @@
 #include "gi_gsignal.h"
 #include "gi_gparamspec.h"
 #include "gi_ginterface.h"
+#include "gir_func.h"
+#include "gir_type.h"
 #include <glib-object.h>
 #include <glib.h>
 #include <girepository.h>
@@ -1542,6 +1544,9 @@ gi_init_gobject (void)
     gi_init_gparamspec ();
 
     gi_init_gobject_type ();
+    gir_init_funcs();
+    gir_init_func2();
+    gir_init_types();
     
     gi_gobject_wrapper_key = g_quark_from_static_string ("GuGObject::wrapper");
     gi_gobject_custom_key = g_quark_from_static_string ("GuGObject::custom");
