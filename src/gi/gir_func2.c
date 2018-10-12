@@ -24,6 +24,7 @@ static GHashTable *gi_constants = NULL;
 static GHashTable *gi_enums = NULL;
 static GHashTable *gi_flags = NULL;
 static GHashTable *gi_functions = NULL;
+static GHashTable *gi_methods = NULL;
 static GHashTable *gi_callbacks = NULL;
 static GHashTable *gi_structs = NULL;
 static GHashTable *gi_unions = NULL;
@@ -53,6 +54,52 @@ hash_equal_func(gconstpointer a, gconstpointer b)
   return a == b;
 }
 #endif
+
+/* The method table is different from other hash tables in that
+ * its VALUE is itself a hashtable mapping a GTYPE to a
+ * FUNC_INFO.
+ * This is because many methods have the same name but operate
+ * on different GTypes */
+static gboolean
+insert_into_method_table (GType type,
+			  GIFunctionInfo *info)
+{
+  if (!gi_methods) {
+    g_debug ("Creating the methods hash table");
+    gi_methods = g_hash_table_new_full (g_str_hash,
+					g_str_equal,
+					g_free,
+					(GDestroyNotify) g_hash_table_destroy);
+  }
+  const gchar *full_name = g_base_info_get_name (info);
+  GHashTable *subhash = g_hash_table_lookup (gi_methods,
+					     full_name);
+  if (!subhash) {
+    g_debug ("Inserted '%s' into the methods table", full_name);
+    subhash = g_hash_table_new_full (g_direct_hash,
+				     g_direct_equal,
+				     NULL,
+				     (GDestroyNotify) g_base_info_unref);
+    g_hash_table_insert (gi_methods,
+			 g_strdup(full_name),
+			 subhash);
+  }
+  if (g_hash_table_contains (subhash, GINT_TO_POINTER(type))) {
+    g_critical ("Did not overwrite method '%s' for type '%s'",
+		full_name,
+		g_type_name (type));
+    return FALSE;
+  }
+  g_hash_table_insert (subhash,
+		       GINT_TO_POINTER (type),
+		       info);
+  g_debug ("Inserted '%s' for type '%s' %d into methods table",
+	   full_name,
+	   g_type_name (type),
+	   type);
+  return TRUE;
+}
+
 
 static gboolean
 insert_into_hash_table (const char *category,
@@ -137,15 +184,18 @@ scm_gi_load_repository (SCM s_namespace, SCM s_version)
 	break;
       case GI_INFO_TYPE_STRUCT:
 	{
+	  GType gtype = g_registered_type_info_get_g_type (info);
+	  if (gtype == G_TYPE_NONE) {
+	    g_warning ("Not registering struct type '%s' because is has no GType",
+		     g_base_info_get_name (info));
+	    g_base_info_unref (info);
+	    break;
+	  }
 	  insert_into_hash_table ("structs", namespace_, NULL, &gi_structs, info);
 	  gint n_methods = g_struct_info_get_n_methods (info);
 	  for (gint m = 0; m < n_methods; m ++) {
 	    GIFunctionInfo *func_info = g_struct_info_get_method (info, m);
-	    if (!insert_into_hash_table ("functions",
-					 namespace_,
-					 g_base_info_get_name (info),
-					 &gi_functions,
-					 func_info))
+	    if (!insert_into_method_table (gtype, func_info))
 	      g_base_info_unref (func_info);
 	  }
 	}
@@ -158,13 +208,18 @@ scm_gi_load_repository (SCM s_namespace, SCM s_version)
 	  break;
 	case GI_INFO_TYPE_OBJECT:
 	  {
+	    GType gtype = g_registered_type_info_get_g_type (info);
+	    if (gtype == G_TYPE_NONE) {
+	      g_warning ("Not registereing object type '%s' because is has no GType",
+		       g_base_info_get_name (info));
+	      g_base_info_unref (info);
+	      break;
+	    }
 	    insert_into_hash_table ("objects", namespace_, NULL, &gi_objects, info);
 	    gint n_methods = g_object_info_get_n_methods (info);
 	    for (gint m = 0; m < n_methods; m ++) {
 	      GIFunctionInfo *func_info = g_object_info_get_method (info, m);
-	      if (!insert_into_hash_table ("functions", namespace_,
-					   g_base_info_get_name (info),
-					   &gi_functions, func_info))
+	      if (!insert_into_method_table (gtype, func_info))
 		g_base_info_unref (func_info);
 	    }
 	  }
@@ -177,12 +232,18 @@ scm_gi_load_repository (SCM s_namespace, SCM s_version)
 	  break;
 	case GI_INFO_TYPE_UNION:
 	  {
+	    GType gtype = g_registered_type_info_get_g_type (info);
+	    if (gtype == G_TYPE_NONE) {
+	      g_warning ("Not registering union type '%s' because is has no GType",
+		       g_base_info_get_name (info));
+	      g_base_info_unref (info);
+	      break;
+	    }
 	    insert_into_hash_table ("unions", namespace_, NULL, &gi_unions, info);
 	    gint n_methods = g_union_info_get_n_methods (info);
 	    for (gint m = 0; m < n_methods; m ++) {
 	      GIFunctionInfo *func_info = g_union_info_get_method (info, m);
-	      if (!insert_into_hash_table ("functions", namespace_,
-					   g_base_info_get_name (info), &gi_functions, func_info))
+	      if (!insert_into_method_table (gtype, func_info))
 		g_base_info_unref (func_info);
 	    }
 	  }
@@ -611,6 +672,8 @@ function_info_count_args (GIFunctionInfo *info, int *in, int *out)
       n_output_args ++;
     }
   }
+  if (g_function_info_get_flags (info) & GI_FUNCTION_IS_METHOD)
+    n_input_args ++;
   *in = n_input_args;
   *out = n_output_args;
 }
@@ -704,6 +767,30 @@ function_info_release_args (GIFunctionInfo *func_info, GIArgument *args)
     g_base_info_unref (type_info);
   }
   
+}
+
+
+/* The inner part of a method call.  It just looks up a method
+ * from the list and appends the method and its arguments together.
+ * A full method call is 
+ * scm_gi_method_call (object, scm_gi_method_prepare ("methodname", list_of_args))
+ */
+static SCM
+scm_gi_method_prepare (SCM s_method_name, SCM s_list_of_args)
+{
+  /* Look-up the method by name. */
+  /* Make a list of the method and the args, for dispatch. */
+  g_return_val_if_reached (SCM_UNSPECIFIED);
+}
+
+/* Given a wrapped GObject, struct, or union, call the attached method
+ * with the given args, if the method is applicable to the object. */
+static SCM
+scm_gi_method_send (SCM s_object, SCM s_method_args_list)
+{
+  /* Find out of this type of argument or of any of this argument's
+     parent types map to this method. */
+  g_return_val_if_reached (SCM_UNSPECIFIED);
 }
 
 static SCM
@@ -856,6 +943,7 @@ scm_gi_unload_repositories (void)
   unload_repository ("enums", &gi_enums);
   unload_repository ("flags", &gi_flags);
   unload_repository ("functions", &gi_functions);
+  unload_repository ("methods", &gi_methods);
   unload_repository ("callbacks", &gi_callbacks);
   unload_repository ("structs", &gi_structs);
   unload_repository ("unions", &gi_unions);
@@ -863,6 +951,36 @@ scm_gi_unload_repositories (void)
   unload_repository ("interfaces", &gi_interfaces);
   return SCM_UNSPECIFIED;
 }
+
+
+/* re pygi_type_import_by_gi_info */
+SCM
+gi_type_import_by_gi_info (GIBaseInfo *info)
+{
+  const gchar *namespace_ = g_base_info_get_namespace (info);
+  const gchar *name = g_base_info_get_name (info);
+  GIInfoType info_type;
+  g_debug ("gi_type_import_by_gi_info: namespace '%s' name '%s'",
+	   namespace_, name);
+
+  switch (info_type) {
+  case GI_INFO_TYPE_STRUCT:
+    {
+      GType g_type;
+      SCM s_type;
+      if (g_hash_table_contains (gi_structs, name)) {
+	g_debug ("type name '%s' is found in structs", name);
+	/* Have we made a Guile type for this struct? */
+	g_type = g_registered_type_info_get_g_type ((GIRegisteredTypeInfo *) info);
+      }
+    }
+    break;
+  default:
+    g_critical ("unimplemented");
+  }
+  return SCM_UNSPECIFIED;
+}
+
 
 void
 gir_init_func2(void)

@@ -4,6 +4,8 @@
 #include <math.h>
 #include "gi_basictype.h"
 #include "gi_gvalue.h"
+#include "gir_func2.h"
+#include "gi_gobject.h"
 /*
  * vim: tabstop=4 shiftwidth=4 expandtab
  *
@@ -137,14 +139,10 @@ gi_giargument_check_scm_type(SCM obj, GIArgInfo *ai, char **errstr)
 		ok = FALSE;
 	    } else
 		ok = TRUE;
-	/* } else if (type_tag == GI_TYPE_TAG_VOID) { */
-	/*     if (!SCM_POINTER_P (obj)) { */
-	/* 	*errstr = g_strdup_printf ("expected pointer"); */
-	/* 	ok = FALSE; */
-	/*     } else */
-	/* 	ok = TRUE; */
+	} else if (type_tag == GI_TYPE_TAG_INTERFACE) {
+	    ok = TRUE;
 	} else {
-	    *errstr = g_strdup_printf ("unhandled type %u", type_tag);
+	    *errstr = g_strdup_printf ("unhandled pointer type %u", type_tag);
 	    ok = FALSE;
 	}
     }
@@ -552,6 +550,7 @@ array_success:
             g_base_info_unref ( (GIBaseInfo *) item_type_info);
             break;
         }
+#endif
         case GI_TYPE_TAG_INTERFACE:
         {
             GIBaseInfo *info;
@@ -570,12 +569,12 @@ array_success:
                 case GI_INFO_TYPE_UNION:
                 {
                     GType g_type;
-                    PyObject *py_type;
+		    SCM s_type;
                     gboolean is_foreign = (info_type == GI_INFO_TYPE_STRUCT) &&
                                           (g_struct_info_is_foreign ((GIStructInfo *) info));
 
                     g_type = g_registered_type_info_get_g_type ( (GIRegisteredTypeInfo *) info);
-                    py_type = pygi_type_import_by_gi_info ( (GIBaseInfo *) info);
+                    s_type = gi_type_import_by_gi_info ( (GIBaseInfo *) info);
 
                     /* Note for G_TYPE_VALUE g_type:
                      * This will currently leak the GValue that is allocated and
@@ -584,32 +583,32 @@ array_success:
                      * Further re-factoring is needed to fix this leak.
                      * See: https://bugzilla.gnome.org/show_bug.cgi?id=693405
                      */
-                    pygi_arg_struct_from_py_marshal (object,
-                                                     &arg,
-                                                     NULL, /*arg_name*/
-                                                     info, /*interface_info*/
-                                                     g_type,
-                                                     py_type,
-                                                     transfer,
-                                                     FALSE, /*copy_reference*/
-                                                     is_foreign,
-                                                     g_type_info_is_pointer (type_info));
+                    /* pygi_arg_struct_from_py_marshal (object, */
+                    /*                                  &arg, */
+                    /*                                  NULL, /\*arg_name*\/ */
+                    /*                                  info, /\*interface_info*\/ */
+                    /*                                  g_type, */
+                    /*                                  py_type, */
+                    /*                                  transfer, */
+                    /*                                  FALSE, /\*copy_reference*\/ */
+                    /*                                  is_foreign, */
+                    /*                                  g_type_info_is_pointer (type_info)); */
+		    g_critical ("Unimplemented");
 
-                    Py_DECREF (py_type);
+                    // Py_DECREF (py_type);
                     break;
                 }
                 case GI_INFO_TYPE_ENUM:
                 case GI_INFO_TYPE_FLAGS:
                 {
-                    if (!pygi_gint_from_py (object, &arg.v_int))
-                        break;
-
+		    arg.v_int = scm_to_int (object);
                     break;
                 }
                 case GI_INFO_TYPE_INTERFACE:
                 case GI_INFO_TYPE_OBJECT:
                     /* An error within this call will result in a NULL arg */
-                    pygi_arg_gobject_out_arg_from_py (object, &arg, transfer);
+                    /* pygi_arg_gobject_out_arg_from_py (object, &arg, transfer); */
+		    g_critical ("Unimplemented");
                     break;
 
                 default:
@@ -618,6 +617,7 @@ array_success:
             g_base_info_unref (info);
             break;
         }
+#if 0
         case GI_TYPE_TAG_GLIST:
         case GI_TYPE_TAG_GSLIST:
         {
@@ -896,6 +896,7 @@ gi_giargument_to_object (GIArgument  *arg,
             g_base_info_unref ( (GIBaseInfo *) item_type_info);
             break;
         }
+#endif
         case GI_TYPE_TAG_INTERFACE:
         {
             GIBaseInfo *info;
@@ -913,29 +914,36 @@ gi_giargument_to_object (GIArgument  *arg,
                 case GI_INFO_TYPE_STRUCT:
                 case GI_INFO_TYPE_UNION:
                 {
-                    PyObject *py_type;
+		    SCM s_type;
                     GType g_type = g_registered_type_info_get_g_type ( (GIRegisteredTypeInfo *) info);
                     gboolean is_foreign = (info_type == GI_INFO_TYPE_STRUCT) &&
                                           (g_struct_info_is_foreign ((GIStructInfo *) info));
 
                     /* Special case variant and none to force loading from py module. */
                     if (g_type == G_TYPE_VARIANT || g_type == G_TYPE_NONE) {
-                        py_type = pygi_type_import_by_gi_info (info);
+			g_assert_not_reached ();
+                        //py_type = pygi_type_import_by_gi_info (info);
                     } else {
-                        py_type = pygi_type_get_from_g_type (g_type);
+			// FIXME: make 
                     }
 
-                    object = pygi_arg_struct_to_py_marshal (arg,
-                                                            info, /*interface_info*/
-                                                            g_type,
-                                                            py_type,
-                                                            transfer,
-                                                            FALSE, /*is_allocated*/
-                                                            is_foreign);
+		    object = scm_make_foreign_object_0(gi_gobject_type);
+		    gi_gobject_set_ob_type (object, g_type);
+		    gi_gobject_set_obj (object, arg);
 
-                    Py_XDECREF (py_type);
+		    // FIXME: add all the transfer and cleanup info to object
+                    /* object = pygi_arg_struct_to_py_marshal (arg, */
+                    /*                                         info, /\*interface_info*\/ */
+                    /*                                         g_type, */
+                    /*                                         py_type, */
+                    /*                                         transfer, */
+                    /*                                         FALSE, /\*is_allocated*\/ */
+                    /*                                         is_foreign); */
+
+                    /* Py_XDECREF (py_type); */
                     break;
                 }
+#if 0
                 case GI_INFO_TYPE_ENUM:
                 case GI_INFO_TYPE_FLAGS:
                 {
@@ -974,7 +982,7 @@ gi_giargument_to_object (GIArgument  *arg,
                 case GI_INFO_TYPE_INTERFACE:
                 case GI_INFO_TYPE_OBJECT:
                     object = pygi_arg_gobject_to_py_called_from_c (arg, transfer);
-
+#endif
                     break;
                 default:
                     g_assert_not_reached();
@@ -983,6 +991,7 @@ gi_giargument_to_object (GIArgument  *arg,
             g_base_info_unref (info);
             break;
         }
+#if 0
         case GI_TYPE_TAG_GLIST:
         case GI_TYPE_TAG_GSLIST:
         {

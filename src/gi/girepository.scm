@@ -89,6 +89,11 @@
 	    struct-info-is-gtype-struct?
 	    struct-info-get-fields
 	    struct-info-get-methods
+	    struct-info-is-foreign?
+
+	    ;; OBJECT
+	    object-info-get-fields
+	    object-info-get-methods
 
 	    ;; FUNC2
 	    load-repository

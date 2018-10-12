@@ -14,6 +14,27 @@ SCM gtype_wrapper_hash;
  * Behind the scenes, it is a complicated private structure,
  * hidden from the user.
  * Types are refcounted.
+
+ * In Guile, we define a GType wrapper class that, for each GType,
+ * holds information by Guile to create, manage, and GC instances of
+ * that class.
+
+ * When parsing a Typelib file, an argument type is a sort of a triple
+ * - type_tag: either a simple type like "guint", else "INTERFACE"
+ *             find this with g_type_info_get_tag (typeinfo)
+ * - interface_type: one of struct, enum, object, flags
+ *             Find this with g_base_info_get_type (g_type_info_get_interface (typeinfo))
+ * - interface_name: the actual name of type of the interface, like "Window"
+ *             Find this with g_base_info_get_name (g_type_info_get_interface (typeinfo))
+ 
+ * The GType wrapper is for GTypes of type
+ * - STRUCT
+ * - ENUM
+ * - OBJECT
+ * - CALLBACK
+ * - FLAGS (rare)
+ * - INTERFACE (rare)
+
  * The Guile binding only creates new GTypes when it makes GObject classes that subtype
  * existing classes.
  */
@@ -451,6 +472,8 @@ gi_gtype_c2g (GType type)
     }
     return wrapper;
 }
+
+    
 
 void
 gi_init_gtype(void)

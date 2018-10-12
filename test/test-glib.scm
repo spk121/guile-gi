@@ -1,6 +1,9 @@
 (use-modules (lib)
 	     (rnrs bytevectors)
-	     (system foreign))
+	     (system foreign)
+	     (srfi srfi-9 gnu))
+
+(set-record-type-printer! <GObject> gobject-printer)
 
 (let* ((rpt (make-count-reporter))
        (counter-proc (car rpt))
@@ -89,9 +92,16 @@
 		 (equal? #xF00FFFFF (bytevector-u64-native-ref bv 0)))))
 
     (with-test-prefix "Main Event Loop"
-		      (pass-if "MainLoop-new"
-			       (let ((mainloop (gi-function-invoke "GLib" "MainLoop-new" #f #t)))
-				 #t)))
+      (let ((mainloop #f))
+	(pass-if "MainLoop-new"
+	  (set! mainloop (gi-function-invoke "GLib" "MainLoop-new" #f #t))
+	  (write mainloop) (newline)
+	  (gobject-printer mainloop (current-output-port)) (newline)
+	  (not (not mainloop)))
+
+	(pass-if "MainLoop-is_running"
+	  (let ((ret (gi-function-invoke "GLib" "MainLoop-is_running" mainloop)))
+	    ret))))
 
     (pass-if "unload repositories"
       (gi-unload-repositories)

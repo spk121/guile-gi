@@ -888,7 +888,7 @@ gi_marshal_from_scm_basic_type (const char *func,
 	    return TRUE;
 
         default:
-	    scm_misc_error (func, "Type tag %d not supported", scm_list_1 (scm_from_uint (type_tag)));
+	    scm_misc_error (func, "Type tag ~a not supported", scm_list_1 (scm_from_uint (type_tag)));
 	    return TRUE;
     }
 
@@ -1023,14 +1023,16 @@ array_success:
                 case GI_INFO_TYPE_STRUCT:
                 case GI_INFO_TYPE_UNION:
                 {
+		    
                     GType g_type;
-                    PyObject *py_type;
+                    SCM s_type;
                     gboolean is_foreign = (info_type == GI_INFO_TYPE_STRUCT) &&
                                           (g_struct_info_is_foreign ((GIStructInfo *) info));
 
                     g_type = g_registered_type_info_get_g_type ( (GIRegisteredTypeInfo *) info);
-                    py_type = pygi_type_import_by_gi_info ( (GIBaseInfo *) info);
+                    s_type = gi_type_import_by_gi_info ( (GIBaseInfo *) info);
 
+		    scm_make_foreign_object_0 (gi_gobject_type);
                     /* Note for G_TYPE_VALUE g_type:
                      * This will currently leak the GValue that is allocated and
                      * stashed in arg.v_pointer. Out argument marshaling for caller
@@ -1072,7 +1074,7 @@ array_success:
             g_base_info_unref (info);
             break;
         }
-        case GI_TYPE_TAG_GLIST:
+    case GI_TYPE_TAG_GLIST:
         case GI_TYPE_TAG_GSLIST:
         {
             Py_ssize_t length;
@@ -1535,6 +1537,18 @@ gi_gobject_finalizer (SCM self)
 {
 }
 
+/* A procedure suitable as a record-type printer. */
+SCM
+scm_gobject_printer (SCM self, SCM port)
+{
+    scm_assert_foreign_object_type (gi_gobject_type, self);
+    scm_simple_format (port,
+		       scm_from_utf8_string("[~s] <~s>"),
+		       scm_list_2 (scm_from_int (gi_gobject_get_ob_type (self)),
+				   scm_from_uintmax ((uintmax_t)gi_gobject_get_obj(self))));
+    return SCM_UNSPECIFIED;
+}
+
 void
 gi_init_gobject (void)
 {
@@ -1563,6 +1577,7 @@ gi_init_gobject (void)
     scm_c_define_gsubr ("gobject-disconnect-by-func", 2, 0, 0, scm_gobject_disconnect_by_func);
     scm_c_define_gsubr ("gobject-handler-block-by-func", 2, 0, 0, scm_gobject_handler_block_by_func);
     scm_c_define_gsubr ("gobject-handler-unblock-by-func", 2, 0, 0, scm_gobject_handler_unblock_by_func);
+    scm_c_define_gsubr ("gobject-printer", 2, 0, 0, scm_gobject_printer);
     scm_c_export ("register-type",
 		  "make-gobject",
 		  "gobject-is-object?",
@@ -1574,6 +1589,7 @@ gi_init_gobject (void)
 		  "gobject-disconnect-by-func",
 		  "gobject-handler-block-by-func",
 		  "gobject-handler-unblock-by-func",
+		  "gobject-printer",
 		  NULL);
 }
 

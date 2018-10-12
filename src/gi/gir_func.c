@@ -580,16 +580,16 @@ return fields;								\
 
 #define GET_METHODS(TYPE, LC_TYPE) \
 static SCM \
-gir_ ## LC_TYPE ## _info_get_methods (SCM s_info) \
+gir_ ## LC_TYPE ## _get_methods (SCM s_info) \
 { \
   scm_assert_foreign_object_type(s_ ## TYPE ## _type, s_info); \
   TYPE *info = scm_foreign_object_ref (s_info, 0); \
-  gint n_methods = g_struct_info_get_n_methods (info); \
+  gint n_methods = g_ ## LC_TYPE ## _get_n_methods (info); \
   if (n_methods == 0) \
     return SCM_EOL; \
   SCM methods = SCM_EOL; \
   for (gint i = 0; i < n_methods; i ++) { \
-    SCM entry = scm_make_foreign_object_1(s_GIFunctionInfo_type, g_struct_info_get_method(info, i)); \
+    SCM entry = scm_make_foreign_object_1(s_GIFunctionInfo_type, g_ ## LC_TYPE ## _get_method(info, i)); \
     methods = scm_append(scm_list_2(methods, scm_list_1(entry))); \
   } \
   return methods; \
@@ -625,6 +625,14 @@ gir_struct_info_is_gtype_struct(SCM s_info)
   scm_assert_foreign_object_type(s_GIStructInfo_type, s_info);
   GIStructInfo *info = scm_foreign_object_ref (s_info, 0);
   return scm_from_bool (g_struct_info_is_gtype_struct (info));
+}
+
+static SCM
+gir_struct_info_is_foreign(SCM s_info)
+{
+  scm_assert_foreign_object_type(s_GIStructInfo_type, s_info);
+  GIStructInfo *info = scm_foreign_object_ref (s_info, 0);
+  return scm_from_bool (g_struct_info_is_foreign (info));
 }
 
 #if 0
@@ -679,6 +687,7 @@ gir_struct_info_get_fields (SCM s_info)
 }
 #endif
 
+#if 0
 static SCM
 gir_struct_info_get_methods (SCM s_info)
 {
@@ -694,6 +703,7 @@ gir_struct_info_get_methods (SCM s_info)
   }
   return methods;
 }
+#endif
 
 /****************************************************************/
 /* OBJECT                                                       */
@@ -929,6 +939,15 @@ gir_init_funcs(void)
 		     gir_struct_info_get_fields);
   scm_c_define_gsubr("struct-info-get-methods", 1, 0, 0,
 		     gir_struct_info_get_methods);
+  scm_c_define_gsubr("struct-info-is-foreign?", 1, 0, 0,
+		     gir_struct_info_is_foreign);
+
+  /* OBJECT */
+  scm_c_define_gsubr("object-info-get-fields", 1, 0, 0,
+		     gir_object_info_get_fields);
+  scm_c_define_gsubr("object-info-get-methods", 1, 0, 0,
+		     gir_object_info_get_methods);
+  
 }
 
 #if 0
