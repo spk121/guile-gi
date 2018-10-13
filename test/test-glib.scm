@@ -32,7 +32,7 @@
 	(equal? (gi-constant-value "GLib" "VERSION_MIN_REQUIRED") 2))
 
       (pass-if "check-version"
-	(string-null? (gi-function-invoke "GLib" "check_version"
+	(string-null? (gi-function-invoke "check_version"
 					  (gi-constant-value "GLib" "MAJOR_VERSION")
 					  (gi-constant-value "GLib" "MINOR_VERSION")
 					  (gi-constant-value "GLib" "MICRO_VERSION")))))
@@ -64,7 +64,7 @@
 	(let ((bv (make-bytevector 8 ; bytes
 				   0 ; value
 				   )))
-	  (gi-function-invoke "GLib" "atomic_int_set" bv 1)
+	  (gi-function-invoke "atomic_int_set" bv 1)
 	  (equal? (bytevector-s32-native-ref bv 0) 1)))
 
       (pass-if "atomic_int_get"
@@ -72,14 +72,14 @@
 					  0 ; value
 					  )))
 		 (bytevector-s32-native-set! bv 0 1234)
-		 (equal? 1234 (gi-function-invoke "GLib" "atomic_int_get" bv))))
+		 (equal? 1234 (gi-function-invoke "atomic_int_get" bv))))
 
       (pass-if "atomic_pointer_set"
 	       (let ((bv (make-bytevector 8 ;bytes
 					  0 ; value
 					  ))
 		     (ptr (make-pointer #xF00FF00F)))
-		 (gi-function-invoke "GLib" "atomic_pointer_set" bv ptr)
+		 (gi-function-invoke "atomic_pointer_set" bv ptr)
 		 (equal? #xF00FF00F (bytevector-u64-native-ref bv 0))))
 
       (pass-if "atomic_pointer_add"
@@ -87,21 +87,27 @@
 					  0 ; value
 					  ))
 		     (ptr (make-pointer #xF00FF00F)))
-		 (gi-function-invoke "GLib" "atomic_pointer_set" bv ptr)
-		 (gi-function-invoke "GLib" "atomic_pointer_add" bv #x0FF0)
+		 (gi-function-invoke "atomic_pointer_set" bv ptr)
+		 (gi-function-invoke "atomic_pointer_add" bv #x0FF0)
 		 (equal? #xF00FFFFF (bytevector-u64-native-ref bv 0)))))
 
     (with-test-prefix "Main Event Loop"
       (let ((mainloop #f))
 	(pass-if "MainLoop-new"
-	  (set! mainloop (gi-function-invoke "GLib" "MainLoop-new" #f #t))
+	  (set! mainloop (gi-function-invoke "MainLoop-new" #f #t))
 	  (write mainloop) (newline)
 	  (gobject-printer mainloop (current-output-port)) (newline)
 	  (not (not mainloop)))
 
 	(pass-if "MainLoop-is_running"
-	  (let ((ret (gi-function-invoke "GLib" "MainLoop-is_running" mainloop)))
-	    ret))))
+	  (let ((ret (gi-method-send mainloop (gi-method-prepare "is_running"))))
+	    ret))
+
+	(pass-if "MainLoop-get_context"
+		 (let ((ret (gi-method-send mainloop (gi-method-prepare "get_context"))))
+		   (write ret) (newline)
+		   (gobject-printer ret (current-output-port)) (newline)
+		   #t))))
 
     (pass-if "unload repositories"
       (gi-unload-repositories)

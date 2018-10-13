@@ -1543,8 +1543,9 @@ scm_gobject_printer (SCM self, SCM port)
 {
     scm_assert_foreign_object_type (gi_gobject_type, self);
     scm_simple_format (port,
-		       scm_from_utf8_string("[~s] <~s>"),
-		       scm_list_2 (scm_from_int (gi_gobject_get_ob_type (self)),
+		       scm_from_utf8_string("~s [~s] <~s>"),
+		       scm_list_3 (scm_from_utf8_string (g_type_name (gi_gobject_get_ob_type(self))),
+				   scm_from_int (gi_gobject_get_ob_type (self)),
 				   scm_from_uintmax ((uintmax_t)gi_gobject_get_obj(self))));
     return SCM_UNSPECIFIED;
 }

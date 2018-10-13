@@ -3,6 +3,8 @@
 #include "gi_giargument.h"
 #include "gir_type.h"
 #include "gir_func2.h"
+#include "gi_gobject.h"
+#include "gi_gtype.h"
 
 
 #define MAX_GERROR_MSG 100
@@ -62,8 +64,11 @@ hash_equal_func(gconstpointer a, gconstpointer b)
  * on different GTypes */
 static gboolean
 insert_into_method_table (GType type,
-			  GIFunctionInfo *info)
+			  GIFunctionInfo *info,
+			  gboolean *is_new_method)
 {
+  *is_new_method = FALSE;
+  
   if (!gi_methods) {
     g_debug ("Creating the methods hash table");
     gi_methods = g_hash_table_new_full (g_str_hash,
@@ -76,6 +81,7 @@ insert_into_method_table (GType type,
 					     full_name);
   if (!subhash) {
     g_debug ("Inserted '%s' into the methods table", full_name);
+    *is_new_method = TRUE;
     subhash = g_hash_table_new_full (g_direct_hash,
 				     g_direct_equal,
 				     NULL,
@@ -93,7 +99,7 @@ insert_into_method_table (GType type,
   g_hash_table_insert (subhash,
 		       GINT_TO_POINTER (type),
 		       info);
-  g_debug ("Inserted '%s' for type '%s' %d into methods table",
+  g_debug ("Inserted '%s' for type '%s' %lu into methods table",
 	   full_name,
 	   g_type_name (type),
 	   type);
@@ -144,6 +150,192 @@ insert_into_hash_table (const char *category,
   return TRUE;
 }
 
+/* Convert the type of names that GTK uses into Guile-like names */
+static char *
+gname_to_scm_name(const char *gname)
+{
+  size_t len = strlen (gname);
+  GString *str = g_string_new(NULL);
+  gboolean was_lower = FALSE;
+  
+  for (size_t i = 0; i < len; i ++) {
+    if (g_ascii_islower(gname[i])) {
+      g_string_append_c (str, gname[i]);
+      was_lower = TRUE;
+    }
+    else if (gname[i] == '_' || gname[i] == '-') {
+      g_string_append_c (str, '-');
+      was_lower = FALSE;
+    }
+    else if (g_ascii_isdigit(gname[i])) {
+      g_string_append_c (str, gname[i]);
+      was_lower = FALSE;
+    }
+    else if (g_ascii_isupper(gname[i])) {
+      if (was_lower)
+	g_string_append_c (str, '-');
+      g_string_append_c (str, g_ascii_tolower (gname[i]));
+      was_lower = FALSE;
+    }
+  }
+  return g_string_free (str, FALSE);
+}
+
+static void
+export_callable_info (GString **export, char *parent, GICallableInfo *info)
+{
+  gint n_args;
+  GIArgInfo *arg;
+  
+  n_args = g_callable_info_get_n_args (info);
+
+  char *c_function_name;
+  if (parent)
+    c_function_name = g_strdup_printf("%s-%s", parent, g_base_info_get_name(info));
+  else
+    c_function_name = g_strdup_printf("%s", g_base_info_get_name(info));
+  
+  char *name = gname_to_scm_name(c_function_name);
+  
+  g_string_append_printf(*export, "(define (%s", name);
+  free (name);
+
+  GITypeInfo *return_type = g_callable_info_get_return_type (info);
+  g_assert (return_type);
+  if (g_type_info_get_tag (return_type) == GI_TYPE_TAG_BOOLEAN
+      && !g_type_info_is_pointer (return_type))
+    g_string_append_c (*export, '?');
+  g_base_info_unref (return_type);
+  
+  for (int i = 0; i < n_args; i ++) {
+    arg = g_callable_info_get_arg (info, i);
+    GIDirection dir = g_arg_info_get_direction (arg);
+    if (dir == GI_DIRECTION_IN || dir == GI_DIRECTION_INOUT) {
+      g_string_append_c (*export, ' ');
+      name = gname_to_scm_name (g_base_info_get_name (arg));
+      g_string_append (*export, name);
+      free (name);
+    }
+    g_base_info_unref (arg);
+  }
+
+  g_string_append_c (*export, ')');
+  g_string_append_c (*export, '\n');
+
+  g_string_append_printf(*export, "  (gi-function-invoke \"%s\"", c_function_name);
+  
+  for (int i = 0; i < n_args; i ++) {
+    arg = g_callable_info_get_arg (info, i);
+    GIDirection dir = g_arg_info_get_direction (arg);
+    if (dir == GI_DIRECTION_IN || dir == GI_DIRECTION_INOUT) {
+      g_string_append_c (*export, ' ');
+      name = gname_to_scm_name (g_base_info_get_name (arg));
+      g_string_append (*export, name);
+      free (name);
+    }
+    g_base_info_unref (arg);
+  }
+
+  g_string_append (*export, "))\n\n");
+}
+
+static void
+export_method_info (GString **export, char *parent, GICallableInfo *info, gboolean is_new_method)
+{
+  gint n_args;
+  GIArgInfo *arg;
+  
+  n_args = g_callable_info_get_n_args (info);
+
+  char *c_function_name, *c_method_name;
+  if (parent)
+    c_function_name = g_strdup_printf("%s-%s", parent, g_base_info_get_name(info));
+  else
+    c_function_name = g_strdup_printf("%s", g_base_info_get_name(info));
+  
+  char *name = gname_to_scm_name(c_function_name);
+  
+  g_string_append_printf(*export, "(define (%s", name);
+  free (name);
+
+  GITypeInfo *return_type = g_callable_info_get_return_type (info);
+  g_assert (return_type);
+  if (g_type_info_get_tag (return_type) == GI_TYPE_TAG_BOOLEAN
+      && !g_type_info_is_pointer (return_type))
+    g_string_append_c (*export, '?');
+  g_base_info_unref (return_type);
+
+  g_string_append_printf(*export, " self");
+  
+  for (int i = 0; i < n_args; i ++) {
+    arg = g_callable_info_get_arg (info, i);
+    GIDirection dir = g_arg_info_get_direction (arg);
+    if (dir == GI_DIRECTION_IN || dir == GI_DIRECTION_INOUT) {
+      g_string_append_c (*export, ' ');
+      name = gname_to_scm_name (g_base_info_get_name (arg));
+      g_string_append (*export, name);
+      free (name);
+    }
+    g_base_info_unref (arg);
+  }
+
+  g_string_append_c (*export, ')');
+  g_string_append_c (*export, '\n');
+
+  g_string_append_printf(*export, "  (gi-method-send self \n");
+  g_string_append_printf(*export, "     (gi-method-prepare \"%s\"", g_base_info_get_name(info));
+  
+  for (int i = 0; i < n_args; i ++) {
+    arg = g_callable_info_get_arg (info, i);
+    GIDirection dir = g_arg_info_get_direction (arg);
+    if (dir == GI_DIRECTION_IN || dir == GI_DIRECTION_INOUT) {
+      g_string_append_c (*export, ' ');
+      name = gname_to_scm_name (g_base_info_get_name (arg));
+      g_string_append (*export, name);
+      free (name);
+    }
+    g_base_info_unref (arg);
+  }
+
+  g_string_append (*export, ")))\n\n");
+}
+
+#if 0
+static void
+export_method_info (GString **export, char *parent, GICallableInfo *info, gboolean is_new_method)
+{
+  gint n_args;
+  GIArgInfo *arg;
+  
+  n_args = g_callable_info_get_n_args (info);
+
+  const char *c_function_name = g_base_info_get_name(info);
+  char *name = gname_to_scm_name(g_base_info_get_name(info));
+
+  g_string_append_printf(*export, ";; %s -> (%s", parent,  name);
+  for (int i = 0; i < n_args; i ++) {
+    arg = g_callable_info_get_arg (info, i);
+    GIDirection dir = g_arg_info_get_direction (arg);
+    if (dir == GI_DIRECTION_IN || dir == GI_DIRECTION_INOUT) {
+      g_string_append_c (*export, ' ');
+      char *arg_name = gname_to_scm_name (g_base_info_get_name (arg));
+      g_string_append (*export, arg_name);
+      free (arg_name);
+    }
+    g_base_info_unref (arg);
+  }
+  g_string_append(*export, ")\n");
+
+  if (is_new_method) {
+    g_string_append_printf(*export, "(define (_%s . args)", name);
+    g_string_append_printf(*export, "  (apply gi-method-prepare (append (list \"%s\") args)))\n\n", g_base_info_get_name (info));
+  }
+
+  free (name);
+
+}
+#endif
+
 static SCM
 scm_gi_load_repository (SCM s_namespace, SCM s_version)
 {
@@ -151,6 +343,7 @@ scm_gi_load_repository (SCM s_namespace, SCM s_version)
   gchar *version;
   GITypelib *tl;
   GError *error = NULL;
+  GString *export;
 
   SCM_ASSERT (scm_is_string (s_namespace), s_namespace, SCM_ARG1, "gi-load-repository");
   SCM_ASSERT (scm_is_string (s_version), s_version, SCM_ARG2, "gi-load-repository");
@@ -168,11 +361,15 @@ scm_gi_load_repository (SCM s_namespace, SCM s_version)
     return SCM_UNSPECIFIED;
   }
 
+  export = g_string_new(NULL);
+  g_string_append_printf (export, ";; Declaration for %s %s\n", namespace_, version);
+    
   g_debug ("Parsing irepository %s %s", namespace_, version);
   int n = g_irepository_get_n_infos (NULL, namespace_);
   for (int i = 0; i < n; i ++) {
       GIBaseInfo *info;
       GIInfoType type;
+      gboolean is_new_method;
       info = g_irepository_get_info (NULL, namespace_, i);
       type = g_base_info_get_type (info);
       switch (type) {
@@ -181,6 +378,7 @@ scm_gi_load_repository (SCM s_namespace, SCM s_version)
 	break;
       case GI_INFO_TYPE_FUNCTION:
 	insert_into_hash_table ("functions", namespace_, NULL, &gi_functions, info);
+	export_callable_info (&export, NULL, info);
 	break;
       case GI_INFO_TYPE_STRUCT:
 	{
@@ -195,8 +393,17 @@ scm_gi_load_repository (SCM s_namespace, SCM s_version)
 	  gint n_methods = g_struct_info_get_n_methods (info);
 	  for (gint m = 0; m < n_methods; m ++) {
 	    GIFunctionInfo *func_info = g_struct_info_get_method (info, m);
-	    if (!insert_into_method_table (gtype, func_info))
-	      g_base_info_unref (func_info);
+	    if (g_function_info_get_flags (func_info) & GI_FUNCTION_IS_METHOD) {
+	      if (!insert_into_method_table (gtype, func_info, &is_new_method))
+		g_base_info_unref (func_info);
+	      else
+		export_method_info (&export, g_base_info_get_name (info), func_info, is_new_method);
+	    } else {
+	      if (!insert_into_hash_table ("functions", namespace_, g_base_info_get_name (info), &gi_functions, func_info))
+		g_base_info_unref (func_info);
+	      else
+		export_callable_info (&export, g_base_info_get_name (info), func_info);
+	    }
 	  }
 	}
 	break;
@@ -219,8 +426,17 @@ scm_gi_load_repository (SCM s_namespace, SCM s_version)
 	    gint n_methods = g_object_info_get_n_methods (info);
 	    for (gint m = 0; m < n_methods; m ++) {
 	      GIFunctionInfo *func_info = g_object_info_get_method (info, m);
-	      if (!insert_into_method_table (gtype, func_info))
-		g_base_info_unref (func_info);
+	      if (g_function_info_get_flags (func_info) & GI_FUNCTION_IS_METHOD) {
+		if (!insert_into_method_table (gtype, func_info, &is_new_method))
+		  g_base_info_unref (func_info);
+		else
+		  export_method_info (&export, g_base_info_get_name (info), func_info, is_new_method);
+	      } else {
+		if (!insert_into_hash_table ("functions", namespace_, g_base_info_get_name (info), &gi_functions, func_info))
+		  g_base_info_unref (func_info);
+		else
+		  export_callable_info (&export, g_base_info_get_name (info), func_info);
+	      }
 	    }
 	  }
 	  break;
@@ -242,9 +458,18 @@ scm_gi_load_repository (SCM s_namespace, SCM s_version)
 	    insert_into_hash_table ("unions", namespace_, NULL, &gi_unions, info);
 	    gint n_methods = g_union_info_get_n_methods (info);
 	    for (gint m = 0; m < n_methods; m ++) {
-	      GIFunctionInfo *func_info = g_union_info_get_method (info, m);
-	      if (!insert_into_method_table (gtype, func_info))
-		g_base_info_unref (func_info);
+	      GIFunctionInfo *func_info = g_object_info_get_method (info, m);
+	      if (g_function_info_get_flags (func_info) & GI_FUNCTION_IS_METHOD) {
+		if (!insert_into_method_table (gtype, func_info, &is_new_method))
+		  g_base_info_unref (func_info);
+		else
+		  export_method_info (&export, g_base_info_get_name (info), func_info, is_new_method);
+	      } else {
+		if (!insert_into_hash_table ("functions", namespace_, g_base_info_get_name (info), &gi_functions, func_info))
+		  g_base_info_unref (func_info);
+		else
+		  export_callable_info (&export, g_base_info_get_name (info), func_info);
+	      }
 	    }
 	  }
 	  break;
@@ -278,8 +503,8 @@ scm_gi_load_repository (SCM s_namespace, SCM s_version)
   }
   free (version);
   free (namespace_);
-  
-  return SCM_UNSPECIFIED;
+
+  return scm_take_locale_string (g_string_free (export, FALSE));
 }
 
 static SCM
@@ -672,8 +897,8 @@ function_info_count_args (GIFunctionInfo *info, int *in, int *out)
       n_output_args ++;
     }
   }
-  if (g_function_info_get_flags (info) & GI_FUNCTION_IS_METHOD)
-    n_input_args ++;
+  // if (g_function_info_get_flags (info) & GI_FUNCTION_IS_METHOD)
+  //  n_input_args ++;
   *in = n_input_args;
   *out = n_output_args;
 }
@@ -740,6 +965,37 @@ function_info_convert_args (GIFunctionInfo *func_info, SCM s_args)
   return in_args;
 }
 
+static GIArgument *
+method_info_convert_args (GIFunctionInfo *func_info, SCM s_object, SCM s_args)
+{
+  GIDirection dir;
+  GIArgInfo *arg_info;
+  GIArgument *in_args = g_new0 (GIArgument, scm_to_int (scm_length (s_args)) + 1);
+  
+  int n_args = g_callable_info_get_n_args ((GICallableInfo *) func_info);
+  int i_input = 0;
+
+  in_args[0].v_pointer = gi_gobject_get_obj (s_object); 
+  for (int i = 0; i < n_args; i ++) {
+    arg_info = g_callable_info_get_arg ((GICallableInfo *) func_info, i);
+    g_assert (arg_info != NULL);
+    
+    dir = g_arg_info_get_direction (arg_info);
+    
+    if (dir == GI_DIRECTION_IN || dir == GI_DIRECTION_INOUT) {
+      SCM arg = scm_list_ref (s_args, scm_from_int (i_input));
+      in_args[i_input + 1] = gi_argument_from_object ("gi-function-invoke",
+						  arg,
+						  g_arg_info_get_type (arg_info),
+						  g_arg_info_get_ownership_transfer (arg_info));
+      i_input ++;
+    }
+    g_base_info_unref (arg_info);
+  }
+
+  return in_args;
+}
+
 static void
 function_info_release_args (GIFunctionInfo *func_info, GIArgument *args)
 {
@@ -773,14 +1029,24 @@ function_info_release_args (GIFunctionInfo *func_info, GIArgument *args)
 /* The inner part of a method call.  It just looks up a method
  * from the list and appends the method and its arguments together.
  * A full method call is 
- * scm_gi_method_call (object, scm_gi_method_prepare ("methodname", list_of_args))
+ * scm_gi_method_send (object, scm_gi_method_prepare ("methodname", list_of_args))
  */
 static SCM
 scm_gi_method_prepare (SCM s_method_name, SCM s_list_of_args)
 {
+  SCM_ASSERT(scm_is_string (s_method_name), s_method_name, SCM_ARG1, "gi-method-prepare");
+  SCM_ASSERT(scm_is_true (scm_list_p (s_list_of_args)), s_list_of_args, SCM_ARG2, "gi-mthod-prepare");
   /* Look-up the method by name. */
+  char *name = scm_to_utf8_string (s_method_name);
   /* Make a list of the method and the args, for dispatch. */
-  g_return_val_if_reached (SCM_UNSPECIFIED);
+  gpointer ptr = g_hash_table_lookup (gi_methods, name);
+  free (name);
+  if (ptr == NULL) {
+    scm_misc_error ("gi-method-prepare",
+		    "Unknown method ~a",
+		    scm_list_1 (s_method_name));
+  }
+  return scm_append (scm_list_2 (scm_list_2 (scm_from_pointer (ptr, NULL), s_method_name), s_list_of_args));
 }
 
 /* Given a wrapped GObject, struct, or union, call the attached method
@@ -790,17 +1056,148 @@ scm_gi_method_send (SCM s_object, SCM s_method_args_list)
 {
   /* Find out of this type of argument or of any of this argument's
      parent types map to this method. */
-  g_return_val_if_reached (SCM_UNSPECIFIED);
+  GType type;
+  GHashTable *method_hash = scm_to_pointer (scm_car (s_method_args_list));
+  GIFunctionInfo *info;
+  SCM s_name = scm_cadr (s_method_args_list);
+  char *method_name = scm_to_utf8_string (scm_cadr (s_method_args_list));
+  
+  type = gi_gobject_get_ob_type (s_object);
+  while (!(info = g_hash_table_lookup (method_hash, GINT_TO_POINTER (type)))) {
+    g_debug ("Did not find a method %s of type %s for object %p",
+	     method_name,
+	     g_type_name (type),
+	     gi_gobject_get_obj (s_object));
+	     
+    if (!(type = g_type_parent (type))) {
+      free (method_name);
+      scm_misc_error ("gi-method-send",
+		      "Cannot find a method '~a' for ~s",
+		      scm_list_2 (scm_cadr (s_method_args_list),
+				  s_object));
+    }
+  }
+
+  g_debug ("Invoking method %s of type %s for object %p of type %s",
+	   method_name,
+	   g_type_name (type),
+	   gi_gobject_get_obj (s_object),
+	   g_type_name (gi_gobject_get_ob_type (s_object)));
+  
+  SCM s_args = scm_cddr (s_method_args_list);
+
+  int n_input_args_received = scm_to_int (scm_length (s_args));
+  g_debug ("\t%d input arguments received", n_input_args_received);
+
+  int n_input_args, n_output_args;
+  function_info_count_args (info, &n_input_args, &n_output_args);
+  g_debug ("\t%d input arguments expected", n_input_args);
+  g_debug ("\t%d output arguments expected", n_output_args);
+  
+  if (n_input_args_received != n_input_args) {
+    scm_misc_error ("function-invoke",
+		    "wrong number of input arguments for method '~a', expected ~a, received ~a",
+		    scm_list_3 (s_name,
+			       scm_from_int (n_input_args),
+			       scm_from_int (n_input_args_received)));
+    return SCM_BOOL_F;
+  }
+
+  char *errstr = NULL;
+  if (!function_info_typecheck_args (info, s_args, &errstr)) {
+    g_assert (errstr != NULL);
+    
+    SCM s_errstr = scm_from_utf8_string (errstr);
+    g_free (errstr);
+    scm_misc_error ("gi-method-send",
+		    "wrong type argument for method '~a' - ~s",
+		    scm_list_2 (s_name, s_errstr));
+    return SCM_BOOL_F;
+  }
+
+  GIArgument *in_args = method_info_convert_args (info, s_object, s_args);
+
+  /* Allocate a GIArgument list of the output and return values. */
+  GIArgument *out_args = NULL;
+  if (n_output_args > 0)
+    out_args = g_new0(GIArgument, n_output_args);
+  GIArgument return_arg;
+
+  /* Make the call. */
+  GError *err = NULL;
+  gboolean ret = g_function_info_invoke(info, in_args, n_input_args + 1,
+					out_args, n_output_args,
+					&return_arg, &err);
+  if (ret)
+    g_debug("Invoked method %s", method_name);
+  else
+    g_debug("Failed to invoked method %s", method_name);
+  
+  /* Free any allocated input */
+  function_info_release_args (info, in_args);
+  g_free (in_args);
+  in_args = NULL;
+  
+  /* If there is a GError, write an error, free, and exit. */
+  if (!ret) {
+    char str[256];
+    memset (str, 0, 256);
+    strncpy (str, err->message, 255);
+    g_error_free (err);
+    
+    scm_misc_error ("gi-method-send",
+		    "error invoking method '~a': ~a",
+		    scm_list_2 (s_name, scm_from_utf8_string (str)));
+    return SCM_BOOL_F;
+  }
+
+  /* We've actually made a call.  Hooray! Convert the output
+   * arguments and return values into Scheme objects.  Free the
+   * C objects if necessary.  Return the output either as
+   * a plain list or as a values list. */
+  GITypeInfo *return_typeinfo = g_callable_info_get_return_type (info);
+  SCM s_return = gi_giargument_to_object (&return_arg,
+					  return_typeinfo,
+					  g_callable_info_get_caller_owns (info));
+  g_base_info_unref (return_typeinfo);
+  SCM output;
+  if (s_return == SCM_UNSPECIFIED)
+    output = SCM_EOL;
+  else
+    output = scm_list_1 (s_return);
+
+  int n_args = g_callable_info_get_n_args ((GICallableInfo *) info);
+  for (int i = 0; i < n_args; i ++) {
+    GIArgInfo *arg_info = g_callable_info_get_arg ((GICallableInfo *) info, i);
+    g_assert (arg_info != NULL);
+    
+    GIDirection dir = g_arg_info_get_direction (arg_info);
+    
+    if (dir == GI_DIRECTION_OUT || dir == GI_DIRECTION_INOUT) {
+      GITypeInfo *arg_typeinfo = g_arg_info_get_type (arg_info);
+      SCM entry = gi_giargument_to_object (&out_args[i],
+					   arg_typeinfo,
+					   g_arg_info_get_ownership_transfer (arg_info));
+      output = scm_append(scm_list_2(output, scm_list_1 (entry)));
+      g_base_info_unref (arg_typeinfo);
+    }
+    g_base_info_unref (arg_info);
+  }
+
+  g_debug ("Completed invocation of method %s", method_name);
+  free (method_name);
+  if (n_output_args == 0)
+    return s_return;
+  else
+    return output;
 }
 
 static SCM
-scm_gi_function_invoke (SCM s_namespace, SCM s_name, SCM s_args)
+scm_gi_function_invoke (SCM s_name, SCM s_args)
 {
   GError *err = NULL;
 
-  SCM_ASSERT (scm_is_string (s_namespace), s_namespace, SCM_ARG1,
-	      "gi-function-invoke");
-  SCM_ASSERT (scm_is_string (s_name), s_name, SCM_ARG2,
+  SCM_ASSERT (scm_is_string (s_name), s_name, SCM_ARG1,
 	      "gi-function-invoke");
 
   GIFunctionInfo *info = NULL;
@@ -815,8 +1212,8 @@ scm_gi_function_invoke (SCM s_namespace, SCM s_name, SCM s_args)
   
   if (!info) {
     scm_misc_error ("gi-function-invoke",
-		    "unknown procedure '~a' in ~a",
-		    scm_list_2 (s_name, s_namespace));
+		    "unknown procedure '~a'",
+		    scm_list_1 (s_name));
     return SCM_BOOL_F;
   }
   
@@ -952,6 +1349,25 @@ scm_gi_unload_repositories (void)
   return SCM_UNSPECIFIED;
 }
 
+static SCM
+scm_gi_lookup_type (SCM s_type_name)
+{
+  SCM_ASSERT (scm_is_string (s_type_name), s_type_name, SCM_ARG1, "gi-lookup-type");
+  char *name = scm_to_utf8_string (s_type_name);
+  gpointer ptr;
+  GType type;
+  ptr = g_hash_table_lookup (gi_objects, name);
+  if (!ptr)
+    ptr = g_hash_table_lookup (gi_structs, name);
+  if (!ptr)
+    ptr = g_hash_table_lookup (gi_unions, name);
+  free (name);
+  if (!ptr)
+    scm_misc_error ("gi-lookup-type",
+		    "Cannot find an object, struct, or union type named '~a'",
+		    scm_list_1 (s_type_name));
+  return gi_gtype_c2g (g_registered_type_info_get_g_type (ptr));
+}
 
 /* re pygi_type_import_by_gi_info */
 SCM
@@ -994,5 +1410,8 @@ gir_init_func2(void)
   scm_c_define_gsubr ("gi-enum-value", 3, 0, 0, scm_gi_enum_value);
   scm_c_define_gsubr ("gi-struct-ref", 4, 0, 0, scm_gi_struct_ref);
   scm_c_define_gsubr ("gi-struct-set", 5, 0, 0, scm_gi_struct_set);
-  scm_c_define_gsubr ("gi-function-invoke", 2, 0, 1, scm_gi_function_invoke);
+  scm_c_define_gsubr ("gi-function-invoke", 1, 0, 1, scm_gi_function_invoke);
+  scm_c_define_gsubr ("gi-method-prepare", 1, 0, 1, scm_gi_method_prepare);
+  scm_c_define_gsubr ("gi-method-send", 2, 0, 0, scm_gi_method_send);
+  scm_c_define_gsubr ("gi-lookup-type", 1, 0, 0, scm_gi_lookup_type);
 }

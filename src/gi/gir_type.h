@@ -23,6 +23,6 @@ GITYPEX(GIValueInfo);
 
 extern SCM s_GIRepository_type;
 extern SCM s_GITypelib_type;
-void gir_init_types();
+void gir_init_types(void);
 
 #endif
