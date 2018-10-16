@@ -1,5 +1,32 @@
-(use-modules (gi gobject))
+(use-modules (lib)
+	     (rnrs bytevectors)
+	     (system foreign)
+	     (srfi srfi-9 gnu)
+	     (ice-9 eval-string))
 
+(set-record-type-printer! <GObject> gobject-printer)
+
+(let* ((rpt (make-count-reporter))
+       (counter-proc (car rpt))
+       (results-proc (cadr rpt)))
+  (register-reporter counter-proc)
+  (register-reporter full-reporter)
+
+  (with-test-prefix
+   "gobject"
+    
+   (pass-if "load Gtk 3.0 repository"
+	    (if (false-if-exception (eval-string (gi-load-repository "Gtk" "3.0")))
+		#t
+		#f))
+
+   (pass-if "subclass <Application>"
+	    (let ((<ExampleApp> (register-type "ExampleApp" <Application> #f #f #f)))
+	      (write <ExampleApp>)
+	      (newline)
+	      #t))))
+
+   #|
 (define TYPE_ALPHA #f)
 (define OBJ_ALPHA #f)
 (define TYPE_BETA #f)
@@ -70,3 +97,4 @@
 ;; Local Variables:
 ;; mode: scheme
 ;; End:
+|#

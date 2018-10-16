@@ -13,21 +13,21 @@
 
 GQuark gi_gobject_instance_data_key;
 
-typedef struct _ClassData {
+typedef struct _GuileSpecifiedGObjectClassData {
     SCM disposer;
     char padding[56];
-} ClassData;
+} GuileSpecifiedGObjectClassData;
 
-typedef struct _InstanceData {
+typedef struct _GuileSpecifiedGObjectInstanceData {
     SCM obj;
     char padding[56];
-} InstanceData;
+} GuileSpecifiedGObjectInstanceData;
 
-#define CLASS_SIZE         (sizeof (ClassData))
-#define INSTANCE_SIZE      (sizeof (InstanceData))
+#define GUILE_SPECIFIED_GOBJECT_CLASS_SIZE         (sizeof (GuileSpecifiedGObjectClassData))
+#define GUILE_SPECIFIED_GOBJECT_INSTANCE_SIZE      (sizeof (GuileSpecifiedGObjectInstanceData))
 #define PROPERTY_ID_OFFSET (5)
 
-typedef struct _ClassInfo
+typedef struct _GuileSpecifiedGObjectClassInfo
 {
     GType type;
     gsize parent_class_size;
@@ -35,17 +35,17 @@ typedef struct _ClassInfo
     GPtrArray *properties;
     GPtrArray *signals;
     SCM disposer;
-} ClassInfo;
+} GuileSpecifiedGObjectClassInfo;
 
 static GQuark gi_gobject_wrapper_key;
 static GQuark gi_gobject_custom_key;
 static GQuark gi_gobject_class_key;
 
 static void
-set_property (GObject *object, guint property_id,
+set_guile_specified_property (GObject *object, guint property_id,
 	      const GValue *value, GParamSpec *pspec);
 static void
-get_property (GObject *object, guint property_id,
+get_guile_specified_property (GObject *object, guint property_id,
 	      GValue *value, GParamSpec *pspec);
 static void
 dispose (GObject *object);
@@ -241,23 +241,23 @@ make_new_signal (SignalSpec *signal_spec, gpointer user_data)
 }
 
 static void
-init_class(GObjectClass *class, gpointer class_info)
+init_guile_specified_gobject_class(GObjectClass *class, gpointer class_info)
 {
     GType type = G_TYPE_FROM_CLASS (class);
-    ClassInfo *init_info = class_info;
+    GuileSpecifiedGObjectClassInfo *init_info = class_info;
     size_t n_properties = init_info->properties->len;
     GParamSpec **properties = (GParamSpec **) init_info->properties->pdata;
-    ClassData *self;
+    GuileSpecifiedGObjectClassData *self;
 
-    class->set_property = set_property;
-    class->get_property = get_property;
+    class->set_property = set_guile_specified_property;
+    class->get_property = get_guile_specified_property;
     class->dispose = dispose;
     class->finalize = finalize;
     
     /* Since the parent type could be anything, some pointer math is
      * required to figure out where our part of the object class is
      * located. */
-    self = (ClassData *) ((char *) class + init_info->parent_class_size);
+    self = (GuileSpecifiedGObjectClassData *) ((char *) class + init_info->parent_class_size);
     self->disposer = init_info->disposer;
 
     g_ptr_array_foreach (init_info->signals,
@@ -277,13 +277,13 @@ init_instance(GTypeInstance *instance, gpointer class_ptr)
     guint n_properties;
     GParamSpec **properties;
     GTypeQuery query;
-    InstanceData *instance_data;
+    GuileSpecifiedGObjectInstanceData *instance_data;
     SCM inst_dict;
     SCM obj;
 
     g_type_query(parent_type, &query);
 
-    instance_data = (InstanceData *) ((char *) instance + query.instance_size);
+    instance_data = (GuileSpecifiedGObjectInstanceData *) ((char *) instance + query.instance_size);
     properties = g_object_class_list_properties (class_ptr, &n_properties);
     
     /* This is both the Guile-side representation of this object and
@@ -326,7 +326,7 @@ wrap_object (GObject *object)
 }
 
 static void
-get_property (GObject *object, guint property_id,
+get_guile_specified_property (GObject *object, guint property_id,
 	      GValue *value, GParamSpec *pspec)
 {
     gpointer ptr;
@@ -355,7 +355,7 @@ get_property (GObject *object, guint property_id,
 }
 
 static void
-set_property (GObject *object, guint property_id,
+set_guile_specified_property (GObject *object, guint property_id,
 	      const GValue *value, GParamSpec *pspec)
 {
     gpointer ptr;
@@ -397,21 +397,21 @@ finalize (GObject *object)
 
 
 static GType
-register_type (const char *type_name,
+register_guile_specified_gobject_type (const char *type_name,
 	       GType parent_type,
 	       GPtrArray *properties,
 	       GPtrArray *signals,
 	       SCM disposer)
 {
     GTypeInfo type_info;
-    ClassInfo *class_init_info;
+    GuileSpecifiedGObjectClassInfo *class_init_info;
     GTypeQuery query;
     GType new_type;
 
     memset (&type_info, 0, sizeof (type_info));
 
     /* This data will needed when the class is dynamically instantiated. */
-    class_init_info = g_new0(ClassInfo, 1);
+    class_init_info = g_new0(GuileSpecifiedGObjectClassInfo, 1);
     class_init_info->disposer = disposer;
     class_init_info->properties = properties;
     class_init_info->signals = signals;
@@ -420,11 +420,11 @@ register_type (const char *type_name,
 
     /* Register it. */
     g_type_query(parent_type, &query);
-    type_info.class_size = query.class_size + CLASS_SIZE;
+    type_info.class_size = query.class_size + GUILE_SPECIFIED_GOBJECT_CLASS_SIZE;
     class_init_info->parent_class_size = query.class_size;
-    type_info.instance_size = query.instance_size + INSTANCE_SIZE;
+    type_info.instance_size = query.instance_size + GUILE_SPECIFIED_GOBJECT_INSTANCE_SIZE;
     class_init_info->parent_instance_size = query.instance_size;
-    type_info.class_init = (GClassInitFunc) init_class;
+    type_info.class_init = (GClassInitFunc) init_guile_specified_gobject_class;
     type_info.instance_init = init_instance;
     new_type = g_type_register_static (parent_type,
 				       type_name,
@@ -439,8 +439,10 @@ register_type (const char *type_name,
     return new_type;
 }
 
+/* The procedure is the top-level entry point for defining a new
+   GObject type in Guile. */
 static SCM
-scm_register_type (SCM s_type_name,
+scm_register_guile_specified_gobject_type (SCM s_type_name,
 		   SCM s_parent_type,
 		   SCM s_properties,
 		   SCM s_signals,
@@ -486,13 +488,13 @@ scm_register_type (SCM s_type_name,
     }
 
     if (scm_is_true (scm_procedure_p (s_disposer)))
-	new_type = register_type (type_name,
+	new_type = register_guile_specified_gobject_type (type_name,
 				  parent_type,
 				  properties,
 				  signals,
 				  s_disposer);
     else
-	new_type = register_type (type_name,
+	new_type = register_guile_specified_gobject_type (type_name,
 				  parent_type,
 				  properties,
 				  signals,
@@ -1567,7 +1569,7 @@ gi_init_gobject (void)
     gi_gobject_custom_key = g_quark_from_static_string ("GuGObject::custom");
     gi_gobject_instance_data_key = g_quark_from_static_string("GuGObject::instance-data");
     
-    scm_c_define_gsubr ("register-type", 5, 0, 0, scm_register_type);
+    scm_c_define_gsubr ("register-type", 5, 0, 0, scm_register_guile_specified_gobject_type);
     scm_c_define_gsubr ("make-gobject", 1, 1, 0, scm_make_gobject);
     scm_c_define_gsubr ("gobject-is-object?", 1, 0, 0, scm_gobject_is_object_p);
     scm_c_define_gsubr ("gobject-type", 1, 0, 0, scm_gobject_type);
