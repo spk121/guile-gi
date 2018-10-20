@@ -53,6 +53,9 @@ static void
 finalize (GObject *object);
 static SCM
 gi_get_property_value (const char *func, SCM instance, GParamSpec *pspec);
+static inline int
+gugobject_clear(SCM self);
+
 
 
 /* re pygobject-object.c:61 gclosure from pyfunc */
@@ -90,7 +93,7 @@ gugobject_data_free (GuGObjectData *data)
  	GClosure *closure = tmp->data;
  
           /* we get next item first, because the current link gets
-           * invalidated by pygobject_unwatch_closure */
+           * invalidated by gugobject_unwatch_closure */
  	tmp = tmp->next;
  	g_closure_invalidate(closure);
     }
@@ -129,6 +132,233 @@ gugobject_get_inst_data(SCM self)
                                 inst_data, (GDestroyNotify) gugobject_data_free);
     }
     return inst_data;
+}
+
+/* Looks up the wrapper class used to represent instances of
+ * GObject represented by @gtype. If no wrapper class has been
+ * registered for GType, then a new type will be created.
+ * returns the wrapper class, or #f */
+/* re pygobject-object.c:953, pygobject_lookup_class */
+#if 0
+SCM
+gi_gobject_lookup_class(GType gtype)
+{
+    SCM gu_type;
+    if (gtype == G_TYPE_INTERFACE)
+	return gi_ginterface_type;
+
+    gu_type = g_type_get_qdata(gtype, gi_gobject_class_key);
+    if (gu_type == NULL) {
+	gu_type = g_type_get_qdata(gtype, gi_ginterface_type_key);
+	//if (gu_type == NULL) {
+	//    gu_type = gi_gtype_import_by_g_type(gtype);
+	}
+	if (gu_type == NULL) {
+	    gu_type = gi_gobject_new_with_interfaces (gtype);
+	    g_type_set_qdata (gtype, gi_ginterface_type_key, gu_type);
+	}
+    }
+    return gu_type;
+}
+#endif
+
+/* re pygobject-object.c:980, pygobject_new_full */
+static SCM
+gi_gobject_new_full (GObject *obj, gboolean steal, gpointer g_class)
+{
+    gpointer ptr;
+    SCM self;
+    if (obj == NULL)
+	return SCM_BOOL_F;
+
+    /* Check if this obj is wrapped already. */
+    ptr = g_object_get_qdata (obj, gi_gobject_wrapper_key);
+    if (ptr) {
+	self = ptr;
+	if (steal)
+	    g_object_unref (obj);
+    } else {
+	/* create wrapper */
+	GuGObjectData *inst_data = gi_gobject_peek_inst_data (obj);
+	SCM tp;
+	if (inst_data)
+	    tp = inst_data->type;
+	else {
+	    /* if (g_class) */
+	    /* 	tp = gugobject_lookup_class (G_OBJECT_CLASS_TYPE (g_class)); */
+	    /* else */
+	    /* 	tp = gugobject_lookup_class (G_OBJECT_TYPE (obj)); */
+	    tp = gi_gtype_c2g(G_OBJECT_TYPE (obj));
+	}
+	g_assert (tp != NULL && scm_is_true (tp));
+
+	//if (gi_gtype_get_flags (tp) & Gu_TPFLAGS_HEAPTYPE)
+	//    Gu_INCREF(tp);
+	self = scm_make_foreign_object_0(gi_gobject_type);
+	gi_gobject_set_ob_type (self, gi_gtype_get_type (tp));
+	gi_gobject_set_inst_dict (self, SCM_BOOL_F);
+	gi_gobject_set_weakreflist (self, SCM_BOOL_F);
+	gi_gobject_set_flags (self, 0);
+	gi_gobject_set_obj (self, obj);
+
+	if (g_object_is_floating (obj))
+	    gi_gobject_set_flags (self, GI_GOBJECT_GOBJECT_WAS_FLOATING);
+	if (!steal || gi_gobject_get_flags(self) & GI_GOBJECT_GOBJECT_WAS_FLOATING)
+	    g_object_ref_sink (obj);
+
+	// gi_gobject_register_wrapper (self);
+    }
+    return self;
+}
+
+/* re pygobject-object.c: 1059 pygobject_new */
+static SCM
+gi_gobject_new (GObject *obj)
+{
+    return gi_gobject_new_full (obj, FALSE, NULL);
+}
+
+/* re pygobject-object.c: 1067 pygobject_unwatch_closure */
+static void
+gugobject_unwatch_closure(gpointer data, GClosure *closure)
+{
+    GuGObjectData *inst_data = data;
+
+    inst_data->closures = g_slist_remove (inst_data->closures, closure);
+}
+
+/* Adds a closure to the list of watched closures for the wrapper.
+ * The closure should be created with gi_gclosure_new. */
+/* re pygobject-object.c:1093 pygobject_watch_closure */
+static void
+gugobject_watch_closure(SCM self, GClosure *closure)
+{
+    GuGObjectData *data;
+
+    g_return_if_fail(SCM_IS_A_P(self, gi_gobject_type));
+    g_return_if_fail(closure != NULL);
+    
+    data = gugobject_get_inst_data(self);
+    g_return_if_fail(data != NULL);
+    g_return_if_fail(g_slist_find(data->closures, closure) == NULL);
+    
+    data->closures = g_slist_prepend(data->closures, closure);
+    g_closure_add_invalidate_notifier(closure, data, gugobject_unwatch_closure);
+}
+
+static void
+gug_toggle_notify (gpointer data, GObject *object, gboolean is_last_ref)
+{
+    /* Avoid thread safety problems by using qdata for wrapper retrieval
+     * instead of the user data argument.
+     * See: https://bugzilla.gnome.org/show_bug.cgi?id=709223
+     */
+    SCM self = g_object_get_qdata (object, gi_gobject_wrapper_key);
+    /* if (self) { */
+    /*     if (is_last_ref) */
+    /*         Py_DECREF(self); */
+    /*     else */
+    /*         Py_INCREF(self); */
+    /* } */
+}
+
+static inline gboolean
+gugobject_toggle_ref_is_required (SCM self)
+{
+    SCM dict = gi_gobject_get_inst_dict (self);
+    // FIXME - maybe check if hash table is not empty
+    return scm_is_true (dict);
+}
+
+static inline gboolean
+gugobject_toggle_ref_is_active (SCM self)
+{
+    unsigned flags = gi_gobject_get_flags(self);
+    return flags & GI_GOBJECT_USING_TOGGLE_REF;
+}
+
+
+
+/****************************************************************/
+/* SCM GObject behavior                                         */
+
+/* Compare with pygobject-object.c:1115 pygobject_dealloc */
+void
+gi_gobject_finalizer (SCM self)
+{
+    /* Clear out the weak reference vector, if it exists. */
+    gi_gobject_set_weakreflist(self, SCM_BOOL_F);
+
+    /* MLG - PyGObject says this is here because finalization might
+     * cause a new type to be created?  Does that matter to use? */
+    gugobject_get_inst_data(self);
+    gugobject_clear(self);
+}
+
+static inline int
+gugobject_clear(SCM self)
+{
+    GObject *obj = gi_gobject_get_obj (self);
+    if (obj) {
+        g_object_set_qdata_full(obj, gi_gobject_wrapper_key, NULL, NULL);
+        if (gugobject_toggle_ref_is_active (self)) {
+            g_object_remove_toggle_ref(obj, gug_toggle_notify, NULL);
+	    unsigned flags = gi_gobject_get_flags (self);
+	    gi_gobject_set_flags (self, flags & ~GI_GOBJECT_USING_TOGGLE_REF);
+        } else {
+            g_object_unref(obj);
+        }
+	gi_gobject_set_obj(self, NULL);
+    }
+    gi_gobject_set_inst_dict(self, SCM_BOOL_F);
+    return 0;
+}
+
+/* re pygobject-object.c:1660 connect_helper */
+static SCM
+connect_helper (SCM self, gchar *name, SCM callback, SCM extra_args, SCM object, gboolean after)
+{
+    guint sigid;
+    GQuark detail = 0;
+    GClosure *closure = NULL;
+    gulong handlerid;
+    GSignalQuery query_info;
+
+    if (!g_signal_parse_name(name, G_OBJECT_TYPE (gi_gobject_get_obj (self),
+						  &sigid, &detail, TRUE))) {
+	scm_misc_error ("connect_helper",
+			"~A: unknown signal name ~A",
+			scm_list_2 (self, scm_from_utf8_string(name)));
+    }
+
+    g_signal_query (sigid, &query_info);
+    if (g_type_get_qdata (gtype, gi_gobject_custom_key) == NULL) {
+	/* The signal is implemented by a non-Scheme class. */
+	closure = gi_gsignal_closure_new (self, query_info.itype,
+					  query_info.signal_name, callback,
+					  extra_args, object);
+    }
+
+    if (!closure) {
+	/* The signal is implemented at the Scheme level, probably */
+	closure = gug_closure_new (callback, extra_args, object);
+    }
+
+    gugobject_watch_closure (self, closure);
+    handlerid = g_signal_connect_closure_by_id (gi_gobject_get_obj (self), sigid, detail, closure after);
+
+    return scm_from_ulong (handlerid);
+}
+
+static SCM
+scm_signal_connect (SCM self, SCM s_name, SCM proc, SCM rest)
+{
+    scm_assert_foreign_object_type (gi_gobject_type, self);
+
+    char *name = scm_to_utf8_string (name);
+    SCM ret = connect_helper (self, name, proc, rest, SCM_BOOL_F, FALSE);
+    free (name);
+    return ret;
 }
 
 /* re pygobject-object.c:2064 pygobject_disconnect_by_func */
@@ -502,87 +732,6 @@ scm_register_guile_specified_gobject_type (SCM s_type_name,
     return gi_gtype_c2g (new_type);
 }
 
-/* Looks up the wrapper class used to represent instances of
- * GObject represented by @gtype. If no wrapper class has been
- * registered for GType, then a new type will be created.
- * returns the wrapper class, or #f */
-/* re pygobject-object.c:953, pygobject_lookup_class */
-#if 0
-SCM
-gi_gobject_lookup_class(GType gtype)
-{
-    SCM gu_type;
-    if (gtype == G_TYPE_INTERFACE)
-	return gi_ginterface_type;
-
-    gu_type = g_type_get_qdata(gtype, gi_gobject_class_key);
-    if (gu_type == NULL) {
-	gu_type = g_type_get_qdata(gtype, gi_ginterface_type_key);
-	//if (gu_type == NULL) {
-	//    gu_type = gi_gtype_import_by_g_type(gtype);
-	}
-	if (gu_type == NULL) {
-	    gu_type = gi_gobject_new_with_interfaces (gtype);
-	    g_type_set_qdata (gtype, gi_ginterface_type_key, gu_type);
-	}
-    }
-    return gu_type;
-}
-#endif
-
-/* re pygobject-object.c:980, pygobject_new_full */
-static SCM
-gi_gobject_new_full (GObject *obj, gboolean steal, gpointer g_class)
-{
-    gpointer ptr;
-    SCM self;
-    if (obj == NULL)
-	return SCM_BOOL_F;
-
-    /* Check if this obj is wrapped already. */
-    ptr = g_object_get_qdata (obj, gi_gobject_wrapper_key);
-    if (ptr) {
-	self = ptr;
-	if (steal)
-	    g_object_unref (obj);
-    } else {
-	/* create wrapper */
-	GuGObjectData *inst_data = gi_gobject_peek_inst_data (obj);
-	SCM tp;
-	if (inst_data)
-	    tp = inst_data->type;
-	else {
-	    /* if (g_class) */
-	    /* 	tp = gugobject_lookup_class (G_OBJECT_CLASS_TYPE (g_class)); */
-	    /* else */
-	    /* 	tp = gugobject_lookup_class (G_OBJECT_TYPE (obj)); */
-	    tp = gi_gtype_c2g(G_OBJECT_TYPE (obj));
-	}
-	g_assert (tp != NULL && scm_is_true (tp));
-
-	//if (gi_gtype_get_flags (tp) & Gu_TPFLAGS_HEAPTYPE)
-	//    Gu_INCREF(tp);
-	self = scm_make_foreign_object_0(gi_gobject_type);
-	gi_gobject_set_inst_dict (self, SCM_BOOL_F);
-	gi_gobject_set_weakreflist (self, SCM_BOOL_F);
-	gi_gobject_set_flags (self, 0);
-	gi_gobject_set_obj (self, obj);
-
-	if (g_object_is_floating (obj))
-	    gi_gobject_set_flags (self, GI_GOBJECT_GOBJECT_WAS_FLOATING);
-	if (!steal || gi_gobject_get_flags(self) & GI_GOBJECT_GOBJECT_WAS_FLOATING)
-	    g_object_ref_sink (obj);
-
-	// gi_gobject_register_wrapper (self);
-    }
-    return self;
-}
-
-static SCM
-gi_gobject_new (GObject *obj)
-{
-    return gi_gobject_new_full (obj, FALSE, NULL);
-}
 
 	
 
@@ -1534,10 +1683,6 @@ scm_gobject_get_property (SCM self, SCM sname)
     return ret;
 }
 
-void
-gi_gobject_finalizer (SCM self)
-{
-}
 
 /* A procedure suitable as a record-type printer. */
 SCM
@@ -1550,6 +1695,46 @@ scm_gobject_printer (SCM self, SCM port)
 				   scm_from_int (gi_gobject_get_ob_type (self)),
 				   scm_from_uintmax ((uintmax_t)gi_gobject_get_obj(self))));
     return SCM_UNSPECIFIED;
+}
+
+SCM
+gi_arg_gobject_to_scm (GIArgument *arg, GITransfer transfer)
+{
+    SCM s_obj;
+
+    if (arg->v_pointer == NULL) {
+	s_obj = SCM_BOOL_F;
+    } else if (G_IS_PARAM_SPEC(arg->v_pointer)) {
+	// s_obj = gi_gparam_spec_new (arg->v_pointer);
+	g_assert_not_reached ();
+	if (transfer == GI_TRANSFER_EVERYTHING)
+	    //g_param_spec_unref (arg->v_pointer);
+	    g_assert_not_reached ();
+    } else {
+	s_obj = gi_gobject_new_full (arg->v_pointer,
+				     transfer == GI_TRANSFER_EVERYTHING, /* steal */
+				     NULL); /* type */
+    }
+    return s_obj;
+}
+
+SCM
+gi_arg_gobject_to_scm_called_from_c (GIArgument *arg, GITransfer transfer)
+{
+    SCM object;
+    /* IN pygobject, they say this is a hack to work around GTK+
+       sending signals with floating widgets in them.  Not sure if
+       that applies to us. */
+    if (arg->v_pointer != NULL
+	&& transfer == GI_TRANSFER_NOTHING
+	&& !G_IS_PARAM_SPEC (arg->v_pointer)) {
+	g_object_ref (arg->v_pointer);
+	object = gi_arg_gobject_to_scm (arg, GI_TRANSFER_EVERYTHING);
+	g_object_force_floating (arg->v_pointer);
+    } else {
+	object = gi_arg_gobject_to_scm (arg, transfer);
+    }
+    return object;
 }
 
 void
@@ -1581,6 +1766,7 @@ gi_init_gobject (void)
     scm_c_define_gsubr ("gobject-handler-block-by-func", 2, 0, 0, scm_gobject_handler_block_by_func);
     scm_c_define_gsubr ("gobject-handler-unblock-by-func", 2, 0, 0, scm_gobject_handler_unblock_by_func);
     scm_c_define_gsubr ("gobject-printer", 2, 0, 0, scm_gobject_printer);
+    scm_c_define_gsubr ("signal-connect", 3, 0, 1, scm_signal_connect);
     scm_c_export ("register-type",
 		  "make-gobject",
 		  "gobject-is-object?",
@@ -1593,6 +1779,7 @@ gi_init_gobject (void)
 		  "gobject-handler-block-by-func",
 		  "gobject-handler-unblock-by-func",
 		  "gobject-printer",
+		  "signal-connect",
 		  NULL);
 }
 

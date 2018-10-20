@@ -32,6 +32,7 @@ static GHashTable *gi_structs = NULL;
 static GHashTable *gi_unions = NULL;
 static GHashTable *gi_objects = NULL;
 static GHashTable *gi_interfaces = NULL;
+static GHashTable *gi_signals = NULL;
 
 #if 0
 static guint
@@ -412,6 +413,69 @@ export_method_info (GString **export, char *parent, GICallableInfo *info, gboole
   g_string_append (*export, ")))\n\n");
 }
 
+/* FIXME: this is very sigmal to export signal info */
+static void
+export_signal_info (GString **export, char *parent, GISignalInfo *info, gboolean is_new_method)
+{
+  gint n_args;
+  GIArgInfo *arg;
+  
+  n_args = g_callable_info_get_n_args (info);
+
+  char *c_function_name, *c_method_name;
+  if (parent)
+    c_function_name = g_strdup_printf("%s-%s-signal", parent, g_base_info_get_name(info));
+  else
+    c_function_name = g_strdup_printf("%s-signal", g_base_info_get_name(info));
+  
+  char *name = gname_to_scm_constant_name(c_function_name);
+  
+  g_string_append_printf(*export, "(define (%s", name);
+  free (name);
+
+  GITypeInfo *return_type = g_callable_info_get_return_type (info);
+  g_assert (return_type);
+  if (g_type_info_get_tag (return_type) == GI_TYPE_TAG_BOOLEAN
+      && !g_type_info_is_pointer (return_type))
+    g_string_append_c (*export, '?');
+  g_base_info_unref (return_type);
+
+  g_string_append_printf(*export, " self");
+  
+  for (int i = 0; i < n_args; i ++) {
+    arg = g_callable_info_get_arg (info, i);
+    GIDirection dir = g_arg_info_get_direction (arg);
+    if (dir == GI_DIRECTION_IN || dir == GI_DIRECTION_INOUT) {
+      g_string_append_c (*export, ' ');
+      name = gname_to_scm_name (g_base_info_get_name (arg));
+      g_string_append (*export, name);
+      free (name);
+    }
+    g_base_info_unref (arg);
+  }
+
+  g_string_append_c (*export, ')');
+  g_string_append_c (*export, '\n');
+
+  g_string_append_printf(*export, "  (gi-method-send self \n");
+  g_string_append_printf(*export, "     (gi-method-prepare \"%s\"", g_base_info_get_name(info));
+  
+  for (int i = 0; i < n_args; i ++) {
+    arg = g_callable_info_get_arg (info, i);
+    GIDirection dir = g_arg_info_get_direction (arg);
+    if (dir == GI_DIRECTION_IN || dir == GI_DIRECTION_INOUT) {
+      g_string_append_c (*export, ' ');
+      name = gname_to_scm_name (g_base_info_get_name (arg));
+      g_string_append (*export, name);
+      free (name);
+    }
+    g_base_info_unref (arg);
+  }
+
+  g_string_append (*export, ")))\n\n");
+}
+
+
 #if 0
 static void
 export_method_info (GString **export, char *parent, GICallableInfo *info, gboolean is_new_method)
@@ -555,19 +619,14 @@ scm_gi_load_repository (SCM s_namespace, SCM s_version)
 	      }
 	    }
 #if 0
-	    gint n_vfuncs = g_object_info_get_n_vfuncs (info);
-	    for (gint m = 0; m < n_vfuncs; m ++) {
-	      GIVFuncInfo *func_info = g_object_info_get_vfunc (info, m);
-	      if (g_function_info_get_flags (func_info) & GI_FUNCTION_IS_METHOD) {
-		if (!insert_into_method_table (gtype, func_info, &is_new_method))
-		  g_base_info_unref (func_info);
+	    gint n_signals = g_object_info_get_n_signals (info);
+	    for (gint m = 0; m < n_signals; m ++) {
+	      GISignalInfo *sig_info = g_object_info_get_signal (info, m);
+	      if (!(g_signal_info_get_flags (sig_info) & G_SIGNAL_DEPRECATED)) {
+		if (!insert_into_signal_table (gtype, sig_info, &is_new_method))
+		  g_base_info_unref (sig_info);
 		else
-		  export_method_info (&export, g_base_info_get_name (info), func_info, is_new_method);
-	      } else {
-		if (!insert_into_hash_table ("functions", namespace_, g_base_info_get_name (info), &gi_functions, func_info))
-		  g_base_info_unref (func_info);
-		else
-		  export_callable_info (&export, g_base_info_get_name (info), func_info);
+		  export_signal_info (&export, g_base_info_get_name (info), sig_info, is_new_method);
 	      }
 	    }
 #endif	    

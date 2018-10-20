@@ -468,7 +468,6 @@ gi_argument_from_object (const char *func,
     is_ptr = g_type_info_is_pointer (type_info);
 
     switch (type_tag) {
-#if 0
         case GI_TYPE_TAG_ARRAY:
         {
             ssize_t slength;
@@ -485,10 +484,10 @@ gi_argument_from_object (const char *func,
             }
 
             /* Note, strings are sequences, but we cannot accept them here */
-	    if (!scm_is_bytevector (object))
-		scm_misc_error (func, "expected bytevector", SCM_EOL);
+	    if (!scm_is_vector (object))
+		scm_misc_error (func, "expected vector", SCM_EOL);
 
-            slength = scm_to_ssize_t (scm_bytevector_length (object));
+            slength = scm_to_ssize_t (scm_vector_length (object));
             is_zero_terminated = g_type_info_is_zero_terminated (type_info);
             item_type_info = g_type_info_get_param_type (type_info, 0);
 
@@ -507,32 +506,40 @@ gi_argument_from_object (const char *func,
             }
 
             if (g_type_info_get_tag (item_type_info) == GI_TYPE_TAG_UINT8) {
-                memcpy(array->data, SCM_BYTEVECTOR_CONTENTS(object), length);
-                array->len = length;
-                goto array_success;
+		if (scm_is_string (object)) {
+		    for (int k = 0; k < scm_c_string_length (object); k ++) {
+			array->data[k] = SCM_CHAR (scm_c_string_ref (object, k));
+		    }
+		    goto array_success;
+		} else if (scm_is_bytevector (object)) {
+		    memcpy(array->data, SCM_BYTEVECTOR_CONTENTS(object), length);
+		    array->len = length;
+		    goto array_success;
+		}
             }
 
             item_transfer = transfer == GI_TRANSFER_CONTAINER ? GI_TRANSFER_NOTHING : transfer;
 
-            for (i = 0; i < length; i++) {
-                PyObject *py_item;
+            for (i = 0; i < slength; i++) {
+		SCM s_item;
                 GIArgument item;
 
-                py_item = PySequence_GetItem (object, i);
-                if (py_item == NULL) {
-                    goto array_item_error;
-                }
+		s_item = scm_c_vector_ref (object, i);
+                /* if (py_item == NULL) { */
+                /*     goto array_item_error; */
+                /* } */
 
-                item = _pygi_argument_from_object (py_item, item_type_info, item_transfer);
+                item = gi_argument_from_object (func, s_item, item_type_info, item_transfer);
 
-                Py_DECREF (py_item);
+                /* Py_DECREF (py_item); */
 
-                if (PyErr_Occurred()) {
-                    goto array_item_error;
-                }
+                /* if (PyErr_Occurred()) { */
+                /*     goto array_item_error; */
+                /* } */
 
                 g_array_insert_val (array, i, item);
                 continue;
+#if 0	    
 
 array_item_error:
                 /* Free everything we have converted so far. */
@@ -542,15 +549,16 @@ array_item_error:
 
                 _PyGI_ERROR_PREFIX ("Item %u: ", i);
                 break;
+#endif		
             }
 
 array_success:
+#if 0	    
             arg.v_pointer = array;
-
             g_base_info_unref ( (GIBaseInfo *) item_type_info);
+#endif
             break;
         }
-#endif
         case GI_TYPE_TAG_INTERFACE:
         {
             GIBaseInfo *info;
@@ -609,6 +617,7 @@ array_success:
                     /* An error within this call will result in a NULL arg */
                     /* pygi_arg_gobject_out_arg_from_py (object, &arg, transfer); */
 		    g_critical ("Unimplemented");
+		    g_assert_not_reached ();
                     break;
 
                 default:
@@ -929,7 +938,7 @@ gi_giargument_to_object (GIArgument  *arg,
 
 		    object = scm_make_foreign_object_0(gi_gobject_type);
 		    gi_gobject_set_ob_type (object, g_type);
-		    gi_gobject_set_obj (object, arg);
+		    gi_gobject_set_obj (object, arg->v_pointer);
 
 		    // FIXME: add all the transfer and cleanup info to object
                     /* object = pygi_arg_struct_to_py_marshal (arg, */
@@ -979,10 +988,11 @@ gi_giargument_to_object (GIArgument  *arg,
 
                     break;
                 }
+#endif		
                 case GI_INFO_TYPE_INTERFACE:
                 case GI_INFO_TYPE_OBJECT:
-                    object = pygi_arg_gobject_to_py_called_from_c (arg, transfer);
-#endif
+		    object = gi_arg_gobject_to_scm_called_from_c (arg, transfer);
+		    
                     break;
                 default:
                     g_assert_not_reached();
