@@ -9,7 +9,7 @@ info_TEXINFOS = doc/guile-gi.texi
 
 guileextension_LTLIBRARIES = libguile-gi.la
 
-noinst_PROGRAMS = guile-gi fo_gen
+noinst_PROGRAMS = guile-gi$(EXEEXT) fo_gen$(EXEEXT)
 
 fo_gen_SOURCES = \
  src/gi/fo_gen.c
@@ -35,25 +35,25 @@ BUILT_SOURCES += \
  src/gi/__gi_gvalue.h src/gi/__gi_gvalue.c \
  src/gi/__gi_gparamspec.h src/gi/__gi_gparamspec.c
 
-src/gi/__gi_gboxed.c: $(builddir)/fo_gen src/gi/foreign-object-types.ini
-src/gi/__gi_gboxed.h: $(builddir)/fo_gen src/gi/foreign-object-types.ini
-src/gi/__gi_genum.c: $(builddir)/fo_gen src/gi/foreign-object-types.ini
-src/gi/__gi_genum.h: $(builddir)/fo_gen src/gi/foreign-object-types.ini
-src/gi/__gi_genumcollection.c: $(builddir)/fo_gen src/gi/foreign-object-types.ini
-src/gi/__gi_genumcollection.h: $(builddir)/fo_gen src/gi/foreign-object-types.ini
-src/gi/__gi_gflags.h: $(builddir)/fo_gen src/gi/foreign-object-types.ini
-src/gi/__gi_gflags.c: $(builddir)/fo_gen src/gi/foreign-object-types.ini
-src/gi/__gi_gflagscollection.c: $(builddir)/fo_gen src/gi/foreign-object-types.ini
-src/gi/__gi_gflagscollection.h: $(builddir)/fo_gen src/gi/foreign-object-types.ini
-src/gi/__gi_gobject.h: $(builddir)/fo_gen src/gi/foreign-object-types.ini
-src/gi/__gi_gobject.c: $(builddir)/fo_gen src/gi/foreign-object-types.ini
-src/gi/__gi_gtype.h: $(builddir)/fo_gen src/gi/foreign-object-types.ini
-src/gi/__gi_gtype.c: $(builddir)/fo_gen src/gi/foreign-object-types.ini
-src/gi/__gi_gvalue.h: $(builddir)/fo_gen src/gi/foreign-object-types.ini
-src/gi/__gi_gvalue.c: $(builddir)/fo_gen src/gi/foreign-object-types.ini
-src/gi/__gi_gparamspec.h: $(builddir)/fo_gen src/gi/foreign-object-types.ini
-src/gi/__gi_gparamspec.c: $(builddir)/fo_gen src/gi/foreign-object-types.ini
-	$(builddir)/fo_gen $(top_srcdir)/src/gi/foreign-object-types.ini $(top_srcdir)/src/gi
+src/gi/__gi_gboxed.c: $(builddir)/fo_gen$(EXEEXT) src/gi/foreign-object-types.ini
+src/gi/__gi_gboxed.h: $(builddir)/fo_gen$(EXEEXT) src/gi/foreign-object-types.ini
+src/gi/__gi_genum.c: $(builddir)/fo_gen$(EXEEXT) src/gi/foreign-object-types.ini
+src/gi/__gi_genum.h: $(builddir)/fo_gen$(EXEEXT) src/gi/foreign-object-types.ini
+src/gi/__gi_genumcollection.c: $(builddir)/fo_gen$(EXEEXT) src/gi/foreign-object-types.ini
+src/gi/__gi_genumcollection.h: $(builddir)/fo_gen$(EXEEXT) src/gi/foreign-object-types.ini
+src/gi/__gi_gflags.h: $(builddir)/fo_gen$(EXEEXT) src/gi/foreign-object-types.ini
+src/gi/__gi_gflags.c: $(builddir)/fo_gen$(EXEEXT) src/gi/foreign-object-types.ini
+src/gi/__gi_gflagscollection.c: $(builddir)/fo_gen$(EXEEXT) src/gi/foreign-object-types.ini
+src/gi/__gi_gflagscollection.h: $(builddir)/fo_gen$(EXEEXT) src/gi/foreign-object-types.ini
+src/gi/__gi_gobject.h: $(builddir)/fo_gen$(EXEEXT) src/gi/foreign-object-types.ini
+src/gi/__gi_gobject.c: $(builddir)/fo_gen$(EXEEXT) src/gi/foreign-object-types.ini
+src/gi/__gi_gtype.h: $(builddir)/fo_gen$(EXEEXT) src/gi/foreign-object-types.ini
+src/gi/__gi_gtype.c: $(builddir)/fo_gen$(EXEEXT) src/gi/foreign-object-types.ini
+src/gi/__gi_gvalue.h: $(builddir)/fo_gen$(EXEEXT) src/gi/foreign-object-types.ini
+src/gi/__gi_gvalue.c: $(builddir)/fo_gen$(EXEEXT) src/gi/foreign-object-types.ini
+src/gi/__gi_gparamspec.h: $(builddir)/fo_gen$(EXEEXT) src/gi/foreign-object-types.ini
+src/gi/__gi_gparamspec.c: $(builddir)/fo_gen$(EXEEXT) src/gi/foreign-object-types.ini
+	$(builddir)/fo_gen$(EXEEXT) $(top_srcdir)/src/gi/foreign-object-types.ini $(top_srcdir)/src/gi
 
 guile_gi_SOURCES = \
  src/gi/__gi_gobject.h src/gi/__gi_gobject.c \
