@@ -5,7 +5,9 @@
 #include "gi_gsignal.h"
 #include "gi_gparamspec.h"
 #include "gi_ginterface.h"
+#include "gi_signal_closure.h"
 #include "gir_func.h"
+#include "gir_func2.h"
 #include "gir_type.h"
 #include <glib-object.h>
 #include <glib.h>
@@ -324,28 +326,31 @@ connect_helper (SCM self, gchar *name, SCM callback, SCM extra_args, SCM object,
     gulong handlerid;
     GSignalQuery query_info;
 
-    if (!g_signal_parse_name(name, G_OBJECT_TYPE (gi_gobject_get_obj (self),
-						  &sigid, &detail, TRUE))) {
+    if (!g_signal_parse_name(name, G_OBJECT_TYPE (gi_gobject_get_obj (self)),
+						  &sigid, &detail, TRUE)) {
 	scm_misc_error ("connect_helper",
 			"~A: unknown signal name ~A",
 			scm_list_2 (self, scm_from_utf8_string(name)));
     }
 
     g_signal_query (sigid, &query_info);
+    GType gtype = G_OBJECT_TYPE (gi_gobject_get_obj (self));
     if (g_type_get_qdata (gtype, gi_gobject_custom_key) == NULL) {
 	/* The signal is implemented by a non-Scheme class. */
-	closure = gi_gsignal_closure_new (self, query_info.itype,
+	closure = gi_signal_closure_new (self, query_info.itype,
 					  query_info.signal_name, callback,
 					  extra_args, object);
     }
 
     if (!closure) {
 	/* The signal is implemented at the Scheme level, probably */
-	closure = gug_closure_new (callback, extra_args, object);
+	// closure = gug_closure_new (callback, extra_args, object);
+    g_critical ("unimplemented");
+    g_abort();
     }
 
     gugobject_watch_closure (self, closure);
-    handlerid = g_signal_connect_closure_by_id (gi_gobject_get_obj (self), sigid, detail, closure after);
+    handlerid = g_signal_connect_closure_by_id (gi_gobject_get_obj (self), sigid, detail, closure, after);
 
     return scm_from_ulong (handlerid);
 }
@@ -355,7 +360,7 @@ scm_signal_connect (SCM self, SCM s_name, SCM proc, SCM rest)
 {
     scm_assert_foreign_object_type (gi_gobject_type, self);
 
-    char *name = scm_to_utf8_string (name);
+    char *name = scm_to_utf8_string (s_name);
     SCM ret = connect_helper (self, name, proc, rest, SCM_BOOL_F, FALSE);
     free (name);
     return ret;

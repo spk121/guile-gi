@@ -5,6 +5,7 @@
 #include "gi_basictype.h"
 #include "gi_gvalue.h"
 #include "gir_func2.h"
+#include "gi_gtype.h"
 #include "gi_gobject.h"
 /*
  * vim: tabstop=4 shiftwidth=4 expandtab
@@ -463,9 +464,12 @@ gi_argument_from_object (const char *func,
     gpointer cleanup_data = NULL;
     gboolean is_ptr;
 
+    g_debug ("making GIArgument from object");
     memset(&arg, 0, sizeof(GIArgument));
     type_tag = g_type_info_get_tag (type_info);
     is_ptr = g_type_info_is_pointer (type_info);
+
+    g_debug (" type1 %s",g_type_tag_to_string (type_tag));
 
     switch (type_tag) {
         case GI_TYPE_TAG_ARRAY:
@@ -566,7 +570,8 @@ array_success:
 
             info = g_type_info_get_interface (type_info);
             info_type = g_base_info_get_type (info);
-
+	    g_debug ("  type2 %s", g_info_type_to_string (info_type));
+	    g_debug ("  type3 %s", g_base_info_get_name (info));
             switch (info_type) {
                 case GI_INFO_TYPE_CALLBACK:
                     /* This should be handled in invoke() */
@@ -577,12 +582,13 @@ array_success:
                 case GI_INFO_TYPE_UNION:
                 {
                     GType g_type;
-		    SCM s_type;
+		            SCM s_type;
                     gboolean is_foreign = (info_type == GI_INFO_TYPE_STRUCT) &&
                                           (g_struct_info_is_foreign ((GIStructInfo *) info));
 
                     g_type = g_registered_type_info_get_g_type ( (GIRegisteredTypeInfo *) info);
-                    s_type = gi_type_import_by_gi_info ( (GIBaseInfo *) info);
+                    //s_type = gi_type_import_by_gi_info ( (GIBaseInfo *) info);
+                    s_type = gi_gtype_c2g(g_type);
 
                     /* Note for G_TYPE_VALUE g_type:
                      * This will currently leak the GValue that is allocated and
@@ -616,8 +622,9 @@ array_success:
                 case GI_INFO_TYPE_OBJECT:
                     /* An error within this call will result in a NULL arg */
                     /* pygi_arg_gobject_out_arg_from_py (object, &arg, transfer); */
-		    g_critical ("Unimplemented");
-		    g_assert_not_reached ();
+		    g_critical ("In barely implemented OBJ->arg");
+		    arg.v_pointer = gi_gobject_get_obj (object);
+		    // g_assert_not_reached ();
                     break;
 
                 default:

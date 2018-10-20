@@ -1,8 +1,5 @@
 #ifndef _GIR_FUNC_H_
 #define _GIR_FUNC_H_
 
-#include <libguile.h>
-#include <girepository.h>
-
-
+void gir_init_func2 (void);
 #endif

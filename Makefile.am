@@ -125,7 +125,9 @@ libguile_gi_la_SOURCES = \
  src/gi/gi_basictype.h src/gi/gi_basictype.c \
  src/gi/gir_func.h src/gi/gir_func.c \
  src/gi/gir_type.h src/gi/gir_type.c \
- src/gi/gir_func2.h src/gi/gir_func2.c
+ src/gi/gir_func2.h src/gi/gir_func2.c \
+ src/gi/gi_signal_closure.h src/gi/gi_signal_closure.c
+
 
 
 libguile_gi_la_CFLAGS = \
