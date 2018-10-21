@@ -214,7 +214,7 @@ gi_gobject_new_full (GObject *obj, gboolean steal, gpointer g_class)
 }
 
 /* re pygobject-object.c: 1059 pygobject_new */
-static SCM
+SCM
 gi_gobject_new (GObject *obj)
 {
     return gi_gobject_new_full (obj, FALSE, NULL);

@@ -77,6 +77,10 @@ gi_signal_closure_marshal(GClosure *closure,
     GSList *list_item = NULL;
     GSList *pass_by_ref_structs = NULL;
 
+
+    /* Here we take the parameters in *param_values and call the
+     * Scheme function stored in *closure */
+    
     signal_info = pc->signal_info;
     n_sig_info_args = g_callable_info_get_n_args(signal_info);
     g_assert_cmpint (n_sig_info_args, >=, 0);
@@ -85,22 +89,24 @@ gi_signal_closure_marshal(GClosure *closure,
     sig_info_highest_arg = n_sig_info_args + 1;
     g_assert_cmpint(sig_info_highest_arg, ==, n_param_values);
 
-    /* construct Python tuple for the parameter values */
+    /* construct a scheme list for the parameter values */
     params = SCM_EOL;
+    gboolean swap = G_CCLOSURE_SWAP_DATA(closure);
+    // FIXME: handle swap
     for (i = 0; i < n_param_values; i++) {
-        /* swap in a different initial data for connect_object() */
-        if (i == 0 && G_CCLOSURE_SWAP_DATA(closure)) {
-            g_return_if_fail(pc->swap_data != NULL);
-            //Py_INCREF(pc->swap_data);
-	    params = scm_append (scm_list_2 (params, scm_list_1 (pc->swap_data)));
-        } else if (i == 0) {
-	  SCM item = gi_gvalue_as_scm(&param_values[i], FALSE);
+        if ( TRUE /*i == 0*/ ) {
+            /* We know that the first argument is always some sort of
+             * 'self' or 'this'. */
+            SCM item = gi_gvalue_as_scm(&param_values[i], FALSE);
 
-	  if (scm_is_false (item)) {
+            if (scm_is_false (item)) {
                 goto out;
             }
-	  params = scm_append (scm_list_2 (params, scm_list_1 (item)));
+            params = scm_append (scm_list_2 (params, scm_list_1 (item)));
         } else if (i < (guint)sig_info_highest_arg) {
+            /* The rest of the parameters could be anything, so we query
+               the arginfo for more information */
+            
             GIArgInfo arg_info;
             GITypeInfo type_info;
             GITypeTag type_tag;
@@ -116,7 +122,7 @@ gi_signal_closure_marshal(GClosure *closure,
 
             type_tag = g_type_info_get_tag (&type_info);
             if (type_tag == GI_TYPE_TAG_ARRAY) {
-	      g_assert_not_reached ();
+                g_assert_not_reached ();
 #if 0	      
                 /* Skip the self argument of param_values */
                 arg.v_pointer = _pygi_argument_to_array (&arg,
@@ -136,7 +142,7 @@ gi_signal_closure_marshal(GClosure *closure,
              *
              * Note the logic here must match the logic path taken in _pygi_argument_to_object.
              */
-            if (type_tag == GI_TYPE_TAG_INTERFACE) {
+            else if (type_tag == GI_TYPE_TAG_INTERFACE) {
 	      g_assert_not_reached ();
 #if 0	      
                 GIBaseInfo *info = g_type_info_get_interface (&type_info);
@@ -180,7 +186,10 @@ gi_signal_closure_marshal(GClosure *closure,
                 PyErr_Print ();
                 goto out;
             }
-#endif            
+#endif
+            else {
+                item = gi_gvalue_as_scm(&param_values[i], FALSE);
+            }
 	    params = scm_append(scm_list_2 (params, scm_list_1(item)));
         }
     }
@@ -188,6 +197,7 @@ gi_signal_closure_marshal(GClosure *closure,
     if (scm_is_true (pc->extra_args)) {
       params = scm_append(scm_list_2 (params, scm_list_1(pc->extra_args)));
     }
+    /* Now we actuall do the call! */
     ret = scm_apply_0 (pc->callback, params);
 #if 0    
     if (ret == NULL) {
@@ -238,11 +248,10 @@ gi_signal_closure_marshal(GClosure *closure,
 
 GClosure *
 gi_signal_closure_new (SCM instance,
-                         GType g_type,
-                         const gchar *signal_name,
-                         SCM callback,
-                         SCM extra_args,
-                         SCM swap_data)
+                       GType g_type,
+                       const gchar *signal_name,
+                       SCM callback,
+                       SCM extra_args)
 {
     GClosure *closure = NULL;
     GuGClosure *gugi_closure = NULL;
@@ -261,18 +270,10 @@ gi_signal_closure_new (SCM instance,
     gugi_closure = (GuGClosure *)closure;
 
     gugi_closure->signal_info = signal_info;
-    // Py_INCREF(callback);
     gugi_closure->callback = callback;
 
     if (scm_is_true (scm_list_p ((extra_args)))) {
-      //Py_INCREF(extra_args);
-      
         gugi_closure->extra_args = extra_args;
-    }
-    if (swap_data) {
-      //Py_INCREF(swap_data);
-        gugi_closure->swap_data = swap_data;
-        closure->derivative_flag = TRUE;
     }
 
     return closure;
