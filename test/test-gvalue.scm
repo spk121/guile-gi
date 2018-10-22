@@ -26,10 +26,25 @@
 	       (let ((val (make-gvalue G_TYPE_INT)))
 		 (gvalue? val)))
 
-      ;; (pass-if "make GValue of G_TYPE_INT holding zero"
-      ;; 	       (let ((val (make-gvalue G_TYPE_INT)))
-      ;; 		 (gvalue-set! val 0)
-      ;; 		 (equal? 0 (gvalue-get val))))
+      (pass-if "make GValue of G_TYPE_INT holding zero"
+      	       (let ((val (make-gvalue G_TYPE_INT)))
+      		 (gvalue-set! val 0)
+       		 (equal? 0 (gvalue-get val))))
+
+      (pass-if "make GValue of G_TYPE_CHAR holding 1"
+      	       (let ((val (make-gvalue G_TYPE_CHAR)))
+      		 (gvalue-set! val 1)
+       		 (equal? 11 (gvalue-get val))))
+
+      (pass-if "make GValue of G_TYPE_CHAR holding -1"
+      	       (let ((val (make-gvalue G_TYPE_CHAR)))
+      		 (gvalue-set! val -1)
+       		 (equal? -1 (gvalue-get val))))
+
+      (pass-if "make GValue of G_TYPE_CHAR holding out of range 129"
+      	       (let ((val (make-gvalue G_TYPE_CHAR)))
+      		 (gvalue-set! val 129)
+       		 (equal? 129 (gvalue-get val))))
       )
   
   (print-counts (results-proc))
