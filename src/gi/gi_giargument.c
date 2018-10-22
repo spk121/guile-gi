@@ -67,6 +67,7 @@ static const uintmax_t uintmax[GI_TYPE_TAG_N_TYPES] =
     ((x) == GI_TYPE_TAG_FLOAT			\
      || (x) == GI_TYPE_TAG_DOUBLE)
 
+
 gboolean
 gi_giargument_check_scm_type(SCM obj, GIArgInfo *ai, char **errstr)
 {
@@ -1460,4 +1461,86 @@ gi_giargument_release (GIArgument   *arg,
         default:
             break;
     }
+}
+
+SCM
+scm_make_giargument (SCM s_type_tag, SCM s_val)
+{
+    SCM_ASSERT (scm_is_exact_integer (s_type_tag), s_type_tag,
+		SCM_ARG1, "make-giargument");
+    unsigned tag = scm_to_unsigned_integer (s_type_tag, 0, GI_TYPE_TAG_N_TYPES);
+    GIArgument arg;
+    memset (&arg, 0, sizeof (GIArgument));
+    
+    if (tag == GI_TYPE_TAG_BOOLEAN)
+	arg.v_boolean = scm_is_true (s_val);
+    else if (tag == GI_TYPE_TAG_INT8)
+	arg.v_int8 = scm_to_int8 (s_val);
+    else if (tag == GI_TYPE_TAG_UINT8)
+	arg.v_uint8 = scm_to_uint8 (s_val);
+    else if (tag == GI_TYPE_TAG_INT16)
+	arg.v_int16 = scm_to_int16 (s_val);
+    else if (tag == GI_TYPE_TAG_UINT16)
+	arg.v_uint16 = scm_to_uint16 (s_val);
+    else if (tag == GI_TYPE_TAG_INT32)
+	arg.v_int32 = scm_to_int32 (s_val);
+    else if (tag == GI_TYPE_TAG_UINT32)
+	arg.v_uint32 = scm_to_uint32 (s_val);
+    else if (tag == GI_TYPE_TAG_INT64)
+	arg.v_int64 = scm_to_int64 (s_val);
+    else if (tag == GI_TYPE_TAG_UINT64)
+	arg.v_uint64 = scm_to_uint64 (s_val);
+    else if (tag == GI_TYPE_TAG_FLOAT) {
+	double val = scm_to_double (s_val);
+	if (val < -FLT_MAX || val > FLT_MAX)
+	    scm_out_of_range ("make-giargument", s_val);
+	arg.v_float = scm_to_double (s_val);
+    }
+    else if (tag == GI_TYPE_TAG_DOUBLE)
+	arg.v_double = scm_to_double (s_val);
+    else if (tag == GI_TYPE_TAG_GTYPE)
+	arg.v_size = scm_to_size_t (s_val);
+    else if (tag == GI_TYPE_TAG_UTF8)
+	arg.v_pointer = scm_to_utf8_string (s_val);
+    else
+	g_critical ("Unimplemented case in make-giargument");
+
+    SCM obj = scm_make_foreign_object_0(gi_giargument_type);
+    GIArgument *ptr = g_new0 (GIArgument, 1);
+    memcpy (ptr, &arg, sizeof (GIArgument));
+    gi_giargument_set_argument (obj, ptr);
+    return obj;
+}
+
+#define SCONSTX(NAME) scm_permanent_object (scm_c_define (#NAME, scm_from_int (NAME)))
+
+void
+gi_init_giargument (void)
+{
+    gi_init_giargument_type();
+    
+    SCONSTX(GI_TYPE_TAG_VOID);
+    SCONSTX(GI_TYPE_TAG_BOOLEAN);
+    SCONSTX(GI_TYPE_TAG_INT8);
+    SCONSTX(GI_TYPE_TAG_UINT8);
+    SCONSTX(GI_TYPE_TAG_INT16);
+    SCONSTX(GI_TYPE_TAG_UINT16);
+    SCONSTX(GI_TYPE_TAG_INT32);
+    SCONSTX(GI_TYPE_TAG_UINT32);
+    SCONSTX(GI_TYPE_TAG_INT64);
+    SCONSTX(GI_TYPE_TAG_UINT64);
+    SCONSTX(GI_TYPE_TAG_FLOAT);
+    SCONSTX(GI_TYPE_TAG_DOUBLE);
+    SCONSTX(GI_TYPE_TAG_GTYPE);
+    SCONSTX(GI_TYPE_TAG_UTF8);
+    SCONSTX(GI_TYPE_TAG_FILENAME);
+    SCONSTX(GI_TYPE_TAG_ARRAY);
+    SCONSTX(GI_TYPE_TAG_INTERFACE);
+    SCONSTX(GI_TYPE_TAG_GLIST);
+    SCONSTX(GI_TYPE_TAG_GSLIST);
+    SCONSTX(GI_TYPE_TAG_GHASH);
+    SCONSTX(GI_TYPE_TAG_ERROR);
+    SCONSTX(GI_TYPE_TAG_UNICHAR);
+    
+    scm_c_define_gsubr ("make-giargument", 2, 0, 0, scm_make_giargument);
 }

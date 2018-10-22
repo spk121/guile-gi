@@ -3,6 +3,8 @@
 
 #include <girepository.h>
 #include <libguile.h>
+#include "__gi_giargument.h"
+
 typedef gssize (*GuGIArgArrayLengthPolicy) (gsize item_index,
 					    void *user_data1,
 					    void *user_data2);
@@ -49,4 +51,6 @@ gi_argument_from_object (const char *func,
 			 SCM object,
 			 GITypeInfo *type_info,
 			 GITransfer  transfer);
+
+void gi_init_giargument (void);
 #endif

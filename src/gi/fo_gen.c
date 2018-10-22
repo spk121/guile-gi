@@ -60,6 +60,7 @@ do_includes (char *name)
   fprintf(fp, "#include <libguile.h>\n");
   fprintf(fp, "#include <glib.h>\n");
   fprintf(fp, "#include <glib-object.h>\n");
+  fprintf(fp, "#include <girepository.h>\n");
   fprintf(fp, "#include \"%s\"\n", filename);
   fprintf(fp, "\n");
   g_free (filename);

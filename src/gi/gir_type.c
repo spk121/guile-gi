@@ -126,6 +126,13 @@ gir_init_types()
   PX("union-info?", GIUnionInfo);
   PX("value-info?", GIValueInfo);
   PX("vfunc-info?", GIVFuncInfo);
+  scm_c_export ("arg-info?",
+		"callback-info?",
+		"const-info?",
+		"enum-info?",
+		"field-info?",
+		"function-info?",
+		NULL);
 }
 
 

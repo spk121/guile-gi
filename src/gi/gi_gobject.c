@@ -1761,6 +1761,7 @@ gi_init_gobject (void)
     gi_init_gobject_type ();
     gir_init_funcs();
     gir_init_func2();
+    gi_init_giargument();
     gir_init_types();
     
     gi_gobject_wrapper_key = g_quark_from_static_string ("GuGObject::wrapper");

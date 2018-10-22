@@ -215,32 +215,26 @@ gi_gvalue_from_scm_with_error(GValue *value, SCM obj)
 	    else
 		return GI_GVALUE_WRONG_TYPE;
 	}
-#if 0	
+
     case G_TYPE_INTERFACE:
         /* we only handle interface types that have a GObject prereq */
         if (g_type_is_a(value_type, G_TYPE_OBJECT)) {
-            if (scm_is_false (obj))
+            if (scm_is_false (obj)) {
                 g_value_set_object(value, NULL);
-            else {
-                if (!SCM_IS_A_P (obj, gi_gobject_type)) {
-		    scm_misc_error ("gvalue_from_scm", "GObject is required", SCM_EOL);
-                    return -1;
-		}
-                if (!G_TYPE_CHECK_INSTANCE_TYPE(gi_gobject_get_obj(obj),
-						value_type)) {
-		    scm_misc_error ("gvalue_from_scm",
-				    "Invalie GObject type for assignment",
-				    SCM_EOL);
-                    return -1;
-                }
+		return 0;
+	    }
+            else if (!SCM_IS_A_P (obj, gi_gobject_type))
+		return GI_GVALUE_WRONG_TYPE;
+            else if (!G_TYPE_CHECK_INSTANCE_TYPE(gi_gobject_get_obj(obj),
+						 value_type))
+		return GI_GVALUE_WRONG_TYPE;
+	    else {
                 g_value_set_object(value, gi_gobject_get_obj(obj));
+		return 0;
             }
-	} else {
-	    scm_misc_error ("gvalue_from_scm", "Unsupported conversion", SCM_EOL);
-            return -1;
-        }
+	} else
+	    return GI_GVALUE_WRONG_TYPE;
         break;
-#endif
 #if 0
     case G_TYPE_POINTER:
 	if (0)
