@@ -7,9 +7,11 @@
 #include <girepository.h>
 #include "__gi_gvalue.h"
 
+SCM gi_gvalue_c2g (GValue *val);
+
 SCM gi_gvalue_to_scm_basic_type (const GValue *value, GType fundamental, gboolean *handled);
 
-SCM gi_gvalue_c2g (GValue *val);
+
 SCM gi_param_gvalue_as_scm (const GValue *gvalue,
 			    gboolean copy_boxed,
 			    const GParamSpec *pspec);

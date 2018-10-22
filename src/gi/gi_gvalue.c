@@ -7,6 +7,352 @@
 #include "gir_xguile.h"
 #include "gi_gobject.h"
 
+/* GValue: a container holding a GType and an associated GValue. */
+
+SCM gi_gvalue_c2g(GValue *val)
+{
+	if (val)
+		return scm_make_foreign_object_1(gi_gvalue_type, val);
+
+	g_return_val_if_reached (SCM_BOOL_F);
+}
+
+void gi_gvalue_finalizer(SCM self)
+{
+	GValue *val;
+	val = gi_gvalue_get_value(self);
+	if (val)
+	{
+		g_value_unset(val);
+		g_free(val);
+		gi_gvalue_set_value(self, (GValue *)NULL);
+	}
+}
+
+/**
+ * gi_gvalue_from_scm_with_error:
+ * @value: the GValue object to store the converted value in.
+ * @obj: the Python object to convert.
+ *
+ * This function converts a generic SCM value and stores the result in a
+ * GValue.  The GValue must be initialised in advance with
+ * g_value_init().  If the Python object can't be converted to the
+ * type of the GValue, then an error is returned.
+ *
+ * Returns: 0 on success, -1 on error.
+ */
+int
+gi_gvalue_from_scm_with_error(GValue *value, SCM obj)
+{
+	g_assert (value != NULL);
+
+    GType value_type = G_VALUE_TYPE(value);
+
+    switch (G_TYPE_FUNDAMENTAL(value_type)) {
+    case G_TYPE_CHAR:
+	{
+		if (!scm_is_signed_integer (obj, G_MININT8, G_MAXINT8))
+			return -1;
+	    gint8 temp = scm_to_int8 (obj);
+	    g_value_set_schar (value, temp);
+	    return 0;
+	}
+    case G_TYPE_UCHAR:
+	{
+		if (!scm_is_unsigned_integer (obj, 0, G_MAXUINT8))
+			return -1;
+	    guchar temp;
+	    temp = scm_to_uint8 (obj);
+	    g_value_set_uchar (value, temp);
+	    return 0;
+	}
+    case G_TYPE_BOOLEAN:
+	{
+	    gboolean temp;
+	    temp = scm_is_true (obj);
+	    g_value_set_boolean (value, temp);
+	    return 0;
+	}
+    case G_TYPE_INT:
+	{
+		if (!scm_is_signed_integer (obj, G_MININT, G_MAXINT))
+			return -1;
+	    gint temp;
+	    temp = scm_to_int (obj);
+	    g_value_set_int (value, temp);
+	    return 0;
+	}
+    case G_TYPE_UINT:
+	{
+		if (!scm_is_unsigned_integer (obj, 0, G_MAXUINT))
+			return -1;
+	    guint temp;
+	    temp = scm_to_uint (obj);
+	    g_value_set_uint (value, temp);
+	    return 0;
+	}
+    case G_TYPE_LONG:
+	{
+		if (!scm_is_signed_integer (obj, G_MINLONG, G_MAXLONG))
+			return -1;
+	    glong temp;
+	    temp = scm_to_long (obj);
+	    g_value_set_long (value, temp);
+	    return 0;
+	}
+    case G_TYPE_ULONG:
+	{
+		if (!scm_is_unsigned_integer (obj, 0, G_MAXULONG))
+			return -1;
+	    gulong temp;
+	    temp = scm_to_ulong (obj);
+	    g_value_set_ulong (value, temp);
+	    return 0;
+	}
+    case G_TYPE_INT64:
+	{
+		if (!scm_is_signed_integer (obj, G_MININT64, G_MAXINT64))
+			return -1;
+	    gint64 temp;
+	    temp = scm_to_int64 (obj);
+	    g_value_set_int64 (value, temp);
+	    return 0;
+	}
+    case G_TYPE_UINT64:
+	{
+		if (!scm_is_unsigned_integer (obj, 0, G_MAXUINT64))
+			return -1;
+	    guint64 temp;
+	    temp = scm_to_uint64 (obj);
+	    g_value_set_uint64 (value, temp);
+	    return 0;
+	}
+    case G_TYPE_ENUM:
+	{
+		if (!scm_is_unsigned_integer (obj, 0, G_MAXULONG))
+			return -1;
+	    gint val = 0;
+	    /* if (gi_enum_get_value(G_VALUE_TYPE(value), obj, &val) < 0) { */
+	    /*     return -1; */
+	    /* } */
+	    val = scm_to_ulong(obj);
+	    g_value_set_enum(value, val);
+	}
+	break;
+    case G_TYPE_FLAGS:
+	{
+		if (!scm_is_unsigned_integer (obj, 0, G_MAXULONG))
+			return -1;
+	    guint val = 0;
+	    /* if (gi_flags_get_value(G_VALUE_TYPE(value), obj, &val) < 0) { */
+	    /*     return -1; */
+	    /* } */
+	    val = scm_to_ulong(obj);
+	    g_value_set_flags(value, val);
+	    return 0;
+	}
+	break;
+    case G_TYPE_FLOAT:
+	{
+		if (!scm_is_true (scm_real_p (obj)))
+			return -1;
+		gdouble dval = scm_to_double (obj);
+		if (dval < -G_MAXFLOAT || dval > G_MAXFLOAT)
+			return -1;
+	    g_value_set_float (value, dval);
+	    return 0;
+	}
+    case G_TYPE_DOUBLE:
+	{
+		if (!scm_is_true (scm_real_p (obj)))
+			return -1;
+	    gdouble temp;
+	    temp = scm_to_double (obj);
+	    g_value_set_double (value, temp);
+	    return 0;
+	}
+    case G_TYPE_STRING:
+	{
+		if (!scm_is_string (obj) && !scm_is_symbol (obj))
+			return -1;
+		if (scm_is_string (obj))
+		{
+			gchar *temp = scm_to_utf8_string (obj);
+			g_value_take_string (value, temp);
+		}
+		else 
+		{ 
+			gchar *temp = scm_to_utf8_string (scm_symbol_to_string (obj));
+			g_value_take_string (value, temp);
+		}
+	    return 0;
+	}
+
+#if 0	
+    case G_TYPE_INTERFACE:
+        /* we only handle interface types that have a GObject prereq */
+        if (g_type_is_a(value_type, G_TYPE_OBJECT)) {
+            if (scm_is_false (obj))
+                g_value_set_object(value, NULL);
+            else {
+                if (!SCM_IS_A_P (obj, gi_gobject_type)) {
+		    scm_misc_error ("gvalue_from_scm", "GObject is required", SCM_EOL);
+                    return -1;
+		}
+                if (!G_TYPE_CHECK_INSTANCE_TYPE(gi_gobject_get_obj(obj),
+						value_type)) {
+		    scm_misc_error ("gvalue_from_scm",
+				    "Invalie GObject type for assignment",
+				    SCM_EOL);
+                    return -1;
+                }
+                g_value_set_object(value, gi_gobject_get_obj(obj));
+            }
+	} else {
+	    scm_misc_error ("gvalue_from_scm", "Unsupported conversion", SCM_EOL);
+            return -1;
+        }
+        break;
+#endif
+    case G_TYPE_POINTER:
+#if 0
+	if (0)
+	    ;
+        else if (PyObject_TypeCheck(obj, &PyGPointer_Type) &&
+		 G_VALUE_HOLDS(value, ((PyGPointer *)obj)->gtype))
+            g_value_set_pointer(value, pyg_pointer_get(obj, gpointer));
+        else if (PyCapsule_CheckExact (obj))
+            g_value_set_pointer(value, PyCapsule_GetPointer (obj, NULL));
+        else if (G_VALUE_HOLDS_GTYPE (value))
+            g_value_set_gtype (value, pyg_type_from_object (obj));
+#endif
+	scm_misc_error("gvalue_from_scm", "expected pointer", SCM_EOL);
+	break;
+#if 0	
+    case G_TYPE_BOXED: {
+        PyGTypeMarshal *bm;
+        gboolean holds_value_array;
+
+        G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+	    holds_value_array = G_VALUE_HOLDS(value, G_TYPE_VALUE_ARRAY);
+        G_GNUC_END_IGNORE_DEPRECATIONS
+
+	    if (obj == Py_None)
+		g_value_set_boxed(value, NULL);
+	    else if (G_VALUE_HOLDS(value, PY_TYPE_OBJECT))
+		g_value_set_boxed(value, obj);
+	    else if (PyObject_TypeCheck(obj, &PyGBoxed_Type) &&
+		     G_VALUE_HOLDS(value, ((PyGBoxed *)obj)->gtype))
+		g_value_set_boxed(value, pyg_boxed_get(obj, gpointer));
+	    else if (G_VALUE_HOLDS(value, G_TYPE_VALUE)) {
+		GType type;
+		GValue *n_value;
+
+		type = pyg_type_from_object((PyObject*)Py_TYPE(obj));
+		if (G_UNLIKELY (! type)) {
+		    return -1;
+		}
+		n_value = g_new0 (GValue, 1);
+		g_value_init (n_value, type);
+		g_value_take_boxed (value, n_value);
+		return pyg_value_from_pyobject_with_error (n_value, obj);
+	    }
+	    else if (PySequence_Check(obj) && holds_value_array)
+		return pyg_value_array_from_pyobject(value, obj, NULL);
+
+	    else if (PySequence_Check(obj) &&
+		     G_VALUE_HOLDS(value, G_TYPE_ARRAY))
+		return pyg_array_from_pyobject(value, obj);
+	    else if (PYGLIB_PyUnicode_Check(obj) &&
+		     G_VALUE_HOLDS(value, G_TYPE_GSTRING)) {
+		GString *string;
+		char *buffer;
+		Py_ssize_t len;
+		if (PYGLIB_PyUnicode_AsStringAndSize(obj, &buffer, &len))
+		    return -1;
+		string = g_string_new_len(buffer, len);
+		g_value_set_boxed(value, string);
+		g_string_free (string, TRUE);
+		break;
+	    }
+	    else if ((bm = pyg_type_lookup(G_VALUE_TYPE(value))) != NULL)
+		return bm->tovalue(value, obj);
+	    else if (PyCapsule_CheckExact (obj))
+		g_value_set_boxed(value, PyCapsule_GetPointer (obj, NULL));
+	    else {
+		PyErr_SetString(PyExc_TypeError, "Expected Boxed");
+		return -1;
+	    }
+        break;
+    }
+    case G_TYPE_PARAM:
+        /* we need to support both the wrapped _gi.GParamSpec and the GI
+         * GObject.ParamSpec */
+        if (G_IS_PARAM_SPEC (pygobject_get (obj)))
+            g_value_set_param(value, G_PARAM_SPEC (pygobject_get (obj)));
+        else if (pyg_param_spec_check (obj))
+            g_value_set_param(value, PyCapsule_GetPointer (obj, NULL));
+        else {
+            PyErr_SetString(PyExc_TypeError, "Expected ParamSpec");
+            return -1;
+        }
+        break;
+    case G_TYPE_OBJECT:
+        if (obj == Py_None) {
+            g_value_set_object(value, NULL);
+        } else if (PyObject_TypeCheck(obj, &PyGObject_Type) &&
+		   G_TYPE_CHECK_INSTANCE_TYPE(pygobject_get(obj),
+					      G_VALUE_TYPE(value))) {
+            g_value_set_object(value, pygobject_get(obj));
+        } else {
+            PyErr_SetString(PyExc_TypeError, "Expected GObject");
+            return -1;
+        }
+        break;
+    case G_TYPE_VARIANT:
+	{
+	    if (obj == Py_None)
+		g_value_set_variant(value, NULL);
+	    else if (pyg_type_from_object_strict(obj, FALSE) == G_TYPE_VARIANT)
+		g_value_set_variant(value, pyg_boxed_get(obj, GVariant));
+	    else {
+		PyErr_SetString(PyExc_TypeError, "Expected Variant");
+		return -1;
+	    }
+	    break;
+	}
+#endif    
+    default:
+	{
+#if 0	
+	    PyGTypeMarshal *bm;
+	    if ((bm = pyg_type_lookup(G_VALUE_TYPE(value))) != NULL) {
+		return bm->tovalue(value, obj);
+	    } else {
+		PyErr_SetString(PyExc_TypeError, "Unknown value type");
+		return -1;
+	    }
+#endif
+	    break;
+	}
+    }
+
+    /* If an error occurred, unset the GValue but don't clear the Python error. */
+    /* if (PyErr_Occurred()) { */
+    /*     g_value_unset(value); */
+    /*     return -1; */
+    /* } */
+
+    return 0;
+}
+
+int
+gi_gvalue_from_scm (GValue *value, SCM obj)
+{
+    int res = gi_gvalue_from_scm_with_error (value, obj);
+    return res;
+}
+
 
 SCM
 gi_param_gvalue_as_scm (const GValue *gvalue,
@@ -377,293 +723,6 @@ gi_gvalue_as_scm (const GValue *value, gboolean copy_boxed)
     return guobj;
 }
 
-/**
- * pyg_value_from_pyobject_with_error:
- * @value: the GValue object to store the converted value in.
- * @obj: the Python object to convert.
- *
- * This function converts a Python object and stores the result in a
- * GValue.  The GValue must be initialised in advance with
- * g_value_init().  If the Python object can't be converted to the
- * type of the GValue, then an error is returned.
- *
- * Returns: 0 on success, -1 on error.
- */
-int
-gi_gvalue_from_scm_with_error(GValue *value, SCM obj)
-{
-    GType value_type = G_VALUE_TYPE(value);
-
-    switch (G_TYPE_FUNDAMENTAL(value_type)) {
-#if 0	
-    case G_TYPE_INTERFACE:
-        /* we only handle interface types that have a GObject prereq */
-        if (g_type_is_a(value_type, G_TYPE_OBJECT)) {
-            if (scm_is_false (obj))
-                g_value_set_object(value, NULL);
-            else {
-                if (!SCM_IS_A_P (obj, gi_gobject_type)) {
-		    scm_misc_error ("gvalue_from_scm", "GObject is required", SCM_EOL);
-                    return -1;
-		}
-                if (!G_TYPE_CHECK_INSTANCE_TYPE(gi_gobject_get_obj(obj),
-						value_type)) {
-		    scm_misc_error ("gvalue_from_scm",
-				    "Invalie GObject type for assignment",
-				    SCM_EOL);
-                    return -1;
-                }
-                g_value_set_object(value, gi_gobject_get_obj(obj));
-            }
-	} else {
-	    scm_misc_error ("gvalue_from_scm", "Unsupported conversion", SCM_EOL);
-            return -1;
-        }
-        break;
-#endif
-    case G_TYPE_CHAR:
-	{
-	    gint8 temp;
-	    temp = scm_to_int8 (obj);
-	    g_value_set_schar (value, temp);
-	    return 0;
-	}
-    case G_TYPE_UCHAR:
-	{
-	    guchar temp;
-	    temp = scm_to_uint8 (obj);
-	    g_value_set_uchar (value, temp);
-	    return 0;
-	}
-    case G_TYPE_BOOLEAN:
-	{
-	    gboolean temp;
-	    temp = scm_is_true (obj);
-	    g_value_set_boolean (value, temp);
-	    return 0;
-	}
-    case G_TYPE_INT:
-	{
-	    gint temp;
-	    temp = scm_to_int (obj);
-	    g_value_set_int (value, temp);
-	    return 0;
-	}
-    case G_TYPE_UINT:
-	{
-	    guint temp;
-	    temp = scm_to_uint (obj);
-	    g_value_set_uint (value, temp);
-	    return 0;
-	}
-    case G_TYPE_LONG:
-	{
-	    glong temp;
-	    temp = scm_to_ulong (obj);
-	    g_value_set_long (value, temp);
-	    return 0;
-	}
-    case G_TYPE_ULONG:
-	{
-	    gulong temp;
-	    temp = scm_to_ulong (obj);
-	    g_value_set_ulong (value, temp);
-	    return 0;
-	}
-    case G_TYPE_INT64:
-	{
-	    gint64 temp;
-	    temp = scm_to_int64 (obj);
-	    g_value_set_int64 (value, temp);
-	    return 0;
-	}
-    case G_TYPE_UINT64:
-	{
-	    guint64 temp;
-	    temp = scm_to_uint64 (obj);
-	    g_value_set_uint64 (value, temp);
-	    return 0;
-	}
-    case G_TYPE_ENUM:
-	{
-	    gint val = 0;
-	    /* if (gi_enum_get_value(G_VALUE_TYPE(value), obj, &val) < 0) { */
-	    /*     return -1; */
-	    /* } */
-	    val = scm_to_ulong(obj);
-	    g_value_set_enum(value, val);
-	}
-	break;
-    case G_TYPE_FLAGS:
-	{
-	    guint val = 0;
-	    /* if (gi_flags_get_value(G_VALUE_TYPE(value), obj, &val) < 0) { */
-	    /*     return -1; */
-	    /* } */
-	    val = scm_to_ulong(obj);
-	    g_value_set_flags(value, val);
-	    return 0;
-	}
-	break;
-    case G_TYPE_FLOAT:
-	{
-	    gfloat temp;
-	    temp = scm_to_double (obj);
-	    g_value_set_float (value, temp);
-	    return 0;
-	}
-    case G_TYPE_DOUBLE:
-	{
-	    gdouble temp;
-	    temp = scm_to_double (obj);
-	    g_value_set_double (value, temp);
-	    return 0;
-	}
-    case G_TYPE_STRING:
-	{
-	    gchar *temp;
-	    temp = scm_to_utf8_string (obj);
-	    g_value_take_string (value, temp);
-	    return 0;
-	}
-    case G_TYPE_POINTER:
-#if 0
-	if (0)
-	    ;
-        else if (PyObject_TypeCheck(obj, &PyGPointer_Type) &&
-		 G_VALUE_HOLDS(value, ((PyGPointer *)obj)->gtype))
-            g_value_set_pointer(value, pyg_pointer_get(obj, gpointer));
-        else if (PyCapsule_CheckExact (obj))
-            g_value_set_pointer(value, PyCapsule_GetPointer (obj, NULL));
-        else if (G_VALUE_HOLDS_GTYPE (value))
-            g_value_set_gtype (value, pyg_type_from_object (obj));
-#endif
-	scm_misc_error("gvalue_from_scm", "expected pointer", SCM_EOL);
-	break;
-#if 0	
-    case G_TYPE_BOXED: {
-        PyGTypeMarshal *bm;
-        gboolean holds_value_array;
-
-        G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-	    holds_value_array = G_VALUE_HOLDS(value, G_TYPE_VALUE_ARRAY);
-        G_GNUC_END_IGNORE_DEPRECATIONS
-
-	    if (obj == Py_None)
-		g_value_set_boxed(value, NULL);
-	    else if (G_VALUE_HOLDS(value, PY_TYPE_OBJECT))
-		g_value_set_boxed(value, obj);
-	    else if (PyObject_TypeCheck(obj, &PyGBoxed_Type) &&
-		     G_VALUE_HOLDS(value, ((PyGBoxed *)obj)->gtype))
-		g_value_set_boxed(value, pyg_boxed_get(obj, gpointer));
-	    else if (G_VALUE_HOLDS(value, G_TYPE_VALUE)) {
-		GType type;
-		GValue *n_value;
-
-		type = pyg_type_from_object((PyObject*)Py_TYPE(obj));
-		if (G_UNLIKELY (! type)) {
-		    return -1;
-		}
-		n_value = g_new0 (GValue, 1);
-		g_value_init (n_value, type);
-		g_value_take_boxed (value, n_value);
-		return pyg_value_from_pyobject_with_error (n_value, obj);
-	    }
-	    else if (PySequence_Check(obj) && holds_value_array)
-		return pyg_value_array_from_pyobject(value, obj, NULL);
-
-	    else if (PySequence_Check(obj) &&
-		     G_VALUE_HOLDS(value, G_TYPE_ARRAY))
-		return pyg_array_from_pyobject(value, obj);
-	    else if (PYGLIB_PyUnicode_Check(obj) &&
-		     G_VALUE_HOLDS(value, G_TYPE_GSTRING)) {
-		GString *string;
-		char *buffer;
-		Py_ssize_t len;
-		if (PYGLIB_PyUnicode_AsStringAndSize(obj, &buffer, &len))
-		    return -1;
-		string = g_string_new_len(buffer, len);
-		g_value_set_boxed(value, string);
-		g_string_free (string, TRUE);
-		break;
-	    }
-	    else if ((bm = pyg_type_lookup(G_VALUE_TYPE(value))) != NULL)
-		return bm->tovalue(value, obj);
-	    else if (PyCapsule_CheckExact (obj))
-		g_value_set_boxed(value, PyCapsule_GetPointer (obj, NULL));
-	    else {
-		PyErr_SetString(PyExc_TypeError, "Expected Boxed");
-		return -1;
-	    }
-        break;
-    }
-    case G_TYPE_PARAM:
-        /* we need to support both the wrapped _gi.GParamSpec and the GI
-         * GObject.ParamSpec */
-        if (G_IS_PARAM_SPEC (pygobject_get (obj)))
-            g_value_set_param(value, G_PARAM_SPEC (pygobject_get (obj)));
-        else if (pyg_param_spec_check (obj))
-            g_value_set_param(value, PyCapsule_GetPointer (obj, NULL));
-        else {
-            PyErr_SetString(PyExc_TypeError, "Expected ParamSpec");
-            return -1;
-        }
-        break;
-    case G_TYPE_OBJECT:
-        if (obj == Py_None) {
-            g_value_set_object(value, NULL);
-        } else if (PyObject_TypeCheck(obj, &PyGObject_Type) &&
-		   G_TYPE_CHECK_INSTANCE_TYPE(pygobject_get(obj),
-					      G_VALUE_TYPE(value))) {
-            g_value_set_object(value, pygobject_get(obj));
-        } else {
-            PyErr_SetString(PyExc_TypeError, "Expected GObject");
-            return -1;
-        }
-        break;
-    case G_TYPE_VARIANT:
-	{
-	    if (obj == Py_None)
-		g_value_set_variant(value, NULL);
-	    else if (pyg_type_from_object_strict(obj, FALSE) == G_TYPE_VARIANT)
-		g_value_set_variant(value, pyg_boxed_get(obj, GVariant));
-	    else {
-		PyErr_SetString(PyExc_TypeError, "Expected Variant");
-		return -1;
-	    }
-	    break;
-	}
-#endif    
-    default:
-	{
-#if 0	
-	    PyGTypeMarshal *bm;
-	    if ((bm = pyg_type_lookup(G_VALUE_TYPE(value))) != NULL) {
-		return bm->tovalue(value, obj);
-	    } else {
-		PyErr_SetString(PyExc_TypeError, "Unknown value type");
-		return -1;
-	    }
-#endif
-	    break;
-	}
-    }
-
-    /* If an error occurred, unset the GValue but don't clear the Python error. */
-    /* if (PyErr_Occurred()) { */
-    /*     g_value_unset(value); */
-    /*     return -1; */
-    /* } */
-
-    return 0;
-}
-
-int
-gi_gvalue_from_scm (GValue *value, SCM obj)
-{
-    int res = gi_gvalue_from_scm_with_error (value, obj);
-    return res;
-}
 
 static SCM
 scm_gvalue_set_x (SCM self, SCM x)
@@ -699,27 +758,6 @@ scm_make_gvalue (SCM gtype)
     g_value_init (val, type);
     return gi_gvalue_c2g (val);
     
-}
-
-SCM
-gi_gvalue_c2g (GValue *val)
-{
-    if (val)
-	return scm_make_foreign_object_1 (gi_gvalue_type, val);
-    
-    return SCM_BOOL_F;
-}
-
-void
-gi_gvalue_finalizer (SCM self)
-{
-    GValue *val;
-    val = gi_gvalue_get_value (self);
-    if (val) {
-	g_value_unset (val);
-	g_free (val);
-	gi_gvalue_set_value (self, (GValue *) NULL);
-    }
 }
 
 static SCM

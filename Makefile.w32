@@ -1,0 +1,62 @@
+SHELL = C:\\Windows\\System32\\bash.exe
+
+CC = /msys64/mingw32/bin/clang.exe
+
+CFLAGS = -g -O0
+DEFS = -DHAVE_CONFIG_H -DSTANDALONE -DVSCODE -DSCM_DEBUG_TYPING_STRICTNESS=2
+DEFAULT_INCLUDES = -I. -I$(top_builddir)/src/gi
+INCLUDES = \
+ -I "C:/msys64/mingw32/i686-w64-mingw32/include" \
+ -I "C:/msys64/mingw32/lib/clang/5.0.1/include" \
+ -I "C:/msys64/mingw32/include" \
+ -I "C:/msys64/mingw32/include/at-spi-2.0" \
+ -I "C:/msys64/mingw32/include/at-spi2-atk/2.0" \
+ -I "C:/msys64/mingw32/include/atk-1.0" \
+ -I "C:/msys64/mingw32/include/cairo" \
+ -I "C:/msys64/mingw32/include/dbus-1.0" \
+ -I "C:/msys64/mingw32/include/freetype2" \
+ -I "C:/msys64/mingw32/include/gdk-pixbuf-2.0" \
+ -I "C:/msys64/mingw32/include/gio-unix-2.0" \
+ -I "C:/msys64/mingw32/include/glib-2.0" \
+ -I "C:/msys64/mingw32/include/gtk-3.0" \
+ -I "C:/msys64/mingw32/include/guile/2.2" \
+ -I "C:/msys64/mingw32/include/harfbuzz" \
+ -I "C:/msys64/mingw32/include/libdrm" \
+ -I "C:/msys64/mingw32/include/libpng16" \
+ -I "C:/msys64/mingw32/include/pango-1.0" \
+ -I "C:/msys64/mingw32/include/pixman-1" \
+ -I "C:/msys64/mingw32/include/gobject-introspection-1.0" \
+ -I "C:/msys64/mingw32/lib/glib-2.0/include"
+
+LIBS = -L "c:/msys64/mingw32/lib" -lglib-2.0 -lgio-2.0 -lguile-2.2 -lgobject-2.0 -lgirepository-1.0 
+
+OBJEXT = obj
+EXEEXT = .exe
+
+all: guile-gi.exe fo_gen.exe
+
+fo_gen.exe: src/gi/fo_gen.c
+	$(CC) $(DEFAULT_INCLUDES) $(INCLUDES) $(CFLAGS) $(DEFS) $< -o $@ -L "C:/msys64/mingw32/lib" -lglib-2.0
+
+OBJ = \
+	src/gi/__gi_gobject.obj \
+	src/gi/__gi_gvalue.obj \
+	src/gi/__gi_gtype.obj \
+	src/gi/__gi_gparamspec.obj \
+	src/gi/gi_gparamspec.obj \
+	src/gi/gi_gobject.obj \
+	src/gi/gi_giargument.obj \
+	src/gi/gi_signal_closure.obj \
+	src/gi/gi_basictype.obj \
+	src/gi/gi_gsignal.obj \
+	src/gi/gi_gtype.obj \
+	src/gi/gi_gvalue.obj \
+	src/gi/gir_func.obj \
+	src/gi/gir_type.obj \
+	src/gi/gir_func2.obj \
+
+guile-gi.exe: $(OBJ)
+	$(CC) $(OBJ) -o $@ $(LIBS)
+
+%.obj: %.c
+	$(CC) -c $(DEFAULT_INCLUDES) $(INCLUDES) $(CFLAGS) $(DEFS) $< -o $@

@@ -214,7 +214,8 @@ AM_TESTS_ENVIRONMENT = LD_LIBRARY_PATH="$(top_builddir)/.libs"; export LD_LIBRAR
 TESTS = \
  test/test-setup.scm \
  test/test-gobject.scm \
- test/test-glib.scm
+ test/test-glib.scm \
+ test/test-gvalue.scm
 
 TEST_EXTENSIONS = .scm
 #SCM_LOG_COMPILER = ${top_builddir}/libtool \
