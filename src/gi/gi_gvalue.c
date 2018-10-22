@@ -205,47 +205,48 @@ gi_gvalue_array_from_scm_list(GValue *value, SCM list)
  *
  * Returns: a PyObject representing the value.
  */
-SCM
-gi_gvalue_to_scm_basic_type (const GValue *value, GType fundamental, gboolean *handled)
+SCM gi_gvalue_to_scm_basic_type(const GValue *value, GType fundamental, gboolean *handled)
 {
-    *handled = TRUE;
-    switch (fundamental) {
-    case G_TYPE_CHAR:
-	return scm_from_int8 (g_value_get_schar (value));
-    case G_TYPE_UCHAR:
-	return scm_from_uint8 (g_value_get_uchar (value));
-    case G_TYPE_BOOLEAN:
-	return scm_from_bool (g_value_get_boolean (value));
-    case G_TYPE_INT:
-	return scm_from_int (g_value_get_int (value));
-    case G_TYPE_UINT:
-	return scm_from_uint (g_value_get_uint (value));
-    case G_TYPE_LONG:
-	return scm_from_long (g_value_get_long(value));
-    case G_TYPE_ULONG:
-	return scm_from_ulong (g_value_get_ulong (value));
-    case G_TYPE_INT64:
-	return scm_from_int64 (g_value_get_int64 (value));
-    case G_TYPE_UINT64:
-	return scm_from_uint64 (g_value_get_uint64 (value));
-    case G_TYPE_ENUM:
-	/* return gi_genum_from_gtype (G_VALUE_TYPE (value), */
-	/*                             g_value_get_enum (value)); */
-	return scm_from_ulong (g_value_get_enum (value));
-    case G_TYPE_FLAGS:
-	/* return gi_gflags_from_gtype (G_VALUE_TYPE (value), */
-	/*                              g_value_get_flags (value)); */
-	return scm_from_ulong (g_value_get_flags (value));
-    case G_TYPE_FLOAT:
-	return scm_from_double (g_value_get_float (value));
-    case G_TYPE_DOUBLE:
-	return scm_from_double (g_value_get_double (value));
-    case G_TYPE_STRING:
-	return scm_from_utf8_string (g_value_get_string (value));
-    default:
-	*handled = FALSE;
-	return NULL;
-    }
+	*handled = TRUE;
+	switch (fundamental)
+	{
+	case G_TYPE_CHAR:
+		return scm_from_int8(g_value_get_schar(value));
+	case G_TYPE_UCHAR:
+		return scm_from_uint8(g_value_get_uchar(value));
+	case G_TYPE_BOOLEAN:
+		return scm_from_bool(g_value_get_boolean(value));
+	case G_TYPE_INT:
+		return scm_from_int(g_value_get_int(value));
+	case G_TYPE_UINT:
+		return scm_from_uint(g_value_get_uint(value));
+	case G_TYPE_LONG:
+		return scm_from_long(g_value_get_long(value));
+	case G_TYPE_ULONG:
+		return scm_from_ulong(g_value_get_ulong(value));
+	case G_TYPE_INT64:
+		return scm_from_int64(g_value_get_int64(value));
+	case G_TYPE_UINT64:
+		return scm_from_uint64(g_value_get_uint64(value));
+	case G_TYPE_ENUM:
+		/* return gi_genum_from_gtype (G_VALUE_TYPE (value), */
+		/*                             g_value_get_enum (value)); */
+		return scm_from_ulong(g_value_get_enum(value));
+	case G_TYPE_FLAGS:
+		/* return gi_gflags_from_gtype (G_VALUE_TYPE (value), */
+		/*                              g_value_get_flags (value)); */
+		return scm_from_ulong(g_value_get_flags(value));
+	case G_TYPE_FLOAT:
+		return scm_from_double(g_value_get_float(value));
+	case G_TYPE_DOUBLE:
+		return scm_from_double(g_value_get_double(value));
+	case G_TYPE_STRING:
+		return scm_from_utf8_string(g_value_get_string(value));
+	default:
+		*handled = FALSE;
+		return SCM_BOOL_F;
+	}
+	g_return_val_if_reached (SCM_BOOL_F);
 }
 
 /**

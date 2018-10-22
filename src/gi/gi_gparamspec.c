@@ -4,25 +4,26 @@
 #include "gi_gparamspec.h"
 
 static gboolean
-gi_gparamspec_typecheck_scm (const char *func, SCM x)
+gi_gparamspec_typecheck_scm(const char *func, SCM x)
 {
     size_t i, len;
     SCM entry;
     GType prop_type;
-    
-    if (scm_is_false (scm_list_p (x)))
-	scm_misc_error (func, "expected a property list: ~S", scm_list_1 (x));
-    len = scm_to_size_t (scm_length (x));
+
+    if (scm_is_false(scm_list_p(x)))
+        scm_misc_error(func, "expected a property list: ~S", scm_list_1(x));
+    len = scm_to_size_t(scm_length(x));
     if (len < 4)
-	scm_misc_error (func, "not enough elements in property list: ~S", scm_list_1 (x));
-    if (!scm_is_string (scm_list_ref (x, scm_from_size_t (0))))
-	scm_misc_error (func, "first element of property list should be a string name: ~S", scm_list_1 (x));
-    if (!SCM_IS_A_P (scm_list_ref (x, scm_from_size_t (1)), gi_gtype_type))
-	scm_misc_error (func, "second element of property list should be a parent type: ~S", scm_list_1 (x));
-    if (!scm_is_string (scm_list_ref (x, scm_from_size_t (2))))
-	scm_misc_error (func, "third element of property list should be a string blurb: ~S", scm_list_1 (x));
-    if (!scm_is_string (scm_list_ref (x, scm_from_size_t (3))))
-	scm_misc_error (func, "fourth element of property list should be a string description: ~S", scm_list_1 (x));
+        scm_misc_error(func, "not enough elements in property list: ~S", scm_list_1(x));
+    if (!scm_is_string(scm_list_ref(x, scm_from_size_t(0))))
+        scm_misc_error(func, "first element of property list should be a string name: ~S", scm_list_1(x));
+    if (!SCM_IS_A_P(scm_list_ref(x, scm_from_size_t(1)), gi_gtype_type))
+        scm_misc_error(func, "second element of property list should be a parent type: ~S", scm_list_1(x));
+    if (!scm_is_string(scm_list_ref(x, scm_from_size_t(2))))
+        scm_misc_error(func, "third element of property list should be a string blurb: ~S", scm_list_1(x));
+    if (!scm_is_string(scm_list_ref(x, scm_from_size_t(3))))
+        scm_misc_error(func, "fourth element of property list should be a string description: ~S", scm_list_1(x));
+    return TRUE;
 }
 
 GParamSpec *
@@ -191,38 +192,38 @@ scm_gparamspec_ref (SCM self)
 }
 
 static SCM
-scm_gparamspec_value_type (SCM self)
+scm_gparamspec_value_type(SCM self)
 {
     GParamSpec *spec;
 
-    scm_assert_foreign_object_type (gi_gparamspec_type, self);
-    spec = gi_gparamspec_get_spec (self);
+    scm_assert_foreign_object_type(gi_gparamspec_type, self);
+    spec = gi_gparamspec_get_spec(self);
     if (spec)
-	return gi_gtype_c2g (G_PARAM_SPEC_VALUE_TYPE (self));
+        return gi_gtype_c2g(G_PARAM_SPEC_VALUE_TYPE(spec));
     return SCM_BOOL_F;
 }
 
 static SCM
-scm_gparamspec_type (SCM self)
+scm_gparamspec_type(SCM self)
 {
     GParamSpec *spec;
 
-    scm_assert_foreign_object_type (gi_gparamspec_type, self);
-    spec = gi_gparamspec_get_spec (self);
+    scm_assert_foreign_object_type(gi_gparamspec_type, self);
+    spec = gi_gparamspec_get_spec(self);
     if (spec)
-	return gi_gtype_c2g (G_PARAM_SPEC_TYPE (self));
+        return gi_gtype_c2g(G_PARAM_SPEC_TYPE(spec));
     return SCM_BOOL_F;
 }
 
 static SCM
-scm_gparamspec_type_name (SCM self)
+scm_gparamspec_type_name(SCM self)
 {
     GParamSpec *spec;
 
-    scm_assert_foreign_object_type (gi_gparamspec_type, self);
-    spec = gi_gparamspec_get_spec (self);
+    scm_assert_foreign_object_type(gi_gparamspec_type, self);
+    spec = gi_gparamspec_get_spec(self);
     if (spec)
-	return scm_from_utf8_string (G_PARAM_SPEC_TYPE_NAME (spec));
+        return scm_from_utf8_string(G_PARAM_SPEC_TYPE_NAME(spec));
     return SCM_BOOL_F;
 }
 

@@ -257,7 +257,7 @@ gi_signal_closure_new (SCM instance,
     GuGClosure *gugi_closure = NULL;
     GISignalInfo *signal_info = NULL;
 
-    g_return_val_if_fail(callback != NULL, NULL);
+    g_return_val_if_fail(scm_is_true (instance), NULL);
 
     signal_info = lookup_signal_from_g_type (g_type, signal_name);
     if (signal_info == NULL)

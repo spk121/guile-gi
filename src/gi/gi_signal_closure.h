@@ -7,6 +7,5 @@ gi_signal_closure_new (SCM instance,
                          GType g_type,
                          const gchar *signal_name,
                          SCM callback,
-                         SCM extra_args,
-                         SCM swap_data);
+                         SCM extra_args);
 #endif

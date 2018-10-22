@@ -67,85 +67,121 @@ static const uintmax_t uintmax[GI_TYPE_TAG_N_TYPES] =
     ((x) == GI_TYPE_TAG_FLOAT			\
      || (x) == GI_TYPE_TAG_DOUBLE)
 
-
 gboolean
 gi_giargument_check_scm_type(SCM obj, GIArgInfo *ai, char **errstr)
 {
-    GITypeInfo *ti = g_arg_info_get_type (ai);
-    GITransfer transfer = g_arg_info_get_ownership_transfer (ai);
-    GIDirection dir = g_arg_info_get_direction (ai);
-    GITypeTag type_tag = g_type_info_get_tag (ti);
-    gboolean is_ptr = g_type_info_is_pointer (ti);
+    GITypeInfo *ti = g_arg_info_get_type(ai);
+    GITransfer transfer = g_arg_info_get_ownership_transfer(ai);
+    GIDirection dir = g_arg_info_get_direction(ai);
+    GITypeTag type_tag = g_type_info_get_tag(ti);
+    gboolean is_ptr = g_type_info_is_pointer(ti);
     gboolean ok;
 
-    g_assert (dir == GI_DIRECTION_IN || dir == GI_DIRECTION_INOUT);
+    g_assert(dir == GI_DIRECTION_IN || dir == GI_DIRECTION_INOUT);
 
-    if (!is_ptr) {
-	if (TYPE_TAG_IS_EXACT_INTEGER(type_tag)) {
-	    if (!scm_is_exact_integer (obj)) {
-		*errstr = g_strdup_printf ("expected exact integer");
-		ok = FALSE;
-	    } else {
-		if (TYPE_TAG_IS_SIGNED_INTEGER (type_tag)) {
-		    intmax_t val = scm_to_intmax (obj);
-		    if (val < intmin[type_tag] || val > intmax[type_tag]) {
-			*errstr = g_strdup_printf ("integer out of range");
-			ok = FALSE;
-		    } else
-			ok = TRUE;
-		} else {
-		    uintmax_t val = scm_to_uintmax (obj);
-		    if (val > uintmax[type_tag]) {
-			*errstr = g_strdup_printf ("unsigned integer out of range");
-			ok = FALSE;
-		    } else
-			ok = TRUE;
-		}
-	    }
-	} else if (TYPE_TAG_IS_REAL_NUMBER (type_tag)) {
-	    if (!scm_is_real (obj)) {
-		*errstr = g_strdup_printf ("expected real number");
-		ok = FALSE;
-	    } else {
-		// FIXME, if you really wanted to, you could make a scheme integer
-		// bigger than DBL_MAX, so this would throw.
-		double val = scm_to_double (obj);
-		if (!isfinite (val)) {
-		    *errstr = g_strdup_printf ("real number is infinite");
-		    ok = FALSE;
-		} else if (type_tag == GI_TYPE_TAG_FLOAT) {
-		    if (val < -FLT_MAX || val > FLT_MAX) {
-			*errstr = g_strdup_printf ("real number out of range");
-			ok = FALSE;
-		    } else
-			ok = TRUE;
-		} else
-		    ok = TRUE;
-	    }
-	} else if (type_tag == GI_TYPE_TAG_BOOLEAN) {
-	    if (obj != SCM_BOOL_F && obj != SCM_BOOL_T) {
-		*errstr = g_strdup_printf ("expected boolean");
-		ok = FALSE;
-	    } else
-		ok = TRUE;
-	} else {
-	    *errstr = g_strdup_printf ("unhandled type %u", type_tag);
-	    ok = FALSE;
-	}
-    } else /* is_ptr */ {
-	if (TYPE_TAG_IS_EXACT_INTEGER (type_tag) || TYPE_TAG_IS_REAL_NUMBER (type_tag)
-	    || type_tag == GI_TYPE_TAG_UTF8 || type_tag == GI_TYPE_TAG_FILENAME || type_tag == GI_TYPE_TAG_VOID) {
-	    if (!scm_is_bytevector (obj) && !scm_is_string (obj)) {
-		*errstr = g_strdup_printf ("expected bytevector or string");
-		ok = FALSE;
-	    } else
-		ok = TRUE;
-	} else if (type_tag == GI_TYPE_TAG_INTERFACE) {
-	    ok = TRUE;
-	} else {
-	    *errstr = g_strdup_printf ("unhandled pointer type %u", type_tag);
-	    ok = FALSE;
-	}
+    if (!is_ptr)
+    {
+        if (TYPE_TAG_IS_EXACT_INTEGER(type_tag))
+        {
+            if (!scm_is_exact_integer(obj))
+            {
+                *errstr = g_strdup_printf("expected exact integer");
+                ok = FALSE;
+            }
+            else
+            {
+                if (TYPE_TAG_IS_SIGNED_INTEGER(type_tag))
+                {
+                    intmax_t val = scm_to_intmax(obj);
+                    if (val < intmin[type_tag] || val > intmax[type_tag])
+                    {
+                        *errstr = g_strdup_printf("integer out of range");
+                        ok = FALSE;
+                    }
+                    else
+                        ok = TRUE;
+                }
+                else
+                {
+                    uintmax_t val = scm_to_uintmax(obj);
+                    if (val > uintmax[type_tag])
+                    {
+                        *errstr = g_strdup_printf("unsigned integer out of range");
+                        ok = FALSE;
+                    }
+                    else
+                        ok = TRUE;
+                }
+            }
+        }
+        else if (TYPE_TAG_IS_REAL_NUMBER(type_tag))
+        {
+            if (!scm_is_real(obj))
+            {
+                *errstr = g_strdup_printf("expected real number");
+                ok = FALSE;
+            }
+            else
+            {
+                // FIXME, if you really wanted to, you could make a scheme integer
+                // bigger than DBL_MAX, so this would throw.
+                double val = scm_to_double(obj);
+                if (!isfinite(val))
+                {
+                    *errstr = g_strdup_printf("real number is infinite");
+                    ok = FALSE;
+                }
+                else if (type_tag == GI_TYPE_TAG_FLOAT)
+                {
+                    if (val < -FLT_MAX || val > FLT_MAX)
+                    {
+                        *errstr = g_strdup_printf("real number out of range");
+                        ok = FALSE;
+                    }
+                    else
+                        ok = TRUE;
+                }
+                else
+                    ok = TRUE;
+            }
+        }
+        else if (type_tag == GI_TYPE_TAG_BOOLEAN)
+        {
+            if (!scm_is_eq(obj, SCM_BOOL_F) && !scm_is_eq(obj, SCM_BOOL_T))
+            {
+                *errstr = g_strdup_printf("expected boolean");
+                ok = FALSE;
+            }
+            else
+                ok = TRUE;
+        }
+        else
+        {
+            *errstr = g_strdup_printf("unhandled type %u", type_tag);
+            ok = FALSE;
+        }
+    }
+    else /* is_ptr */
+    {
+        if (TYPE_TAG_IS_EXACT_INTEGER(type_tag) || TYPE_TAG_IS_REAL_NUMBER(type_tag) || type_tag == GI_TYPE_TAG_UTF8 || type_tag == GI_TYPE_TAG_FILENAME || type_tag == GI_TYPE_TAG_VOID)
+        {
+            if (!scm_is_bytevector(obj) && !scm_is_string(obj))
+            {
+                *errstr = g_strdup_printf("expected bytevector or string");
+                ok = FALSE;
+            }
+            else
+                ok = TRUE;
+        }
+        else if (type_tag == GI_TYPE_TAG_INTERFACE)
+        {
+            ok = TRUE;
+        }
+        else
+        {
+            *errstr = g_strdup_printf("unhandled pointer type %u", type_tag);
+            ok = FALSE;
+        }
     }
     return ok;
 }
@@ -209,17 +245,17 @@ get_storage_type (GITypeInfo *type_info)
     GITypeTag type_tag = g_type_info_get_tag (type_info);
 
     if (type_tag == GI_TYPE_TAG_INTERFACE) {
-        GIBaseInfo *interface = g_type_info_get_interface (type_info);
-        switch (g_base_info_get_type (interface)) {
+        GIBaseInfo *iface = g_type_info_get_interface (type_info);
+        switch (g_base_info_get_type (iface)) {
 	case GI_INFO_TYPE_ENUM:
 	case GI_INFO_TYPE_FLAGS:
-	    type_tag = g_enum_info_get_storage_type ((GIEnumInfo *)interface);
+	    type_tag = g_enum_info_get_storage_type ((GIEnumInfo *)iface);
 	    break;
 	default:
 	    /* FIXME: we might have something to do for other types */
 	    break;
         }
-        g_base_info_unref (interface);
+        g_base_info_unref (iface);
     }
     return type_tag;
 }
@@ -482,7 +518,8 @@ gi_argument_from_object (const char *func,
             GArray *array;
             GITransfer item_transfer;
 
-            if (object == SCM_BOOL_F || object == SCM_EOL) {
+            if (scm_is_eq (object, SCM_BOOL_F) || scm_is_eq (object, SCM_EOL))
+            {
                 arg.v_pointer = NULL;
                 break;
             }
@@ -833,26 +870,27 @@ hash_table_release:
  *
  * Returns: A PyObject representing @arg
  */
-SCM
-gi_giargument_to_object (GIArgument  *arg,
-			 GITypeInfo *type_info,
-			 GITransfer transfer)
+SCM gi_giargument_to_object(GIArgument *arg,
+                            GITypeInfo *type_info,
+                            GITransfer transfer)
 {
     GITypeTag type_tag;
     SCM object = SCM_BOOL_F;
 
-    type_tag = g_type_info_get_tag (type_info);
+    type_tag = g_type_info_get_tag(type_info);
 
-    switch (type_tag) {
-        case GI_TYPE_TAG_VOID:
+    switch (type_tag)
+    {
+    case GI_TYPE_TAG_VOID:
+    {
+        if (g_type_info_is_pointer(type_info))
         {
-            if (g_type_info_is_pointer (type_info)) {
-                g_warn_if_fail (transfer == GI_TRANSFER_NOTHING);
+            g_warn_if_fail(transfer == GI_TRANSFER_NOTHING);
 
-                object = scm_from_pointer (arg->v_pointer, NULL);
-            }
-            break;
+            object = scm_from_pointer(arg->v_pointer, NULL);
         }
+        break;
+    }
 #if 0
         case GI_TYPE_TAG_ARRAY:
         {
@@ -913,52 +951,56 @@ gi_giargument_to_object (GIArgument  *arg,
             break;
         }
 #endif
-        case GI_TYPE_TAG_INTERFACE:
+    case GI_TYPE_TAG_INTERFACE:
+    {
+        GIBaseInfo *info;
+        GIInfoType info_type;
+
+        info = g_type_info_get_interface(type_info);
+        info_type = g_base_info_get_type(info);
+
+        switch (info_type)
         {
-            GIBaseInfo *info;
-            GIInfoType info_type;
+        case GI_INFO_TYPE_CALLBACK:
+        {
+            g_assert_not_reached();
+        }
+        case GI_INFO_TYPE_BOXED:
+        case GI_INFO_TYPE_STRUCT:
+        case GI_INFO_TYPE_UNION:
+        {
+            SCM s_type;
+            GType g_type = g_registered_type_info_get_g_type((GIRegisteredTypeInfo *)info);
+            gboolean is_foreign = (info_type == GI_INFO_TYPE_STRUCT) &&
+                                  (g_struct_info_is_foreign((GIStructInfo *)info));
 
-            info = g_type_info_get_interface (type_info);
-            info_type = g_base_info_get_type (info);
+            /* Special case variant and none to force loading from py module. */
+            if (g_type == G_TYPE_VARIANT || g_type == G_TYPE_NONE)
+            {
+                g_assert_not_reached();
+                //py_type = pygi_type_import_by_gi_info (info);
+            }
+            else
+            {
+                // FIXME: make
+            }
 
-            switch (info_type) {
-                case GI_INFO_TYPE_CALLBACK:
-                {
-                    g_assert_not_reached();
-                }
-                case GI_INFO_TYPE_BOXED:
-                case GI_INFO_TYPE_STRUCT:
-                case GI_INFO_TYPE_UNION:
-                {
-		    SCM s_type;
-                    GType g_type = g_registered_type_info_get_g_type ( (GIRegisteredTypeInfo *) info);
-                    gboolean is_foreign = (info_type == GI_INFO_TYPE_STRUCT) &&
-                                          (g_struct_info_is_foreign ((GIStructInfo *) info));
+            object = scm_make_foreign_object_0(gi_gobject_type);
+            gi_gobject_set_ob_type(object, g_type);
+            gi_gobject_set_obj(object, arg->v_pointer);
 
-                    /* Special case variant and none to force loading from py module. */
-                    if (g_type == G_TYPE_VARIANT || g_type == G_TYPE_NONE) {
-			g_assert_not_reached ();
-                        //py_type = pygi_type_import_by_gi_info (info);
-                    } else {
-			// FIXME: make 
-                    }
+            // FIXME: add all the transfer and cleanup info to object
+            /* object = pygi_arg_struct_to_py_marshal (arg, */
+            /*                                         info, /\*interface_info*\/ */
+            /*                                         g_type, */
+            /*                                         py_type, */
+            /*                                         transfer, */
+            /*                                         FALSE, /\*is_allocated*\/ */
+            /*                                         is_foreign); */
 
-		    object = scm_make_foreign_object_0(gi_gobject_type);
-		    gi_gobject_set_ob_type (object, g_type);
-		    gi_gobject_set_obj (object, arg->v_pointer);
-
-		    // FIXME: add all the transfer and cleanup info to object
-                    /* object = pygi_arg_struct_to_py_marshal (arg, */
-                    /*                                         info, /\*interface_info*\/ */
-                    /*                                         g_type, */
-                    /*                                         py_type, */
-                    /*                                         transfer, */
-                    /*                                         FALSE, /\*is_allocated*\/ */
-                    /*                                         is_foreign); */
-
-                    /* Py_XDECREF (py_type); */
-                    break;
-                }
+            /* Py_XDECREF (py_type); */
+            break;
+        }
 #if 0
                 case GI_INFO_TYPE_ENUM:
                 case GI_INFO_TYPE_FLAGS:
@@ -995,19 +1037,19 @@ gi_giargument_to_object (GIArgument  *arg,
 
                     break;
                 }
-#endif		
-                case GI_INFO_TYPE_INTERFACE:
-                case GI_INFO_TYPE_OBJECT:
-		    object = gi_arg_gobject_to_scm_called_from_c (arg, transfer);
-		    
-                    break;
-                default:
-                    g_assert_not_reached();
-            }
+#endif
+        case GI_INFO_TYPE_INTERFACE:
+        case GI_INFO_TYPE_OBJECT:
+            object = gi_arg_gobject_to_scm_called_from_c(arg, transfer);
 
-            g_base_info_unref (info);
             break;
+        default:
+            g_assert_not_reached();
         }
+
+        g_base_info_unref(info);
+        break;
+    }
 #if 0
         case GI_TYPE_TAG_GLIST:
         case GI_TYPE_TAG_GSLIST:
@@ -1140,9 +1182,9 @@ gi_giargument_to_object (GIArgument  *arg,
         }
 #endif
     default:
-        {
-            object = gi_marshal_to_scm_basic_type (arg, type_tag, transfer);
-        }
+    {
+        object = gi_marshal_to_scm_basic_type(arg, type_tag, transfer);
+    }
     }
 
     return object;

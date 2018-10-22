@@ -9,17 +9,17 @@ getter (const char *self, const char *type, int n)
   if ((strlen (type) > 2 && type[strlen(type)-1] == '*')
       || (!strcmp (type, "gpointer")))
     return g_strdup_printf ("(%s) scm_foreign_object_ref (%s, %d)", type, self, n);
-  else if (!strcmp (type, "GType") || !strcmp (type, "ssize_t"))
-    return g_strdup_printf ("(%s) scm_to_ssize_t (scm_foreign_object_ref (%s, %d))",
+  else if (!strcmp (type, "GType") || !strcmp (type, "size_t"))
+    return g_strdup_printf ("(%s) GPOINTER_TO_SIZE (scm_foreign_object_ref (%s, %d))",
 			    type, self, n);
   else if (!strcmp (type, "gboolean") || !strcmp (type, "bool"))
-    return g_strdup_printf ("(%s) scm_to_bool (scm_foreign_object_ref (%s, %d))",
+    return g_strdup_printf ("(%s) GPOINTER_TO_SIZE(scm_foreign_object_ref (%s, %d))",
 			    type, self, n);
   else if (!strcmp (type, "gint") || !strcmp (type, "int"))
-    return g_strdup_printf ("(%s) scm_to_int (scm_foreign_object_ref (%s, %d))",
+    return g_strdup_printf ("(%s) scm_foreign_object_ref (%s, %d)",
 			    type, self, n);
   else if (!strcmp (type, "SCM"))
-    return g_strdup_printf ("scm_foreign_object_ref (%s, %d)", self, n);
+    return g_strdup_printf ("SCM_PACK_POINTER (scm_foreign_object_ref (%s, %d))", self, n);
   else {
     fprintf (stderr, "UNKNOWN TYPE %s\n", type);
     return g_strdup_printf ("scm_foreign_object_ref (%s, %d)", self, n);
@@ -32,21 +32,21 @@ setter (const char *self, const char *var, const char *type, int n)
   if ((strlen (type) > 2 && type[strlen(type)-1] == '*')
       || (!strcmp (type, "gpointer")))
     return g_strdup_printf ("scm_foreign_object_set_x (%s, %d, %s)", self, n, var);
-  else if (!strcmp (type, "GType") || !strcmp (type, "ssize_t"))
-    return g_strdup_printf ("scm_foreign_object_set_x (%s, %d, scm_from_ssize_t ((ssize_t) %s))",
+  else if (!strcmp (type, "GType") || !strcmp (type, "size_t"))
+    return g_strdup_printf ("scm_foreign_object_set_x (%s, %d, GSIZE_TO_POINTER (%s))",
 			    self, n, var);
   else if (!strcmp (type, "gboolean") || !strcmp (type, "bool"))
-    return g_strdup_printf ("scm_foreign_object_set_x (%s, %d, scm_from_bool ((size_t) %s))",
+    return g_strdup_printf ("scm_foreign_object_set_x (%s, %d,  GSIZE_TO_POINTER (%s))",
 			    self, n, var);
   else if (!strcmp (type, "gint") || !strcmp (type, "int"))
-    return g_strdup_printf ("scm_foreign_object_set_x (%s, %d, scm_from_int ((int) %s))",
+    return g_strdup_printf ("scm_foreign_object_set_x (%s, %d, (void *) %s)",
 			    self, n, var);
   else if (!strcmp (type, "SCM"))
-    return g_strdup_printf ("scm_foreign_object_set_x (%s, %d, %s)",
+    return g_strdup_printf ("scm_foreign_object_set_x (%s, %d, SCM_UNPACK_POINTER (%s))",
 			    self, n, var);
   else {
     fprintf (stderr, "UNKNOWN TYPE %s\n", type);
-    
+
     return g_strdup_printf ("scm_foreign_object_set_x (%s, %d, %s)", self, n, var);
   }
 }
@@ -56,7 +56,7 @@ do_includes (char *name)
 {
   gchar *lower = g_ascii_strdown(name, -1);
   char *filename = g_strdup_printf("__gi_%s.h", lower);
-  
+
   fprintf(fp, "#include <libguile.h>\n");
   fprintf(fp, "#include <glib.h>\n");
   fprintf(fp, "#include <glib-object.h>\n");
@@ -92,7 +92,7 @@ do_declaration (const gchar *name, gsize n, gchar **fields, gboolean finalizer)
       fprintf(fp, "#define GI_%s_%s_SLOT (%zu)\n", upper, field_upper, i);
       g_free (field_upper);
     }
-  
+
   fprintf(fp, "\n");
   g_free (lower);
   g_free (upper);
@@ -142,7 +142,7 @@ do_getters (const gchar *name, gsize n, gchar **fields, gchar **types)
       fprintf (fp, "%s\n", types[i]);
       fprintf (fp, "%s (SCM %s)\n", func_name, "self");
       fprintf (fp, "{\n");
-      fprintf (fp, "\treturn %s;\n", conv); 
+      fprintf (fp, "\treturn %s;\n", conv);
       fprintf (fp, "}\n");
       fprintf (fp, "\n");
       g_free (conv);
@@ -182,7 +182,7 @@ do_setters (const gchar *name, gsize n, gchar **fields, gchar **types)
       fprintf (fp, "void\n");
       fprintf (fp, "%s (SCM self, %s val)\n", func_name, types[i]);
       fprintf (fp, "{\n");
-      fprintf (fp, "\t%s;\n", conv); 
+      fprintf (fp, "\t%s;\n", conv);
       fprintf (fp, "}\n");
       fprintf (fp, "\n");
       g_free (conv);
@@ -266,71 +266,73 @@ int main(int argc, char **argv)
   gboolean finalizer;
   gsize n_fields;
   gsize n_types;
-  
+
   if (argc < 3)
+  {
+    printf("Usage: fo_gen INI_FILE OUTPUT_PATH\n");
+    return 1;
+  }
+
+  printf("Trying %s\n", argv[1]);
+  if (!g_key_file_load_from_file(key_file, argv[1], G_KEY_FILE_NONE, &error))
+  {
+    if (!g_error_matches(error, G_FILE_ERROR, G_FILE_ERROR_NOENT))
     {
+      g_warning("Error loading key file %s", error->message);
+      g_error_free(error);
       return 1;
     }
-  if (!g_key_file_load_from_file (key_file, argv[1], G_KEY_FILE_NONE, &error))
-    {
-      if (!g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_NOENT))
-	{
-	  g_warning ("Error loading key file %s", error->message);
-	  g_error_free (error);
-	  return 1;
-	}
-    }
-    names = g_key_file_get_string_list (key_file, "Foreign Objects", "Names", &n_names, &error);
-    for (gsize n = 0; n < n_names; n ++)
-    {
-      char *filename;
-      char *filepath;
-      name = g_key_file_get_string (key_file, names[n], "Name", &error);
-      fields = g_key_file_get_string_list (key_file, names[n], "Fields", &n_fields, &error);
-      types = g_key_file_get_string_list (key_file, names[n], "Types", &n_types, &error);
-      lowercase = g_ascii_strdown (name, -1);
-      error = NULL;
-      finalizer = g_key_file_get_boolean (key_file, names[n], "Finalizer", &error);
-      if (!finalizer)
-	g_error_free (error);
+  }
+  names = g_key_file_get_string_list(key_file, "Foreign Objects", "Names", &n_names, &error);
+  for (gsize n = 0; n < n_names; n++)
+  {
+    char *filename;
+    char *filepath;
+    name = g_key_file_get_string(key_file, names[n], "Name", &error);
+    fields = g_key_file_get_string_list(key_file, names[n], "Fields", &n_fields, &error);
+    types = g_key_file_get_string_list(key_file, names[n], "Types", &n_types, &error);
+    lowercase = g_ascii_strdown(name, -1);
+    error = NULL;
+    finalizer = g_key_file_get_boolean(key_file, names[n], "Finalizer", &error);
+    if (!finalizer)
+      g_error_free(error);
 
-      filename = g_strdup_printf("__gi_%s.c", lowercase);
-      filepath = g_build_filename(argv[2], filename, NULL);
-      fp = fopen(filepath, "wt");
-    
-      do_includes(name);
-      do_declaration(name, n_fields, fields, finalizer);
-      do_getters(name, n_fields, fields, types);
-      do_setters(name, n_fields, fields, types);
-      do_predicate(name);
-      do_init(name, n_fields, fields, finalizer);
+    filename = g_strdup_printf("__gi_%s.c", lowercase);
+    filepath = g_build_filename(argv[2], filename, NULL);
+    fp = fopen(filepath, "wt");
 
-      fclose (fp);
-      g_free (filename);
-      g_free (filepath);
+    do_includes(name);
+    do_declaration(name, n_fields, fields, finalizer);
+    do_getters(name, n_fields, fields, types);
+    do_setters(name, n_fields, fields, types);
+    do_predicate(name);
+    do_init(name, n_fields, fields, finalizer);
 
-      filename = g_strdup_printf("__gi_%s.h", lowercase);
-      filepath = g_build_filename(argv[2], filename, NULL);
-      fp = fopen(filepath, "wt");
+    fclose(fp);
+    g_free(filename);
+    g_free(filepath);
 
-      do_header_includes(name);
-      do_header_declaration(name, n_fields, fields, finalizer);
-      do_header_getters(name, n_fields, fields, types);
-      do_header_setters(name, n_fields, fields, types);
-      do_header_predicate(name);
-      do_header_init(name, n_fields, fields, finalizer);
+    filename = g_strdup_printf("__gi_%s.h", lowercase);
+    filepath = g_build_filename(argv[2], filename, NULL);
+    fp = fopen(filepath, "wt");
 
-      fclose (fp);
-      g_free (filename);
-      g_free (filepath);
+    do_header_includes(name);
+    do_header_declaration(name, n_fields, fields, finalizer);
+    do_header_getters(name, n_fields, fields, types);
+    do_header_setters(name, n_fields, fields, types);
+    do_header_predicate(name);
+    do_header_init(name, n_fields, fields, finalizer);
 
-      g_free (lowercase);
-      g_free (name);
-      g_strfreev (fields);
-      g_strfreev (types);
-    }
+    fclose(fp);
+    g_free(filename);
+    g_free(filepath);
 
-    g_key_file_free (key_file);
-    return 0;
+    g_free(lowercase);
+    g_free(name);
+    g_strfreev(fields);
+    g_strfreev(types);
+  }
+
+  g_key_file_free(key_file);
+  return 0;
 }
-  

@@ -1,4 +1,6 @@
 /* -*- Mode: C; c-basic-offset: 4 -*- */
+
+
 #include <libguile.h>
 #include <glib.h>
 #include <glib-object.h>
@@ -6,8 +8,7 @@
 
 #include "gi_gtype.h"
 
-static GQuark gtype_wrapper_key;
-
+GQuark gtype_wrapper_key;
 SCM gtype_wrapper_hash;
 
 /* In C, a GType is an integer.  It indicates a GObject type.
@@ -36,7 +37,8 @@ SCM gtype_wrapper_hash;
  * - INTERFACE (rare)
 
  * The Guile binding only creates new GTypes when it makes GObject classes that subtype
- * existing classes.
+ * existing classes. 
+ * 
  */
 
 /* A <gtype> is a foreign object type that contains a C GType
@@ -116,19 +118,18 @@ gi_gtype_from_scm(SCM obj)
     g_return_val_if_reached (0);
 }
 
-GType
-gi_infer_gtype_from_scm(SCM obj)
+GType gi_infer_gtype_from_scm(SCM obj)
 {
-    if ((obj == SCM_BOOL_F) || (obj == SCM_BOOL_T))
-	return G_TYPE_BOOLEAN;
-    else if (scm_is_exact_integer (obj))
-	return G_TYPE_LONG;
-    else if (scm_is_real (obj))
-	return G_TYPE_DOUBLE;
-    else if (scm_is_string (obj))
-	return G_TYPE_STRING;
+    if (scm_is_eq(obj, SCM_BOOL_F) || scm_is_eq(obj, SCM_BOOL_T))
+        return G_TYPE_BOOLEAN;
+    else if (scm_is_exact_integer(obj))
+        return G_TYPE_LONG;
+    else if (scm_is_real(obj))
+        return G_TYPE_DOUBLE;
+    else if (scm_is_string(obj))
+        return G_TYPE_STRING;
     else
-	g_critical("Could not infer typecode from object");
+        g_critical("Could not infer typecode from object");
 
     return G_TYPE_INT;
 }
@@ -447,33 +448,32 @@ scm_gtype_equal_p (SCM self, SCM other)
     return scm_from_bool (gi_gtype_get_type (self) == gi_gtype_get_type (other));
 }
 
-SCM
-gi_gtype_c2g (GType type)
+SCM gi_gtype_c2g(GType type)
 {
     SCM wrapper;
     gpointer ptr;
     GType parent;
 
-
-    parent = g_type_parent (type);
+    parent = g_type_parent(type);
     if (parent != 0)
-	gi_gtype_c2g (parent);
-    
+        gi_gtype_c2g(parent);
+
     /* Do we already have a wrapper for this type? */
     ptr = g_type_get_qdata(type, gtype_wrapper_key);
-    if (!ptr) {
-	g_debug ("Creating new GType wrapper: %zu %s", type, g_type_name(type));
-	
-	wrapper = scm_make_foreign_object_1 (gi_gtype_type, scm_from_size_t (type));
-	g_type_set_qdata(type, gtype_wrapper_key, wrapper);
-	scm_hash_set_x (gtype_wrapper_hash, scm_from_size_t (type), wrapper);
-    } else {
-	wrapper = ptr;
+    if (!ptr)
+    {
+        g_debug("Creating new GType wrapper: %zu %s", type, g_type_name(type));
+
+        wrapper = scm_make_foreign_object_1(gi_gtype_type, SCM_UNPACK_POINTER (scm_from_size_t(type)));
+        g_type_set_qdata(type, gtype_wrapper_key, SCM_UNPACK_POINTER (wrapper));
+        scm_hash_set_x(gtype_wrapper_hash, scm_from_size_t(type), wrapper);
+    }
+    else
+    {
+        wrapper = SCM_PACK_POINTER (ptr);
     }
     return wrapper;
 }
-
-    
 
 void
 gi_init_gtype(void)

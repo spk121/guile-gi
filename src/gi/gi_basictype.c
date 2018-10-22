@@ -100,7 +100,7 @@ static gfloat
 scm_to_gfloat (SCM s_arg)
 {
     double arg = scm_to_double (s_arg);
-    if (isfinite (arg) && (arg < -G_MAXFLOAT || arg > G_MAXFLOAT)) {
+    if ( /*isfinite (arg) && */ (arg < -G_MAXFLOAT || arg > G_MAXFLOAT)) {
 	scm_misc_error(NULL,
 		       "cannot convert '~a' to gfloat, out of range",
 		       scm_list_1 (s_arg));
@@ -185,7 +185,7 @@ gi_gpointer_from_scm (SCM arg, gpointer *result)
 {
     void* temp;
 
-    if (arg == SCM_BOOL_F || arg == SCM_EOL) {
+    if (scm_is_eq (arg, SCM_BOOL_F) || scm_is_eq (arg, SCM_EOL)) {
 	*result = NULL;
 	return TRUE;
     } else if (scm_is_exact_integer (arg)) {

@@ -64,49 +64,51 @@ hash_equal_func(gconstpointer a, gconstpointer b)
  * This is because many methods have the same name but operate
  * on different GTypes */
 static gboolean
-insert_into_method_table (GType type,
-			  GIFunctionInfo *info,
-			  gboolean *is_new_method)
+insert_into_method_table(GType type,
+                         GIFunctionInfo *info,
+                         gboolean *is_new_method)
 {
-  *is_new_method = FALSE;
-  
-  if (!gi_methods) {
-    g_debug ("Creating the methods hash table");
-    gi_methods = g_hash_table_new_full (g_str_hash,
-					g_str_equal,
-					g_free,
-					(GDestroyNotify) g_hash_table_destroy);
-  }
-  const gchar *full_name = g_base_info_get_name (info);
-  GHashTable *subhash = g_hash_table_lookup (gi_methods,
-					     full_name);
-  if (!subhash) {
-    g_debug ("Inserted '%s' into the methods table", full_name);
-    *is_new_method = TRUE;
-    subhash = g_hash_table_new_full (g_direct_hash,
-				     g_direct_equal,
-				     NULL,
-				     (GDestroyNotify) g_base_info_unref);
-    g_hash_table_insert (gi_methods,
-			 g_strdup(full_name),
-			 subhash);
-  }
-  if (g_hash_table_contains (subhash, GINT_TO_POINTER(type))) {
-    g_critical ("Did not overwrite method '%s' for type '%s'",
-		full_name,
-		g_type_name (type));
-    return FALSE;
-  }
-  g_hash_table_insert (subhash,
-		       GINT_TO_POINTER (type),
-		       info);
-  g_debug ("Inserted '%s' for type '%s' %lu into methods table",
-	   full_name,
-	   g_type_name (type),
-	   type);
-  return TRUE;
-}
+    *is_new_method = FALSE;
 
+    if (!gi_methods)
+    {
+        g_debug("Creating the methods hash table");
+        gi_methods = g_hash_table_new_full(g_str_hash,
+                                           g_str_equal,
+                                           g_free,
+                                           (GDestroyNotify)g_hash_table_destroy);
+    }
+    const gchar *full_name = g_base_info_get_name(info);
+    GHashTable *subhash = g_hash_table_lookup(gi_methods,
+                                              full_name);
+    if (!subhash)
+    {
+        g_debug("Inserted '%s' into the methods table", full_name);
+        *is_new_method = TRUE;
+        subhash = g_hash_table_new_full(g_direct_hash,
+                                        g_direct_equal,
+                                        NULL,
+                                        (GDestroyNotify)g_base_info_unref);
+        g_hash_table_insert(gi_methods,
+                            g_strdup(full_name),
+                            subhash);
+    }
+    if (g_hash_table_contains(subhash, GINT_TO_POINTER(type)))
+    {
+        g_critical("Did not overwrite method '%s' for type '%s'",
+                   full_name,
+                   g_type_name(type));
+        return FALSE;
+    }
+    g_hash_table_insert(subhash,
+                        GINT_TO_POINTER(type),
+                        info);
+    g_debug("Inserted '%s' for type '%s' %lu into methods table",
+            full_name,
+            g_type_name(type),
+            (unsigned long)type);
+    return TRUE;
+}
 
 static gboolean
 insert_into_hash_table (const char *category,
@@ -1258,9 +1260,10 @@ scm_gi_method_send (SCM s_object, SCM s_method_args_list)
   
   type = gi_gobject_get_ob_type (s_object);
   while (!(info = g_hash_table_lookup (method_hash, GINT_TO_POINTER (type)))) {
+      const char *tname = g_type_name (type);
     g_debug ("Did not find a method %s of type %s for object %p",
 	     method_name,
-	     g_type_name (type),
+	     tname,
 	     gi_gobject_get_obj (s_object));
 	     
     if (!(type = g_type_parent (type))) {
@@ -1355,7 +1358,7 @@ scm_gi_method_send (SCM s_object, SCM s_method_args_list)
 					  g_callable_info_get_caller_owns (info));
   g_base_info_unref (return_typeinfo);
   SCM output;
-  if (s_return == SCM_UNSPECIFIED)
+  if (scm_is_eq (output, SCM_UNSPECIFIED))
     output = SCM_EOL;
   else
     output = scm_list_1 (s_return);
@@ -1402,6 +1405,10 @@ scm_gi_function_invoke (SCM s_name, SCM s_args)
     info = g_hash_table_lookup (gi_functions, name);
     free (name);
     name = NULL;
+
+    name = scm_to_utf8_string(scm_simple_format(SCM_BOOL_F, scm_from_utf8_string("args ~S"), scm_list_1(s_args)));
+    g_debug(" %s", name);
+    free(name);
   }
   
   if (!info) {
@@ -1488,7 +1495,7 @@ scm_gi_function_invoke (SCM s_name, SCM s_args)
 					  g_callable_info_get_caller_owns (info));
   g_base_info_unref (return_typeinfo);
   SCM output;
-  if (s_return == SCM_UNSPECIFIED)
+  if (scm_is_eq (s_return, SCM_UNSPECIFIED))
     output = SCM_EOL;
   else
     output = scm_list_1 (s_return);

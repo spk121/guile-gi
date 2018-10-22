@@ -6,12 +6,14 @@
 #include "gi_gparamspec.h"
 #include "gi_ginterface.h"
 #include "gi_signal_closure.h"
+#include "gi_giargument.h"
 #include "gir_func.h"
 #include "gir_func2.h"
 #include "gir_type.h"
 #include <glib-object.h>
 #include <glib.h>
 #include <girepository.h>
+#include <libguile.h>
 
 GQuark gi_gobject_instance_data_key;
 
@@ -73,7 +75,7 @@ gclosure_from_scm_func (SCM object, SCM func)
     if (inst_data) {
         for (l = inst_data->closures; l; l = l->next) {
             GuGClosure *guclosure = l->data;
-            int res = scm_is_true (scm_eq_p (guclosure->callback, func));
+            int res = scm_is_eq (guclosure->callback, func);
             if (res) {
                 return (GClosure*)guclosure;
             }
@@ -84,24 +86,25 @@ gclosure_from_scm_func (SCM object, SCM func)
 
 /* re pygobject-object.c:103 pygobject_data_free */
 static void
-gugobject_data_free (GuGObjectData *data)
+gugobject_data_free(GuGObjectData *data)
 {
     GSList *closures, *tmp;
 
     tmp = closures = data->closures;
     data->closures = NULL;
-    data->type = NULL;
-    while (tmp) {
- 	GClosure *closure = tmp->data;
- 
-          /* we get next item first, because the current link gets
+    data->type = SCM_BOOL_F;
+    while (tmp)
+    {
+        GClosure *closure = tmp->data;
+
+        /* we get next item first, because the current link gets
            * invalidated by gugobject_unwatch_closure */
- 	tmp = tmp->next;
- 	g_closure_invalidate(closure);
+        tmp = tmp->next;
+        g_closure_invalidate(closure);
     }
- 
+
     if (data->closures != NULL)
- 	g_warning("invalidated all closures, but data->closures != NULL !");
+        g_warning("invalidated all closures, but data->closures != NULL !");
 
     g_free(data);
 }
@@ -166,49 +169,53 @@ gi_gobject_lookup_class(GType gtype)
 
 /* re pygobject-object.c:980, pygobject_new_full */
 static SCM
-gi_gobject_new_full (GObject *obj, gboolean steal, gpointer g_class)
+gi_gobject_new_full(GObject *obj, gboolean steal, gpointer g_class)
 {
     gpointer ptr;
     SCM self;
     if (obj == NULL)
-	return SCM_BOOL_F;
+        return SCM_BOOL_F;
 
     /* Check if this obj is wrapped already. */
-    ptr = g_object_get_qdata (obj, gi_gobject_wrapper_key);
-    if (ptr) {
-	self = ptr;
-	if (steal)
-	    g_object_unref (obj);
-    } else {
-	/* create wrapper */
-	GuGObjectData *inst_data = gi_gobject_peek_inst_data (obj);
-	SCM tp;
-	if (inst_data)
-	    tp = inst_data->type;
-	else {
-	    /* if (g_class) */
-	    /* 	tp = gugobject_lookup_class (G_OBJECT_CLASS_TYPE (g_class)); */
-	    /* else */
-	    /* 	tp = gugobject_lookup_class (G_OBJECT_TYPE (obj)); */
-	    tp = gi_gtype_c2g(G_OBJECT_TYPE (obj));
-	}
-	g_assert (tp != NULL && scm_is_true (tp));
+    ptr = g_object_get_qdata(obj, gi_gobject_wrapper_key);
+    if (ptr)
+    {
+        self = SCM_PACK_POINTER (ptr);
+        if (steal)
+            g_object_unref(obj);
+    }
+    else
+    {
+        /* create wrapper */
+        GuGObjectData *inst_data = gi_gobject_peek_inst_data(obj);
+        SCM tp;
+        if (inst_data)
+            tp = inst_data->type;
+        else
+        {
+            /* if (g_class) */
+            /* 	tp = gugobject_lookup_class (G_OBJECT_CLASS_TYPE (g_class)); */
+            /* else */
+            /* 	tp = gugobject_lookup_class (G_OBJECT_TYPE (obj)); */
+            tp = gi_gtype_c2g(G_OBJECT_TYPE(obj));
+        }
+        g_assert(scm_is_true(tp));
 
-	//if (gi_gtype_get_flags (tp) & Gu_TPFLAGS_HEAPTYPE)
-	//    Gu_INCREF(tp);
-	self = scm_make_foreign_object_0(gi_gobject_type);
-	gi_gobject_set_ob_type (self, gi_gtype_get_type (tp));
-	gi_gobject_set_inst_dict (self, SCM_BOOL_F);
-	gi_gobject_set_weakreflist (self, SCM_BOOL_F);
-	gi_gobject_set_flags (self, 0);
-	gi_gobject_set_obj (self, obj);
+        //if (gi_gtype_get_flags (tp) & Gu_TPFLAGS_HEAPTYPE)
+        //    Gu_INCREF(tp);
+        self = scm_make_foreign_object_0(gi_gobject_type);
+        gi_gobject_set_ob_type(self, gi_gtype_get_type(tp));
+        gi_gobject_set_inst_dict(self, SCM_BOOL_F);
+        gi_gobject_set_weakreflist(self, SCM_BOOL_F);
+        gi_gobject_set_flags(self, 0);
+        gi_gobject_set_obj(self, obj);
 
-	if (g_object_is_floating (obj))
-	    gi_gobject_set_flags (self, GI_GOBJECT_GOBJECT_WAS_FLOATING);
-	if (!steal || gi_gobject_get_flags(self) & GI_GOBJECT_GOBJECT_WAS_FLOATING)
-	    g_object_ref_sink (obj);
+        if (g_object_is_floating(obj))
+            gi_gobject_set_flags(self, GI_GOBJECT_GOBJECT_WAS_FLOATING);
+        if (!steal || gi_gobject_get_flags(self) & GI_GOBJECT_GOBJECT_WAS_FLOATING)
+            g_object_ref_sink(obj);
 
-	// gi_gobject_register_wrapper (self);
+        // gi_gobject_register_wrapper (self);
     }
     return self;
 }
@@ -255,7 +262,8 @@ gug_toggle_notify (gpointer data, GObject *object, gboolean is_last_ref)
      * instead of the user data argument.
      * See: https://bugzilla.gnome.org/show_bug.cgi?id=709223
      */
-    SCM self = g_object_get_qdata (object, gi_gobject_wrapper_key);
+    
+    SCM self = SCM_PACK_POINTER (g_object_get_qdata (object, gi_gobject_wrapper_key));
     /* if (self) { */
     /*     if (is_last_ref) */
     /*         Py_DECREF(self); */
@@ -339,7 +347,7 @@ connect_helper (SCM self, gchar *name, SCM callback, SCM extra_args, SCM object,
 	/* The signal is implemented by a non-Scheme class. */
 	closure = gi_signal_closure_new (self, query_info.itype,
 					  query_info.signal_name, callback,
-					  extra_args, object);
+					  extra_args);
     }
 
     if (!closure) {
@@ -548,7 +556,7 @@ init_instance(GTypeInstance *instance, gpointer class_ptr)
     }
     
     instance_data->obj = obj;
-    g_object_set_qdata (G_OBJECT(instance), gi_gobject_wrapper_key, obj);
+    g_object_set_qdata (G_OBJECT(instance), gi_gobject_wrapper_key, SCM_UNPACK_POINTER (obj));
 }
 
 static void
@@ -576,7 +584,7 @@ get_guile_specified_property (GObject *object, guint property_id,
 	ptr = g_object_get_qdata (object, gi_gobject_wrapper_key);
     }
 
-    obj = ptr;
+    obj = SCM_PACK_POINTER (ptr);
 
     g_assert (gi_gobject_get_obj (obj) == object);
     
@@ -605,7 +613,7 @@ set_guile_specified_property (GObject *object, guint property_id,
 	ptr = g_object_get_qdata (object, gi_gobject_wrapper_key);
     }
 
-    obj = ptr;
+    obj = SCM_PACK_POINTER (ptr);
 
     g_assert (gi_gobject_get_obj (obj) == object);
 
@@ -835,7 +843,7 @@ scm_make_gobject (SCM s_gtype, SCM s_prop_alist)
     ptr = g_object_get_qdata (obj, gi_gobject_wrapper_key);
 
     g_assert (ptr);
-    sobj = ptr;
+    sobj = SCM_PACK_POINTER (ptr);
 	
     g_assert (gi_gobject_get_obj (sobj) == obj);
     return sobj;
@@ -1051,7 +1059,7 @@ gi_marshal_from_scm_basic_type (const char *func,
     return TRUE;
 }
 
-
+#if 0
 static GIArgument
 gi_argument_from_object (const char *func,
 			 SCM object,
@@ -1414,7 +1422,7 @@ hash_table_release:
 
     return arg;
 }
-
+#endif
 
 /* re pygi_set_property_value */
 static int
@@ -1788,6 +1796,7 @@ gi_init_gobject (void)
 		  NULL);
 }
 
+#define STANDALONE 1
 #ifdef STANDALONE
 int main(int argc, char **argv)
 {

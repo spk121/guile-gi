@@ -13,7 +13,11 @@
 
 (define win #f)
 (define (example-app-activate app extra)
+  (format #t "In example-app-activate: app = ~s extra = ~s" app extra)
+  (newline)
   (set! win (application-window-new app))
+  (format #t "application-window-new returns ~S" win)
+  (newline)
   (window-present win))
 
 (signal-connect example-app "activate" example-app-activate)
