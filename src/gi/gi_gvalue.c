@@ -9,6 +9,9 @@
 
 /* GValue: a container holding a GType and an associated GValue. */
 
+#define GI_GVALUE_WRONG_TYPE -1
+#define GI_GVALUE_OUT_OF_RANGE -2
+
 SCM gi_gvalue_c2g(GValue *val)
 {
 	if (val)
@@ -51,16 +54,20 @@ gi_gvalue_from_scm_with_error(GValue *value, SCM obj)
     switch (G_TYPE_FUNDAMENTAL(value_type)) {
     case G_TYPE_CHAR:
 	{
-		if (!scm_is_signed_integer (obj, G_MININT8, G_MAXINT8))
-			return -1;
+	    if (!scm_is_exact_integer (obj))
+		return GI_GVALUE_WRONG_TYPE;
+	    if (!scm_is_signed_integer (obj, G_MININT8, G_MAXINT8))
+		return GI_GVALUE_OUT_OF_RANGE;
 	    gint8 temp = scm_to_int8 (obj);
 	    g_value_set_schar (value, temp);
 	    return 0;
 	}
     case G_TYPE_UCHAR:
 	{
-		if (!scm_is_unsigned_integer (obj, 0, G_MAXUINT8))
-			return -1;
+	    if (!scm_is_exact_integer (obj))
+		return GI_GVALUE_WRONG_TYPE;
+	    if (!scm_is_unsigned_integer (obj, 0, G_MAXUINT8))
+		return GI_GVALUE_OUT_OF_RANGE;
 	    guchar temp;
 	    temp = scm_to_uint8 (obj);
 	    g_value_set_uchar (value, temp);
@@ -68,6 +75,8 @@ gi_gvalue_from_scm_with_error(GValue *value, SCM obj)
 	}
     case G_TYPE_BOOLEAN:
 	{
+	    if (!scm_is_eq (obj, SCM_BOOL_T) && !scm_is_eq (obj, SCM_BOOL_F))
+		return GI_GVALUE_WRONG_TYPE;
 	    gboolean temp;
 	    temp = scm_is_true (obj);
 	    g_value_set_boolean (value, temp);
@@ -75,8 +84,10 @@ gi_gvalue_from_scm_with_error(GValue *value, SCM obj)
 	}
     case G_TYPE_INT:
 	{
-		if (!scm_is_signed_integer (obj, G_MININT, G_MAXINT))
-			return -1;
+	    if (!scm_is_exact_integer (obj))
+		return GI_GVALUE_WRONG_TYPE;
+	    if (!scm_is_signed_integer (obj, G_MININT, G_MAXINT))
+		return GI_GVALUE_OUT_OF_RANGE;
 	    gint temp;
 	    temp = scm_to_int (obj);
 	    g_value_set_int (value, temp);
@@ -84,8 +95,10 @@ gi_gvalue_from_scm_with_error(GValue *value, SCM obj)
 	}
     case G_TYPE_UINT:
 	{
-		if (!scm_is_unsigned_integer (obj, 0, G_MAXUINT))
-			return -1;
+	    if (!scm_is_exact_integer (obj))
+		return GI_GVALUE_WRONG_TYPE;
+	    if (!scm_is_unsigned_integer (obj, 0, G_MAXUINT))
+		return GI_GVALUE_OUT_OF_RANGE;
 	    guint temp;
 	    temp = scm_to_uint (obj);
 	    g_value_set_uint (value, temp);
@@ -93,8 +106,10 @@ gi_gvalue_from_scm_with_error(GValue *value, SCM obj)
 	}
     case G_TYPE_LONG:
 	{
-		if (!scm_is_signed_integer (obj, G_MINLONG, G_MAXLONG))
-			return -1;
+	    if (!scm_is_exact_integer (obj))
+		return GI_GVALUE_WRONG_TYPE;
+	    if (!scm_is_signed_integer (obj, G_MINLONG, G_MAXLONG))
+		return GI_GVALUE_OUT_OF_RANGE;
 	    glong temp;
 	    temp = scm_to_long (obj);
 	    g_value_set_long (value, temp);
@@ -102,8 +117,10 @@ gi_gvalue_from_scm_with_error(GValue *value, SCM obj)
 	}
     case G_TYPE_ULONG:
 	{
-		if (!scm_is_unsigned_integer (obj, 0, G_MAXULONG))
-			return -1;
+	    if (!scm_is_exact_integer (obj))
+		return GI_GVALUE_WRONG_TYPE;
+	    if (!scm_is_unsigned_integer (obj, 0, G_MAXULONG))
+		return GI_GVALUE_OUT_OF_RANGE;
 	    gulong temp;
 	    temp = scm_to_ulong (obj);
 	    g_value_set_ulong (value, temp);
@@ -111,8 +128,10 @@ gi_gvalue_from_scm_with_error(GValue *value, SCM obj)
 	}
     case G_TYPE_INT64:
 	{
-		if (!scm_is_signed_integer (obj, G_MININT64, G_MAXINT64))
-			return -1;
+	    if (!scm_is_exact_integer (obj))
+		return GI_GVALUE_WRONG_TYPE;
+	    if (!scm_is_signed_integer (obj, G_MININT64, G_MAXINT64))
+		return GI_GVALUE_OUT_OF_RANGE;
 	    gint64 temp;
 	    temp = scm_to_int64 (obj);
 	    g_value_set_int64 (value, temp);
@@ -120,8 +139,10 @@ gi_gvalue_from_scm_with_error(GValue *value, SCM obj)
 	}
     case G_TYPE_UINT64:
 	{
-		if (!scm_is_unsigned_integer (obj, 0, G_MAXUINT64))
-			return -1;
+	    if (!scm_is_exact_integer (obj))
+		return GI_GVALUE_WRONG_TYPE;
+	    if (!scm_is_unsigned_integer (obj, 0, G_MAXUINT64))
+		return GI_GVALUE_OUT_OF_RANGE;
 	    guint64 temp;
 	    temp = scm_to_uint64 (obj);
 	    g_value_set_uint64 (value, temp);
@@ -129,9 +150,11 @@ gi_gvalue_from_scm_with_error(GValue *value, SCM obj)
 	}
     case G_TYPE_ENUM:
 	{
+	    if (!scm_is_exact_integer (obj))
+		return GI_GVALUE_WRONG_TYPE;
 		if (!scm_is_unsigned_integer (obj, 0, G_MAXULONG))
-			return -1;
-	    gint val = 0;
+		    return GI_GVALUE_OUT_OF_RANGE;
+	    gint val;
 	    /* if (gi_enum_get_value(G_VALUE_TYPE(value), obj, &val) < 0) { */
 	    /*     return -1; */
 	    /* } */
@@ -141,8 +164,10 @@ gi_gvalue_from_scm_with_error(GValue *value, SCM obj)
 	break;
     case G_TYPE_FLAGS:
 	{
+	    if (!scm_is_exact_integer (obj))
+		return GI_GVALUE_WRONG_TYPE;
 		if (!scm_is_unsigned_integer (obj, 0, G_MAXULONG))
-			return -1;
+		    return GI_GVALUE_OUT_OF_RANGE;
 	    guint val = 0;
 	    /* if (gi_flags_get_value(G_VALUE_TYPE(value), obj, &val) < 0) { */
 	    /*     return -1; */
@@ -155,17 +180,17 @@ gi_gvalue_from_scm_with_error(GValue *value, SCM obj)
     case G_TYPE_FLOAT:
 	{
 		if (!scm_is_true (scm_real_p (obj)))
-			return -1;
+			return GI_GVALUE_WRONG_TYPE;
 		gdouble dval = scm_to_double (obj);
 		if (dval < -G_MAXFLOAT || dval > G_MAXFLOAT)
-			return -1;
+			return GI_GVALUE_OUT_OF_RANGE;
 	    g_value_set_float (value, dval);
 	    return 0;
 	}
     case G_TYPE_DOUBLE:
 	{
-		if (!scm_is_true (scm_real_p (obj)))
-			return -1;
+	    if (!scm_is_true (scm_real_p (obj)))
+		return GI_GVALUE_WRONG_TYPE;
 	    gdouble temp;
 	    temp = scm_to_double (obj);
 	    g_value_set_double (value, temp);
@@ -173,21 +198,23 @@ gi_gvalue_from_scm_with_error(GValue *value, SCM obj)
 	}
     case G_TYPE_STRING:
 	{
-		if (!scm_is_string (obj) && !scm_is_symbol (obj))
-			return -1;
-		if (scm_is_string (obj))
-		{
-			gchar *temp = scm_to_utf8_string (obj);
-			g_value_take_string (value, temp);
-		}
-		else 
-		{ 
-			gchar *temp = scm_to_utf8_string (scm_symbol_to_string (obj));
-			g_value_take_string (value, temp);
-		}
+		if (!scm_is_string (obj))
+			return GI_GVALUE_WRONG_TYPE;
+		gchar *temp = scm_to_utf8_string (obj);
+		g_value_take_string (value, temp);
 	    return 0;
 	}
-
+    case G_TYPE_POINTER:
+	{
+	    if (SCM_POINTER_P (obj))
+		g_value_set_pointer (value, scm_to_pointer (obj));
+	    else if (scm_is_true (scm_bytevector_p (obj)))
+		g_value_set_pointer (value, SCM_BYTEVECTOR_CONTENTS (obj));
+	    else if (SCM_IS_A_P(obj, gi_gobject_type))
+		g_value_set_gtype (value, gi_gobject_get_obj (obj));
+	    else
+		return GI_GVALUE_WRONG_TYPE;
+	}
 #if 0	
     case G_TYPE_INTERFACE:
         /* we only handle interface types that have a GObject prereq */
@@ -214,8 +241,8 @@ gi_gvalue_from_scm_with_error(GValue *value, SCM obj)
         }
         break;
 #endif
-    case G_TYPE_POINTER:
 #if 0
+    case G_TYPE_POINTER:
 	if (0)
 	    ;
         else if (PyObject_TypeCheck(obj, &PyGPointer_Type) &&
@@ -225,9 +252,9 @@ gi_gvalue_from_scm_with_error(GValue *value, SCM obj)
             g_value_set_pointer(value, PyCapsule_GetPointer (obj, NULL));
         else if (G_VALUE_HOLDS_GTYPE (value))
             g_value_set_gtype (value, pyg_type_from_object (obj));
-#endif
 	scm_misc_error("gvalue_from_scm", "expected pointer", SCM_EOL);
 	break;
+#endif
 #if 0	
     case G_TYPE_BOXED: {
         PyGTypeMarshal *bm;
@@ -616,13 +643,11 @@ gi_gvalue_to_scm_structured_type (const GValue *value, GType fundamental, gboole
         else
             break;
 
-#if 0    
     case G_TYPE_POINTER:
-        if (G_VALUE_HOLDS_GTYPE (value))
-            return pyg_type_wrapper_new (g_value_get_gtype (value));
-        else
-            return pyg_pointer_new(G_VALUE_TYPE(value),
-				   g_value_get_pointer(value));
+	// If we get a simple pointer with no context information,
+	// what can we do other than return a dumb pointer?
+	return scm_from_pointer (g_value_get_pointer (value), NULL);
+#if 0    
     case G_TYPE_BOXED: {
         PyGTypeMarshal *bm;
         gboolean holds_value_array;
@@ -712,10 +737,12 @@ gi_gvalue_as_scm (const GValue *value, gboolean copy_boxed)
     gboolean handled;
     GType fundamental = G_TYPE_FUNDAMENTAL (G_VALUE_TYPE (value));
 
+#if 0
     if (fundamental == G_TYPE_CHAR)
 	return SCM_MAKE_CHAR (g_value_get_schar (value));
     else if (fundamental == G_TYPE_UCHAR)
 	return SCM_MAKE_CHAR (g_value_get_uchar (value));
+#endif
 
     guobj = gi_gvalue_to_scm_basic_type (value, fundamental, &handled);
     if (!handled)
@@ -729,9 +756,23 @@ scm_gvalue_set_x (SCM self, SCM x)
 {
     GValue *val;
     
-    scm_assert_foreign_object_type (gi_gvalue_type, self);
+    if (!SCM_IS_A_P (self, gi_gvalue_type))
+	scm_wrong_type_arg_msg ("gvalue-set!",
+				SCM_ARG1,
+				self,
+				"GValue");
+    
     val = gi_gvalue_get_value (self);
-    gi_gvalue_from_scm (val, x);
+    if (val) {
+	int err = gi_gvalue_from_scm_with_error (val, x);
+	if (err == GI_GVALUE_WRONG_TYPE)
+	    scm_wrong_type_arg_msg ("gvalue-set!",
+				    SCM_ARG2,
+				    x,
+				    G_VALUE_TYPE_NAME (val));
+	else if (err == GI_GVALUE_OUT_OF_RANGE)
+	    scm_out_of_range_pos ("gvalue-set!", x, SCM_ARG2);
+    }
     return SCM_UNSPECIFIED;
 }
 
@@ -766,7 +807,12 @@ scm_gvalue_type_name (SCM self)
     GValue *val;
     const gchar *name;
 
-    scm_assert_foreign_object_type (gi_gvalue_type, self);
+    if (!SCM_IS_A_P (self, gi_gvalue_type))
+	scm_wrong_type_arg_msg ("gvalue-type-name",
+				SCM_ARG1,
+				self,
+				"GValue");
+
     val = gi_gvalue_get_value (self);
     if (val) {
 	name = G_VALUE_TYPE_NAME (val);
@@ -775,7 +821,7 @@ scm_gvalue_type_name (SCM self)
 	else
 	    return scm_from_utf8_string ("(unknown)");
     }
-    return SCM_BOOL_F;
+    g_return_val_if_reached (SCM_BOOL_F);
 }
 
 static SCM
@@ -783,8 +829,13 @@ scm_gvalue_to_gtype (SCM self)
 {
     GValue *val;
     GType type;
-    
-    scm_assert_foreign_object_type (gi_gvalue_type, self);
+
+    if (!SCM_IS_A_P (self, gi_gvalue_type))
+	scm_wrong_type_arg_msg ("gvalue->gtype",
+				SCM_ARG1,
+				self,
+				"GValue");
+
     val = gi_gvalue_get_value (self);
     if (val) {
 	type = G_VALUE_TYPE (val);
@@ -800,9 +851,17 @@ scm_gvalue_holds_p(SCM self, SCM gtype)
     GType type;
     gboolean ret;
     
-    scm_assert_foreign_object_type (gi_gvalue_type, self);
-    scm_assert_foreign_object_type (gi_gtype_type, gtype);
-    
+    if (!SCM_IS_A_P (self, gi_gvalue_type))
+	scm_wrong_type_arg_msg ("gvalue-holds?",
+				SCM_ARG1,
+				self,
+				"GValue");
+    if (!SCM_IS_A_P (gtype, gi_gtype_type))
+	scm_wrong_type_arg_msg ("gvalue-holds?",
+				SCM_ARG2,
+				gtype,
+				"GType");
+
     val = gi_gvalue_get_value (self);
     type = gi_gtype_get_type (gtype);
     if (val) {
