@@ -1,8 +1,19 @@
 SHELL = C:\\Windows\\System32\\bash.exe
 
-CC = /msys64/mingw32/bin/clang.exe
+CC = clang.exe
 
 CFLAGS = -g -O0
+ALL_THE_WARNINGS =  \
+ -Wall -Wextra -Waggregate-return -Wcast-align \
+ -Werror=missing-include-dirs -Werror=pointer-arith -Wfloat-equal \
+ -Wformat=2 -Winit-self -Wmissing-declarations \
+ -Wmissing-include-dirs -Wmissing-prototypes -Wnested-externs \
+ -Wno-missing-field-initializers -Wno-packed -Wno-switch-enum \
+ -Wno-unused-parameter -Wold-style-definition -Wshadow -Wstrict-prototypes \
+ -Wundef -Wuninitialized -Wwrite-strings \
+ -fdiagnostics-show-option -fno-strict-aliasing -fstack-protector \
+ -fstack-protector-strong -fno-omit-frame-pointer -fno-common
+
 DEFS = -DHAVE_CONFIG_H -DSTANDALONE -DVSCODE -DSCM_DEBUG_TYPING_STRICTNESS=2
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src/gi
 INCLUDES = \
@@ -28,7 +39,7 @@ INCLUDES = \
  -I "C:/msys64/mingw32/include/gobject-introspection-1.0" \
  -I "C:/msys64/mingw32/lib/glib-2.0/include"
 
-LIBS = -L "c:/msys64/mingw32/lib" -lglib-2.0 -lgio-2.0 -lguile-2.2 -lgobject-2.0 -lgirepository-1.0 
+LIBS = -L "c:/msys64/mingw32/lib" -lglib-2.0 -lgio-2.0 -lguile-2.2 -lgobject-2.0 -lgirepository-1.0
 
 OBJEXT = obj
 EXEEXT = .exe
@@ -43,6 +54,7 @@ OBJ = \
 	src/gi/__gi_gvalue.obj \
 	src/gi/__gi_gtype.obj \
 	src/gi/__gi_gparamspec.obj \
+	src/gi/__gi_giargument.obj \
 	src/gi/gi_gparamspec.obj \
 	src/gi/gi_gobject.obj \
 	src/gi/gi_giargument.obj \
@@ -56,7 +68,12 @@ OBJ = \
 	src/gi/gir_func2.obj \
 
 guile-gi.exe: $(OBJ)
-	$(CC) $(OBJ) -o $@ $(LIBS)
+	$(CC) $(OBJ) $(CFLAGS) $(ALL_THE_WARNINGS)  -o $@ $(LIBS)
 
 %.obj: %.c
-	$(CC) -c $(DEFAULT_INCLUDES) $(INCLUDES) $(CFLAGS) $(DEFS) $< -o $@
+	$(CC) -c $(DEFAULT_INCLUDES) $(INCLUDES) $(CFLAGS) $(ALL_THE_WARNINGS) $(DEFS) $< -o $@
+
+.PHONY: clean
+clean:
+	-rm $(OBJ)
+	-rm "guile-gi.exe"

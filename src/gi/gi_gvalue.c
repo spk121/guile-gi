@@ -7,6 +7,10 @@
 #include "gir_xguile.h"
 #include "gi_gobject.h"
 
+#ifndef FLT_MAX
+#define FLT_MAX 3.402823466e+38F
+#endif
+
 /* GValue: a container holding a GType and an associated GValue. */
 
 #define GI_GVALUE_WRONG_TYPE -1
@@ -765,7 +769,7 @@ scm_gvalue_set_x (SCM self, SCM x)
 				    x,
 				    G_VALUE_TYPE_NAME (val));
 	else if (err == GI_GVALUE_OUT_OF_RANGE)
-	    scm_out_of_range_pos ("gvalue-set!", x, SCM_ARG2);
+	    scm_out_of_range_pos ("gvalue-set!", x, scm_from_int(2));
     }
     return SCM_UNSPECIFIED;
 }

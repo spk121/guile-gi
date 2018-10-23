@@ -1,12 +1,21 @@
 /* -*- Mode: C; c-basic-offset: 4 -*- */
-#include "gi_giargument.h"
+#include <stdint.h>
+#include <glib.h>
+#include <girepository.h>
 #include <libguile.h>
-#include <math.h>
-#include "gi_basictype.h"
-#include "gi_gvalue.h"
-#include "gir_func2.h"
 #include "gi_gtype.h"
 #include "gi_gobject.h"
+#include "gi_basictype.h"
+#include <math.h>
+#include "gi_gvalue.h"
+#include "gir_func2.h"
+#include "gir_type.h"
+#include "gi_boxed.h"
+#include "gi_giargument.h"
+
+#ifndef FLT_MAX
+#define FLT_MAX 3.402823466e+38F
+#endif
 /*
  * vim: tabstop=4 shiftwidth=4 expandtab
  *
@@ -47,25 +56,405 @@ static const uintmax_t uintmax[GI_TYPE_TAG_N_TYPES] =
      [GI_TYPE_TAG_UINT64] = UINT64_MAX,
      [GI_TYPE_TAG_UNICHAR] = 0x10FFFF};
 
-#define TYPE_TAG_IS_EXACT_INTEGER(x)		\
-    ((x) == GI_TYPE_TAG_INT8			\
-     || (x) == GI_TYPE_TAG_UINT8		\
-     || (x) == GI_TYPE_TAG_INT16		\
-     || (x) == GI_TYPE_TAG_UINT16		\
-     || (x) == GI_TYPE_TAG_INT32		\
-     || (x) == GI_TYPE_TAG_UINT32		\
-     || (x) == GI_TYPE_TAG_INT64		\
-     || (x) == GI_TYPE_TAG_UINT64)
+static SCM 
+arg_struct_to_scm (GIArgument *arg,
+                               GIInterfaceInfo *interface_info,
+                               GType g_type,
+                               SCM s_type,
+                               GITransfer transfer,
+                               gboolean is_allocated,
+                               gboolean is_foreign);
 
-#define TYPE_TAG_IS_SIGNED_INTEGER(x)		\
-    ((x) == GI_TYPE_TAG_INT8			\
-     || (x) == GI_TYPE_TAG_INT16		\
-     || (x) == GI_TYPE_TAG_INT32		\
-     || (x) == GI_TYPE_TAG_INT64)
+static int
+TYPE_TAG_IS_EXACT_INTEGER (GITypeTag x)
+{
+    if ((x == GI_TYPE_TAG_INT8) || (x == GI_TYPE_TAG_UINT8)
+        || (x == GI_TYPE_TAG_INT16) || (x == GI_TYPE_TAG_UINT16)
+        || (x == GI_TYPE_TAG_INT32) || (x == GI_TYPE_TAG_UINT32)
+        || (x == GI_TYPE_TAG_INT64) || (x == GI_TYPE_TAG_UINT64))
+        return TRUE;
+    return FALSE;
+}
 
-#define TYPE_TAG_IS_REAL_NUMBER(x)		\
-    ((x) == GI_TYPE_TAG_FLOAT			\
-     || (x) == GI_TYPE_TAG_DOUBLE)
+static int
+TYPE_TAG_IS_SIGNED_INTEGER (GITypeTag x)
+{
+    if ((x == GI_TYPE_TAG_INT8) || (x == GI_TYPE_TAG_INT16) || (x == GI_TYPE_TAG_INT32) || (x == GI_TYPE_TAG_INT64))
+        return TRUE;
+    return FALSE;
+}
+
+static int
+TYPE_TAG_IS_REAL_NUMBER (GITypeTag x)
+{
+    if ((x == GI_TYPE_TAG_FLOAT) || (x == GI_TYPE_TAG_DOUBLE))
+        return TRUE;
+    return FALSE;
+}
+
+#define GI_GIARGUMENT_OK 0
+#define GI_GIARGUMENT_NON_CONST_VOID_POINTER -1
+#define GI_GIARGUMENT_ARRAY_ELEMENT_TOO_BIG -2
+#define GI_GIARGUMENT_UNHANDLED_ARRAY_ELEMENT_TYPE -3
+#define GI_GIARGUMENT_UNHANDLED_INTERFACE_TYPE -4
+#define GI_GIARGUMENT_UNHANDLED_FOREIGN_TYPE -5
+
+
+/* Converts the generic argument ARG into a scheme object
+ * according to the description in ARG_INFO */
+static int
+gi_giargument_convert_to_object(GIArgument *arg,
+                                GIArgInfo *arg_info,
+                                SCM obj)
+{
+    GITypeInfo *type_info = g_arg_info_get_type(arg_info);
+    GIDirection direction = g_arg_info_get_direction(arg_info);
+    GITransfer transfer = g_arg_info_get_ownership_transfer(arg_info);
+    gboolean may_be_null = g_arg_info_may_be_null(arg_info);
+    GITypeTag type_tag = g_type_info_get_tag(type_info);
+    SCM object = SCM_BOOL_F;
+    int ret = GI_GIARGUMENT_OK;
+
+    switch (type_tag)
+    {
+    case GI_TYPE_TAG_VOID:
+    {
+        /* Convert const void * to SCM pointers */
+        if (g_type_info_is_pointer(type_info))
+        {
+            if (transfer != GI_TRANSFER_NOTHING)
+                ret = GI_GIARGUMENT_NON_CONST_VOID_POINTER;
+            else
+                obj = scm_from_pointer(arg->v_pointer, NULL);
+        }
+        break;
+    }
+    case GI_TYPE_TAG_ARRAY:
+    {
+        /* Convert a GArray* of simple types to a SCM bytevector */
+        /* Arrays are assumed to be packed in a GArray */
+        GArray *array;
+        GITypeInfo *item_type_info;
+        GITypeTag item_type_tag;
+        gsize item_size;
+
+        if (arg->v_pointer == NULL)
+            obj = scm_c_make_bytevector(0);
+
+        item_type_tag = g_type_info_get_param_type(type_info, 0);
+        item_type_tag = g_type_info_get_tag(item_type_info);
+
+        array = arg->v_pointer;
+        item_size = g_array_get_element_size(array);
+
+        if (item_size > sizeof(GIArgument))
+            ret = GI_GIARGUMENT_ARRAY_ELEMENT_TOO_BIG;
+        else if (TYPE_TAG_IS_EXACT_INTEGER(item_type_tag) || TYPE_TAG_IS_REAL_NUMBER(item_type_tag))
+        {
+            // This is a simple numerical array, so we'll put it into
+            // a bytevector.  We need to put the contents in
+            // GC-managed memory, so we can't keep the contents even
+            // if it is GI_TRANSFER_EVERYTHING.
+            obj = scm_c_make_bytevector(array->len * item_size);
+            memcpy(SCM_BYTEVECTOR_CONTENTS(obj),
+                   array->data,
+                   array->len * item_size);
+
+            // Since we've made a copy of the original array into a
+            // bytevector, we can delete the original array
+            if (transfer == GI_TRANSFER_EVERYTHING)
+                g_array_free(array, TRUE);
+            else if (transfer == GI_TRANSFER_CONTAINER)
+                g_array_free(array, FALSE);
+            arg->v_pointer = NULL;
+        }
+        else
+            ret = GI_GIARGUMENT_UNHANDLED_ARRAY_ELEMENT_TYPE;
+
+        g_base_info_unref(item_type_info);
+        break;
+    }
+    case GI_TYPE_TAG_INTERFACE:
+    {
+        GIBaseInfo *info;
+        GIInfoType info_type;
+
+        info = g_type_info_get_interface(type_info);
+        info_type = g_base_info_get_type(info);
+
+        switch (info_type)
+        {
+        case GI_INFO_TYPE_CALLBACK:
+            // Should be handled by invoke? Never reached?
+            ret = GI_GIARGUMENT_UNHANDLED_INTERFACE_TYPE;
+            break;
+        case GI_INFO_TYPE_BOXED:
+        case GI_INFO_TYPE_STRUCT:
+        case GI_INFO_TYPE_UNION:
+        {
+            SCM s_type;
+            GType g_type = g_registered_type_info_get_g_type((GIRegisteredTypeInfo *)info);
+            gboolean is_foreign = (info_type == GI_INFO_TYPE_STRUCT) &&
+                                  (g_struct_info_is_foreign((GIStructInfo *)info));
+            if (g_type == G_TYPE_NONE)
+                s_type = SCM_BOOL_F;
+            else
+                s_type = gi_gtype_c2g(g_type);
+
+            obj = arg_struct_to_scm (arg, info, g_type, s_type, transfer, FALSE, is_foreign);
+            break;
+        }
+#if 0
+                case GI_INFO_TYPE_ENUM:
+                case GI_INFO_TYPE_FLAGS:
+                {
+                    GType type;
+
+                    type = g_registered_type_info_get_g_type ( (GIRegisteredTypeInfo *) info);
+
+                    if (type == G_TYPE_NONE) {
+                        /* An enum with a GType of None is an enum without GType */
+                        PyObject *py_type = pygi_type_import_by_gi_info (info);
+                        PyObject *py_args = NULL;
+
+                        if (!py_type)
+                            return NULL;
+
+                        py_args = PyTuple_New (1);
+                        if (PyTuple_SetItem (py_args, 0, pygi_gint_to_py (arg->v_int)) != 0) {
+                            Py_DECREF (py_args);
+                            Py_DECREF (py_type);
+                            return NULL;
+                        }
+
+                        object = PyObject_CallFunction (py_type, "i", arg->v_int);
+
+                        Py_DECREF (py_args);
+                        Py_DECREF (py_type);
+
+                    } else if (info_type == GI_INFO_TYPE_ENUM) {
+                        object = pyg_enum_from_gtype (type, arg->v_int);
+                    } else {
+                        object = pyg_flags_from_gtype (type, arg->v_uint);
+                    }
+
+                    break;
+                }
+#endif
+        case GI_INFO_TYPE_INTERFACE:
+        case GI_INFO_TYPE_OBJECT:
+            object = gi_arg_gobject_to_scm_called_from_c(arg, transfer);
+
+            break;
+        default:
+            g_assert_not_reached();
+        }
+
+        g_base_info_unref(info);
+        break;
+    }
+#if 0
+        case GI_TYPE_TAG_GLIST:
+        case GI_TYPE_TAG_GSLIST:
+        {
+            GSList *list;
+            gsize length;
+            GITypeInfo *item_type_info;
+            GITransfer item_transfer;
+            gsize i;
+
+            list = arg->v_pointer;
+            length = g_slist_length (list);
+
+            object = PyList_New (length);
+            if (object == NULL) {
+                break;
+            }
+
+            item_type_info = g_type_info_get_param_type (type_info, 0);
+            g_assert (item_type_info != NULL);
+
+            item_transfer = transfer == GI_TRANSFER_CONTAINER ? GI_TRANSFER_NOTHING : transfer;
+
+            for (i = 0; list != NULL; list = g_slist_next (list), i++) {
+                GIArgument item;
+                PyObject *py_item;
+
+                item.v_pointer = list->data;
+
+                py_item = _pygi_argument_to_object (&item, item_type_info, item_transfer);
+                if (py_item == NULL) {
+                    Py_CLEAR (object);
+                    _PyGI_ERROR_PREFIX ("Item %zu: ", i);
+                    break;
+                }
+
+                PyList_SET_ITEM (object, i, py_item);
+            }
+
+            g_base_info_unref ( (GIBaseInfo *) item_type_info);
+            break;
+        }
+        case GI_TYPE_TAG_GHASH:
+        {
+            GITypeInfo *key_type_info;
+            GITypeInfo *value_type_info;
+            GITransfer item_transfer;
+            GHashTableIter hash_table_iter;
+            GIArgument key;
+            GIArgument value;
+
+            if (arg->v_pointer == NULL) {
+                object = Py_None;
+                Py_INCREF (object);
+                break;
+            }
+
+            object = PyDict_New();
+            if (object == NULL) {
+                break;
+            }
+
+            key_type_info = g_type_info_get_param_type (type_info, 0);
+            g_assert (key_type_info != NULL);
+            g_assert (g_type_info_get_tag (key_type_info) != GI_TYPE_TAG_VOID);
+
+            value_type_info = g_type_info_get_param_type (type_info, 1);
+            g_assert (value_type_info != NULL);
+            g_assert (g_type_info_get_tag (value_type_info) != GI_TYPE_TAG_VOID);
+
+            item_transfer = transfer == GI_TRANSFER_CONTAINER ? GI_TRANSFER_NOTHING : transfer;
+
+            g_hash_table_iter_init (&hash_table_iter, (GHashTable *) arg->v_pointer);
+            while (g_hash_table_iter_next (&hash_table_iter, &key.v_pointer, &value.v_pointer)) {
+                PyObject *py_key;
+                PyObject *py_value;
+                int retval;
+
+                py_key = _pygi_argument_to_object (&key, key_type_info, item_transfer);
+                if (py_key == NULL) {
+                    break;
+                }
+
+                hash_pointer_to_arg (&value, value_type_info);
+                py_value = _pygi_argument_to_object (&value, value_type_info, item_transfer);
+                if (py_value == NULL) {
+                    Py_DECREF (py_key);
+                    break;
+                }
+
+                retval = PyDict_SetItem (object, py_key, py_value);
+
+                Py_DECREF (py_key);
+                Py_DECREF (py_value);
+
+                if (retval < 0) {
+                    Py_CLEAR (object);
+                    break;
+                }
+            }
+
+            g_base_info_unref ( (GIBaseInfo *) key_type_info);
+            g_base_info_unref ( (GIBaseInfo *) value_type_info);
+            break;
+        }
+        case GI_TYPE_TAG_ERROR:
+        {
+            GError *error = (GError *) arg->v_pointer;
+            if (error != NULL && transfer == GI_TRANSFER_NOTHING) {
+                /* If we have not been transferred the ownership we must copy
+                 * the error, because pygi_error_check() is going to free it.
+                 */
+                error = g_error_copy (error);
+            }
+
+            if (pygi_error_check (&error)) {
+                PyObject *err_type;
+                PyObject *err_value;
+                PyObject *err_trace;
+                PyErr_Fetch (&err_type, &err_value, &err_trace);
+                Py_XDECREF (err_type);
+                Py_XDECREF (err_trace);
+                object = err_value;
+            } else {
+                object = Py_None;
+                Py_INCREF (object);
+                break;
+            }
+            break;
+        }
+#endif
+    default:
+    {
+        object = gi_marshal_to_scm_basic_type(arg, type_tag, transfer);
+    }
+    }
+
+    return ret;
+}
+
+static int
+arg_struct_to_scm (GIArgument *arg,
+                               GIInterfaceInfo *interface_info,
+                               GType g_type,
+                               SCM s_type,
+                               GITransfer transfer,
+                               gboolean is_allocated,
+                               gboolean is_foreign,
+                               SCM obj)
+{
+    if (arg->v_pointer == NULL) {
+        obj = SCM_BOOL_F;
+        return 0;
+    }
+
+    if (g_type_is_a (g_type, G_TYPE_VALUE)) {
+        obj = gi_gvalue_as_scm(arg->v_pointer, FALSE);
+        return 0;
+    }
+    else if (is_foreign) {
+        // FIXME: this is where you look up a special handler for Cairo types
+        return GI_GIARGUMENT_UNHANDLED_FOREIGN_TYPE;
+    }
+    else if (g_type_is_a (g_type, G_TYPE_BOXED)) {
+        gboolean copy_boxed = FALSE;
+        gboolean own_ref = FALSE;
+        if (transfer == GI_TRANSFER_EVERYTHING || is_allocated)
+            copy_boxed = TRUE;
+        if (is_allocated && g_struct_info_get_size (interface_info) > 0)
+            own_ref = TRUE;
+        obj = gi_gboxed_new(g_type, arg->v_pointer, copy_boxed, own_ref);
+    }
+    else if (g_type_is_a (g_type, G_TYPE_POINTER)) {
+        if (!scm_is_true (s_type) ||  !gi_gtype_is_subtype (gi_gobject_type)) {
+            if (transfer != GI_TRANSFER_NOTHING)
+                return GI_GIARGUMENT_NON_CONST_VOID_POINTER;
+            obj = scm_from_pointer(arg->v_pointer, NULL);
+            return 0;
+        } else {
+            obj = scm_make_foreign_object_0(gi_gobject_type);
+            gi_gobject_set_ob_type(obj, s_type);
+            gi_gobject_set_obj (obj, arg->v_pointer);
+            gi_gobject_set_free_on_dealloc (obj, transfer == GI_TRANSFER_EVERYTHING);
+        }
+                !PyType_IsSubtype ((PyTypeObject *) py_type, &PyGIStruct_Type)) {
+            g_warn_if_fail (transfer == GI_TRANSFER_NOTHING);
+            py_obj = pyg_pointer_new (g_type, arg->v_pointer);
+        } else {
+            py_obj = pygi_struct_new ( (PyTypeObject *) py_type,
+                                      arg->v_pointer,
+                                      transfer == GI_TRANSFER_EVERYTHING);
+        }
+
+
+
+    SCM ret = pygi_arg_struct_to_py_marshaller (arg, interface_info, g_type, py_type, transfer, is_allocated, is_foreign);
+
+    if (scm_is_true (ret) && SCM_IS_A_P(s_GIBoxed_type, ret) && transfer == GI_TRANSFER_NOTHING)
+        pygi_boxed_copy_in_place ((PyGIBoxed *) ret);
+
+    return ret;
+};
 
 
 gboolean
@@ -127,14 +516,9 @@ gi_giargument_check_scm_type(SCM obj, GIArgInfo *ai, char **errstr)
                 // FIXME, if you really wanted to, you could make a scheme integer
                 // bigger than DBL_MAX, so this would throw.
                 double val = scm_to_double(obj);
-                if (!isfinite(val))
+                if (type_tag == GI_TYPE_TAG_FLOAT)
                 {
-                    *errstr = g_strdup_printf("real number is infinite");
-                    ok = FALSE;
-                }
-                else if (type_tag == GI_TYPE_TAG_FLOAT)
-                {
-                    if (val < -FLT_MAX || val > FLT_MAX)
+                    if (val < -G_MAXFLOAT || val > G_MAXFLOAT)
                     {
                         *errstr = g_strdup_printf("real number out of range");
                         ok = FALSE;
@@ -549,7 +933,7 @@ gi_argument_from_object (const char *func,
 
             if (g_type_info_get_tag (item_type_info) == GI_TYPE_TAG_UINT8) {
 		if (scm_is_string (object)) {
-		    for (int k = 0; k < scm_c_string_length (object); k ++) {
+		    for (size_t k = 0; k < scm_c_string_length (object); k ++) {
 			array->data[k] = SCM_CHAR (scm_c_string_ref (object, k));
 		    }
 		    goto array_success;
@@ -1463,333 +1847,27 @@ gi_giargument_release (GIArgument   *arg,
     }
 }
 
-#define GI_GIARGUMENT_OK 0
-#define GI_GIARGUMENT_NON_CONST_VOID_POINTER -1
 
-
-/* Converts the generic argument ARG into a scheme object
- * according to the description in ARG_INFO */
-int gi_giargument_convert_to_object(GIArgument *arg,
-				    GIArgInfo *arg_info,
-				    SCM obj)
-{
-    GITypeInfo *type_info = g_arg_info_get_type (arg_info);
-    GIDirection direction = g_arg_info_get_direction (arg_info);
-    GITransfer transfer = g_arg_info_get_ownership_transfer (arg_info);
-    gboolean may_be_null = g_arg_info_may_be_null (arg_info);
-    GITypeTag type_tag = g_type_info_get_tag (type_info);
-    SCM object = SCM_BOOL_F;
-    int ret GI_GIARGUMENT_OK;
-
-    switch (type_tag) {
-    case GI_TYPE_TAG_VOID: {
-
-	/* Convert const void * to SCM pointers */
-	if (g_type_info_is_pointer(type_info)) {
-	    if (transfer != GI_TRANSFER_NOTHING)
-		ret = GI_GIARGUMENT_NON_CONST_VOID_POINTER;
-	    else
-		obj = scm_from_pointer (arg->v_pointer, NULL);
-        }
-        break;
-    }
-    case GI_TYPE_TAG_ARRAY: {
-	/* Convert a GArray* of simple types to a SCM bytevector */
-	/* Arrays are assumed to be packed in a GArray */
-	GArray *array;
-	GITypeInfo *item_type_info;
-	GITypeTag item_type_tag;
-	gsize item_size;
-	
-	if (arg->v_pointer == NULL)
-	    return scm_c_make_bytevector (0);
-
-	item_type_tag = g_type_info_get_param_type (type_info, 0);
-	item_type_tag = g_type_info_get_tag (item_type_info);
-
-	array = arg->v_pointer;
-	item_size = g_array_get_element_size (array);
-
-	if (item_size > sizeof (GIArgument))
-	    ret = GI_GIARGUMENT_ARRAY_ELEMENT_TOO_BIG;
-	else if (GI_TYPE_TAG_IS_EXACT_INTEGER (item_type_tag)
-		 || GI_TYPE_TAG_IS_REAL_NUMBER (item_type_tag)) {
-	    /* This is a simple numerical array, so we'll put it into
-	     * a bytevector.  We need to put the contents in
-	     * GC-managed memory, so we can't keep the contents even
-	     * if it is GI_TRANSFER_EVERYTHING. */
-	    obj = scm_c_make_bytevector (array->len * item_size);
-	    memcpy (SCM_BYTEVECTOR_CONTENTS (obj),
-		    array->data,
-		    array->len * item_size);
-
-	    /* Since we've made a copy of the original array into a
-	     * bytevector, we can delete the original array */
-	    if (transfer == GI_TRANSFER_EVERYTHING)
-		g_array_free (array, TRUE);
-	    else if (transfer == GI_TRANSFER_CONTAINER)
-		g_array_free (array, FALSE);
-	    arg->v_pointer = NULL;
-	} else
-	    ret = GI_GIARGUMENT_UNHANDLED_ARRAY_ELEMENT_TYPE;
-	
-	g_base_info_unref (item_type_info);
-	break;
-    }
-    case GI_TYPE_TAG_INTERFACE:
-    {
-        GIBaseInfo *info;
-        GIInfoType info_type;
-
-        info = g_type_info_get_interface(type_info);
-        info_type = g_base_info_get_type(info);
-
-        switch (info_type) {
-        case GI_INFO_TYPE_CALLBACK:
-	    ret = GI_GIARGUMENT_UNHANDLED_INTERFACE_TYPE;
-	    break;
-        case GI_INFO_TYPE_BOXED:
-        case GI_INFO_TYPE_STRUCT:
-        case GI_INFO_TYPE_UNION:
-        {
-            SCM s_type;
-            GType g_type = g_registered_type_info_get_g_type((GIRegisteredTypeInfo *)info);
-            gboolean is_foreign = (info_type == GI_INFO_TYPE_STRUCT) &&
-                                  (g_struct_info_is_foreign((GIStructInfo *)info));
-
-	    s_type = gi_gtype_c2g (g_type);
-            /* Special case variant and none to force loading from py module. */
-            if (g_type == G_TYPE_VARIANT || g_type == G_TYPE_NONE)
-            {
-                g_assert_not_reached();
-                //py_type = pygi_type_import_by_gi_info (info);
-            }
-            else
-            {
-                // FIXME: make
-            }
-
-            obj = scm_make_foreign_object_0(gi_gobject_type);
-            gi_gobject_set_ob_type(object, g_type);
-            gi_gobject_set_obj(object, arg->v_pointer);
-
-            // FIXME: add all the transfer and cleanup info to object
-            /* object = pygi_arg_struct_to_py_marshal (arg, */
-            /*                                         info, /\*interface_info*\/ */
-            /*                                         g_type, */
-            /*                                         py_type, */
-            /*                                         transfer, */
-            /*                                         FALSE, /\*is_allocated*\/ */
-            /*                                         is_foreign); */
-
-            /* Py_XDECREF (py_type); */
-            break;
-        }
-#if 0
-                case GI_INFO_TYPE_ENUM:
-                case GI_INFO_TYPE_FLAGS:
-                {
-                    GType type;
-
-                    type = g_registered_type_info_get_g_type ( (GIRegisteredTypeInfo *) info);
-
-                    if (type == G_TYPE_NONE) {
-                        /* An enum with a GType of None is an enum without GType */
-                        PyObject *py_type = pygi_type_import_by_gi_info (info);
-                        PyObject *py_args = NULL;
-
-                        if (!py_type)
-                            return NULL;
-
-                        py_args = PyTuple_New (1);
-                        if (PyTuple_SetItem (py_args, 0, pygi_gint_to_py (arg->v_int)) != 0) {
-                            Py_DECREF (py_args);
-                            Py_DECREF (py_type);
-                            return NULL;
-                        }
-
-                        object = PyObject_CallFunction (py_type, "i", arg->v_int);
-
-                        Py_DECREF (py_args);
-                        Py_DECREF (py_type);
-
-                    } else if (info_type == GI_INFO_TYPE_ENUM) {
-                        object = pyg_enum_from_gtype (type, arg->v_int);
-                    } else {
-                        object = pyg_flags_from_gtype (type, arg->v_uint);
-                    }
-
-                    break;
-                }
-#endif
-        case GI_INFO_TYPE_INTERFACE:
-        case GI_INFO_TYPE_OBJECT:
-            object = gi_arg_gobject_to_scm_called_from_c(arg, transfer);
-
-            break;
-        default:
-            g_assert_not_reached();
-        }
-
-        g_base_info_unref(info);
-        break;
-    }
-#if 0
-        case GI_TYPE_TAG_GLIST:
-        case GI_TYPE_TAG_GSLIST:
-        {
-            GSList *list;
-            gsize length;
-            GITypeInfo *item_type_info;
-            GITransfer item_transfer;
-            gsize i;
-
-            list = arg->v_pointer;
-            length = g_slist_length (list);
-
-            object = PyList_New (length);
-            if (object == NULL) {
-                break;
-            }
-
-            item_type_info = g_type_info_get_param_type (type_info, 0);
-            g_assert (item_type_info != NULL);
-
-            item_transfer = transfer == GI_TRANSFER_CONTAINER ? GI_TRANSFER_NOTHING : transfer;
-
-            for (i = 0; list != NULL; list = g_slist_next (list), i++) {
-                GIArgument item;
-                PyObject *py_item;
-
-                item.v_pointer = list->data;
-
-                py_item = _pygi_argument_to_object (&item, item_type_info, item_transfer);
-                if (py_item == NULL) {
-                    Py_CLEAR (object);
-                    _PyGI_ERROR_PREFIX ("Item %zu: ", i);
-                    break;
-                }
-
-                PyList_SET_ITEM (object, i, py_item);
-            }
-
-            g_base_info_unref ( (GIBaseInfo *) item_type_info);
-            break;
-        }
-        case GI_TYPE_TAG_GHASH:
-        {
-            GITypeInfo *key_type_info;
-            GITypeInfo *value_type_info;
-            GITransfer item_transfer;
-            GHashTableIter hash_table_iter;
-            GIArgument key;
-            GIArgument value;
-
-            if (arg->v_pointer == NULL) {
-                object = Py_None;
-                Py_INCREF (object);
-                break;
-            }
-
-            object = PyDict_New();
-            if (object == NULL) {
-                break;
-            }
-
-            key_type_info = g_type_info_get_param_type (type_info, 0);
-            g_assert (key_type_info != NULL);
-            g_assert (g_type_info_get_tag (key_type_info) != GI_TYPE_TAG_VOID);
-
-            value_type_info = g_type_info_get_param_type (type_info, 1);
-            g_assert (value_type_info != NULL);
-            g_assert (g_type_info_get_tag (value_type_info) != GI_TYPE_TAG_VOID);
-
-            item_transfer = transfer == GI_TRANSFER_CONTAINER ? GI_TRANSFER_NOTHING : transfer;
-
-            g_hash_table_iter_init (&hash_table_iter, (GHashTable *) arg->v_pointer);
-            while (g_hash_table_iter_next (&hash_table_iter, &key.v_pointer, &value.v_pointer)) {
-                PyObject *py_key;
-                PyObject *py_value;
-                int retval;
-
-                py_key = _pygi_argument_to_object (&key, key_type_info, item_transfer);
-                if (py_key == NULL) {
-                    break;
-                }
-
-                hash_pointer_to_arg (&value, value_type_info);
-                py_value = _pygi_argument_to_object (&value, value_type_info, item_transfer);
-                if (py_value == NULL) {
-                    Py_DECREF (py_key);
-                    break;
-                }
-
-                retval = PyDict_SetItem (object, py_key, py_value);
-
-                Py_DECREF (py_key);
-                Py_DECREF (py_value);
-
-                if (retval < 0) {
-                    Py_CLEAR (object);
-                    break;
-                }
-            }
-
-            g_base_info_unref ( (GIBaseInfo *) key_type_info);
-            g_base_info_unref ( (GIBaseInfo *) value_type_info);
-            break;
-        }
-        case GI_TYPE_TAG_ERROR:
-        {
-            GError *error = (GError *) arg->v_pointer;
-            if (error != NULL && transfer == GI_TRANSFER_NOTHING) {
-                /* If we have not been transferred the ownership we must copy
-                 * the error, because pygi_error_check() is going to free it.
-                 */
-                error = g_error_copy (error);
-            }
-
-            if (pygi_error_check (&error)) {
-                PyObject *err_type;
-                PyObject *err_value;
-                PyObject *err_trace;
-                PyErr_Fetch (&err_type, &err_value, &err_trace);
-                Py_XDECREF (err_type);
-                Py_XDECREF (err_trace);
-                object = err_value;
-            } else {
-                object = Py_None;
-                Py_INCREF (object);
-                break;
-            }
-            break;
-        }
-#endif
-    default:
-    {
-        object = gi_marshal_to_scm_basic_type(arg, type_tag, transfer);
-    }
-    }
-
-    return object;
-}
-
-
-SCM
+static SCM
 scm_convert_giargument_to_object (SCM s_arg, SCM s_arg_info)
 {
-    if (!SCM_IS_A_P(s_giargument_test, s_arg))
+    if (!SCM_IS_A_P(gi_giargument_type, s_arg))
 	scm_wrong_type_arg ("convert-giargument-to-object", SCM_ARG1, s_arg);
     if (!SCM_IS_A_P(s_GIArgInfo_type, s_arg_info))
 	scm_wrong_type_arg ("convert-giargument-to-object", SCM_ARG2, s_arg_info);
 
-    GIArgument *arg = gi_giargument_get_argument;
+    GIArgument *arg = gi_giargument_get_argument(s_arg);
     GIArgInfo *arg_info = scm_foreign_object_ref (s_arg_info, 0);
 
-    int err = gi_giargument_convert_to_object (arg, arg_info);
+    SCM obj = SCM_BOOL_F;
+    int err = gi_giargument_convert_to_object (arg, arg_info, obj);
+
+    if (err)
+        scm_misc_error ("convert-giargument-to-object", "marshalling error", SCM_EOL);
+    return obj;
 }
 
-SCM
+static SCM
 scm_make_giargument (SCM s_type_tag, SCM s_val)
 {
     SCM_ASSERT (scm_is_exact_integer (s_type_tag), s_type_tag,
