@@ -465,7 +465,7 @@ SCM gi_gtype_c2g(GType type)
         g_debug("Creating new GType wrapper: %zu %s", type, g_type_name(type));
 
         wrapper = scm_make_foreign_object_0(gi_gtype_type);
-	gi_gtype_set_type (wrapper, type);
+	    gi_gtype_set_type (wrapper, type);
         g_type_set_qdata(type, gtype_wrapper_key, SCM_UNPACK_POINTER (wrapper));
         scm_hash_set_x(gtype_wrapper_hash, scm_from_size_t(type), wrapper);
     }

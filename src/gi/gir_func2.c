@@ -1555,12 +1555,13 @@ scm_gi_lookup_type (SCM s_type_name)
 {
   SCM_ASSERT (scm_is_string (s_type_name), s_type_name, SCM_ARG1, "gi-lookup-type");
   char *name = scm_to_utf8_string (s_type_name);
-  gpointer ptr;
-  GType type;
-  ptr = g_hash_table_lookup (gi_objects, name);
-  if (!ptr)
+  gpointer ptr = NULL;
+
+  if (gi_objects) 
+    ptr = g_hash_table_lookup (gi_objects, name);
+  if (!ptr && gi_structs)
     ptr = g_hash_table_lookup (gi_structs, name);
-  if (!ptr)
+  if (!ptr && gi_unions)
     ptr = g_hash_table_lookup (gi_unions, name);
   free (name);
   if (!ptr)

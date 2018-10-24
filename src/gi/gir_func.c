@@ -316,8 +316,9 @@ SCONST(GI_FUNCTION_THROWS);
 static SCM
 gir_function_info_get_flags(SCM s_info)
 {
-  scm_assert_foreign_object_type(s_GIFunctionInfo_type, s_info);
-
+  //if (!SCM_IS_A_P(s_info, s_GIFunctionInfo_type))
+  //   scm_wrong_type_arg_msg("%function-info-get-flags",SCM_ARG1, s_info, "GIFunctionInfo");
+  
   GIFunctionInfo *info = scm_foreign_object_ref (s_info, 0);
   return scm_from_int (g_function_info_get_flags (info));
 }

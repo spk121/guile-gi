@@ -10,6 +10,7 @@
 #include "gir_func.h"
 #include "gir_func2.h"
 #include "gir_type.h"
+#include "gi_gstruct.h"
 #include <glib-object.h>
 #include <glib.h>
 #include <girepository.h>
@@ -1757,6 +1758,7 @@ gi_init_gobject (void)
     gi_init_gvalue ();
     gi_init_gsignal ();
     gi_init_gparamspec ();
+    gi_init_gstruct ();
 
     gi_init_gobject_type ();
     gir_init_funcs();

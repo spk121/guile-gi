@@ -87,10 +87,10 @@ do_declaration (const gchar *name, gsize n, gchar **fields, gboolean finalizer)
   fprintf(fp, "SCM gi_%s_type_store;\n", lower);
   fprintf(fp, "\n");
 
-  for (gsize i = 0; i < n; i ++)
+  for (int i = 0; i < (int) n; i ++)
     {
       gchar *field_upper = g_ascii_strup(fields[i], -1);
-      fprintf(fp, "#define GI_%s_%s_SLOT (%zu)\n", upper, field_upper, i);
+      fprintf(fp, "#define GI_%s_%s_SLOT (%u)\n", upper, field_upper, i);
       g_free (field_upper);
     }
 
@@ -274,6 +274,7 @@ int main(int argc, char **argv)
     return 1;
   }
 
+  g_key_file_set_list_separator(key_file, ',');
   printf("Trying %s\n", argv[1]);
   if (!g_key_file_load_from_file(key_file, argv[1], G_KEY_FILE_NONE, &error))
   {

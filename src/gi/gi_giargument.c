@@ -10,8 +10,9 @@
 #include "gi_gvalue.h"
 #include "gir_func2.h"
 #include "gir_type.h"
-#include "gi_boxed.h"
+#include "gi_gstruct.h"
 #include "gi_giargument.h"
+#include "gi_gboxed.h"
 
 #ifndef FLT_MAX
 #define FLT_MAX 3.402823466e+38F
@@ -56,14 +57,14 @@ static const uintmax_t uintmax[GI_TYPE_TAG_N_TYPES] =
      [GI_TYPE_TAG_UINT64] = UINT64_MAX,
      [GI_TYPE_TAG_UNICHAR] = 0x10FFFF};
 
-static SCM 
-arg_struct_to_scm (GIArgument *arg,
-                               GIInterfaceInfo *interface_info,
-                               GType g_type,
-                               SCM s_type,
-                               GITransfer transfer,
-                               gboolean is_allocated,
-                               gboolean is_foreign);
+static int
+arg_struct_to_scm(GIArgument *arg,
+                  GIInterfaceInfo *interface_info,
+                  GType g_type,
+                  GITransfer transfer,
+                  gboolean is_allocated,
+                  gboolean is_foreign,
+                  SCM obj);
 
 static int
 TYPE_TAG_IS_EXACT_INTEGER (GITypeTag x)
@@ -98,6 +99,7 @@ TYPE_TAG_IS_REAL_NUMBER (GITypeTag x)
 #define GI_GIARGUMENT_UNHANDLED_ARRAY_ELEMENT_TYPE -3
 #define GI_GIARGUMENT_UNHANDLED_INTERFACE_TYPE -4
 #define GI_GIARGUMENT_UNHANDLED_FOREIGN_TYPE -5
+#define GI_GIARGUMENT_ERROR -99
 
 
 /* Converts the generic argument ARG into a scheme object
@@ -108,9 +110,9 @@ gi_giargument_convert_to_object(GIArgument *arg,
                                 SCM obj)
 {
     GITypeInfo *type_info = g_arg_info_get_type(arg_info);
-    GIDirection direction = g_arg_info_get_direction(arg_info);
+    // GIDirection direction = g_arg_info_get_direction(arg_info);
     GITransfer transfer = g_arg_info_get_ownership_transfer(arg_info);
-    gboolean may_be_null = g_arg_info_may_be_null(arg_info);
+    // gboolean may_be_null = g_arg_info_may_be_null(arg_info);
     GITypeTag type_tag = g_type_info_get_tag(type_info);
     SCM object = SCM_BOOL_F;
     int ret = GI_GIARGUMENT_OK;
@@ -141,7 +143,7 @@ gi_giargument_convert_to_object(GIArgument *arg,
         if (arg->v_pointer == NULL)
             obj = scm_c_make_bytevector(0);
 
-        item_type_tag = g_type_info_get_param_type(type_info, 0);
+        item_type_info = g_type_info_get_param_type(type_info, 0);
         item_type_tag = g_type_info_get_tag(item_type_info);
 
         array = arg->v_pointer;
@@ -192,16 +194,11 @@ gi_giargument_convert_to_object(GIArgument *arg,
         case GI_INFO_TYPE_STRUCT:
         case GI_INFO_TYPE_UNION:
         {
-            SCM s_type;
             GType g_type = g_registered_type_info_get_g_type((GIRegisteredTypeInfo *)info);
             gboolean is_foreign = (info_type == GI_INFO_TYPE_STRUCT) &&
                                   (g_struct_info_is_foreign((GIStructInfo *)info));
-            if (g_type == G_TYPE_NONE)
-                s_type = SCM_BOOL_F;
-            else
-                s_type = gi_gtype_c2g(g_type);
 
-            obj = arg_struct_to_scm (arg, info, g_type, s_type, transfer, FALSE, is_foreign);
+            ret = arg_struct_to_scm (arg, info, g_type, transfer, FALSE, is_foreign, obj);
             break;
         }
 #if 0
@@ -394,28 +391,35 @@ gi_giargument_convert_to_object(GIArgument *arg,
 }
 
 static int
-arg_struct_to_scm (GIArgument *arg,
-                               GIInterfaceInfo *interface_info,
-                               GType g_type,
-                               SCM s_type,
-                               GITransfer transfer,
-                               gboolean is_allocated,
-                               gboolean is_foreign,
-                               SCM obj)
+arg_struct_to_scm(GIArgument *arg,
+                  GIInterfaceInfo *interface_info,
+                  GType g_type,
+                  GITransfer transfer,
+                  gboolean is_allocated,
+                  gboolean is_foreign,
+                  SCM obj)
 {
+    // Once we get here, INTERFACE_INFO says we are a struct or 
+    // union, and g_type is the GObject GType of that struct or 
+    // union.
     if (arg->v_pointer == NULL) {
         obj = SCM_BOOL_F;
         return 0;
     }
 
+    // A struct/union/box containing a value?
     if (g_type_is_a (g_type, G_TYPE_VALUE)) {
         obj = gi_gvalue_as_scm(arg->v_pointer, FALSE);
         return 0;
     }
+
+    // All the foreign types.
     else if (is_foreign) {
         // FIXME: this is where you look up a special handler for Cairo types
         return GI_GIARGUMENT_UNHANDLED_FOREIGN_TYPE;
     }
+
+    // All the rest of the boxed types.
     else if (g_type_is_a (g_type, G_TYPE_BOXED)) {
         gboolean copy_boxed = FALSE;
         gboolean own_ref = FALSE;
@@ -425,43 +429,24 @@ arg_struct_to_scm (GIArgument *arg,
             own_ref = TRUE;
         obj = gi_gboxed_new(g_type, arg->v_pointer, copy_boxed, own_ref);
     }
+
+    // Struct or union containing a pointer
     else if (g_type_is_a (g_type, G_TYPE_POINTER)) {
-        if (!scm_is_true (s_type) ||  !gi_gtype_is_subtype (gi_gobject_type)) {
-            if (transfer != GI_TRANSFER_NOTHING)
-                return GI_GIARGUMENT_NON_CONST_VOID_POINTER;
-            obj = scm_from_pointer(arg->v_pointer, NULL);
-            return 0;
-        } else {
-            obj = scm_make_foreign_object_0(gi_gobject_type);
-            gi_gobject_set_ob_type(obj, s_type);
-            gi_gobject_set_obj (obj, arg->v_pointer);
-            gi_gobject_set_free_on_dealloc (obj, transfer == GI_TRANSFER_EVERYTHING);
-        }
-                !PyType_IsSubtype ((PyTypeObject *) py_type, &PyGIStruct_Type)) {
-            g_warn_if_fail (transfer == GI_TRANSFER_NOTHING);
-            py_obj = pyg_pointer_new (g_type, arg->v_pointer);
-        } else {
-            py_obj = pygi_struct_new ( (PyTypeObject *) py_type,
-                                      arg->v_pointer,
-                                      transfer == GI_TRANSFER_EVERYTHING);
-        }
+        obj = gi_gstruct_new_from_gtype (g_type, arg->v_pointer, transfer == GI_TRANSFER_EVERYTHING);
+    }
 
+    else
+        return GI_GIARGUMENT_ERROR;
 
-
-    SCM ret = pygi_arg_struct_to_py_marshaller (arg, interface_info, g_type, py_type, transfer, is_allocated, is_foreign);
-
-    if (scm_is_true (ret) && SCM_IS_A_P(s_GIBoxed_type, ret) && transfer == GI_TRANSFER_NOTHING)
-        pygi_boxed_copy_in_place ((PyGIBoxed *) ret);
-
-    return ret;
+    return GI_GIARGUMENT_OK;
 };
 
 
-gboolean
+gboolean 
 gi_giargument_check_scm_type(SCM obj, GIArgInfo *ai, char **errstr)
 {
     GITypeInfo *ti = g_arg_info_get_type(ai);
-    GITransfer transfer = g_arg_info_get_ownership_transfer(ai);
+    // GITransfer transfer = g_arg_info_get_ownership_transfer(ai);
     GIDirection dir = g_arg_info_get_direction(ai);
     GITypeTag type_tag = g_type_info_get_tag(ti);
     gboolean is_ptr = g_type_info_is_pointer(ti);
