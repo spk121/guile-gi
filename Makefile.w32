@@ -44,7 +44,7 @@ LIBS = -L "c:/msys64/mingw32/lib" -lglib-2.0 -lgio-2.0 -lguile-2.2 -lgobject-2.0
 OBJEXT = obj
 EXEEXT = .exe
 
-all: guile-gi.exe fo_gen.exe
+all: guile-gi.exe fo_gen.exe libguile-gi.dll
 
 fo_gen.exe: src/gi/fo_gen.c
 	$(CC) $(DEFAULT_INCLUDES) $(INCLUDES) $(CFLAGS) $(DEFS) $< -o $@ -L "C:/msys64/mingw32/lib" -lglib-2.0
@@ -63,12 +63,17 @@ OBJ = \
 	src/gi/gi_gsignal.obj \
 	src/gi/gi_gtype.obj \
 	src/gi/gi_gvalue.obj \
+	src/gi/gi_gstruct.obj \
 	src/gi/gir_func.obj \
 	src/gi/gir_type.obj \
 	src/gi/gir_func2.obj \
 
-guile-gi.exe: $(OBJ)
+guile-gi.exe: $(OBJ) fo_gen.exe
 	$(CC) $(OBJ) $(CFLAGS) $(ALL_THE_WARNINGS)  -o $@ $(LIBS)
+
+libguile-gi.dll: $(OBJ) fo_gen.exe
+	$(CC) -shared $(OBJ) $(CFLAGS) $(ALL_THE_WARNINGS)  -o $@ $(LIBS) -Wl,--out-implib,libguile-gi.dll.a
+
 
 %.obj: %.c
 	$(CC) -c $(DEFAULT_INCLUDES) $(INCLUDES) $(CFLAGS) $(ALL_THE_WARNINGS) $(DEFS) $< -o $@

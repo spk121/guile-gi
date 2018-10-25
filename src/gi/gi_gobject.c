@@ -1758,7 +1758,7 @@ gi_init_gobject (void)
     gi_init_gvalue ();
     gi_init_gsignal ();
     gi_init_gparamspec ();
-    gi_init_gstruct ();
+    gi_init_gbox ();
 
     gi_init_gobject_type ();
     gir_init_funcs();
