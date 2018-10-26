@@ -3,8 +3,7 @@
 #include <girepository.h>
 SCM
 gi_marshal_to_scm_basic_type (GIArgument  *arg,
-                               GITypeTag type_tag,
-			      GITransfer transfer);
+                               GITypeTag type_tag);
 
 gboolean
 gi_marshal_from_scm_basic_type (SCM object, /* in */

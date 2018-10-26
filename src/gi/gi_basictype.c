@@ -100,7 +100,8 @@ static gfloat
 scm_to_gfloat (SCM s_arg)
 {
     double arg = scm_to_double (s_arg);
-    if ( /*isfinite (arg) && */ (arg < -G_MAXFLOAT || arg > G_MAXFLOAT)) {
+	
+    if ( /*isfinite (arg) && */ (arg < -3.402823466e+38F || arg > 3.402823466e+38F)) {
 	scm_misc_error(NULL,
 		       "cannot convert '~a' to gfloat, out of range",
 		       scm_list_1 (s_arg));
@@ -397,8 +398,7 @@ pygi_filename_to_py (gchar *value)
  */
 SCM
 gi_marshal_to_scm_basic_type (GIArgument  *arg,
-			      GITypeTag type_tag,
-			      GITransfer transfer)
+			      GITypeTag type_tag)
 {
     switch (type_tag) {
     case GI_TYPE_TAG_BOOLEAN:
