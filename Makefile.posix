@@ -95,18 +95,8 @@ fo_gen: src/gi/fo_gen.c
 DEFS = \
   -DHAVE_CONFIG_H \
   -DSTANDALONE \
-  -DG_LOG_DOMAIN=\"GuileGI\"
-
-MORE_WARNINGS = -Wextra -Waggregate-return -Wcast-align		\
-  -Werror=missing-include-dirs -Werror=pointer-arith -Wfloat-equal	\
-  -Wformat=2 -Winit-self -Wlogical-op -Wmissing-declarations		\
-  -Wmissing-include-dirs -Wmissing-prototypes -Wnested-externs		\
-  -Wno-missing-field-initializers -Wno-packed -Wno-switch-enum		\
-  -Wno-unused-parameter -Wold-style-definition -Wshadow			\
-  -Wstrict-prototypes -Wsuggest-attribute=format			\
-  -Wsuggest-attribute=malloc -Wsuggest-attribute=noreturn		\
-  -Wsuggest-attribute=pure -Wundef -Wuninitialized -Wwrite-strings \
-  -fdiagnostics-show-option
+  -DG_LOG_DOMAIN=\"GuileGI\" \
+  -D_FORTIFY_SOURCE=2
 
 CPPFLAGS = \
   -Wall \
@@ -115,21 +105,23 @@ CPPFLAGS = \
   `pkg-config --cflags-only-I guile-2.2 glib-2.0 gobject-2.0 gobject-introspection-1.0` 
 
 CFLAGS = \
-  -Og -pipe -ggdb -std=c11 -fPIC \
-  -fvar-tracking \
-  -fno-strict-aliasing -fstack-protector	\
-  -fstack-protector-strong -fno-semantic-interposition			\
-  -fno-omit-frame-pointer -fno-common -fdiagnostics-color=auto \
-  `pkg-config --cflags-only-other guile-2.2 glib-2.0 gobject-2.0 gobject-introspection-1.0`
+ -fasynchronous-unwind-tables -fexceptions \
+ -fpic -fstack-clash-protection -fstack-protector-strong \
+ -g -grecord-gcc-switches \
+ -mcet -fcf-protection \
+ -Og -pipe \
+ -Wall -Werror=format-security -Werror=implicit-function-declaration -Wshadow \
+ -fvar-tracking -fno-omit-frame-pointer -fdiagnostics-color=auto \
+ `pkg-config --cflags-only-other guile-2.2 glib-2.0 gobject-2.0 gobject-introspection-1.0`
 
 LDFLAGS = \
   `pkg-config --libs-only-L guile-2.2 glib-2.0 gobject-2.0 gobject-introspection-1.0` \
-  -Wl,-fuse-ld=$(LINKER)
+  -Wl,-z,defs -Wl,-z,now -Wl,z,relro
 
 LIBS = \
   `pkg-config --libs-only-l --libs-only-other guile-2.2 glib-2.0 gobject-2.0 gobject-introspection-1.0`
 
-guile_gi_HEADERS = \
+LIBGUILE_GI_HEADERS = \
  src/gi/__gi_gobject.h \
  src/gi/gi_gobject.h \
  src/gi/__gi_gvalue.h \
@@ -147,9 +139,9 @@ guile_gi_HEADERS = \
  src/gi/gi_signal_closure.h \
  src/gi/__gi_giargument.h
 
-guile_gi_SOURCES = \
+LIBGUILE_GI_SOURCES = \
  src/gi/__gi_gobject.c \
-  src/gi/gi_gobject.c \
+ src/gi/gi_gobject.c \
  src/gi/__gi_gvalue.c \
  src/gi/gi_gvalue.c \
  src/gi/__gi_gtype.c \
@@ -163,20 +155,20 @@ guile_gi_SOURCES = \
  src/gi/gir_func2.c \
  src/gi/gir_type.c \
  src/gi/gi_signal_closure.c \
- src/gi/__gi_giargument.c
+ src/gi/__gi_giargument.c \
+ src/gi/gi_gstruct.c \
+ src/gi/gir.c
 
-guile_gi_OBJECTS = $(guile_gi_SOURCES:.c=.o)
+LIBGUILE_GI_OBJECTS = $(LIBGUILE_GI_SOURCES:.c=.o)
 
-guile-gi$(EXEEXT): $(guile_gi_OBJECTS)
+guile-gi$(EXEEXT): $(LIBGUILE_GI_OBJECTS)
 	@rm -f guile-gi$(EXEEXT)
-	$(CC) -pie -Wl,-z,now -Wl,-z,text $(LDFLAGS) -o $@ $(guile_gi_OBJECTS) $(LIBS)
+	$(CC) -pie $(LDFLAGS) -o $@ $^ $(LIBS)
 
-libguile-gi.so: $(guile_gi_OBJECTS)
-	@rm -r libguile-gi.so
-	$(CC) -shared -Wl,-z,defs $(LDFLAGS) -o $@ $(guile_gi_OBJECTS) $(LIBS)
+libguile-gi.so: $(LIBGUILE_GI_OBJECTS)
+	@rm -f libguile-gi.so
+	$(CC) -shared -Wl,-z,defs $(LDFLAGS) -o $@ $^ $(LIBS)
 
-build_triplet = x86_64-pc-linux-gnu
-host_triplet = x86_64-pc-linux-gnu
 subdir = .
 
 DIST_COMMON = $(srcdir)/Makefile.am $(top_srcdir)/configure \
@@ -189,10 +181,6 @@ DIST_COMMON = $(srcdir)/Makefile.am $(top_srcdir)/configure \
 CONFIG_HEADER = $(top_builddir)/src/gi/config.h
 libgirtest_la_OBJECTS = test/libgirtest_la-GirtestTriv.lo
 
-depcomp = $(SHELL) $(top_srcdir)/build-aux/depcomp
-COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES)  \
-	  $(CFLAGS)
-CCLD = $(CC)
 SOURCES = $(libgirtest_la_SOURCES) \
 	fo_gen.c $(guile_gi_SOURCES)
 DIST_SOURCES = $(libgirtest_la_SOURCES) \

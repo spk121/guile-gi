@@ -1,3 +1,4 @@
+/* -*- Mode: C; c-basic-offset: 4 -*- */
 #include "gi_gstruct.h"
 #include "gi_gtype.h"
 
@@ -26,7 +27,10 @@ static void gir_sptr_destroy (GirSmartPtr *sptr)
     {
         if (sptr->dealloc == SPTR_DEFAULT_FREE_FUNC)
         {
-            g_free(sptr->ptr);
+	    if (sptr->holds == SPTR_HOLDS_GBOXED)
+		g_boxed_free (sptr->type, sptr->ptr);
+	    else
+		g_free(sptr->ptr);
         }
         else if (sptr->dealloc == SPTR_C_FREE_FUNC)
         {
@@ -141,8 +145,8 @@ scm_make_gbox (GirPointerContents contains, SCM s_type, SCM s_pointer, SCM s_fre
     }
 
 SCM_MAKE_XXX_GBOX("make-struct-gbox", scm_make_struct_gbox, SPTR_HOLDS_STRUCT)
-SCM_MAKE_XXX_GBOX("make-union-gbox", scm_make_union_gbox, SPTR_HOLDS_STRUCT)
-SCM_MAKE_XXX_GBOX("make-pointer-gbox", scm_make_pointer_gbox, SPTR_HOLDS_STRUCT)
+SCM_MAKE_XXX_GBOX("make-union-gbox", scm_make_union_gbox, SPTR_HOLDS_UNION)
+SCM_MAKE_XXX_GBOX("make-pointer-gbox", scm_make_pointer_gbox, SPTR_HOLDS_POINTER)
 
 static SCM
 scm_gbox_peek_pointer (SCM self)
@@ -182,6 +186,17 @@ gi_gbox_finalizer(SCM self)
     scm_foreign_object_set_x (self, 0, NULL);
 }
 
+static SCM scm_gbox_get_refcount (SCM self)
+{
+    if (!SCM_IS_A_P(self, gir_gbox_type))
+        scm_wrong_type_arg_msg ("gbox-get-refcount", SCM_ARG1, self, "GBox");
+        
+    GirSmartPtr *sptr = scm_foreign_object_ref(self, 0);
+    if (sptr)
+	return scm_from_int (g_atomic_int_get (&(sptr->count)));
+    return scm_from_int (0);
+}
+
 static SCM scm_gbox_p (SCM self)
 {
   return scm_from_bool (SCM_IS_A_P (self, gir_gbox_type));
@@ -190,19 +205,20 @@ static SCM scm_gbox_p (SCM self)
 void
 gi_init_gbox (void)
 {
-	SCM name, slots;
-	name = scm_from_utf8_symbol("<GBox>");
-	slots = scm_list_n(
-		scm_from_utf8_symbol ("sptr"),
-		SCM_UNDEFINED);
-	gir_gbox_type = scm_make_foreign_object_type (name, slots, gi_gbox_finalizer);
-	gir_gbox_type_store = scm_c_define ("<GBox>", gir_gbox_type);
-	scm_c_define_gsubr ("gbox?", 1, 0, 0, scm_gbox_p);
-	scm_c_export ("<GBox>", "gbox?", NULL);
+    SCM name, slots;
+    name = scm_from_utf8_symbol("<GBox>");
+    slots = scm_list_n(
+		       scm_from_utf8_symbol ("sptr"),
+		       SCM_UNDEFINED);
+    gir_gbox_type = scm_make_foreign_object_type (name, slots, gi_gbox_finalizer);
+    gir_gbox_type_store = scm_c_define ("<GBox>", gir_gbox_type);
+    scm_c_define_gsubr ("gbox?", 1, 0, 0, scm_gbox_p);
+    scm_c_export ("<GBox>", "gbox?", NULL);
 
     scm_c_define_gsubr("make-struct-gbox", 2, 1, 0, scm_make_struct_gbox);
     scm_c_define_gsubr("make-union-gbox", 2, 1, 0, scm_make_union_gbox);
     scm_c_define_gsubr("make-pointer-gbox", 2, 1, 0, scm_make_pointer_gbox);
     scm_c_define_gsubr("gbox-peek-pointer", 1, 0, 0, scm_gbox_peek_pointer);
     scm_c_define_gsubr("gbox-get-gtype", 1, 0, 0, scm_gbox_get_gtype);
+    scm_c_define_gsubr("%gbox-get-refcount", 1, 0, 0, scm_gbox_get_refcount);
 }

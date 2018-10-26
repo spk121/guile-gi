@@ -99,6 +99,7 @@ TYPE_TAG_IS_REAL_NUMBER (GITypeTag x)
 #define GI_GIARGUMENT_UNHANDLED_ARRAY_ELEMENT_TYPE -3
 #define GI_GIARGUMENT_UNHANDLED_INTERFACE_TYPE -4
 #define GI_GIARGUMENT_UNHANDLED_FOREIGN_TYPE -5
+#define GI_GIARGUMENT_UNHANDLED_TYPE -6
 #define GI_GIARGUMENT_ERROR -99
 
 
@@ -114,7 +115,6 @@ gi_giargument_convert_to_object(GIArgument *arg,
     GITransfer transfer = g_arg_info_get_ownership_transfer(arg_info);
     // gboolean may_be_null = g_arg_info_may_be_null(arg_info);
     GITypeTag type_tag = g_type_info_get_tag(type_info);
-    SCM object = SCM_BOOL_F;
     int ret = GI_GIARGUMENT_OK;
 
     switch (type_tag)
@@ -224,7 +224,7 @@ gi_giargument_convert_to_object(GIArgument *arg,
                             return NULL;
                         }
 
-                        object = PyObject_CallFunction (py_type, "i", arg->v_int);
+                        obj = PyObject_CallFunction (py_type, "i", arg->v_int);
 
                         Py_DECREF (py_args);
                         Py_DECREF (py_type);
@@ -240,7 +240,7 @@ gi_giargument_convert_to_object(GIArgument *arg,
 #endif
         case GI_INFO_TYPE_INTERFACE:
         case GI_INFO_TYPE_OBJECT:
-            object = gi_arg_gobject_to_scm_called_from_c(arg, transfer);
+            obj = gi_arg_gobject_to_scm_called_from_c(arg, transfer);
 
             break;
         default:
@@ -383,7 +383,7 @@ gi_giargument_convert_to_object(GIArgument *arg,
 #endif
     default:
     {
-        object = gi_marshal_to_scm_basic_type(arg, type_tag, transfer);
+        obj = gi_marshal_to_scm_basic_type(arg, type_tag, transfer);
     }
     }
 
@@ -407,7 +407,8 @@ arg_struct_to_scm(GIArgument *arg,
         return 0;
     }
 
-    // A struct/union/box containing a value?
+    // A struct/union/box containing a simple value?  Let's just unbox
+    // that now.
     if (g_type_is_a (g_type, G_TYPE_VALUE)) {
         obj = gi_gvalue_as_scm(arg->v_pointer, FALSE);
         return 0;
@@ -415,28 +416,38 @@ arg_struct_to_scm(GIArgument *arg,
 
     // All the foreign types.
     else if (is_foreign) {
-        // FIXME: this is where you look up a special handler for Cairo types
+        // FIXME: this is where you look up a special handler for
+        // Cairo types
         return GI_GIARGUMENT_UNHANDLED_FOREIGN_TYPE;
     }
 
-    // All the rest of the boxed types.
-    else if (g_type_is_a (g_type, G_TYPE_BOXED)) {
+    // All the rest of the boxed types get re-wrapped into a
+    // Scheme-friendly refcounted box.
+    else {
         gboolean copy_boxed = FALSE;
         gboolean own_ref = FALSE;
-        if (transfer == GI_TRANSFER_EVERYTHING || is_allocated)
-            copy_boxed = TRUE;
-        if (is_allocated && g_struct_info_get_size (interface_info) > 0)
-            own_ref = TRUE;
-        obj = gi_gboxed_new(g_type, arg->v_pointer, copy_boxed, own_ref);
+	if (g_type_is_a (g_type, G_TYPE_BOXED)) {
+	    if (transfer == GI_TRANSFER_EVERYTHING || is_allocated)
+		copy_boxed = TRUE;
+	    if (is_allocated && g_struct_info_get_size (interface_info) > 0)
+		own_ref = TRUE;
+	    obj = gir_new_gbox (SPTR_HOLDS_GBOXED, g_type, arg->v_pointer, copy_boxed);
+	} else if (g_type_is_a (g_type, G_TYPE_POINTER)) {
+	    // Struct or union containing a pointer
+	    obj = gir_new_gbox (SPTR_HOLDS_POINTER, g_type, arg->v_pointer, transfer == GI_TRANSFER_EVERYTHING);
+	} else if (g_type_is_a (g_type, G_TYPE_VARIANT)) {
+	    if (transfer == GI_TRANSFER_NOTHING) {
+		g_variant_ref_sink (arg->v_pointer);
+	    }
+	    obj = gir_new_gbox (SPTR_HOLDS_STRUCT, g_type, arg->v_pointer, FALSE);
+	} else if (g_type == G_TYPE_NONE) {
+	    if (transfer == GI_TRANSFER_EVERYTHING || is_allocated)
+		obj = gir_new_gbox (SPTR_HOLDS_STRUCT, g_type, arg->v_pointer, TRUE);
+	    else
+		obj = gir_new_gbox (SPTR_HOLDS_STRUCT, g_type, arg->v_pointer, FALSE);
+	} else
+	    return GI_GIARGUMENT_UNHANDLED_TYPE;
     }
-
-    // Struct or union containing a pointer
-    else if (g_type_is_a (g_type, G_TYPE_POINTER)) {
-        obj = gi_gstruct_new_from_gtype (g_type, arg->v_pointer, transfer == GI_TRANSFER_EVERYTHING);
-    }
-
-    else
-        return GI_GIARGUMENT_ERROR;
 
     return GI_GIARGUMENT_OK;
 };
@@ -547,6 +558,10 @@ gi_giargument_check_scm_type(SCM obj, GIArgInfo *ai, char **errstr)
         {
             ok = TRUE;
         }
+	else if (type_tag == GI_TYPE_TAG_ARRAY)
+	{
+	    ok = TRUE;
+	}
         else
         {
             *errstr = g_strdup_printf("unhandled pointer type %u", type_tag);
@@ -896,7 +911,7 @@ gi_argument_from_object (const char *func,
 
             /* Note, strings are sequences, but we cannot accept them here */
 	    if (!scm_is_vector (object))
-		scm_misc_error (func, "expected vector", SCM_EOL);
+	       scm_misc_error (func, "expected vector", SCM_EOL);
 
             slength = scm_to_ssize_t (scm_vector_length (object));
             is_zero_terminated = g_type_info_is_zero_terminated (type_info);
@@ -917,12 +932,7 @@ gi_argument_from_object (const char *func,
             }
 
             if (g_type_info_get_tag (item_type_info) == GI_TYPE_TAG_UINT8) {
-		if (scm_is_string (object)) {
-		    for (size_t k = 0; k < scm_c_string_length (object); k ++) {
-			array->data[k] = SCM_CHAR (scm_c_string_ref (object, k));
-		    }
-		    goto array_success;
-		} else if (scm_is_bytevector (object)) {
+		if (scm_is_bytevector (object)) {
 		    memcpy(array->data, SCM_BYTEVECTOR_CONTENTS(object), length);
 		    array->len = length;
 		    goto array_success;
@@ -1344,7 +1354,16 @@ SCM gi_giargument_to_object(GIArgument *arg,
             gboolean is_foreign = (info_type == GI_INFO_TYPE_STRUCT) &&
                                   (g_struct_info_is_foreign((GIStructInfo *)info));
 
-            /* Special case variant and none to force loading from py module. */
+	    if (info_type == GI_INFO_TYPE_STRUCT) {
+		object = gir_new_struct_gbox (g_type, arg->v_pointer, transfer == GI_TRANSFER_EVERYTHING);
+		break;
+	    }
+	    else if (info_type == GI_INFO_TYPE_UNION) {
+		object =  gir_new_union_gbox (g_type, arg->v_pointer, transfer == GI_TRANSFER_EVERYTHING);
+		break;
+	    }
+	    
+	    /* Special case variant and none to force loading from py module. */
             if (g_type == G_TYPE_VARIANT || g_type == G_TYPE_NONE)
             {
                 g_assert_not_reached();

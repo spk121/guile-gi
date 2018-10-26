@@ -1754,18 +1754,7 @@ gi_arg_gobject_to_scm_called_from_c (GIArgument *arg, GITransfer transfer)
 void
 gi_init_gobject (void)
 {
-    gi_init_gtype ();
-    gi_init_gvalue ();
-    gi_init_gsignal ();
-    gi_init_gparamspec ();
-    gi_init_gbox ();
-
     gi_init_gobject_type ();
-    gir_init_funcs();
-    gir_init_func2();
-    gi_init_giargument();
-    gir_init_types();
-    
     gi_gobject_wrapper_key = g_quark_from_static_string ("GuGObject::wrapper");
     gi_gobject_custom_key = g_quark_from_static_string ("GuGObject::custom");
     gi_gobject_instance_data_key = g_quark_from_static_string("GuGObject::instance-data");
@@ -1799,15 +1788,3 @@ gi_init_gobject (void)
 		  NULL);
 }
 
-#define STANDALONE 1
-#ifdef STANDALONE
-int main(int argc, char **argv)
-{
-    scm_init_guile();
-    
-    gi_init_gobject ();
-    scm_shell(argc, argv);
-    return 0;
-}
-
-#endif

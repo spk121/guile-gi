@@ -156,8 +156,8 @@ gi_gvalue_from_scm_with_error(GValue *value, SCM obj)
 	{
 	    if (!scm_is_exact_integer (obj))
 		return GI_GVALUE_WRONG_TYPE;
-		if (!scm_is_unsigned_integer (obj, 0, G_MAXULONG))
-		    return GI_GVALUE_OUT_OF_RANGE;
+	    if (!scm_is_unsigned_integer (obj, 0, G_MAXULONG))
+		return GI_GVALUE_OUT_OF_RANGE;
 	    gint val;
 	    /* if (gi_enum_get_value(G_VALUE_TYPE(value), obj, &val) < 0) { */
 	    /*     return -1; */

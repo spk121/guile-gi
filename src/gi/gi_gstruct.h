@@ -49,7 +49,7 @@ void gir_gbox_connect_scm_free_func (SCM box, SCM free_func);
 SCM gir_new_struct_gbox (GType type, void *ptr, gboolean free_on_dealloc);
 SCM gir_new_union_gbox (GType type, void *ptr, gboolean free_on_dealloc);
 
-static SCM gi_gbox_p (SCM self);
+SCM gi_gbox_p (SCM self);
 
 void gi_init_gbox (void);
 #endif
