@@ -7,6 +7,8 @@
 
 G_BEGIN_DECLS
 
+extern GQuark gtype_base_info_key;
+
 GType     gi_gtype_from_scm (SCM obj);
 GType     gi_infer_gtype_from_scm(SCM obj);
 SCM       gi_gtype_c2g (GType type);

@@ -1,4 +1,4 @@
-SHELL = C:\\Windows\\System32\\bash.exe
+# SHELL = C:\\Windows\\System32\\bash.exe
 
 CC = clang.exe
 
@@ -98,10 +98,10 @@ OBJ = \
 	src/gi/gir.obj
 
 guile-gi.exe: $(OBJ) fo_gen.exe
-	$(CC) -v $(OBJ) $(CFLAGS) $(LDFLAGS) -o $@ $(LIBS)
+	$(CC) $(OBJ) $(CFLAGS) $(LDFLAGS) -o $@ $(LIBS)
 
 libguile-gi.dll: $(OBJ) fo_gen.exe
-	$(CC) -v -shared $(OBJ) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS)  -o $@ $(LIBS) -Wl,--out-implib,libguile-gi.dll.a
+	$(CC) -shared $(OBJ) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS)  -o $@ $(LIBS) -Wl,--out-implib,libguile-gi.dll.a
 
 %.obj: %.c
 	$(CC) -c $(CPPFLAGS) $(CFLAGS) $(DEFS) $< -o $@

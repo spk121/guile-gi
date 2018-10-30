@@ -9,6 +9,7 @@
 #include "gi_gtype.h"
 
 GQuark gtype_wrapper_key;
+GQuark gtype_base_info_key;
 SCM gtype_wrapper_hash;
 
 /* In C, a GType is an integer.  It indicates a GObject type.
@@ -484,6 +485,7 @@ gi_init_gtype(void)
     gtype_wrapper_hash = scm_c_make_hash_table (10);
     scm_permanent_object (scm_c_define ("%gtypes", gtype_wrapper_hash));
     gtype_wrapper_key = g_quark_from_static_string ("guile-gi-gtype-wrapper");
+    gtype_base_info_key = g_quark_from_static_string ("gtype-base-info");
     
 #define D(x) scm_permanent_object(scm_c_define(#x, gi_gtype_c2g (x)))
     // D(G_TYPE_INVALID);

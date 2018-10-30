@@ -148,6 +148,19 @@ SCM_MAKE_XXX_GBOX("make-struct-gbox", scm_make_struct_gbox, SPTR_HOLDS_STRUCT)
 SCM_MAKE_XXX_GBOX("make-union-gbox", scm_make_union_gbox, SPTR_HOLDS_UNION)
 SCM_MAKE_XXX_GBOX("make-pointer-gbox", scm_make_pointer_gbox, SPTR_HOLDS_POINTER)
 
+void *
+gi_gbox_peek_pointer (SCM self)
+{
+    if (!SCM_IS_A_P (self, gir_gbox_type))
+        scm_wrong_type_arg_msg("gbox-peek-pointer", SCM_ARG1, self, "GBox");
+    
+    GirSmartPtr *sptr = scm_foreign_object_ref(self, 0);
+    if (sptr)
+        return sptr->ptr;
+    else
+        return NULL;
+}
+
 static SCM
 scm_gbox_peek_pointer (SCM self)
 {

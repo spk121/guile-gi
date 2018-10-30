@@ -1,0 +1,1615 @@
+array      * IN    LEN   0 SIZE  -1           C      filename   * NULL_OK           CONST   argv Application-run 
+array      * IN    LEN   1 SIZE  -1           C      guint8                         CONST   blob DBusMessage-bytes_needed 
+array      * IN    LEN   1 SIZE  -1           C      guint8                         CONST   blob DBusMessage-new_from_blob 
+array      * IN    LEN   1 SIZE  -1           C      guint8                         CONST   buffer InputStream-read 
+array      * IN    LEN   1 SIZE  -1           C      guint8                         CONST   buffer InputStream-read_all 
+array      * IN    LEN   1 SIZE  -1           C      guint8                         CONST   buffer InputStream-read_all_async 
+array      * IN    LEN   1 SIZE  -1           C      guint8                         CONST   buffer InputStream-read_async 
+array      * IN    LEN   1 SIZE  -1           C      guint8                         CONST   buffer OutputStream-write 
+array      * IN    LEN   1 SIZE  -1           C      guint8                         CONST   buffer OutputStream-write_all 
+array      * IN    LEN   1 SIZE  -1           C      guint8                         CONST   buffer OutputStream-write_all_async 
+array      * IN    LEN   1 SIZE  -1           C      guint8                         CONST   buffer OutputStream-write_async 
+array      * IN    LEN   1 SIZE  -1           C      guint8                         CONST   buffer Socket-receive 
+array      * IN    LEN   1 SIZE  -1           C      guint8                         CONST   buffer Socket-receive_with_blocking 
+array      * IN    LEN   1 SIZE  -1           C      guint8                         CONST   buffer Socket-send 
+array      * IN    LEN   1 SIZE  -1           C      guint8                         CONST   buffer Socket-send_with_blocking 
+array      * IN    LEN   1 SIZE  -1           C      guint8                         CONST   value TlsPassword-set_value 
+array      * IN    LEN   1 SIZE  -1           C      guint8                         CONST   value TlsPassword-set_value_full 
+array      * IN    LEN   1 SIZE  -1           C      guint8                         DEEP    data MemoryInputStream-add_data 
+array      * IN    LEN   1 SIZE  -1           C      guint8                         DEEP    data MemoryInputStream-new_from_data 
+array      * IN    LEN   1 SIZE  -1           C      interface    STRUCT    ActionEntry                   CONST   entries SimpleActionGroup-add_entries 
+array      * IN    LEN   1 SIZE  -1           C      interface    STRUCT    InputMessage                   CONST   messages Socket-receive_messages 
+array      * IN    LEN   1 SIZE  -1           C      interface    STRUCT    OutputMessage                   CONST   messages Socket-send_messages 
+array      * IN    LEN   1 SIZE  -1           C      interface  * INTERFACE File                          CONST   files Application-open 
+array      * IN    LEN   1 SIZE  -1           C      utf8       *                   CONST   iconnames ThemedIcon-new_from_names 
+array      * IN    LEN   2 SIZE  -1           C      guint8                         CONST   buffer BufferedInputStream-peek 
+array      * IN    LEN   2 SIZE  -1           C      guint8                         CONST   buffer pollable_stream_read 
+array      * IN    LEN   2 SIZE  -1           C      guint8                         CONST   buffer pollable_stream_write 
+array      * IN    LEN   2 SIZE  -1           C      guint8                         CONST   buffer pollable_stream_write_all 
+array      * IN    LEN   2 SIZE  -1           C      guint8                         CONST   buffer Socket-receive_from 
+array      * IN    LEN   2 SIZE  -1           C      guint8                         CONST   buffer Socket-send_to 
+array      * IN    LEN   2 SIZE  -1           C      guint8                         CONST   data SocketControlMessage-deserialize 
+array      * IN    LEN   2 SIZE  -1           C      guint8       NULL_OK           CONST   data content_type_guess 
+array      * IN    LEN   2 SIZE  -1           C      interface    STRUCT    InputVector                   CONST   vectors Socket-receive_message 
+array      * IN    LEN   2 SIZE  -1           C      interface    STRUCT    OutputVector                   CONST   vectors Socket-send_message 
+array      * IN    LEN   3 SIZE  -1           C      interface    OBJECT    Object                        CONST   additions ListStore-splice 
+array      * IN    LEN   3 SIZE  -1           C      interface    STRUCT    DBusErrorEntry                   CONST   entries dbus_error_register_error_domain 
+array      * IN    LEN   4 SIZE  -1           C      interface  * OBJECT    SocketControlMessage NULL_OK           CONST   messages Socket-send_message 
+array      * IN    LEN  -1 SIZE  -1           BYTE   guint8                         CONST   issuer_raw_dn TlsDatabase-lookup_certificates_issued_by 
+array      * IN    LEN  -1 SIZE  -1           BYTE   guint8                         CONST   issuer_raw_dn TlsDatabase-lookup_certificates_issued_by_async 
+array      * IN    LEN  -1 SIZE  -1           C      guint8                         CONST   bytes InetAddress-new_from_bytes 
+array      * IN    LEN  -1 SIZE  -1           C      utf8       *                   CONST   attr_value FileInfo-set_attribute_stringv 
+array      * IN    LEN  -1 SIZE  -1 ZERO_TERM C      filename   *                   CONST   argv SubprocessLauncher-spawnv 
+array      * IN    LEN  -1 SIZE  -1 ZERO_TERM C      filename   *                   CONST   argv Subprocess-new 
+array      * IN    LEN  -1 SIZE  -1 ZERO_TERM C      filename   *                   CONST   env SubprocessLauncher-set_environ 
+array      * IN    LEN  -1 SIZE  -1 ZERO_TERM C      interface    STRUCT    OptionEntry                   CONST   entries Application-add_main_option_entries 
+array      * IN    LEN  -1 SIZE  -1 ZERO_TERM C      interface  * STRUCT    DBusAnnotationInfo NULL_OK           CONST   annotations dbus_annotation_info_lookup 
+array      * IN    LEN  -1 SIZE  -1 ZERO_TERM C      interface  * STRUCT    DBusAnnotationInfo NULL_OK           CONST   annotations DBusAnnotationInfo-lookup 
+array      * IN    LEN  -1 SIZE  -1 ZERO_TERM C      utf8       *                   CONST   items SettingsBackend-keys_changed 
+array      * IN    LEN  -1 SIZE  -1 ZERO_TERM C      utf8       * NULL_OK           CONST   value Settings-set_strv 
+array      * OUT   LEN   4 SIZE  -1           C      interface  * OBJECT    SocketControlMessage NULL_OK       OPT DEEP    messages Socket-receive_message 
+array      * OUT   LEN  -1 SIZE  -1 ZERO_TERM C      interface  * STRUCT    Variant                   OPT SHALLOW values SettingsBackend-flatten_tree 
+array      * OUT   LEN  -1 SIZE  -1 ZERO_TERM C      utf8       *                   DEEP    non_relocatable SettingsSchemaSource-list_schemas 
+array      * OUT   LEN  -1 SIZE  -1 ZERO_TERM C      utf8       *                   DEEP    relocatable SettingsSchemaSource-list_schemas 
+array      * OUT   LEN  -1 SIZE  -1 ZERO_TERM C      utf8       *                   SHALLOW keys SettingsBackend-flatten_tree 
+error      * IN                      CONST   error dbus_error_encode_gerror 
+error      * IN                      CONST   error dbus_error_get_remote_error 
+error      * IN                      CONST   error dbus_error_is_remote_error 
+error      * IN                      CONST   error dbus_error_strip_remote_error 
+error      * IN                      CONST   error DBusMethodInvocation-return_gerror 
+error      * IN                      CONST   error SimpleAsyncResult-new_from_error 
+error      * IN                      CONST   error SimpleAsyncResult-set_from_error 
+error      * IN                      DEEP    error Task-report_error 
+error      * IN                      DEEP    error Task-return_error 
+filename   * IN                      CONST   anchors tls_file_database_new 
+filename   * IN                      CONST   arg ApplicationCommandLine-create_file_for_arg 
+filename   * IN                      CONST   arg file_new_for_commandline_arg 
+filename   * IN                      CONST   arg file_new_for_commandline_arg_and_cwd 
+filename   * IN                      CONST   cert_file TlsCertificate-new_from_files 
+filename   * IN                      CONST   commandline app_info_create_from_commandline 
+filename   * IN                      CONST   cwd file_new_for_commandline_arg_and_cwd 
+filename   * IN                      CONST   cwd SubprocessLauncher-set_cwd 
+filename   * IN                      CONST   directory SettingsSchemaSource-new_from_directory 
+filename   * IN                      CONST   dirname io_modules_load_all_in_directory 
+filename   * IN                      CONST   dirname io_modules_load_all_in_directory_with_scope 
+filename   * IN                      CONST   dirname io_modules_scan_all_in_directory 
+filename   * IN                      CONST   dirname io_modules_scan_all_in_directory_with_scope 
+filename   * IN                      CONST   file TlsCertificate-list_new_from_file 
+filename   * IN                      CONST   file TlsCertificate-new_from_file 
+filename   * IN                      CONST   filename IOModule-new 
+filename   * IN                      CONST   filename resource_load 
+filename   * IN                      CONST   filename Resource-load 
+filename   * IN                      CONST   key_file TlsCertificate-new_from_files 
+filename   * IN                      CONST   name ApplicationCommandLine-getenv 
+filename   * IN                      CONST   name FileInfo-set_name 
+filename   * IN                      CONST   path file_new_for_path 
+filename   * IN                      CONST   value AppLaunchContext-setenv 
+filename   * IN                      CONST   value SubprocessLauncher-setenv 
+filename   * IN                      CONST   variable AppLaunchContext-setenv 
+filename   * IN                      CONST   variable AppLaunchContext-unsetenv 
+filename   * IN                      CONST   variable SubprocessLauncher-getenv 
+filename   * IN                      CONST   variable SubprocessLauncher-setenv 
+filename   * IN                      CONST   variable SubprocessLauncher-unsetenv 
+filename   * IN    NULL_OK           CONST   tmpl file_new_tmp 
+gboolean     IN                      CONST   allow_reuse Socket-bind 
+gboolean     IN                      CONST   allowed Permission-impl_update 
+gboolean     IN                      CONST   allowed SimplePermission-new 
+gboolean     IN                      CONST   anonymous MountOperation-set_anonymous 
+gboolean     IN                      CONST   attr_value FileInfo-set_attribute_boolean 
+gboolean     IN                      CONST   auto_grow BufferedOutputStream-set_auto_grow 
+gboolean     IN                      CONST   blocking pollable_stream_read 
+gboolean     IN                      CONST   blocking pollable_stream_write 
+gboolean     IN                      CONST   blocking pollable_stream_write_all 
+gboolean     IN                      CONST   blocking Socket-receive_with_blocking 
+gboolean     IN                      CONST   blocking Socket-send_with_blocking 
+gboolean     IN                      CONST   blocking Socket-set_blocking 
+gboolean     IN                      CONST   broadcast Socket-set_broadcast 
+gboolean     IN                      CONST   can_acquire Permission-impl_update 
+gboolean     IN                      CONST   can_release Permission-impl_update 
+gboolean     IN                      CONST   check_cancellable Task-set_check_cancellable 
+gboolean     IN                      CONST   close_base FilterInputStream-set_close_base_stream 
+gboolean     IN                      CONST   close_base FilterOutputStream-set_close_base_stream 
+gboolean     IN                      CONST   dirs_only FilenameCompleter-set_dirs_only 
+gboolean     IN                      CONST   enable SocketClient-set_enable_proxy 
+gboolean     IN                      CONST   enabled SimpleAction-set_enabled 
+gboolean     IN                      CONST   exit_on_close DBusConnection-set_exit_on_close 
+gboolean     IN                      CONST   graceful_disconnect TcpConnection-set_graceful_disconnect 
+gboolean     IN                      CONST   handle_cancellation SimpleAsyncResult-set_handle_cancellation 
+gboolean     IN                      CONST   hidden_volume MountOperation-set_is_tcrypt_hidden_volume 
+gboolean     IN                      CONST   inverted Settings-bind_writable 
+gboolean     IN                      CONST   is_hidden FileInfo-set_is_hidden 
+gboolean     IN                      CONST   is_symlink FileInfo-set_is_symlink 
+gboolean     IN                      CONST   keepalive Socket-set_keepalive 
+gboolean     IN                      CONST   loopback Socket-set_multicast_loopback 
+gboolean     IN                      CONST   must_support_uris app_info_get_default_for_type 
+gboolean     IN                      CONST   op_res SimpleAsyncResult-set_op_res_gboolean 
+gboolean     IN                      CONST   overwrite SubprocessLauncher-setenv 
+gboolean     IN                      CONST   pending FileEnumerator-set_pending 
+gboolean     IN                      CONST   recursive SettingsSchemaSource-list_schemas 
+gboolean     IN                      CONST   recursive SettingsSchemaSource-lookup 
+gboolean     IN                      CONST   require_close_notify TlsConnection-set_require_close_notify 
+gboolean     IN                      CONST   result Task-return_boolean 
+gboolean     IN                      CONST   return_on_cancel Task-set_return_on_cancel 
+gboolean     IN                      CONST   shutdown_read Socket-shutdown 
+gboolean     IN                      CONST   shutdown_write Socket-shutdown 
+gboolean     IN                      CONST   source_specific Socket-join_multicast_group 
+gboolean     IN                      CONST   source_specific Socket-leave_multicast_group 
+gboolean     IN                      CONST   system_volume MountOperation-set_is_tcrypt_system_volume 
+gboolean     IN                      CONST   tls SocketClient-set_tls 
+gboolean     IN                      CONST   trusted SettingsSchemaSource-new_from_directory 
+gboolean     IN                      CONST   urgent Notification-set_urgent 
+gboolean     IN                      CONST   use_fallback CharsetConverter-set_use_fallback 
+gboolean     IN                      CONST   use_system_certdb TlsConnection-set_use_system_certdb 
+gboolean     IN                      CONST   value Settings-set_boolean 
+gboolean     OUT                 OPT DEEP    result_uncertain content_type_guess 
+gdouble      IN                      CONST   value Settings-set_double 
+gint16       IN                      CONST   data DataOutputStream-put_int16 
+gint32       IN                      CONST   added MenuModel-items_changed 
+gint32       IN                      CONST   argc Application-run 
+gint32       IN                      CONST   attr_value FileInfo-set_attribute_int32 
+gint32       IN                      CONST   backlog Socket-set_listen_backlog 
+gint32       IN                      CONST   choice MountOperation-set_choice 
+gint32       IN                      CONST   code DBusMethodInvocation-return_error_literal 
+gint32       IN                      CONST   count BufferedInputStream-fill 
+gint32       IN                      CONST   count BufferedInputStream-fill_async 
+gint32       IN                      CONST   data DataOutputStream-put_int32 
+gint32       IN                      CONST   err_no io_error_from_errno 
+gint32       IN                      CONST   error_code dbus_error_register_error 
+gint32       IN                      CONST   error_code dbus_error_unregister_error 
+gint32       IN                      CONST   error_code io_error_from_win32_error 
+gint32       IN                      CONST   exit_status ApplicationCommandLine-set_exit_status 
+gint32       IN                      CONST   fd Socket-new_from_fd 
+gint32       IN                      CONST   flags Socket-receive_messages 
+gint32       IN                      CONST   flags Socket-send_message 
+gint32       IN                      CONST   flags Socket-send_messages 
+gint32       IN                      CONST   io_priority BufferedInputStream-fill_async 
+gint32       IN                      CONST   io_priority DataInputStream-read_line_async 
+gint32       IN                      CONST   io_priority DataInputStream-read_until_async 
+gint32       IN                      CONST   io_priority DataInputStream-read_upto_async 
+gint32       IN                      CONST   io_priority FileEnumerator-close_async 
+gint32       IN                      CONST   io_priority FileEnumerator-next_files_async 
+gint32       IN                      CONST   io_priority FileInputStream-query_info_async 
+gint32       IN                      CONST   io_priority FileIOStream-query_info_async 
+gint32       IN                      CONST   io_priority FileOutputStream-query_info_async 
+gint32       IN                      CONST   io_priority InputStream-close_async 
+gint32       IN                      CONST   io_priority InputStream-read_all_async 
+gint32       IN                      CONST   io_priority InputStream-read_async 
+gint32       IN                      CONST   io_priority InputStream-read_bytes_async 
+gint32       IN                      CONST   io_priority InputStream-skip_async 
+gint32       IN                      CONST   io_priority IOStream-close_async 
+gint32       IN                      CONST   io_priority IOStream-splice_async 
+gint32       IN                      CONST   io_priority OutputStream-close_async 
+gint32       IN                      CONST   io_priority OutputStream-flush_async 
+gint32       IN                      CONST   io_priority OutputStream-splice_async 
+gint32       IN                      CONST   io_priority OutputStream-write_all_async 
+gint32       IN                      CONST   io_priority OutputStream-write_async 
+gint32       IN                      CONST   io_priority OutputStream-write_bytes_async 
+gint32       IN                      CONST   io_priority TlsConnection-handshake_async 
+gint32       IN                      CONST   item_index MenuItem-new_from_model 
+gint32       IN                      CONST   item_index MenuModel-get_item_attribute_value 
+gint32       IN                      CONST   item_index MenuModel-get_item_link 
+gint32       IN                      CONST   item_index MenuModel-iterate_item_attributes 
+gint32       IN                      CONST   item_index MenuModel-iterate_item_links 
+gint32       IN                      CONST   len MemoryInputStream-add_data 
+gint32       IN                      CONST   len MemoryInputStream-new_from_data 
+gint32       IN                      CONST   len ThemedIcon-new_from_names 
+gint32       IN                      CONST   length TlsCertificate-new_from_pem 
+gint32       IN                      CONST   length TlsPassword-set_value 
+gint32       IN                      CONST   length TlsPassword-set_value_full 
+gint32       IN                      CONST   level SocketControlMessage-deserialize 
+gint32       IN                      CONST   level Socket-get_option 
+gint32       IN                      CONST   level Socket-set_option 
+gint32       IN                      CONST   level ZlibCompressor-new 
+gint32       IN                      CONST   limit_msecs FileMonitor-set_rate_limit 
+gint32       IN                      CONST   listen_backlog SocketListener-set_backlog 
+gint32       IN                      CONST   max_threads ThreadedSocketService-new 
+gint32       IN                      CONST   n_entries SimpleActionGroup-add_entries 
+gint32       IN                      CONST   n_files Application-open 
+gint32       IN                      CONST   num_files FileEnumerator-next_files_async 
+gint32       IN                      CONST   num_messages Socket-send_message 
+gint32       IN                      CONST   num_vectors Socket-receive_message 
+gint32       IN                      CONST   num_vectors Socket-send_message 
+gint32       IN                      CONST   op_res SimpleAsyncResult-set_op_res_gssize 
+gint32       IN                      CONST   optname Socket-get_option 
+gint32       IN                      CONST   optname Socket-set_option 
+gint32       IN                      CONST   position Menu-insert 
+gint32       IN                      CONST   position Menu-insert_item 
+gint32       IN                      CONST   position Menu-insert_section 
+gint32       IN                      CONST   position Menu-insert_submenu 
+gint32       IN                      CONST   position MenuModel-items_changed 
+gint32       IN                      CONST   position Menu-remove 
+gint32       IN                      CONST   priority io_extension_point_implement 
+gint32       IN                      CONST   priority Task-set_priority 
+gint32       IN                      CONST   protocol SocketConnection-factory_register_type 
+gint32       IN                      CONST   protocol_id SocketConnection-factory_lookup_type 
+gint32       IN                      CONST   removed MenuModel-items_changed 
+gint32       IN                      CONST   result Task-return_int 
+gint32       IN                      CONST   sort_order FileInfo-set_sort_order 
+gint32       IN                      CONST   stop_chars_len DataInputStream-read_upto 
+gint32       IN                      CONST   stop_chars_len DataInputStream-read_upto_async 
+gint32       IN                      CONST   timeout_msec DBusConnection-call 
+gint32       IN                      CONST   timeout_msec DBusConnection-call_sync 
+gint32       IN                      CONST   timeout_msec DBusConnection-call_with_unix_fd_list 
+gint32       IN                      CONST   timeout_msec DBusConnection-call_with_unix_fd_list_sync 
+gint32       IN                      CONST   timeout_msec DBusConnection-send_message_with_reply 
+gint32       IN                      CONST   timeout_msec DBusConnection-send_message_with_reply_sync 
+gint32       IN                      CONST   timeout_msec DBusProxy-call 
+gint32       IN                      CONST   timeout_msec DBusProxy-call_sync 
+gint32       IN                      CONST   timeout_msec DBusProxy-call_with_unix_fd_list 
+gint32       IN                      CONST   timeout_msec DBusProxy-call_with_unix_fd_list_sync 
+gint32       IN                      CONST   timeout_msec DBusProxy-set_default_timeout 
+gint32       IN                      CONST   type SocketControlMessage-deserialize 
+gint32       IN                      CONST   value Settings-set_enum 
+gint32       IN                      CONST   value Settings-set_int 
+gint32       IN                      CONST   value Socket-set_option 
+gint32       INOUT                   DEEP    flags Socket-receive_message 
+gint32       OUT                     DEEP    num_messages Socket-receive_message 
+gint32       OUT                     DEEP    value Socket-get_option 
+gint32       OUT                 OPT DEEP    argc ApplicationCommandLine-get_arguments 
+gint64       IN                      CONST   attr_value FileInfo-set_attribute_int64 
+gint64       IN                      CONST   data DataOutputStream-put_int64 
+gint64       IN                      CONST   size FileInfo-set_size 
+gint64       IN                      CONST   timeout Socket-condition_timed_wait 
+gint64       IN                      CONST   value Settings-set_int64 
+gint8        IN                      CONST   short_name Application-add_main_option 
+glist      * IN                      CONST   files AppLaunchContext-get_display 
+glist      * IN                      CONST   files AppLaunchContext-get_startup_notify_id 
+GType        IN                      CONST   g_type SocketConnection-factory_register_type 
+GType        IN                      CONST   item_type ListStore-new 
+GType        IN                      CONST   type io_extension_point_implement 
+guint16      IN                      CONST   data DataOutputStream-put_uint16 
+guint16      IN                      CONST   default_port NetworkAddress-parse 
+guint16      IN                      CONST   default_port NetworkAddress-parse_uri 
+guint16      IN                      CONST   default_port SocketClient-connect_to_host 
+guint16      IN                      CONST   default_port SocketClient-connect_to_host_async 
+guint16      IN                      CONST   default_port SocketClient-connect_to_uri 
+guint16      IN                      CONST   default_port SocketClient-connect_to_uri_async 
+guint16      IN                      CONST   dest_port ProxyAddress-new 
+guint16      IN                      CONST   port InetSocketAddress-new 
+guint16      IN                      CONST   port NetworkAddress-new 
+guint16      IN                      CONST   port NetworkAddress-new_loopback 
+guint16      IN                      CONST   port ProxyAddress-new 
+guint16      IN                      CONST   port SocketListener-add_inet_port 
+guint16      IN                      CONST   port SrvTarget-new 
+guint16      IN                      CONST   priority SrvTarget-new 
+guint16      IN                      CONST   weight SrvTarget-new 
+guint32      IN                      CONST   attr_value FileInfo-set_attribute_uint32 
+guint32      IN                      CONST   blob_len DBusMessage-bytes_needed 
+guint32      IN                      CONST   blob_len DBusMessage-new_from_blob 
+guint32      IN                      CONST   count BufferedInputStream-peek 
+guint32      IN                      CONST   count InputStream-read 
+guint32      IN                      CONST   count InputStream-read_all 
+guint32      IN                      CONST   count InputStream-read_all_async 
+guint32      IN                      CONST   count InputStream-read_async 
+guint32      IN                      CONST   count InputStream-read_bytes 
+guint32      IN                      CONST   count InputStream-read_bytes_async 
+guint32      IN                      CONST   count InputStream-skip 
+guint32      IN                      CONST   count InputStream-skip_async 
+guint32      IN                      CONST   count OutputStream-write 
+guint32      IN                      CONST   count OutputStream-write_all 
+guint32      IN                      CONST   count OutputStream-write_all_async 
+guint32      IN                      CONST   count OutputStream-write_async 
+guint32      IN                      CONST   count pollable_stream_read 
+guint32      IN                      CONST   count pollable_stream_write 
+guint32      IN                      CONST   count pollable_stream_write_all 
+guint32      IN                      CONST   data DataOutputStream-put_uint32 
+guint32      IN                      CONST   data_size content_type_guess 
+guint32      IN                      CONST   destlen SocketAddress-to_native 
+guint32      IN                      CONST   domain DBusMethodInvocation-return_error_literal 
+guint32      IN                      CONST   error_domain dbus_error_register_error 
+guint32      IN                      CONST   error_domain dbus_error_unregister_error 
+guint32      IN                      CONST   export_id DBusConnection-unexport_action_group 
+guint32      IN                      CONST   export_id DBusConnection-unexport_menu_model 
+guint32      IN                      CONST   filter_id DBusConnection-remove_filter 
+guint32      IN                      CONST   handler_id Cancellable-disconnect 
+guint32      IN                      CONST   inactivity_timeout Application-set_inactivity_timeout 
+guint32      IN                      CONST   indent DBusInterfaceInfo-generate_xml 
+guint32      IN                      CONST   indent DBusMessage-print 
+guint32      IN                      CONST   indent DBusNodeInfo-generate_xml 
+guint32      IN                      CONST   len SocketAddress-new_from_native 
+guint32      IN                      CONST   length InetAddressMask-new 
+guint32      IN                      CONST   n_additions ListStore-splice 
+guint32      IN                      CONST   n_removals ListStore-splice 
+guint32      IN                      CONST   num_entries dbus_error_register_error_domain 
+guint32      IN                      CONST   num_messages Socket-receive_messages 
+guint32      IN                      CONST   num_messages Socket-send_messages 
+guint32      IN                      CONST   offset BufferedInputStream-peek 
+guint32      IN                      CONST   owner_id bus_unown_name 
+guint32      IN                      CONST   pim MountOperation-set_pim 
+guint32      IN                      CONST   port InetSocketAddress-new_from_string 
+guint32      IN                      CONST   position ListStore-insert 
+guint32      IN                      CONST   position ListStore-remove 
+guint32      IN                      CONST   position ListStore-splice 
+guint32      IN                      CONST   registration_id DBusConnection-unregister_object 
+guint32      IN                      CONST   registration_id DBusConnection-unregister_subtree 
+guint32      IN                      CONST   serial DBusMessage-set_serial 
+guint32      IN                      CONST   size BufferedInputStream-new_sized 
+guint32      IN                      CONST   size BufferedInputStream-set_buffer_size 
+guint32      IN                      CONST   size BufferedOutputStream-new_sized 
+guint32      IN                      CONST   size BufferedOutputStream-set_buffer_size 
+guint32      IN                      CONST   size SocketControlMessage-deserialize 
+guint32      IN                      CONST   size Socket-receive 
+guint32      IN                      CONST   size Socket-receive_from 
+guint32      IN                      CONST   size Socket-receive_with_blocking 
+guint32      IN                      CONST   size Socket-send 
+guint32      IN                      CONST   size Socket-send_to 
+guint32      IN                      CONST   size Socket-send_with_blocking 
+guint32      IN                      CONST   subscription_id DBusConnection-signal_unsubscribe 
+guint32      IN                      CONST   timeout SocketClient-set_timeout 
+guint32      IN                      CONST   timeout Socket-set_timeout 
+guint32      IN                      CONST   ttl Socket-set_multicast_ttl 
+guint32      IN                      CONST   ttl Socket-set_ttl 
+guint32      IN                      CONST   value DBusMessage-set_num_unix_fds 
+guint32      IN                      CONST   value DBusMessage-set_reply_serial 
+guint32      IN                      CONST   value Settings-set_flags 
+guint32      IN                      CONST   value Settings-set_uint 
+guint32      IN                      CONST   watcher_id bus_unwatch_name 
+guint32      OUT                     DEEP    bytes_read InputStream-read_all 
+guint32      OUT                     DEEP    bytes_read InputStream-read_all_finish 
+guint32      OUT                     DEEP    bytes_written pollable_stream_write_all 
+guint32      OUT                     DEEP    count BufferedInputStream-peek_buffer 
+guint32      OUT                     DEEP    out_size DBusMessage-to_blob 
+guint32      OUT                 OPT DEEP    bytes_written OutputStream-write_all 
+guint32      OUT                 OPT DEEP    bytes_written OutputStream-write_all_finish 
+guint32      OUT                 OPT DEEP    flags Resource-get_info 
+guint32      OUT                 OPT DEEP    flags resources_get_info 
+guint32      OUT                 OPT DEEP    length DataInputStream-read_line 
+guint32      OUT                 OPT DEEP    length DataInputStream-read_line_finish 
+guint32      OUT                 OPT DEEP    length DataInputStream-read_line_finish_utf8 
+guint32      OUT                 OPT DEEP    length DataInputStream-read_line_utf8 
+guint32      OUT                 OPT DEEP    length DataInputStream-read_until 
+guint32      OUT                 OPT DEEP    length DataInputStream-read_until_finish 
+guint32      OUT                 OPT DEEP    length DataInputStream-read_upto 
+guint32      OUT                 OPT DEEP    length DataInputStream-read_upto_finish 
+guint32      OUT                 OPT DEEP    out_serial DBusConnection-send_message 
+guint32      OUT                 OPT DEEP    out_serial DBusConnection-send_message_with_reply 
+guint32      OUT                 OPT DEEP    out_serial DBusConnection-send_message_with_reply_sync 
+guint32      OUT                 OPT DEEP    size Resource-get_info 
+guint32      OUT                 OPT DEEP    size resources_get_info 
+guint32    * IN                      CONST   quark_volatile dbus_error_register_error_domain 
+guint32    * IN    NULL_OK           CONST   length TlsPassword-get_value 
+guint64      IN                      CONST   attr_value FileInfo-set_attribute_uint64 
+guint64      IN                      CONST   data DataOutputStream-put_uint64 
+guint64      IN                      CONST   value Settings-set_uint64 
+guint8       IN                      CONST   data DataOutputStream-put_byte 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback app_info_launch_default_for_uri_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback BufferedInputStream-fill_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback bus_get 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback DataInputStream-read_line_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback DataInputStream-read_until_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback DataInputStream-read_upto_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback dbus_address_get_stream 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback DBusConnection-call 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback DBusConnection-call_with_unix_fd_list 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback DBusConnection-close 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback DBusConnection-flush 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback DBusConnection-new 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback DBusConnection-new_for_address 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback DBusConnection-send_message_with_reply 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback DBusObjectManagerClient-new 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback DBusObjectManagerClient-new_for_bus 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback DBusProxy-call 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback DBusProxy-call_with_unix_fd_list 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback DBusProxy-new 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback DBusProxy-new_for_bus 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback FileEnumerator-close_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback FileEnumerator-next_files_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback FileInputStream-query_info_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback FileIOStream-query_info_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback FileOutputStream-query_info_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback InputStream-close_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback InputStream-read_all_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback InputStream-read_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback InputStream-read_bytes_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback InputStream-skip_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback IOStream-close_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback IOStream-splice_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback OutputStream-close_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback OutputStream-flush_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback OutputStream-splice_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback OutputStream-write_all_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback OutputStream-write_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback OutputStream-write_bytes_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback Permission-acquire_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback Permission-release_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback Resolver-lookup_by_address_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback Resolver-lookup_by_name_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback Resolver-lookup_records_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback Resolver-lookup_service_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback SimpleAsyncResult-new 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback SimpleAsyncResult-new_from_error 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback SocketAddressEnumerator-next_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback SocketClient-connect_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback SocketClient-connect_to_host_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback SocketClient-connect_to_service_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback SocketClient-connect_to_uri_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback SocketConnection-connect_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback SocketListener-accept_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback SocketListener-accept_socket_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback Subprocess-communicate_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback Subprocess-communicate_utf8_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback Subprocess-wait_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback Subprocess-wait_check_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback Task-new 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback Task-report_error 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback TlsConnection-handshake_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback TlsDatabase-lookup_certificate_for_handle_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback TlsDatabase-lookup_certificate_issuer_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback TlsDatabase-lookup_certificates_issued_by_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback TlsDatabase-verify_chain_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback TlsInteraction-ask_password_async 
+interface    IN    CALLBACK  AsyncReadyCallback NULL_OK           CONST   callback TlsInteraction-request_certificate_async 
+interface    IN    CALLBACK  Callback                      CONST   callback Cancellable-connect 
+interface    IN    CALLBACK  CompareDataFunc                   CONST   compare_func ListStore-insert_sorted 
+interface    IN    CALLBACK  CompareDataFunc                   CONST   compare_func ListStore-sort 
+interface    IN    CALLBACK  DBusMessageFilterFunction                   CONST   filter_function DBusConnection-add_filter 
+interface    IN    CALLBACK  DBusProxyTypeFunc NULL_OK           CONST   get_proxy_type_func DBusObjectManagerClient-new 
+interface    IN    CALLBACK  DBusProxyTypeFunc NULL_OK           CONST   get_proxy_type_func DBusObjectManagerClient-new_for_bus 
+interface    IN    CALLBACK  DBusProxyTypeFunc NULL_OK           CONST   get_proxy_type_func DBusObjectManagerClient-new_for_bus_sync 
+interface    IN    CALLBACK  DBusProxyTypeFunc NULL_OK           CONST   get_proxy_type_func DBusObjectManagerClient-new_sync 
+interface    IN    CALLBACK  DBusSignalCallback                   CONST   callback DBusConnection-signal_subscribe 
+interface    IN    CALLBACK  DestroyNotify                   CONST   user_data_free_func DBusConnection-add_filter 
+interface    IN    CALLBACK  DestroyNotify                   CONST   user_data_free_func DBusConnection-register_subtree 
+interface    IN    CALLBACK  DestroyNotify NULL_OK           CONST   data_destroy_func Cancellable-connect 
+interface    IN    CALLBACK  DestroyNotify NULL_OK           CONST   destroy MemoryInputStream-add_data 
+interface    IN    CALLBACK  DestroyNotify NULL_OK           CONST   destroy MemoryInputStream-new_from_data 
+interface    IN    CALLBACK  DestroyNotify NULL_OK           CONST   destroy TlsPassword-set_value_full 
+interface    IN    CALLBACK  DestroyNotify NULL_OK           CONST   get_proxy_type_destroy_notify DBusObjectManagerClient-new 
+interface    IN    CALLBACK  DestroyNotify NULL_OK           CONST   get_proxy_type_destroy_notify DBusObjectManagerClient-new_for_bus 
+interface    IN    CALLBACK  DestroyNotify NULL_OK           CONST   get_proxy_type_destroy_notify DBusObjectManagerClient-new_for_bus_sync 
+interface    IN    CALLBACK  DestroyNotify NULL_OK           CONST   get_proxy_type_destroy_notify DBusObjectManagerClient-new_sync 
+interface    IN    CALLBACK  DestroyNotify NULL_OK           CONST   parse_name_destroy Vfs-register_uri_scheme 
+interface    IN    CALLBACK  DestroyNotify NULL_OK           CONST   result_destroy Task-return_pointer 
+interface    IN    CALLBACK  DestroyNotify NULL_OK           CONST   task_data_destroy Task-set_task_data 
+interface    IN    CALLBACK  DestroyNotify NULL_OK           CONST   uri_destroy Vfs-register_uri_scheme 
+interface    IN    CALLBACK  DestroyNotify NULL_OK           CONST   user_data_free_func DBusConnection-signal_subscribe 
+interface    IN    CALLBACK  SettingsGetMapping                   CONST   mapping Settings-get_mapped 
+interface    IN    CALLBACK  VfsFileLookupFunc NULL_OK           CONST   parse_name_func Vfs-register_uri_scheme 
+interface    IN    CALLBACK  VfsFileLookupFunc NULL_OK           CONST   uri_func Vfs-register_uri_scheme 
+interface    IN    ENUM      BusType                       CONST   bus_type bus_get 
+interface    IN    ENUM      BusType                       CONST   bus_type bus_get_sync 
+interface    IN    ENUM      BusType                       CONST   bus_type bus_own_name 
+interface    IN    ENUM      BusType                       CONST   bus_type bus_watch_name 
+interface    IN    ENUM      BusType                       CONST   bus_type dbus_address_get_for_bus_sync 
+interface    IN    ENUM      BusType                       CONST   bus_type DBusObjectManagerClient-new_for_bus 
+interface    IN    ENUM      BusType                       CONST   bus_type DBusObjectManagerClient-new_for_bus_sync 
+interface    IN    ENUM      BusType                       CONST   bus_type DBusProxy-new_for_bus 
+interface    IN    ENUM      BusType                       CONST   bus_type DBusProxy-new_for_bus_sync 
+interface    IN    ENUM      CredentialsType                   CONST   native_type Credentials-set_native 
+interface    IN    ENUM      DataStreamByteOrder                   CONST   order DataInputStream-set_byte_order 
+interface    IN    ENUM      DataStreamByteOrder                   CONST   order DataOutputStream-set_byte_order 
+interface    IN    ENUM      DataStreamNewlineType                   CONST   type DataInputStream-set_newline_type 
+interface    IN    ENUM      DBusMessageByteOrder                   CONST   byte_order DBusMessage-set_byte_order 
+interface    IN    ENUM      DBusMessageHeaderField                   CONST   header_field DBusMessage-get_header 
+interface    IN    ENUM      DBusMessageHeaderField                   CONST   header_field DBusMessage-set_header 
+interface    IN    ENUM      DBusMessageType                   CONST   type DBusMessage-set_message_type 
+interface    IN    ENUM      EmblemOrigin                   CONST   origin Emblem-new_with_origin 
+interface    IN    ENUM      FileAttributeStatus                   CONST   status FileInfo-set_attribute_status 
+interface    IN    ENUM      FileAttributeType                   CONST   type FileAttributeInfoList-add 
+interface    IN    ENUM      FileAttributeType                   CONST   type FileInfo-set_attribute 
+interface    IN    ENUM      FileMonitorEvent                   CONST   event_type FileMonitor-emit_event 
+interface    IN    ENUM      FileType                      CONST   type FileInfo-set_file_type 
+interface    IN    ENUM      MountOperationResult                   CONST   result MountOperation-reply 
+interface    IN    ENUM      NotificationPriority                   CONST   priority Notification-set_priority 
+interface    IN    ENUM      OptionArg                     CONST   arg Application-add_main_option 
+interface    IN    ENUM      PasswordSave                   CONST   save MountOperation-set_password_save 
+interface    IN    ENUM      ResolverRecordType                   CONST   record_type Resolver-lookup_records 
+interface    IN    ENUM      ResolverRecordType                   CONST   record_type Resolver-lookup_records_async 
+interface    IN    ENUM      SocketFamily                   CONST   family InetAddress-new_any 
+interface    IN    ENUM      SocketFamily                   CONST   family InetAddress-new_from_bytes 
+interface    IN    ENUM      SocketFamily                   CONST   family InetAddress-new_loopback 
+interface    IN    ENUM      SocketFamily                   CONST   family SocketClient-set_family 
+interface    IN    ENUM      SocketFamily                   CONST   family SocketConnection-factory_lookup_type 
+interface    IN    ENUM      SocketFamily                   CONST   family SocketConnection-factory_register_type 
+interface    IN    ENUM      SocketFamily                   CONST   family Socket-new 
+interface    IN    ENUM      SocketProtocol                   CONST   protocol SocketClient-set_protocol 
+interface    IN    ENUM      SocketProtocol                   CONST   protocol SocketListener-add_address 
+interface    IN    ENUM      SocketProtocol                   CONST   protocol Socket-new 
+interface    IN    ENUM      SocketType                    CONST   type SocketClient-set_socket_type 
+interface    IN    ENUM      SocketType                    CONST   type SocketConnection-factory_lookup_type 
+interface    IN    ENUM      SocketType                    CONST   type SocketConnection-factory_register_type 
+interface    IN    ENUM      SocketType                    CONST   type SocketListener-add_address 
+interface    IN    ENUM      SocketType                    CONST   type Socket-new 
+interface    IN    ENUM      TlsCertificateRequestFlags                   CONST   flags TlsInteraction-invoke_request_certificate 
+interface    IN    ENUM      TlsCertificateRequestFlags                   CONST   flags TlsInteraction-request_certificate 
+interface    IN    ENUM      TlsCertificateRequestFlags                   CONST   flags TlsInteraction-request_certificate_async 
+interface    IN    ENUM      TlsDatabaseLookupFlags                   CONST   flags TlsDatabase-lookup_certificate_for_handle 
+interface    IN    ENUM      TlsDatabaseLookupFlags                   CONST   flags TlsDatabase-lookup_certificate_for_handle_async 
+interface    IN    ENUM      TlsDatabaseLookupFlags                   CONST   flags TlsDatabase-lookup_certificate_issuer 
+interface    IN    ENUM      TlsDatabaseLookupFlags                   CONST   flags TlsDatabase-lookup_certificate_issuer_async 
+interface    IN    ENUM      TlsDatabaseLookupFlags                   CONST   flags TlsDatabase-lookup_certificates_issued_by 
+interface    IN    ENUM      TlsDatabaseLookupFlags                   CONST   flags TlsDatabase-lookup_certificates_issued_by_async 
+interface    IN    ENUM      TlsRehandshakeMode                   CONST   mode TlsConnection-set_rehandshake_mode 
+interface    IN    ENUM      ZlibCompressorFormat                   CONST   format ZlibCompressor-new 
+interface    IN    ENUM      ZlibCompressorFormat                   CONST   format ZlibDecompressor-new 
+interface    IN    FLAGS     AppInfoCreateFlags                   CONST   flags app_info_create_from_commandline 
+interface    IN    FLAGS     ApplicationFlags                   CONST   flags Application-new 
+interface    IN    FLAGS     ApplicationFlags                   CONST   flags Application-set_flags 
+interface    IN    FLAGS     BusNameOwnerFlags                   CONST   flags bus_own_name 
+interface    IN    FLAGS     BusNameOwnerFlags                   CONST   flags bus_own_name_on_connection 
+interface    IN    FLAGS     BusNameWatcherFlags                   CONST   flags bus_watch_name 
+interface    IN    FLAGS     BusNameWatcherFlags                   CONST   flags bus_watch_name_on_connection 
+interface    IN    FLAGS     DBusCallFlags                   CONST   flags DBusConnection-call 
+interface    IN    FLAGS     DBusCallFlags                   CONST   flags DBusConnection-call_sync 
+interface    IN    FLAGS     DBusCallFlags                   CONST   flags DBusConnection-call_with_unix_fd_list 
+interface    IN    FLAGS     DBusCallFlags                   CONST   flags DBusConnection-call_with_unix_fd_list_sync 
+interface    IN    FLAGS     DBusCallFlags                   CONST   flags DBusProxy-call 
+interface    IN    FLAGS     DBusCallFlags                   CONST   flags DBusProxy-call_sync 
+interface    IN    FLAGS     DBusCallFlags                   CONST   flags DBusProxy-call_with_unix_fd_list 
+interface    IN    FLAGS     DBusCallFlags                   CONST   flags DBusProxy-call_with_unix_fd_list_sync 
+interface    IN    FLAGS     DBusCapabilityFlags                   CONST   capabilities DBusMessage-new_from_blob 
+interface    IN    FLAGS     DBusCapabilityFlags                   CONST   capabilities DBusMessage-to_blob 
+interface    IN    FLAGS     DBusConnectionFlags                   CONST   flags DBusConnection-new 
+interface    IN    FLAGS     DBusConnectionFlags                   CONST   flags DBusConnection-new_for_address 
+interface    IN    FLAGS     DBusConnectionFlags                   CONST   flags DBusConnection-new_for_address_sync 
+interface    IN    FLAGS     DBusConnectionFlags                   CONST   flags DBusConnection-new_sync 
+interface    IN    FLAGS     DBusInterfaceSkeletonFlags                   CONST   flags DBusInterfaceSkeleton-set_flags 
+interface    IN    FLAGS     DBusMessageFlags                   CONST   flags DBusMessage-set_flags 
+interface    IN    FLAGS     DBusObjectManagerClientFlags                   CONST   flags DBusObjectManagerClient-new 
+interface    IN    FLAGS     DBusObjectManagerClientFlags                   CONST   flags DBusObjectManagerClient-new_for_bus 
+interface    IN    FLAGS     DBusObjectManagerClientFlags                   CONST   flags DBusObjectManagerClient-new_for_bus_sync 
+interface    IN    FLAGS     DBusObjectManagerClientFlags                   CONST   flags DBusObjectManagerClient-new_sync 
+interface    IN    FLAGS     DBusProxyFlags                   CONST   flags DBusProxy-new 
+interface    IN    FLAGS     DBusProxyFlags                   CONST   flags DBusProxy-new_for_bus 
+interface    IN    FLAGS     DBusProxyFlags                   CONST   flags DBusProxy-new_for_bus_sync 
+interface    IN    FLAGS     DBusProxyFlags                   CONST   flags DBusProxy-new_sync 
+interface    IN    FLAGS     DBusSendMessageFlags                   CONST   flags DBusConnection-send_message 
+interface    IN    FLAGS     DBusSendMessageFlags                   CONST   flags DBusConnection-send_message_with_reply 
+interface    IN    FLAGS     DBusSendMessageFlags                   CONST   flags DBusConnection-send_message_with_reply_sync 
+interface    IN    FLAGS     DBusServerFlags                   CONST   flags DBusServer-new_sync 
+interface    IN    FLAGS     DBusSignalFlags                   CONST   flags DBusConnection-signal_subscribe 
+interface    IN    FLAGS     DBusSubtreeFlags                   CONST   flags DBusConnection-register_subtree 
+interface    IN    FLAGS     FileAttributeInfoFlags                   CONST   flags FileAttributeInfoList-add 
+interface    IN    FLAGS     IOCondition                   CONST   condition Socket-condition_check 
+interface    IN    FLAGS     IOCondition                   CONST   condition Socket-condition_timed_wait 
+interface    IN    FLAGS     IOCondition                   CONST   condition Socket-condition_wait 
+interface    IN    FLAGS     IOStreamSpliceFlags                   CONST   flags IOStream-splice_async 
+interface    IN    FLAGS     OptionFlags                   CONST   flags Application-add_main_option 
+interface    IN    FLAGS     OutputStreamSpliceFlags                   CONST   flags OutputStream-splice 
+interface    IN    FLAGS     OutputStreamSpliceFlags                   CONST   flags OutputStream-splice_async 
+interface    IN    FLAGS     ResourceLookupFlags                   CONST   lookup_flags Resource-enumerate_children 
+interface    IN    FLAGS     ResourceLookupFlags                   CONST   lookup_flags Resource-get_info 
+interface    IN    FLAGS     ResourceLookupFlags                   CONST   lookup_flags Resource-lookup_data 
+interface    IN    FLAGS     ResourceLookupFlags                   CONST   lookup_flags Resource-open_stream 
+interface    IN    FLAGS     ResourceLookupFlags                   CONST   lookup_flags resources_enumerate_children 
+interface    IN    FLAGS     ResourceLookupFlags                   CONST   lookup_flags resources_get_info 
+interface    IN    FLAGS     ResourceLookupFlags                   CONST   lookup_flags resources_lookup_data 
+interface    IN    FLAGS     ResourceLookupFlags                   CONST   lookup_flags resources_open_stream 
+interface    IN    FLAGS     SettingsBindFlags                   CONST   flags Settings-bind 
+interface    IN    FLAGS     SubprocessFlags                   CONST   flags SubprocessLauncher-new 
+interface    IN    FLAGS     SubprocessFlags                   CONST   flags SubprocessLauncher-set_flags 
+interface    IN    FLAGS     SubprocessFlags                   CONST   flags Subprocess-new 
+interface    IN    FLAGS     TestDBusFlags                   CONST   flags TestDBus-new 
+interface    IN    FLAGS     TlsCertificateFlags                   CONST   errors TlsConnection-emit_accept_certificate 
+interface    IN    FLAGS     TlsCertificateFlags                   CONST   flags SocketClient-set_tls_validation_flags 
+interface    IN    FLAGS     TlsDatabaseVerifyFlags                   CONST   flags TlsDatabase-verify_chain 
+interface    IN    FLAGS     TlsDatabaseVerifyFlags                   CONST   flags TlsDatabase-verify_chain_async 
+interface    IN    FLAGS     TlsPasswordFlags                   CONST   flags TlsPassword-new 
+interface    IN    FLAGS     TlsPasswordFlags                   CONST   flags TlsPassword-set_flags 
+interface    OUT   ENUM      FileAttributeStatus               OPT DEEP    status FileInfo-get_attribute_data 
+interface    OUT   ENUM      FileAttributeType               OPT DEEP    type FileInfo-get_attribute_data 
+interface    OUT   STRUCT    TimeVal             ALLOC     CONST   result FileInfo-get_modification_time 
+interface    OUT   STRUCT    Value               ALLOC     CONST   out_gvalue dbus_gvariant_to_gvalue 
+interface  * IN    INTERFACE Action                        CONST   action SimpleActionGroup-insert 
+interface  * IN    INTERFACE ActionGroup                   CONST   action_group DBusConnection-export_action_group 
+interface  * IN    INTERFACE ActionGroup NULL_OK           CONST   action_group Application-set_action_group 
+interface  * IN    INTERFACE AppInfo                       CONST   info AppLaunchContext-get_display 
+interface  * IN    INTERFACE AppInfo                       CONST   info AppLaunchContext-get_startup_notify_id 
+interface  * IN    INTERFACE AsyncResult                   CONST   res bus_get_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   res dbus_address_get_stream_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   res DBusConnection-call_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   res DBusConnection-call_with_unix_fd_list_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   res DBusConnection-close_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   res DBusConnection-flush_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   res DBusConnection-new_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   res DBusConnection-new_for_address_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   res DBusConnection-send_message_with_reply_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   res DBusObjectManagerClient-new_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   res DBusObjectManagerClient-new_for_bus_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   res DBusProxy-call_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   res DBusProxy-call_with_unix_fd_list_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   res DBusProxy-new_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   res DBusProxy-new_for_bus_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result app_info_launch_default_for_uri_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result BufferedInputStream-fill_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result DataInputStream-read_line_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result DataInputStream-read_line_finish_utf8 
+interface  * IN    INTERFACE AsyncResult                   CONST   result DataInputStream-read_until_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result DataInputStream-read_upto_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result FileEnumerator-close_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result FileEnumerator-next_files_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result FileInputStream-query_info_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result FileIOStream-query_info_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result FileOutputStream-query_info_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result InputStream-close_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result InputStream-read_all_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result InputStream-read_bytes_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result InputStream-read_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result InputStream-skip_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result IOStream-close_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result IOStream-splice_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result OutputStream-close_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result OutputStream-flush_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result OutputStream-splice_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result OutputStream-write_all_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result OutputStream-write_bytes_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result OutputStream-write_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result Permission-acquire_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result Permission-release_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result Resolver-lookup_by_address_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result Resolver-lookup_by_name_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result Resolver-lookup_records_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result Resolver-lookup_service_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result SimpleAsyncResult-is_valid 
+interface  * IN    INTERFACE AsyncResult                   CONST   result SocketAddressEnumerator-next_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result SocketClient-connect_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result SocketClient-connect_to_host_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result SocketClient-connect_to_service_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result SocketClient-connect_to_uri_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result SocketConnection-connect_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result SocketListener-accept_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result SocketListener-accept_socket_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result Subprocess-communicate_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result Subprocess-communicate_utf8_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result Subprocess-wait_check_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result Subprocess-wait_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result Task-is_valid 
+interface  * IN    INTERFACE AsyncResult                   CONST   result TlsConnection-handshake_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result TlsDatabase-lookup_certificate_for_handle_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result TlsDatabase-lookup_certificate_issuer_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result TlsDatabase-lookup_certificates_issued_by_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result TlsDatabase-verify_chain_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result TlsInteraction-ask_password_finish 
+interface  * IN    INTERFACE AsyncResult                   CONST   result TlsInteraction-request_certificate_finish 
+interface  * IN    INTERFACE Converter                     CONST   converter ConverterInputStream-new 
+interface  * IN    INTERFACE Converter                     CONST   converter ConverterOutputStream-new 
+interface  * IN    INTERFACE DatagramBased                   CONST   base_socket dtls_client_connection_new 
+interface  * IN    INTERFACE DatagramBased                   CONST   base_socket dtls_server_connection_new 
+interface  * IN    INTERFACE File                          CONST   child FileMonitor-emit_event 
+interface  * IN    INTERFACE File                          CONST   file FileIcon-new 
+interface  * IN    INTERFACE File                          CONST   other_file FileMonitor-emit_event 
+interface  * IN    INTERFACE File                          CONST   root content_type_guess_for_tree 
+interface  * IN    INTERFACE Icon                          CONST   icon EmblemedIcon-new 
+interface  * IN    INTERFACE Icon                          CONST   icon Emblem-new 
+interface  * IN    INTERFACE Icon                          CONST   icon Emblem-new_with_origin 
+interface  * IN    INTERFACE Icon                          CONST   icon FileInfo-set_icon 
+interface  * IN    INTERFACE Icon                          CONST   icon FileInfo-set_symbolic_icon 
+interface  * IN    INTERFACE Icon                          CONST   icon MenuItem-set_icon 
+interface  * IN    INTERFACE Icon                          CONST   icon Notification-set_icon 
+interface  * IN    INTERFACE Mount                         CONST   mount VolumeMonitor-adopt_orphan_mount 
+interface  * IN    INTERFACE ProxyResolver NULL_OK           CONST   proxy_resolver SocketClient-set_proxy_resolver 
+interface  * IN    INTERFACE SocketConnectable                   CONST   connectable SocketClient-connect 
+interface  * IN    INTERFACE SocketConnectable                   CONST   connectable SocketClient-connect_async 
+interface  * IN    INTERFACE SocketConnectable NULL_OK           CONST   identity TlsCertificate-verify 
+interface  * IN    INTERFACE SocketConnectable NULL_OK           CONST   identity TlsDatabase-verify_chain 
+interface  * IN    INTERFACE SocketConnectable NULL_OK           CONST   identity TlsDatabase-verify_chain_async 
+interface  * IN    INTERFACE SocketConnectable NULL_OK           CONST   server_identity dtls_client_connection_new 
+interface  * IN    INTERFACE SocketConnectable NULL_OK           CONST   server_identity tls_client_connection_new 
+interface  * IN    OBJECT    AppLaunchContext NULL_OK           CONST   context app_info_launch_default_for_uri 
+interface  * IN    OBJECT    AppLaunchContext NULL_OK           CONST   context app_info_launch_default_for_uri_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable app_info_launch_default_for_uri_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable Application-register 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable BufferedInputStream-fill 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable BufferedInputStream-fill_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable BufferedInputStream-read_byte 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable bus_get 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable bus_get_sync 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DataInputStream-read_byte 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DataInputStream-read_int16 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DataInputStream-read_int32 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DataInputStream-read_int64 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DataInputStream-read_line 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DataInputStream-read_line_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DataInputStream-read_line_utf8 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DataInputStream-read_uint16 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DataInputStream-read_uint32 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DataInputStream-read_uint64 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DataInputStream-read_until 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DataInputStream-read_until_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DataInputStream-read_upto 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DataInputStream-read_upto_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DataOutputStream-put_byte 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DataOutputStream-put_int16 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DataOutputStream-put_int32 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DataOutputStream-put_int64 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DataOutputStream-put_string 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DataOutputStream-put_uint16 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DataOutputStream-put_uint32 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DataOutputStream-put_uint64 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable dbus_address_get_for_bus_sync 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable dbus_address_get_stream 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable dbus_address_get_stream_sync 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DBusConnection-call 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DBusConnection-call_sync 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DBusConnection-call_with_unix_fd_list 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DBusConnection-call_with_unix_fd_list_sync 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DBusConnection-close 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DBusConnection-close_sync 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DBusConnection-flush 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DBusConnection-flush_sync 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DBusConnection-new 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DBusConnection-new_for_address 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DBusConnection-new_for_address_sync 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DBusConnection-new_sync 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DBusConnection-send_message_with_reply 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DBusConnection-send_message_with_reply_sync 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DBusObjectManagerClient-new 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DBusObjectManagerClient-new_for_bus 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DBusObjectManagerClient-new_for_bus_sync 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DBusObjectManagerClient-new_sync 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DBusProxy-call 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DBusProxy-call_sync 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DBusProxy-call_with_unix_fd_list 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DBusProxy-call_with_unix_fd_list_sync 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DBusProxy-new 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DBusProxy-new_for_bus 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DBusProxy-new_for_bus_sync 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DBusProxy-new_sync 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable DBusServer-new_sync 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable FileEnumerator-close 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable FileEnumerator-close_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable FileEnumerator-iterate 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable FileEnumerator-next_file 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable FileEnumerator-next_files_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable FileInputStream-query_info 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable FileInputStream-query_info_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable FileIOStream-query_info 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable FileIOStream-query_info_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable FileOutputStream-query_info 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable FileOutputStream-query_info_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable InputStream-close 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable InputStream-close_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable InputStream-read 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable InputStream-read_all 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable InputStream-read_all_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable InputStream-read_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable InputStream-read_bytes 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable InputStream-read_bytes_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable InputStream-skip 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable InputStream-skip_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable IOStream-close 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable IOStream-close_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable IOStream-splice_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable OutputStream-close 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable OutputStream-close_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable OutputStream-flush 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable OutputStream-flush_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable OutputStream-splice 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable OutputStream-splice_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable OutputStream-write 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable OutputStream-write_all 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable OutputStream-write_all_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable OutputStream-write_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable OutputStream-write_bytes 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable OutputStream-write_bytes_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable Permission-acquire 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable Permission-acquire_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable Permission-release 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable Permission-release_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable pollable_source_new_full 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable pollable_stream_read 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable pollable_stream_write 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable pollable_stream_write_all 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable Resolver-lookup_by_address 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable Resolver-lookup_by_address_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable Resolver-lookup_by_name 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable Resolver-lookup_by_name_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable Resolver-lookup_records 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable Resolver-lookup_records_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable Resolver-lookup_service 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable Resolver-lookup_service_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable Socket-accept 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable SocketAddressEnumerator-next 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable SocketAddressEnumerator-next_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable SocketClient-connect 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable SocketClient-connect_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable SocketClient-connect_to_host 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable SocketClient-connect_to_host_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable SocketClient-connect_to_service 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable SocketClient-connect_to_service_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable SocketClient-connect_to_uri 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable SocketClient-connect_to_uri_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable Socket-condition_timed_wait 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable Socket-condition_wait 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable Socket-connect 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable SocketConnection-connect 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable SocketConnection-connect_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable SocketListener-accept 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable SocketListener-accept_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable SocketListener-accept_socket 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable SocketListener-accept_socket_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable Socket-receive 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable Socket-receive_from 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable Socket-receive_message 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable Socket-receive_messages 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable Socket-receive_with_blocking 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable Socket-send 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable Socket-send_message 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable Socket-send_messages 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable Socket-send_to 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable Socket-send_with_blocking 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable Subprocess-communicate 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable Subprocess-communicate_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable Subprocess-communicate_utf8 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable Subprocess-communicate_utf8_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable Subprocess-wait 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable Subprocess-wait_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable Subprocess-wait_check 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable Subprocess-wait_check_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable Task-new 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable TlsConnection-handshake 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable TlsConnection-handshake_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable TlsDatabase-lookup_certificate_for_handle 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable TlsDatabase-lookup_certificate_for_handle_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable TlsDatabase-lookup_certificate_issuer 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable TlsDatabase-lookup_certificate_issuer_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable TlsDatabase-lookup_certificates_issued_by 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable TlsDatabase-lookup_certificates_issued_by_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable TlsDatabase-verify_chain 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable TlsDatabase-verify_chain_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable TlsInteraction-ask_password 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable TlsInteraction-ask_password_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable TlsInteraction-invoke_ask_password 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable TlsInteraction-invoke_request_certificate 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable TlsInteraction-request_certificate 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   cancellable TlsInteraction-request_certificate_async 
+interface  * IN    OBJECT    Cancellable NULL_OK           CONST   check_cancellable SimpleAsyncResult-set_check_cancellable 
+interface  * IN    OBJECT    Credentials                   CONST   other_credentials Credentials-is_same_user 
+interface  * IN    OBJECT    Credentials NULL_OK           CONST   credentials DBusAuthObserver-authorize_authenticated_peer 
+interface  * IN    OBJECT    DBusAuthObserver NULL_OK           CONST   observer DBusConnection-new 
+interface  * IN    OBJECT    DBusAuthObserver NULL_OK           CONST   observer DBusConnection-new_for_address 
+interface  * IN    OBJECT    DBusAuthObserver NULL_OK           CONST   observer DBusConnection-new_for_address_sync 
+interface  * IN    OBJECT    DBusAuthObserver NULL_OK           CONST   observer DBusConnection-new_sync 
+interface  * IN    OBJECT    DBusAuthObserver NULL_OK           CONST   observer DBusServer-new_sync 
+interface  * IN    OBJECT    DBusConnection                   CONST   connection bus_own_name_on_connection 
+interface  * IN    OBJECT    DBusConnection                   CONST   connection bus_watch_name_on_connection 
+interface  * IN    OBJECT    DBusConnection                   CONST   connection DBusActionGroup-get 
+interface  * IN    OBJECT    DBusConnection                   CONST   connection DBusInterfaceSkeleton-export 
+interface  * IN    OBJECT    DBusConnection                   CONST   connection DBusInterfaceSkeleton-has_connection 
+interface  * IN    OBJECT    DBusConnection                   CONST   connection DBusInterfaceSkeleton-unexport_from_connection 
+interface  * IN    OBJECT    DBusConnection                   CONST   connection DBusMenuModel-get 
+interface  * IN    OBJECT    DBusConnection                   CONST   connection DBusObjectManagerClient-new 
+interface  * IN    OBJECT    DBusConnection                   CONST   connection DBusObjectManagerClient-new_sync 
+interface  * IN    OBJECT    DBusConnection                   CONST   connection DBusObjectProxy-new 
+interface  * IN    OBJECT    DBusConnection                   CONST   connection DBusProxy-new 
+interface  * IN    OBJECT    DBusConnection                   CONST   connection DBusProxy-new_sync 
+interface  * IN    OBJECT    DBusConnection NULL_OK           CONST   connection DBusObjectManagerServer-set_connection 
+interface  * IN    OBJECT    DBusInterfaceSkeleton                   CONST   interface_ DBusObjectSkeleton-add_interface 
+interface  * IN    OBJECT    DBusInterfaceSkeleton                   CONST   interface_ DBusObjectSkeleton-remove_interface 
+interface  * IN    OBJECT    DBusMessage                   CONST   message DBusConnection-send_message 
+interface  * IN    OBJECT    DBusMessage                   CONST   message DBusConnection-send_message_with_reply 
+interface  * IN    OBJECT    DBusMessage                   CONST   message DBusConnection-send_message_with_reply_sync 
+interface  * IN    OBJECT    DBusObjectSkeleton                   CONST   object DBusObjectManagerServer-export 
+interface  * IN    OBJECT    DBusObjectSkeleton                   CONST   object DBusObjectManagerServer-export_uniquely 
+interface  * IN    OBJECT    DBusObjectSkeleton                   CONST   object DBusObjectManagerServer-is_exported 
+interface  * IN    OBJECT    Emblem                        CONST   emblem EmblemedIcon-add_emblem 
+interface  * IN    OBJECT    Emblem      NULL_OK           CONST   emblem EmblemedIcon-new 
+interface  * IN    OBJECT    FileInfo                      CONST   dest_info FileInfo-copy_into 
+interface  * IN    OBJECT    FileInfo                      CONST   info FileEnumerator-get_child 
+interface  * IN    OBJECT    FileInfo    NULL_OK           CONST   file_info ZlibCompressor-set_file_info 
+interface  * IN    OBJECT    InetAddress                   CONST   addr InetAddressMask-new 
+interface  * IN    OBJECT    InetAddress                   CONST   address InetAddressMask-matches 
+interface  * IN    OBJECT    InetAddress                   CONST   address InetSocketAddress-new 
+interface  * IN    OBJECT    InetAddress                   CONST   address Resolver-lookup_by_address 
+interface  * IN    OBJECT    InetAddress                   CONST   address Resolver-lookup_by_address_async 
+interface  * IN    OBJECT    InetAddress                   CONST   group Socket-join_multicast_group 
+interface  * IN    OBJECT    InetAddress                   CONST   group Socket-join_multicast_group_ssm 
+interface  * IN    OBJECT    InetAddress                   CONST   group Socket-leave_multicast_group 
+interface  * IN    OBJECT    InetAddress                   CONST   group Socket-leave_multicast_group_ssm 
+interface  * IN    OBJECT    InetAddress                   CONST   inetaddr ProxyAddress-new 
+interface  * IN    OBJECT    InetAddress                   CONST   other_address InetAddress-equal 
+interface  * IN    OBJECT    InetAddress NULL_OK           CONST   source_specific Socket-join_multicast_group_ssm 
+interface  * IN    OBJECT    InetAddress NULL_OK           CONST   source_specific Socket-leave_multicast_group_ssm 
+interface  * IN    OBJECT    InetAddressMask                   CONST   mask2 InetAddressMask-equal 
+interface  * IN    OBJECT    InputStream                   CONST   base_stream BufferedInputStream-new 
+interface  * IN    OBJECT    InputStream                   CONST   base_stream BufferedInputStream-new_sized 
+interface  * IN    OBJECT    InputStream                   CONST   base_stream ConverterInputStream-new 
+interface  * IN    OBJECT    InputStream                   CONST   base_stream DataInputStream-new 
+interface  * IN    OBJECT    InputStream                   CONST   input_stream SimpleIOStream-new 
+interface  * IN    OBJECT    InputStream                   CONST   source OutputStream-splice 
+interface  * IN    OBJECT    InputStream                   CONST   source OutputStream-splice_async 
+interface  * IN    OBJECT    InputStream                   CONST   stream pollable_stream_read 
+interface  * IN    OBJECT    IOStream                      CONST   base_io_stream TcpWrapperConnection-new 
+interface  * IN    OBJECT    IOStream                      CONST   base_io_stream tls_client_connection_new 
+interface  * IN    OBJECT    IOStream                      CONST   base_io_stream tls_server_connection_new 
+interface  * IN    OBJECT    IOStream                      CONST   stream DBusAuthObserver-authorize_authenticated_peer 
+interface  * IN    OBJECT    IOStream                      CONST   stream DBusConnection-new 
+interface  * IN    OBJECT    IOStream                      CONST   stream DBusConnection-new_sync 
+interface  * IN    OBJECT    IOStream                      CONST   stream2 IOStream-splice_async 
+interface  * IN    OBJECT    MenuItem                      CONST   item Menu-append_item 
+interface  * IN    OBJECT    MenuItem                      CONST   item Menu-insert_item 
+interface  * IN    OBJECT    MenuItem                      CONST   item Menu-prepend_item 
+interface  * IN    OBJECT    MenuModel                     CONST   menu DBusConnection-export_menu_model 
+interface  * IN    OBJECT    MenuModel                     CONST   model MenuItem-new_from_model 
+interface  * IN    OBJECT    MenuModel                     CONST   section Menu-append_section 
+interface  * IN    OBJECT    MenuModel                     CONST   section Menu-insert_section 
+interface  * IN    OBJECT    MenuModel                     CONST   section MenuItem-new_section 
+interface  * IN    OBJECT    MenuModel                     CONST   section Menu-prepend_section 
+interface  * IN    OBJECT    MenuModel                     CONST   submenu Menu-append_submenu 
+interface  * IN    OBJECT    MenuModel                     CONST   submenu Menu-insert_submenu 
+interface  * IN    OBJECT    MenuModel                     CONST   submenu MenuItem-new_submenu 
+interface  * IN    OBJECT    MenuModel                     CONST   submenu Menu-prepend_submenu 
+interface  * IN    OBJECT    MenuModel   NULL_OK           CONST   model MenuItem-set_link 
+interface  * IN    OBJECT    MenuModel   NULL_OK           CONST   section MenuItem-set_section 
+interface  * IN    OBJECT    MenuModel   NULL_OK           CONST   submenu MenuItem-set_submenu 
+interface  * IN    OBJECT    Notification                   CONST   notification Application-send_notification 
+interface  * IN    OBJECT    Object                        CONST   attr_value FileInfo-set_attribute_object 
+interface  * IN    OBJECT    Object                        CONST   item ListStore-append 
+interface  * IN    OBJECT    Object                        CONST   item ListStore-insert 
+interface  * IN    OBJECT    Object                        CONST   item ListStore-insert_sorted 
+interface  * IN    OBJECT    Object                        CONST   object Application-bind_busy_property 
+interface  * IN    OBJECT    Object                        CONST   object Application-unbind_busy_property 
+interface  * IN    OBJECT    Object                        CONST   object PropertyAction-new 
+interface  * IN    OBJECT    Object                        CONST   object Settings-bind 
+interface  * IN    OBJECT    Object                        CONST   object Settings-bind_writable 
+interface  * IN    OBJECT    Object                        CONST   object Settings-unbind 
+interface  * IN    OBJECT    Object                        CONST   pollable_stream pollable_source_new 
+interface  * IN    OBJECT    Object                        CONST   pollable_stream pollable_source_new_full 
+interface  * IN    OBJECT    Object      NULL_OK           CONST   source SimpleAsyncResult-is_valid 
+interface  * IN    OBJECT    Object      NULL_OK           CONST   source_object SimpleAsyncResult-new 
+interface  * IN    OBJECT    Object      NULL_OK           CONST   source_object SimpleAsyncResult-new_from_error 
+interface  * IN    OBJECT    Object      NULL_OK           CONST   source_object SocketListener-add_address 
+interface  * IN    OBJECT    Object      NULL_OK           CONST   source_object SocketListener-add_any_inet_port 
+interface  * IN    OBJECT    Object      NULL_OK           CONST   source_object SocketListener-add_inet_port 
+interface  * IN    OBJECT    Object      NULL_OK           CONST   source_object SocketListener-add_socket 
+interface  * IN    OBJECT    Object      NULL_OK           CONST   source_object Task-is_valid 
+interface  * IN    OBJECT    Object      NULL_OK           CONST   source_object Task-new 
+interface  * IN    OBJECT    Object      NULL_OK           CONST   source_object Task-report_error 
+interface  * IN    OBJECT    OutputStream                   CONST   base_stream BufferedOutputStream-new 
+interface  * IN    OBJECT    OutputStream                   CONST   base_stream BufferedOutputStream-new_sized 
+interface  * IN    OBJECT    OutputStream                   CONST   base_stream ConverterOutputStream-new 
+interface  * IN    OBJECT    OutputStream                   CONST   base_stream DataOutputStream-new 
+interface  * IN    OBJECT    OutputStream                   CONST   output_stream SimpleIOStream-new 
+interface  * IN    OBJECT    OutputStream                   CONST   stream pollable_stream_write 
+interface  * IN    OBJECT    OutputStream                   CONST   stream pollable_stream_write_all 
+interface  * IN    OBJECT    SettingsBackend                   CONST   backend Settings-new_with_backend 
+interface  * IN    OBJECT    SettingsBackend                   CONST   backend Settings-new_with_backend_and_path 
+interface  * IN    OBJECT    SettingsBackend NULL_OK           CONST   backend Settings-new_full 
+interface  * IN    OBJECT    Socket                        CONST   socket SocketListener-add_socket 
+interface  * IN    OBJECT    Socket                        CONST   socket TcpWrapperConnection-new 
+interface  * IN    OBJECT    SocketAddress                   CONST   address Socket-bind 
+interface  * IN    OBJECT    SocketAddress                   CONST   address Socket-connect 
+interface  * IN    OBJECT    SocketAddress                   CONST   address SocketConnection-connect 
+interface  * IN    OBJECT    SocketAddress                   CONST   address SocketConnection-connect_async 
+interface  * IN    OBJECT    SocketAddress                   CONST   address SocketListener-add_address 
+interface  * IN    OBJECT    SocketAddress NULL_OK           CONST   address SocketClient-set_local_address 
+interface  * IN    OBJECT    SocketAddress NULL_OK           CONST   address Socket-send_message 
+interface  * IN    OBJECT    SocketAddress NULL_OK           CONST   address Socket-send_to 
+interface  * IN    OBJECT    TlsCertificate                   CONST   cert_two TlsCertificate-is_same 
+interface  * IN    OBJECT    TlsCertificate                   CONST   certificate TlsConnection-set_certificate 
+interface  * IN    OBJECT    TlsCertificate                   CONST   certificate TlsDatabase-create_certificate_handle 
+interface  * IN    OBJECT    TlsCertificate                   CONST   certificate TlsDatabase-lookup_certificate_issuer 
+interface  * IN    OBJECT    TlsCertificate                   CONST   certificate TlsDatabase-lookup_certificate_issuer_async 
+interface  * IN    OBJECT    TlsCertificate                   CONST   chain TlsDatabase-verify_chain 
+interface  * IN    OBJECT    TlsCertificate                   CONST   chain TlsDatabase-verify_chain_async 
+interface  * IN    OBJECT    TlsCertificate                   CONST   peer_cert TlsConnection-emit_accept_certificate 
+interface  * IN    OBJECT    TlsCertificate NULL_OK           CONST   certificate dtls_server_connection_new 
+interface  * IN    OBJECT    TlsCertificate NULL_OK           CONST   certificate tls_server_connection_new 
+interface  * IN    OBJECT    TlsCertificate NULL_OK           CONST   trusted_ca TlsCertificate-verify 
+interface  * IN    OBJECT    TlsConnection                   CONST   connection TlsInteraction-invoke_request_certificate 
+interface  * IN    OBJECT    TlsConnection                   CONST   connection TlsInteraction-request_certificate 
+interface  * IN    OBJECT    TlsConnection                   CONST   connection TlsInteraction-request_certificate_async 
+interface  * IN    OBJECT    TlsDatabase                   CONST   database TlsConnection-set_database 
+interface  * IN    OBJECT    TlsInteraction NULL_OK           CONST   interaction TlsConnection-set_interaction 
+interface  * IN    OBJECT    TlsInteraction NULL_OK           CONST   interaction TlsDatabase-lookup_certificate_for_handle 
+interface  * IN    OBJECT    TlsInteraction NULL_OK           CONST   interaction TlsDatabase-lookup_certificate_for_handle_async 
+interface  * IN    OBJECT    TlsInteraction NULL_OK           CONST   interaction TlsDatabase-lookup_certificate_issuer 
+interface  * IN    OBJECT    TlsInteraction NULL_OK           CONST   interaction TlsDatabase-lookup_certificate_issuer_async 
+interface  * IN    OBJECT    TlsInteraction NULL_OK           CONST   interaction TlsDatabase-lookup_certificates_issued_by 
+interface  * IN    OBJECT    TlsInteraction NULL_OK           CONST   interaction TlsDatabase-lookup_certificates_issued_by_async 
+interface  * IN    OBJECT    TlsInteraction NULL_OK           CONST   interaction TlsDatabase-verify_chain 
+interface  * IN    OBJECT    TlsInteraction NULL_OK           CONST   interaction TlsDatabase-verify_chain_async 
+interface  * IN    OBJECT    TlsPassword                   CONST   password TlsInteraction-ask_password 
+interface  * IN    OBJECT    TlsPassword                   CONST   password TlsInteraction-ask_password_async 
+interface  * IN    OBJECT    TlsPassword                   CONST   password TlsInteraction-invoke_ask_password 
+interface  * IN    STRUCT    Bytes                         CONST   bytes BytesIcon-new 
+interface  * IN    STRUCT    Bytes                         CONST   bytes MemoryInputStream-add_bytes 
+interface  * IN    STRUCT    Bytes                         CONST   bytes MemoryInputStream-new_from_bytes 
+interface  * IN    STRUCT    Bytes                         CONST   bytes OutputStream-write_bytes 
+interface  * IN    STRUCT    Bytes                         CONST   bytes OutputStream-write_bytes_async 
+interface  * IN    STRUCT    Bytes                         CONST   data Resource-new_from_data 
+interface  * IN    STRUCT    Bytes       NULL_OK           CONST   stdin_buf Subprocess-communicate 
+interface  * IN    STRUCT    Bytes       NULL_OK           CONST   stdin_buf Subprocess-communicate_async 
+interface  * IN    STRUCT    Closure     NULL_OK           CONST   bus_acquired_closure bus_own_name 
+interface  * IN    STRUCT    Closure     NULL_OK           CONST   get_property_closure DBusConnection-register_object 
+interface  * IN    STRUCT    Closure     NULL_OK           CONST   method_call_closure DBusConnection-register_object 
+interface  * IN    STRUCT    Closure     NULL_OK           CONST   name_acquired_closure bus_own_name 
+interface  * IN    STRUCT    Closure     NULL_OK           CONST   name_acquired_closure bus_own_name_on_connection 
+interface  * IN    STRUCT    Closure     NULL_OK           CONST   name_appeared_closure bus_watch_name 
+interface  * IN    STRUCT    Closure     NULL_OK           CONST   name_appeared_closure bus_watch_name_on_connection 
+interface  * IN    STRUCT    Closure     NULL_OK           CONST   name_lost_closure bus_own_name 
+interface  * IN    STRUCT    Closure     NULL_OK           CONST   name_lost_closure bus_own_name_on_connection 
+interface  * IN    STRUCT    Closure     NULL_OK           CONST   name_vanished_closure bus_watch_name 
+interface  * IN    STRUCT    Closure     NULL_OK           CONST   name_vanished_closure bus_watch_name_on_connection 
+interface  * IN    STRUCT    Closure     NULL_OK           CONST   set_property_closure DBusConnection-register_object 
+interface  * IN    STRUCT    DBusInterfaceInfo                   CONST   interface_info DBusConnection-register_object 
+interface  * IN    STRUCT    DBusInterfaceInfo NULL_OK           CONST   info DBusProxy-new 
+interface  * IN    STRUCT    DBusInterfaceInfo NULL_OK           CONST   info DBusProxy-new_for_bus 
+interface  * IN    STRUCT    DBusInterfaceInfo NULL_OK           CONST   info DBusProxy-new_for_bus_sync 
+interface  * IN    STRUCT    DBusInterfaceInfo NULL_OK           CONST   info DBusProxy-new_sync 
+interface  * IN    STRUCT    DBusInterfaceInfo NULL_OK           CONST   info DBusProxy-set_interface_info 
+interface  * IN    STRUCT    DBusSubtreeVTable                   CONST   vtable DBusConnection-register_subtree 
+interface  * IN    STRUCT    FileAttributeMatcher                   CONST   mask FileInfo-set_attribute_mask 
+interface  * IN    STRUCT    FileAttributeMatcher                   CONST   subtract FileAttributeMatcher-subtract 
+interface  * IN    STRUCT    IOModuleScope                   CONST   scope io_modules_load_all_in_directory_with_scope 
+interface  * IN    STRUCT    IOModuleScope                   CONST   scope io_modules_scan_all_in_directory_with_scope 
+interface  * IN    STRUCT    OptionGroup                   DEEP    group Application-add_option_group 
+interface  * IN    STRUCT    PollFD                        CONST   pollfd Cancellable-make_pollfd 
+interface  * IN    STRUCT    Resource                      CONST   resource resources_register 
+interface  * IN    STRUCT    Resource                      CONST   resource resources_unregister 
+interface  * IN    STRUCT    SettingsSchema                   CONST   schema Settings-new_full 
+interface  * IN    STRUCT    SettingsSchemaSource NULL_OK           CONST   parent SettingsSchemaSource-new_from_directory 
+interface  * IN    STRUCT    Source      NULL_OK           CONST   child_source pollable_source_new_full 
+interface  * IN    STRUCT    String                        CONST   string_builder DBusInterfaceInfo-generate_xml 
+interface  * IN    STRUCT    String                        CONST   string_builder DBusNodeInfo-generate_xml 
+interface  * IN    STRUCT    TimeVal                       CONST   mtime FileInfo-set_modification_time 
+interface  * IN    STRUCT    Tree                          CONST   tree SettingsBackend-changed_tree 
+interface  * IN    STRUCT    Tree                          CONST   tree SettingsBackend-flatten_tree 
+interface  * IN    STRUCT    UnixFDList  NULL_OK           CONST   fd_list DBusConnection-call_with_unix_fd_list 
+interface  * IN    STRUCT    UnixFDList  NULL_OK           CONST   fd_list DBusConnection-call_with_unix_fd_list_sync 
+interface  * IN    STRUCT    UnixFDList  NULL_OK           CONST   fd_list DBusMessage-set_unix_fd_list 
+interface  * IN    STRUCT    UnixFDList  NULL_OK           CONST   fd_list DBusMethodInvocation-return_value_with_unix_fd_list 
+interface  * IN    STRUCT    UnixFDList  NULL_OK           CONST   fd_list DBusProxy-call_with_unix_fd_list 
+interface  * IN    STRUCT    UnixFDList  NULL_OK           CONST   fd_list DBusProxy-call_with_unix_fd_list_sync 
+interface  * IN    STRUCT    Value                         CONST   gvalue dbus_gvalue_to_gvariant 
+interface  * IN    STRUCT    Variant                       CONST   body DBusMessage-set_body 
+interface  * IN    STRUCT    Variant                       CONST   state SimpleAction-new_stateful 
+interface  * IN    STRUCT    Variant                       CONST   value dbus_gvariant_to_gvalue 
+interface  * IN    STRUCT    Variant                       CONST   value icon_deserialize 
+interface  * IN    STRUCT    Variant                       CONST   value Settings-range_check 
+interface  * IN    STRUCT    Variant                       CONST   value SettingsSchemaKey-range_check 
+interface  * IN    STRUCT    Variant                       CONST   value Settings-set_value 
+interface  * IN    STRUCT    Variant                       CONST   value SimpleAction-set_state 
+interface  * IN    STRUCT    Variant     NULL_OK           CONST   parameters DBusConnection-call 
+interface  * IN    STRUCT    Variant     NULL_OK           CONST   parameters DBusConnection-call_sync 
+interface  * IN    STRUCT    Variant     NULL_OK           CONST   parameters DBusConnection-call_with_unix_fd_list 
+interface  * IN    STRUCT    Variant     NULL_OK           CONST   parameters DBusConnection-call_with_unix_fd_list_sync 
+interface  * IN    STRUCT    Variant     NULL_OK           CONST   parameters DBusConnection-emit_signal 
+interface  * IN    STRUCT    Variant     NULL_OK           CONST   parameters DBusMethodInvocation-return_value 
+interface  * IN    STRUCT    Variant     NULL_OK           CONST   parameters DBusMethodInvocation-return_value_with_unix_fd_list 
+interface  * IN    STRUCT    Variant     NULL_OK           CONST   parameters DBusProxy-call 
+interface  * IN    STRUCT    Variant     NULL_OK           CONST   parameters DBusProxy-call_sync 
+interface  * IN    STRUCT    Variant     NULL_OK           CONST   parameters DBusProxy-call_with_unix_fd_list 
+interface  * IN    STRUCT    Variant     NULL_OK           CONST   parameters DBusProxy-call_with_unix_fd_list_sync 
+interface  * IN    STRUCT    Variant     NULL_OK           CONST   state_hint SimpleAction-set_state_hint 
+interface  * IN    STRUCT    Variant     NULL_OK           CONST   target Notification-add_button_with_target 
+interface  * IN    STRUCT    Variant     NULL_OK           CONST   target Notification-set_default_action_and_target 
+interface  * IN    STRUCT    Variant     NULL_OK           CONST   target_value action_print_detailed_name 
+interface  * IN    STRUCT    Variant     NULL_OK           CONST   target_value MenuItem-set_action_and_target_value 
+interface  * IN    STRUCT    Variant     NULL_OK           CONST   value DBusMessage-set_header 
+interface  * IN    STRUCT    Variant     NULL_OK           CONST   value DBusProxy-set_cached_property 
+interface  * IN    STRUCT    Variant     NULL_OK           CONST   value MenuItem-set_attribute_value 
+interface  * IN    STRUCT    VariantType                   CONST   type dbus_gvalue_to_gvariant 
+interface  * IN    STRUCT    VariantType NULL_OK           CONST   expected_type MenuItem-get_attribute_value 
+interface  * IN    STRUCT    VariantType NULL_OK           CONST   expected_type MenuModel-get_item_attribute_value 
+interface  * IN    STRUCT    VariantType NULL_OK           CONST   parameter_type SimpleAction-new 
+interface  * IN    STRUCT    VariantType NULL_OK           CONST   parameter_type SimpleAction-new_stateful 
+interface  * IN    STRUCT    VariantType NULL_OK           CONST   reply_type DBusConnection-call 
+interface  * IN    STRUCT    VariantType NULL_OK           CONST   reply_type DBusConnection-call_sync 
+interface  * IN    STRUCT    VariantType NULL_OK           CONST   reply_type DBusConnection-call_with_unix_fd_list 
+interface  * IN    STRUCT    VariantType NULL_OK           CONST   reply_type DBusConnection-call_with_unix_fd_list_sync 
+interface  * OUT   INTERFACE File                      OPT CONST   out_child FileEnumerator-iterate 
+interface  * OUT   OBJECT    FileInfo                  OPT CONST   out_info FileEnumerator-iterate 
+interface  * OUT   OBJECT    FileIOStream                   DEEP    iostream file_new_tmp 
+interface  * OUT   OBJECT    MenuModel                 OPT DEEP    value MenuLinkIter-get_next 
+interface  * OUT   OBJECT    Object      NULL_OK       OPT CONST   source_object SocketListener-accept 
+interface  * OUT   OBJECT    Object      NULL_OK       OPT CONST   source_object SocketListener-accept_finish 
+interface  * OUT   OBJECT    Object      NULL_OK       OPT CONST   source_object SocketListener-accept_socket 
+interface  * OUT   OBJECT    Object      NULL_OK       OPT CONST   source_object SocketListener-accept_socket_finish 
+interface  * OUT   OBJECT    SocketAddress               OPT DEEP    address Socket-receive_from 
+interface  * OUT   OBJECT    SocketAddress               OPT DEEP    address Socket-receive_message 
+interface  * OUT   OBJECT    SocketAddress               OPT DEEP    effective_address SocketListener-add_address 
+interface  * OUT   STRUCT    Bytes       NULL_OK       OPT DEEP    stderr_buf Subprocess-communicate 
+interface  * OUT   STRUCT    Bytes       NULL_OK       OPT DEEP    stderr_buf Subprocess-communicate_finish 
+interface  * OUT   STRUCT    Bytes       NULL_OK       OPT DEEP    stdout_buf Subprocess-communicate 
+interface  * OUT   STRUCT    Bytes       NULL_OK       OPT DEEP    stdout_buf Subprocess-communicate_finish 
+interface  * OUT   STRUCT    UnixFDList                OPT DEEP    out_fd_list DBusConnection-call_with_unix_fd_list_finish 
+interface  * OUT   STRUCT    UnixFDList                OPT DEEP    out_fd_list DBusConnection-call_with_unix_fd_list_sync 
+interface  * OUT   STRUCT    UnixFDList                OPT DEEP    out_fd_list DBusProxy-call_with_unix_fd_list_finish 
+interface  * OUT   STRUCT    UnixFDList                OPT DEEP    out_fd_list DBusProxy-call_with_unix_fd_list_sync 
+interface  * OUT   STRUCT    Variant                       DEEP    target_value action_parse_detailed_name 
+interface  * OUT   STRUCT    Variant                   OPT DEEP    value MenuAttributeIter-get_next 
+utf8       * IN                      CONST   action Notification-add_button_with_target 
+utf8       * IN                      CONST   action Notification-set_default_action_and_target 
+utf8       * IN                      CONST   action_name action_name_is_valid 
+utf8       * IN                      CONST   action_name action_print_detailed_name 
+utf8       * IN                      CONST   action_name SimpleActionGroup-lookup 
+utf8       * IN                      CONST   action_name SimpleActionGroup-remove 
+utf8       * IN                      CONST   address dbus_address_get_stream 
+utf8       * IN                      CONST   address dbus_address_get_stream_sync 
+utf8       * IN                      CONST   address DBusConnection-new_for_address 
+utf8       * IN                      CONST   address DBusConnection-new_for_address_sync 
+utf8       * IN                      CONST   address DBusServer-new_sync 
+utf8       * IN                      CONST   address InetSocketAddress-new_from_string 
+utf8       * IN                      CONST   application_id Application-id_is_valid 
+utf8       * IN                      CONST   attr_value FileInfo-set_attribute_byte_string 
+utf8       * IN                      CONST   attr_value FileInfo-set_attribute_string 
+utf8       * IN                      CONST   attribute FileAttributeMatcher-matches 
+utf8       * IN                      CONST   attribute FileAttributeMatcher-matches_only 
+utf8       * IN                      CONST   attribute FileInfo-get_attribute_as_string 
+utf8       * IN                      CONST   attribute FileInfo-get_attribute_boolean 
+utf8       * IN                      CONST   attribute FileInfo-get_attribute_byte_string 
+utf8       * IN                      CONST   attribute FileInfo-get_attribute_data 
+utf8       * IN                      CONST   attribute FileInfo-get_attribute_int32 
+utf8       * IN                      CONST   attribute FileInfo-get_attribute_int64 
+utf8       * IN                      CONST   attribute FileInfo-get_attribute_object 
+utf8       * IN                      CONST   attribute FileInfo-get_attribute_status 
+utf8       * IN                      CONST   attribute FileInfo-get_attribute_string 
+utf8       * IN                      CONST   attribute FileInfo-get_attribute_stringv 
+utf8       * IN                      CONST   attribute FileInfo-get_attribute_type 
+utf8       * IN                      CONST   attribute FileInfo-get_attribute_uint32 
+utf8       * IN                      CONST   attribute FileInfo-get_attribute_uint64 
+utf8       * IN                      CONST   attribute FileInfo-has_attribute 
+utf8       * IN                      CONST   attribute FileInfo-remove_attribute 
+utf8       * IN                      CONST   attribute FileInfo-set_attribute 
+utf8       * IN                      CONST   attribute FileInfo-set_attribute_boolean 
+utf8       * IN                      CONST   attribute FileInfo-set_attribute_byte_string 
+utf8       * IN                      CONST   attribute FileInfo-set_attribute_int32 
+utf8       * IN                      CONST   attribute FileInfo-set_attribute_int64 
+utf8       * IN                      CONST   attribute FileInfo-set_attribute_object 
+utf8       * IN                      CONST   attribute FileInfo-set_attribute_status 
+utf8       * IN                      CONST   attribute FileInfo-set_attribute_string 
+utf8       * IN                      CONST   attribute FileInfo-set_attribute_stringv 
+utf8       * IN                      CONST   attribute FileInfo-set_attribute_uint32 
+utf8       * IN                      CONST   attribute FileInfo-set_attribute_uint64 
+utf8       * IN                      CONST   attribute MenuItem-get_attribute_value 
+utf8       * IN                      CONST   attribute MenuItem-set_attribute_value 
+utf8       * IN                      CONST   attribute MenuModel-get_item_attribute_value 
+utf8       * IN                      CONST   attributes FileAttributeMatcher-new 
+utf8       * IN                      CONST   attributes FileInputStream-query_info 
+utf8       * IN                      CONST   attributes FileInputStream-query_info_async 
+utf8       * IN                      CONST   attributes FileIOStream-query_info 
+utf8       * IN                      CONST   attributes FileIOStream-query_info_async 
+utf8       * IN                      CONST   attributes FileOutputStream-query_info 
+utf8       * IN                      CONST   attributes FileOutputStream-query_info_async 
+utf8       * IN                      CONST   content_type app_info_get_all_for_type 
+utf8       * IN                      CONST   content_type app_info_get_default_for_type 
+utf8       * IN                      CONST   content_type app_info_get_fallback_for_type 
+utf8       * IN                      CONST   content_type app_info_get_recommended_for_type 
+utf8       * IN                      CONST   content_type app_info_reset_type_associations 
+utf8       * IN                      CONST   content_type FileInfo-set_content_type 
+utf8       * IN                      CONST   data TlsCertificate-new_from_pem 
+utf8       * IN                      CONST   dbus_error_message dbus_error_new_for_dbus_error 
+utf8       * IN                      CONST   dbus_error_name dbus_error_new_for_dbus_error 
+utf8       * IN                      CONST   dbus_error_name dbus_error_register_error 
+utf8       * IN                      CONST   dbus_error_name dbus_error_unregister_error 
+utf8       * IN                      CONST   default_proxy SimpleProxyResolver-set_default_proxy 
+utf8       * IN                      CONST   description Application-add_main_option 
+utf8       * IN                      CONST   description TlsPassword-new 
+utf8       * IN                      CONST   description TlsPassword-set_description 
+utf8       * IN                      CONST   dest_hostname ProxyAddress-new 
+utf8       * IN                      CONST   detailed_action MenuItem-set_detailed_action 
+utf8       * IN                      CONST   detailed_action Notification-add_button 
+utf8       * IN                      CONST   detailed_action Notification-set_default_action 
+utf8       * IN                      CONST   detailed_name action_parse_detailed_name 
+utf8       * IN                      CONST   display_name FileInfo-set_display_name 
+utf8       * IN                      CONST   domain MountOperation-set_domain 
+utf8       * IN                      CONST   domain NetworkService-new 
+utf8       * IN                      CONST   domain Resolver-lookup_service 
+utf8       * IN                      CONST   domain Resolver-lookup_service_async 
+utf8       * IN                      CONST   domain SocketClient-connect_to_service 
+utf8       * IN                      CONST   domain SocketClient-connect_to_service_async 
+utf8       * IN                      CONST   edit_name FileInfo-set_edit_name 
+utf8       * IN                      CONST   error_domain_quark_name dbus_error_register_error_domain 
+utf8       * IN                      CONST   error_message DBusMessage-new_method_error_literal 
+utf8       * IN                      CONST   error_message DBusMethodInvocation-return_dbus_error 
+utf8       * IN                      CONST   error_name DBusMessage-new_method_error_literal 
+utf8       * IN                      CONST   error_name DBusMethodInvocation-return_dbus_error 
+utf8       * IN                      CONST   extension_name io_extension_point_implement 
+utf8       * IN                      CONST   extension_point_name io_extension_point_implement 
+utf8       * IN                      CONST   filename keyfile_settings_backend_new 
+utf8       * IN                      CONST   from_charset CharsetConverter-new 
+utf8       * IN                      CONST   guid DBusServer-new_sync 
+utf8       * IN                      CONST   handle TlsDatabase-lookup_certificate_for_handle 
+utf8       * IN                      CONST   handle TlsDatabase-lookup_certificate_for_handle_async 
+utf8       * IN                      CONST   hint Application-open 
+utf8       * IN                      CONST   host_and_port NetworkAddress-parse 
+utf8       * IN                      CONST   host_and_port SocketClient-connect_to_host 
+utf8       * IN                      CONST   host_and_port SocketClient-connect_to_host_async 
+utf8       * IN                      CONST   hostname NetworkAddress-new 
+utf8       * IN                      CONST   hostname Resolver-lookup_by_name 
+utf8       * IN                      CONST   hostname Resolver-lookup_by_name_async 
+utf8       * IN                      CONST   hostname SrvTarget-new 
+utf8       * IN                      CONST   iconname ThemedIcon-append_name 
+utf8       * IN                      CONST   iconname ThemedIcon-new 
+utf8       * IN                      CONST   iconname ThemedIcon-new_with_default_fallbacks 
+utf8       * IN                      CONST   iconname ThemedIcon-prepend_name 
+utf8       * IN                      CONST   id Application-withdraw_notification 
+utf8       * IN                      CONST   ignore_hosts SimpleProxyResolver-set_ignore_hosts 
+utf8       * IN                      CONST   initial_text FilenameCompleter-get_completion_suffix 
+utf8       * IN                      CONST   initial_text FilenameCompleter-get_completions 
+utf8       * IN                      CONST   interface_ DBusMessage-new_signal 
+utf8       * IN                      CONST   interface_name DBusConnection-call 
+utf8       * IN                      CONST   interface_name DBusConnection-call_sync 
+utf8       * IN                      CONST   interface_name DBusConnection-call_with_unix_fd_list 
+utf8       * IN                      CONST   interface_name DBusConnection-call_with_unix_fd_list_sync 
+utf8       * IN                      CONST   interface_name DBusConnection-emit_signal 
+utf8       * IN                      CONST   interface_name DBusObjectSkeleton-remove_interface_by_name 
+utf8       * IN                      CONST   interface_name DBusProxy-new 
+utf8       * IN                      CONST   interface_name DBusProxy-new_for_bus 
+utf8       * IN                      CONST   interface_name DBusProxy-new_for_bus_sync 
+utf8       * IN                      CONST   interface_name DBusProxy-new_sync 
+utf8       * IN                      CONST   key SettingsBackend-changed 
+utf8       * IN                      CONST   key SettingsBackend-writable_changed 
+utf8       * IN                      CONST   key Settings-bind 
+utf8       * IN                      CONST   key Settings-bind_writable 
+utf8       * IN                      CONST   key Settings-create_action 
+utf8       * IN                      CONST   key Settings-get_boolean 
+utf8       * IN                      CONST   key Settings-get_default_value 
+utf8       * IN                      CONST   key Settings-get_double 
+utf8       * IN                      CONST   key Settings-get_enum 
+utf8       * IN                      CONST   key Settings-get_flags 
+utf8       * IN                      CONST   key Settings-get_int 
+utf8       * IN                      CONST   key Settings-get_int64 
+utf8       * IN                      CONST   key Settings-get_mapped 
+utf8       * IN                      CONST   key Settings-get_range 
+utf8       * IN                      CONST   key Settings-get_string 
+utf8       * IN                      CONST   key Settings-get_strv 
+utf8       * IN                      CONST   key Settings-get_uint 
+utf8       * IN                      CONST   key Settings-get_uint64 
+utf8       * IN                      CONST   key Settings-get_user_value 
+utf8       * IN                      CONST   key Settings-get_value 
+utf8       * IN                      CONST   key Settings-range_check 
+utf8       * IN                      CONST   key Settings-reset 
+utf8       * IN                      CONST   key Settings-set_boolean 
+utf8       * IN                      CONST   key Settings-set_double 
+utf8       * IN                      CONST   key Settings-set_enum 
+utf8       * IN                      CONST   key Settings-set_flags 
+utf8       * IN                      CONST   key Settings-set_int 
+utf8       * IN                      CONST   key Settings-set_int64 
+utf8       * IN                      CONST   key Settings-set_string 
+utf8       * IN                      CONST   key Settings-set_strv 
+utf8       * IN                      CONST   key Settings-set_uint 
+utf8       * IN                      CONST   key Settings-set_uint64 
+utf8       * IN                      CONST   key Settings-set_value 
+utf8       * IN                      CONST   label Notification-add_button 
+utf8       * IN                      CONST   label Notification-add_button_with_target 
+utf8       * IN                      CONST   link MenuItem-get_link 
+utf8       * IN                      CONST   link MenuItem-set_link 
+utf8       * IN                      CONST   link MenuModel-get_item_link 
+utf8       * IN                      CONST   long_name Application-add_main_option 
+utf8       * IN                      CONST   mask_string InetAddressMask-new_from_string 
+utf8       * IN                      CONST   mechanism DBusAuthObserver-allow_mechanism 
+utf8       * IN                      CONST   message DBusMethodInvocation-return_error_literal 
+utf8       * IN                      CONST   method DBusMessage-new_method_call 
+utf8       * IN                      CONST   method_name DBusConnection-call 
+utf8       * IN                      CONST   method_name DBusConnection-call_sync 
+utf8       * IN                      CONST   method_name DBusConnection-call_with_unix_fd_list 
+utf8       * IN                      CONST   method_name DBusConnection-call_with_unix_fd_list_sync 
+utf8       * IN                      CONST   method_name DBusProxy-call 
+utf8       * IN                      CONST   method_name DBusProxy-call_sync 
+utf8       * IN                      CONST   method_name DBusProxy-call_with_unix_fd_list 
+utf8       * IN                      CONST   method_name DBusProxy-call_with_unix_fd_list_sync 
+utf8       * IN                      CONST   mime_type content_type_from_mime_type 
+utf8       * IN                      CONST   mime_type content_type_is_mime_type 
+utf8       * IN                      CONST   name bus_own_name 
+utf8       * IN                      CONST   name bus_own_name_on_connection 
+utf8       * IN                      CONST   name bus_watch_name 
+utf8       * IN                      CONST   name bus_watch_name_on_connection 
+utf8       * IN                      CONST   name dbus_annotation_info_lookup 
+utf8       * IN                      CONST   name DBusAnnotationInfo-lookup 
+utf8       * IN                      CONST   name DBusInterfaceInfo-lookup_method 
+utf8       * IN                      CONST   name DBusInterfaceInfo-lookup_property 
+utf8       * IN                      CONST   name DBusInterfaceInfo-lookup_signal 
+utf8       * IN                      CONST   name DBusNodeInfo-lookup_interface 
+utf8       * IN                      CONST   name DBusObjectManagerClient-new 
+utf8       * IN                      CONST   name DBusObjectManagerClient-new_for_bus 
+utf8       * IN                      CONST   name DBusObjectManagerClient-new_for_bus_sync 
+utf8       * IN                      CONST   name DBusProxy-new_for_bus 
+utf8       * IN                      CONST   name DBusProxy-new_for_bus_sync 
+utf8       * IN                      CONST   name FileAttributeInfoList-add 
+utf8       * IN                      CONST   name FileAttributeInfoList-lookup 
+utf8       * IN                      CONST   name io_extension_point_lookup 
+utf8       * IN                      CONST   name io_extension_point_register 
+utf8       * IN                      CONST   name PropertyAction-new 
+utf8       * IN                      CONST   name Settings-get_child 
+utf8       * IN                      CONST   name Settings-is_writable 
+utf8       * IN                      CONST   name SettingsSchema-get_key 
+utf8       * IN                      CONST   name SettingsSchema-has_key 
+utf8       * IN                      CONST   name SimpleAction-new 
+utf8       * IN                      CONST   name SimpleAction-new_stateful 
+utf8       * IN                      CONST   name_space FileInfo-has_namespace 
+utf8       * IN                      CONST   ns FileAttributeMatcher-enumerate_namespace 
+utf8       * IN                      CONST   object_path DBusActionGroup-get 
+utf8       * IN                      CONST   object_path DBusConnection-call 
+utf8       * IN                      CONST   object_path DBusConnection-call_sync 
+utf8       * IN                      CONST   object_path DBusConnection-call_with_unix_fd_list 
+utf8       * IN                      CONST   object_path DBusConnection-call_with_unix_fd_list_sync 
+utf8       * IN                      CONST   object_path DBusConnection-emit_signal 
+utf8       * IN                      CONST   object_path DBusConnection-export_action_group 
+utf8       * IN                      CONST   object_path DBusConnection-export_menu_model 
+utf8       * IN                      CONST   object_path DBusConnection-register_object 
+utf8       * IN                      CONST   object_path DBusConnection-register_subtree 
+utf8       * IN                      CONST   object_path DBusInterfaceSkeleton-export 
+utf8       * IN                      CONST   object_path DBusMenuModel-get 
+utf8       * IN                      CONST   object_path DBusObjectManagerClient-new 
+utf8       * IN                      CONST   object_path DBusObjectManagerClient-new_for_bus 
+utf8       * IN                      CONST   object_path DBusObjectManagerClient-new_for_bus_sync 
+utf8       * IN                      CONST   object_path DBusObjectManagerClient-new_sync 
+utf8       * IN                      CONST   object_path DBusObjectManagerServer-new 
+utf8       * IN                      CONST   object_path DBusObjectManagerServer-unexport 
+utf8       * IN                      CONST   object_path DBusObjectProxy-new 
+utf8       * IN                      CONST   object_path DBusObjectSkeleton-new 
+utf8       * IN                      CONST   object_path DBusObjectSkeleton-set_object_path 
+utf8       * IN                      CONST   object_path DBusProxy-new 
+utf8       * IN                      CONST   object_path DBusProxy-new_for_bus 
+utf8       * IN                      CONST   object_path DBusProxy-new_for_bus_sync 
+utf8       * IN                      CONST   object_path DBusProxy-new_sync 
+utf8       * IN                      CONST   parse_name file_parse_name 
+utf8       * IN                      CONST   parse_name Vfs-parse_name 
+utf8       * IN                      CONST   password MountOperation-set_password 
+utf8       * IN                      CONST   path DBusMessage-new_method_call 
+utf8       * IN                      CONST   path DBusMessage-new_signal 
+utf8       * IN                      CONST   path Resource-enumerate_children 
+utf8       * IN                      CONST   path Resource-get_info 
+utf8       * IN                      CONST   path Resource-lookup_data 
+utf8       * IN                      CONST   path Resource-open_stream 
+utf8       * IN                      CONST   path resources_enumerate_children 
+utf8       * IN                      CONST   path resources_get_info 
+utf8       * IN                      CONST   path resources_lookup_data 
+utf8       * IN                      CONST   path resources_open_stream 
+utf8       * IN                      CONST   path SettingsBackend-keys_changed 
+utf8       * IN                      CONST   path SettingsBackend-path_changed 
+utf8       * IN                      CONST   path SettingsBackend-path_writable_changed 
+utf8       * IN                      CONST   path Settings-new_with_backend_and_path 
+utf8       * IN                      CONST   path Settings-new_with_path 
+utf8       * IN                      CONST   path TestDBus-add_service_dir 
+utf8       * IN                      CONST   path Vfs-get_file_for_path 
+utf8       * IN                      CONST   property Application-bind_busy_property 
+utf8       * IN                      CONST   property Application-unbind_busy_property 
+utf8       * IN                      CONST   property Settings-bind 
+utf8       * IN                      CONST   property Settings-bind_writable 
+utf8       * IN                      CONST   property Settings-unbind 
+utf8       * IN                      CONST   property_name DBusProxy-get_cached_property 
+utf8       * IN                      CONST   property_name DBusProxy-set_cached_property 
+utf8       * IN                      CONST   property_name PropertyAction-new 
+utf8       * IN                      CONST   protocol NetworkService-new 
+utf8       * IN                      CONST   protocol proxy_get_default_for_protocol 
+utf8       * IN                      CONST   protocol ProxyAddress-new 
+utf8       * IN                      CONST   protocol Resolver-lookup_service 
+utf8       * IN                      CONST   protocol Resolver-lookup_service_async 
+utf8       * IN                      CONST   protocol SocketClient-add_application_proxy 
+utf8       * IN                      CONST   proxy SimpleProxyResolver-set_uri_proxy 
+utf8       * IN                      CONST   purpose TlsDatabase-verify_chain 
+utf8       * IN                      CONST   purpose TlsDatabase-verify_chain_async 
+utf8       * IN                      CONST   root_path keyfile_settings_backend_new 
+utf8       * IN                      CONST   rrname Resolver-lookup_records 
+utf8       * IN                      CONST   rrname Resolver-lookup_records_async 
+utf8       * IN                      CONST   schema_id Settings-new 
+utf8       * IN                      CONST   schema_id Settings-new_with_backend 
+utf8       * IN                      CONST   schema_id Settings-new_with_backend_and_path 
+utf8       * IN                      CONST   schema_id Settings-new_with_path 
+utf8       * IN                      CONST   schema_id SettingsSchemaSource-lookup 
+utf8       * IN                      CONST   scheme NetworkService-set_scheme 
+utf8       * IN                      CONST   scheme Vfs-register_uri_scheme 
+utf8       * IN                      CONST   scheme Vfs-unregister_uri_scheme 
+utf8       * IN                      CONST   service NetworkService-new 
+utf8       * IN                      CONST   service Resolver-lookup_service 
+utf8       * IN                      CONST   service Resolver-lookup_service_async 
+utf8       * IN                      CONST   service SocketClient-connect_to_service 
+utf8       * IN                      CONST   service SocketClient-connect_to_service_async 
+utf8       * IN                      CONST   signal DBusMessage-new_signal 
+utf8       * IN                      CONST   signal_name DBusConnection-emit_signal 
+utf8       * IN                      CONST   startup_notify_id AppLaunchContext-launch_failed 
+utf8       * IN                      CONST   stop_chars DataInputStream-read_until 
+utf8       * IN                      CONST   stop_chars DataInputStream-read_until_async 
+utf8       * IN                      CONST   stop_chars DataInputStream-read_upto 
+utf8       * IN                      CONST   stop_chars DataInputStream-read_upto_async 
+utf8       * IN                      CONST   str DataOutputStream-put_string 
+utf8       * IN                      CONST   str icon_new_for_string 
+utf8       * IN                      CONST   string dbus_address_escape_value 
+utf8       * IN                      CONST   string dbus_is_address 
+utf8       * IN                      CONST   string dbus_is_guid 
+utf8       * IN                      CONST   string dbus_is_interface_name 
+utf8       * IN                      CONST   string dbus_is_member_name 
+utf8       * IN                      CONST   string dbus_is_name 
+utf8       * IN                      CONST   string dbus_is_supported_address 
+utf8       * IN                      CONST   string dbus_is_unique_name 
+utf8       * IN                      CONST   string InetAddress-new_from_string 
+utf8       * IN                      CONST   supertype content_type_is_a 
+utf8       * IN                      CONST   symlink_target FileInfo-set_symlink_target 
+utf8       * IN                      CONST   title Notification-new 
+utf8       * IN                      CONST   title Notification-set_title 
+utf8       * IN                      CONST   to_charset CharsetConverter-new 
+utf8       * IN                      CONST   type content_type_can_be_executable 
+utf8       * IN                      CONST   type content_type_get_description 
+utf8       * IN                      CONST   type content_type_get_generic_icon_name 
+utf8       * IN                      CONST   type content_type_get_icon 
+utf8       * IN                      CONST   type content_type_get_mime_type 
+utf8       * IN                      CONST   type content_type_get_symbolic_icon 
+utf8       * IN                      CONST   type content_type_is_a 
+utf8       * IN                      CONST   type content_type_is_mime_type 
+utf8       * IN                      CONST   type content_type_is_unknown 
+utf8       * IN                      CONST   type1 content_type_equals 
+utf8       * IN                      CONST   type2 content_type_equals 
+utf8       * IN                      CONST   uri app_info_launch_default_for_uri 
+utf8       * IN                      CONST   uri app_info_launch_default_for_uri_async 
+utf8       * IN                      CONST   uri file_new_for_uri 
+utf8       * IN                      CONST   uri NetworkAddress-parse_uri 
+utf8       * IN                      CONST   uri SocketClient-connect_to_uri 
+utf8       * IN                      CONST   uri SocketClient-connect_to_uri_async 
+utf8       * IN                      CONST   uri Vfs-get_file_for_uri 
+utf8       * IN                      CONST   uri_scheme app_info_get_default_for_uri_scheme 
+utf8       * IN                      CONST   uri_scheme SimpleProxyResolver-set_uri_proxy 
+utf8       * IN                      CONST   username MountOperation-set_username 
+utf8       * IN                      CONST   uuid VolumeMonitor-get_mount_for_uuid 
+utf8       * IN                      CONST   uuid VolumeMonitor-get_volume_for_uuid 
+utf8       * IN                      CONST   value DBusMessage-set_destination 
+utf8       * IN                      CONST   value DBusMessage-set_error_name 
+utf8       * IN                      CONST   value DBusMessage-set_interface 
+utf8       * IN                      CONST   value DBusMessage-set_member 
+utf8       * IN                      CONST   value DBusMessage-set_path 
+utf8       * IN                      CONST   value DBusMessage-set_sender 
+utf8       * IN                      CONST   value DBusMessage-set_signature 
+utf8       * IN                      CONST   value Settings-set_string 
+utf8       * IN                      CONST   warning TlsPassword-set_warning 
+utf8       * IN                      CONST   xml_data DBusNodeInfo-new_for_xml 
+utf8       * IN    NULL_OK           CONST   action MenuItem-set_action_and_target_value 
+utf8       * IN    NULL_OK           CONST   application_id Application-new 
+utf8       * IN    NULL_OK           CONST   application_id Application-set_application_id 
+utf8       * IN    NULL_OK           CONST   application_name app_info_create_from_commandline 
+utf8       * IN    NULL_OK           CONST   arg_description Application-add_main_option 
+utf8       * IN    NULL_OK           CONST   arg0 DBusConnection-signal_subscribe 
+utf8       * IN    NULL_OK           CONST   body Notification-set_body 
+utf8       * IN    NULL_OK           CONST   bus_name DBusActionGroup-get 
+utf8       * IN    NULL_OK           CONST   bus_name DBusConnection-call 
+utf8       * IN    NULL_OK           CONST   bus_name DBusConnection-call_sync 
+utf8       * IN    NULL_OK           CONST   bus_name DBusConnection-call_with_unix_fd_list 
+utf8       * IN    NULL_OK           CONST   bus_name DBusConnection-call_with_unix_fd_list_sync 
+utf8       * IN    NULL_OK           CONST   bus_name DBusMenuModel-get 
+utf8       * IN    NULL_OK           CONST   default_proxy SimpleProxyResolver-new 
+utf8       * IN    NULL_OK           CONST   description Application-set_option_context_description 
+utf8       * IN    NULL_OK           CONST   destination_bus_name DBusConnection-emit_signal 
+utf8       * IN    NULL_OK           CONST   detailed_action Menu-append 
+utf8       * IN    NULL_OK           CONST   detailed_action Menu-insert 
+utf8       * IN    NULL_OK           CONST   detailed_action MenuItem-new 
+utf8       * IN    NULL_OK           CONST   detailed_action Menu-prepend 
+utf8       * IN    NULL_OK           CONST   filename content_type_guess 
+utf8       * IN    NULL_OK           CONST   guid DBusConnection-new 
+utf8       * IN    NULL_OK           CONST   guid DBusConnection-new_sync 
+utf8       * IN    NULL_OK           CONST   id Application-send_notification 
+utf8       * IN    NULL_OK           CONST   iface Socket-join_multicast_group 
+utf8       * IN    NULL_OK           CONST   iface Socket-join_multicast_group_ssm 
+utf8       * IN    NULL_OK           CONST   iface Socket-leave_multicast_group 
+utf8       * IN    NULL_OK           CONST   iface Socket-leave_multicast_group_ssm 
+utf8       * IN    NULL_OK           CONST   ignore_hosts SimpleProxyResolver-new 
+utf8       * IN    NULL_OK           CONST   interface_ DBusMessage-new_method_call 
+utf8       * IN    NULL_OK           CONST   interface_name DBusConnection-signal_subscribe 
+utf8       * IN    NULL_OK           CONST   label Menu-append 
+utf8       * IN    NULL_OK           CONST   label Menu-append_section 
+utf8       * IN    NULL_OK           CONST   label Menu-append_submenu 
+utf8       * IN    NULL_OK           CONST   label Menu-insert 
+utf8       * IN    NULL_OK           CONST   label Menu-insert_section 
+utf8       * IN    NULL_OK           CONST   label Menu-insert_submenu 
+utf8       * IN    NULL_OK           CONST   label MenuItem-new 
+utf8       * IN    NULL_OK           CONST   label MenuItem-new_section 
+utf8       * IN    NULL_OK           CONST   label MenuItem-new_submenu 
+utf8       * IN    NULL_OK           CONST   label MenuItem-set_label 
+utf8       * IN    NULL_OK           CONST   label Menu-prepend 
+utf8       * IN    NULL_OK           CONST   label Menu-prepend_section 
+utf8       * IN    NULL_OK           CONST   label Menu-prepend_submenu 
+utf8       * IN    NULL_OK           CONST   member DBusConnection-signal_subscribe 
+utf8       * IN    NULL_OK           CONST   name DBusMessage-new_method_call 
+utf8       * IN    NULL_OK           CONST   name DBusObjectManagerClient-new_sync 
+utf8       * IN    NULL_OK           CONST   name DBusProxy-new 
+utf8       * IN    NULL_OK           CONST   name DBusProxy-new_sync 
+utf8       * IN    NULL_OK           CONST   name_space FileInfo-list_attributes 
+utf8       * IN    NULL_OK           CONST   object_path DBusConnection-signal_subscribe 
+utf8       * IN    NULL_OK           CONST   parameter_string Application-set_option_context_parameter_string 
+utf8       * IN    NULL_OK           CONST   password ProxyAddress-new 
+utf8       * IN    NULL_OK           CONST   path Settings-new_full 
+utf8       * IN    NULL_OK           CONST   resource_path Application-set_resource_base_path 
+utf8       * IN    NULL_OK           CONST   root_group keyfile_settings_backend_new 
+utf8       * IN    NULL_OK           CONST   sender DBusConnection-signal_subscribe 
+utf8       * IN    NULL_OK           CONST   stdin_buf Subprocess-communicate_utf8 
+utf8       * IN    NULL_OK           CONST   stdin_buf Subprocess-communicate_utf8_async 
+utf8       * IN    NULL_OK           CONST   summary Application-set_option_context_summary 
+utf8       * IN    NULL_OK           CONST   username ProxyAddress-new 
+utf8       * OUT                     DEEP    action_name action_parse_detailed_name 
+utf8       * OUT                     DEEP    path SettingsBackend-flatten_tree 
+utf8       * OUT                 OPT CONST   out_link MenuLinkIter-get_next 
+utf8       * OUT                 OPT CONST   out_name MenuAttributeIter-get_next 
+utf8       * OUT                 OPT DEEP    out_guid dbus_address_get_stream_finish 
+utf8       * OUT                 OPT DEEP    out_guid dbus_address_get_stream_sync 
+utf8       * OUT   NULL_OK       OPT DEEP    stderr_buf Subprocess-communicate_utf8 
+utf8       * OUT   NULL_OK       OPT DEEP    stderr_buf Subprocess-communicate_utf8_finish 
+utf8       * OUT   NULL_OK       OPT DEEP    stdout_buf Subprocess-communicate_utf8 
+utf8       * OUT   NULL_OK       OPT DEEP    stdout_buf Subprocess-communicate_utf8_finish 
+void       * IN                      CONST   data SocketControlMessage-serialize 
+void       * IN                      CONST   icon icon_hash 
+void       * IN                      CONST   native Credentials-set_native 
+void       * IN                      CONST   native SocketAddress-new_from_native 
+void       * IN                      CONST   value_p FileInfo-set_attribute 
+void       * IN    NULL_OK           CONST   callback_data Task-new 
+void       * IN    NULL_OK           CONST   callback_data Task-report_error 
+void       * IN    NULL_OK           CONST   data Cancellable-connect 
+void       * IN    NULL_OK           CONST   dest SocketAddress-to_native 
+void       * IN    NULL_OK           CONST   get_proxy_type_user_data DBusObjectManagerClient-new 
+void       * IN    NULL_OK           CONST   get_proxy_type_user_data DBusObjectManagerClient-new_for_bus 
+void       * IN    NULL_OK           CONST   get_proxy_type_user_data DBusObjectManagerClient-new_for_bus_sync 
+void       * IN    NULL_OK           CONST   get_proxy_type_user_data DBusObjectManagerClient-new_sync 
+void       * IN    NULL_OK           CONST   origin_tag SettingsBackend-changed 
+void       * IN    NULL_OK           CONST   origin_tag SettingsBackend-changed_tree 
+void       * IN    NULL_OK           CONST   origin_tag SettingsBackend-keys_changed 
+void       * IN    NULL_OK           CONST   origin_tag SettingsBackend-path_changed 
+void       * IN    NULL_OK           CONST   parse_name_data Vfs-register_uri_scheme 
+void       * IN    NULL_OK           CONST   source_tag SimpleAsyncResult-is_valid 
+void       * IN    NULL_OK           CONST   source_tag SimpleAsyncResult-new 
+void       * IN    NULL_OK           CONST   source_tag Task-report_error 
+void       * IN    NULL_OK           CONST   source_tag Task-set_source_tag 
+void       * IN    NULL_OK           CONST   task_data Task-set_task_data 
+void       * IN    NULL_OK           CONST   uri_data Vfs-register_uri_scheme 
+void       * IN    NULL_OK           CONST   user_data app_info_launch_default_for_uri_async 
+void       * IN    NULL_OK           CONST   user_data BufferedInputStream-fill_async 
+void       * IN    NULL_OK           CONST   user_data bus_get 
+void       * IN    NULL_OK           CONST   user_data DataInputStream-read_line_async 
+void       * IN    NULL_OK           CONST   user_data DataInputStream-read_until_async 
+void       * IN    NULL_OK           CONST   user_data DataInputStream-read_upto_async 
+void       * IN    NULL_OK           CONST   user_data dbus_address_get_stream 
+void       * IN    NULL_OK           CONST   user_data DBusConnection-add_filter 
+void       * IN    NULL_OK           CONST   user_data DBusConnection-call 
+void       * IN    NULL_OK           CONST   user_data DBusConnection-call_with_unix_fd_list 
+void       * IN    NULL_OK           CONST   user_data DBusConnection-close 
+void       * IN    NULL_OK           CONST   user_data DBusConnection-flush 
+void       * IN    NULL_OK           CONST   user_data DBusConnection-new 
+void       * IN    NULL_OK           CONST   user_data DBusConnection-new_for_address 
+void       * IN    NULL_OK           CONST   user_data DBusConnection-register_subtree 
+void       * IN    NULL_OK           CONST   user_data DBusConnection-send_message_with_reply 
+void       * IN    NULL_OK           CONST   user_data DBusConnection-signal_subscribe 
+void       * IN    NULL_OK           CONST   user_data DBusObjectManagerClient-new 
+void       * IN    NULL_OK           CONST   user_data DBusObjectManagerClient-new_for_bus 
+void       * IN    NULL_OK           CONST   user_data DBusProxy-call 
+void       * IN    NULL_OK           CONST   user_data DBusProxy-call_with_unix_fd_list 
+void       * IN    NULL_OK           CONST   user_data DBusProxy-new 
+void       * IN    NULL_OK           CONST   user_data DBusProxy-new_for_bus 
+void       * IN    NULL_OK           CONST   user_data FileEnumerator-close_async 
+void       * IN    NULL_OK           CONST   user_data FileEnumerator-next_files_async 
+void       * IN    NULL_OK           CONST   user_data FileInputStream-query_info_async 
+void       * IN    NULL_OK           CONST   user_data FileIOStream-query_info_async 
+void       * IN    NULL_OK           CONST   user_data FileOutputStream-query_info_async 
+void       * IN    NULL_OK           CONST   user_data InputStream-close_async 
+void       * IN    NULL_OK           CONST   user_data InputStream-read_all_async 
+void       * IN    NULL_OK           CONST   user_data InputStream-read_async 
+void       * IN    NULL_OK           CONST   user_data InputStream-read_bytes_async 
+void       * IN    NULL_OK           CONST   user_data InputStream-skip_async 
+void       * IN    NULL_OK           CONST   user_data IOStream-close_async 
+void       * IN    NULL_OK           CONST   user_data IOStream-splice_async 
+void       * IN    NULL_OK           CONST   user_data ListStore-insert_sorted 
+void       * IN    NULL_OK           CONST   user_data ListStore-sort 
+void       * IN    NULL_OK           CONST   user_data OutputStream-close_async 
+void       * IN    NULL_OK           CONST   user_data OutputStream-flush_async 
+void       * IN    NULL_OK           CONST   user_data OutputStream-splice_async 
+void       * IN    NULL_OK           CONST   user_data OutputStream-write_all_async 
+void       * IN    NULL_OK           CONST   user_data OutputStream-write_async 
+void       * IN    NULL_OK           CONST   user_data OutputStream-write_bytes_async 
+void       * IN    NULL_OK           CONST   user_data Permission-acquire_async 
+void       * IN    NULL_OK           CONST   user_data Permission-release_async 
+void       * IN    NULL_OK           CONST   user_data Resolver-lookup_by_address_async 
+void       * IN    NULL_OK           CONST   user_data Resolver-lookup_by_name_async 
+void       * IN    NULL_OK           CONST   user_data Resolver-lookup_records_async 
+void       * IN    NULL_OK           CONST   user_data Resolver-lookup_service_async 
+void       * IN    NULL_OK           CONST   user_data Settings-get_mapped 
+void       * IN    NULL_OK           CONST   user_data SimpleActionGroup-add_entries 
+void       * IN    NULL_OK           CONST   user_data SimpleAsyncResult-new 
+void       * IN    NULL_OK           CONST   user_data SimpleAsyncResult-new_from_error 
+void       * IN    NULL_OK           CONST   user_data SocketAddressEnumerator-next_async 
+void       * IN    NULL_OK           CONST   user_data SocketClient-connect_async 
+void       * IN    NULL_OK           CONST   user_data SocketClient-connect_to_host_async 
+void       * IN    NULL_OK           CONST   user_data SocketClient-connect_to_service_async 
+void       * IN    NULL_OK           CONST   user_data SocketClient-connect_to_uri_async 
+void       * IN    NULL_OK           CONST   user_data SocketConnection-connect_async 
+void       * IN    NULL_OK           CONST   user_data SocketListener-accept_async 
+void       * IN    NULL_OK           CONST   user_data SocketListener-accept_socket_async 
+void       * IN    NULL_OK           CONST   user_data Subprocess-communicate_async 
+void       * IN    NULL_OK           CONST   user_data Subprocess-communicate_utf8_async 
+void       * IN    NULL_OK           CONST   user_data Subprocess-wait_async 
+void       * IN    NULL_OK           CONST   user_data Subprocess-wait_check_async 
+void       * IN    NULL_OK           CONST   user_data TlsConnection-handshake_async 
+void       * IN    NULL_OK           CONST   user_data TlsDatabase-lookup_certificate_for_handle_async 
+void       * IN    NULL_OK           CONST   user_data TlsDatabase-lookup_certificate_issuer_async 
+void       * IN    NULL_OK           CONST   user_data TlsDatabase-lookup_certificates_issued_by_async 
+void       * IN    NULL_OK           CONST   user_data TlsDatabase-verify_chain_async 
+void       * IN    NULL_OK           CONST   user_data TlsInteraction-ask_password_async 
+void       * IN    NULL_OK           CONST   user_data TlsInteraction-request_certificate_async 
+void       * IN    NULL_OK           DEEP    result Task-return_pointer 
+void       * OUT                 OPT DEEP    value_pp FileInfo-get_attribute_data 
