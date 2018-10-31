@@ -5,6 +5,12 @@
 #include <libguile.h>
 #include "__gi_giargument.h"
 
+#define GIR_FREE_NONE 0x00000
+#define GIR_FREE_SIMPLE 0x10000
+#define GIR_FREE_STRV 0x20000
+#define GIR_FREE_PTR_ARRAY 0x40000
+#define GIR_FREE_PTR_COUNT(x) ((x)&GIR_FREE_PTR_ARRAY ? (x)&0xFFFF : 0)
+
 typedef gssize (*GuGIArgArrayLengthPolicy) (gsize item_index,
 					    void *user_data1,
 					    void *user_data2);
@@ -37,7 +43,7 @@ gboolean
 gi_giargument_check_scm_type(SCM obj, GIArgInfo *ai, char **errstr);
 
 
-  SCM
+SCM
 gi_giargument_to_object (GIArgument  *arg,
 			 GITypeInfo *type_info,
 			 GITransfer transfer);

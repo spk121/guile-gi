@@ -1181,33 +1181,35 @@ function_info_typecheck_args(GIFunctionInfo *func_info, SCM s_args, char **errst
 }
 
 static GIArgument *
-function_info_convert_args (GIFunctionInfo *func_info, SCM s_args)
+function_info_convert_args(GIFunctionInfo *func_info, SCM s_args)
 {
-  GIDirection dir;
-  GIArgInfo *arg_info;
-  GIArgument *in_args = g_new0 (GIArgument, scm_to_int (scm_length (s_args)));
+    GIDirection dir;
+    GIArgInfo *arg_info;
+    GIArgument *in_args = g_new0(GIArgument, scm_to_int(scm_length(s_args)));
 
-  int n_args = g_callable_info_get_n_args ((GICallableInfo *) func_info);
-  int i_input = 0;
+    int n_args = g_callable_info_get_n_args((GICallableInfo *)func_info);
+    int i_input = 0;
 
-  for (int i = 0; i < n_args; i ++) {
-    arg_info = g_callable_info_get_arg ((GICallableInfo *) func_info, i);
-    g_assert (arg_info != NULL);
+    for (int i = 0; i < n_args; i++)
+    {
+        arg_info = g_callable_info_get_arg((GICallableInfo *)func_info, i);
+        g_assert(arg_info != NULL);
 
-    dir = g_arg_info_get_direction (arg_info);
+        dir = g_arg_info_get_direction(arg_info);
 
-    if (dir == GI_DIRECTION_IN || dir == GI_DIRECTION_INOUT) {
-      SCM arg = scm_list_ref (s_args, scm_from_int (i_input));
-      in_args[i_input] = gi_argument_from_object ("gi-function-invoke",
-                          arg,
-                          g_arg_info_get_type (arg_info),
-                          g_arg_info_get_ownership_transfer (arg_info));
-      i_input ++;
+        if (dir == GI_DIRECTION_IN || dir == GI_DIRECTION_INOUT)
+        {
+            SCM arg = scm_list_ref(s_args, scm_from_int(i_input));
+            in_args[i_input] = gi_argument_from_object("gi-function-invoke",
+                                                       arg,
+                                                       g_arg_info_get_type(arg_info),
+                                                       g_arg_info_get_ownership_transfer(arg_info));
+            i_input++;
+        }
+        g_base_info_unref(arg_info);
     }
-    g_base_info_unref (arg_info);
-  }
 
-  return in_args;
+    return in_args;
 }
 
 static GIArgument *
@@ -1447,164 +1449,170 @@ scm_gi_method_send(SCM s_object, SCM s_method_args_list)
 }
 
 static SCM
-scm_gi_function_invoke (SCM s_name, SCM s_args)
+scm_gi_function_invoke(SCM s_name, SCM s_args)
 {
-  GError *err = NULL;
+    GError *err = NULL;
 
-  SCM_ASSERT (scm_is_string (s_name), s_name, SCM_ARG1,
-          "gi-function-invoke");
+    SCM_ASSERT(scm_is_string(s_name), s_name, SCM_ARG1,
+               "gi-function-invoke");
 
-  GIFunctionInfo *info = NULL;
+    GIFunctionInfo *info = NULL;
 
-  {
-    char *name = scm_to_utf8_string (s_name);
-    g_debug ("in gi-function-invoke for %s", name);
-    info = g_hash_table_lookup (gi_functions, name);
-    free (name);
-    name = NULL;
+    {
+        char *name = scm_to_utf8_string(s_name);
+        g_debug("in gi-function-invoke for %s", name);
+        info = g_hash_table_lookup(gi_functions, name);
+        free(name);
+        name = NULL;
 
-    name = scm_to_utf8_string(scm_simple_format(SCM_BOOL_F, scm_from_utf8_string("args ~S"), scm_list_1(s_args)));
-    g_debug(" %s", name);
-    free(name);
-  }
+        name = scm_to_utf8_string(scm_simple_format(SCM_BOOL_F, scm_from_utf8_string("args ~S"), scm_list_1(s_args)));
+        g_debug(" %s", name);
+        free(name);
+    }
 
-  if (!info) {
-    scm_misc_error ("gi-function-invoke",
-            "unknown procedure '~a'",
-            scm_list_1 (s_name));
-    return SCM_BOOL_F;
-  }
+    if (!info)
+    {
+        scm_misc_error("gi-function-invoke",
+                       "unknown procedure '~a'",
+                       scm_list_1(s_name));
+        return SCM_BOOL_F;
+    }
 
-  int n_input_args_received;
-  if (SCM_UNBNDP (s_args))
-      n_input_args_received = 0;
-  else
-    n_input_args_received = scm_to_int (scm_length (s_args));
-  g_debug ("\t%d input arguments received", n_input_args_received);
+    int n_input_args_received;
+    if (SCM_UNBNDP(s_args))
+        n_input_args_received = 0;
+    else
+        n_input_args_received = scm_to_int(scm_length(s_args));
+    g_debug("\t%d input arguments received", n_input_args_received);
 
-  /* Count the number of required input arguments, and store
+    /* Count the number of required input arguments, and store
    * the arg info in a newly allocate array. */
-  int n_input_args, n_output_args;
-  function_info_count_args (info, &n_input_args, &n_output_args);
-  g_debug ("\t%d input arguments expected", n_input_args);
-  g_debug ("\t%d output arguments expected", n_output_args);
+    int n_input_args, n_output_args;
+    function_info_count_args(info, &n_input_args, &n_output_args);
+    g_debug("\t%d input arguments expected", n_input_args);
+    g_debug("\t%d output arguments expected", n_output_args);
 
-  if (n_input_args_received != n_input_args) {
-    scm_misc_error ("function-invoke",
-            "wrong number of input arguments for funtion '~a', expected ~S, received ~s",
-            scm_list_3 (s_name,
-                   scm_from_int (n_input_args),
-                   scm_from_int (n_input_args_received)));
-    return SCM_BOOL_F;
-  }
+    if (n_input_args_received != n_input_args)
+    {
+        scm_misc_error("function-invoke",
+                       "wrong number of input arguments for funtion '~a', expected ~S, received ~s",
+                       scm_list_3(s_name,
+                                  scm_from_int(n_input_args),
+                                  scm_from_int(n_input_args_received)));
+        return SCM_BOOL_F;
+    }
 
-  char *errstr = NULL;
-  if (!function_info_typecheck_args (info, s_args, &errstr)) {
-    g_assert (errstr != NULL);
+    char *errstr = NULL;
+    if (!function_info_typecheck_args(info, s_args, &errstr))
+    {
+        g_assert(errstr != NULL);
 
-    SCM s_errstr = scm_from_utf8_string (errstr);
-    g_free (errstr);
-    scm_misc_error ("gi-function-invoke",
-            "wrong type argument for function '~a' - ~s",
-            scm_list_2 (s_name, s_errstr));
-    return SCM_BOOL_F;
-  }
+        SCM s_errstr = scm_from_utf8_string(errstr);
+        g_free(errstr);
+        scm_misc_error("gi-function-invoke",
+                       "wrong type argument for function '~a' - ~s",
+                       scm_list_2(s_name, s_errstr));
+        return SCM_BOOL_F;
+    }
 
+    GIArgument *in_args = function_info_convert_args(info, s_args);
 
-  GIArgument *in_args = function_info_convert_args (info, s_args);
+    /* Allocate a GIArgument list of the output and return values. */
+    GIArgument *out_args = NULL;
+    if (n_output_args > 0)
+        out_args = g_new0(GIArgument, n_output_args);
+    GIArgument return_arg;
 
-  /* Allocate a GIArgument list of the output and return values. */
-  GIArgument *out_args = NULL;
-  if (n_output_args > 0)
-    out_args = g_new0(GIArgument, n_output_args);
-  GIArgument return_arg;
+    /* Make the call. */
+    gboolean ret = g_function_info_invoke(info, in_args, n_input_args,
+                                          out_args, n_output_args,
+                                          &return_arg, &err);
 
-  /* Make the call. */
-  gboolean ret = g_function_info_invoke(info, in_args, n_input_args,
-                    out_args, n_output_args,
-                    &return_arg, &err);
+    /* Free any allocated input */
+    function_info_release_args(info, in_args);
+    g_free(in_args);
+    in_args = NULL;
 
-  /* Free any allocated input */
-  function_info_release_args (info, in_args);
-  g_free (in_args);
-  in_args = NULL;
+    /* If there is a GError, write an error, free, and exit. */
+    if (!ret)
+    {
+        char str[256];
+        memset(str, 0, 256);
+        strncpy(str, err->message, 255);
+        g_error_free(err);
 
-  /* If there is a GError, write an error, free, and exit. */
-  if (!ret) {
-    char str[256];
-    memset (str, 0, 256);
-    strncpy (str, err->message, 255);
-    g_error_free (err);
+        scm_misc_error("gi-function-invoke",
+                       "error invoking function '~a': ~a",
+                       scm_list_2(s_name, scm_from_utf8_string(str)));
+        return SCM_BOOL_F;
+    }
 
-    scm_misc_error ("gi-function-invoke",
-            "error invoking function '~a': ~a",
-            scm_list_2 (s_name, scm_from_utf8_string (str)));
-    return SCM_BOOL_F;
-  }
-
-  /* We've actually made a call.  Hooray! Convert the output
+    /* We've actually made a call.  Hooray! Convert the output
    * arguments and return values into Scheme objects.  Free the
    * C objects if necessary.  Return the output either as
    * a plain list or as a values list. */
-  GITypeInfo *return_typeinfo = g_callable_info_get_return_type (info);
-  SCM s_return = gi_giargument_to_object (&return_arg,
-                      return_typeinfo,
-                      g_callable_info_get_caller_owns (info));
-  g_base_info_unref (return_typeinfo);
-  SCM output;
-  if (scm_is_eq (s_return, SCM_UNSPECIFIED))
-    output = SCM_EOL;
-  else
-    output = scm_list_1 (s_return);
+    GITypeInfo *return_typeinfo = g_callable_info_get_return_type(info);
+    SCM s_return = gi_giargument_to_object(&return_arg,
+                                           return_typeinfo,
+                                           g_callable_info_get_caller_owns(info));
+    g_base_info_unref(return_typeinfo);
+    SCM output;
+    if (scm_is_eq(s_return, SCM_UNSPECIFIED))
+        output = SCM_EOL;
+    else
+        output = scm_list_1(s_return);
 
-  int n_args = g_callable_info_get_n_args ((GICallableInfo *) info);
-  for (int i = 0; i < n_args; i ++) {
-    GIArgInfo *arg_info = g_callable_info_get_arg ((GICallableInfo *) info, i);
-    g_assert (arg_info != NULL);
+    int n_args = g_callable_info_get_n_args((GICallableInfo *)info);
+    for (int i = 0; i < n_args; i++)
+    {
+        GIArgInfo *arg_info = g_callable_info_get_arg((GICallableInfo *)info, i);
+        g_assert(arg_info != NULL);
 
-    GIDirection dir = g_arg_info_get_direction (arg_info);
+        GIDirection dir = g_arg_info_get_direction(arg_info);
 
-    if (dir == GI_DIRECTION_OUT || dir == GI_DIRECTION_INOUT) {
-      GITypeInfo *arg_typeinfo = g_arg_info_get_type (arg_info);
-      SCM entry = gi_giargument_to_object (&out_args[i],
-                       arg_typeinfo,
-                       g_arg_info_get_ownership_transfer (arg_info));
-      output = scm_append(scm_list_2(output, scm_list_1 (entry)));
-      g_base_info_unref (arg_typeinfo);
+        if (dir == GI_DIRECTION_OUT || dir == GI_DIRECTION_INOUT)
+        {
+            GITypeInfo *arg_typeinfo = g_arg_info_get_type(arg_info);
+            SCM entry = gi_giargument_to_object(&out_args[i],
+                                                arg_typeinfo,
+                                                g_arg_info_get_ownership_transfer(arg_info));
+            output = scm_append(scm_list_2(output, scm_list_1(entry)));
+            g_base_info_unref(arg_typeinfo);
+        }
+        g_base_info_unref(arg_info);
     }
-    g_base_info_unref (arg_info);
-  }
 
-  if (n_output_args == 0)
-    return s_return;
-  else
-    return output;
+    if (n_output_args == 0)
+        return s_return;
+    else
+        return output;
 }
 
 static void
-unload_repository (const char *category, GHashTable **p_hash_table)
+unload_repository(const char *category, GHashTable **p_hash_table)
 {
-  if (*p_hash_table) {
-    g_debug ("destroying %s hash table", category);
-    g_hash_table_destroy (*p_hash_table);
-    *p_hash_table = NULL;
-  }
+    if (*p_hash_table)
+    {
+        g_debug("destroying %s hash table", category);
+        g_hash_table_destroy(*p_hash_table);
+        *p_hash_table = NULL;
+    }
 }
 
 static SCM
-scm_gi_unload_repositories (void)
+scm_gi_unload_repositories(void)
 {
-  unload_repository ("constants", &gi_constants);
-  unload_repository ("enums", &gi_enums);
-  unload_repository ("flags", &gi_flags);
-  unload_repository ("functions", &gi_functions);
-  unload_repository ("methods", &gi_methods);
-  unload_repository ("callbacks", &gi_callbacks);
-  unload_repository ("structs", &gi_structs);
-  unload_repository ("unions", &gi_unions);
-  unload_repository ("objects", &gi_objects);
-  unload_repository ("interfaces", &gi_interfaces);
-  return SCM_UNSPECIFIED;
+    unload_repository("constants", &gi_constants);
+    unload_repository("enums", &gi_enums);
+    unload_repository("flags", &gi_flags);
+    unload_repository("functions", &gi_functions);
+    unload_repository("methods", &gi_methods);
+    unload_repository("callbacks", &gi_callbacks);
+    unload_repository("structs", &gi_structs);
+    unload_repository("unions", &gi_unions);
+    unload_repository("objects", &gi_objects);
+    unload_repository("interfaces", &gi_interfaces);
+    return SCM_UNSPECIFIED;
 }
 
 GType
