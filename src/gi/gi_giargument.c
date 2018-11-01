@@ -137,7 +137,7 @@ static GIArgumentStatus gi_giargument_convert_interface_pointer_object_to_arg(SC
 static GIArgumentStatus gi_giargument_convert_array_object_to_arg(SCM object, GIArgInfo *array_arg_info, unsigned *must_free, GIArgument *arg);
 
 static GIArgumentStatus gi_giargument_convert_arg_to_object(GIArgument *arg, GIArgInfo *arg_info, SCM *obj);
-static GIArgumentStatus gi_giargument_convert_immediate_arg_to_object(GIArgument *arg, GITypeTag type_tag, SCM* obj);
+static GIArgumentStatus convert_immediate_arg_to_object(GIArgument *arg, GITypeTag type_tag, SCM* obj);
 
 //////////////////////////////////////////////////////////
 // CONVERTING SCM OBJECTS TO GIARGUMENTS
@@ -818,8 +818,7 @@ gi_giargument_convert_arg_to_object(GIArgument *arg, GIArgInfo *arg_info, SCM *o
             case GI_TYPE_TAG_UINT8:
             case GI_TYPE_TAG_UNICHAR:
             case GI_TYPE_TAG_GTYPE:
-                ret = gi_giargument_convert_immediate_arg_to_object(obj, type_tag, arg);
-                *must_free = GIR_FREE_NONE;
+                ret = convert_immediate_arg_to_object(arg, type_tag, obj);
                 break;
 
             case GI_TYPE_TAG_VOID:
@@ -834,8 +833,7 @@ gi_giargument_convert_arg_to_object(GIArgument *arg, GIArgInfo *arg_info, SCM *o
                 break;
 
             case GI_TYPE_TAG_INTERFACE:
-                // The non-pointer interfaces are FLAGS, ENUM, and CALLBACK only.
-                // STRUCT and OBJECT interfaces are always pointer interfaces.
+		// Weirdly, caller-allocated structs also end up here.
                 ret = gi_giargument_convert_interface_to_arg(obj, arg_info, must_free, arg);
                 break;
             default:
@@ -909,7 +907,7 @@ gi_giargument_convert_arg_to_object(GIArgument *arg, GIArgInfo *arg_info, SCM *o
 }
 
 static GIArgumentStatus
-gi_giargument_convert_immediate_arg_to_object(GIArgument *arg, GITypeTag type_tag, SCM *obj)
+convert_immediate_arg_to_object(GIArgument *arg, GITypeTag type_tag, SCM *obj)
 {
     switch (type_tag)
     {
