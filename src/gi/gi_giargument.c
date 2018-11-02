@@ -792,16 +792,13 @@ gi_giargument_convert_array_object_to_arg(SCM object, GIArgInfo *array_arg_info,
 // CONVERTING GIARGUMENTS TO SCM OBJECTS
 //////////////////////////////////////////////////////////
 
-void
+GIArgumentStatus
 gi_giargument_preallocate_output_arg_and_object(GIArgInfo *arg_info, GIArgument *arg, SCM *obj)
 {
-    // Some output
+    GIArgumentStatus ret = GI_GIARGUMENT_OK;
+
     if (!g_arg_info_is_caller_allocates (arg_info))
-    {
-        arg->v_int = 0;
-        *obj = SCM_BOOL_F;
-        return;
-    }
+        return ret;
 
     GITypeInfo *type_info = g_arg_info_get_type (arg_info); 
     GITypeTag type_tag = g_type_info_get_tag (type_info);
@@ -827,6 +824,13 @@ gi_giargument_preallocate_output_arg_and_object(GIArgInfo *arg_info, GIArgument 
             case GI_TYPE_TAG_UINT8:
             case GI_TYPE_TAG_UNICHAR:
             case GI_TYPE_TAG_GTYPE:
+		// Uniquely, the GLib unicode procedures have the
+		// ALLOC flag set on some 'items_read' and
+		// 'items-written' outputs.  I think this is an error.
+		// So what to do about that?  Try ignoring it?
+		g_critical ("Ignoring request to allocate output argument for immediate type");
+		break;
+		
             case GI_TYPE_TAG_VOID:
             case GI_TYPE_TAG_ARRAY:
             case GI_TYPE_TAG_UTF8:
@@ -847,10 +851,21 @@ gi_giargument_preallocate_output_arg_and_object(GIArgInfo *arg_info, GIArgument 
                 if (referenced_base_type == GI_INFO_TYPE_STRUCT)
                 {
                     GIStructInfo *referenced_struct_info = g_type_get_qdata(referenced_object_type, gtype_base_info_key);
+		    gpointer ptr;
                     g_assert (referenced_struct_info != NULL);
-                    item_size = g_struct_info_get_size (referenced_struct_info);                    
-                    arg->v_pointer = g_malloc0(item_size);
-                    *obj = gi_gbox_new(referenced_object_type, arg->v_pointer, FALSE, FALSE);
+
+		    // If OBJ is already set, we typecheck that it is
+		    // a box holding a pointer for a struct of the
+		    // right type.  If it isn't set, we allocate a new
+		    // box.
+		    if (!scm_is_eq(*obj, SCM_BOOL_F))
+			{
+			    item_size = g_struct_info_get_size (referenced_struct_info);
+			    arg->v_pointer = g_malloc0(item_size);
+			    *obj = gi_gbox_new(referenced_object_type, arg->v_pointer, FALSE, FALSE);
+			}
+		    else
+			arg->v_pointer = gi_gbox_peek_pointer (*obj);
                 }
                 else
                     g_assert_not_reached ();
@@ -877,46 +892,48 @@ gi_giargument_preallocate_output_arg_and_object(GIArgInfo *arg_info, GIArgument 
             case GI_TYPE_TAG_UINT64:
             case GI_TYPE_TAG_UINT8:
             case GI_TYPE_TAG_UNICHAR:
+            case GI_TYPE_TAG_UTF8:
+            case GI_TYPE_TAG_FILENAME:
+		// OK. Function expects pre-allocated C array to copy
+		// data into.  But, from here, it is difficult to know
+		// how big that array was supposed to have been.  So
+		// we require that obj already be a bytevector.
+
+		// Uniquely, g_unichar_to_utf8 requires a pre-allocated UTF8
+		// output buffer.		
+		if (!scm_is_bytevector (*obj))
+		    ret = GI_GIARGUMENT_OUTPUT_STRUCT_VARIABLE_NOT_PROVIDED;
+		else
+		{
+		    // FIXME: we're just hoping that this
+		    // bytevector is big enough to hold the contents
+		    // that are going to be copied into it.
+		    arg->v_pointer = SCM_BYTEVECTOR_CONTENTS (*obj);
+		}
                 ret = gi_giargument_convert_immediate_pointer_object_to_arg(obj, arg_info, must_free, arg);
                 *must_free = GIR_FREE_NONE;
                 break;
 
-            case GI_TYPE_TAG_UTF8:
-            case GI_TYPE_TAG_FILENAME:
-                ret = gi_giargument_convert_string_object_to_arg(obj, arg_info, must_free, arg);
-                break;
-
             case GI_TYPE_TAG_VOID:
-                ret = gi_giargument_convert_const_void_pointer_object_to_arg(obj, arg);
-                *must_free = GIR_FREE_NONE;
-                break;
-
             case GI_TYPE_TAG_GHASH:
             case GI_TYPE_TAG_GLIST:
             case GI_TYPE_TAG_GSLIST:
-                // FIXME: unhandled
-                g_critical("Unhandled argument type tag %d", type_tag);
                 g_assert_not_reached();
                 break;
 
             case GI_TYPE_TAG_INTERFACE:
-                ret = gi_giargument_convert_interface_pointer_object_to_arg(obj, arg_info, must_free, arg);
-                *must_free = GIR_FREE_NONE;
+		g_assert_not_reached();
                 break;
 
             case GI_TYPE_TAG_GTYPE:
-                // No GType pointer inputs as far as I can tell.
-                g_assert_not_reached();
-                break;
-            
             case GI_TYPE_TAG_ERROR:
-                // FIXME: unhandled
-                g_assert_not_reached();
-                //ret = gi_giargument_convert_error_to_arg(obj, arg_info, must_free, arg);
-                break;
-
+		g_assert_not_reached ();
+		break;
+		
             case GI_TYPE_TAG_ARRAY:
-                ret = gi_giargument_convert_array_object_to_arg(obj, arg_info, must_free, arg);
+		// FIXME: uniquely, g_main_context_query requires a
+		// pre-allocated array of PollFD structs.
+		g_assert_not_reached ();
                 break;
 
             default:
