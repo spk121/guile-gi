@@ -7,6 +7,7 @@
 
 typedef enum _GIArgumentStatus {
     GI_GIARGUMENT_OK,
+	GI_GIARGUMENT_OUT_OF_RANGE,
     GI_GIARGUMENT_NON_CONST_VOID_POINTER,
     GI_GIARGUMENT_ARRAY_ELEMENT_TOO_BIG,
     GI_GIARGUMENT_UNHANDLED_ARRAY_ELEMENT_TYPE,
@@ -25,6 +26,7 @@ typedef enum _GIArgumentStatus {
 
 const static char gi_giargument_error_messages[GI_GIARGUMENT_N_ERRORS][80] = {
     [GI_GIARGUMENT_OK] = "Conversion successful",
+	[GI_GIARGUMENT_OUT_OF_RANGE] = "Argument out of range",
     [GI_GIARGUMENT_NON_CONST_VOID_POINTER] = "Cannot convert a non-const void pointer",
     [GI_GIARGUMENT_ARRAY_ELEMENT_TOO_BIG] = "The array element size is too big",
     [GI_GIARGUMENT_UNHANDLED_ARRAY_ELEMENT_TYPE] = "Cannot pack/unpack arrays of this element type",
@@ -55,7 +57,10 @@ gi_giargument_free_args(int n, unsigned *must_free, GIArgument *args);
 GIArgumentStatus
 gi_giargument_convert_arg_to_object(GIArgument *arg, GIArgInfo *arg_info, SCM *obj);
 
-
+SCM
+gi_giargument_convert_return_val_to_object (GIArgument  *arg,
+			 GITypeInfo *type_info,
+			 GITransfer transfer, gboolean null_ok, gboolean skip);
 #if 0
 typedef gssize (*GuGIArgArrayLengthPolicy) (gsize item_index,
 					    void *user_data1,
@@ -89,10 +94,7 @@ gboolean
 gi_giargument_check_scm_type(SCM obj, GIArgInfo *ai, char **errstr);
 
 
-SCM
-gi_giargument_to_object (GIArgument  *arg,
-			 GITypeInfo *type_info,
-			 GITransfer transfer);
+
 void
 gi_giargument_release (GIArgument   *arg,
                         GITypeInfo  *type_info,
