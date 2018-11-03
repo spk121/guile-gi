@@ -94,40 +94,7 @@ TYPE_TAG_IS_REAL_NUMBER (GITypeTag x)
     return FALSE;
 }
 
-typedef enum _GIArgumentStatus {
-    GI_GIARGUMENT_OK,
-    GI_GIARGUMENT_NON_CONST_VOID_POINTER,
-    GI_GIARGUMENT_ARRAY_ELEMENT_TOO_BIG,
-    GI_GIARGUMENT_UNHANDLED_ARRAY_ELEMENT_TYPE,
-    GI_GIARGUMENT_UNHANDLED_ARRAY_ELEMENT_TYPE_CONVERSION,
-    GI_GIARGUMENT_UNHANDLED_INTERFACE_TYPE,
-    GI_GIARGUMENT_UNHANDLED_FOREIGN_TYPE,
-    GI_GIARGUMENT_UNHANDLED_IMMEDIATE_TYPE,
-    GI_GIARGUMENT_UNHANDLED_STRING_TYPE,
-    GI_GIARGUMENT_UNHANDLED_TYPE,
-    GI_GIARGUMENT_VOID,
-    GI_GIARGUMENT_WRONG_TYPE_ARG,
-    GI_GIARGUMENT_ERROR,
-    GI_GIARGUMENT_N_ERRORS
-} GIArgumentStatus;
 
-const static char gi_giargument_error_messages[GI_GIARGUMENT_N_ERRORS][80] = {
-    [GI_GIARGUMENT_OK] = "Conversion successful",
-    [GI_GIARGUMENT_NON_CONST_VOID_POINTER] = "Cannot convert a non-const void pointer",
-    [GI_GIARGUMENT_ARRAY_ELEMENT_TOO_BIG] = "The array element size is too big",
-    [GI_GIARGUMENT_UNHANDLED_ARRAY_ELEMENT_TYPE] = "Cannot pack/unpack arrays of this element type",
-    [GI_GIARGUMENT_UNHANDLED_ARRAY_ELEMENT_TYPE_CONVERSION] = "Cannot pack/unpack this type of scheme object to array elements of this type",
-    [GI_GIARGUMENT_UNHANDLED_INTERFACE_TYPE] = "Cannot handle interfaces of this type",
-    [GI_GIARGUMENT_UNHANDLED_FOREIGN_TYPE] = "Cannot handle non-GObject interfaces of this type",
-    [GI_GIARGUMENT_UNHANDLED_IMMEDIATE_TYPE] = "Cannot handle immediate objects of this type",
-    [GI_GIARGUMENT_UNHANDLED_STRING_TYPE] = "Unknown string type",
-    [GI_GIARGUMENT_UNHANDLED_TYPE] = "Cannot handle this type",
-    [GI_GIARGUMENT_VOID] = "Non-pointer void arguments cannot be unpacked",
-    [GI_GIARGUMENT_WRONG_TYPE_ARG] = "Cannot pack/unpack this type of scheme object for this argument type",
-    [GI_GIARGUMENT_ERROR] = "GIArgument conversion error"
-};
-
-static GIArgumentStatus gi_giargument_convert_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *must_free, GIArgument *arg);
 static GIArgumentStatus gi_giargument_convert_immediate_object_to_arg(SCM obj, GITypeTag type_tag, GIArgument *arg);
 static GIArgumentStatus gi_giargument_convert_interface_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *must_free, GIArgument *arg);
 static GIArgumentStatus gi_giargument_convert_immediate_pointer_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *must_free, GIArgument *arg);
@@ -136,14 +103,13 @@ static GIArgumentStatus gi_giargument_convert_const_void_pointer_object_to_arg(S
 static GIArgumentStatus gi_giargument_convert_interface_pointer_object_to_arg(SCM object, GIArgInfo *arg_info, unsigned *must_free, GIArgument *arg);
 static GIArgumentStatus gi_giargument_convert_array_object_to_arg(SCM object, GIArgInfo *array_arg_info, unsigned *must_free, GIArgument *arg);
 
-static GIArgumentStatus gi_giargument_convert_arg_to_object(GIArgument *arg, GIArgInfo *arg_info, SCM *obj);
 static GIArgumentStatus convert_immediate_arg_to_object(GIArgument *arg, GITypeTag type_tag, SCM* obj);
 
 //////////////////////////////////////////////////////////
 // CONVERTING SCM OBJECTS TO GIARGUMENTS
 //////////////////////////////////////////////////////////
 
-static GIArgumentStatus
+GIArgumentStatus
 gi_giargument_convert_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *must_free, GIArgument *arg)
 {
     GITypeInfo *type_info = g_arg_info_get_type (arg_info); 
@@ -788,6 +754,33 @@ gi_giargument_convert_array_object_to_arg(SCM object, GIArgInfo *array_arg_info,
     return ret;
 }
 
+void
+gi_giargument_free_args(int n, unsigned *must_free, GIArgument *args)
+{
+    for (int i = 0; i < n; i ++)
+    {
+        if (must_free[i] == GIR_FREE_SIMPLE)
+            g_free(args[i].v_pointer);
+        else if (must_free[i] == GIR_STRV)
+        {
+            int j = 0;
+            while (args[i].v_pointer[j] != NULL)
+            {
+                g_free(args[i].v_pointer[j])
+                j++;
+            }
+            g_free (arg[i].v_pointer);
+        }
+        else if (must_free[i] & GIR_FREE_PTR_ARRAY)
+        {
+            int count = GIR_FREE_PTR_COUNT(must_free[i]);
+            for (int j = 0; j < count; j ++)
+                g_free(args[i].v_pointer[j]);
+            g_free(args[i].v_pointer[j]);
+        }
+    }
+}
+
 //////////////////////////////////////////////////////////
 // CONVERTING GIARGUMENTS TO SCM OBJECTS
 //////////////////////////////////////////////////////////
@@ -944,7 +937,7 @@ gi_giargument_preallocate_output_arg_and_object(GIArgInfo *arg_info, GIArgument 
 
 }
 
-static GIArgumentStatus
+GIArgumentStatus
 gi_giargument_convert_arg_to_object(GIArgument *arg, GIArgInfo *arg_info, SCM *obj)
 {
     GITypeInfo *type_info = g_arg_info_get_type (arg_info); 
