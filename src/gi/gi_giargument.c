@@ -114,6 +114,13 @@ static GIArgumentStatus convert_string_pointer_arg_to_object(GIArgument *arg, GI
 GIArgumentStatus
 gi_giargument_convert_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *must_free, GIArgument *arg)
 {
+    if (g_arg_info_may_be_null(arg_info) && scm_is_false(obj))
+    {
+	arg->v_pointer = NULL;
+	*must_free = GIR_FREE_NONE;    
+	return GI_GIARGUMENT_OK;
+    }
+    
     GITypeInfo *type_info = g_arg_info_get_type (arg_info); 
     GITypeTag type_tag = g_type_info_get_tag (type_info);
     gboolean is_ptr = g_type_info_is_pointer (type_info);
@@ -406,7 +413,7 @@ gi_giargument_convert_interface_pointer_object_to_arg(SCM obj, GIArgInfo *arg_in
     GIInfoType referenced_base_type = g_base_info_get_type (referenced_base_info);
 
     g_base_info_unref (type_info);
-    if (scm_is_eq (obj, SCM_BOOL_F) && g_arg_info_is_optional (arg_info))
+    if (scm_is_eq (obj, SCM_BOOL_F) && g_arg_info_may_be_null (arg_info))
     {
         arg->v_pointer = NULL;
         *must_free = GIR_FREE_NONE;
@@ -845,7 +852,6 @@ gi_giargument_preallocate_output_arg_and_object(GIArgInfo *arg_info, GIArgument 
             if (referenced_base_type == GI_INFO_TYPE_STRUCT)
             {
                 GIStructInfo *referenced_struct_info = g_type_get_qdata(referenced_object_type, gtype_base_info_key);
-                gpointer ptr;
                 g_assert(referenced_struct_info != NULL);
 
                 // If OBJ is already set, we typecheck that it is
@@ -904,10 +910,8 @@ gi_giargument_preallocate_output_arg_and_object(GIArgInfo *arg_info, GIArgument 
                 // bytevector is big enough to hold the contents
                 // that are going to be copied into it.
                 arg->v_pointer = SCM_BYTEVECTOR_CONTENTS(*obj);
+		ret = GI_GIARGUMENT_OK;
             }
-            unsigned must_free;
-            ret = gi_giargument_convert_immediate_pointer_object_to_arg(obj, arg_info, &must_free, arg);
-            // *must_free = GIR_FREE_NONE;
             break;
 
         case GI_TYPE_TAG_VOID:
@@ -936,7 +940,7 @@ gi_giargument_preallocate_output_arg_and_object(GIArgInfo *arg_info, GIArgument 
             g_assert_not_reached();
         }
     }
-    g_return_val_if_reached(GI_GIARGUMENT_ERROR);
+    return ret;
 }
 
 GIArgumentStatus
@@ -1057,7 +1061,7 @@ gi_giargument_convert_arg_to_object(GIArgument *arg, GIArgInfo *arg_info, SCM *o
                 g_assert_not_reached ();
         }
     }
-    g_return_val_if_reached(GI_GIARGUMENT_ERROR);
+    return ret;
 }
 
 SCM
@@ -1161,7 +1165,21 @@ gi_giargument_convert_return_val_to_object(GIArgument  *arg,
                 break;
 
             case GI_TYPE_TAG_INTERFACE:
-                g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);            
+			{
+				GIBaseInfo *referenced_base_info = g_type_info_get_interface(type_info);
+				GIInfoType referenced_base_type = g_base_info_get_type(referenced_base_info);
+				GType referenced_object_type = g_registered_type_info_get_g_type(referenced_base_info);
+
+				if (referenced_base_type == GI_INFO_TYPE_STRUCT)
+				{
+					GIStructInfo *referenced_struct_info = g_type_get_qdata(referenced_object_type, gtype_base_info_key);
+					g_assert(referenced_struct_info != NULL);
+					
+                    return gir_new_struct_gbox(referenced_object_type, arg->v_pointer, TRUE);
+				}
+                else
+					g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);            
+            }
                 // ret = gi_giargument_convert_interface_pointer_object_to_arg(obj, arg_info, must_free, arg);
                 // *must_free = GIR_FREE_NONE;
                 break;
@@ -3279,6 +3297,7 @@ scm_immediate_object_to_giargument(SCM s_obj, SCM s_type)
     return scm_make_foreign_object_1 (gi_giargument_type, arg);
 }
 
+#if 0
 static SCM
 scm_string_object_to_giargument(SCM s_obj, SCM s_type, SCM s_transfer)
 {
@@ -3298,6 +3317,7 @@ scm_string_object_to_giargument(SCM s_obj, SCM s_type, SCM s_transfer)
 
     return scm_make_foreign_object_1 (gi_giargument_type, arg);
 }
+#endif
 
 static SCM
 scm_string_giargument_to_object(SCM s_arg, SCM s_type, SCM s_transfer)
@@ -3398,7 +3418,7 @@ gi_init_giargument (void)
     scm_c_define_gsubr ("immediate-giargument->object", 2, 0, 0, scm_immediate_giargument_to_object);
     scm_c_define_gsubr ("immediate-object->giargument", 2, 0, 0, scm_immediate_object_to_giargument);
     scm_c_define_gsubr ("string-giargument->object", 3, 0, 0, scm_string_giargument_to_object);
-    scm_c_define_gsubr ("string-object->giargument", 3, 0, 0, scm_string_object_to_giargument);
+    //scm_c_define_gsubr ("string-object->giargument", 3, 0, 0, scm_string_object_to_giargument);
     scm_c_define_gsubr ("giargument->pointer", 1, 0, 0, scm_giargument_to_pointer);
     scm_c_define_gsubr ("pointer->giargument", 1, 0, 0, scm_pointer_to_giargument);
 }

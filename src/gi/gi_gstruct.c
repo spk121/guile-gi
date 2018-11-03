@@ -215,6 +215,28 @@ static SCM scm_gbox_p (SCM self)
   return scm_from_bool (SCM_IS_A_P (self, gir_gbox_type));
 }
 
+/* A procedure suitable as a record-type printer. */
+SCM
+scm_gbox_printer (SCM self, SCM port)
+{
+    if (!SCM_IS_A_P(self, gir_gbox_type))
+	scm_simple_format (port,
+			   scm_from_utf8_string("NOT A GBOX TYPE"),
+			   SCM_EOL);
+    else
+	{
+	    GirSmartPtr *sptr = scm_foreign_object_ref(self, 0);
+	    
+	    scm_simple_format (port,
+			       scm_from_utf8_string("~s [~s] <~s>"),
+			       scm_list_3 (scm_from_utf8_string (g_type_name (sptr->type)),
+					   scm_from_int (sptr->type),
+					   scm_from_uintmax ((uintmax_t)sptr->ptr)));
+	}
+    return SCM_UNSPECIFIED;
+}
+
+
 void
 gi_init_gbox (void)
 {
@@ -234,4 +256,5 @@ gi_init_gbox (void)
     scm_c_define_gsubr("gbox-peek-pointer", 1, 0, 0, scm_gbox_peek_pointer);
     scm_c_define_gsubr("gbox-get-gtype", 1, 0, 0, scm_gbox_get_gtype);
     scm_c_define_gsubr("%gbox-get-refcount", 1, 0, 0, scm_gbox_get_refcount);
+    scm_c_define_gsubr("gbox-printer", 2, 0, 0, scm_gbox_printer);
 }

@@ -1231,7 +1231,7 @@ function_info_convert_args(const char *func_name, GIFunctionInfo *func_info, SCM
             // argument is optional, we handle that case.
             if (i_received_arg >= n_args_received)
             {
-                if (g_arg_info_is_optional (arg_info))
+                if (g_arg_info_may_be_null (arg_info))
                 {
                     in_args[i_input_arg++]->v_pointer = NULL;
                     if (dir == GI_DIRECTION_INOUT)
@@ -1272,7 +1272,7 @@ function_info_convert_args(const char *func_name, GIFunctionInfo *func_info, SCM
             {
                 if (i_received_arg >= n_args_received)
                 {
-                    if (g_arg_info_is_optional(arg_info))
+		    if (g_arg_info_may_be_null (arg_info))
                     {
                         out_args[i_output_arg]->v_pointer = NULL;
                         i_output_arg ++;
