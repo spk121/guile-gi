@@ -1432,6 +1432,7 @@ gi_set_property_value (const char *func,
 		       GParamSpec *pspec,
 		       SCM svalue)
 {
+#if 0    
     GIPropertyInfo *property_info = NULL;
     GITypeInfo *type_info = NULL;
     GITypeTag type_tag;
@@ -1602,6 +1603,9 @@ out:
         g_base_info_unref (type_info);
 
     return ret_value;
+#else
+    return 0;
+#endif        
 }
 
 /* re pygobject_set_property */

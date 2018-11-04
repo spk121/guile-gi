@@ -113,7 +113,7 @@
 	(pass-if "MainLoop-get_context"
 		 (let ((ret (gi-method-send mainloop (gi-method-prepare "get_context"))))
 		   (write ret) (newline)
-		   (gobject-printer ret (current-output-port)) (newline)
+		   (gbox-printer ret (current-output-port)) (newline)
 		   #t))))
 
     (pass-if "unload repositories"

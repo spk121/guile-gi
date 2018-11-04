@@ -368,6 +368,7 @@ check_type(SCM obj, GIArgInfo *ai, char **errstr)
   return TRUE;
 }
 
+#if 0
 static SCM
 gir_function_invoke(SCM s_info, SCM s_args)
 {
@@ -500,6 +501,7 @@ gir_function_invoke(SCM s_info, SCM s_args)
 
     return output;
 }
+#endif
 
 /****************************************************************/
 /* REGISTERED TYPE */
@@ -928,8 +930,8 @@ gir_init_funcs(void)
 		     s_xg_irepository_get_infos);
   scm_c_define_gsubr("irepository-require", 2, 0, 0,
 		     gir_irepository_require);
-  scm_c_define_gsubr("function-invoke", 1, 0, 1,
-		     gir_function_invoke);
+  // scm_c_define_gsubr("function-invoke", 1, 0, 1,
+	// 	     gir_function_invoke);
 
   /* REGISTERED TYPE */
   GET_G_TYPEX("enum-info-get-g-type", GIEnumInfo);

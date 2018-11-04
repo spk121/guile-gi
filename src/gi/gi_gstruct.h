@@ -44,6 +44,7 @@ void gir_sptr_add_ref (GirSmartPtr *sptr);
 void gir_sptr_release (GirSmartPtr *sptr);
 
 void *gi_gbox_peek_pointer (SCM self);
+GType gi_gbox_get_type (SCM self);
 
 SCM gir_new_gbox (GirPointerContents holds, GType gtype, gpointer ptr, gboolean use_default_free);
 void gir_gbox_connect_c_free_func (SCM box, void (*free_func)(gpointer ptr));

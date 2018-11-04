@@ -176,6 +176,14 @@ scm_gbox_peek_pointer (SCM self)
     return SCM_BOOL_F;
 }
 
+GType gi_gbox_get_type (SCM self)
+{
+    GirSmartPtr *sptr = scm_foreign_object_ref(self, 0);
+    if (sptr)
+        return sptr->type;
+    return G_TYPE_NONE;    
+}
+
 static SCM
 scm_gbox_get_gtype (SCM self)
 {
