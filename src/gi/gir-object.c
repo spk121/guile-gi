@@ -437,6 +437,7 @@ gir_make_GObject (SCM gtype, SCM args_alist)
 				scm_list_2 (gtype, scm_car));
 	    g_value_init(&values[i], G_PARAM_SPEC_VALUE_TYPE(pspec));
 	    gug_value_from_scm_with_error(&values[i], scm_cdr(entry));
+	    scm_remember_upto_her_1 (entry);
 	}
     }
 

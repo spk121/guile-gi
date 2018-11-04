@@ -116,12 +116,12 @@ gi_giargument_convert_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *must
 {
     if (g_arg_info_may_be_null(arg_info) && scm_is_false(obj))
     {
-	arg->v_pointer = NULL;
-	*must_free = GIR_FREE_NONE;    
-	return GI_GIARGUMENT_OK;
+    arg->v_pointer = NULL;
+    *must_free = GIR_FREE_NONE;
+    return GI_GIARGUMENT_OK;
     }
-    
-    GITypeInfo *type_info = g_arg_info_get_type (arg_info); 
+
+    GITypeInfo *type_info = g_arg_info_get_type (arg_info);
     GITypeTag type_tag = g_type_info_get_tag (type_info);
     gboolean is_ptr = g_type_info_is_pointer (type_info);
     GIArgumentStatus ret;
@@ -216,7 +216,7 @@ gi_giargument_convert_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *must
                 // No GType pointer inputs as far as I can tell.
                 g_assert_not_reached();
                 break;
-            
+
             case GI_TYPE_TAG_ERROR:
                 // FIXME: unhandled
                 g_assert_not_reached();
@@ -315,7 +315,7 @@ gi_giargument_convert_interface_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *m
     }
     else
     {
-        g_assert_not_reached();        
+        g_assert_not_reached();
     }
     return ret;
 }
@@ -430,7 +430,7 @@ gi_giargument_convert_interface_pointer_object_to_arg(SCM obj, GIArgInfo *arg_in
         else
         {
             GType type = g_registered_type_info_get_g_type(referenced_base_info);
-            GirSmartPtr *sptr = scm_foreign_object_ref(obj, 0);        
+            GirSmartPtr *sptr = scm_foreign_object_ref(obj, 0);
             if ((sptr->holds == SPTR_HOLDS_STRUCT && referenced_base_type == GI_INFO_TYPE_STRUCT)
                 || (sptr->holds == SPTR_HOLDS_UNION && referenced_base_type == GI_INFO_TYPE_UNION))
             {
@@ -438,7 +438,7 @@ gi_giargument_convert_interface_pointer_object_to_arg(SCM obj, GIArgInfo *arg_in
                 {
                     arg->v_pointer = NULL;
                     *must_free = GIR_FREE_NONE;
-                    ret = GI_GIARGUMENT_WRONG_TYPE_ARG;    
+                    ret = GI_GIARGUMENT_WRONG_TYPE_ARG;
                 }
                 else
                 {
@@ -455,7 +455,7 @@ gi_giargument_convert_interface_pointer_object_to_arg(SCM obj, GIArgInfo *arg_in
         {
             arg->v_pointer = NULL;
             *must_free = GIR_FREE_NONE;
-            ret = GI_GIARGUMENT_WRONG_TYPE_ARG;            
+            ret = GI_GIARGUMENT_WRONG_TYPE_ARG;
         }
         else
         {
@@ -464,15 +464,15 @@ gi_giargument_convert_interface_pointer_object_to_arg(SCM obj, GIArgInfo *arg_in
             {
                 arg->v_pointer = NULL;
                 *must_free = GIR_FREE_NONE;
-                ret = GI_GIARGUMENT_WRONG_TYPE_ARG;                   
+                ret = GI_GIARGUMENT_WRONG_TYPE_ARG;
             }
             else
             {
                 arg->v_pointer = gi_gobject_get_obj(obj);
                 *must_free = GIR_FREE_NONE;
-                ret = GI_GIARGUMENT_OK;    
+                ret = GI_GIARGUMENT_OK;
             }
-        }        
+        }
     }
     else
     {
@@ -910,7 +910,7 @@ gi_giargument_preallocate_output_arg_and_object(GIArgInfo *arg_info, GIArgument 
                 // bytevector is big enough to hold the contents
                 // that are going to be copied into it.
                 arg->v_pointer = SCM_BYTEVECTOR_CONTENTS(*obj);
-		ret = GI_GIARGUMENT_OK;
+        ret = GI_GIARGUMENT_OK;
             }
             break;
 
@@ -946,7 +946,7 @@ gi_giargument_preallocate_output_arg_and_object(GIArgInfo *arg_info, GIArgument 
 GIArgumentStatus
 gi_giargument_convert_arg_to_object(GIArgument *arg, GIArgInfo *arg_info, SCM *obj)
 {
-    GITypeInfo *type_info = g_arg_info_get_type (arg_info); 
+    GITypeInfo *type_info = g_arg_info_get_type (arg_info);
     GITypeTag type_tag = g_type_info_get_tag (type_info);
     GITransfer transfer = g_arg_info_get_ownership_transfer (arg_info);
     gboolean is_ptr = g_type_info_is_pointer (type_info);
@@ -961,7 +961,7 @@ gi_giargument_convert_arg_to_object(GIArgument *arg, GIArgInfo *arg_info, SCM *o
                 *obj = SCM_UNSPECIFIED;
                 ret = GI_GIARGUMENT_OK;
                 break;
-            
+
             case GI_TYPE_TAG_BOOLEAN:
             case GI_TYPE_TAG_DOUBLE:
             case GI_TYPE_TAG_FLOAT:
@@ -1045,7 +1045,7 @@ gi_giargument_convert_arg_to_object(GIArgument *arg, GIArgInfo *arg_info, SCM *o
             case GI_TYPE_TAG_GTYPE:
                 g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
                 break;
-            
+
             case GI_TYPE_TAG_ERROR:
                 // FIXME: unhandled
                 g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
@@ -1066,8 +1066,8 @@ gi_giargument_convert_arg_to_object(GIArgument *arg, GIArgInfo *arg_info, SCM *o
 
 SCM
 gi_giargument_convert_return_val_to_object(GIArgument  *arg,
-			 GITypeInfo *type_info,
-			 GITransfer transfer, gboolean null_ok, gboolean skip)
+             GITypeInfo *type_info,
+             GITransfer transfer, gboolean null_ok, gboolean skip)
 {
     SCM obj = SCM_BOOL_F;
     unsigned must_free;
@@ -1076,7 +1076,7 @@ gi_giargument_convert_return_val_to_object(GIArgument  *arg,
         return SCM_UNSPECIFIED;
     if (null_ok && arg->v_pointer == NULL)
         return SCM_BOOL_F;
-    
+
     GITypeTag type_tag = g_type_info_get_tag (type_info);
     gboolean is_ptr = g_type_info_is_pointer (type_info);
     GIArgumentStatus ret;
@@ -1089,7 +1089,7 @@ gi_giargument_convert_return_val_to_object(GIArgument  *arg,
                 obj = SCM_UNSPECIFIED;
                 ret = GI_GIARGUMENT_OK;
                 break;
-                
+
             case GI_TYPE_TAG_BOOLEAN:
             case GI_TYPE_TAG_DOUBLE:
             case GI_TYPE_TAG_FLOAT:
@@ -1140,19 +1140,19 @@ gi_giargument_convert_return_val_to_object(GIArgument  *arg,
             case GI_TYPE_TAG_UINT64:
             case GI_TYPE_TAG_UINT8:
             case GI_TYPE_TAG_UNICHAR:
-                g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);            
+                g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
                 // ret = gi_giargument_convert_immediate_pointer_object_to_arg(obj, arg_info, must_free, arg);
                 // *must_free = GIR_FREE_NONE;
                 break;
 
             case GI_TYPE_TAG_UTF8:
             case GI_TYPE_TAG_FILENAME:
-                // g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);            
+                // g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
                 ret = convert_string_pointer_arg_to_object(arg, type_tag, transfer, &obj);
                 break;
 
             case GI_TYPE_TAG_VOID:
-                g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);            
+                g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
                 // ret = gi_giargument_convert_const_void_pointer_object_to_arg(obj, arg);
                 // *must_free = GIR_FREE_NONE;
                 break;
@@ -1165,40 +1165,41 @@ gi_giargument_convert_return_val_to_object(GIArgument  *arg,
                 break;
 
             case GI_TYPE_TAG_INTERFACE:
-			{
-				GIBaseInfo *referenced_base_info = g_type_info_get_interface(type_info);
-				GIInfoType referenced_base_type = g_base_info_get_type(referenced_base_info);
-				GType referenced_object_type = g_registered_type_info_get_g_type(referenced_base_info);
+                {
+                    GIBaseInfo *referenced_base_info = g_type_info_get_interface(type_info);
+                    GIInfoType referenced_base_type = g_base_info_get_type(referenced_base_info);
+                    GType referenced_object_type = g_registered_type_info_get_g_type(referenced_base_info);
+                    g_base_info_unref(referenced_base_info);
 
-				if (referenced_base_type == GI_INFO_TYPE_STRUCT)
-				{
-					GIStructInfo *referenced_struct_info = g_type_get_qdata(referenced_object_type, gtype_base_info_key);
-					g_assert(referenced_struct_info != NULL);
-					
-                    return gir_new_struct_gbox(referenced_object_type, arg->v_pointer, TRUE);
-				}
-                else
-					g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);            
-            }
+                    if (referenced_base_type == GI_INFO_TYPE_STRUCT)
+                    {
+                        GIStructInfo *referenced_struct_info = g_type_get_qdata(referenced_object_type, gtype_base_info_key);
+                        g_assert(referenced_struct_info != NULL);
+
+                        return gir_new_struct_gbox(referenced_object_type, arg->v_pointer, TRUE);
+                    }
+                    else
+                        g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
+                }
                 // ret = gi_giargument_convert_interface_pointer_object_to_arg(obj, arg_info, must_free, arg);
                 // *must_free = GIR_FREE_NONE;
                 break;
 
             case GI_TYPE_TAG_GTYPE:
                 // No GType pointer inputs as far as I can tell.
-                g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);                
+                g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
                 g_assert_not_reached();
                 break;
-            
+
             case GI_TYPE_TAG_ERROR:
                 // FIXME: unhandled
-                g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);                
+                g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
                 // g_assert_not_reached();
                 //ret = gi_giargument_convert_error_to_arg(obj, arg_info, must_free, arg);
                 break;
 
             case GI_TYPE_TAG_ARRAY:
-                g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);            
+                g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
                 // ret = gi_giargument_convert_array_object_to_arg(obj, arg_info, must_free, arg);
                 break;
 

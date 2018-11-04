@@ -321,10 +321,10 @@ export_callable_info(GString **export, const char *parent, GICallableInfo *info)
 {
     gint n_args;
     GIArgInfo *arg;
+    char *c_function_name;
 
     n_args = g_callable_info_get_n_args(info);
 
-    char *c_function_name;
     if (parent)
         c_function_name = g_strdup_printf("%s-%s", parent, g_base_info_get_name(info));
     else
@@ -386,6 +386,7 @@ export_callable_info(GString **export, const char *parent, GICallableInfo *info)
     }
 
     g_string_append(*export, "))\n\n");
+    g_free (c_function_name);
 }
 
 static void
@@ -393,10 +394,10 @@ export_method_info(GString **export, const char *parent, GICallableInfo *info, g
 {
     gint n_args;
     GIArgInfo *arg;
+    char *c_function_name;
 
     n_args = g_callable_info_get_n_args(info);
 
-    char *c_function_name;
     if (parent)
         c_function_name = g_strdup_printf("%s-%s", parent, g_base_info_get_name(info));
     else
@@ -461,6 +462,7 @@ export_method_info(GString **export, const char *parent, GICallableInfo *info, g
     }
 
     g_string_append(*export, ")))\n\n");
+    g_free (c_function_name);
 }
 
 /* FIXME: this is very sigmal to export signal info */
@@ -861,6 +863,7 @@ scm_gi_constant_value(SCM s_namespace, SCM s_name)
         ret = SCM_BOOL_F;
     }
     g_constant_info_free_value(info, &value);
+    g_base_info_unref (typeinfo);
     free(namespace_);
     free(name);
     g_free(full_name);
@@ -1353,7 +1356,7 @@ function_info_convert_args(const char *func_name, GIFunctionInfo *func_info, SCM
                                   scm_from_int(*n_input_args),
                                   scm_from_int(i_received_arg)));
     }
-
+    scm_remember_upto_here_1 (obj);
     return;
 
 arg_err_cleanup:
@@ -1574,10 +1577,9 @@ scm_gi_method_send(SCM s_object, SCM s_method_args_list)
     unsigned *in_args_free;
 
     // This converts the SCM arguments to C arguments. This will throw on conversion error.
-    if (n_input_args > 0)
-        function_info_convert_args(method_name, info, scm_cdr(s_args), &n_input_args, &in_args, &in_args_free, &n_output_args, &out_args);
-    else
-        function_info_convert_args(method_name, info, SCM_EOL, &n_input_args, &in_args, &in_args_free, &n_output_args, &out_args);
+    // scm_write(s_method_args_list, scm_current_output_port());
+    function_info_convert_args(method_name, info, s_args, &n_input_args, &in_args, &in_args_free, &n_output_args, &out_args);
+    scm_remember_upto_here_1 (s_args);
 
     // Need to prepend 'self' to the input arguments on a method call
     in_args = g_realloc_n(in_args, n_input_args + 1, sizeof(GIArgument));
@@ -1612,6 +1614,7 @@ scm_gi_method_send(SCM s_object, SCM s_method_args_list)
         memset(str, 0, 256);
         strncpy(str, err->message, 255);
         g_error_free(err);
+	free (method_name);
 
         scm_misc_error("gi-method-send",
                        "error invoking method '~a': ~a",
@@ -1641,6 +1644,14 @@ scm_gi_method_send(SCM s_object, SCM s_method_args_list)
     g_free(out_args);
     g_free(method_name);
     int outlen = scm_to_int(scm_length(output));
+    
+    scm_remember_upto_here_1 (s_name);
+    scm_remember_upto_here_1 (s_args);
+    scm_remember_upto_here_1 (s_return);
+    scm_remember_upto_here_1 (output);
+    scm_remember_upto_here_1 (output2);
+    scm_remember_upto_here_1 (s_method_args_list);
+    
     if (outlen == 0)
         return SCM_UNSPECIFIED;
     if (outlen == 1)
@@ -1730,7 +1741,14 @@ scm_gi_function_invoke(SCM s_name, SCM s_args)
     SCM output2 = function_info_convert_output_args(name_str, func_info, n_output_args, out_args);
     output = scm_append(scm_list_2(output, output2));
     g_free(out_args);
+    free(name_str);
+    free(args_str);
     int outlen = scm_to_int(scm_length(output));
+    
+    scm_remember_upto_here_1 (s_return);
+    scm_remember_upto_here_1 (output);
+    scm_remember_upto_here_1 (output2);
+    
     if (outlen == 0)
         return SCM_UNSPECIFIED;
     if (outlen == 1)
