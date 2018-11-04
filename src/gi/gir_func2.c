@@ -34,7 +34,7 @@ static GHashTable *gi_unions = NULL;
 static GHashTable *gi_objects = NULL;
 static GHashTable *gi_interfaces = NULL;
 static GHashTable *gi_signals = NULL;
-#define FIGURE_OUT_ALL_ARG_TYPES
+// #define FIGURE_OUT_ALL_ARG_TYPES
 #ifdef FIGURE_OUT_ALL_ARG_TYPES
 struct _arg_info_func_name
 {
@@ -2020,5 +2020,7 @@ void gir_init_func2(void)
     scm_c_define_gsubr("gi-method-prepare", 1, 0, 1, scm_gi_method_prepare);
     scm_c_define_gsubr("gi-method-send", 2, 0, 0, scm_gi_method_send);
     scm_c_define_gsubr("gi-lookup-type", 1, 0, 0, scm_gi_lookup_type);
+#ifdef FIGURE_OUT_ALL_ARG_TYPES    
     scm_c_define_gsubr("gi-dump-arg-types", 0, 0, 0, scm_dump_all_arg_types);
+#endif    
 }
