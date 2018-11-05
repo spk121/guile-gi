@@ -14,6 +14,7 @@
 #include "gi_giargument.h"
 #include "gi_gboxed.h"
 #include "gi_gstruct.h"
+#include "gir_callback.h"
 
 #ifndef FLT_MAX
 #define FLT_MAX 3.402823466e+38F
@@ -472,6 +473,21 @@ gi_giargument_convert_interface_pointer_object_to_arg(SCM obj, GIArgInfo *arg_in
                 *must_free = GIR_FREE_NONE;
                 ret = GI_GIARGUMENT_OK;
             }
+        }
+    }
+    else if (referenced_base_type == GI_INFO_TYPE_CALLBACK)
+    {
+        if (SCM_IS_A_P(obj, gir_callback_type))
+        {
+            arg->v_pointer = gir_callback_get_func (obj);
+            *must_free = GIR_FREE_NONE;
+            ret = GI_GIARGUMENT_OK;
+        }
+        else
+        {
+            arg->v_pointer = NULL;
+            *must_free = GIR_FREE_NONE;
+            ret = GI_GIARGUMENT_WRONG_TYPE_ARG;
         }
     }
     else

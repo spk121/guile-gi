@@ -3,6 +3,7 @@
 *.gcno
 *.la
 *.o
+*.obj
 *.orig
 *.rej
 *.tab.c
@@ -64,6 +65,9 @@ guile-gi
 a.out
 *.gir
 *.typelib
+*.exe
+*.dll
+*.a
 
 # logs
 gir-log.txt

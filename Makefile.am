@@ -33,7 +33,8 @@ BUILT_SOURCES += \
  src/gi/__gi_gobject.h src/gi/__gi_gobject.c \
  src/gi/__gi_gtype.h src/gi/__gi_gtype.c \
  src/gi/__gi_gvalue.h src/gi/__gi_gvalue.c \
- src/gi/__gi_gparamspec.h src/gi/__gi_gparamspec.c
+ src/gi/__gi_gparamspec.h src/gi/__gi_gparamspec.c \
+ src/gi/__gi_gstruct.h src/gi/__gi_gstruct.c
 
 src/gi/__gi_gboxed.c: $(builddir)/fo_gen$(EXEEXT) src/gi/foreign-object-types.ini
 src/gi/__gi_gboxed.h: $(builddir)/fo_gen$(EXEEXT) src/gi/foreign-object-types.ini
@@ -53,6 +54,8 @@ src/gi/__gi_gvalue.h: $(builddir)/fo_gen$(EXEEXT) src/gi/foreign-object-types.in
 src/gi/__gi_gvalue.c: $(builddir)/fo_gen$(EXEEXT) src/gi/foreign-object-types.ini
 src/gi/__gi_gparamspec.h: $(builddir)/fo_gen$(EXEEXT) src/gi/foreign-object-types.ini
 src/gi/__gi_gparamspec.c: $(builddir)/fo_gen$(EXEEXT) src/gi/foreign-object-types.ini
+src/gi/__gi_gstruct.h: $(builddir)/fo_gen$(EXEEXT) src/gi/foreign-object-types.ini
+src/gi/__gi_gstruct.c: $(builddir)/fo_gen$(EXEEXT) src/gi/foreign-object-types.ini
 	$(builddir)/fo_gen$(EXEEXT) $(top_srcdir)/src/gi/foreign-object-types.ini $(top_srcdir)/src/gi
 
 guile_gi_SOURCES = \
@@ -70,7 +73,9 @@ guile_gi_SOURCES = \
  src/gi/gir_func.h src/gi/gir_func.c \
  src/gi/gir_func2.h src/gi/gir_func2.c \
  src/gi/gir_type.h src/gi/gir_type.c \
- src/gi/gi_signal_closure.h src/gi/gi_signal_closure.c
+ src/gi/gi_signal_closure.h src/gi/gi_signal_closure.c \
+ src/gi/gi_gstruct.h src/gi/gi_struct.c \
+ src/gi/__gi_gstruct.h src/gi/__gi_gstruct.c
 
 
 # src/gi/__gi_gboxed.h src/gi/__gi_gboxed.c \
@@ -126,7 +131,9 @@ libguile_gi_la_SOURCES = \
  src/gi/gir_func.h src/gi/gir_func.c \
  src/gi/gir_type.h src/gi/gir_type.c \
  src/gi/gir_func2.h src/gi/gir_func2.c \
- src/gi/gi_signal_closure.h src/gi/gi_signal_closure.c
+ src/gi/gi_signal_closure.h src/gi/gi_signal_closure.c \
+ src/gi/gi_gstruct.h src/gi/gi_struct.c \
+ src/gi/__gi_gstruct.h src/gi/__gi_gstruct.c
 
 
 

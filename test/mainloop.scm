@@ -1,4 +1,5 @@
 (use-modules (lib)
+	     (rnrs bytevectors)
 	     (ice-9 eval-string)
 	     (srfi srfi-9 gnu))
 
@@ -32,7 +33,15 @@
 	    (not (main-context-pending? ctx)))
 
    (pass-if "an iteration of the main loop doesn't dispatch events"
-	    (not (main-context-iteration? ctx #f))))
+	    (not (main-context-iteration? ctx #f)))
+
+   (pass-if "g_idle_remove_by_data works"
+	    (let ((callback (lambda (user-data)
+			      (format #t "In callback.  Received ~s~%" user-data)
+			      #f))
+		  (user-data (make-bytevector 8 0)))
+	      (idle-add PRIORITY_DEFAULT_IDLE callback user-data #f)
+	      (idle-remove-by-data user-data))))
   
   (with-test-prefix
    "unload typelib"

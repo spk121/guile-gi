@@ -392,7 +392,7 @@ gu_g_object_new(GObject *obj)
 }
 
 static SCM
-gir_make_GObject (SCM gtype, SCM args_alist)
+gir_make_GObject(SCM gtype, SCM args_alist)
 {
     GType type;
     GObjectClass *class;
@@ -439,25 +439,25 @@ gir_make_GObject (SCM gtype, SCM args_alist)
 	    gug_value_from_scm_with_error(&values[i], scm_cdr(entry));
 	    scm_remember_upto_her_1 (entry);
 	}
-    }
 
-    GObject *new = g_object_new_with_properties (type, n_params, names, values);
-    if (!new)
-	scm_misc_error ("make-GObject", "could not create object", SCM_EOL);
-  
-    for (int i = 0; i < n_params; i ++) {
-	g_free(names[i]);
-	g_value_unset(&values[i]);
-    }
-    g_free (names);
-    g_type_class_unref(class);
-  
-    if (new)
-	return scm_make_foreign_object_1(GuGObject_Type, new);
+	GObject *new = g_object_new_with_properties(type, n_params, names, values);
+	if (!new)
+		scm_misc_error("make-GObject", "could not create object", SCM_EOL);
 
-    return SCM_BOOL_F;
+	for (int i = 0; i < n_params; i++)
+	{
+		g_free(names[i]);
+		g_value_unset(&values[i]);
+	}
+	g_free(names);
+	g_type_class_unref(class);
+
+	if (new)
+		return scm_make_foreign_object_1(GuGObject_Type, new);
+
+	return SCM_BOOL_F;
 }
-    
+
 void
 gir_init_gobject(void)
 {

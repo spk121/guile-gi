@@ -16,6 +16,7 @@
 #include "gir_func2.h"
 #include "gir_type.h"
 #include "gi_gstruct.h"
+#include "gir_callback.h"
 
 void
 gir_log_handler (const gchar *log_domain,
@@ -53,6 +54,7 @@ gir_init(void)
     gi_init_giargument();
     gir_init_types();
     gi_init_gobject();
+    gir_init_callback();
     g_debug ("End libguile-gir initialization");
 }
 

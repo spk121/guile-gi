@@ -153,14 +153,15 @@ m4_define([compiler_flags_common],[ dnl
  -fstack-protector dnl
  -fstack-protector-strong dnl
  -fno-semantic-interposition dnl
- -fsanitize=address dnl        AddressSanitizer
- -fno-omit-frame-pointer dnl   AddressSanitizer
- -fno-common dnl               AddressSanitizer
- -fsanitize=leak dnl           LeakSanatizer
- -fsanitize=undefined dnl      UndefinedBehaviorSanitizer
- -fsanitize=bounds-strict dnl  UndefinedBEhaviorSanitizer
  -fdiagnostics-color=auto dnl
 ])
+
+ dnl -fsanitize=address dnl        AddressSanitizer
+ dnl -fno-omit-frame-pointer dnl   AddressSanitizer
+ dnl -fno-common dnl               AddressSanitizer
+ dnl -fsanitize=leak dnl           LeakSanatizer
+ dnl -fsanitize=undefined dnl      UndefinedBehaviorSanitizer
+ dnl -fsanitize=bounds-strict dnl  UndefinedBEhaviorSanitizer
 
 AC_ARG_ENABLE([all-the-warnings],
             [AS_HELP_STRING([--enable-all-the-warnings],

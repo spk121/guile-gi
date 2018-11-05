@@ -138,4 +138,4 @@ with 'irepository-require'"
 namespace must first have been loaded with 'irepository-require'"
   (%irepository-get-infos namespace))
 
-(load-extension "libguile-gi.so" "gi_init_gobject")
+(load-extension "libguile-gi.dll" "gi_init_gobject")

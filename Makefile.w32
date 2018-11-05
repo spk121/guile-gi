@@ -12,23 +12,23 @@ CPPFLAGS = \
   -Wall \
   $(DEFS) \
   $(INCLUDES) \
-  `pkg-config --cflags-only-I guile-2.2 glib-2.0 gobject-2.0 gobject-introspection-1.0` 
+  `pkg-config --cflags-only-I guile-2.2 glib-2.0 gobject-2.0 gobject-introspection-1.0 libffi` 
 
 CFLAGS = \
  -fasynchronous-unwind-tables -fexceptions \
  -fstack-protector-strong \
- -g -grecord-gcc-switches \
+ -g -pg -grecord-gcc-switches \
  -fcf-protection \
  -Og -pipe \
  -Wall -Werror=format-security -Werror=implicit-function-declaration -Wshadow \
  -fno-omit-frame-pointer -fdiagnostics-color=auto \
- `pkg-config --cflags-only-other guile-2.2 glib-2.0 gobject-2.0 gobject-introspection-1.0`
+ `pkg-config --cflags-only-other guile-2.2 glib-2.0 gobject-2.0 gobject-introspection-1.0 libffi`
 
 LDFLAGS = \
-  `pkg-config --libs-only-L guile-2.2 glib-2.0 gobject-2.0 gobject-introspection-1.0`
+  `pkg-config --libs-only-L guile-2.2 glib-2.0 gobject-2.0 gobject-introspection-1.0 libffi`
 
 LIBS = \
-  `pkg-config --libs-only-l --libs-only-other guile-2.2 glib-2.0 gobject-2.0 gobject-introspection-1.0`
+  `pkg-config --libs-only-l --libs-only-other guile-2.2 glib-2.0 gobject-2.0 gobject-introspection-1.0 libffi`
 
 # CFLAGS = -g -O0
 # ALL_THE_WARNINGS =  \
@@ -95,6 +95,7 @@ OBJ = \
 	src/gi/gir_func.obj \
 	src/gi/gir_type.obj \
 	src/gi/gir_func2.obj \
+	src/gi/gir_callback.obj \
 	src/gi/gir.obj
 
 guile-gi.exe: $(OBJ) fo_gen.exe

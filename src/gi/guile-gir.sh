@@ -11,7 +11,7 @@
 ;; (irepository-require "Gtk" "3.0")
 ;; (define infos (irepository-get-infos "Gtk"))
 (irepository-require "GLib" "2.0")
-(define infos (irepository-get-infos "GLib"))
+(define infos (%irepository-get-infos "GLib"))
 ;; (irepository-require "WebKit2" "4.0")
 ;; (define infos (irepository-get-infos "WebKit2"))
 

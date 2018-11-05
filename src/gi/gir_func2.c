@@ -317,6 +317,67 @@ export_flag_info(GString **export, const char *parent, GIEnumInfo *info)
 }
 
 static void
+export_callback_info(GString **export, const char *parent, GICallableInfo *info)
+{
+    gint n_args;
+    GIArgInfo *arg;
+    char *c_function_name;
+
+    n_args = g_callable_info_get_n_args(info);
+
+    if (parent)
+        c_function_name = g_strdup_printf("%s-%s", parent, g_base_info_get_name(info));
+    else
+        c_function_name = g_strdup_printf("%s", g_base_info_get_name(info));
+
+    char *name = gname_to_scm_name(c_function_name);
+
+    g_string_append_printf(*export, ";; CALLBACK\n");
+    g_string_append_printf(*export, "(define %s", c_function_name);
+    free(name);
+
+    GITypeInfo *return_type = g_callable_info_get_return_type(info);
+    g_assert(return_type);
+    //if (g_type_info_get_tag(return_type) == GI_TYPE_TAG_BOOLEAN && !g_type_info_is_pointer(return_type))
+    //    g_string_append_c(*export, '?');
+    g_base_info_unref(return_type);
+
+    g_string_append_c(*export, '\n');
+
+    g_string_append_printf(*export, "  (gi-lookup-callback-info \"%s\"))\n", c_function_name);
+    g_string_append(*export, "  ;; ARGS: ");
+    for (int i = 0; i < n_args; i++)
+    {
+        arg = g_callable_info_get_arg(info, i);
+        GIDirection dir = g_arg_info_get_direction(arg);
+        GITypeInfo *type_info = g_arg_info_get_type(arg);
+
+        name = gname_to_scm_name(g_base_info_get_name(arg));
+        g_string_append(*export, name);
+        g_string_append_c(*export, ' ');
+        g_string_append_printf(*export, "[%s%s]", g_type_tag_to_string(g_type_info_get_tag(type_info)),
+            g_type_info_is_pointer(type_info) ? "*": "");
+        if (dir == GI_DIRECTION_INOUT)
+            g_string_append(*export, "[INOUT] ");
+        else if (dir == GI_DIRECTION_OUT)
+            g_string_append(*export, "[OUT]");
+        free(name);
+        if (i + 1 < n_args)
+            g_string_append(*export, ", ");
+        g_base_info_unref(type_info);
+        g_base_info_unref(arg);
+    }
+
+    g_string_append(*export, "\n");
+    GITypeInfo *type_info = g_callable_info_get_return_type(info);
+    g_string_append_printf(*export, "  ;; RETURN: %s%s\n\n", g_type_tag_to_string (g_type_info_get_tag (type_info)),
+        g_type_info_is_pointer(type_info) ? "*" : "");
+    g_base_info_unref (type_info);
+    g_free (c_function_name);
+}
+
+
+static void
 export_callable_info(GString **export, const char *parent, GICallableInfo *info)
 {
     gint n_args;
@@ -387,6 +448,7 @@ export_callable_info(GString **export, const char *parent, GICallableInfo *info)
 
     g_string_append(*export, "))\n\n");
     g_free (c_function_name);
+
 }
 
 static void
@@ -474,7 +536,7 @@ export_signal_info(GString **export, char *parent, GISignalInfo *info, gboolean 
 
     n_args = g_callable_info_get_n_args(info);
 
-    char *c_function_name, *c_method_name;
+    char *c_function_name;
     if (parent)
         c_function_name = g_strdup_printf("%s-%s-signal", parent, g_base_info_get_name(info));
     else
@@ -592,7 +654,7 @@ scm_gi_load_repository(SCM s_namespace, SCM s_version)
         return SCM_UNSPECIFIED;
     }
 
-    export = g_string_new(NULL);
+    export = g_string_new_len(NULL, 128*1024);
     g_string_append_printf(export, ";; Declaration for %s %s\n", namespace_, version);
 
     g_debug("Parsing irepository %s %s", namespace_, version);
@@ -613,6 +675,7 @@ scm_gi_load_repository(SCM s_namespace, SCM s_version)
         {
         case GI_INFO_TYPE_CALLBACK:
             insert_into_hash_table("callbacks", namespace_, NULL, &gi_callbacks, info);
+            export_callback_info(&export, NULL, info);
             break;
         case GI_INFO_TYPE_FUNCTION:
             insert_into_hash_table("functions", namespace_, NULL, &gi_functions, info);
@@ -1248,8 +1311,8 @@ function_info_convert_args(const char *func_name, GIFunctionInfo *func_info, SCM
         n_args_received = scm_to_int(scm_length(s_args));
     n_args = g_callable_info_get_n_args((GICallableInfo *)func_info);
     function_info_count_args(func_info, n_input_args, n_output_args);
-    g_debug("%s: %d arguments received", func_info, n_args_received);
-    g_debug("%s: %d args expected (%d input, %d output)", func_info, n_args, *n_input_args, *n_output_args);
+    g_debug("%s: %d arguments received", func_name, n_args_received);
+    g_debug("%s: %d args expected (%d input, %d output)", func_name, n_args, *n_input_args, *n_output_args);
 
     *in_args = g_new0(GIArgument, *n_input_args);
     *in_args_free = g_new0(unsigned, *n_input_args);
@@ -1329,8 +1392,8 @@ function_info_convert_args(const char *func_name, GIFunctionInfo *func_info, SCM
                 }
                 else
                 {
-                    SCM obj = scm_list_ref(s_args, scm_from_int(i_received_arg++));
-                    status = gi_giargument_preallocate_output_arg_and_object(arg_info, &(out_args[i_output_arg]), &obj);
+                    SCM entry = scm_list_ref(s_args, scm_from_int(i_received_arg++));
+                    status = gi_giargument_preallocate_output_arg_and_object(arg_info, out_args[i_output_arg], &entry);
                     i_output_arg++;
                     if (status != GI_GIARGUMENT_OK)
                     {
@@ -1663,16 +1726,10 @@ static SCM
 scm_gi_function_invoke(SCM s_name, SCM s_args)
 {
     GError *err = NULL;
-    int n_args, n_input_args, n_output_args, n_args_received;
+    int n_input_args, n_output_args;
     char *name_str;
     char *args_str;
     GIFunctionInfo *func_info;
-    GIDirection dir;
-    GIArgInfo *arg_info;
-    int i_input_arg;
-    int i_output_arg;
-    int i_received_arg;
-    GIArgumentStatus status;
     GIArgument *in_args, *out_args, return_arg;
     unsigned *in_args_free;
 
@@ -1832,7 +1889,6 @@ SCM gi_type_import_by_gi_info(GIBaseInfo *info)
     case GI_INFO_TYPE_STRUCT:
     {
         GType g_type;
-        SCM s_type;
         if (g_hash_table_contains(gi_structs, name))
         {
             g_debug("type name '%s' is found in structs", name);
@@ -1845,6 +1901,24 @@ SCM gi_type_import_by_gi_info(GIBaseInfo *info)
         g_critical("unimplemented");
     }
     return SCM_UNSPECIFIED;
+}
+
+static SCM
+scm_gi_lookup_callback_info(SCM s_type_name)
+{
+    SCM_ASSERT(scm_is_string(s_type_name), s_type_name, SCM_ARG1, "gi-lookup-callback-info");
+    char *name = scm_to_utf8_string(s_type_name);
+    gpointer ptr = NULL;
+
+    if (gi_callbacks)
+        ptr = g_hash_table_lookup(gi_callbacks, name);
+    free(name);
+    if (!ptr)
+        scm_misc_error("gi-lookup-callback-info",
+                       "Cannot find a callback type named '~a'",
+                       scm_list_1(s_type_name));
+
+    return scm_from_pointer(ptr, NULL);
 }
 
 #ifdef FIGURE_OUT_ALL_ARG_TYPES
@@ -2038,6 +2112,7 @@ void gir_init_func2(void)
     scm_c_define_gsubr("gi-method-prepare", 1, 0, 1, scm_gi_method_prepare);
     scm_c_define_gsubr("gi-method-send", 2, 0, 0, scm_gi_method_send);
     scm_c_define_gsubr("gi-lookup-type", 1, 0, 0, scm_gi_lookup_type);
+    scm_c_define_gsubr("gi-lookup-callback-info", 1, 0, 0, scm_gi_lookup_callback_info);
 #ifdef FIGURE_OUT_ALL_ARG_TYPES    
     scm_c_define_gsubr("gi-dump-arg-types", 0, 0, 0, scm_dump_all_arg_types);
 #endif    
