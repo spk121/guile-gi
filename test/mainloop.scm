@@ -1,5 +1,6 @@
 (use-modules (lib)
 	     (rnrs bytevectors)
+	     (system foreign)
 	     (ice-9 eval-string)
 	     (srfi srfi-9 gnu))
 
@@ -40,8 +41,26 @@
 			      (format #t "In callback.  Received ~s~%" user-data)
 			      #f))
 		  (user-data (make-bytevector 8 0)))
-	      (idle-add PRIORITY_DEFAULT_IDLE callback user-data #f)
-	      (idle-remove-by-data user-data))))
+	      (idle-add PRIORITY_DEFAULT_IDLE
+			(gir-callback-new SourceFunc callback)
+			(bytevector->pointer user-data) #f)
+	      (idle-remove-by-data? (bytevector->pointer user-data)))))
+
+  (with-test-prefix
+   "mainloop basic"
+   (let ((loop #f)
+	 (ctx #f))
+     
+     (pass-if "new main loop is not running"
+	      (set! loop (main-loop-new #f #f))
+	      (not (main-loop-is-running? loop)))
+
+     (pass-if "main loop context is default context"
+	      (set! ctx (main-loop-get-context loop))
+	      (format #t "main loop context: ~S. default context: ~S.~%" ctx (main-context-default))
+	      (equal? ctx (main-context-default)))
+
+     ))
   
   (with-test-prefix
    "unload typelib"

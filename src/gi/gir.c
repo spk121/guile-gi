@@ -30,9 +30,10 @@ gir_log_handler (const gchar *log_domain,
     time(&timer);
     tm_info = localtime(&timer);
     strftime(buffer, 26, "%Y-%m-%d %H:%M:%S", tm_info);
-    FILE *fp = fopen("gir-log.txt", "at");
-    fprintf (fp, "%s: %s %d %s\n", buffer, log_domain, log_level, message);
-    fclose (fp);
+    // FILE *fp = fopen("gir-log.txt", "at");
+    // fprintf (fp, "%s: %s %d %s\n", buffer, log_domain, log_level, message);
+    // fclose (fp);
+    fprintf (stderr, "%s: %s %d %s\n", buffer, log_domain, log_level, message);
 }
 
 void

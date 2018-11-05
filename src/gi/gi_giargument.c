@@ -281,6 +281,7 @@ gi_giargument_convert_immediate_object_to_arg(SCM object, GITypeTag type_tag, GI
         arg->v_uint32 = SCM_CHAR (object);
         break;
     default:
+        g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);    
         return GI_GIARGUMENT_UNHANDLED_TYPE;
     }
 
@@ -308,11 +309,20 @@ gi_giargument_convert_interface_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *m
     }
     else if (referenced_base_type == GI_INFO_TYPE_CALLBACK)
     {
-        // Somehow hook in a Scheme procedure + marshaller as a callback
-        g_critical("Unimplemented callback conversion");
-        arg->v_pointer = NULL;
-        *must_free = GIR_FREE_NONE;
-        ret = GI_GIARGUMENT_UNHANDLED_TYPE;
+
+        if (SCM_IS_A_P(obj, gir_callback_type))
+        {
+            arg->v_pointer = gir_callback_get_func (obj);
+            *must_free = GIR_FREE_NONE;
+            ret = GI_GIARGUMENT_OK;
+        }
+        else
+        {
+            g_critical("Unimplemented callback conversion %s: %d", __FILE__, __LINE__);
+            arg->v_pointer = NULL;
+            *must_free = GIR_FREE_NONE;
+            ret = GI_GIARGUMENT_UNHANDLED_TYPE;
+        }        
     }
     else
     {
@@ -493,7 +503,7 @@ gi_giargument_convert_interface_pointer_object_to_arg(SCM obj, GIArgInfo *arg_in
     else
     {
         // FIXME: definitely need to handle INTERFACE types.
-        g_critical("unimplemented");
+        g_critical("Unhandled argument type, %s: %d", __FILE__, __LINE__);
         ret = GI_GIARGUMENT_UNHANDLED_TYPE;
     }
     return ret;
@@ -769,6 +779,7 @@ gi_giargument_convert_array_object_to_arg(SCM object, GIArgInfo *array_arg_info,
     else
     {
         // Everything else is unhandled.
+        g_critical("Unhandled argument type, %s: %d", __FILE__, __LINE__);        
         ret = GI_GIARGUMENT_UNHANDLED_TYPE;
     }
 
@@ -1871,7 +1882,10 @@ arg_struct_to_scm(GIArgument *arg,
         else
         obj = gir_new_gbox (SPTR_HOLDS_STRUCT, g_type, arg->v_pointer, FALSE);
     } else
+    {
+        g_critical("Unhandled argument type, %s: %d", __FILE__, __LINE__);
         return GI_GIARGUMENT_UNHANDLED_TYPE;
+    }
     }
 
     return GI_GIARGUMENT_OK;
