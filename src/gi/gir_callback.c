@@ -103,7 +103,7 @@ GirCallback *gir_callback_new(GICallbackInfo *callback_info, SCM s_func)
     g_base_info_ref(callback_info);
 
     /* Allocate closure and bound_puts */
-    gir_callback->closure = ffi_closure_alloc(sizeof(ffi_closure), (void **)(&(gir_callback->callback_ptr)));
+    gir_callback->closure = ffi_closure_alloc(sizeof(ffi_closure), &(gir_callback->callback_ptr));
 
     if (gir_callback->closure)
     {
@@ -130,7 +130,7 @@ GirCallback *gir_callback_new(GICallbackInfo *callback_info, SCM s_func)
         {
             /* Initialize the closure */
             if (ffi_prep_closure_loc(gir_callback->closure, &(gir_callback->cif), callback_binding,
-                                    gir_callback, &(gir_callback->callback_ptr)) == FFI_OK)
+                                    gir_callback, gir_callback->callback_ptr) == FFI_OK)
             {
 
                 return gir_callback;

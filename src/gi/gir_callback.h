@@ -12,7 +12,7 @@ typedef struct _GirCallback
     ffi_closure *closure;
     ffi_cif cif;
     SCM s_func;
-    void (*callback_ptr)(void);
+    void *callback_ptr;
 } GirCallback;
 
 void gir_init_callback (void);
