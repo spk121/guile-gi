@@ -94,7 +94,7 @@ void callback_binding(ffi_cif *cif, void *ret, void *ffi_args[],
 GirCallback *gir_callback_new(GICallbackInfo *callback_info, SCM s_func)
 {
     GirCallback *gir_callback = g_new0(GirCallback, 1);
-    ffi_type *ffi_args = NULL;
+    ffi_type **ffi_args = NULL;
     ffi_type *ffi_ret_type;
     gint n_args = g_callable_info_get_n_args(callback_info);
 
@@ -109,12 +109,12 @@ GirCallback *gir_callback_new(GICallbackInfo *callback_info, SCM s_func)
     {
         /* Initialize the argument info vectors */
         if (n_args > 0)
-            ffi_args = g_new0(ffi_type, n_args);
+            ffi_args = g_new0(ffi_type *, n_args);
         for (int i = 0; i < n_args; i++)
         {
             GIArgInfo *callback_arg_info = g_callable_info_get_arg(callback_info, i);
             GITypeInfo *type_info = g_arg_info_get_type(callback_arg_info);
-            memcpy(&ffi_args[i], type_info_to_ffi_type(type_info), sizeof(ffi_type));
+            ffi_args[i] = type_info_to_ffi_type(type_info);
             g_base_info_unref(callback_arg_info);
             g_base_info_unref(type_info);
         }
@@ -124,7 +124,7 @@ GirCallback *gir_callback_new(GICallbackInfo *callback_info, SCM s_func)
 
         /* Initialize the cif */
         ffi_status ret = ffi_prep_cif(&(gir_callback->cif), FFI_DEFAULT_ABI, n_args,
-                                      ffi_ret_type, &ffi_args);
+                                      ffi_ret_type, ffi_args);
         g_free(ffi_args);
         if (ret == FFI_OK)
         {
