@@ -103,24 +103,24 @@ CPPFLAGS = \
   -Wall \
   $(DEFS) \
   $(INCLUDES) \
-  `pkg-config --cflags-only-I guile-2.2 glib-2.0 gobject-2.0 gobject-introspection-1.0` 
+  `pkg-config --cflags-only-I guile-2.2 glib-2.0 gobject-2.0 gobject-introspection-1.0 libffi` 
 
 CFLAGS = \
  -fasynchronous-unwind-tables -fexceptions \
  -fpic -fstack-clash-protection -fstack-protector-strong \
- -g -grecord-gcc-switches \
+ -g -pg -grecord-gcc-switches \
  -mcet -fcf-protection \
  -Og -pipe \
  -Wall -Werror=format-security -Werror=implicit-function-declaration -Wshadow \
  -fvar-tracking -fno-omit-frame-pointer -fdiagnostics-color=auto \
- `pkg-config --cflags-only-other guile-2.2 glib-2.0 gobject-2.0 gobject-introspection-1.0`
+ `pkg-config --cflags-only-other guile-2.2 glib-2.0 gobject-2.0 gobject-introspection-1.0 libffi`
 
 LDFLAGS = \
-  `pkg-config --libs-only-L guile-2.2 glib-2.0 gobject-2.0 gobject-introspection-1.0` \
+  `pkg-config --libs-only-L guile-2.2 glib-2.0 gobject-2.0 gobject-introspection-1.0 libffi` \
   -Wl,-z,defs -Wl,-z,now -Wl,z,relro
 
 LIBS = \
-  `pkg-config --libs-only-l --libs-only-other guile-2.2 glib-2.0 gobject-2.0 gobject-introspection-1.0`
+  `pkg-config --libs-only-l --libs-only-other guile-2.2 glib-2.0 gobject-2.0 gobject-introspection-1.0 libffi`
 
 LIBGUILE_GI_HEADERS = \
  src/gi/__gi_gobject.h \
@@ -158,6 +158,7 @@ LIBGUILE_GI_SOURCES = \
  src/gi/gi_signal_closure.c \
  src/gi/__gi_giargument.c \
  src/gi/gi_gstruct.c \
+ src/gi/gir_callback.c \
  src/gi/gir.c
 
 LIBGUILE_GI_OBJECTS = $(LIBGUILE_GI_SOURCES:.c=.o)

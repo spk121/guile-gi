@@ -71,7 +71,7 @@ void callback_binding(ffi_cif *cif, void *ret, void *ffi_args[],
         }
 
         arg_info = g_callable_info_get_arg(gcb->callback_info, i);
-        ret = gi_giargument_convert_arg_to_object(&giarg, arg_info, &s_entry);
+        gi_giargument_convert_arg_to_object(&giarg, arg_info, &s_entry);
         s_args = scm_append(scm_list_2(s_args, scm_list_1(s_entry)));
         g_base_info_unref (arg_info);
     }
