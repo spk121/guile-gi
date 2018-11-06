@@ -4,10 +4,10 @@ SHELL = /bin/sh
 
 #HOST=WIN32
 HOST=LINUX
-#HOST_CYGWIN
+#HOST=CYGWIN
 #HOST=DARWIN
 #PROC=IA32
-#PROC=AMD64
+PROC=AMD64
 #PROC=ARM
 
 # Direcories
@@ -61,8 +61,8 @@ top_srcdir = .
 
 # Programs
 AWK = gawk
-CC = clang
-LD = gold
+CC = gcc
+LD = ld
 install_DATA = install -c -m 644
 install_PROGRAM = install -c
 install_SCRIPT = install -c
@@ -103,7 +103,7 @@ CPPFLAGS = \
 
 CFLAGS = \
  -fasynchronous-unwind-tables -fexceptions \
- -fPIC -fstack-protector-strong \
+ -fstack-protector-strong \
  -g -pg -grecord-gcc-switches \
  -Og -pipe \
  -Wall -Werror=format-security -Werror=implicit-function-declaration -Wshadow \
@@ -117,9 +117,10 @@ endif
 
 ifeq ($(HOST),LINUX)
 CFLAGS += \
+ -fPIC \
  -fstack-clash-protection \
  -fcf-protection
-ifeq ($(CC),GCC)
+ifeq ($(CC),gcc)
 CFLAGS += \
  -fplugin=annobin
 endif
