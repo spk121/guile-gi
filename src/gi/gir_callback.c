@@ -24,7 +24,7 @@ void callback_binding(ffi_cif *cif, void *ret, void **ffi_args,
 
     for (unsigned int i = 0; i < n_args; i ++)
     {
-        SCM s_entry;
+        SCM s_entry = SCM_BOOL_F;
         GIArgument giarg;
         GIArgInfo *arg_info;
 
@@ -80,10 +80,15 @@ void callback_binding(ffi_cif *cif, void *ret, void **ffi_args,
     s_ret = scm_apply_0(gcb->s_func, s_args);
 
     GIArgument giarg;
-    GIArgInfo *ret_arg_info = g_callable_info_get_return_type (gcb->callback_info);
-    unsigned must_free;
-    gi_giargument_convert_object_to_arg(s_ret, ret_arg_info, &must_free, &giarg);
-    g_base_info_unref (ret_arg_info);
+    GITypeInfo *ret_type_info = g_callable_info_get_return_type (gcb->callback_info);
+    GIArgumentStatus ret2;
+    ret2 = gi_giargument_convert_return_type_object_to_arg(s_ret,
+             ret_type_info,
+             g_callable_info_get_caller_owns (gcb->callback_info),
+             g_callable_info_may_return_null (gcb->callback_info),
+             g_callable_info_skip_return(gcb->callback_info),
+             &giarg);
+    g_base_info_unref (ret_type_info);
 
     // I'm pretty sure I don't need a big type case/switch block here.
     // I'll try brutally coercing the data, and see what happens.

@@ -235,6 +235,139 @@ gi_giargument_convert_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *must
     return ret;
  }
 
+GIArgumentStatus
+gi_giargument_convert_return_type_object_to_arg(SCM obj,
+             GITypeInfo *type_info,
+             GITransfer transfer, gboolean null_ok, gboolean skip,
+             GIArgument *arg)
+{
+    GIArgumentStatus ret;
+    gboolean is_ptr = g_type_info_is_pointer(type_info);
+    GITypeTag type_tag = g_type_info_get_tag(type_info);
+    if (skip)
+    {
+        arg->v_pointer = NULL;
+        return GI_GIARGUMENT_OK;
+    }
+    if (null_ok && scm_is_eq(obj, SCM_BOOL_F))
+    {
+        arg->v_pointer = NULL;
+        return GI_GIARGUMENT_OK;
+    }
+    else if (!is_ptr)
+    {
+        switch(type_tag)
+        {
+            case GI_TYPE_TAG_BOOLEAN:
+            case GI_TYPE_TAG_DOUBLE:
+            case GI_TYPE_TAG_FLOAT:
+            case GI_TYPE_TAG_INT16:
+            case GI_TYPE_TAG_INT32:
+            case GI_TYPE_TAG_INT64:
+            case GI_TYPE_TAG_INT8:
+            case GI_TYPE_TAG_UINT16:
+            case GI_TYPE_TAG_UINT32:
+            case GI_TYPE_TAG_UINT64:
+            case GI_TYPE_TAG_UINT8:
+            case GI_TYPE_TAG_UNICHAR:
+            case GI_TYPE_TAG_GTYPE:
+                ret = gi_giargument_convert_immediate_object_to_arg(obj, type_tag, arg);
+                break;
+
+            case GI_TYPE_TAG_VOID:
+            case GI_TYPE_TAG_ARRAY:
+            case GI_TYPE_TAG_UTF8:
+            case GI_TYPE_TAG_FILENAME:
+            case GI_TYPE_TAG_GHASH:
+            case GI_TYPE_TAG_GLIST:
+            case GI_TYPE_TAG_GSLIST:
+            case GI_TYPE_TAG_ERROR:
+                g_assert_not_reached();
+                break;
+
+            case GI_TYPE_TAG_INTERFACE:
+                // The non-pointer interfaces are FLAGS, ENUM, and CALLBACK only.
+                // STRUCT and OBJECT interfaces are always pointer interfaces.
+                g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);                  
+                //ret = gi_giargument_convert_interface_to_arg(obj, arg_info, must_free, arg);
+                break;
+            default:
+                g_assert_not_reached();
+                break;
+        }
+    }
+    else
+    {
+        switch(type_tag)
+        {
+            case GI_TYPE_TAG_BOOLEAN:
+            case GI_TYPE_TAG_DOUBLE:
+            case GI_TYPE_TAG_FLOAT:
+            case GI_TYPE_TAG_INT16:
+            case GI_TYPE_TAG_INT32:
+            case GI_TYPE_TAG_INT64:
+            case GI_TYPE_TAG_INT8:
+            case GI_TYPE_TAG_UINT16:
+            case GI_TYPE_TAG_UINT32:
+            case GI_TYPE_TAG_UINT64:
+            case GI_TYPE_TAG_UINT8:
+            case GI_TYPE_TAG_UNICHAR:
+                g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);  
+                //ret = gi_giargument_convert_immediate_pointer_object_to_arg(obj, arg_info, must_free, arg);
+                //*must_free = GIR_FREE_NONE;
+                break;
+
+            case GI_TYPE_TAG_UTF8:
+            case GI_TYPE_TAG_FILENAME:
+                    g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);  
+                //ret = gi_giargument_convert_string_object_to_arg(obj, arg_info, must_free, arg);
+                break;
+
+            case GI_TYPE_TAG_VOID:
+                //ret = gi_giargument_convert_const_void_pointer_object_to_arg(obj, arg);
+                //*must_free = GIR_FREE_NONE;
+                        g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);  
+                break;
+
+            case GI_TYPE_TAG_GHASH:
+            case GI_TYPE_TAG_GLIST:
+            case GI_TYPE_TAG_GSLIST:
+                // FIXME: unhandled
+                        g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);  
+                g_assert_not_reached();
+                break;
+
+            case GI_TYPE_TAG_INTERFACE:
+                        g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);  
+                        //ret = gi_giargument_convert_interface_pointer_object_to_arg(obj, arg_info, must_free, arg);
+                //*must_free = GIR_FREE_NONE;
+                break;
+
+            case GI_TYPE_TAG_GTYPE:
+                // No GType pointer inputs as far as I can tell.
+        g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);                  
+                //g_assert_not_reached();
+                break;
+
+            case GI_TYPE_TAG_ERROR:
+                // FIXME: unhandled
+        g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);                  
+                //g_assert_not_reached();
+                //ret = gi_giargument_convert_error_to_arg(obj, arg_info, must_free, arg);
+                break;
+
+            case GI_TYPE_TAG_ARRAY:
+        g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);              
+                //ret = gi_giargument_convert_array_object_to_arg(obj, arg_info, must_free, arg);
+                break;
+
+            default:
+                g_assert_not_reached ();
+        }
+    }
+    return ret;
+}
+
 static GIArgumentStatus
 gi_giargument_convert_immediate_object_to_arg(SCM object, GITypeTag type_tag, GIArgument *arg)
 {
@@ -977,7 +1110,7 @@ gi_giargument_convert_arg_to_object(GIArgument *arg, GIArgInfo *arg_info, SCM *o
     GITypeTag type_tag = g_type_info_get_tag (type_info);
     GITransfer transfer = g_arg_info_get_ownership_transfer (arg_info);
     gboolean is_ptr = g_type_info_is_pointer (type_info);
-    GIArgumentStatus ret;
+    GIArgumentStatus ret = GI_GIARGUMENT_ERROR;
 
     g_base_info_unref (type_info);
     if (!is_ptr)
@@ -1050,7 +1183,17 @@ gi_giargument_convert_arg_to_object(GIArgument *arg, GIArgInfo *arg_info, SCM *o
                 break;
 
             case GI_TYPE_TAG_VOID:
-                g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
+                if (arg->v_pointer == NULL)
+                {
+                    *obj = SCM_BOOL_F;
+                    ret = GI_GIARGUMENT_OK;
+                }
+                else
+                {
+                    *obj = scm_from_pointer(arg->v_pointer, NULL);
+                    ret = GI_GIARGUMENT_OK;
+                }
+                //    g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
                 // ret = gi_giargument_convert_const_void_pointer_arg_to_object(obj, arg);
                 // *must_free = GIR_FREE_NONE;
                 break;

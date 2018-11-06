@@ -61,6 +61,11 @@ SCM
 gi_giargument_convert_return_val_to_object (GIArgument  *arg,
 			 GITypeInfo *type_info,
 			 GITransfer transfer, gboolean null_ok, gboolean skip);
+GIArgumentStatus
+gi_giargument_convert_return_type_object_to_arg(SCM obj,
+             GITypeInfo *type_info,
+             GITransfer transfer, gboolean null_ok, gboolean skip,
+             GIArgument *arg);             
 #if 0
 typedef gssize (*GuGIArgArrayLengthPolicy) (gsize item_index,
 					    void *user_data1,
