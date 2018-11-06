@@ -2,6 +2,14 @@
 
 SHELL = /bin/sh
 
+#HOST=WIN32
+HOST=LINUX
+#HOST_CYGWIN
+#HOST=DARWIN
+#PROC=IA32
+#PROC=AMD64
+#PROC=ARM
+
 # Direcories
 prefix = /usr/local
 infodir = ${datarootdir}/info
@@ -53,8 +61,8 @@ top_srcdir = .
 
 # Programs
 AWK = gawk
-CC = gcc
-LINKER = gold
+CC = clang
+LD = gold
 install_DATA = install -c -m 644
 install_PROGRAM = install -c
 install_SCRIPT = install -c
@@ -83,44 +91,70 @@ DATA = $(dist_guilesite_DATA)
 dist_guilesite_DATA = \
   src/gi.scm
 
+DEFS = \
+  -DG_LOG_DOMAIN=\"GuileGI\" \
+  -D_FORTIFY_SOURCE=2 \
+  -DSCM_DEBUG_TYPING_STRICTNESS=2
+
+CPPFLAGS = \
+  $(DEFS) \
+  $(INCLUDES) \
+  $(shell pkg-config --cflags-only-I guile-2.2 glib-2.0 gobject-2.0 gobject-introspection-1.0 libffi)
+
+CFLAGS = \
+ -fasynchronous-unwind-tables -fexceptions \
+ -fPIC -fstack-protector-strong \
+ -g -pg -grecord-gcc-switches \
+ -Og -pipe \
+ -Wall -Werror=format-security -Werror=implicit-function-declaration -Wshadow \
+ -fno-omit-frame-pointer -fdiagnostics-color=auto \
+ $(shell pkg-config --cflags-only-other guile-2.2 glib-2.0 gobject-2.0 gobject-introspection-1.0 libffi)
+
+ifeq ($(CC),gcc)
+CFLAGS += \
+ -fvar-tracking
+endif
+
+ifeq ($(HOST),LINUX)
+CFLAGS += \
+ -fstack-clash-protection \
+ -fcf-protection
+ifeq ($(CC),GCC)
+CFLAGS += \
+ -fplugin=annobin
+endif
+endif
+
+LDFLAGS = \
+ $(shell pkg-config --libs-only-L guile-2.2 glib-2.0 gobject-2.0 gobject-introspection-1.0 libffi)
+
+ifeq ($(HOST),LINUX)
+LDFLAGS += \
+ -Wl,-z,defs \
+ -Wl,-z,now \
+ -Wl,-z,relro
+endif
+
+ifeq ($(LD),gold)
+LDFLAGS += -fuse-ld=gold
+else
+ifeq ($(LD),lld)
+LDFLAGS += -fuse-ld=lld
+endif
+endif
+
+LIBS = \
+ $(shell pkg-config --libs-only-l --libs-only-other guile-2.2 glib-2.0 gobject-2.0 gobject-introspection-1.0 libffi)
+
 ################
 # Build helper program fo_gen
 
 fo_gen: src/gi/fo_gen.c
-	$(CC) -Wall -ggdb -fuse-ld=$(LINKER) -Wl,--gc-sections -Wl,--rosegment -Wl,--compress-debug-sections=none -fPIE -pie -Wl,-z,now -Wl,-z,text -o $@ $< `pkg-config --cflags --libs glib-2.0`
+	$(CC) $(CFLAGS) $(LDFLAGS) -fpie -pie -o $@ $< `pkg-config --cflags --libs glib-2.0`
 
 ################
 # Build guile_gi
 
-DEFS = \
-  -DHAVE_CONFIG_H \
-  -DSTANDALONE \
-  -DG_LOG_DOMAIN=\"GuileGI\" \
-  -D_FORTIFY_SOURCE=2 \
-	-DSCM_DEBUG_TYPING_STRICTNESS=2
-
-CPPFLAGS = \
-  -Wall \
-  $(DEFS) \
-  $(INCLUDES) \
-  `pkg-config --cflags-only-I guile-2.2 glib-2.0 gobject-2.0 gobject-introspection-1.0 libffi` 
-
-CFLAGS = \
- -fasynchronous-unwind-tables -fexceptions \
- -fpic -fstack-clash-protection -fstack-protector-strong \
- -g -pg -grecord-gcc-switches \
- -mcet -fcf-protection \
- -Og -pipe \
- -Wall -Werror=format-security -Werror=implicit-function-declaration -Wshadow \
- -fvar-tracking -fno-omit-frame-pointer -fdiagnostics-color=auto \
- `pkg-config --cflags-only-other guile-2.2 glib-2.0 gobject-2.0 gobject-introspection-1.0 libffi`
-
-LDFLAGS = \
-  `pkg-config --libs-only-L guile-2.2 glib-2.0 gobject-2.0 gobject-introspection-1.0 libffi` \
-  -Wl,-z,defs -Wl,-z,now -Wl,z,relro
-
-LIBS = \
-  `pkg-config --libs-only-l --libs-only-other guile-2.2 glib-2.0 gobject-2.0 gobject-introspection-1.0 libffi`
 
 LIBGUILE_GI_HEADERS = \
  src/gi/__gi_gobject.h \
@@ -165,11 +199,11 @@ LIBGUILE_GI_OBJECTS = $(LIBGUILE_GI_SOURCES:.c=.o)
 
 guile-gi$(EXEEXT): $(LIBGUILE_GI_OBJECTS)
 	@rm -f guile-gi$(EXEEXT)
-	$(CC) -pie $(LDFLAGS) -o $@ $^ $(LIBS)
+	$(CC) -fpie -pie $(LDFLAGS) -o $@ $^ $(LIBS)
 
 libguile-gi.so: $(LIBGUILE_GI_OBJECTS)
 	@rm -f libguile-gi.so
-	$(CC) -shared -Wl,-z,defs $(LDFLAGS) -o $@ $^ $(LIBS)
+	$(CC) -shared $(LDFLAGS) -o $@ $^ $(LIBS)
 
 subdir = .
 
@@ -354,7 +388,6 @@ INTROSPECTION_MAKEFILE = /usr/share/gobject-introspection-1.0/Makefile.introspec
 INTROSPECTION_SCANNER = /usr/bin/g-ir-scanner
 INTROSPECTION_TYPELIBDIR = /usr/lib64/girepository-1.0
 LD = /usr/bin/ld -m elf_x86_64
-LDFLAGS =
 LIBGUILE_GI_INTERFACE = 0:0:0
 LIBOBJS =
 LIPO =
@@ -443,7 +476,6 @@ info_TEXINFOS = doc/guile-gi.texi
 # src/gi/gugobject-object.c \
 # src/gi/gugi-object.c
 
-guile_gi_LDFLAGS = -no-undefined
 
 libguile_gi_la_CFLAGS = \
   -std=c11 \
@@ -1340,9 +1372,7 @@ Girtest-1.0.gir: libgirtest.so
 
 .PHONY: check-syntax
 check-syntax:
-	$(CC)  -std=c11 $(GUILE_CFLAGS) $(GLIB_CFLAGS) $(GOBJECT_CFLAGS) \
-	 $(GOBJECT_INTROSPECTION_CFLAGS) \
-	 -DGUILE_GI_CORE -DG_LOG_DOMAIN=\"GuileGI\" $(CFLAGS) -fsyntax-only $(CHK_SOURCES)
+	$(CC) -std=c11 $(CFLAGS) -fsyntax-only $(CHK_SOURCES)
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
