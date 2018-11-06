@@ -117,9 +117,9 @@ gi_giargument_convert_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *must
 {
     if (g_arg_info_may_be_null(arg_info) && scm_is_false(obj))
     {
-    arg->v_pointer = NULL;
-    *must_free = GIR_FREE_NONE;
-    return GI_GIARGUMENT_OK;
+        arg->v_pointer = NULL;
+        *must_free = GIR_FREE_NONE;
+        return GI_GIARGUMENT_OK;
     }
 
     GITypeInfo *type_info = g_arg_info_get_type (arg_info);

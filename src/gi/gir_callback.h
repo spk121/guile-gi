@@ -6,6 +6,8 @@
 
 extern SCM gir_callback_type;
 
+#define DEBUG_CALLBACKS
+
 typedef struct _GirCallback
 {
     GICallbackInfo *callback_info;
@@ -13,6 +15,12 @@ typedef struct _GirCallback
     ffi_cif cif;
     SCM s_func;
     void *callback_ptr;
+#ifdef DEBUG_CALLBACKS
+    uint64_t callback_info_ptr_as_uint;
+    uint64_t closure_ptr_as_uint;
+    uint64_t callback_ptr_as_uint;
+#endif    
+    
 } GirCallback;
 
 void gir_init_callback (void);
