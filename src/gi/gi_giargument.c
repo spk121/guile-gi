@@ -140,7 +140,6 @@ gi_giargument_convert_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *must
     gboolean is_ptr = g_type_info_is_pointer (type_info);
     GIArgumentStatus ret;
 
-    g_base_info_unref (type_info);
     if (!is_ptr)
     {
         switch(type_tag)
@@ -247,6 +246,8 @@ gi_giargument_convert_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *must
                 g_assert_not_reached ();
         }
     }
+    g_base_info_unref (type_info);
+
     return ret;
  }
 
@@ -256,7 +257,7 @@ gi_giargument_convert_return_type_object_to_arg(SCM obj,
              GITransfer transfer, gboolean null_ok, gboolean skip,
              GIArgument *arg)
 {
-    GIArgumentStatus ret;
+    GIArgumentStatus ret = GI_GIARGUMENT_ERROR;
     gboolean is_ptr = g_type_info_is_pointer(type_info);
     GITypeTag type_tag = g_type_info_get_tag(type_info);
     unsigned must_free;
@@ -440,13 +441,11 @@ static GIArgumentStatus
 convert_interface_object_to_arg(SCM obj, GITypeInfo *type_info, unsigned *must_free, GIArgument *arg)
 {
     GIArgumentStatus ret;
-
-    g_assert (g_type_info_get_tag (type_info) == GI_TYPE_TAG_INTERFACE);
+    GITypeTag type_tag = g_type_info_get_tag (type_info);
+    g_assert (type_tag == GI_TYPE_TAG_INTERFACE);
 
     GIBaseInfo *referenced_base_info = g_type_info_get_interface (type_info);
     GIInfoType referenced_base_type = g_base_info_get_type (referenced_base_info);
-
-    g_base_info_unref (type_info);
 
     if (referenced_base_type == GI_INFO_TYPE_ENUM || referenced_base_type == GI_INFO_TYPE_FLAGS)
     {
