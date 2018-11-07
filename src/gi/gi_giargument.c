@@ -108,7 +108,7 @@ TYPE_TAG_IS_REAL_NUMBER (GITypeTag x)
 
 
 static GIArgumentStatus gi_giargument_convert_immediate_object_to_arg(SCM obj, GITypeTag type_tag, GIArgument *arg);
-static GIArgumentStatus gi_giargument_convert_interface_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *must_free, GIArgument *arg);
+static GIArgumentStatus convert_interface_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *must_free, GIArgument *arg);
 static GIArgumentStatus gi_giargument_convert_immediate_pointer_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *must_free, GIArgument *arg);
 static GIArgumentStatus gi_giargument_convert_string_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *must_free, GIArgument *arg);
 static GIArgumentStatus convert_const_void_pointer_object_to_arg(SCM obj, GIArgument *arg);
@@ -175,9 +175,7 @@ gi_giargument_convert_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *must
                 break;
 
             case GI_TYPE_TAG_INTERFACE:
-                // The non-pointer interfaces are FLAGS, ENUM, and CALLBACK only.
-                // STRUCT and OBJECT interfaces are always pointer interfaces.
-                ret = gi_giargument_convert_interface_to_arg(obj, arg_info, must_free, arg);
+                ret = convert_interface_object_to_arg(obj, arg_info, must_free, arg);
                 break;
             default:
                 g_assert_not_reached();
@@ -437,7 +435,7 @@ gi_giargument_convert_immediate_object_to_arg(SCM object, GITypeTag type_tag, GI
 }
 
 static GIArgumentStatus
-gi_giargument_convert_interface_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *must_free, GIArgument *arg)
+convert_interface_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *must_free, GIArgument *arg)
 {
     GIArgumentStatus ret;
     GITypeInfo *type_info = g_arg_info_get_type(arg_info);
@@ -457,20 +455,30 @@ gi_giargument_convert_interface_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *m
     }
     else if (referenced_base_type == GI_INFO_TYPE_CALLBACK)
     {
-
-        if (SCM_IS_A_P(obj, gir_callback_type))
+        GICallbackInfo *callback_info = referenced_base_info;
+        if (scm_is_true (scm_procedure_p (obj)))
         {
-            arg->v_pointer = gir_callback_get_func (obj);
-            *must_free = GIR_FREE_NONE;
-            ret = GI_GIARGUMENT_OK;
+            int arity = scm_to_int (scm_car (scm_procedure_minimum_arity (obj)));
+            int n_args = g_callable_info_get_n_args (callback_info);
+            if (arity != n_args)
+            {
+                arg->v_pointer = NULL;
+                *must_free = GIR_FREE_NONE;
+                ret = GI_GIARGUMENT_CALLBACK_HAS_WRONG_ARITY;
+            }
+            else
+            {
+                arg->v_pointer = gir_callback_cache(callback_info, obj)->callback_ptr;
+                *must_free = GIR_FREE_NONE;
+                ret = GI_GIARGUMENT_OK;
+            }
         }
         else
         {
-            g_critical("Unimplemented callback conversion %s: %d", __FILE__, __LINE__);
             arg->v_pointer = NULL;
             *must_free = GIR_FREE_NONE;
-            ret = GI_GIARGUMENT_UNHANDLED_TYPE;
-        }
+            ret = GI_GIARGUMENT_WRONG_TYPE_ARG;
+        }        
     }
     else
     {
@@ -652,6 +660,8 @@ gi_giargument_convert_interface_pointer_object_to_arg(SCM obj, GIArgInfo *arg_in
     }
     else if (referenced_base_type == GI_INFO_TYPE_CALLBACK)
     {
+        g_critical("Unhandled argument type, %s: %d", __FILE__, __LINE__);
+
         if (SCM_IS_A_P(obj, gir_callback_type))
         {
             arg->v_pointer = gir_callback_get_func (obj);

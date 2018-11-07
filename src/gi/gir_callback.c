@@ -6,6 +6,8 @@
 SCM gir_callback_type;
 SCM gir_callback_type_store;
 
+GSList *callback_list = NULL;
+
 static ffi_type *
 type_info_to_ffi_type(GITypeInfo *type_info);
 
@@ -166,6 +168,28 @@ GirCallback *gir_callback_new(GICallbackInfo *callback_info, SCM s_func)
 #endif  
 
     return gir_callback;
+}
+
+GirCallback *gir_callback_cache(GICallbackInfo *callback_info, SCM s_func)
+{
+    g_assert (callback_info != NULL);
+    g_assert (scm_is_true (scm_procedure_p (s_func)));
+
+    // Lookup s_func in the callback cache.
+    GSList *x = callback_list;
+    GirCallback *gcb;
+    while (x != NULL)
+    {
+        gcb = x->data;
+        if (scm_is_eq(gcb->s_func, s_func) && (g_base_info_get_type (callback_info) == g_base_info_get_type(gcb->callback_info)))
+            return gcb;
+        x = x->next;
+    }
+
+    // Create a new entry if necessary.
+    gcb = gir_callback_new (callback_info, s_func);
+    callback_list = g_slist_prepend(callback_list, gcb);
+    return gcb;
 }
 
 void *
@@ -354,7 +378,7 @@ scm_gir_callback_new (SCM s_callback_info, SCM s_proc)
 {
     GirCallback *gcb;
     
-    gcb = gir_callback_new(scm_to_pointer(s_callback_info), s_proc);
+    gcb = gir_callback_cache(scm_to_pointer(s_callback_info), s_proc);
     return scm_make_foreign_object_1(gir_callback_type, gcb);
 }
 
@@ -362,13 +386,18 @@ static void
 gir_callback_finalizer (SCM callback)
 {
     GirCallback *gcb = scm_foreign_object_ref(callback, 0);
-    if (gcb != NULL)
-    {
-        if (gcb->closure != NULL)
-            ffi_closure_free(gcb->closure);
-       gcb->closure = NULL;
-       gcb->s_func = SCM_BOOL_F;
-    }
+    //if (gcb != NULL)
+    //{
+    //    if (gcb->closure != NULL)
+    //        ffi_closure_free(gcb->closure);
+    //   gcb->closure = NULL;
+    //   gcb->s_func = SCM_BOOL_F;
+    //}
+}
+
+static void gir_callback_hash_key_destroy (gpointer data)
+{
+    // Destroy the scm procedure.
 }
 
 void

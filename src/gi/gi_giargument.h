@@ -21,6 +21,7 @@ typedef enum _GIArgumentStatus {
     GI_GIARGUMENT_WRONG_TYPE_ARG,
     GI_GIARGUMENT_ERROR,
     GI_GIARGUMENT_TOO_FEW_ARGUMENTS,
+    GI_GIARGUMENT_CALLBACK_HAS_WRONG_ARITY,
     GI_GIARGUMENT_N_ERRORS
 } GIArgumentStatus;
 
@@ -39,6 +40,7 @@ const static char gi_giargument_error_messages[GI_GIARGUMENT_N_ERRORS][80] = {
     [GI_GIARGUMENT_VOID] = "Non-pointer void arguments cannot be unpacked",
     [GI_GIARGUMENT_WRONG_TYPE_ARG] = "Cannot pack/unpack this type of scheme object for this argument type",
     [GI_GIARGUMENT_ERROR] = "GIArgument conversion error",
+    [GI_GIARGUMENT_CALLBACK_HAS_WRONG_ARITY] = "Callback procedure takes wrong number of arguments",
     [GI_GIARGUMENT_TOO_FEW_ARGUMENTS] = "Too few arguments",
 };
 

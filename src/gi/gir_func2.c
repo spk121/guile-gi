@@ -1434,8 +1434,9 @@ arg_err_cleanup:
         scm_out_of_range_pos(func_name, obj, scm_from_int(i_input_arg));
     else
         scm_misc_error(func_name,
-                       "input argument conversion error for argument '~a': ~a",
-                       scm_list_2(scm_from_int(i_input_arg + 1),
+                       "input argument conversion error for argument #~a ~s: ~a",
+                       scm_list_3(scm_from_int(i_input_arg),
+                            obj,
                                   scm_from_utf8_string(gi_giargument_error_messages[status])));
 
     g_return_if_reached();

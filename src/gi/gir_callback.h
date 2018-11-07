@@ -24,9 +24,9 @@ typedef struct _GirCallback
 } GirCallback;
 
 void gir_init_callback (void);
-GirCallback *gir_callback_new(GICallbackInfo *callback_info, SCM s_func);
+GirCallback *gir_callback_cache(GICallbackInfo *callback_info, SCM s_func);
 void *gir_callback_get_func (SCM s_gcb);
-
+GirCallback *gir_callback_cache(GICallbackInfo *callback_info, SCM s_func);
 void gir_callback_free(GirCallback *callback);
 
 #endif

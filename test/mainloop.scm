@@ -37,14 +37,14 @@
             (not (main-context-iteration? ctx #f)))
 
    (pass-if "g_idle_remove_by_data works"
-            (let ((callback (lambda (user-data)
-                              (format #t "In callback.  Received ~s~%" user-data)
-                              #f))
-                  (user-data (make-bytevector 8 0)))
-              (idle-add PRIORITY_DEFAULT_IDLE
-                        (gir-callback-new SourceFunc callback)
-                        (bytevector->pointer user-data) #f)
-              (idle-remove-by-data? (bytevector->pointer user-data)))))
+	    (let ((callback (lambda (user-data)
+			      (format #t "In callback.  Received ~s~%" user-data)
+			      #f))
+		  (user-data (make-bytevector 8 0)))
+	      (idle-add PRIORITY_DEFAULT_IDLE
+			callback
+			(bytevector->pointer user-data) #f)
+	      (idle-remove-by-data? (bytevector->pointer user-data)))))
 
   (with-test-prefix
    "mainloop basics"
@@ -85,22 +85,22 @@
        (set! c (1+ c)))
 
      (pass-if "timeouts can run"
-              (let ((sourceA (timeout-source-new 100))
-                    (sourceB (timeout-source-new 250))
-                    (sourceC (timeout-source-new 330))
-                    (sourceD (timeout-source-new 1050)))
-                (set! ctx (main-context-new))
-                (set! loop (main-loop-new ctx #f))
-                (source-set-callback sourceA (gir-callback-new SourceFunc a++) #f #f)
-                (source-set-callback sourceB (gir-callback-new SourceFunc b++) #f #f)
-                (source-set-callback sourceC (gir-callback-new SourceFunc c++) #f #f)
-                (source-set-callback sourceD (gir-callback-new SourceFunc main-loop-quit) #f #f)
-                (source-attach sourceA ctx)
-                (source-attach sourceB ctx)
-                (source-attach sourceC ctx)
-                (source-attach sourceD ctx)
-                (main-loop-run loop)
-                #t))
+	      (let ((sourceA (timeout-source-new 100))
+		    (sourceB (timeout-source-new 250))
+		    (sourceC (timeout-source-new 330))
+		    (sourceD (timeout-source-new 1050)))
+		(set! ctx (main-context-new))
+		(set! loop (main-loop-new ctx #f))
+		(source-set-callback sourceA a++ #f #f)
+		(source-set-callback sourceB b++ #f #f)
+		(source-set-callback sourceC c++ #f #f)
+		(source-set-callback sourceD main-loop-quit loop #f)
+		(source-attach sourceA ctx)
+		(source-attach sourceB ctx)
+		(source-attach sourceC ctx)
+		(source-attach sourceD ctx)
+		(main-loop-run loop)
+		#t))
 
      (pass-if "fast source fired"
               (> a 0))
