@@ -107,12 +107,12 @@ TYPE_TAG_IS_REAL_NUMBER (GITypeTag x)
 }
 
 
-static GIArgumentStatus gi_giargument_convert_immediate_object_to_arg(SCM obj, GITypeTag type_tag, GIArgument *arg);
+static GIArgumentStatus convert_immediate_object_to_arg(SCM obj, GITypeTag type_tag, GIArgument *arg);
 static GIArgumentStatus convert_interface_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *must_free, GIArgument *arg);
 static GIArgumentStatus gi_giargument_convert_immediate_pointer_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *must_free, GIArgument *arg);
 static GIArgumentStatus gi_giargument_convert_string_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *must_free, GIArgument *arg);
 static GIArgumentStatus convert_const_void_pointer_object_to_arg(SCM obj, GIArgument *arg);
-static GIArgumentStatus gi_giargument_convert_interface_pointer_object_to_arg(SCM object, GIArgInfo *arg_info, unsigned *must_free, GIArgument *arg);
+static GIArgumentStatus convert_interface_pointer_object_to_arg(SCM object, GIArgInfo *arg_info, unsigned *must_free, GIArgument *arg);
 static GIArgumentStatus gi_giargument_convert_array_object_to_arg(SCM object, GIArgInfo *array_arg_info, unsigned *must_free, GIArgument *arg);
 
 static GIArgumentStatus convert_immediate_arg_to_object(GIArgument *arg, GITypeTag type_tag, SCM* obj);
@@ -126,8 +126,7 @@ convert_const_void_pointer_arg_to_object(GIArgument *arg, SCM *obj);
 //////////////////////////////////////////////////////////
 
 GIArgumentStatus
-gi_giargument_convert_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *must_free, GIArgument *arg
-				    )
+gi_giargument_convert_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *must_free, GIArgument *arg)
 {
     if (g_arg_info_may_be_null(arg_info) && scm_is_false(obj))
     {
@@ -159,7 +158,7 @@ gi_giargument_convert_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *must
             case GI_TYPE_TAG_UINT8:
             case GI_TYPE_TAG_UNICHAR:
             case GI_TYPE_TAG_GTYPE:
-                ret = gi_giargument_convert_immediate_object_to_arg(obj, type_tag, arg);
+                ret = convert_immediate_object_to_arg(obj, type_tag, arg);
                 *must_free = GIR_FREE_NONE;
                 break;
 
@@ -175,7 +174,10 @@ gi_giargument_convert_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *must
                 break;
 
             case GI_TYPE_TAG_INTERFACE:
-                ret = convert_interface_object_to_arg(obj, arg_info, must_free, arg);
+                // The non-pointer interfaces are FLAGS, ENUM, and CALLBACK only.
+                // STRUCT and OBJECT interfaces are always pointer interfaces.
+                // g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
+                ret = convert_interface_object_to_arg(obj, type_info, must_free, arg);
                 break;
             default:
                 g_assert_not_reached();
@@ -221,7 +223,7 @@ gi_giargument_convert_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *must
                 break;
 
             case GI_TYPE_TAG_INTERFACE:
-                ret = gi_giargument_convert_interface_pointer_object_to_arg(obj, arg_info, must_free, arg);
+                ret = convert_interface_pointer_object_to_arg(obj, arg_info, must_free, arg);
                 *must_free = GIR_FREE_NONE;
                 break;
 
@@ -257,6 +259,7 @@ gi_giargument_convert_return_type_object_to_arg(SCM obj,
     GIArgumentStatus ret;
     gboolean is_ptr = g_type_info_is_pointer(type_info);
     GITypeTag type_tag = g_type_info_get_tag(type_info);
+    unsigned must_free;
     if (skip)
     {
         arg->v_pointer = NULL;
@@ -284,7 +287,7 @@ gi_giargument_convert_return_type_object_to_arg(SCM obj,
             case GI_TYPE_TAG_UINT8:
             case GI_TYPE_TAG_UNICHAR:
             case GI_TYPE_TAG_GTYPE:
-                ret = gi_giargument_convert_immediate_object_to_arg(obj, type_tag, arg);
+                ret = convert_immediate_object_to_arg(obj, type_tag, arg);
                 break;
 
             case GI_TYPE_TAG_VOID:
@@ -301,8 +304,7 @@ gi_giargument_convert_return_type_object_to_arg(SCM obj,
             case GI_TYPE_TAG_INTERFACE:
                 // The non-pointer interfaces are FLAGS, ENUM, and CALLBACK only.
                 // STRUCT and OBJECT interfaces are always pointer interfaces.
-                g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
-                //ret = gi_giargument_convert_interface_to_arg(obj, arg_info, must_free, arg);
+                 ret = convert_interface_object_to_arg(obj, type_info, &must_free, arg);
                 break;
             default:
                 g_assert_not_reached();
@@ -352,7 +354,7 @@ gi_giargument_convert_return_type_object_to_arg(SCM obj,
 
             case GI_TYPE_TAG_INTERFACE:
                         g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
-                        //ret = gi_giargument_convert_interface_pointer_object_to_arg(obj, arg_info, must_free, arg);
+                        //ret = convert_interface_pointer_object_to_arg(obj, arg_info, must_free, arg);
                 //*must_free = GIR_FREE_NONE;
                 break;
 
@@ -382,7 +384,7 @@ gi_giargument_convert_return_type_object_to_arg(SCM obj,
 }
 
 static GIArgumentStatus
-gi_giargument_convert_immediate_object_to_arg(SCM object, GITypeTag type_tag, GIArgument *arg)
+convert_immediate_object_to_arg(SCM object, GITypeTag type_tag, GIArgument *arg)
 {
     /* We can assume that GIArgument values are always valid */
     switch (type_tag)
@@ -435,10 +437,9 @@ gi_giargument_convert_immediate_object_to_arg(SCM object, GITypeTag type_tag, GI
 }
 
 static GIArgumentStatus
-convert_interface_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *must_free, GIArgument *arg)
+convert_interface_object_to_arg(SCM obj, GITypeInfo *type_info, unsigned *must_free, GIArgument *arg)
 {
     GIArgumentStatus ret;
-    GITypeInfo *type_info = g_arg_info_get_type(arg_info);
 
     g_assert (g_type_info_get_tag (type_info) == GI_TYPE_TAG_INTERFACE);
 
@@ -468,7 +469,8 @@ convert_interface_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *must_fre
             }
             else
             {
-                arg->v_pointer = gir_callback_cache(callback_info, obj)->callback_ptr;
+                GirCallback *gcb = gir_callback_cache(callback_info, obj)->callback_ptr;
+                arg->v_pointer = gcb->callback_ptr;
                 *must_free = GIR_FREE_NONE;
                 ret = GI_GIARGUMENT_OK;
             }
@@ -584,7 +586,7 @@ convert_const_void_pointer_object_to_arg(SCM obj, GIArgument *arg)
 }
 
 static GIArgumentStatus
-gi_giargument_convert_interface_pointer_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *must_free, GIArgument *arg)
+convert_interface_pointer_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *must_free, GIArgument *arg)
 {
     // Usually STRUCT, UNION, INTERFACE, OBJECT.  Handle NULL_OK
     GIArgumentStatus ret = GI_GIARGUMENT_ERROR;
@@ -1225,7 +1227,7 @@ gi_giargument_convert_arg_to_object(GIArgument *arg, GIArgInfo *arg_info, SCM *o
                 break;
 
             case GI_TYPE_TAG_VOID:
-                ret = convert_const_void_pointer_arg_to_object(arg, &obj);
+                ret = convert_const_void_pointer_arg_to_object(arg, obj);
                 break;
 
             case GI_TYPE_TAG_GHASH:
@@ -1238,7 +1240,7 @@ gi_giargument_convert_arg_to_object(GIArgument *arg, GIArgInfo *arg_info, SCM *o
 
             case GI_TYPE_TAG_INTERFACE:
                 g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
-                // ret = gi_giargument_convert_interface_pointer_arg_to_object(obj, arg_info, must_free, arg);
+                // ret = convert_interface_pointer_arg_to_object(obj, arg_info, must_free, arg);
                 // *must_free = GIR_FREE_NONE;
                 break;
 
@@ -1270,7 +1272,6 @@ gi_giargument_convert_return_val_to_object(GIArgument  *arg,
              GITransfer transfer, gboolean null_ok, gboolean skip)
 {
     SCM obj = SCM_BOOL_F;
-    unsigned must_free;
 
     if (skip)
         return SCM_UNSPECIFIED;
@@ -1379,7 +1380,7 @@ gi_giargument_convert_return_val_to_object(GIArgument  *arg,
                     else
                         g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
                 }
-                // ret = gi_giargument_convert_interface_pointer_object_to_arg(obj, arg_info, must_free, arg);
+                // ret = convert_interface_pointer_object_to_arg(obj, arg_info, must_free, arg);
                 // *must_free = GIR_FREE_NONE;
                 break;
 
@@ -1472,6 +1473,14 @@ convert_interface_arg_to_object(GIArgument *arg, GITypeInfo *type_info, SCM *obj
     if (referenced_info_type == GI_INFO_TYPE_ENUM || referenced_info_type == GI_INFO_TYPE_FLAGS)
     {
         *obj = scm_from_uint32(arg->v_uint32);
+        ret = GI_GIARGUMENT_OK;
+    }
+    else if (referenced_info_type == GI_INFO_TYPE_CALLBACK)
+    {
+        gpointer callback_ptr = arg->v_pointer;
+        *obj = gir_callback_lookup_by_pointer(callback_ptr);
+        if (scm_is_false (*obj))
+            *obj = scm_from_pointer(callback_ptr, NULL);
         ret = GI_GIARGUMENT_OK;
     }
     else
@@ -2981,21 +2990,23 @@ SCM gi_giargument_to_object(GIArgument *arg,
         case GI_INFO_TYPE_STRUCT:
         case GI_INFO_TYPE_UNION:
         {
-            SCM s_type;
+
             GType g_type = g_registered_type_info_get_g_type((GIRegisteredTypeInfo *)info);
             gboolean is_foreign = (info_type == GI_INFO_TYPE_STRUCT) &&
                                   (g_struct_info_is_foreign((GIStructInfo *)info));
 
-        if (info_type == GI_INFO_TYPE_STRUCT) {
-        object = gir_new_struct_gbox (g_type, arg->v_pointer, transfer == GI_TRANSFER_EVERYTHING);
-        break;
-        }
-        else if (info_type == GI_INFO_TYPE_UNION) {
-        object =  gir_new_union_gbox (g_type, arg->v_pointer, transfer == GI_TRANSFER_EVERYTHING);
-        break;
-        }
+            if (info_type == GI_INFO_TYPE_STRUCT)
+            {
+                object = gir_new_struct_gbox (g_type, arg->v_pointer, transfer == GI_TRANSFER_EVERYTHING);
+                break;
+            }
+            else if (info_type == GI_INFO_TYPE_UNION)
+            {
+                object =  gir_new_union_gbox (g_type, arg->v_pointer, transfer == GI_TRANSFER_EVERYTHING);
+                break;
+            }
 
-        /* Special case variant and none to force loading from py module. */
+            /* Special case variant and none to force loading from py module. */
             if (g_type == G_TYPE_VARIANT || g_type == G_TYPE_NONE)
             {
                 g_assert_not_reached();
@@ -3509,7 +3520,7 @@ scm_immediate_object_to_giargument(SCM s_obj, SCM s_type)
     GIArgument *arg = scm_gc_malloc (sizeof(GIArgument), "GIArgument");
     memset (arg, 0, sizeof (GIArgument));
 
-    ret = gi_giargument_convert_immediate_object_to_arg(s_obj, type_tag, arg);
+    ret = convert_immediate_object_to_arg(s_obj, type_tag, arg);
     if (ret != GI_GIARGUMENT_OK)
         scm_misc_error("immediate-object->giargument",
             gi_giargument_error_messages[ret],

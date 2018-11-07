@@ -162,9 +162,9 @@ GirCallback *gir_callback_new(GICallbackInfo *callback_info, SCM s_func)
         "closure location preparation error #~A", scm_list_1(scm_from_int (closure_ok)));
 
 #ifdef DEBUG_CALLBACKS
-    gir_callback->callback_info_ptr_as_uint = gir_callback->callback_ptr;
-    gir_callback->closure_ptr_as_uint = gir_callback->closure;
-    gir_callback->callback_ptr_as_uint = gir_callback->closure;
+    gir_callback->callback_info_ptr_as_uint = GPOINTER_TO_UINT(gir_callback->callback_ptr);
+    gir_callback->closure_ptr_as_uint = GPOINTER_TO_UINT(gir_callback->closure);
+    gir_callback->callback_ptr_as_uint = GPOINTER_TO_UINT (gir_callback->closure);
 #endif  
 
     return gir_callback;
@@ -190,6 +190,24 @@ GirCallback *gir_callback_cache(GICallbackInfo *callback_info, SCM s_func)
     gcb = gir_callback_new (callback_info, s_func);
     callback_list = g_slist_prepend(callback_list, gcb);
     return gcb;
+}
+
+SCM gir_callback_lookup_by_pointer(gpointer callback_ptr)
+{
+    g_assert (callback_ptr != NULL);
+
+    GSList *x = callback_list;
+    GirCallback *gcb;
+    while (x != NULL)
+    {
+        gcb = x->data;
+        if (gcb->callback_ptr == callback_ptr)
+        {
+            return scm_make_foreign_object_1 (gir_callback_type, gcb);
+        }
+        x = x->next;
+    }
+    return SCM_BOOL_F;
 }
 
 void *
