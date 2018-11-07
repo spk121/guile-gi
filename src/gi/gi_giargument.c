@@ -468,8 +468,9 @@ convert_interface_object_to_arg(SCM obj, GITypeInfo *type_info, unsigned *must_f
             }
             else
             {
-                GirCallback *gcb = gir_callback_cache(callback_info, obj)->callback_ptr;
+                GirCallback *gcb = gir_callback_cache(callback_info, obj);
                 arg->v_pointer = gcb->callback_ptr;
+                g_assert (arg->v_pointer != NULL);
                 *must_free = GIR_FREE_NONE;
                 ret = GI_GIARGUMENT_OK;
             }

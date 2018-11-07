@@ -138,18 +138,16 @@
               (set! ctx (main-context-new))
               (set! sourceA (idle-source-new))
               (source-set-callback sourceA
-                                   (gir-callback-new SourceFunc
-                                                     (lambda (x)
-                                                       (set! a (1+ a))))
+                                   (lambda (x)
+                                     (set! a (1+ a)))
                                    #f #f)
               (source-set-priority sourceA 1)
               (source-attach sourceA ctx)
 
               (set! sourceB (idle-source-new))
               (source-set-callback sourceB
-                                   (gir-callback-new SourceFunc
-                                                     (lambda (x)
-                                                       (set! b (1+ b))))
+                                   (lambda (x)
+                                     (set! b (1+ b)))
                                    #f #f)
               (source-set-priority sourceB 0)
               (source-attach sourceB ctx)
@@ -193,7 +191,7 @@
      (define (func data)
        (when (and data
                   (not (equal? data (thread-self))))
-         (misc-error "not running from self thread"))
+         (error "not running from self thread"))
        (set! count (1+ count))
        #f)
 
@@ -205,7 +203,7 @@
               (main-context-invoke-full
                #f                       ; default primary thread context
                0                        ; priority
-               (gir-callback-new SourceFunc func)
+	       func
                (thread-self)            ; data
                #f                       ; destroy notification func
                )
@@ -213,7 +211,7 @@
 
      (pass-if "invoking a func from idle"
               (idle-add PRIORITY_DEFAULT_IDLE
-                        (gir-callback-new SourceFunc call-func)
+			call-func
                         #f
                         #f)
               (main-context-iteration? (main-context-default) #f)
