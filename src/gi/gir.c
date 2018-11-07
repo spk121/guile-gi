@@ -20,9 +20,9 @@
 
 void
 gir_log_handler (const gchar *log_domain,
-		 GLogLevelFlags log_level,
-		 const gchar *message,
-		 gpointer user_data)
+                 GLogLevelFlags log_level,
+                 const gchar *message,
+                 gpointer user_data)
 {
     time_t timer;
     char buffer[26];
@@ -30,26 +30,30 @@ gir_log_handler (const gchar *log_domain,
     time(&timer);
     tm_info = localtime(&timer);
     strftime(buffer, 26, "%Y-%m-%d %H:%M:%S", tm_info);
-    // FILE *fp = fopen("gir-log.txt", "at");
-    // fprintf (fp, "%s: %s %d %s\n", buffer, log_domain, log_level, message);
-    // fclose (fp);
-    fprintf (stderr, "%s: %s %d %s\n", buffer, log_domain, log_level, message);
+    if (log_level == G_LOG_LEVEL_DEBUG)
+    {
+        FILE *fp = fopen("gir-debug-log.xt", "at");
+        fprintf (fp, "%s: %s %d %s\n", buffer, log_domain, log_level, message);
+        fclose (fp);
+    }
+    else
+	fprintf (stderr, "%s: %s %d %s\n", buffer, log_domain, log_level, message);
 }
 
 void
 gir_init(void)
 {
     g_log_set_handler (G_LOG_DOMAIN, G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL
-		       | G_LOG_FLAG_RECURSION, gir_log_handler, NULL);
+                       | G_LOG_FLAG_RECURSION, gir_log_handler, NULL);
     g_log_set_handler ("GLib", G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL
-		       | G_LOG_FLAG_RECURSION, gir_log_handler, NULL);
+                       | G_LOG_FLAG_RECURSION, gir_log_handler, NULL);
     g_debug ("Begin libguile-gir initialization");
     gi_init_gtype ();
     gi_init_gvalue ();
     gi_init_gsignal ();
     gi_init_gparamspec ();
     gi_init_gbox ();
-    
+
     gir_init_funcs();
     gir_init_func2();
     gi_init_giargument();
@@ -62,7 +66,7 @@ gir_init(void)
 int main(int argc, char **argv)
 {
     scm_init_guile();
-    
+
     gir_init ();
     scm_shell(argc, argv);
     return 0;
