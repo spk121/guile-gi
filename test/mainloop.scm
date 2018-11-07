@@ -189,33 +189,33 @@
          (count 0))
      
      (define (func data)
-       (when (and data
-                  (not (equal? data (thread-self))))
-         (error "not running from self thread"))
+       ;;(when (and data (not (equal? data (thread-self))))
+         ;;(display "not running from self thread") (newline))
        (set! count (1+ count))
-       #f)
+       SOURCE_REMOVE)
 
      (define (call-func data)
        (func (thread-self))
        SOURCE_REMOVE)
      
-     (pass-if "directly invoking callback in this thread"
-              (main-context-invoke-full
-               #f                       ; default primary thread context
-               0                        ; priority
-	       func
-               (thread-self)            ; data
-               #f                       ; destroy notification func
-               )
-              (= count 1))
+     ;; (pass-if "directly invoking callback in this thread"
+     ;;          (main-context-invoke-full
+     ;;           #f                       ; default primary thread context
+     ;;           0                        ; priority
+     ;; 	       func
+     ;;           (thread-self)            ; data
+     ;;           #f                       ; destroy notification func
+     ;;           )
+     ;;          (= count 1))
 
      (pass-if "invoking a func from idle"
+	      (set! count 0)
               (idle-add PRIORITY_DEFAULT_IDLE
 			call-func
                         #f
                         #f)
               (main-context-iteration? (main-context-default) #f)
-              (= count 2))))
+              (= count 1))))
 
   (with-test-prefix
    "unload typelib"
