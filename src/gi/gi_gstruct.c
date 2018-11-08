@@ -23,28 +23,35 @@ void gir_sptr_release (GirSmartPtr *sptr)
 
 static void gir_sptr_destroy (GirSmartPtr *sptr)
 {
-    if (sptr->ptr)
+    static GMutex mutex;
+    g_mutex_lock (&mutex);
+    if (sptr)
     {
-        if (sptr->dealloc == SPTR_DEFAULT_FREE_FUNC)
+        if (sptr && sptr->dealloc == SPTR_DEFAULT_FREE_FUNC)
         {
-	    if (sptr->holds == SPTR_HOLDS_GBOXED)
+	    if (sptr && sptr->holds == SPTR_HOLDS_GBOXED)
 		g_boxed_free (sptr->type, sptr->ptr);
-	    else
+	    else if (sptr && sptr->ptr)
 		g_free(sptr->ptr);
         }
         else if (sptr->dealloc == SPTR_C_FREE_FUNC)
         {
-            sptr->c_free_func(sptr->ptr);
+	    if (sptr && sptr->ptr)
+		sptr->c_free_func(sptr->ptr);
             sptr->c_free_func = NULL;
         }
         else if (sptr->dealloc == SPTR_SCM_FREE_FUNC)
         {
-            SCM scm_ptr = scm_from_pointer(sptr->ptr, NULL);
-            scm_call_1(sptr->scm_free_func, scm_ptr);
-            sptr->scm_free_func = SCM_BOOL_F;
+	    if (sptr && sptr->ptr)
+	    {
+		SCM scm_ptr = scm_from_pointer(sptr->ptr, NULL);
+		scm_call_1(sptr->scm_free_func, scm_ptr);
+		sptr->scm_free_func = SCM_BOOL_F;
+	    }
         }
         sptr->ptr = NULL;
     }
+    g_mutex_unlock(&mutex);
 }
 
 SCM

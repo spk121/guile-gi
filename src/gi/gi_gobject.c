@@ -44,7 +44,7 @@ typedef struct _GuileSpecifiedGObjectClassInfo
 
 static GQuark gi_gobject_wrapper_key;
 static GQuark gi_gobject_custom_key;
-static GQuark gi_gobject_class_key;
+// static GQuark gi_gobject_class_key;
 
 static void
 set_guile_specified_property (GObject *object, guint property_id,
@@ -264,7 +264,7 @@ gug_toggle_notify (gpointer data, GObject *object, gboolean is_last_ref)
      * See: https://bugzilla.gnome.org/show_bug.cgi?id=709223
      */
     
-    SCM self = SCM_PACK_POINTER (g_object_get_qdata (object, gi_gobject_wrapper_key));
+    // SCM self = SCM_PACK_POINTER (g_object_get_qdata (object, gi_gobject_wrapper_key));
     /* if (self) { */
     /*     if (is_last_ref) */
     /*         Py_DECREF(self); */
@@ -902,6 +902,7 @@ scm_gobject_is_floating_p (SCM self)
     return scm_from_bool (ret);
 }
 
+#if 0
 static GIPropertyInfo *
 lookup_property_from_object_info (GIObjectInfo *info, const gchar *attr_name)
 {
@@ -924,7 +925,9 @@ lookup_property_from_object_info (GIObjectInfo *info, const gchar *attr_name)
 
     return NULL;
 }
+#endif
 
+#if 0
 static GIPropertyInfo *
 lookup_property_from_interface_info (GIInterfaceInfo *info,
                                      const gchar *attr_name)
@@ -948,8 +951,9 @@ lookup_property_from_interface_info (GIInterfaceInfo *info,
 
     return NULL;
 }
+#endif
 
-
+#if 0
 /* re _pygi_lookup_property_from_g_type */
 static GIPropertyInfo *
 gi_lookup_property_from_g_type (GType g_type, const gchar *attr_name)
@@ -973,7 +977,9 @@ gi_lookup_property_from_g_type (GType g_type, const gchar *attr_name)
     g_base_info_unref (info);
     return ret;
 }
+#endif
 
+#if 0
 /* re pygi_marshal_from_py_basic_type */
 static gboolean
 gi_marshal_from_scm_basic_type (const char *func,
@@ -1059,6 +1065,7 @@ gi_marshal_from_scm_basic_type (const char *func,
 
     return TRUE;
 }
+#endif
 
 #if 0
 static GIArgument

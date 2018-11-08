@@ -18,6 +18,12 @@
 #include "gi_gstruct.h"
 #include "gir_callback.h"
 
+#ifdef _WIN32
+static const int _win32 = TRUE;
+#else
+static const int _win32 = FALSE;
+#endif
+
 void
 gir_log_handler (const gchar *log_domain,
                  GLogLevelFlags log_level,
@@ -30,7 +36,7 @@ gir_log_handler (const gchar *log_domain,
     time(&timer);
     tm_info = localtime(&timer);
     strftime(buffer, 26, "%Y-%m-%d %H:%M:%S", tm_info);
-    if (log_level == G_LOG_LEVEL_DEBUG && !_WIN32)
+    if (log_level == G_LOG_LEVEL_DEBUG && !_win32)
     {
         FILE *fp = fopen("gir-debug-log.xt", "at");
         fprintf (fp, "%s: %s %d %s\n", buffer, log_domain, log_level, message);

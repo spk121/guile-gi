@@ -2,14 +2,17 @@
 
 SHELL = /bin/sh
 
+################################################################
 #HOST=WIN32
-HOST=LINUX
-#HOST=CYGWIN
+#HOST=LINUX
+HOST=CYGWIN
 #HOST=DARWIN
+
 #PROC=IA32
 PROC=AMD64
 #PROC=ARM
 
+################################################################
 # Direcories
 prefix = /usr/local
 infodir = ${datarootdir}/info
@@ -51,10 +54,6 @@ htmldir = ${docdir}
 oldincludedir = /usr/include
 pdfdir = ${docdir}
 
-abs_builddir = /home/mike/projects/guile-gi
-abs_srcdir = /home/mike/projects/guile-gi
-abs_top_builddir = /home/mike/projects/guile-gi
-abs_top_srcdir = /home/mike/projects/guile-gi
 
 top_builddir = .
 top_srcdir = .
@@ -80,13 +79,18 @@ GUILE_SITE_CCACHE = /usr/local/lib/guile/2.2/site-ccache
 ################
 # 
 
-all: libguile-gi.so guile-gi fo_gen
+EXEEXT=
+ifeq ($(HOST),CYGWIN)
+EXEEXT=.exe
+endif
+
+all: libguile-gi.so guile-gi$(EXEEXT) fo_gen$(EXEEXT)
 
 #$(BUILT_SOURCES) $(INFO_DEPS) $(LTLIBRARIES) $(PROGRAMS) $(DATA)
 
 INFO_DEPS = $(srcdir)/doc/guile-gi.info
 LTLIBRARIES = libguile-gi.so
-PROGRAMS = guile-gi fo_gen
+PROGRAMS = guile-gi$(EXEEXT) fo_gen$(EXEEXT)
 DATA = $(dist_guilesite_DATA)
 dist_guilesite_DATA = \
   src/gi.scm
@@ -104,7 +108,7 @@ CPPFLAGS = \
 CFLAGS = \
  -fasynchronous-unwind-tables -fexceptions \
  -fstack-protector-strong \
- -g -pg -grecord-gcc-switches \
+ -g -grecord-gcc-switches \
  -Og -pipe \
  -Wall -Werror=format-security -Werror=implicit-function-declaration -Wshadow \
  -fno-omit-frame-pointer -fdiagnostics-color=auto \
@@ -150,7 +154,7 @@ LIBS = \
 ################
 # Build helper program fo_gen
 
-fo_gen: src/gi/fo_gen.c
+fo_gen$(EXEEXT): src/gi/fo_gen.c
 	$(CC) $(CFLAGS) $(LDFLAGS) -fpie -pie -o $@ $< `pkg-config --cflags --libs glib-2.0`
 
 ################
@@ -208,8 +212,8 @@ libguile-gi.so: $(LIBGUILE_GI_OBJECTS)
 
 subdir = .
 
-DIST_COMMON = $(srcdir)/Makefile.am $(top_srcdir)/configure \
-	$(CONFIGURE_DEPS) $(dist_guilesite_DATA) \
+DIST_COMMON = \
+	$(dist_guilesite_DATA) \
 	$(top_srcdir)/build-aux/test-driver \
 	$(top_srcdir)/build-aux/texinfo.tex \
 	AUTHORS COPYING ChangeLog \
@@ -437,8 +441,6 @@ top_build_prefix =
 
 #        +         +         +         +         +         +         +         |
 ACLOCAL_AMFLAGS = -I m4 ${ACLOCAL_FLAGS}
-DISTCHECK_CONFIGURE_FLAGS = --enable-introspection
-CLEANFILES = $($(check_DATA))
 BUILT_SOURCES = docs/index.html src/gi/__gi_gboxed.h \
 	src/gi/__gi_gboxed.c src/gi/__gi_genum.h src/gi/__gi_genum.c \
 	src/gi/__gi_genumcollection.h src/gi/__gi_genumcollection.c \
@@ -449,34 +451,8 @@ BUILT_SOURCES = docs/index.html src/gi/__gi_gboxed.h \
 	src/gi/__gi_gvalue.c src/gi/__gi_gparamspec.h \
 	src/gi/__gi_gparamspec.c src/gi/__gi_giargument.h \
 	src/gi/__gi_giargument.c
+CLEANFILES = $($(check_DATA)) $(BUILT_SOURCES)
 info_TEXINFOS = doc/guile-gi.texi
-
-
-# src/gi/__gi_gboxed.h src/gi/__gi_gboxed.c \
-# # src/gi/gi_gboxed.h src/gi/gi_gboxed.c \
-# # src/gi/__gi_genum.h src/gi/__gi_genum.c \
-# # src/gi/gi_genum.h src/gi/gi_genum.c \
-# # scr/gi/__gi_genumcollection.h src/gi/__gi_genumcollection.c \
-# # src/gi/__gi_gflags.h src/gi/__gi_gflags.c \
-# # src/gi/gi_gflags.h src/gi/gi_gflags.c \
-# # src/gi/__gi_gflagscollection.h src/gi/__gi_gflagscollection.c \
-# # src/gi/gi_gvalue.h src/gi/gi_gvalue.c \
-# # src/gi/stubs.c \
-# # src/gi/pycompat.c \
-# # src/gi/gir_xguile.c src/gi/gir_xguile.h \
-# # src/gi/gir_g_type.c \
-# # src/gi/gir_g_value.c \
-# # src/gi/gir-object.c src/gi/gir-object.h \
-# # src/gi/gir_ginterface.c src/gi/gir_ginterface.h \
-# # src/gi/gimodule.c src/gi/gimodule.h \
-# # src/gi/gi_util.c src/gi/gi_util.h
-
-# src/gi/gimodule.c
-# src/gi/gugobject.c
-
-# src/gi/gugobject-object.c \
-# src/gi/gugi-object.c
-
 
 libguile_gi_la_CFLAGS = \
   -std=c11 \
@@ -1022,10 +998,6 @@ distcheck: dist
 	  && dc_destdir="$${TMPDIR-/tmp}/am-dc-$$$$/" \
 	  && am__cwd=`pwd` \
 	  && cd $(distdir)/_build/sub \
-	  && ../../configure \
-	    $(AM_DISTCHECK_CONFIGURE_FLAGS) \
-	    $(DISTCHECK_CONFIGURE_FLAGS) \
-	    --srcdir=../.. --prefix="$$dc_install_base" \
 	  && make  \
 	  && make  dvi \
 	  && make  check \
@@ -1326,28 +1298,7 @@ uninstall-am: uninstall-dist_guilesiteDATA uninstall-dvi-am \
 	uninstall-guileextensionLTLIBRARIES uninstall-html-am \
 	uninstall-info-am uninstall-pdf uninstall-ps-am
 
-.PRECIOUS: Makefile
-
-
-src/gi/__gi_gboxed.c: $(builddir)/fo_gen$(EXEEXT) src/gi/foreign-object-types.ini
-src/gi/__gi_gboxed.h: $(builddir)/fo_gen$(EXEEXT) src/gi/foreign-object-types.ini
-src/gi/__gi_genum.c: $(builddir)/fo_gen$(EXEEXT) src/gi/foreign-object-types.ini
-src/gi/__gi_genum.h: $(builddir)/fo_gen$(EXEEXT) src/gi/foreign-object-types.ini
-src/gi/__gi_genumcollection.c: $(builddir)/fo_gen$(EXEEXT) src/gi/foreign-object-types.ini
-src/gi/__gi_genumcollection.h: $(builddir)/fo_gen$(EXEEXT) src/gi/foreign-object-types.ini
-src/gi/__gi_gflags.h: $(builddir)/fo_gen$(EXEEXT) src/gi/foreign-object-types.ini
-src/gi/__gi_gflags.c: $(builddir)/fo_gen$(EXEEXT) src/gi/foreign-object-types.ini
-src/gi/__gi_gflagscollection.c: $(builddir)/fo_gen$(EXEEXT) src/gi/foreign-object-types.ini
-src/gi/__gi_gflagscollection.h: $(builddir)/fo_gen$(EXEEXT) src/gi/foreign-object-types.ini
-src/gi/__gi_gobject.h: $(builddir)/fo_gen$(EXEEXT) src/gi/foreign-object-types.ini
-src/gi/__gi_gobject.c: $(builddir)/fo_gen$(EXEEXT) src/gi/foreign-object-types.ini
-src/gi/__gi_gtype.h: $(builddir)/fo_gen$(EXEEXT) src/gi/foreign-object-types.ini
-src/gi/__gi_gtype.c: $(builddir)/fo_gen$(EXEEXT) src/gi/foreign-object-types.ini
-src/gi/__gi_gvalue.h: $(builddir)/fo_gen$(EXEEXT) src/gi/foreign-object-types.ini
-src/gi/__gi_gvalue.c: $(builddir)/fo_gen$(EXEEXT) src/gi/foreign-object-types.ini
-src/gi/__gi_gparamspec.h: $(builddir)/fo_gen$(EXEEXT) src/gi/foreign-object-types.ini
-src/gi/__gi_gparamspec.c: $(builddir)/fo_gen$(EXEEXT) src/gi/foreign-object-types.ini
-src/gi/__gi_giargument.c: $(builddir)/fo_gen$(EXEEXT) src/gi/foreign-object-types.ini
+$(BUILT_SOURCES):  $(builddir)/fo_gen$(EXEEXT) src/gi/foreign-object-types.ini
 	$(builddir)/fo_gen$(EXEEXT) $(top_srcdir)/src/gi/foreign-object-types.ini $(top_srcdir)/src/gi
 
 # Build ChangeLog from GIT  history

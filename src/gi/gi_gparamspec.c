@@ -3,12 +3,11 @@
 #include "gi_gtype.h"
 #include "gi_gparamspec.h"
 
+#if 0
 static gboolean
 gi_gparamspec_typecheck_scm(const char *func, SCM x)
 {
-    size_t i, len;
-    SCM entry;
-    GType prop_type;
+    size_t len;
 
     if (scm_is_false(scm_list_p(x)))
         scm_misc_error(func, "expected a property list: ~S", scm_list_1(x));
@@ -25,6 +24,7 @@ gi_gparamspec_typecheck_scm(const char *func, SCM x)
         scm_misc_error(func, "fourth element of property list should be a string description: ~S", scm_list_1(x));
     return TRUE;
 }
+#endif
 
 GParamSpec *
 gi_gparamspec_from_scm (SCM x)
@@ -36,7 +36,6 @@ gi_gparamspec_from_scm (SCM x)
     GParamFlags flags;
     GParamSpec *pspec;
     int i;
-    SCM tmp;
 
 #define scm_c_list_ref(x,n) scm_list_ref((x),scm_from_int(n))
     

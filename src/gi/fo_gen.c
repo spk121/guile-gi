@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <glib.h>
 
 FILE *fp;
@@ -16,7 +17,7 @@ getter (const char *self, const char *type, int n)
     return g_strdup_printf ("(%s) GPOINTER_TO_SIZE(scm_foreign_object_ref (%s, %d))",
 			    type, self, n);
   else if (!strcmp (type, "gint") || !strcmp (type, "int"))
-    return g_strdup_printf ("(%s) scm_foreign_object_ref (%s, %d)",
+    return g_strdup_printf ("(%s) GPOINTER_TO_INT (scm_foreign_object_ref (%s, %d))",
 			    type, self, n);
   else if (!strcmp (type, "SCM"))
     return g_strdup_printf ("SCM_PACK_POINTER (scm_foreign_object_ref (%s, %d))", self, n);
@@ -39,7 +40,7 @@ setter (const char *self, const char *var, const char *type, int n)
     return g_strdup_printf ("scm_foreign_object_set_x (%s, %d,  GSIZE_TO_POINTER (%s))",
 			    self, n, var);
   else if (!strcmp (type, "gint") || !strcmp (type, "int"))
-    return g_strdup_printf ("scm_foreign_object_set_x (%s, %d, (void *) %s)",
+    return g_strdup_printf ("scm_foreign_object_set_x (%s, %d, GINT_TO_POINTER(%s))",
 			    self, n, var);
   else if (!strcmp (type, "SCM"))
     return g_strdup_printf ("scm_foreign_object_set_x (%s, %d, SCM_UNPACK_POINTER (%s))",
@@ -282,6 +283,7 @@ int main(int argc, char **argv)
     {
       g_warning("Error loading key file %s", error->message);
       g_error_free(error);
+      error = NULL;
       return 1;
     }
   }
@@ -290,14 +292,16 @@ int main(int argc, char **argv)
   {
     char *filename;
     char *filepath;
-    name = g_key_file_get_string(key_file, names[n], "Name", &error);
-    fields = g_key_file_get_string_list(key_file, names[n], "Fields", &n_fields, &error);
-    types = g_key_file_get_string_list(key_file, names[n], "Types", &n_types, &error);
+    name = g_key_file_get_string(key_file, names[n], "Name", NULL);
+    fields = g_key_file_get_string_list(key_file, names[n], "Fields", &n_fields, NULL);
+    types = g_key_file_get_string_list(key_file, names[n], "Types", &n_types, NULL);
+    if (name == NULL || fields == NULL || types == NULL)
+      {
+	printf("Missing fields for %s\n", names[n]);
+	continue;
+      }
     lowercase = g_ascii_strdown(name, -1);
-    error = NULL;
-    finalizer = g_key_file_get_boolean(key_file, names[n], "Finalizer", &error);
-    if (!finalizer)
-      g_error_free(error);
+    finalizer = g_key_file_get_boolean(key_file, names[n], "Finalizer", NULL);
 
     filename = g_strdup_printf("__gi_%s.c", lowercase);
     filepath = g_build_filename(argv[2], filename, NULL);
