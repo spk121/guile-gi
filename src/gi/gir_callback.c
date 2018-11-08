@@ -74,7 +74,7 @@ void callback_binding(ffi_cif *cif, void *ret, void **ffi_args,
         }
 
         arg_info = g_callable_info_get_arg(gcb->callback_info, i);
-        gi_giargument_convert_arg_to_object(&giarg, arg_info, &s_entry);
+        gi_giargument_convert_arg_to_object(&giarg, arg_info, &s_entry);    
         s_args = scm_append(scm_list_2(s_args, scm_list_1(s_entry)));
         g_base_info_unref (arg_info);
     }
@@ -106,6 +106,9 @@ GirCallback *gir_callback_new(GICallbackInfo *callback_info, SCM s_func)
     ffi_type *ffi_ret_type;
     gint n_args = g_callable_info_get_n_args(callback_info);
 
+    char *name = scm_to_utf8_string (scm_symbol_to_string (scm_procedure_name (s_func)));
+    g_debug("Constructing C Callback for %s", name);
+    free (name);
     gir_callback->s_func = s_func;
     gir_callback->callback_info = callback_info;
     g_base_info_ref(callback_info);
@@ -395,7 +398,7 @@ static SCM
 scm_gir_callback_new (SCM s_callback_info, SCM s_proc)
 {
     GirCallback *gcb;
-    
+
     gcb = gir_callback_cache(scm_to_pointer(s_callback_info), s_proc);
     return scm_make_foreign_object_1(gir_callback_type, gcb);
 }

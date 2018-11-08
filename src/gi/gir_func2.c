@@ -93,7 +93,9 @@ insert_into_method_table(GType type,
                                               full_name);
     if (!subhash)
     {
+#ifdef VERBOSE_DEBUG        
         g_debug("Inserted '%s' into the methods table", full_name);
+#endif        
         *is_new_method = TRUE;
         subhash = g_hash_table_new_full(g_direct_hash,
                                         g_direct_equal,
@@ -113,10 +115,12 @@ insert_into_method_table(GType type,
     g_hash_table_insert(subhash,
                         GINT_TO_POINTER(type),
                         info);
+#ifdef VERBOSE_DEBUG                        
     g_debug("Inserted '%s' for type '%s' %lu into methods table",
             full_name,
             g_type_name(type),
             (unsigned long)type);
+#endif            
     return TRUE;
 }
 
@@ -158,10 +162,12 @@ insert_into_hash_table(const char *category,
     g_hash_table_replace(*p_hash_table,
                          full_name,
                          info);
+#ifdef VERBOSE_DEBUG                         
     g_debug("Inserted %s into %s hash table. %u entries.",
             full_name,
             category,
             g_hash_table_size(*p_hash_table));
+#endif            
     return TRUE;
 }
 
@@ -993,9 +999,11 @@ scm_gi_flag_or_enum_value(SCM s_namespace, SCM s_category, SCM s_name, gboolean 
         vi = g_enum_info_get_value(info, i);
         g_assert(vi != NULL);
 
+#ifdef VERBOSE_DEBUG
         g_debug("flag name search: %s == %s ?",
                 name,
                 g_base_info_get_name(vi));
+#endif                
         if (strcmp(g_base_info_get_name(vi), name) == 0)
         {
             break;
@@ -1597,18 +1605,22 @@ scm_gi_method_send(SCM s_object, SCM s_method_args_list)
 {
     // Find out if this type of argument or of any of this argument's
     // parent types map to this method.
-    GType type;
+    GType type, original_type;
     GHashTable *method_hash = scm_to_pointer(scm_car(s_method_args_list));
     GIFunctionInfo *info;
     SCM s_name = scm_cadr(s_method_args_list);
-    char *method_name = scm_to_utf8_string(scm_cadr(s_method_args_list));
+    char *method_name = scm_to_utf8_string(s_name);
+    SCM s_args = scm_cddr(s_method_args_list);    
 
     if (SCM_IS_A_P(s_object, gi_gobject_type))
         type = gi_gobject_get_ob_type(s_object);
     else if (SCM_IS_A_P(s_object, gir_gbox_type))
         type = gi_gbox_get_type(s_object);
     else
-        g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
+        scm_misc_error("gi-method-send",
+            "Cannot invoke ::~S~S for object ~S",
+            scm_list_3(s_name, s_args, s_object));
+    original_type = type;
     while (!(info = g_hash_table_lookup(method_hash, GINT_TO_POINTER(type))))
     {
         const char *tname = g_type_name(type);
@@ -1626,15 +1638,20 @@ scm_gi_method_send(SCM s_object, SCM s_method_args_list)
         }
     }
 
-    g_debug("Invoking method %s of type %s for object of type %s",
-            method_name,
-            g_type_name(type),
-            g_type_name(gi_gobject_get_ob_type(s_object)));
 
-    SCM s_args = scm_cddr(s_method_args_list);
+    SCM s_args_str = scm_simple_format(SCM_BOOL_F, scm_from_locale_string("~s"), scm_list_1(s_args));
+    char *args_str = scm_to_utf8_string(s_args_str);
+    g_debug("Invoking %s::%s%s for object of type %s",
+            g_type_name(type),
+            method_name,
+            args_str,
+            g_type_name(original_type));
+    free (args_str);
+
+
 
     int n_input_args_received = scm_to_int(scm_length(s_args));
-    g_debug("\t%d input arguments received", n_input_args_received);
+    // g_debug("\t%d input arguments received", n_input_args_received);
 
     int n_input_args, n_output_args;
     GIArgument *in_args, *out_args;

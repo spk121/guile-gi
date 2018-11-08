@@ -5,6 +5,17 @@
 #include <libguile.h>
 #include "__gi_giargument.h"
 
+typedef struct _GirVoidBox
+{
+    int header;
+    int size;
+    SCM body;
+} GirVoidBox;
+
+// Presume 32-bit max size.  Choose a value that is not a valid memory
+// location and should segfault.
+static const int GIR_VOIDBOX_HEADER = ('v' | 'b' << 8 | 'x' << 16 | 32 << 24);
+
 typedef enum _GIArgumentStatus {
     GI_GIARGUMENT_OK,
 	GI_GIARGUMENT_OUT_OF_RANGE,

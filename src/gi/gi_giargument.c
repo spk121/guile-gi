@@ -40,16 +40,7 @@
  * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
-typedef struct _GirVoidBox
-{
-    int header;
-    int size;
-    SCM body;
-} GirVoidBox;
 
-// Presume 32-bit max size.  Choose a value that is not a valid memory
-// location and should segfault.
-static const int GIR_VOIDBOX_HEADER = 0x7FF0EEE0;
 
 static const intmax_t intmin[GI_TYPE_TAG_N_TYPES] =
     {[GI_TYPE_TAG_INT8] = INT8_MIN,
@@ -118,8 +109,7 @@ static GIArgumentStatus gi_giargument_convert_array_object_to_arg(SCM object, GI
 static GIArgumentStatus convert_immediate_arg_to_object(GIArgument *arg, GITypeTag type_tag, SCM* obj);
 static GIArgumentStatus convert_interface_arg_to_object(GIArgument *arg, GITypeInfo *type_info, SCM *obj);
 static GIArgumentStatus convert_string_pointer_arg_to_object(GIArgument *arg, GITypeTag type_tag, GITransfer transfer, SCM *obj);
-static GIArgumentStatus
-convert_const_void_pointer_arg_to_object(GIArgument *arg, SCM *obj);
+static GIArgumentStatus convert_const_void_pointer_arg_to_object(GIArgument *arg, SCM *obj);
 
 //////////////////////////////////////////////////////////
 // CONVERTING SCM OBJECTS TO GIARGUMENTS
@@ -340,9 +330,7 @@ gi_giargument_convert_return_type_object_to_arg(SCM obj,
                 break;
 
             case GI_TYPE_TAG_VOID:
-                //ret = convert_const_void_pointer_object_to_arg(obj, arg);
-                //*must_free = GIR_FREE_NONE;
-                        g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
+                ret = convert_const_void_pointer_object_to_arg(obj, arg);
                 break;
 
             case GI_TYPE_TAG_GHASH:
@@ -566,22 +554,21 @@ convert_const_void_pointer_object_to_arg(SCM obj, GIArgument *arg)
 {
     // The interpretation of void pointer objects is tricky, because
     // in C they can be anything.
-    
-    if (scm_is_false (obj))
-	arg->v_pointer = NULL;
-    else if (SCM_POINTER_P (obj))
-	arg->v_pointer = scm_to_pointer (obj);
+
+    if (scm_is_false(obj))
+        arg->v_pointer = NULL;
+    else if (SCM_POINTER_P(obj))
+        arg->v_pointer = scm_to_pointer(obj);
     else
     {
-	// If we're passed some generic non-pointer object,
-	// we box it up for transport.
-	GirVoidBox *vbox = g_new0(GirVoidBox, 1);
-	vbox->header = GIR_VOIDBOX_HEADER;
-	vbox->size = sizeof(obj);
-	vbox->body = obj;
-	arg->v_pointer = vbox;
+        // If we're passed some generic non-pointer object,
+        // we box it up for transport.
+        arg->v_pointer = g_new0(GirVoidBox, 1);
+        ((GirVoidBox *)(arg->v_pointer))->header = GIR_VOIDBOX_HEADER;
+        ((GirVoidBox *)(arg->v_pointer))->size = sizeof(obj);
+        ((GirVoidBox *)(arg->v_pointer))->body = obj;
     }
-		 
+
     return GI_GIARGUMENT_OK;
 }
 
@@ -1722,27 +1709,26 @@ convert_const_void_pointer_arg_to_object(GIArgument *arg, SCM *obj)
 {
     // Void pointer arguments might hold a boxed Guile type.  Boxed
     // Guile types can be identified by magic number.
-    if (*(int *)(arg->v_pointer) == GIR_VOIDBOX_HEADER)
+    GirVoidBox *vbox = arg->v_pointer;
+    if (vbox->header == GIR_VOIDBOX_HEADER)
     {
-	GirVoidBox *vbox = arg->v_pointer;
-	int size = vbox->size;
-	if (size == sizeof(SCM))
-	{
-	    *obj = vbox->body;
-	    g_free (vbox);
-	}
-	else
-	{
-	    // I guess this was an (extremely unlikely)
-	    // naked pointer that happend to equal our magic number
-	    *obj = scm_from_pointer (arg->v_pointer, NULL);
-	}
+        int size = vbox->size;
+        if (size == sizeof(SCM))
+        {
+            *obj = vbox->body;
+            g_free(vbox);
+        }
+        else
+        {
+            // I guess this was an (extremely unlikely)
+            // naked pointer that happend to equal our magic number
+            *obj = scm_from_pointer(arg->v_pointer, NULL);
+        }
     }
     else
-	*obj = scm_from_pointer (arg->v_pointer, NULL);
+        *obj = scm_from_pointer(arg->v_pointer, NULL);
     return GI_GIARGUMENT_OK;
 }
-
 
 #if 0
     GITypeInfo *type_info = g_arg_info_get_type(arg_info);

@@ -19,7 +19,7 @@ CFLAGS = \
  -fstack-protector-strong \
  -g -pg -grecord-gcc-switches \
  -fcf-protection \
- -Og -pipe \
+ -O0 -pipe \
  -Wall -Werror=format-security -Werror=implicit-function-declaration -Wshadow \
  -fno-omit-frame-pointer -fdiagnostics-color=auto \
  `pkg-config --cflags-only-other guile-2.2 glib-2.0 gobject-2.0 gobject-introspection-1.0 libffi`
