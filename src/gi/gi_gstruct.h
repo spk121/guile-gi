@@ -41,9 +41,11 @@ typedef struct _GirSmartPtr
 } GirSmartPtr;
 
 void gir_sptr_add_ref (GirSmartPtr *sptr);
-void gir_sptr_release (GirSmartPtr *sptr);
+gboolean gir_sptr_release (GirSmartPtr *sptr);
 
 void *gi_gbox_peek_pointer (SCM self);
+void *gi_gbox_ref_pointer (SCM self);
+
 GType gi_gbox_get_type (SCM self);
 
 SCM gir_new_gbox (GirPointerContents holds, GType gtype, gpointer ptr, gboolean use_default_free);

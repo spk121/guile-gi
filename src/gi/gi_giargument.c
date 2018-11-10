@@ -734,7 +734,7 @@ gi_giargument_convert_array_object_to_arg(SCM object, GIArgInfo *array_arg_info,
             // If we are a Struct or Object, we need to look up our actual GType.
             const char *referenced_name = g_base_info_get_namespace(referenced_base_info);
             const char *referenced_namespace = g_base_info_get_namespace(referenced_base_info);
-            referenced_object_type = gir_lookup_type(referenced_namespace, referenced_name);
+            referenced_object_type = gir_lookup_type(referenced_name);
 
             g_assert (referenced_object_type != G_TYPE_NONE);
 
@@ -870,7 +870,7 @@ gi_giargument_convert_array_object_to_arg(SCM object, GIArgInfo *array_arg_info,
         {
             SCM entry = scm_list_ref (object, scm_from_size_t(i));
             // Entry should be a GBox
-            gpointer entry_ptr = gi_gbox_peek_pointer (entry);
+            gpointer entry_ptr = gi_gbox_ref_pointer (entry);
             memcpy((char *)ptr + i * item_size, entry_ptr, item_size);
         }
         if (item_transfer == GI_TRANSFER_NOTHING)
@@ -893,7 +893,7 @@ gi_giargument_convert_array_object_to_arg(SCM object, GIArgInfo *array_arg_info,
         {
             SCM entry = scm_list_ref (object, scm_from_size_t(i));
             // Entry should be a GBox
-            ptr[i] = gi_gbox_peek_pointer (entry);
+            ptr[i] = gi_gbox_ref_pointer (entry);
         }
         if (item_transfer == GI_TRANSFER_NOTHING)
         {
@@ -1057,7 +1057,7 @@ gi_giargument_preallocate_output_arg_and_object(GIArgInfo *arg_info, GIArgument 
                     *obj = gir_new_struct_gbox(referenced_object_type, arg->v_pointer, TRUE);
                 }
                 else
-                    arg->v_pointer = gi_gbox_peek_pointer(*obj);
+                    arg->v_pointer = gi_gbox_ref_pointer(*obj);
             }
             else
                 g_assert_not_reached();
@@ -1657,7 +1657,7 @@ gi_giargument_convert_array_to_object(GIArgument *arg, GIArgInfo *array_arg_info
             // If we are a Struct or Object, we need to look up our actual GType.
             const char *referenced_name = g_base_info_get_namespace(referenced_base_info);
             const char *referenced_namespace = g_base_info_get_namespace(referenced_base_info);
-            referenced_object_type = gir_lookup_type (referenced_namespace, referenced_name);
+            referenced_object_type = gir_lookup_type (referenced_name);
 
             g_assert (referenced_object_type != G_TYPE_NONE);
 

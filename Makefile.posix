@@ -4,8 +4,8 @@ SHELL = /bin/sh
 
 ################################################################
 #HOST=WIN32
-#HOST=LINUX
-HOST=CYGWIN
+HOST=LINUX
+#HOST=CYGWIN
 #HOST=DARWIN
 
 #PROC=IA32
@@ -109,7 +109,7 @@ CFLAGS = \
  -fasynchronous-unwind-tables -fexceptions \
  -fstack-protector-strong \
  -g -grecord-gcc-switches \
- -Og -pipe \
+ -O0 -pipe \
  -Wall -Werror=format-security -Werror=implicit-function-declaration -Wshadow \
  -fno-omit-frame-pointer -fdiagnostics-color=auto \
  $(shell pkg-config --cflags-only-other guile-2.2 glib-2.0 gobject-2.0 gobject-introspection-1.0 libffi)

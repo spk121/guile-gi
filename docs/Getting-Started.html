@@ -10,7 +10,7 @@
 <meta name="keywords" content="Getting Started (Guile GI)">
 <meta name="resource-type" content="document">
 <meta name="distribution" content="global">
-<meta name="Generator" content="texi2any">
+<meta name="Generator" content="makeinfo">
 <link href="index.html#Top" rel="start" title="Top">
 <link href="Index.html#Index" rel="index" title="Index">
 <link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
@@ -44,7 +44,6 @@ span.sansserif {font-family: sans-serif; font-weight: normal}
 ul.no-bullet {list-style: none}
 -->
 </style>
-<link rel="stylesheet" type="text/css" href="document-1.0.1.css">
 
 
 </head>
@@ -60,15 +59,21 @@ Next: <a href="Tutorials.html#Tutorials" accesskey="n" rel="next">Tutorials</a>,
 <h2 class="chapter">1 Getting Started</h2>
 
 <p>To get things started, we will try to run a very simple GTK+ based GUI
-application using the bindings provided by Guile GI.  First, create a
+application using the bindings provided by Guile GI.
+</p>
+<p>First, create a <code>(Gtk)</code> Guile module.
+</p>
+<div class="example">
+<pre class="example"> guile -L . -c '(use-modules (gi)) (display (export-typelib &quot;Gtk&quot; &quot;3.0&quot;))' &gt; Gtk.scm
+</pre></div>
+
+<p>Then, create a
 small Guile script called <samp>hello.scm</samp> with the following content
 and save it somewhere (FIXME, this doesn&rsquo;t work):
 </p>
 <div class="lisp">
-<pre class="lisp">(use-modules (gi introspection))
-(require-version &quot;Gtk&quot; &quot;3.0&quot;)
-(import &quot;Gtk&quot;)
-
+<pre class="lisp">(use-modules (gi)
+             (Gtk))
 (define window (Window #:title &quot;Hello World&quot;))
 (show window)
 (connect window main-quit)

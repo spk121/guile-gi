@@ -4,61 +4,71 @@
 
 SCM gir_gbox_type;
 SCM gir_gbox_type_store;
+static GMutex mutex;
 
-static void gir_sptr_destroy (GirSmartPtr *sptr);
+static void gir_sptr_free (GirSmartPtr *sptr);
 
 void gir_sptr_add_ref (GirSmartPtr *sptr)
 {
+    g_assert (sptr != NULL);
     g_atomic_int_inc (&(sptr->count));
 }
 
-void gir_sptr_release (GirSmartPtr *sptr)
+// Decrement the refcount.
+// Free if refcnt is zero.
+// Return TRUE if freeing occurred, else return FALSE.
+gboolean gir_sptr_release (GirSmartPtr *sptr)
 {
+    g_assert (sptr != NULL);
     g_assert (g_atomic_int_get (&(sptr->count)) >= 0);
     if (g_atomic_int_dec_and_test (&(sptr->count)))
     {
-        gir_sptr_destroy (sptr);
+        gir_sptr_free (sptr);
+	return TRUE;
     }
+    return FALSE;
 }
 
-static void gir_sptr_destroy (GirSmartPtr *sptr)
+static void gir_sptr_free (GirSmartPtr *sptr)
 {
-    static GMutex mutex;
-    g_mutex_lock (&mutex);
     if (sptr)
     {
-        if (sptr && sptr->dealloc == SPTR_DEFAULT_FREE_FUNC)
+        if (sptr->dealloc == SPTR_DEFAULT_FREE_FUNC)
         {
-	    if (sptr && sptr->holds == SPTR_HOLDS_GBOXED)
-		g_boxed_free (sptr->type, sptr->ptr);
-	    else if (sptr && sptr->ptr)
-		g_free(sptr->ptr);
+	    /* if (sptr->holds == SPTR_HOLDS_GBOXED) */
+	    /* 	g_boxed_free (sptr->type, sptr->ptr); */
+	    /* else */
+	    g_assert (sptr);
+	    g_assert (sptr->ptr);
+	    g_free(sptr->ptr);
         }
         else if (sptr->dealloc == SPTR_C_FREE_FUNC)
         {
-	    if (sptr && sptr->ptr)
-		sptr->c_free_func(sptr->ptr);
-            sptr->c_free_func = NULL;
+	    g_assert (sptr);
+	    g_assert (sptr->ptr);
+	    g_assert (sptr->c_free_func);
+	    sptr->c_free_func(sptr->ptr);
         }
         else if (sptr->dealloc == SPTR_SCM_FREE_FUNC)
         {
-	    if (sptr && sptr->ptr)
-	    {
-		SCM scm_ptr = scm_from_pointer(sptr->ptr, NULL);
-		scm_call_1(sptr->scm_free_func, scm_ptr);
-		sptr->scm_free_func = SCM_BOOL_F;
-	    }
+	    g_assert (sptr);
+	    g_assert (sptr->ptr);
+	    g_assert (SCM_UNPACK_POINTER(sptr->scm_free_func));
+	    
+	    SCM scm_ptr = scm_from_pointer(sptr->ptr, NULL);
+	    scm_call_1(sptr->scm_free_func, scm_ptr);
+	    sptr->scm_free_func = SCM_BOOL_F;
         }
-        sptr->ptr = NULL;
+	memset(sptr, 0, sizeof(GirSmartPtr));
+	g_free (sptr);
     }
-    g_mutex_unlock(&mutex);
 }
+
 
 SCM
 gir_new_gbox (GirPointerContents holds, GType gtype, gpointer ptr, gboolean use_default_free)
 {
-    GirSmartPtr *sptr = scm_gc_malloc(sizeof (GirSmartPtr), "box");
-    memset (sptr, 0, sizeof(GirSmartPtr));
+    GirSmartPtr *sptr = g_malloc0(sizeof (GirSmartPtr));
     sptr->holds = holds;
     sptr->ptr = ptr;
     sptr->type = gtype;
@@ -68,7 +78,7 @@ gir_new_gbox (GirPointerContents holds, GType gtype, gpointer ptr, gboolean use_
     else
         sptr->dealloc = SPTR_NO_FREE_FUNC;
 
-    SCM obj = scm_make_foreign_object_1(gir_gbox_type, sptr);
+    SCM obj = scm_make_foreign_object_2(gir_gbox_type, sptr, TRUE);
     return obj;
 }
 
@@ -168,6 +178,23 @@ gi_gbox_peek_pointer (SCM self)
         return NULL;
 }
 
+void *
+gi_gbox_ref_pointer (SCM self)
+{
+    if (!SCM_IS_A_P (self, gir_gbox_type))
+        scm_wrong_type_arg_msg("gbox-peek-pointer", SCM_ARG1, self, "GBox");
+    
+    GirSmartPtr *sptr = scm_foreign_object_ref(self, 0);
+    if (sptr)
+    {
+	gir_sptr_add_ref(sptr);
+        return sptr;
+    }
+    else
+        return NULL;
+}
+
+
 static SCM
 scm_gbox_peek_pointer (SCM self)
 {
@@ -185,6 +212,8 @@ scm_gbox_peek_pointer (SCM self)
 
 GType gi_gbox_get_type (SCM self)
 {
+    g_assert (SCM_IS_A_P(self, gir_gbox_type));
+
     GirSmartPtr *sptr = scm_foreign_object_ref(self, 0);
     if (sptr)
         return sptr->type;
@@ -205,13 +234,33 @@ scm_gbox_get_gtype (SCM self)
     return SCM_BOOL_F;
 }
 
+
 static void
 gi_gbox_finalizer(SCM self)
 {
+    g_mutex_lock (&mutex);
     GirSmartPtr *sptr = scm_foreign_object_ref (self, 0);
-    if (sptr)
+    gboolean valid = scm_foreign_object_ref (self, 1);
+
+    SCM s_str = scm_simple_format(SCM_BOOL_F, scm_from_utf8_string ("~S"), scm_list_1 (self));
+    char *str = scm_to_utf8_string (s_str);
+    
+    if (!valid)
+    {
+	g_debug ("In GBox finalizer for (invalid) %s", str);
+    }
+    else if (sptr)
+    {
+	g_debug ("In GBox finalizer for %s", str);
         gir_sptr_release(sptr);
-    scm_foreign_object_set_x (self, 0, NULL);
+	scm_foreign_object_set_x (self, 0, NULL);
+    }
+    else
+	g_debug ("In GBox finalizer for (freed) %s", str);
+
+    free (str);
+    scm_foreign_object_set_x (self, 1, FALSE);
+    g_mutex_unlock (&mutex);
 }
 
 static SCM scm_gbox_get_refcount (SCM self)
@@ -256,9 +305,11 @@ void
 gi_init_gbox (void)
 {
     SCM name, slots;
+    g_mutex_init(&mutex);
     name = scm_from_utf8_symbol("<GBox>");
     slots = scm_list_n(
 		       scm_from_utf8_symbol ("sptr"),
+		       scm_from_utf8_symbol ("valid"),
 		       SCM_UNDEFINED);
     gir_gbox_type = scm_make_foreign_object_type (name, slots, gi_gbox_finalizer);
     gir_gbox_type_store = scm_c_define ("<GBox>", gir_gbox_type);
