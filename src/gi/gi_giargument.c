@@ -464,6 +464,7 @@ convert_interface_object_to_arg(SCM obj, GITypeInfo *type_info, unsigned *must_f
         }
         else
         {
+            g_critical("Unhandled argument type, %s: %d", __FILE__, __LINE__);            
             arg->v_pointer = NULL;
             *must_free = GIR_FREE_NONE;
             ret = GI_GIARGUMENT_WRONG_TYPE_ARG;
@@ -493,6 +494,7 @@ gi_giargument_convert_immediate_pointer_object_to_arg(SCM obj, GIArgInfo *arg_in
     }
     if (!scm_is_bytevector (obj))
     {
+        g_critical("Unhandled argument type, %s: %d", __FILE__, __LINE__);        
         arg->v_pointer = NULL;
         *must_free = GIR_FREE_NONE;
         ret = GI_GIARGUMENT_WRONG_TYPE_ARG;
@@ -525,6 +527,7 @@ gi_giargument_convert_string_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigne
     }
     else if (!scm_is_string (obj))
     {
+        g_critical("Unhandled argument type, %s: %d", __FILE__, __LINE__);        
         arg->v_string = NULL;
         *must_free = GIR_FREE_NONE;
         ret = GI_GIARGUMENT_WRONG_TYPE_ARG;
@@ -595,6 +598,7 @@ convert_interface_pointer_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *
     {
         if (!SCM_IS_A_P(obj, gir_gbox_type))
         {
+            g_critical("Unhandled argument type, %s: %d", __FILE__, __LINE__);            
             arg->v_pointer = NULL;
             *must_free = GIR_FREE_NONE;
             ret = GI_GIARGUMENT_WRONG_TYPE_ARG;
@@ -608,6 +612,7 @@ convert_interface_pointer_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *
             {
                 if (!g_type_is_a (sptr->type, type))
                 {
+                    g_critical("Unhandled argument type, %s: %d", __FILE__, __LINE__);                    
                     arg->v_pointer = NULL;
                     *must_free = GIR_FREE_NONE;
                     ret = GI_GIARGUMENT_WRONG_TYPE_ARG;
@@ -625,6 +630,7 @@ convert_interface_pointer_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *
     {
         if (!SCM_IS_A_P(obj, gi_gobject_type))
         {
+            g_critical("Unhandled argument type, %s: %d", __FILE__, __LINE__);            
             arg->v_pointer = NULL;
             *must_free = GIR_FREE_NONE;
             ret = GI_GIARGUMENT_WRONG_TYPE_ARG;
@@ -632,8 +638,10 @@ convert_interface_pointer_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *
         else
         {
             GType type = g_registered_type_info_get_g_type(referenced_base_info);
+            g_debug ("testing if %p (a %s) is a child of %s", obj, g_type_name(gi_gobject_get_ob_type (obj)), g_type_name(type));
             if (!g_type_is_a (gi_gobject_get_ob_type(obj), type))
             {
+                g_critical("Unhandled argument type, %s: %d", __FILE__, __LINE__);                
                 arg->v_pointer = NULL;
                 *must_free = GIR_FREE_NONE;
                 ret = GI_GIARGUMENT_WRONG_TYPE_ARG;
@@ -649,7 +657,7 @@ convert_interface_pointer_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *
     else if (referenced_base_type == GI_INFO_TYPE_CALLBACK)
     {
         g_critical("Unhandled argument type, %s: %d", __FILE__, __LINE__);
-	g_abort();
+	    g_abort();
 #if 0
         if (SCM_IS_A_P(obj, gir_callback_type))
         {
@@ -824,12 +832,14 @@ gi_giargument_convert_array_object_to_arg(SCM object, GIArgInfo *array_arg_info,
 
     // UTF8 or FILENAME pointers.  It seems that arrays of type UTF8 can mean two things.
     // 1. If zero-terminated, it means a NULL-pointer-terminated list of gchar pointers to UTF8 strings.
-    // 2. If not zero-terminated, it means a non-zero-terminated UTF8 string, but, only for GLib regex
-    //    functions, which seems like a mistake, so won't handle those yet
-    else if ((item_type_tag == GI_TYPE_TAG_UTF8 || item_type_tag == GI_TYPE_TAG_FILENAME) && !array_is_zero_terminated)
-        ret = GI_GIARGUMENT_UNHANDLED_ARRAY_ELEMENT_TYPE;
-    else if ((item_type_tag == GI_TYPE_TAG_UTF8 || item_type_tag == GI_TYPE_TAG_FILENAME) && array_is_zero_terminated)
+    // 2. If not zero-terminated, it could mean a non-zero-terminated UTF8 string, but, only for GLib regex
+    //    functions, which seems like a mistake.
+    //    Also, if not zero-terminated, it could be an argv list of strings. In that case, it seems OK
+    //    to do the same thing as case #1.
+    else if ((item_type_tag == GI_TYPE_TAG_UTF8 || item_type_tag == GI_TYPE_TAG_FILENAME))
     {
+        // We're adding a zero termination despite the value of array_is_zero_terminated,
+        // because it does not harm.
         if (!item_is_ptr)
             ret = GI_GIARGUMENT_UNHANDLED_ARRAY_ELEMENT_TYPE;
 
@@ -1356,15 +1366,22 @@ gi_giargument_convert_return_val_to_object(GIArgument  *arg,
                 {
                     GIBaseInfo *referenced_base_info = g_type_info_get_interface(type_info);
                     GIInfoType referenced_base_type = g_base_info_get_type(referenced_base_info);
-                    GType referenced_object_type = g_registered_type_info_get_g_type(referenced_base_info);
+                    GType referenced_base_gtype = g_registered_type_info_get_g_type(referenced_base_info);
                     g_base_info_unref(referenced_base_info);
 
                     if (referenced_base_type == GI_INFO_TYPE_STRUCT)
                     {
-                        GIStructInfo *referenced_struct_info = g_type_get_qdata(referenced_object_type, gtype_base_info_key);
+                        GIStructInfo *referenced_struct_info = g_type_get_qdata(referenced_base_gtype, gtype_base_info_key);
                         g_assert(referenced_struct_info != NULL);
 
-                        return gir_new_struct_gbox(referenced_object_type, arg->v_pointer, TRUE);
+                        return gir_new_struct_gbox(referenced_base_gtype, arg->v_pointer, TRUE);
+                    }
+                    else if (referenced_base_type == GI_INFO_TYPE_OBJECT)
+                    {
+                        GIObjectInfo *referenced_object_info = g_type_get_qdata(referenced_base_gtype, gtype_base_info_key);
+                        g_assert(referenced_object_info != NULL);
+
+                        return gi_gobject_new(arg->v_pointer);
                     }
                     else
                         g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);

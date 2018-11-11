@@ -74,4 +74,4 @@
   (load-typelib namespace version)
   (eval-string (%import-typelib namespace version)))
 
-(load-extension "libguile-gi.so" "gir_init")
+(load-extension "libguile-gi" "gir_init")

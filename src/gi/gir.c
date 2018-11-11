@@ -44,15 +44,18 @@ gir_log_handler (const gchar *log_domain,
     }
     else
 	fprintf (stderr, "%s: %s %d %s\n", buffer, log_domain, log_level, message);
+    fflush(stderr);
 }
 
 void
 gir_init(void)
 {
+#if 1
     g_log_set_handler (G_LOG_DOMAIN, G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL
                        | G_LOG_FLAG_RECURSION, gir_log_handler, NULL);
     g_log_set_handler ("GLib", G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL
                        | G_LOG_FLAG_RECURSION, gir_log_handler, NULL);
+#endif                       
     g_debug ("Begin libguile-gir initialization");
     gi_init_gtype ();
     gi_init_gvalue ();

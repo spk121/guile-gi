@@ -367,7 +367,13 @@ connect_helper (SCM self, gchar *name, SCM callback, SCM extra_args, SCM object,
 static SCM
 scm_signal_connect (SCM self, SCM s_name, SCM proc, SCM rest)
 {
-    scm_assert_foreign_object_type (gi_gobject_type, self);
+    // int t1 = SCM_INSTANCEP(self);
+    // int t2 = SCM_CLASS_OF(self);
+    // int t3 = SCM_SUBCLASSP(SCM_CLASS_OF(self), gi_gobject_type);
+    if (!SCM_IS_A_P (self, gi_gobject_type))
+        scm_error (scm_arg_type_key, "signal-connect", "Wrong type in position 1 (expecting ~A): ~S",
+                             scm_list_2 (scm_class_name (gi_gobject_type), self), scm_list_1 (self));
+
 
     char *name = scm_to_utf8_string (s_name);
     SCM ret = connect_helper (self, name, proc, rest, SCM_BOOL_F, FALSE);
