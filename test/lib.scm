@@ -308,7 +308,7 @@
 		 (report key test-name))
 		((quit)
 		 (report 'unresolved test-name)
-		 (quit))
+		 (quit 0))
 		(else
 		 (report 'error test-name (cons key args))))))
 	  (set! test-running #f))))

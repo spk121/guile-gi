@@ -10,7 +10,6 @@
 
 GQuark gtype_wrapper_key;
 GQuark gtype_base_info_key;
-SCM gtype_wrapper_hash;
 
 /* In C, a GType is an integer.  It indicates a GObject type.
  * Behind the scenes, it is a complicated private structure,
@@ -44,6 +43,24 @@ SCM gtype_wrapper_hash;
 
 /* A <gtype> is a foreign object type that contains a C GType
    integer. */
+
+static SCM
+get_hash_table (void)
+{
+    SCM hashtable;
+    static int first = TRUE;
+    static SCM sym;
+    if (first)
+    {
+	first = FALSE;
+	sym = scm_from_utf8_symbol("%gtypes");
+    }
+
+    hashtable = scm_module_variable (scm_current_module (), sym);
+    g_assert (scm_is_true (scm_hash_table_p (scm_variable_ref (hashtable))));
+    return scm_variable_ref (hashtable);
+}
+
 
 /* re pyg_type_get_bases */
 static SCM
@@ -108,7 +125,7 @@ gi_gtype_from_scm(SCM obj)
 	SCM entry;
 	
 	val = scm_to_size_t (obj);
-	entry = scm_hash_ref (gtype_wrapper_hash, obj, SCM_BOOL_F);
+	entry = scm_hash_ref (get_hash_table(), obj, SCM_BOOL_F);
 	if (!scm_is_false (entry))
 	    return val;
     }
@@ -466,9 +483,9 @@ SCM gi_gtype_c2g(GType type)
         g_debug("Creating new GType wrapper: %zu %s", type, g_type_name(type));
 
         wrapper = scm_make_foreign_object_0(gi_gtype_type);
-	    gi_gtype_set_type (wrapper, type);
+	gi_gtype_set_type (wrapper, type);
         g_type_set_qdata(type, gtype_wrapper_key, SCM_UNPACK_POINTER (wrapper));
-        scm_hash_set_x(gtype_wrapper_hash, scm_from_size_t(type), wrapper);
+        scm_hash_set_x(get_hash_table(), scm_from_size_t(type), wrapper);
     }
     else
     {
@@ -478,11 +495,19 @@ SCM gi_gtype_c2g(GType type)
 }
 
 void
+gi_gtype_finalizer (SCM self)
+{
+    GType type = gi_gtype_get_type (self);
+    g_debug("Finalizing GType wrapper: %zu %s", type, g_type_name(type));
+    g_type_set_qdata(type, gtype_wrapper_key, NULL);
+}
+
+void
 gi_init_gtype(void)
 {
     gi_init_gtype_type ();
 
-    gtype_wrapper_hash = scm_c_make_hash_table (10);
+    SCM gtype_wrapper_hash = scm_c_make_hash_table (10);
     scm_permanent_object (scm_c_define ("%gtypes", gtype_wrapper_hash));
     gtype_wrapper_key = g_quark_from_static_string ("guile-gi-gtype-wrapper");
     gtype_base_info_key = g_quark_from_static_string ("gtype-base-info");
@@ -537,54 +562,4 @@ gi_init_gtype(void)
     scm_c_define_gsubr("gtype-is-value?", 1, 0, 0, scm_gtype_is_value_p);
     scm_c_define_gsubr("gtype-is-param?", 1, 0, 0, scm_gtype_is_param_p);
     scm_c_define_gsubr("gtype=?", 2, 0, 0, scm_gtype_equal_p);
-
-    scm_c_export ("%gtypes",
-		  // "G_TYPE_INVALID",
-		  "G_TYPE_NONE",
-		  "G_TYPE_INTERFACE",
-		  "G_TYPE_CHAR",
-		  "G_TYPE_UCHAR",
-		  "G_TYPE_BOOLEAN",
-		  "G_TYPE_INT",
-		  "G_TYPE_UINT",
-		  "G_TYPE_LONG",
-		  "G_TYPE_ULONG",
-		  "G_TYPE_INT64",
-		  "G_TYPE_UINT64",
-		  "G_TYPE_ENUM",
-		  "G_TYPE_FLAGS",
-		  "G_TYPE_FLOAT",
-		  "G_TYPE_DOUBLE",
-		  "G_TYPE_STRING",
-		  "G_TYPE_BOXED",
-		  "G_TYPE_PARAM",
-		  "G_TYPE_OBJECT",
-		  "G_TYPE_GTYPE",
-		  "G_TYPE_VARIANT",
-		  "G_TYPE_CHECKSUM",
-		  "G_TYPE_POINTER",
-		  "->gtype",
-		  "integer->gtype-unsafe",
-		  "string->gtype",
-		  "gtype-get-name",
-		  "gtype-get-parent",
-		  "gtype-get-fundamental",
-		  "gtype-get-children",
-		  "gtype-get-interfaces",
-		  "gtype-get-depth",
-		  "gtype-is-interface?",
-		  "gtype-is-classed?",
-		  "gtype-is-instantiatable?",
-		  "gtype-is-derivable?",
-		  "gtype-is-deep-derivable?",
-		  "gtype-is-abstract?",
-		  "gtype-is-value-abstract?",
-		  "gtype-is-value-tyoe?",
-		  "gtype-has-value-table?",
-		  "gtype-is-a?",
-		  "gtype-get-bases",
-		  "gtype-is-value?",
-		  "gtype-is-param?",
-		  NULL);
-
 }

@@ -1,0 +1,39 @@
+{
+   Cond/GC_mark_some
+   Memcheck:Cond
+   ...
+   fun:GC_mark_some
+}
+
+{
+   Value8/GC_mark_some
+   Memcheck:Value8
+   ...
+   fun:GC_mark_some
+}
+
+{
+   Cond/GC_mark_local
+   Memcheck:Cond
+   ...
+   fun:GC_mark_local
+}
+
+{
+   Value8/GC_mark_local
+   Memcheck:Value8
+   ...
+   fun:GC_mark_local
+}
+
+
+{
+   Leak/scm_init_numbers
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   fun:scm_init_numbers
+}
+
+
+

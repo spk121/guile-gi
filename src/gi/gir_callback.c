@@ -3,9 +3,6 @@
 #include "gir_callback.h"
 #include "gi_giargument.h"
 
-SCM gir_callback_type;
-SCM gir_callback_type_store;
-
 GSList *callback_list = NULL;
 
 static ffi_type *
@@ -106,9 +103,19 @@ GirCallback *gir_callback_new(GICallbackInfo *callback_info, SCM s_func)
     ffi_type *ffi_ret_type;
     gint n_args = g_callable_info_get_n_args(callback_info);
 
-    char *name = scm_to_utf8_string (scm_symbol_to_string (scm_procedure_name (s_func)));
-    g_debug("Constructing C Callback for %s", name);
-    free (name);
+    {
+	SCM s_name = scm_procedure_name (s_func);
+	if (scm_is_string (s_name))
+	{
+	    char *name = scm_to_utf8_string (scm_symbol_to_string (scm_procedure_name (s_func)));
+	    g_debug("Constructing C Callback for %s", name);
+	    free (name);
+	}
+	else
+	    g_debug ("Construction a C Callback for an anonymous procedure");
+    }
+		
+
     gir_callback->s_func = s_func;
     gir_callback->callback_info = callback_info;
     g_base_info_ref(callback_info);
@@ -173,7 +180,7 @@ GirCallback *gir_callback_new(GICallbackInfo *callback_info, SCM s_func)
     return gir_callback;
 }
 
-GirCallback *gir_callback_cache(GICallbackInfo *callback_info, SCM s_func)
+void *gir_callback_get_ptr(GICallbackInfo *callback_info, SCM s_func)
 {
     g_assert (callback_info != NULL);
     g_assert (scm_is_true (scm_procedure_p (s_func)));
@@ -184,40 +191,15 @@ GirCallback *gir_callback_cache(GICallbackInfo *callback_info, SCM s_func)
     while (x != NULL)
     {
         gcb = x->data;
-        if (scm_is_eq(gcb->s_func, s_func) && (g_base_info_get_type (callback_info) == g_base_info_get_type(gcb->callback_info)))
-            return gcb;
+        if (scm_is_eq(gcb->s_func, s_func)
+	    && (g_base_info_get_type (callback_info) == g_base_info_get_type(gcb->callback_info)))
+	    return gcb->callback_ptr;
         x = x->next;
     }
 
     // Create a new entry if necessary.
     gcb = gir_callback_new (callback_info, s_func);
     callback_list = g_slist_prepend(callback_list, gcb);
-    return gcb;
-}
-
-SCM gir_callback_lookup_by_pointer(gpointer callback_ptr)
-{
-    g_assert (callback_ptr != NULL);
-
-    GSList *x = callback_list;
-    GirCallback *gcb;
-    while (x != NULL)
-    {
-        gcb = x->data;
-        if (gcb->callback_ptr == callback_ptr)
-        {
-            return scm_make_foreign_object_1 (gir_callback_type, gcb);
-        }
-        x = x->next;
-    }
-    return SCM_BOOL_F;
-}
-
-void *
-gir_callback_get_func (SCM s_gcb)
-{
-    g_assert (SCM_IS_A_P (s_gcb, gir_callback_type));
-    GirCallback *gcb = scm_foreign_object_ref(s_gcb, 0);
     return gcb->callback_ptr;
 }
 
@@ -323,113 +305,7 @@ type_info_to_ffi_type(GITypeInfo *type_info)
     return rettype;
 }
 
-#if 0
-static void
-value_from_ffi_type(GValue *gvalue, gpointer *value)
-{
-    ffi_arg *int_val = (ffi_arg *)value;
-    switch (g_type_fundamental(G_VALUE_TYPE(gvalue)))
-    {
-    case G_TYPE_INT:
-        g_value_set_int(gvalue, (gint)*int_val);
-        break;
-    case G_TYPE_FLOAT:
-        g_value_set_float(gvalue, *(gfloat *)value);
-        break;
-    case G_TYPE_DOUBLE:
-        g_value_set_double(gvalue, *(gdouble *)value);
-        break;
-    case G_TYPE_BOOLEAN:
-        g_value_set_boolean(gvalue, (gboolean)*int_val);
-        break;
-    case G_TYPE_STRING:
-        g_value_take_string(gvalue, *(gchar **)value);
-        break;
-    case G_TYPE_CHAR:
-        g_value_set_schar(gvalue, (gint8)*int_val);
-        break;
-    case G_TYPE_UCHAR:
-        g_value_set_uchar(gvalue, (guchar)*int_val);
-        break;
-    case G_TYPE_UINT:
-        g_value_set_uint(gvalue, (guint)*int_val);
-        break;
-    case G_TYPE_POINTER:
-        g_value_set_pointer(gvalue, *(gpointer *)value);
-        break;
-    case G_TYPE_LONG:
-        g_value_set_long(gvalue, (glong)*int_val);
-        break;
-    case G_TYPE_ULONG:
-        g_value_set_ulong(gvalue, (gulong)*int_val);
-        break;
-    case G_TYPE_INT64:
-        g_value_set_int64(gvalue, (gint64)*int_val);
-        break;
-    case G_TYPE_UINT64:
-        g_value_set_uint64(gvalue, (guint64)*int_val);
-        break;
-    case G_TYPE_BOXED:
-        g_value_take_boxed(gvalue, *(gpointer *)value);
-        break;
-    case G_TYPE_ENUM:
-        g_value_set_enum(gvalue, (gint)*int_val);
-        break;
-    case G_TYPE_FLAGS:
-        g_value_set_flags(gvalue, (guint)*int_val);
-        break;
-    case G_TYPE_PARAM:
-        g_value_take_param(gvalue, *(gpointer *)value);
-        break;
-    case G_TYPE_OBJECT:
-        g_value_take_object(gvalue, *(gpointer *)value);
-        break;
-    case G_TYPE_VARIANT:
-        g_value_take_variant(gvalue, *(gpointer *)value);
-        break;
-    default:
-        g_warning("value_from_ffi_type: Unsupported fundamental type: %s",
-                  g_type_name(g_type_fundamental(G_VALUE_TYPE(gvalue))));
-   }
-}
-#endif
-
-static SCM
-scm_gir_callback_new (SCM s_callback_info, SCM s_proc)
-{
-    GirCallback *gcb;
-
-    gcb = gir_callback_cache(scm_to_pointer(s_callback_info), s_proc);
-    return scm_make_foreign_object_1(gir_callback_type, gcb);
-}
-
-static void
-gir_callback_finalizer (SCM callback)
-{
-    GirCallback *gcb = scm_foreign_object_ref(callback, 0);
-    //if (gcb != NULL)
-    //{
-    //    if (gcb->closure != NULL)
-    //        ffi_closure_free(gcb->closure);
-    //   gcb->closure = NULL;
-    //   gcb->s_func = SCM_BOOL_F;
-    //}
-}
-
-static void gir_callback_hash_key_destroy (gpointer data)
-{
-    // Destroy the scm procedure.
-}
-
 void
 gir_init_callback(void)
 {
-    SCM name, slots;
-    name = scm_from_utf8_symbol("<GCallback>");
-    slots = scm_list_n(
-		       scm_from_utf8_symbol ("ptr"),
-		       SCM_UNDEFINED);
-    gir_callback_type = scm_make_foreign_object_type (name, slots, gir_callback_finalizer);
-    gir_callback_type_store = scm_c_define ("<GCallback>", gir_callback_type);
-    scm_c_define_gsubr("gir-callback-new", 2, 0, 0, scm_gir_callback_new);
 }

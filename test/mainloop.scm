@@ -1,4 +1,5 @@
-(use-modules (lib)
+(use-modules (gi)
+	     (lib)
              (rnrs bytevectors)
              (system foreign)
              (ice-9 eval-string)
@@ -20,21 +21,21 @@
    "load typelib"
    
    (pass-if "load GLib 2.0 repository"
-            (eval-string (gi-load-repository "GLib" "2.0"))
+            (import-typelib "GLib" "2.0")
             #t))
 
   (with-test-prefix
    "main context"
 
-   (pass-if "main-context-new returns a context"
-            (set! ctx (main-context-new))
+   (pass-if "MainContext-new returns a context"
+            (set! ctx (MainContext-new))
             (gbox? ctx))
    
    (pass-if "main context is not pending"
-            (not (main-context-pending? ctx)))
+            (not (MainContext-pending? ctx)))
 
    (pass-if "an iteration of the main loop doesn't dispatch events"
-            (not (main-context-iteration? ctx #f)))
+            (not (MainContext-iteration? ctx #f)))
 
    (pass-if "g_idle_remove_by_data works"
 	    (let ((callback (lambda (user-data)
@@ -52,13 +53,13 @@
          (ctx #f))
      
      (pass-if "new main loop is not running"
-              (set! loop (main-loop-new #f #f))
-              (not (main-loop-is-running? loop)))
+              (set! loop (MainLoop-new #f #f))
+              (not (MainLoop-is-running? loop)))
 
      (pass-if "main loop context is default context"
-              (set! ctx (main-loop-get-context loop))
-              (format #t "main loop context: ~S. default context: ~S.~%" ctx (main-context-default))
-              (equal? ctx (main-context-default)))
+              (set! ctx (MainLoop-get-context loop))
+              (format #t "main loop context: ~S. default context: ~S.~%" ctx (MainContext-default))
+              (equal? ctx (MainContext-default)))
 
      (pass-if "main depth is zero"
               (= (main-depth) 0))
@@ -83,24 +84,29 @@
        (set! b (1+ b)))
      (define (c++ data)
        (set! c (1+ c)))
+     (define (stopit data)
+       (MainLoop-quit loop))
 
-     (pass-if "timeouts can run"
+     (pass-if "setup"
 	      (let ((sourceA (timeout-source-new 100))
 		    (sourceB (timeout-source-new 250))
 		    (sourceC (timeout-source-new 330))
 		    (sourceD (timeout-source-new 1050)))
-		(set! ctx (main-context-new))
-		(set! loop (main-loop-new ctx #f))
-		(source-set-callback sourceA a++ #f #f)
-		(source-set-callback sourceB b++ #f #f)
-		(source-set-callback sourceC c++ #f #f)
-		(source-set-callback sourceD main-loop-quit loop #f)
-		(source-attach sourceA ctx)
-		(source-attach sourceB ctx)
-		(source-attach sourceC ctx)
-		(source-attach sourceD ctx)
-		(main-loop-run loop)
-		#t))
+		(set! ctx (MainContext-new))
+		(set! loop (MainLoop-new ctx #f))
+		(Source-set-callback sourceA a++ #f #f)
+		(Source-set-callback sourceB b++ #f #f)
+		(Source-set-callback sourceC c++ #f #f)
+		(Source-set-callback sourceD stopit #f #f)
+		(Source-attach sourceA ctx)
+		(Source-attach sourceB ctx)
+		(Source-attach sourceC ctx)
+		(Source-attach sourceD ctx))
+	      #t)
+
+     (pass-if "timeouts can run"
+	      (MainLoop-run loop)
+	      #t)
 
      (pass-if "fast source fired"
               (> a 0))
@@ -134,28 +140,31 @@
          (b 0)
          (c 0))
 
-     (pass-if "setup test"
-              (set! ctx (main-context-new))
+     (pass-if "setup test, part 1"
+              (set! ctx (MainContext-new))
               (set! sourceA (idle-source-new))
-              (source-set-callback sourceA
+              (set! sourceB (idle-source-new))
+              (Source-set-callback sourceA
                                    (lambda (x)
                                      (set! a (1+ a)))
                                    #f #f)
-              (source-set-priority sourceA 1)
-              (source-attach sourceA ctx)
+	      #t)
 
-              (set! sourceB (idle-source-new))
-              (source-set-callback sourceB
+     (pass-if "setup test, part 2"
+              (Source-set-priority sourceA 1)
+              (Source-attach sourceA ctx)
+
+              (Source-set-callback sourceB
                                    (lambda (x)
                                      (set! b (1+ b)))
                                    #f #f)
-              (source-set-priority sourceB 0)
-              (source-attach sourceB ctx)
+              (Source-set-priority sourceB 0)
+              (Source-attach sourceB ctx)
 
-              (main-context-pending? ctx))
+              (MainContext-pending? ctx))
      
      (pass-if "iterate once"
-              (main-context-iteration? ctx #f))
+              (MainContext-iteration? ctx #f))
 
      (pass-if "low priority callback didn't run"
               (= a 0))
@@ -164,7 +173,7 @@
               (= b 1))
 
      (pass-if "iterate once"
-              (main-context-iteration? ctx #f))
+              (MainContext-iteration? ctx #f))
 
      (pass-if "low priority callback didn't run"
               (= a 0))
@@ -199,7 +208,7 @@
        SOURCE_REMOVE)
      
      ;; (pass-if "directly invoking callback in this thread"
-     ;;          (main-context-invoke-full
+     ;;          (MainContext-invoke-full
      ;;           #f                       ; default primary thread context
      ;;           0                        ; priority
      ;; 	       func
@@ -214,16 +223,9 @@
 			call-func
                         #f
                         #f)
-              (main-context-iteration? (main-context-default) #f)
+              (MainContext-iteration? (MainContext-default) #f)
               (= count 1))))
 
-  (with-test-prefix
-   "unload typelib"
-   
-   (pass-if "unload repositories"
-            (gi-unload-repositories)
-            #t))
-  
   (print-counts (results-proc))
   ;;(exit-value (results-proc))
   )

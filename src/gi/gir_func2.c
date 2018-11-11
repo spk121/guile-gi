@@ -561,11 +561,19 @@ scm_export_typelib(SCM s_namespace, SCM s_version)
             for (gint m = 0; m < n_methods; m++)
             {
                 GIFunctionInfo *func_info = g_struct_info_get_method(info, m);
+		GITypeInfo *return_type = g_callable_info_get_return_type(func_info);
 		char *tmp2 = gname_to_scm_name (g_base_info_get_name (func_info));
+		gboolean predicate = (g_type_info_get_tag(return_type) == GI_TYPE_TAG_BOOLEAN
+				      && !g_type_info_is_pointer(return_type));
 		funcs = g_slist_insert_sorted (funcs,
-					       g_strdup_printf("%s-%s", g_base_info_get_name (info), tmp2),
+					       g_strdup_printf("%s-%s%s",
+							       g_base_info_get_name (info),
+							       tmp2,
+							       predicate ?  "?" : "" ),
 					       (GCompareFunc) strcmp);
 		free (tmp2);
+		g_base_info_unref(return_type);
+		g_base_info_unref(func_info);
             }
         }
         break;
@@ -591,11 +599,19 @@ scm_export_typelib(SCM s_namespace, SCM s_version)
             for (gint m = 0; m < n_methods; m++)
             {
                 GIFunctionInfo *func_info = g_object_info_get_method(info, m);
+		GITypeInfo *return_type = g_callable_info_get_return_type(func_info);
 		char *tmp2 = gname_to_scm_name (g_base_info_get_name (func_info));
+		gboolean predicate = (g_type_info_get_tag(return_type) == GI_TYPE_TAG_BOOLEAN
+				      && !g_type_info_is_pointer(return_type));
 		funcs = g_slist_insert_sorted (funcs,
-					       g_strdup_printf("%s-%s", g_base_info_get_name(info), tmp2),
+					       g_strdup_printf("%s-%s%s",
+							       g_base_info_get_name (info),
+							       tmp2,
+							       predicate ?  "?" : "" ),
 					       (GCompareFunc) strcmp);
 		free (tmp2);
+		g_base_info_unref(return_type);
+		g_base_info_unref(func_info);
             }
 #if 0
         gint n_signals = g_object_info_get_n_signals (info);
@@ -1020,7 +1036,14 @@ export_callable_info(GString **export, const char *parent, GICallableInfo *info)
     
     export_callable_argument_description(export, info, FALSE);
 
-    g_string_append_printf(*export, "  (gi-function-invoke \"%s\"", name);
+    char *full_name;
+    if (parent)
+        full_name = g_strdup_printf("%s-%s", parent, g_base_info_get_name(info));
+    else
+        full_name = g_strdup_printf("%s", g_base_info_get_name(info));
+
+    g_string_append_printf(*export, "  (gi-function-invoke \"%s\"", full_name);
+    free (full_name);
 
     for (int i = 0; i < n_args; i++)
     {
@@ -1999,7 +2022,8 @@ scm_gi_method_send(SCM s_object, SCM s_method_args_list)
 
     // This converts the SCM arguments to C arguments. This will throw on conversion error.
     // scm_write(s_method_args_list, scm_current_output_port());
-    function_info_convert_args(method_name, info, s_args, &n_input_args, &in_args, &in_args_free, &n_output_args, &out_args);
+    function_info_convert_args(method_name, info, s_args, &n_input_args, &in_args, &in_args_free, &n_output_args,
+			       &out_args);
     scm_remember_upto_here_1 (s_args);
 
     // Need to prepend 'self' to the input arguments on a method call
@@ -2023,12 +2047,14 @@ scm_gi_method_send(SCM s_object, SCM s_method_args_list)
     if (ret)
         g_debug("Invoked method %s", method_name);
     else
-        g_debug("Failed to invoked method %s", method_name);
+        g_debug("Failed to invoke method %s", method_name);
 
     /* Free any allocated input */
     function_info_release_args(info, in_args + 1);
     g_free(in_args);
+    g_free (in_args_free);
     in_args = NULL;
+    in_args_free = NULL;
 
     /* If there is a GError, write an error, free, and exit. */
     if (!ret)

@@ -456,8 +456,7 @@ convert_interface_object_to_arg(SCM obj, GITypeInfo *type_info, unsigned *must_f
             }
             else
             {
-                GirCallback *gcb = gir_callback_cache(callback_info, obj);
-                arg->v_pointer = gcb->callback_ptr;
+                arg->v_pointer  = gir_callback_get_ptr(callback_info, obj);
                 g_assert (arg->v_pointer != NULL);
                 *must_free = GIR_FREE_NONE;
                 ret = GI_GIARGUMENT_OK;
@@ -650,7 +649,8 @@ convert_interface_pointer_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *
     else if (referenced_base_type == GI_INFO_TYPE_CALLBACK)
     {
         g_critical("Unhandled argument type, %s: %d", __FILE__, __LINE__);
-
+	g_abort();
+#if 0
         if (SCM_IS_A_P(obj, gir_callback_type))
         {
             arg->v_pointer = gir_callback_get_func (obj);
@@ -663,6 +663,7 @@ convert_interface_pointer_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *
             *must_free = GIR_FREE_NONE;
             ret = GI_GIARGUMENT_WRONG_TYPE_ARG;
         }
+#endif
     }
     else
     {
@@ -670,6 +671,7 @@ convert_interface_pointer_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *
         g_critical("Unhandled argument type, %s: %d", __FILE__, __LINE__);
         ret = GI_GIARGUMENT_UNHANDLED_TYPE;
     }
+    g_base_info_unref (referenced_base_info);
     return ret;
 }
 
@@ -1465,9 +1467,7 @@ convert_interface_arg_to_object(GIArgument *arg, GITypeInfo *type_info, SCM *obj
     else if (referenced_info_type == GI_INFO_TYPE_CALLBACK)
     {
         gpointer callback_ptr = arg->v_pointer;
-        *obj = gir_callback_lookup_by_pointer(callback_ptr);
-        if (scm_is_false (*obj))
-            *obj = scm_from_pointer(callback_ptr, NULL);
+	*obj = scm_from_pointer(callback_ptr, NULL);
         ret = GI_GIARGUMENT_OK;
     }
     else
@@ -2551,19 +2551,19 @@ gi_argument_from_object (const char *func,
                item_size = sizeof (GIArgument);
 
             array = g_array_sized_new (is_zero_terminated,
-                       FALSE, (guint)item_size, length);
+				       FALSE, (guint)item_size, length);
             if (array == NULL) {
                 g_base_info_unref ( (GIBaseInfo *) item_type_info);
-        scm_misc_error (func, "allocation error", SCM_EOL);
+		scm_misc_error (func, "allocation error", SCM_EOL);
                 break;
             }
 
             if (g_type_info_get_tag (item_type_info) == GI_TYPE_TAG_UINT8) {
-        if (scm_is_bytevector (object)) {
-            memcpy(array->data, SCM_BYTEVECTOR_CONTENTS(object), length);
-            array->len = length;
-            goto array_success;
-        }
+		if (scm_is_bytevector (object)) {
+		    memcpy(array->data, SCM_BYTEVECTOR_CONTENTS(object), length);
+		    array->len = length;
+		    goto array_success;
+		}
             }
 
             item_transfer = transfer == GI_TRANSFER_CONTAINER ? GI_TRANSFER_NOTHING : transfer;
