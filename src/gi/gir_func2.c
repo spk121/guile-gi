@@ -289,7 +289,7 @@ hash_table_insert(const char *table_name,
         full_name = g_strdup_printf("%s", g_base_info_get_name(info));
 
     s_info = scm_from_pointer (info, (scm_t_pointer_finalizer) g_base_info_unref);
-    g_debug ("%s[%s] = %p\n", table_name, full_name, (char *)info);
+    g_debug ("%s[%s] = %p", table_name, full_name, (char *)info);
     scm_hash_set_x (h, scm_from_utf8_string (full_name), s_info);
     free (full_name);
 }

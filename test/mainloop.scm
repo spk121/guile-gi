@@ -144,13 +144,13 @@
               (set! ctx (MainContext-new))
               (set! sourceA (idle-source-new))
               (set! sourceB (idle-source-new))
+	      #t)
+
+     (pass-if "setup test, part 2"
               (Source-set-callback sourceA
                                    (lambda (x)
                                      (set! a (1+ a)))
                                    #f #f)
-	      #t)
-
-     (pass-if "setup test, part 2"
               (Source-set-priority sourceA 1)
               (Source-attach sourceA ctx)
 
@@ -198,8 +198,6 @@
          (count 0))
      
      (define (func data)
-       ;;(when (and data (not (equal? data (thread-self))))
-         ;;(display "not running from self thread") (newline))
        (set! count (1+ count))
        SOURCE_REMOVE)
 
@@ -207,16 +205,6 @@
        (func (thread-self))
        SOURCE_REMOVE)
      
-     ;; (pass-if "directly invoking callback in this thread"
-     ;;          (MainContext-invoke-full
-     ;;           #f                       ; default primary thread context
-     ;;           0                        ; priority
-     ;; 	       func
-     ;;           (thread-self)            ; data
-     ;;           #f                       ; destroy notification func
-     ;;           )
-     ;;          (= count 1))
-
      (pass-if "invoking a func from idle"
 	      (set! count 0)
               (idle-add PRIORITY_DEFAULT_IDLE
@@ -224,7 +212,8 @@
                         #f
                         #f)
               (MainContext-iteration? (MainContext-default) #f)
-              (= count 1))))
+              (= count 1))
+     ))
 
   (print-counts (results-proc))
   ;;(exit-value (results-proc))
