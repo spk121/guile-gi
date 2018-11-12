@@ -7,9 +7,6 @@
 (load-typelib "Gio" "2.0")
 
 (define (activate app user-data)
-  (pk app) (flush-all-ports)
-  (gobject-printer app (current-output-port)) (newline) (flush-all-ports)
-  (pk user-data) (flush-all-ports)
   (let ((window (GtkApplicationWindow-new app)))
     (GtkWindow-set-title window "Window")
     (GtkWindow-set-default-size window 200 200)
@@ -17,16 +14,7 @@
 
 (define (main)
   (let ((app (GtkApplication-new "org.gtk.example" 0)))
-    (pk app) (flush-all-ports)
     (signal-connect app "activate" activate #f)
     (GioApplication-run app (length (command-line)) (command-line))))
 
-(sleep 1)
-(display ".") (newline) (flush-all-ports)
-(sleep 1)
-(display ".") (newline) (flush-all-ports)
-(sleep 1) 
-(display ".") (newline) (flush-all-ports)
-(sleep 1)
-(display ".") (newline) (flush-all-ports)
 (main)
