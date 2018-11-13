@@ -176,7 +176,7 @@ html: docs/index.html
 
 docs/index.html: doc/guile-gi.texi
 	@rm -f docs/*.html 
-	texi2any $< --css-ref=document-1.0.1.css --html -o docs
+	makeinfo $< --css-ref=document-1.0.1.css --html -o docs
 
 ################################################################
 # Tarballs
