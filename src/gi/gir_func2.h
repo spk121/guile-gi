@@ -3,6 +3,6 @@
 
 // SCM
 // gi_type_import_by_gi_info (GIBaseInfo *info);
-GType gir_lookup_type (const char *name);
-void gir_init_func2 (void);
+GType gir_lookup_type(const char *name);
+void gir_init_func2(void);
 #endif

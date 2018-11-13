@@ -897,46 +897,84 @@ export_callable_argument_description(GString **export, GICallableInfo *info, gbo
     n_args = g_callable_info_get_n_args(info);
 
     if (style)
-        g_string_append(*export, "  ;; ARGS: ");
+        g_string_append(*export, ";; ARGS: \n");
     else
-        g_string_append(*export, "  \" ARGS: ");
+        g_string_append(*export, "\"  ARGS: \n");
 
     for (int i = 0; i < n_args; i++)
     {
         arg = g_callable_info_get_arg(info, i);
         dir = g_arg_info_get_direction(arg);
         type_info = g_arg_info_get_type(arg);
+        if (!(dir == GI_DIRECTION_OUT && g_arg_info_is_caller_allocates(arg)))
+        {
+            if (style)
+                g_string_append(*export, ";;   ");
+            else
+                g_string_append(*export, "     ");
 
-        name = gname_to_scm_name(g_base_info_get_name(arg));
-        g_string_append(*export, name);
-        g_string_append_c(*export, ' ');
-        g_string_append_printf(*export, "[%s%s]", g_type_tag_to_string(g_type_info_get_tag(type_info)),
-            g_type_info_is_pointer(type_info) ? "*" : "");
-        if (dir == GI_DIRECTION_INOUT)
-            g_string_append(*export, "[INOUT] ");
-        else if (dir == GI_DIRECTION_OUT)
-            g_string_append(*export, "[OUT]");
-        free(name);
-        if (i + 1 < n_args)
-            g_string_append(*export, ", ");
+            name = gname_to_scm_name(g_base_info_get_name(arg));
+            g_string_append(*export, name);
+            g_string_append_c(*export, ' ');
+            char *desc = gi_giargument_describe_arg_in(arg);
+            g_string_append_printf(*export, " - %s", desc);
+            g_free(desc);
+            if (dir == GI_DIRECTION_INOUT)
+                g_string_append(*export, "[INOUT] ");
+            else if (dir == GI_DIRECTION_OUT)
+                g_string_append(*export, "[OUT]");
+            free(name);
+            if (i + 1 < n_args)
+                g_string_append(*export, ", ");
 
+            g_string_append_c(*export, '\n');
+        }
         g_base_info_unref(type_info);
         g_base_info_unref(arg);
     }
 
-    g_string_append(*export, "\n");
-
     type_info = g_callable_info_get_return_type(info);
     if (style)
-        g_string_append_printf(*export, "  ;; RETURN: %s%s\n",
+        g_string_append_printf(*export, ";; RETURN: %s%s\n",
             g_type_tag_to_string(g_type_info_get_tag(type_info)),
             g_type_info_is_pointer(type_info) ? "*" : "");
     else
-        g_string_append_printf(*export, "  RETURN: %s%s\"\n",
+        g_string_append_printf(*export, "   RETURN: %s%s\n",
             g_type_tag_to_string(g_type_info_get_tag(type_info)),
             g_type_info_is_pointer(type_info) ? "*" : "");
-
     g_base_info_unref(type_info);
+
+    for (int i = 0; i < n_args; i++)
+    {
+        arg = g_callable_info_get_arg(info, i);
+        dir = g_arg_info_get_direction(arg);
+        type_info = g_arg_info_get_type(arg);
+        if (dir == GI_DIRECTION_OUT && g_arg_info_is_caller_allocates(arg))
+        {
+            if (style)
+                g_string_append(*export, ";;   ");
+            else
+                g_string_append(*export, "     ");
+
+            name = gname_to_scm_name(g_base_info_get_name(arg));
+            g_string_append(*export, name);
+            g_string_append_c(*export, ' ');
+            char *desc = gi_giargument_describe_arg_in(arg);
+            g_string_append_printf(*export, " - %s", desc);
+            g_free(desc);
+            free(name);
+            if (i + 1 < n_args)
+                g_string_append(*export, ", ");
+
+            g_string_append_c(*export, '\n');
+        }
+        g_base_info_unref(type_info);
+        g_base_info_unref(arg);
+    }
+
+    if (!style)
+        g_string_append(*export, "\"\n");
+
 }
 
 static gchar *
@@ -1741,9 +1779,9 @@ function_info_convert_args(const char *func_name, GIFunctionInfo *func_info, SCM
                 {
                     g_base_info_unref(arg_info);
                     goto arg_err_cleanup;
-                }
             }
         }
+    }
         else if (dir == GI_DIRECTION_OUT)
         {
             // Only those output arguments that require pre-allocation, e.g.
@@ -1873,8 +1911,8 @@ function_info_convert_output_args(const char *func_name, const GIFunctionInfo *f
                 gi_giargument_convert_arg_to_object(&out_args[i], arg_info, &obj);
                 output = scm_append(scm_list_2(output, scm_list_1(obj)));
                 g_base_info_unref(arg_typeinfo);
-            }
         }
+}
         g_base_info_unref(arg_info);
     }
     return output;
@@ -2464,7 +2502,7 @@ scm_dump_all_arg_types(void)
             else if (it == GI_INFO_TYPE_TYPE)
                 fprintf(fp, "TYPE      ");
             fprintf(fp, "%-11s ", g_base_info_get_name(bi));
-        }
+}
 
         gboolean null = g_arg_info_may_be_null(ai);
         if (null)

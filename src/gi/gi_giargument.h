@@ -18,7 +18,7 @@ static const int GIR_VOIDBOX_HEADER = ('v' | 'b' << 8 | 'x' << 16 | 32 << 24);
 
 typedef enum _GIArgumentStatus {
     GI_GIARGUMENT_OK,
-	GI_GIARGUMENT_OUT_OF_RANGE,
+    GI_GIARGUMENT_OUT_OF_RANGE,
     GI_GIARGUMENT_NON_CONST_VOID_POINTER,
     GI_GIARGUMENT_ARRAY_ELEMENT_TOO_BIG,
     GI_GIARGUMENT_UNHANDLED_ARRAY_ELEMENT_TYPE,
@@ -38,7 +38,7 @@ typedef enum _GIArgumentStatus {
 
 const static char gi_giargument_error_messages[GI_GIARGUMENT_N_ERRORS][80] = {
     [GI_GIARGUMENT_OK] = "Conversion successful",
-	[GI_GIARGUMENT_OUT_OF_RANGE] = "Argument out of range",
+    [GI_GIARGUMENT_OUT_OF_RANGE] = "Argument out of range",
     [GI_GIARGUMENT_NON_CONST_VOID_POINTER] = "Cannot convert a non-const void pointer",
     [GI_GIARGUMENT_ARRAY_ELEMENT_TOO_BIG] = "The array element size is too big",
     [GI_GIARGUMENT_UNHANDLED_ARRAY_ELEMENT_TYPE] = "Cannot pack/unpack arrays of this element type",
@@ -61,6 +61,7 @@ const static char gi_giargument_error_messages[GI_GIARGUMENT_N_ERRORS][80] = {
 #define GIR_FREE_PTR_ARRAY 0x40000
 #define GIR_FREE_PTR_COUNT(x) ((x)&GIR_FREE_PTR_ARRAY ? (x)&0xFFFF : 0)
 
+char *gi_giargument_describe_arg_in(GIArgInfo *arg_info);
 GIArgumentStatus
 gi_giargument_convert_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *must_free, GIArgument *arg);
 GIArgumentStatus
@@ -71,42 +72,42 @@ GIArgumentStatus
 gi_giargument_convert_arg_to_object(GIArgument *arg, GIArgInfo *arg_info, SCM *obj);
 
 SCM
-gi_giargument_convert_return_val_to_object (GIArgument  *arg,
-			 GITypeInfo *type_info,
-			 GITransfer transfer, gboolean null_ok, gboolean skip);
+gi_giargument_convert_return_val_to_object(GIArgument  *arg,
+    GITypeInfo *type_info,
+    GITransfer transfer, gboolean null_ok, gboolean skip);
 GIArgumentStatus
 gi_giargument_convert_return_type_object_to_arg(SCM obj,
-             GITypeInfo *type_info,
-             GITransfer transfer, gboolean null_ok, gboolean skip,
-             GIArgument *arg);             
+    GITypeInfo *type_info,
+    GITransfer transfer, gboolean null_ok, gboolean skip,
+    GIArgument *arg);
 #if 0
-typedef gssize (*GuGIArgArrayLengthPolicy) (gsize item_index,
-					    void *user_data1,
-					    void *user_data2);
+typedef gssize(*GuGIArgArrayLengthPolicy) (gsize item_index,
+    void *user_data1,
+    void *user_data2);
 
 gboolean
-gi_giargument_to_gssize (const char *func,
-			 GIArgument *arg_in,
-                         GITypeTag  type_tag,
-                         gssize *gssize_out);
+gi_giargument_to_gssize(const char *func,
+    GIArgument *arg_in,
+    GITypeTag  type_tag,
+    gssize *gssize_out);
 gssize
-gi_argument_array_length_marshal (gsize length_arg_index,
-				  void *user_data1,
-				  void *user_data2);
+gi_argument_array_length_marshal(gsize length_arg_index,
+    void *user_data1,
+    void *user_data2);
 GArray *
-gi_giargument_to_array (GIArgument  *arg,
-		      GuGIArgArrayLengthPolicy array_length_policy,
-		      void        *user_data1,
-		      void        *user_data2,
-		      GITypeInfo  *type_info,
-			gboolean    *out_free_array);
+gi_giargument_to_array(GIArgument  *arg,
+    GuGIArgArrayLengthPolicy array_length_policy,
+    void        *user_data1,
+    void        *user_data2,
+    GITypeInfo  *type_info,
+    gboolean    *out_free_array);
 
-GArray* _pygi_argument_to_array (GIArgument  *arg,
-                                 GuGIArgArrayLengthPolicy array_length_policy,
-                                 void        *user_data1,
-                                 void        *user_data2,
-                                 GITypeInfo  *type_info,
-                                 gboolean    *out_free_array);
+GArray* _pygi_argument_to_array(GIArgument  *arg,
+    GuGIArgArrayLengthPolicy array_length_policy,
+    void        *user_data1,
+    void        *user_data2,
+    GITypeInfo  *type_info,
+    gboolean    *out_free_array);
 
 gboolean
 gi_giargument_check_scm_type(SCM obj, GIArgInfo *ai, char **errstr);
@@ -114,16 +115,16 @@ gi_giargument_check_scm_type(SCM obj, GIArgInfo *ai, char **errstr);
 
 
 void
-gi_giargument_release (GIArgument   *arg,
-                        GITypeInfo  *type_info,
-                        GITransfer   transfer,
-		       GIDirection  direction);
+gi_giargument_release(GIArgument   *arg,
+    GITypeInfo  *type_info,
+    GITransfer   transfer,
+    GIDirection  direction);
 GIArgument
-gi_argument_from_object (const char *func,
-			 SCM object,
-			 GITypeInfo *type_info,
-			 GITransfer  transfer);
+gi_argument_from_object(const char *func,
+    SCM object,
+    GITypeInfo *type_info,
+    GITransfer  transfer);
 #endif
 
-void gi_init_giargument (void);
+void gi_init_giargument(void);
 #endif
