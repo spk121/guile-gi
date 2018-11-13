@@ -47,7 +47,6 @@ texinfo.tex
 /build-aux/install-sh
 /build-aux/ltmain.sh
 /build-aux/missing
-/docs/*.html
 /m4/libtool.m4
 /m4/ltoptions.m4
 /m4/ltsugar.m4

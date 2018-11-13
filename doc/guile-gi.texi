@@ -30,7 +30,7 @@ This manual is for Guile GI.
 * Tutorials::
 * Reference Guide::
 * Further Resources and Contact Info::
-* Index::
+* _index::
 
 @detailmenu
  --- The Detailed Node Listing ---
@@ -287,10 +287,10 @@ will get converted.
 If a flag or enum is required, pass a Guile unsigned number.
 @end table
 
-@node Further Resources and Contact Info, Index, Reference Guide, Top
+@node Further Resources and Contact Info, _index, Reference Guide, Top
 @chapter Further Resources and Contact Info
 
-@node Index,  , Further Resources and Contact Info, Top
+@node _index,  , Further Resources and Contact Info, Top
 @unnumbered Index
 
 @printindex cp
