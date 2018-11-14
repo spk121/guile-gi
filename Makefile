@@ -125,7 +125,10 @@ C_HEADERS = \
  src/gi/gir_func2.h \
  src/gi/gir_type.h \
  src/gi/gi_signal_closure.h \
- src/gi/__gi_giargument.h
+ src/gi/__gi_giargument.h \
+ src/gi/gi_ginterface.h \
+ src/gi/__gi_ginterface.h \
+ src/gi/gi_gstruct.h
 
 C_SOURCES = \
  src/gi/__gi_gobject.c \
@@ -187,7 +190,7 @@ DISTFILES = $(C_SOURCES) $(C_HEADERS) $(SCM_SOURCES) \
   Makefile Makefile.mingw ChangeLog
 
 .PHONY: dist
-dist: guile-gi.tar.gz ChangeLog
+dist: guile-gi-0.0.1.tar.gz ChangeLog
 
 .PHONY: ChangeLog
 ChangeLog:
@@ -195,12 +198,12 @@ ChangeLog:
 		git log --stat > $@; \
 	fi
 
-guile-gi.tar.gz: guile-gi.tar
-	gzip guile-gi.tar
+guile-gi-0.0.1.tar.gz: guile-gi-0.0.1.tar
+	gzip guile-gi-0.0.1.tar
 
-guile-gi.tar: $(DISTFILES)
+guile-gi-0.0.1.tar: $(DISTFILES)
 	tar --create --format=ustar --verbose --dereference \
-	  --one-top-level --file=$@ $^
+	  --transform 's,^,guile-gi-0.0.1/,' --file=$@ $^
 
 ################################################################
 # Check

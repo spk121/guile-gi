@@ -875,7 +875,7 @@ export_flag_info(GString **export, const char *namespace_, const char *parent, G
     while (i < n_values)
     {
         vi = g_enum_info_get_value(info, i);
-        public_name = flag_public_name(parent, vi);
+        public_name = flag_public_name(g_base_info_get_name(info), vi);
 
         g_string_append_printf(*export, "(define %s\n  (gi-flag-value \"%s-%s\" \"%s\"))\n\n",
             public_name, namespace_, g_base_info_get_name(info), g_base_info_get_name(vi));
