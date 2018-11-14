@@ -17,12 +17,12 @@ Copyright @copyright{} 2018 Michael L. Gran
 
 @contents
 
-@ifnottex
+@c @ifnottex
 @node Top, Preface, (dir), (dir)
 @top Guile GI
 
 This manual is for Guile GI.
-@end ifnottex
+@c @end ifnottex
 
 @menu
 * Preface::
