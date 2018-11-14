@@ -62,28 +62,52 @@ Next: <a href="Tutorials.html#Tutorials" accesskey="n" rel="next">Tutorials</a>,
 <p>To get things started, we will try to run a very simple GTK+ based GUI
 application using the bindings provided by Guile GI.
 </p>
-<p>First, create a <code>(Gtk)</code> Guile module.
+<p>First, create a <code>(Gtk)</code> Guile module and a <code>(Gio)</code> Guile
+module.
 </p>
 <div class="example">
-<pre class="example"> guile -L . -c '(use-modules (gi)) (display (export-typelib &quot;Gtk&quot; &quot;3.0&quot;))' &gt; Gtk.scm
+<pre class="example">guile -L . -c '(use-modules (gi)) (display (export-typelib &quot;Gtk&quot; &quot;3.0&quot;))' &gt; Gtk.scm
+guile -L . -c '(use-modules (gi)) (display (export-typelib &quot;Gio&quot; &quot;2.0&quot;))' &gt; Gio.scm
 </pre></div>
 
-<p>Then, create a
-small Guile script called <samp>hello.scm</samp> with the following content
-and save it somewhere (FIXME, this doesn&rsquo;t work):
+<p>The, a minimal GTK application looks like this
 </p>
 <div class="lisp">
 <pre class="lisp">(use-modules (gi)
-             (Gtk))
-(define window (Window #:title &quot;Hello World&quot;))
-(show window)
-(connect window main-quit)
+	     (Gtk)
+	     (Gio)
+	     )
+
+(load-typelib &quot;Gtk&quot; &quot;3.0&quot;)
+(load-typelib &quot;Gio&quot; &quot;2.0&quot;)
+
+(define (print-hello widget data)
+  (display &quot;Hello World\n&quot;))
+
+(define (activate app user-data)
+  (let ((window (GtkApplicationWindow-new app))
+	(button-box (GtkButtonBox-new 0))
+	(button (GtkButton-new-with-label &quot;Hello World&quot;)))
+    (GtkWindow-set-title window &quot;Window&quot;)
+    (GtkWindow-set-default-size window 200 200)
+    (GtkWidget-show-all window)
+
+    (GtkContainer-add window button-box)
+
+    (signal-connect button &quot;clicked&quot; print-hello #f)
+    (signal-connect button &quot;clicked&quot; (lambda x
+				       (GtkWidget-destroy window)) #f)
+    (GtkContainer-add button-box button)
+    (GtkWidget-show-all window)))
+
+(define (main)
+  (let ((app (GtkApplication-new &quot;org.gtk.example&quot; 0)))
+    (signal-connect app &quot;activate&quot; activate #f)
+    (GioApplication-run app (length (command-line)) (command-line))))
+
 (main)
 </pre></div>
 
-<p>Before we can run the example application, we need to install Guile
-GI, GTK+, and their dependencioes.
-</p>
 <p>When it is run, it will create an empty window with a title.  Are you
 impressed?
 </p>
