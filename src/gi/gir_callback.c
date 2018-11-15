@@ -138,7 +138,7 @@ GirCallback *gir_callback_new(GICallbackInfo *callback_info, SCM s_func)
     {
         GIArgInfo *cb_arg_info = g_callable_info_get_arg(callback_info, i);
         GITypeInfo *cb_type_info = g_arg_info_get_type(cb_arg_info);
-        ffi_args[i] = cb_type_info_to_ffi_type(cb_type_info);
+        ffi_args[i] = type_info_to_ffi_type(cb_type_info);
         g_base_info_unref(cb_arg_info);
         g_base_info_unref(cb_type_info);
     }
@@ -191,8 +191,8 @@ void *gir_callback_get_ptr(GICallbackInfo *cb_info, SCM s_func)
     // Lookup s_func in the callback cache.
     GSList *x = callback_list;
     GirCallback *gcb;
-    GITypeInfo cb_typeinfo = g_base_info_get_type(cb_info);
-    GITypeInfo gcb_typeinfo;
+    GIInfoType cb_typeinfo = g_base_info_get_type(cb_info);
+    GIInfoType gcb_typeinfo;
 
     // A callback is only a 'match' if it is the same Scheme produre
     // as well as the same GObject C Callback type.
