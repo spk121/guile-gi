@@ -27,7 +27,7 @@ void callback_binding(ffi_cif *cif, void *ret, void **ffi_args,
         GIArgument giarg;
         GIArgInfo *arg_info;
 
-        // Did I need this block? Or can I just 
+        // Did I need this block? Or can I just
         // do giarg.v_pointer = ffi_args[i] for all cases?
 
         if (cif->arg_types[i] == &ffi_type_pointer)
@@ -94,11 +94,11 @@ void callback_binding(ffi_cif *cif, void *ret, void **ffi_args,
     *(ffi_arg *)ret = giarg.v_uint64;
 }
 
-// We use the CALLBACK_INFO to create a dynamic FFI closure
+// This procedure uses CALLBACK_INFO to create a dynamic FFI C closure
 // to use as an entry point to the scheme procedure S_FUNC.
 GirCallback *gir_callback_new(GICallbackInfo *callback_info, SCM s_func)
 {
-    GirCallback *gir_callback = g_new0(GirCallback, 1);
+    GirCallback *gcb = g_new0(GirCallback, 1);
     ffi_type **ffi_args = NULL;
     ffi_type *ffi_ret_type;
     gint n_args = g_callable_info_get_n_args(callback_info);
@@ -107,7 +107,7 @@ GirCallback *gir_callback_new(GICallbackInfo *callback_info, SCM s_func)
         SCM s_name = scm_procedure_name(s_func);
         if (scm_is_string(s_name))
         {
-            char *name = scm_to_utf8_string(scm_symbol_to_string(scm_procedure_name(s_func)));
+            char *name = scm_to_utf8_string(scm_symbol_to_string(s_name));
             g_debug("Constructing C Callback for %s", name);
             free(name);
         }
@@ -115,39 +115,41 @@ GirCallback *gir_callback_new(GICallbackInfo *callback_info, SCM s_func)
             g_debug("Construction a C Callback for an anonymous procedure");
     }
 
-
-    gir_callback->s_func = s_func;
-    gir_callback->callback_info = callback_info;
+    gcb->s_func = s_func;
+    gcb->callback_info = callback_info;
     g_base_info_ref(callback_info);
 
     // STEP 1
     // Allocate the block of memory that FFI uses to hold a closure object,
     // and set a pointer to the corresponding executable address.
-    gir_callback->closure = ffi_closure_alloc(sizeof(ffi_closure), &(gir_callback->callback_ptr));
-    g_return_val_if_fail(gir_callback->closure != NULL, NULL);
-    g_return_val_if_fail(gir_callback->callback_ptr != NULL, NULL);
+    gcb->closure = ffi_closure_alloc(sizeof(ffi_closure),
+                                     &(gcb->callback_ptr));
+
+    g_return_val_if_fail(gcb->closure != NULL, NULL);
+    g_return_val_if_fail(gcb->callback_ptr != NULL, NULL);
 
     // STEP 2
     // Next, we begin to construct an FFI_CIF to describe the function call.
 
-    // Initialize the argument info vectors */
+    // Initialize the argument info vectors.
     if (n_args > 0)
         ffi_args = g_new0(ffi_type *, n_args);
     for (int i = 0; i < n_args; i++)
     {
-        GIArgInfo *callback_arg_info = g_callable_info_get_arg(callback_info, i);
-        GITypeInfo *type_info = g_arg_info_get_type(callback_arg_info);
-        ffi_args[i] = type_info_to_ffi_type(type_info);
-        g_base_info_unref(callback_arg_info);
-        g_base_info_unref(type_info);
+        GIArgInfo *cb_arg_info = g_callable_info_get_arg(callback_info, i);
+        GITypeInfo *cb_type_info = g_arg_info_get_type(cb_arg_info);
+        ffi_args[i] = cb_type_info_to_ffi_type(cb_type_info);
+        g_base_info_unref(cb_arg_info);
+        g_base_info_unref(cb_type_info);
     }
+
     GITypeInfo *ret_type_info = g_callable_info_get_return_type(callback_info);
     ffi_ret_type = type_info_to_ffi_type(ret_type_info);
     g_base_info_unref(ret_type_info);
 
-    // Initialize the cif
+    // Initialize the CIF Call Interface Struct.
     ffi_status prep_ok;
-    prep_ok = ffi_prep_cif(&(gir_callback->cif), // pointer to the call interface struct
+    prep_ok = ffi_prep_cif(&(gcb->cif),
         FFI_DEFAULT_ABI,
         n_args,
         ffi_ret_type,
@@ -155,50 +157,59 @@ GirCallback *gir_callback_new(GICallbackInfo *callback_info, SCM s_func)
 
     if (prep_ok != FFI_OK)
         scm_misc_error("gir-callback-new",
-            "closure call interface preparation error #~A", scm_list_1(scm_from_int(prep_ok)));
-    //g_free(ffi_args);
+            "closure call interface preparation error #~A",
+            scm_list_1(scm_from_int(prep_ok)));
 
     // STEP 3
     // Initialize the closure
     ffi_status closure_ok;
-    closure_ok = ffi_prep_closure_loc(gir_callback->closure,    // Address of FFI closure object
-        &(gir_callback->cif),                                   // the CIF describing the function params
-        callback_binding,                                       // The function to be called when the closure is invoked
-        gir_callback,                                           // The 'user-data' passed to the function
-        gir_callback->callback_ptr);                            // The executable address returned by ffi_closure_alloc
+    closure_ok = ffi_prep_closure_loc(gcb->closure,
+        &(gcb->cif),
+        callback_binding,
+        gcb,                 // The 'user-data' passed to the function
+        gcb->callback_ptr);
 
     if (closure_ok != FFI_OK)
         scm_misc_error("gir-callback-new",
-            "closure location preparation error #~A", scm_list_1(scm_from_int(closure_ok)));
+            "closure location preparation error #~A",
+            scm_list_1(scm_from_int(closure_ok)));
 
 #ifdef DEBUG_CALLBACKS
-    gir_callback->callback_info_ptr_as_uint = GPOINTER_TO_UINT(gir_callback->callback_ptr);
-    gir_callback->closure_ptr_as_uint = GPOINTER_TO_UINT(gir_callback->closure);
-    gir_callback->callback_ptr_as_uint = GPOINTER_TO_UINT(gir_callback->closure);
-#endif  
+    gcb->callback_info_ptr_as_uint = GPOINTER_TO_UINT(gcb->callback_ptr);
+    gcb->closure_ptr_as_uint = GPOINTER_TO_UINT(gcb->closure);
+    gcb->callback_ptr_as_uint = GPOINTER_TO_UINT(gcb->closure);
+#endif
 
-    return gir_callback;
+    return gcb;
 }
 
-void *gir_callback_get_ptr(GICallbackInfo *callback_info, SCM s_func)
+void *gir_callback_get_ptr(GICallbackInfo *cb_info, SCM s_func)
 {
-    g_assert(callback_info != NULL);
+    g_assert(cb_info != NULL);
     g_assert(scm_is_true(scm_procedure_p(s_func)));
 
     // Lookup s_func in the callback cache.
     GSList *x = callback_list;
     GirCallback *gcb;
+    GITypeInfo cb_typeinfo = g_base_info_get_type(cb_info);
+    GITypeInfo gcb_typeinfo;
+
+    // A callback is only a 'match' if it is the same Scheme produre
+    // as well as the same GObject C Callback type.
     while (x != NULL)
     {
         gcb = x->data;
-        if (scm_is_eq(gcb->s_func, s_func)
-            && (g_base_info_get_type(callback_info) == g_base_info_get_type(gcb->callback_info)))
-            return gcb->callback_ptr;
+        if (scm_is_eq(gcb->s_func, s_func))
+        {
+            gcb_typeinfo = g_base_info_get_type (gcb->callback_info);
+            if (cb_typeinfo == gcb_typeinfo)
+                return gcb->callback_ptr;
+        }
         x = x->next;
     }
 
     // Create a new entry if necessary.
-    gcb = gir_callback_new(callback_info, s_func);
+    gcb = gir_callback_new(cb_info, s_func);
     callback_list = g_slist_prepend(callback_list, gcb);
     return gcb->callback_ptr;
 }
