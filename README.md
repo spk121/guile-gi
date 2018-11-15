@@ -16,4 +16,8 @@ Guile GI has two primary components
 - libguile-gi.so or libguile-gi.dll: a compiled module that contains glue code
   to interface with GObject
 
+Note that it doesn't come with bindings to GTK3 or GLib out of the
+box, but, you can use this library to generate those bindings
+automatically.
+
 For the moment, the docs are at https://spk121.github.io/guile-gi/
