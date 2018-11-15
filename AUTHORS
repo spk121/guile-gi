@@ -1,1 +1,6 @@
 Mike Gran
+
+Also some of this code was inspired by or adapted from PyGObject, and
+I need to try to figure out which code that still remains was lifted
+verbatim from PyGObject and make proper attribution.
+

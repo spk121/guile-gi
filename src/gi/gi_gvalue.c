@@ -1,8 +1,7 @@
 /* -*- Mode: C; c-basic-offset: 4 -*- */
 #include <girepository.h>
 #include "gi_gvalue.h"
-#include "gi_genum.h"
-#include "gi_gflags.h"
+//#include "gi_gflags.h"
 #include "gi_gtype.h"
 #include "gir_xguile.h"
 #include "gi_gobject.h"

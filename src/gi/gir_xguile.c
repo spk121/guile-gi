@@ -87,7 +87,7 @@ scm_is_list (SCM x)
 int
 scm_is_none (SCM x)
 {
-    return x == SCM_NONE;
+    return scm_is_eq(x, SCM_NONE);
 }
 
 int
@@ -246,14 +246,14 @@ scm_parse_list (SCM args, const char *format, ...)
 		    return false;
 		}
 		break;
-	    case 'O':
-		if (format[i_fmt + 1] == '!') {
-		    if (!SCM_IS_A_P(entry, (SCM) ptr)) {
-			sprintf(parse_error_str, "%s: arg %zu, expected a matching type", name, i_fmt);
-			return false;
-		    }
-		}
-		break;
+	    /* case 'O': */
+	    /* 	if (format[i_fmt + 1] == '!') { */
+	    /* 	    if (!SCM_IS_A_P(entry, (SCM) ptr)) { */
+	    /* 		sprintf(parse_error_str, "%s: arg %zu, expected a matching type", name, i_fmt); */
+	    /* 		return false; */
+	    /* 	    } */
+	    /* 	} */
+	    /* 	break; */
 	    case '!':
 		/* We don't consume an argument here. */
 		continue;
