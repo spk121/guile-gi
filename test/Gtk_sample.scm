@@ -4305,13 +4305,13 @@
   (gi-method-send self 
      (gi-method-prepare "set_wrap_license" wrap-license)))
 
-(define VISIBLE
+(define ACCEL_VISIBLE
   (gi-flag-value "Gtk-AccelFlags" "visible"))
 
-(define LOCKED
+(define ACCEL_LOCKED
   (gi-flag-value "Gtk-AccelFlags" "locked"))
 
-(define MASK
+(define ACCEL_MASK
   (gi-flag-value "Gtk-AccelFlags" "mask"))
 
 (define <GtkAccelGroup>
@@ -5736,16 +5736,16 @@
   (gi-method-send self 
      (gi-method-prepare "uninhibit" cookie)))
 
-(define LOGOUT
+(define APPLICATION_INHIBIT_LOGOUT
   (gi-flag-value "Gtk-ApplicationInhibitFlags" "logout"))
 
-(define SWITCH
+(define APPLICATION_INHIBIT_SWITCH
   (gi-flag-value "Gtk-ApplicationInhibitFlags" "switch"))
 
-(define SUSPEND
+(define APPLICATION_INHIBIT_SUSPEND
   (gi-flag-value "Gtk-ApplicationInhibitFlags" "suspend"))
 
-(define IDLE
+(define APPLICATION_INHIBIT_IDLE
   (gi-flag-value "Gtk-ApplicationInhibitFlags" "idle"))
 
 (define <GtkApplicationWindow>
@@ -6120,13 +6120,13 @@
 (define ASSISTANT_PAGE_TYPE_CUSTOM
   (gi-enum-value "Gtk-AssistantPageType" "custom"))
 
-(define EXPAND
+(define ATTACH_OPTIONS_EXPAND
   (gi-flag-value "Gtk-AttachOptions" "expand"))
 
-(define SHRINK
+(define ATTACH_OPTIONS_SHRINK
   (gi-flag-value "Gtk-AttachOptions" "shrink"))
 
-(define FILL
+(define ATTACH_OPTIONS_FILL
   (gi-flag-value "Gtk-AttachOptions" "fill"))
 
 (define GTK_BINARY_AGE
@@ -7047,19 +7047,19 @@
 ;;   day  - exact integer of size guint32, 
 ;;   user-data  - #f for NULL or pointer
 ;; RETURN: utf8*
-(define SHOW_HEADING
+(define CALENDAR_DISPLAY_OPTIONS_SHOW_HEADING
   (gi-flag-value "Gtk-CalendarDisplayOptions" "show_heading"))
 
-(define SHOW_DAY_NAMES
+(define CALENDAR_DISPLAY_OPTIONS_SHOW_DAY_NAMES
   (gi-flag-value "Gtk-CalendarDisplayOptions" "show_day_names"))
 
-(define NO_MONTH_CHANGE
+(define CALENDAR_DISPLAY_OPTIONS_NO_MONTH_CHANGE
   (gi-flag-value "Gtk-CalendarDisplayOptions" "no_month_change"))
 
-(define SHOW_WEEK_NUMBERS
+(define CALENDAR_DISPLAY_OPTIONS_SHOW_WEEK_NUMBERS
   (gi-flag-value "Gtk-CalendarDisplayOptions" "show_week_numbers"))
 
-(define SHOW_DETAILS
+(define CALENDAR_DISPLAY_OPTIONS_SHOW_DETAILS
   (gi-flag-value "Gtk-CalendarDisplayOptions" "show_details"))
 
 ;; CALLBACK
@@ -7912,25 +7912,25 @@
 "
   (gi-function-invoke "Gtk-CellRendererSpinner-new"))
 
-(define SELECTED
+(define CELL_RENDERER_STATE_SELECTED
   (gi-flag-value "Gtk-CellRendererState" "selected"))
 
-(define PRELIT
+(define CELL_RENDERER_STATE_PRELIT
   (gi-flag-value "Gtk-CellRendererState" "prelit"))
 
-(define INSENSITIVE
+(define CELL_RENDERER_STATE_INSENSITIVE
   (gi-flag-value "Gtk-CellRendererState" "insensitive"))
 
-(define SORTED
+(define CELL_RENDERER_STATE_SORTED
   (gi-flag-value "Gtk-CellRendererState" "sorted"))
 
-(define FOCUSED
+(define CELL_RENDERER_STATE_FOCUSED
   (gi-flag-value "Gtk-CellRendererState" "focused"))
 
-(define EXPANDABLE
+(define CELL_RENDERER_STATE_EXPANDABLE
   (gi-flag-value "Gtk-CellRendererState" "expandable"))
 
-(define EXPANDED
+(define CELL_RENDERER_STATE_EXPANDED
   (gi-flag-value "Gtk-CellRendererState" "expanded"))
 
 (define <GtkCellRendererText>
@@ -9633,70 +9633,70 @@
 (define CSS_SECTION_TYPE_KEYFRAMES
   (gi-enum-value "Gtk-CssSectionType" "keyframes"))
 
-(define MISC
+(define DEBUG_FLAG_MISC
   (gi-flag-value "Gtk-DebugFlag" "misc"))
 
-(define PLUGSOCKET
+(define DEBUG_FLAG_PLUGSOCKET
   (gi-flag-value "Gtk-DebugFlag" "plugsocket"))
 
-(define TEXT
+(define DEBUG_FLAG_TEXT
   (gi-flag-value "Gtk-DebugFlag" "text"))
 
-(define TREE
+(define DEBUG_FLAG_TREE
   (gi-flag-value "Gtk-DebugFlag" "tree"))
 
-(define UPDATES
+(define DEBUG_FLAG_UPDATES
   (gi-flag-value "Gtk-DebugFlag" "updates"))
 
-(define KEYBINDINGS
+(define DEBUG_FLAG_KEYBINDINGS
   (gi-flag-value "Gtk-DebugFlag" "keybindings"))
 
-(define MULTIHEAD
+(define DEBUG_FLAG_MULTIHEAD
   (gi-flag-value "Gtk-DebugFlag" "multihead"))
 
-(define MODULES
+(define DEBUG_FLAG_MODULES
   (gi-flag-value "Gtk-DebugFlag" "modules"))
 
-(define GEOMETRY
+(define DEBUG_FLAG_GEOMETRY
   (gi-flag-value "Gtk-DebugFlag" "geometry"))
 
-(define ICONTHEME
+(define DEBUG_FLAG_ICONTHEME
   (gi-flag-value "Gtk-DebugFlag" "icontheme"))
 
-(define PRINTING
+(define DEBUG_FLAG_PRINTING
   (gi-flag-value "Gtk-DebugFlag" "printing"))
 
-(define BUILDER
+(define DEBUG_FLAG_BUILDER
   (gi-flag-value "Gtk-DebugFlag" "builder"))
 
-(define SIZE_REQUEST
+(define DEBUG_FLAG_SIZE_REQUEST
   (gi-flag-value "Gtk-DebugFlag" "size_request"))
 
-(define NO_CSS_CACHE
+(define DEBUG_FLAG_NO_CSS_CACHE
   (gi-flag-value "Gtk-DebugFlag" "no_css_cache"))
 
-(define BASELINES
+(define DEBUG_FLAG_BASELINES
   (gi-flag-value "Gtk-DebugFlag" "baselines"))
 
-(define PIXEL_CACHE
+(define DEBUG_FLAG_PIXEL_CACHE
   (gi-flag-value "Gtk-DebugFlag" "pixel_cache"))
 
-(define NO_PIXEL_CACHE
+(define DEBUG_FLAG_NO_PIXEL_CACHE
   (gi-flag-value "Gtk-DebugFlag" "no_pixel_cache"))
 
-(define INTERACTIVE
+(define DEBUG_FLAG_INTERACTIVE
   (gi-flag-value "Gtk-DebugFlag" "interactive"))
 
-(define TOUCHSCREEN
+(define DEBUG_FLAG_TOUCHSCREEN
   (gi-flag-value "Gtk-DebugFlag" "touchscreen"))
 
-(define ACTIONS
+(define DEBUG_FLAG_ACTIONS
   (gi-flag-value "Gtk-DebugFlag" "actions"))
 
-(define RESIZE
+(define DEBUG_FLAG_RESIZE
   (gi-flag-value "Gtk-DebugFlag" "resize"))
 
-(define LAYOUT
+(define DEBUG_FLAG_LAYOUT
   (gi-flag-value "Gtk-DebugFlag" "layout"))
 
 (define DELETE_TYPE_CHARS
@@ -9723,16 +9723,16 @@
 (define DELETE_TYPE_WHITESPACE
   (gi-enum-value "Gtk-DeleteType" "whitespace"))
 
-(define MOTION
+(define DEST_DEFAULTS_MOTION
   (gi-flag-value "Gtk-DestDefaults" "motion"))
 
-(define HIGHLIGHT
+(define DEST_DEFAULTS_HIGHLIGHT
   (gi-flag-value "Gtk-DestDefaults" "highlight"))
 
-(define DROP
+(define DEST_DEFAULTS_DROP
   (gi-flag-value "Gtk-DestDefaults" "drop"))
 
-(define ALL
+(define DEST_DEFAULTS_ALL
   (gi-flag-value "Gtk-DestDefaults" "all"))
 
 (define <GtkDialog>
@@ -9840,13 +9840,13 @@
   (gi-method-send self 
      (gi-method-prepare "set_response_sensitive" response-id setting)))
 
-(define MODAL
+(define DIALOG_MODAL
   (gi-flag-value "Gtk-DialogFlags" "modal"))
 
-(define DESTROY_WITH_PARENT
+(define DIALOG_DESTROY_WITH_PARENT
   (gi-flag-value "Gtk-DialogFlags" "destroy_with_parent"))
 
-(define USE_HEADER_BAR
+(define DIALOG_USE_HEADER_BAR
   (gi-flag-value "Gtk-DialogFlags" "use_header_bar"))
 
 (define DIRECTION_TYPE_TAB_FORWARD
@@ -10965,22 +10965,22 @@
   (gi-method-send self 
      (gi-method-prepare "set_flags" flags)))
 
-(define NONE
+(define EVENT_CONTROLLER_SCROLL_NONE
   (gi-flag-value "Gtk-EventControllerScrollFlags" "none"))
 
-(define VERTICAL
+(define EVENT_CONTROLLER_SCROLL_VERTICAL
   (gi-flag-value "Gtk-EventControllerScrollFlags" "vertical"))
 
-(define HORIZONTAL
+(define EVENT_CONTROLLER_SCROLL_HORIZONTAL
   (gi-flag-value "Gtk-EventControllerScrollFlags" "horizontal"))
 
-(define DISCRETE
+(define EVENT_CONTROLLER_SCROLL_DISCRETE
   (gi-flag-value "Gtk-EventControllerScrollFlags" "discrete"))
 
-(define KINETIC
+(define EVENT_CONTROLLER_SCROLL_KINETIC
   (gi-flag-value "Gtk-EventControllerScrollFlags" "kinetic"))
 
-(define BOTH_AXES
+(define EVENT_CONTROLLER_SCROLL_BOTH_AXES
   (gi-flag-value "Gtk-EventControllerScrollFlags" "both_axes"))
 
 (define EVENT_SEQUENCE_STATE_NONE
@@ -11384,16 +11384,16 @@
   (gi-method-send self 
      (gi-method-prepare "to_gvariant")))
 
-(define FILENAME
+(define FILE_FILTER_FILENAME
   (gi-flag-value "Gtk-FileFilterFlags" "filename"))
 
-(define URI
+(define FILE_FILTER_URI
   (gi-flag-value "Gtk-FileFilterFlags" "uri"))
 
-(define DISPLAY_NAME
+(define FILE_FILTER_DISPLAY_NAME
   (gi-flag-value "Gtk-FileFilterFlags" "display_name"))
 
-(define MIME_TYPE
+(define FILE_FILTER_MIME_TYPE
   (gi-flag-value "Gtk-FileFilterFlags" "mime_type"))
 
 ;; CALLBACK
@@ -11862,19 +11862,19 @@
 "
   (gi-function-invoke "Gtk-FontChooserDialog-new" title parent))
 
-(define FAMILY
+(define FONT_CHOOSER_LEVEL_FAMILY
   (gi-flag-value "Gtk-FontChooserLevel" "family"))
 
-(define STYLE
+(define FONT_CHOOSER_LEVEL_STYLE
   (gi-flag-value "Gtk-FontChooserLevel" "style"))
 
-(define SIZE
+(define FONT_CHOOSER_LEVEL_SIZE
   (gi-flag-value "Gtk-FontChooserLevel" "size"))
 
-(define VARIATIONS
+(define FONT_CHOOSER_LEVEL_VARIATIONS
   (gi-flag-value "Gtk-FontChooserLevel" "variations"))
 
-(define FEATURES
+(define FONT_CHOOSER_LEVEL_FEATURES
   (gi-flag-value "Gtk-FontChooserLevel" "features"))
 
 (define <GtkFontChooserWidget>
@@ -13599,31 +13599,31 @@
   (gi-method-send self 
      (gi-method-prepare "set_raw_coordinates" raw-coordinates)))
 
-(define NO_SVG
+(define ICON_LOOKUP_NO_SVG
   (gi-flag-value "Gtk-IconLookupFlags" "no_svg"))
 
-(define FORCE_SVG
+(define ICON_LOOKUP_FORCE_SVG
   (gi-flag-value "Gtk-IconLookupFlags" "force_svg"))
 
-(define USE_BUILTIN
+(define ICON_LOOKUP_USE_BUILTIN
   (gi-flag-value "Gtk-IconLookupFlags" "use_builtin"))
 
-(define GENERIC_FALLBACK
+(define ICON_LOOKUP_GENERIC_FALLBACK
   (gi-flag-value "Gtk-IconLookupFlags" "generic_fallback"))
 
-(define FORCE_SIZE
+(define ICON_LOOKUP_FORCE_SIZE
   (gi-flag-value "Gtk-IconLookupFlags" "force_size"))
 
-(define FORCE_REGULAR
+(define ICON_LOOKUP_FORCE_REGULAR
   (gi-flag-value "Gtk-IconLookupFlags" "force_regular"))
 
-(define FORCE_SYMBOLIC
+(define ICON_LOOKUP_FORCE_SYMBOLIC
   (gi-flag-value "Gtk-IconLookupFlags" "force_symbolic"))
 
-(define DIR_LTR
+(define ICON_LOOKUP_DIR_LTR
   (gi-flag-value "Gtk-IconLookupFlags" "dir_ltr"))
 
-(define DIR_RTL
+(define ICON_LOOKUP_DIR_RTL
   (gi-flag-value "Gtk-IconLookupFlags" "dir_rtl"))
 
 (define <GtkIconSet>
@@ -15138,40 +15138,40 @@
   (gi-method-send self 
      (gi-method-prepare "set_show_close_button" setting)))
 
-(define NONE
+(define INPUT_HINTS_NONE
   (gi-flag-value "Gtk-InputHints" "none"))
 
-(define SPELLCHECK
+(define INPUT_HINTS_SPELLCHECK
   (gi-flag-value "Gtk-InputHints" "spellcheck"))
 
-(define NO_SPELLCHECK
+(define INPUT_HINTS_NO_SPELLCHECK
   (gi-flag-value "Gtk-InputHints" "no_spellcheck"))
 
-(define WORD_COMPLETION
+(define INPUT_HINTS_WORD_COMPLETION
   (gi-flag-value "Gtk-InputHints" "word_completion"))
 
-(define LOWERCASE
+(define INPUT_HINTS_LOWERCASE
   (gi-flag-value "Gtk-InputHints" "lowercase"))
 
-(define UPPERCASE_CHARS
+(define INPUT_HINTS_UPPERCASE_CHARS
   (gi-flag-value "Gtk-InputHints" "uppercase_chars"))
 
-(define UPPERCASE_WORDS
+(define INPUT_HINTS_UPPERCASE_WORDS
   (gi-flag-value "Gtk-InputHints" "uppercase_words"))
 
-(define UPPERCASE_SENTENCES
+(define INPUT_HINTS_UPPERCASE_SENTENCES
   (gi-flag-value "Gtk-InputHints" "uppercase_sentences"))
 
-(define INHIBIT_OSK
+(define INPUT_HINTS_INHIBIT_OSK
   (gi-flag-value "Gtk-InputHints" "inhibit_osk"))
 
-(define VERTICAL_WRITING
+(define INPUT_HINTS_VERTICAL_WRITING
   (gi-flag-value "Gtk-InputHints" "vertical_writing"))
 
-(define EMOJI
+(define INPUT_HINTS_EMOJI
   (gi-flag-value "Gtk-InputHints" "emoji"))
 
-(define NO_EMOJI
+(define INPUT_HINTS_NO_EMOJI
   (gi-flag-value "Gtk-InputHints" "no_emoji"))
 
 (define INPUT_PURPOSE_FREE_FORM
@@ -15235,31 +15235,31 @@
   (gi-method-send self 
      (gi-method-prepare "set_screen" screen)))
 
-(define NONE
+(define JUNCTION_SIDES_NONE
   (gi-flag-value "Gtk-JunctionSides" "none"))
 
-(define CORNER_TOPLEFT
+(define JUNCTION_SIDES_CORNER_TOPLEFT
   (gi-flag-value "Gtk-JunctionSides" "corner_topleft"))
 
-(define CORNER_TOPRIGHT
+(define JUNCTION_SIDES_CORNER_TOPRIGHT
   (gi-flag-value "Gtk-JunctionSides" "corner_topright"))
 
-(define CORNER_BOTTOMLEFT
+(define JUNCTION_SIDES_CORNER_BOTTOMLEFT
   (gi-flag-value "Gtk-JunctionSides" "corner_bottomleft"))
 
-(define CORNER_BOTTOMRIGHT
+(define JUNCTION_SIDES_CORNER_BOTTOMRIGHT
   (gi-flag-value "Gtk-JunctionSides" "corner_bottomright"))
 
-(define TOP
+(define JUNCTION_SIDES_TOP
   (gi-flag-value "Gtk-JunctionSides" "top"))
 
-(define BOTTOM
+(define JUNCTION_SIDES_BOTTOM
   (gi-flag-value "Gtk-JunctionSides" "bottom"))
 
-(define LEFT
+(define JUNCTION_SIDES_LEFT
   (gi-flag-value "Gtk-JunctionSides" "left"))
 
-(define RIGHT
+(define JUNCTION_SIDES_RIGHT
   (gi-flag-value "Gtk-JunctionSides" "right"))
 
 (define JUSTIFICATION_LEFT
@@ -18873,13 +18873,13 @@
 "
   (gi-function-invoke "Gtk-PaperSize-get_paper_sizes" include-custom))
 
-(define NORMAL
+(define PLACES_OPEN_NORMAL
   (gi-flag-value "Gtk-PlacesOpenFlags" "normal"))
 
-(define NEW_TAB
+(define PLACES_OPEN_NEW_TAB
   (gi-flag-value "Gtk-PlacesOpenFlags" "new_tab"))
 
-(define NEW_WINDOW
+(define PLACES_OPEN_NEW_WINDOW
   (gi-flag-value "Gtk-PlacesOpenFlags" "new_window"))
 
 (define <GtkPlacesSidebar>
@@ -20888,16 +20888,16 @@
 (define <GtkRangeAccessible>
   (gi-lookup-type "Gtk-RangeAccessible"))
 
-(define FG
+(define RC_FG
   (gi-flag-value "Gtk-RcFlags" "fg"))
 
-(define BG
+(define RC_BG
   (gi-flag-value "Gtk-RcFlags" "bg"))
 
-(define TEXT
+(define RC_TEXT
   (gi-flag-value "Gtk-RcFlags" "text"))
 
-(define BASE
+(define RC_BASE
   (gi-flag-value "Gtk-RcFlags" "base"))
 
 ;; CALLBACK
@@ -21116,22 +21116,22 @@
   (gi-method-send self 
      (gi-method-prepare "set_name" name)))
 
-(define URI
+(define RECENT_FILTER_URI
   (gi-flag-value "Gtk-RecentFilterFlags" "uri"))
 
-(define DISPLAY_NAME
+(define RECENT_FILTER_DISPLAY_NAME
   (gi-flag-value "Gtk-RecentFilterFlags" "display_name"))
 
-(define MIME_TYPE
+(define RECENT_FILTER_MIME_TYPE
   (gi-flag-value "Gtk-RecentFilterFlags" "mime_type"))
 
-(define APPLICATION
+(define RECENT_FILTER_APPLICATION
   (gi-flag-value "Gtk-RecentFilterFlags" "application"))
 
-(define GROUP
+(define RECENT_FILTER_GROUP
   (gi-flag-value "Gtk-RecentFilterFlags" "group"))
 
-(define AGE
+(define RECENT_FILTER_AGE
   (gi-flag-value "Gtk-RecentFilterFlags" "age"))
 
 ;; CALLBACK
@@ -21450,22 +21450,22 @@
 (define RECENT_SORT_TYPE_CUSTOM
   (gi-enum-value "Gtk-RecentSortType" "custom"))
 
-(define EVEN
+(define REGION_EVEN
   (gi-flag-value "Gtk-RegionFlags" "even"))
 
-(define ODD
+(define REGION_ODD
   (gi-flag-value "Gtk-RegionFlags" "odd"))
 
-(define FIRST
+(define REGION_FIRST
   (gi-flag-value "Gtk-RegionFlags" "first"))
 
-(define LAST
+(define REGION_LAST
   (gi-flag-value "Gtk-RegionFlags" "last"))
 
-(define ONLY
+(define REGION_ONLY
   (gi-flag-value "Gtk-RegionFlags" "only"))
 
-(define SORTED
+(define REGION_SORTED
   (gi-flag-value "Gtk-RegionFlags" "sorted"))
 
 (define RELIEF_STYLE_NORMAL
@@ -23552,46 +23552,46 @@
 (define STACK_TRANSITION_TYPE_OVER_RIGHT_LEFT
   (gi-enum-value "Gtk-StackTransitionType" "over_right_left"))
 
-(define NORMAL
+(define STATE_NORMAL
   (gi-flag-value "Gtk-StateFlags" "normal"))
 
-(define ACTIVE
+(define STATE_ACTIVE
   (gi-flag-value "Gtk-StateFlags" "active"))
 
-(define PRELIGHT
+(define STATE_PRELIGHT
   (gi-flag-value "Gtk-StateFlags" "prelight"))
 
-(define SELECTED
+(define STATE_SELECTED
   (gi-flag-value "Gtk-StateFlags" "selected"))
 
-(define INSENSITIVE
+(define STATE_INSENSITIVE
   (gi-flag-value "Gtk-StateFlags" "insensitive"))
 
-(define INCONSISTENT
+(define STATE_INCONSISTENT
   (gi-flag-value "Gtk-StateFlags" "inconsistent"))
 
-(define FOCUSED
+(define STATE_FOCUSED
   (gi-flag-value "Gtk-StateFlags" "focused"))
 
-(define BACKDROP
+(define STATE_BACKDROP
   (gi-flag-value "Gtk-StateFlags" "backdrop"))
 
-(define DIR_LTR
+(define STATE_DIR_LTR
   (gi-flag-value "Gtk-StateFlags" "dir_ltr"))
 
-(define DIR_RTL
+(define STATE_DIR_RTL
   (gi-flag-value "Gtk-StateFlags" "dir_rtl"))
 
-(define LINK
+(define STATE_LINK
   (gi-flag-value "Gtk-StateFlags" "link"))
 
-(define VISITED
+(define STATE_VISITED
   (gi-flag-value "Gtk-StateFlags" "visited"))
 
-(define CHECKED
+(define STATE_CHECKED
   (gi-flag-value "Gtk-StateFlags" "checked"))
 
-(define DROP_ACTIVE
+(define STATE_DROP_ACTIVE
   (gi-flag-value "Gtk-StateFlags" "drop_active"))
 
 (define <GtkStatusIcon>
@@ -24437,13 +24437,13 @@
   (gi-method-send self 
      (gi-method-prepare "to_string" flags)))
 
-(define NONE
+(define STYLE_CONTEXT_PRINT_NONE
   (gi-flag-value "Gtk-StyleContextPrintFlags" "none"))
 
-(define RECURSE
+(define STYLE_CONTEXT_PRINT_RECURSE
   (gi-flag-value "Gtk-StyleContextPrintFlags" "recurse"))
 
-(define SHOW_STYLE
+(define STYLE_CONTEXT_PRINT_SHOW_STYLE
   (gi-flag-value "Gtk-StyleContextPrintFlags" "show_style"))
 
 (define <GtkStyleProperties>
@@ -24818,16 +24818,16 @@
   (gi-method-send self 
      (gi-method-prepare "free")))
 
-(define SAME_APP
+(define TARGET_SAME_APP
   (gi-flag-value "Gtk-TargetFlags" "same_app"))
 
-(define SAME_WIDGET
+(define TARGET_SAME_WIDGET
   (gi-flag-value "Gtk-TargetFlags" "same_widget"))
 
-(define OTHER_APP
+(define TARGET_OTHER_APP
   (gi-flag-value "Gtk-TargetFlags" "other_app"))
 
-(define OTHER_WIDGET
+(define TARGET_OTHER_WIDGET
   (gi-flag-value "Gtk-TargetFlags" "other_widget"))
 
 (define <GtkTargetList>
@@ -26443,13 +26443,13 @@
   (gi-method-send self 
      (gi-method-prepare "set_visible" setting)))
 
-(define VISIBLE_ONLY
+(define TEXT_SEARCH_VISIBLE_ONLY
   (gi-flag-value "Gtk-TextSearchFlags" "visible_only"))
 
-(define TEXT_ONLY
+(define TEXT_SEARCH_TEXT_ONLY
   (gi-flag-value "Gtk-TextSearchFlags" "text_only"))
 
-(define CASE_INSENSITIVE
+(define TEXT_SEARCH_CASE_INSENSITIVE
   (gi-flag-value "Gtk-TextSearchFlags" "case_insensitive"))
 
 (define <GtkTextTag>
@@ -28137,10 +28137,10 @@
   (gi-method-send self 
      (gi-method-prepare "unset_style")))
 
-(define ITEMS
+(define TOOL_PALETTE_DRAG_TARGETS_ITEMS
   (gi-flag-value "Gtk-ToolPaletteDragTargets" "items"))
 
-(define GROUPS
+(define TOOL_PALETTE_DRAG_TARGETS_GROUPS
   (gi-flag-value "Gtk-ToolPaletteDragTargets" "groups"))
 
 (define <GtkToolbar>
@@ -28518,10 +28518,10 @@
 ;;   iter  - struct TreeIter, 
 ;;   data  - #f for NULL or pointer
 ;; RETURN: gboolean
-(define ITERS_PERSIST
+(define TREE_MODEL_ITERS_PERSIST
   (gi-flag-value "Gtk-TreeModelFlags" "iters_persist"))
 
-(define LIST_ONLY
+(define TREE_MODEL_LIST_ONLY
   (gi-flag-value "Gtk-TreeModelFlags" "list_only"))
 
 ;; CALLBACK
