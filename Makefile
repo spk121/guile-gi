@@ -128,7 +128,12 @@ C_HEADERS = \
  src/gi/__gi_giargument.h \
  src/gi/gi_ginterface.h \
  src/gi/__gi_ginterface.h \
- src/gi/gi_gstruct.h
+ src/gi/gi_gstruct.h \
+ src/gi/gi_gflags.h \
+ src/gi/gir_xguile.h \
+ src/gi/__gi_gboxed.h \
+ src/gi/gi_gboxed.h \
+ src/gi/gir_callback.h
 
 C_SOURCES = \
  src/gi/__gi_gobject.c \
@@ -149,7 +154,11 @@ C_SOURCES = \
  src/gi/__gi_giargument.c \
  src/gi/gi_gstruct.c \
  src/gi/gir_callback.c \
- src/gi/gir.c
+ src/gi/gir.c \
+ src/gi/gir_xguile.c \
+ src/gi/__gi_gboxed.c \
+ src/gi/gi_gboxed.c \
+ src/gi/gir_callback.c
 
 SCM_SOURCES = \
  src/gi.scm
@@ -185,6 +194,7 @@ docs/index.html: doc/guile-gi.texi
 # Tarballs
 
 DISTFILES = $(C_SOURCES) $(C_HEADERS) $(SCM_SOURCES) \
+  src/gi/fo_gen.c \
   doc/guile-gi.texi docs/document-1.0.1.css \
   README.md AUTHORS NEWS COPYING \
   Makefile Makefile.mingw ChangeLog

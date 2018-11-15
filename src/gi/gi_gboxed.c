@@ -41,8 +41,6 @@ gi_gboxed_new (GType boxed_type, gpointer boxed, gboolean copy_boxed, gboolean o
     SCM tp;
     SCM self;
     
-    g_return_val_if_fail(boxed_type != 0, NULL);
-    g_return_val_if_fail(!copy_boxed || (copy_boxed && own_ref), NULL);
     if (!boxed) {
 	return SCM_NONE;
     }
