@@ -12,6 +12,9 @@ HOST=LINUX
 PROC=AMD64
 #PROC=ARM
 
+#GCOV=YES
+GCOV=NO
+
 ################################################################
 # Direcories
 
@@ -72,6 +75,11 @@ CFLAGS += \
  -fvar-tracking
 endif
 
+ifeq ($(GCOV),YES)
+CFLAGS += --coverage
+DEFS += -DENABLE_GCOV
+endif
+
 ifeq ($(HOST),LINUX)
 CFLAGS += \
  -fPIC \
@@ -84,6 +92,7 @@ endif
 endif
 
 LDFLAGS = \
+ -Wl,--dynamic-list-data \
  $(shell pkg-config --libs-only-L guile-2.2 glib-2.0 gobject-2.0 gobject-introspection-1.0 libffi)
 
 ifeq ($(HOST),LINUX)
@@ -167,7 +176,7 @@ C_OBJECTS = $(C_SOURCES:.c=.o)
 
 libguile-gi.so: $(C_OBJECTS)
 	@rm -f libguile-gi.so
-	$(CC) -shared $(LDFLAGS) -o $@ $^ $(LIBS)
+	$(CC) $(CFLAGS) -shared $(LDFLAGS) -o $@ $^ $(LIBS)
 
 ################################################################
 # Documentation
@@ -245,10 +254,10 @@ install: libguile-gi.so doc/guile-gi.info doc/guile-gi.pdf
 	install -D -v -m 644 doc/guile-gi.info $(infodir)
 	install -D -v -m 644 doc/guile-gi.pdf $(pdfdir)
 
-CLEAN_FILES=
+CLEAN_FILES= $(C_OBJECTS) libguile-gi.so
 
 clean:
-	@rm $(CLEAN_FILES)
+	@-rm $(CLEAN_FILES)
 
 
 ################################################################

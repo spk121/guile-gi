@@ -1,6 +1,7 @@
 (define-module (gi)
   #:use-module (ice-9 eval-string)
   #:export (
+	    ;;
 	    get-typelib-search-path
 	    prepend-typelib-search-path
 	    load-typelib
@@ -75,3 +76,8 @@
   (eval-string (%import-typelib namespace version)))
 
 (load-extension "libguile-gi" "gir_init")
+
+(when (defined? 'gcov-reset)
+  (export gcov-reset))
+(when (defined? 'gcov-dump)
+  (export gcov-dump))

@@ -24,6 +24,10 @@ static const int _win32 = TRUE;
 static const int _win32 = FALSE;
 #endif
 
+
+void __gcov_reset(void);
+void __gcov_dump(void);
+
 void
 gir_log_handler(const gchar *log_domain,
     GLogLevelFlags log_level,
@@ -47,10 +51,27 @@ gir_log_handler(const gchar *log_domain,
     fflush(stderr);
 }
 
+#ifdef ENABLE_GCOV
+static SCM
+scm_gcov_reset (void)
+{
+    __gcov_reset();
+    return SCM_UNSPECIFIED;
+}
+
+
+static SCM
+scm_gcov_dump (void)
+{
+    __gcov_dump();
+    return SCM_UNSPECIFIED;
+}
+#endif
+
 void
 gir_init(void)
 {
-#if 1
+#if 0
     g_log_set_handler(G_LOG_DOMAIN, G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL
         | G_LOG_FLAG_RECURSION, gir_log_handler, NULL);
     g_log_set_handler("GLib", G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL
@@ -70,6 +91,11 @@ gir_init(void)
     gi_init_gobject();
     gir_init_callback();
     g_debug("End libguile-gir initialization");
+
+#ifdef ENABLE_GCOV
+    scm_c_define_gsubr("gcov-reset", 0, 0, 0, scm_gcov_reset);
+    scm_c_define_gsubr("gcov-dump", 0, 0, 0, scm_gcov_dump);
+#endif
 }
 
 int main(int argc, char **argv)
