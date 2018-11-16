@@ -65,7 +65,7 @@ LIBS = \
 # Build helper program fo_gen
 
 fo_gen$(EXEEXT): src/gi/fo_gen.c
-	$(CC) $(CFLAGS) $(LDFLAGS) -fpie -pie -o $@ $< `pkg-config --cflags --libs glib-2.0`
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $< `pkg-config --cflags --libs glib-2.0`
 
 C_HEADERS = \
  src/gi/__gi_gobject.h \

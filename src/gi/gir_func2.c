@@ -1779,9 +1779,9 @@ function_info_convert_args(const char *func_name, GIFunctionInfo *func_info, SCM
                 {
                     g_base_info_unref(arg_info);
                     goto arg_err_cleanup;
+                }
             }
         }
-    }
         else if (dir == GI_DIRECTION_OUT)
         {
             // Only those output arguments that require pre-allocation, e.g.
@@ -1911,8 +1911,8 @@ function_info_convert_output_args(const char *func_name, const GIFunctionInfo *f
                 gi_giargument_convert_arg_to_object(&out_args[i], arg_info, &obj);
                 output = scm_append(scm_list_2(output, scm_list_1(obj)));
                 g_base_info_unref(arg_typeinfo);
+            }
         }
-}
         g_base_info_unref(arg_info);
     }
     return output;
@@ -2502,7 +2502,7 @@ scm_dump_all_arg_types(void)
             else if (it == GI_INFO_TYPE_TYPE)
                 fprintf(fp, "TYPE      ");
             fprintf(fp, "%-11s ", g_base_info_get_name(bi));
-}
+        }
 
         gboolean null = g_arg_info_may_be_null(ai);
         if (null)
