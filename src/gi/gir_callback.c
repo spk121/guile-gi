@@ -123,7 +123,7 @@ GirCallback *gir_callback_new(GICallbackInfo *callback_info, SCM s_func)
     // Allocate the block of memory that FFI uses to hold a closure object,
     // and set a pointer to the corresponding executable address.
     gcb->closure = ffi_closure_alloc(sizeof(ffi_closure),
-                                     &(gcb->callback_ptr));
+        &(gcb->callback_ptr));
 
     g_return_val_if_fail(gcb->closure != NULL, NULL);
     g_return_val_if_fail(gcb->callback_ptr != NULL, NULL);
@@ -201,7 +201,7 @@ void *gir_callback_get_ptr(GICallbackInfo *cb_info, SCM s_func)
         gcb = x->data;
         if (scm_is_eq(gcb->s_func, s_func))
         {
-            gcb_typeinfo = g_base_info_get_type (gcb->callback_info);
+            gcb_typeinfo = g_base_info_get_type(gcb->callback_info);
             if (cb_typeinfo == gcb_typeinfo)
                 return gcb->callback_ptr;
         }
@@ -316,7 +316,55 @@ type_info_to_ffi_type(GITypeInfo *type_info)
     return rettype;
 }
 
+static SCM
+scm_is_registered_callback_p(SCM s_proc)
+{
+    if (!scm_is_true(scm_procedure_p (s_proc)))
+        scm_wrong_type_arg_msg("is-registered-callback?", 0, s_proc, "procedure");
+
+    // Lookup s_func in the callback cache.
+    GSList *x = callback_list;
+    GirCallback *gcb;    
+
+    while (x != NULL)
+    {
+        gcb = x->data;
+        if (scm_is_eq(gcb->s_func, s_proc))
+        {
+            return SCM_BOOL_T;
+        }
+        x = x->next;
+    }
+    return SCM_BOOL_F;
+}
+
+static SCM
+scm_get_registered_callback_closure_pointer(SCM s_proc)
+{
+    if (!scm_is_true(scm_procedure_p (s_proc)))
+        scm_wrong_type_arg_msg("get-registered-callback-closure-pointer", 0, s_proc, "procedure");
+
+    // Lookup s_func in the callback cache.
+    GSList *x = callback_list;
+    GirCallback *gcb;
+
+    // If you use the same scheme procedure for different callbacks,
+    // you're just going to get one closure pointer.
+    while (x != NULL)
+    {
+        gcb = x->data;
+        if (scm_is_eq(gcb->s_func, s_proc))
+            return scm_from_pointer(gcb->callback_ptr, NULL);
+        x = x->next;
+    }
+    return SCM_BOOL_F;
+}
+
 void
 gir_init_callback(void)
 {
+    scm_c_define_gsubr("is-registered-callback?", 1, 0, 0,
+        scm_is_registered_callback_p);
+    scm_c_define_gsubr("get-registered-callback-closure-pointer", 1, 0, 0,
+        scm_get_registered_callback_closure_pointer);
 }
