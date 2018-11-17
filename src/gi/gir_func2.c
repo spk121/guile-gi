@@ -25,6 +25,7 @@ static void export_constant_info(GString **export, const char *namespace_, const
 static void export_method_info(GString **export, const char *namespace_, const char *parent, GICallableInfo *info);
 static void export_enum_info(GString **export, const char *namespace_, const char *parent, GIEnumInfo *info);
 static void export_flag_info(GString **export, const char *namespace_, const char *parent, GIEnumInfo *info);
+static const char *abbrev_namespace(const char *namespace_) __attribute__((const));
 static char *gname_to_scm_name(const char *gname);
 static char *gname_to_scm_constant_name(const char *gname);
 
@@ -495,6 +496,17 @@ scm_import_typelib(SCM s_namespace, SCM s_version)
     return scm_take_locale_string(g_string_free(export, FALSE));
 }
 
+
+static const char *
+abbrev_namespace(const char *namespace_)
+{
+    const char *g = "G";
+
+    if (strcasecmp(namespace_, "glib") == 0)
+        return g;
+    return namespace_;
+}
+
 static SCM
 scm_export_typelib(SCM s_namespace, SCM s_version)
 {
@@ -556,8 +568,9 @@ scm_export_typelib(SCM s_namespace, SCM s_version)
                 g_base_info_unref(info);
                 break;
             }
+
             types = g_slist_insert_sorted(types,
-                g_strdup_printf("<%s%s>", namespace_, g_base_info_get_name(info)),
+                g_strdup_printf("<%s%s>", abbrev_namespace(namespace_), g_base_info_get_name(info)),
                 (GCompareFunc)strcmp);
             gint n_methods = g_struct_info_get_n_methods(info);
             for (gint m = 0; m < n_methods; m++)
@@ -809,7 +822,10 @@ export_type_info(GString **export, const char *namespace_, const char *parent, G
     g_assert(parent == NULL);
 
     g_string_append_printf(*export, "(define <%s%s>\n  (gi-lookup-type \"%s-%s\"))\n\n",
-        namespace_, g_base_info_get_name(info), namespace_, g_base_info_get_name(info));
+        abbrev_namespace(namespace_),
+        g_base_info_get_name(info),
+        namespace_,
+        g_base_info_get_name(info));
 }
 
 static void
@@ -824,6 +840,7 @@ export_constant_info(GString **export, const char *namespace_, const char *paren
 static gchar *
 flag_public_name(const char *parent, GIBaseInfo *info)
 {
+
     char *tmp_str, *public_name;
     if (parent)
     {
@@ -861,8 +878,6 @@ export_enum_info(GString **export, const char *namespace_, const char *parent, G
         i++;
     }
 }
-
-
 
 static void
 export_flag_info(GString **export, const char *namespace_, const char *parent, GIEnumInfo *info)
@@ -1042,7 +1057,7 @@ callable_public_name(const char *namespace_, const char *parent, GICallableInfo 
 
     if (parent)
     {
-        tmp_str = g_strdup_printf("%s%s", namespace_, parent);
+        tmp_str = g_strdup_printf("%s%s", abbrev_namespace(namespace_), parent);
         tmp_str2 = gname_to_scm_name(g_base_info_get_name(info));
         if (g_type_info_get_tag(return_type) == GI_TYPE_TAG_BOOLEAN && !g_type_info_is_pointer(return_type))
             public_name = g_strdup_printf("%s-%s?", tmp_str, tmp_str2);
@@ -1054,9 +1069,9 @@ callable_public_name(const char *namespace_, const char *parent, GICallableInfo 
     else
     {
         if (g_type_info_get_tag(return_type) == GI_TYPE_TAG_BOOLEAN && !g_type_info_is_pointer(return_type))
-            tmp_str = g_strdup_printf("%s-%s?", namespace_, g_base_info_get_name(info));
+            tmp_str = g_strdup_printf("%s-%s?", abbrev_namespace(namespace_), g_base_info_get_name(info));
         else
-            tmp_str = g_strdup_printf("%s-%s", namespace_, g_base_info_get_name(info));
+            tmp_str = g_strdup_printf("%s-%s", abbrev_namespace(namespace_), g_base_info_get_name(info));
         public_name = gname_to_scm_name(tmp_str);
         g_free(tmp_str);
     }
