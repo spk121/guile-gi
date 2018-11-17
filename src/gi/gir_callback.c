@@ -3,10 +3,14 @@
 #include "gir_callback.h"
 #include "gi_giargument.h"
 
+static SCM scm_call_proc (void *user_data);
+static SCM scm_handler_proc (void *user_data, SCM key, SCM params);
+
 GSList *callback_list = NULL;
 
 static ffi_type *
 type_info_to_ffi_type(GITypeInfo *type_info);
+
 
 // This is the core of a dynamically generated callback funcion.
 // It converts FFI arguments to SCM arguments, calls a SCM function
@@ -18,8 +22,15 @@ void callback_binding(ffi_cif *cif, void *ret, void **ffi_args,
     SCM s_args = SCM_EOL;
     SCM s_ret;
 
+    g_assert (cif != NULL);
+    g_assert (ret != NULL);
+    g_assert (ffi_args != NULL);
+    g_assert (user_data != NULL);
+
     g_debug("in callback C->SCM binding");
     unsigned int n_args = cif->nargs;
+
+    g_assert (n_args >= 0);
 
     for (unsigned int i = 0; i < n_args; i++)
     {
@@ -76,22 +87,42 @@ void callback_binding(ffi_cif *cif, void *ret, void **ffi_args,
         g_base_info_unref(arg_info);
     }
 
-    s_ret = scm_apply_0(gcb->s_func, s_args);
+    s_ret = scm_c_catch(SCM_BOOL_T,
+        scm_call_proc, SCM_UNPACK_POINTER(scm_cons (gcb->s_func, s_args)),
+        scm_handler_proc, NULL, NULL, NULL);
+    if (scm_is_false(s_ret))
+        *(ffi_arg *)ret = FALSE;
+    else
+    {
+        GIArgument giarg;
+        GITypeInfo *ret_type_info = g_callable_info_get_return_type(gcb->callback_info);
+        GIArgumentStatus ret2;
+        ret2 = gi_giargument_convert_return_type_object_to_arg(s_ret,
+                                                               ret_type_info,
+                                                               g_callable_info_get_caller_owns(gcb->callback_info),
+                                                               g_callable_info_may_return_null(gcb->callback_info),
+                                                               g_callable_info_skip_return(gcb->callback_info),
+                                                               &giarg);
+        g_base_info_unref(ret_type_info);
 
-    GIArgument giarg;
-    GITypeInfo *ret_type_info = g_callable_info_get_return_type(gcb->callback_info);
-    GIArgumentStatus ret2;
-    ret2 = gi_giargument_convert_return_type_object_to_arg(s_ret,
-        ret_type_info,
-        g_callable_info_get_caller_owns(gcb->callback_info),
-        g_callable_info_may_return_null(gcb->callback_info),
-        g_callable_info_skip_return(gcb->callback_info),
-        &giarg);
-    g_base_info_unref(ret_type_info);
+        // I'm pretty sure I don't need a big type case/switch block here.
+        // I'll try brutally coercing the data, and see what happens.
+        *(ffi_arg *)ret = giarg.v_uint64;
+    }
+}
 
-    // I'm pretty sure I don't need a big type case/switch block here.
-    // I'll try brutally coercing the data, and see what happens.
-    *(ffi_arg *)ret = giarg.v_uint64;
+static SCM
+scm_call_proc (void *user_data)
+{
+    SCM func_args_pair = SCM_PACK_POINTER(user_data);
+    return scm_apply_0(scm_car(func_args_pair), scm_cdr(func_args_pair));
+}
+
+static SCM
+scm_handler_proc (void *user_data, SCM key, SCM params)
+{
+    g_critical("scheme procedure threw error in C callback");
+    return SCM_BOOL_F;
 }
 
 // This procedure uses CALLBACK_INFO to create a dynamic FFI C closure
