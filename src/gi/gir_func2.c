@@ -831,7 +831,7 @@ export_type_info(GString **export, const char *namespace_, const char *parent, G
 static void
 export_constant_info(GString **export, const char *namespace_, const char *parent, GIConstantInfo *info)
 {
-    char *public_name = flag_public_name(namespace_, info);
+    char *public_name = flag_public_name(NULL, info);
     g_assert(parent == NULL);
     g_string_append_printf(*export, "(define %s\n  (gi-constant-value \"%s-%s\"))\n\n", public_name, namespace_, g_base_info_get_name(info));
     free(public_name);
@@ -1170,7 +1170,7 @@ export_method_info(GString **export, const char *namespace_, const char *parent,
     g_assert(parent != NULL);
 
     lookup_name = g_strdup_printf("%s", g_base_info_get_name(info));
-    tmp_str = g_strdup_printf("%s%s", namespace_, parent);
+    tmp_str = g_strdup_printf("%s%s", abbrev_namespace(namespace_), parent);
     tmp_str2 = gname_to_scm_name(g_base_info_get_name(info));
     if (g_type_info_get_tag(return_type) == GI_TYPE_TAG_BOOLEAN && !g_type_info_is_pointer(return_type))
         public_name = g_strdup_printf("%s-%s?", tmp_str, tmp_str2);
