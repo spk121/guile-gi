@@ -4,7 +4,7 @@
 
 SCM gir_gbox_type;
 SCM gir_gbox_type_store;
-static GMutex mutex;
+static GMutex mutex = G_STATIC_MUTEX_INIT;
 
 static void gir_sptr_free(GirSmartPtr *sptr);
 
@@ -238,7 +238,7 @@ scm_gbox_get_gtype(SCM self)
 static void
 gi_gbox_finalizer(SCM self)
 {
-    g_mutex_lock(&mutex);
+    // g_mutex_lock(&mutex);
     GirSmartPtr *sptr = scm_foreign_object_ref(self, 0);
     gboolean valid = scm_foreign_object_ref(self, 1);
 
@@ -260,7 +260,7 @@ gi_gbox_finalizer(SCM self)
 
     free(str);
     scm_foreign_object_set_x(self, 1, FALSE);
-    g_mutex_unlock(&mutex);
+    // g_mutex_unlock(&mutex);
 }
 
 static SCM scm_gbox_get_refcount(SCM self)
