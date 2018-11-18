@@ -868,7 +868,7 @@ export_enum_info(GString **export, const char *namespace_, const char *parent, G
     while (i < n_values)
     {
         vi = g_enum_info_get_value(info, i);
-        char *public_name, *lookup_name;
+        char *public_name;
         public_name = flag_public_name(g_base_info_get_name(info), vi);
         g_string_append_printf(*export, "(define %s\n  (gi-enum-value \"%s-%s\" \"%s\"))\n\n",
             public_name, namespace_, g_base_info_get_name(info), g_base_info_get_name(vi));
@@ -1015,11 +1015,8 @@ callback_public_name(const char *namespace_, const char *parent, GICallableInfo 
 static void
 export_callback_info(GString **export, const char *namespace_, const char *parent, GICallableInfo *info)
 {
-    gint n_args;
     char *lookup_name;
     char *public_name;
-
-    n_args = g_callable_info_get_n_args(info);
 
     if (parent)
         lookup_name = g_strdup_printf("%s-%s-%s", namespace_, parent, g_base_info_get_name(info));
@@ -2160,6 +2157,75 @@ scm_gi_method_send(SCM s_object, SCM s_method_args_list)
     if (outlen == 1)
         return scm_car(output);
     return output;
+}
+
+void
+gir_unref_object(SCM s_object)
+{
+    GType type, original_type;
+    GIFunctionInfo *info;
+
+    if (SCM_IS_A_P(s_object, gi_gobject_type))
+        type = gi_gobject_get_ob_type(s_object);
+    else if (SCM_IS_A_P(s_object, gir_gbox_type))
+        type = gi_gbox_get_type(s_object);
+    else
+        scm_misc_error("gi-unref",
+            "Cannot invoke \'unref\' for object ~S",
+            scm_list_1(s_object));
+
+    original_type = type;
+    SCM val;
+    SCM h = get_hash_table("%gi-methods");
+    SCM s_name = scm_from_utf8_string("unref");
+    SCM subhash = scm_hash_ref(h, s_name, 
+        SCM_BOOL_F);
+    
+    while (scm_is_false((val = scm_hash_ref(subhash, scm_from_size_t(type), SCM_BOOL_F))))
+    {
+        if (!(type = g_type_parent(type)))
+        {
+	    // Should be impossible.
+            scm_misc_error("gi-unref", "Unknown object type ~s",
+			   scm_list_1(s_object));
+        }
+    }
+    info = scm_to_pointer(val);
+
+    g_debug("Invoking %s::unref for object of type %s",
+        g_type_name(type),
+        g_type_name(original_type));
+
+    GIArgument in_arg;
+    if (SCM_IS_A_P(s_object, gi_gobject_type))
+        in_arg.v_pointer = gi_gobject_get_obj(s_object);
+    else if (SCM_IS_A_P(s_object, gir_gbox_type))
+        in_arg.v_pointer = gi_gbox_peek_pointer(s_object);
+    else
+        g_abort();
+
+    GIArgument return_arg;
+
+    /* Make the call. */
+    GError *err = NULL;
+    gboolean ret = g_function_info_invoke(info, &in_arg, 1, NULL, 0, &return_arg, &err);
+    if (ret)
+        g_debug("Invoked unref");
+    else
+        g_debug("Failed to invoke unref");
+
+    /* If there is a GError, write an error, free, and exit. */
+    if (!ret)
+    {
+        char str[256];
+        memset(str, 0, 256);
+        strncpy(str, err->message, 255);
+        g_error_free(err);
+
+        scm_misc_error("gi-unref",
+            "error invoking method 'unref': ~a",
+            scm_list_2(s_name, scm_from_utf8_string(str)));
+    }
 }
 
 static SCM

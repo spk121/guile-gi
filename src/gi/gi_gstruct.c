@@ -1,6 +1,7 @@
 /* -*- Mode: C; c-basic-offset: 4 -*- */
 #include "gi_gstruct.h"
 #include "gi_gtype.h"
+#include "gir_func2.h"
 
 SCM gir_gbox_type;
 SCM gir_gbox_type_store;
@@ -33,7 +34,9 @@ static void gir_sptr_free(GirSmartPtr *sptr)
 {
     if (sptr)
     {
-        if (sptr->dealloc == SPTR_DEFAULT_FREE_FUNC)
+	if (sptr->dealloc == SPTR_NO_FREE_FUNC)
+	    ;
+        else if (sptr->dealloc == SPTR_DEFAULT_FREE_FUNC)
         {
             /* if (sptr->holds == SPTR_HOLDS_GBOXED) */
             /* 	g_boxed_free (sptr->type, sptr->ptr); */
@@ -51,13 +54,7 @@ static void gir_sptr_free(GirSmartPtr *sptr)
         }
         else if (sptr->dealloc == SPTR_SCM_FREE_FUNC)
         {
-            g_assert(sptr);
-            g_assert(sptr->ptr);
-            g_assert(SCM_UNPACK_POINTER(sptr->scm_free_func));
-
-            SCM scm_ptr = scm_from_pointer(sptr->ptr, NULL);
-            scm_call_1(sptr->scm_free_func, scm_ptr);
-            sptr->scm_free_func = SCM_BOOL_F;
+	    g_assert_not_reached ();
         }
         memset(sptr, 0, sizeof(GirSmartPtr));
         g_free(sptr);
@@ -74,11 +71,16 @@ gir_new_gbox(GirPointerContents holds, GType gtype, gpointer ptr, gboolean use_d
     sptr->type = gtype;
     g_atomic_int_set(&(sptr->count), 1);
     if (use_default_free)
-        sptr->dealloc = SPTR_DEFAULT_FREE_FUNC;
+    {
+	if (holds == SPTR_HOLDS_STRUCT || holds == SPTR_HOLDS_UNION)
+	    sptr->dealloc = SPTR_SCM_UNREF_METHOD;
+	else
+            sptr->dealloc = SPTR_DEFAULT_FREE_FUNC;
+    }
     else
         sptr->dealloc = SPTR_NO_FREE_FUNC;
 
-    SCM obj = scm_make_foreign_object_2(gir_gbox_type, sptr, TRUE);
+    SCM obj = scm_make_foreign_object_2(gir_gbox_type, sptr, GINT_TO_POINTER (TRUE));
     return obj;
 }
 
@@ -240,7 +242,7 @@ gi_gbox_finalizer(SCM self)
 {
     // g_mutex_lock(&mutex);
     GirSmartPtr *sptr = scm_foreign_object_ref(self, 0);
-    gboolean valid = scm_foreign_object_ref(self, 1);
+    gboolean valid = GPOINTER_TO_INT (scm_foreign_object_ref(self, 1));
 
     SCM s_str = scm_simple_format(SCM_BOOL_F, scm_from_utf8_string("~S"), scm_list_1(self));
     char *str = scm_to_utf8_string(s_str);
@@ -252,6 +254,14 @@ gi_gbox_finalizer(SCM self)
     else if (sptr)
     {
         g_debug("In GBox finalizer for %s", str);
+        if (sptr->dealloc == SPTR_SCM_UNREF_METHOD)
+        {
+	    g_debug("In GBox SCM finalizer for %s", str);
+            g_assert(sptr);
+            g_assert(sptr->ptr);
+	    gir_unref_object (self);
+	    sptr->dealloc = SPTR_NO_FREE_FUNC;
+        }
         gir_sptr_release(sptr);
         scm_foreign_object_set_x(self, 0, NULL);
     }
@@ -300,6 +310,17 @@ scm_gbox_printer(SCM self, SCM port)
     return SCM_UNSPECIFIED;
 }
 
+static SCM
+scm_gbox_set_finalizer_x (SCM s_box, SCM s_free_func)
+{
+    if (!SCM_IS_A_P(s_box, gir_gbox_type))
+	scm_wrong_type_arg_msg ("gbox-set-finalizer!", 1, s_box, "<GBox>");
+    if (scm_is_false (scm_procedure_p (s_free_func)))
+	scm_wrong_type_arg_msg ("gbox-set-finalizer!", 2, s_free_func, "procedure");
+
+    gir_gbox_connect_scm_free_func (s_box, s_free_func);
+    return SCM_UNSPECIFIED;
+}
 
 void
 gi_init_gbox(void)
@@ -323,4 +344,5 @@ gi_init_gbox(void)
     scm_c_define_gsubr("gbox-get-gtype", 1, 0, 0, scm_gbox_get_gtype);
     scm_c_define_gsubr("%gbox-get-refcount", 1, 0, 0, scm_gbox_get_refcount);
     scm_c_define_gsubr("gbox-printer", 2, 0, 0, scm_gbox_printer);
+    scm_c_define_gsubr("gbox-set-finalizer!", 2, 0, 0, scm_gbox_set_finalizer_x);
 }

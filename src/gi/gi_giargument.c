@@ -1532,7 +1532,7 @@ gi_giargument_convert_return_val_to_object(GIArgument  *arg,
                         GIStructInfo *referenced_struct_info = g_type_get_qdata(referenced_base_gtype, gtype_base_info_key);
                         g_assert(referenced_struct_info != NULL);
 
-                        return gir_new_struct_gbox(referenced_base_gtype, arg->v_pointer, TRUE);
+                        return gir_new_struct_gbox(referenced_base_gtype, arg->v_pointer, transfer == GI_TRANSFER_EVERYTHING);
                     }
                     else if (referenced_base_type == GI_INFO_TYPE_OBJECT)
                     {

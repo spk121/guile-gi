@@ -21,6 +21,7 @@
 	    <GObject>
 	    <GBox>
 	    gbox-printer
+	    gbox-set-finalizer!
 
 	    ;; gi_gtype.c
 	    ->gtype

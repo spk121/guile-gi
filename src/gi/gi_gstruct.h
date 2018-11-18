@@ -24,7 +24,8 @@ typedef enum _GirPointerFree
     SPTR_NO_FREE_FUNC,
     SPTR_DEFAULT_FREE_FUNC,
     SPTR_C_FREE_FUNC,
-    SPTR_SCM_FREE_FUNC
+    SPTR_SCM_FREE_FUNC,
+    SPTR_SCM_UNREF_METHOD
 } GirPointerFreeAction;
 
 typedef struct _GirSmartPtr
