@@ -229,7 +229,8 @@ guile-gi-0.0.1.tar: $(DISTFILES)
 
 .PHONY: check
 
-TESTS = test/memchk_1.scm
+TESTS = test/memchk_1.scm \
+ test/mainloop.scm
 
 check:
 	@for t in $(TESTS); do \

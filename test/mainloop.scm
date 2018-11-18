@@ -255,7 +255,8 @@
        SOURCE_REMOVE)
 
      (define (call-func data)
-       (func (g-thread-self))
+       ;; (func (g-thread-self))
+       (func #f)
        SOURCE_REMOVE)
      
      (pass-if "invoking a func from idle"
