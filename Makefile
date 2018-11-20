@@ -54,8 +54,8 @@ pkgdatadir = $(datadir)/guile-gi
 ################################################################
 # External Programs
 
-CC = gcc
-LD = ld
+#CC = gcc
+#LD = ld
 GUILD = guild
 GUILE = guile
 GUILE_EFFECTIVE_VERSION = 2.2
