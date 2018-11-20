@@ -115,9 +115,8 @@ endif
 ifeq ($(HOST),LINUX)
 CFLAGS += -fPIC
 ifeq ($(CC),gcc)
-CFLAGS += -fplugin=annobin
 ifeq ($(NEW_CC),YES)
-CFLAGS += -fstack-clash-protection -fcf-protection
+CFLAGS += -fstack-clash-protection -fcf-protection -fplugin=annobin
 endif
 endif
 endif
