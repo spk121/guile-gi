@@ -198,11 +198,11 @@ SCM_SOURCES = \
 
 C_OBJECTS = $(C_SOURCES:.c=.o)
 
-src/gi/__gi_gstruct.c: src/gi/foreign-object-types.ini
-	./fo_gen src/gi/foreign-object-types.ini src/gi
+src/gi/__gi_gstruct.c: src/gi/foreign-object-types.ini fo_gen$(EXEEXT)
+	./fo_gen$(EXEEXT) src/gi/foreign-object-types.ini src/gi
 
-src/gi/__gi_gobject.c: src/gi/foreign-object-types.ini
-	./fo_gen src/gi/foreign-object-types.ini src/gi
+src/gi/__gi_gobject.c: src/gi/foreign-object-types.ini fo_gen$(EXEEXT)
+	./fo_gen$(EXEEXT) src/gi/foreign-object-types.ini src/gi
 
 src/gi/gi_gstruct.c: src/gi/__gi_gstruct.c
 
