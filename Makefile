@@ -31,6 +31,9 @@ PROC=AMD64
 #GCOV=YES
 GCOV=NO
 
+# The Travis CI instance uses GCC v4.x
+NEW_CC=NO
+
 ################################################################
 # Direcories
 
@@ -87,16 +90,21 @@ CPPFLAGS = \
 
 CFLAGS = \
  -fasynchronous-unwind-tables -fexceptions \
- -fstack-protector-strong \
  -g -grecord-gcc-switches \
  -O0 -pipe \
  -Wall -Werror=format-security -Werror=implicit-function-declaration -Wshadow \
- -fno-omit-frame-pointer -fdiagnostics-color=auto \
+ -fno-omit-frame-pointer \
  $(shell pkg-config --cflags-only-other guile-2.2 glib-2.0 gobject-2.0 gobject-introspection-1.0 libffi)
 
 ifeq ($(CC),gcc)
 CFLAGS += \
  -fvar-tracking
+endif
+
+ifeq ($(NEW_CC),YES)
+CFLAGS += \
+ -fstack-protector-strong \
+ -fdiagnostics-color=auto
 endif
 
 ifeq ($(GCOV),YES)
@@ -105,13 +113,12 @@ DEFS += -DENABLE_GCOV
 endif
 
 ifeq ($(HOST),LINUX)
-CFLAGS += \
- -fPIC \
- -fstack-clash-protection \
- -fcf-protection
+CFLAGS += -fPIC
 ifeq ($(CC),gcc)
-CFLAGS += \
- -fplugin=annobin
+CFLAGS += -fplugin=annobin
+ifeq ($(NEW_CC),YES)
+CFLAGS += -fstack-clash-protection -fcf-protection
+endif
 endif
 endif
 
