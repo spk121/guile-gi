@@ -37,8 +37,8 @@ pkgdatadir = $(datadir)/guile-gi
 
 CC = gcc
 LD = ld
-GUILD = /usr/local/bin/guild-2.2
-GUILE = /usr/local/bin/guile-2.2
+GUILD = guild
+GUILE = guile
 GUILE_EFFECTIVE_VERSION = 2.2
 
 ################################################################
@@ -49,7 +49,12 @@ ifeq ($(HOST),CYGWIN)
 EXEEXT=.exe
 endif
 
-all: libguile-gi.so fo_gen$(EXEEXT) info pdf html
+LIBEXT=so
+ifeq ($(HOST),CYGWIN)
+LIBEXT=dll
+endif
+
+all: libguile-gi.$(LIBEXT) fo_gen$(EXEEXT) info pdf html
 
 DEFS = \
   -DG_LOG_DOMAIN=\"GuileGI\" \
@@ -174,8 +179,8 @@ SCM_SOURCES = \
 
 C_OBJECTS = $(C_SOURCES:.c=.o)
 
-libguile-gi.so: $(C_OBJECTS)
-	@rm -f libguile-gi.so
+libguile-gi.$(LIBEXT): $(C_OBJECTS)
+	@rm -f libguile-gi.$(LIBEXT)
 	$(CC) $(CFLAGS) -shared $(LDFLAGS) -o $@ $^ $(LIBS)
 
 ################################################################
@@ -249,13 +254,13 @@ check:
 
 .PHONY: install clean
 
-install: libguile-gi.so doc/guile-gi.info doc/guile-gi.pdf
-	install -D -v -m 644 libguile-gi.so $(guileextensiondir)
+install: libguile-gi.$(LIBEXT) doc/guile-gi.info doc/guile-gi.pdf
+	install -D -v -m 644 libguile-gi.$(LIBEXT) $(guileextensiondir)
 	install -D -v -m 644 $(SCM_SOURCES) $(guilesitedir)
 	install -D -v -m 644 doc/guile-gi.info $(infodir)
 	install -D -v -m 644 doc/guile-gi.pdf $(pdfdir)
 
-CLEAN_FILES= $(C_OBJECTS) libguile-gi.so
+CLEAN_FILES= $(C_OBJECTS) libguile-gi.$(LIBEXT)
 
 clean:
 	@-rm $(CLEAN_FILES)

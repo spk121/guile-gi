@@ -77,3 +77,6 @@ gir-log.txt
 # Crashes
 core*
 vgcore*
+
+# Temp docs
+*.info
