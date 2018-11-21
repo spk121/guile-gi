@@ -748,9 +748,6 @@ libguile_gi_la_LIBADD = \
 pkgdata_DATA = \
   src/gi.scm
 
-
-################################################################
-# Test driver
 AM_TESTS_ENVIRONMENT = LD_LIBRARY_PATH="$(builddir)/.libs"; export LD_LIBRARY_PATH;
 TESTS = \
  test/memchk_1.scm \
@@ -2037,6 +2034,12 @@ check-syntax:
 	$(CC) -std=c11 $(GUILE_CFLAGS) $(GLIB_CFLAGS) $(GOBJECT_CFLAGS) \
 	 $(GOBJECT_INTROSPECTION_CFLAGS) $(FFI_CFLAGS) \
 	 DG_LOG_DOMAIN=\"GuileGI\" $(CFLAGS) -fsyntax-only $(CHK_SOURCES)
+
+################################################################
+# Test driver
+
+.PHONY test
+test: check
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
