@@ -6,6 +6,13 @@
 
 @copying
 Copyright @copyright{} 2018 Michael L. Gran
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, no Front-Cover Texts, and no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.
 @end copying
 
 @titlepage
@@ -30,6 +37,7 @@ This manual is for Guile GI.
 * Tutorials::
 * Reference Guide::
 * Further Resources and Contact Info::
+* Gnu Free Documentation License::
 * _index::
 
 @detailmenu
@@ -318,15 +326,65 @@ the callback procedure to the object so that it is called when the
 GObject signal is emitted.
 @end deffn
 
+@subsection On Guile to C Type Conversions
 
-@node Further Resources and Contact Info, _index, Reference Guide, Top
+Guile-GI uses a rule system to convert Guile procedure arguments to C
+types.  Typically these conversions between Guile and C types are
+straightforward, but, some conversions are tricky and need additional
+description.
+
+@subsubsection Strings
+
+GObject libraries usually use UTF-8 encoding for their strings, while
+Guile uses a different encoding internally for its strings.  Thus
+every time a string is parameter is passed through to a C procedure, a
+new UTF-8 copy of the Guile string is created.  The string is
+automatically freed when no longer in use.
+
+GObject has some procedures that deal with locale-encoded strings:
+notably those procedures that deal with environment variables.
+Guile-GI converts Guile strings to locale-encoded strings for those
+procedures.  Note that this may throw an encoding error if the Guile
+string cannot be represented in the current locale.
+
+@subsection C Arrays
+
+There are many different types of C arrays, and the Guile types
+expected for GObject procedures that C arrays varies depending on the
+type required.
+
+Typically, for simple C arrays of numerical types -- integers, floating
+points, etc -- a Guile bytevector needs to be used.  For these
+bytevectors, always use native-endianness.
+
+For C arrays of GObject objects, structs, unions, flags, enums, and
+GTypes, a @emph{list} is used instead of a bytevector.
+
+If the C procedure expects a zero-terminated array, Guile-GI will
+provide that automatically.  There is no need to add you own zero.
+
+Some GObject procedures write output information into preallocated C
+arrays.  For those procedures, the Guile caller will need to create
+and pass in a bytevector of the appropriate size.
+
+@quotation Warning
+It is best not to use any of GLib's @code{Array} and @code{ByteArray}
+procedures directly.  Since arrays get converted to bytevectors, these
+procedures will likely fail to do anything sensible.
+@end quotation
+
+@node Further Resources and Contact Info, Gnu Free Documentation License, Reference Guide, Top
 @chapter Further Resources and Contact Info
 
 Uh, I dunno.
 
 Maybe the Guile mailing list?
 
-@node _index,  , Further Resources and Contact Info, Top
+@node Gnu Free Documentation License, _index, Further Resources and Contact Info, Top
+@chapter Gnu Free Documenation License
+@include fdl-1.3.texi
+
+@node _index,  , Gnu Free Documentation License, Top
 @unnumbered Index
 
 @printindex cp
