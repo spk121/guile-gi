@@ -148,7 +148,7 @@ check-syntax:
 ################################################################
 # Test driver
 
-.PHONY test
+.PHONY: test
 test: check
 
 AM_TESTS_ENVIRONMENT = LD_LIBRARY_PATH="$(builddir)/.libs"; export LD_LIBRARY_PATH;
