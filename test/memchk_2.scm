@@ -1,0 +1,2 @@
+(use-modules (gi))
+(gc)
