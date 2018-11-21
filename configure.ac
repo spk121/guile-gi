@@ -45,7 +45,11 @@ PKG_CHECK_MODULES(GLIB, [glib-2.0 >= 2.48.0])
 PKG_CHECK_MODULES(GOBJECT, [gobject-2.0])
 PKG_CHECK_MODULES(GOBJECT_INTROSPECTION, [gobject-introspection-1.0])
 PKG_CHECK_MODULES(FFI, [libffi])
-PKG_CHECK_MODULES(GUILE, [guile-2.2])
+
+GUILE_PKG([2.2 2.0])
+GUILE_PROGS
+GUILE_FLAGS
+# PKG_CHECK_MODULES(GUILE, [guile-2.2])
 
 ################
 # Check for header files
