@@ -40,8 +40,6 @@
  * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
-
-
 static const intmax_t intmin[GI_TYPE_TAG_N_TYPES] =
     {[GI_TYPE_TAG_INT8] = INT8_MIN,
      [GI_TYPE_TAG_INT16] = INT16_MIN,
@@ -71,18 +69,15 @@ arg_struct_to_scm(GIArgument *arg,
                   SCM obj);
 
 static int
-TYPE_TAG_IS_EXACT_INTEGER (GITypeTag x)
+TYPE_TAG_IS_EXACT_INTEGER(GITypeTag x)
 {
-    if ((x == GI_TYPE_TAG_INT8) || (x == GI_TYPE_TAG_UINT8)
-        || (x == GI_TYPE_TAG_INT16) || (x == GI_TYPE_TAG_UINT16)
-        || (x == GI_TYPE_TAG_INT32) || (x == GI_TYPE_TAG_UINT32)
-        || (x == GI_TYPE_TAG_INT64) || (x == GI_TYPE_TAG_UINT64))
+    if ((x == GI_TYPE_TAG_INT8) || (x == GI_TYPE_TAG_UINT8) || (x == GI_TYPE_TAG_INT16) || (x == GI_TYPE_TAG_UINT16) || (x == GI_TYPE_TAG_INT32) || (x == GI_TYPE_TAG_UINT32) || (x == GI_TYPE_TAG_INT64) || (x == GI_TYPE_TAG_UINT64))
         return TRUE;
     return FALSE;
 }
 
 static int
-TYPE_TAG_IS_SIGNED_INTEGER (GITypeTag x)
+TYPE_TAG_IS_SIGNED_INTEGER(GITypeTag x)
 {
     if ((x == GI_TYPE_TAG_INT8) || (x == GI_TYPE_TAG_INT16) || (x == GI_TYPE_TAG_INT32) || (x == GI_TYPE_TAG_INT64))
         return TRUE;
@@ -90,13 +85,12 @@ TYPE_TAG_IS_SIGNED_INTEGER (GITypeTag x)
 }
 
 static int
-TYPE_TAG_IS_REAL_NUMBER (GITypeTag x)
+TYPE_TAG_IS_REAL_NUMBER(GITypeTag x)
 {
     if ((x == GI_TYPE_TAG_FLOAT) || (x == GI_TYPE_TAG_DOUBLE))
         return TRUE;
     return FALSE;
 }
-
 
 static GIArgumentStatus convert_immediate_object_to_arg(SCM obj, GITypeTag type_tag, GIArgument *arg);
 static GIArgumentStatus convert_interface_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *must_free, GIArgument *arg);
@@ -106,7 +100,7 @@ static GIArgumentStatus convert_const_void_pointer_object_to_arg(SCM obj, GIArgu
 static GIArgumentStatus convert_interface_pointer_object_to_arg(SCM object, GIArgInfo *arg_info, unsigned *must_free, GIArgument *arg);
 static GIArgumentStatus convert_array_object_to_arg(SCM object, GITypeInfo *array_type_info, GITransfer array_transfer, unsigned *must_free, GIArgument *arg);
 
-static GIArgumentStatus convert_immediate_arg_to_object(GIArgument *arg, GITypeTag type_tag, SCM* obj);
+static GIArgumentStatus convert_immediate_arg_to_object(GIArgument *arg, GITypeTag type_tag, SCM *obj);
 static GIArgumentStatus convert_interface_arg_to_object(GIArgument *arg, GITypeInfo *type_info, SCM *obj);
 static GIArgumentStatus convert_string_pointer_arg_to_object(GIArgument *arg, GITypeTag type_tag, GITransfer transfer, SCM *obj);
 static GIArgumentStatus convert_const_void_pointer_arg_to_object(GIArgument *arg, SCM *obj);
@@ -126,346 +120,345 @@ gi_giargument_convert_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *must
         return GI_GIARGUMENT_OK;
     }
 
-    GITypeInfo *type_info = g_arg_info_get_type (arg_info);
-    GITypeTag type_tag = g_type_info_get_tag (type_info);
-    gboolean is_ptr = g_type_info_is_pointer (type_info);
+    GITypeInfo *type_info = g_arg_info_get_type(arg_info);
+    GITypeTag type_tag = g_type_info_get_tag(type_info);
+    gboolean is_ptr = g_type_info_is_pointer(type_info);
     GIArgumentStatus ret;
 
     if (!is_ptr)
     {
-        switch(type_tag)
+        switch (type_tag)
         {
-            case GI_TYPE_TAG_BOOLEAN:
-            case GI_TYPE_TAG_DOUBLE:
-            case GI_TYPE_TAG_FLOAT:
-            case GI_TYPE_TAG_INT16:
-            case GI_TYPE_TAG_INT32:
-            case GI_TYPE_TAG_INT64:
-            case GI_TYPE_TAG_INT8:
-            case GI_TYPE_TAG_UINT16:
-            case GI_TYPE_TAG_UINT32:
-            case GI_TYPE_TAG_UINT64:
-            case GI_TYPE_TAG_UINT8:
-            case GI_TYPE_TAG_UNICHAR:
-            case GI_TYPE_TAG_GTYPE:
-                ret = convert_immediate_object_to_arg(obj, type_tag, arg);
-                *must_free = GIR_FREE_NONE;
-                break;
+        case GI_TYPE_TAG_BOOLEAN:
+        case GI_TYPE_TAG_DOUBLE:
+        case GI_TYPE_TAG_FLOAT:
+        case GI_TYPE_TAG_INT16:
+        case GI_TYPE_TAG_INT32:
+        case GI_TYPE_TAG_INT64:
+        case GI_TYPE_TAG_INT8:
+        case GI_TYPE_TAG_UINT16:
+        case GI_TYPE_TAG_UINT32:
+        case GI_TYPE_TAG_UINT64:
+        case GI_TYPE_TAG_UINT8:
+        case GI_TYPE_TAG_UNICHAR:
+        case GI_TYPE_TAG_GTYPE:
+            ret = convert_immediate_object_to_arg(obj, type_tag, arg);
+            *must_free = GIR_FREE_NONE;
+            break;
 
-            case GI_TYPE_TAG_VOID:
-            case GI_TYPE_TAG_ARRAY:
-            case GI_TYPE_TAG_UTF8:
-            case GI_TYPE_TAG_FILENAME:
-            case GI_TYPE_TAG_GHASH:
-            case GI_TYPE_TAG_GLIST:
-            case GI_TYPE_TAG_GSLIST:
-            case GI_TYPE_TAG_ERROR:
-                g_assert_not_reached();
-                break;
+        case GI_TYPE_TAG_VOID:
+        case GI_TYPE_TAG_ARRAY:
+        case GI_TYPE_TAG_UTF8:
+        case GI_TYPE_TAG_FILENAME:
+        case GI_TYPE_TAG_GHASH:
+        case GI_TYPE_TAG_GLIST:
+        case GI_TYPE_TAG_GSLIST:
+        case GI_TYPE_TAG_ERROR:
+            g_assert_not_reached();
+            break;
 
-            case GI_TYPE_TAG_INTERFACE:
-                // The non-pointer interfaces are FLAGS, ENUM, and CALLBACK only.
-                // STRUCT and OBJECT interfaces are always pointer interfaces.
-                // g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
-                ret = convert_interface_object_to_arg(obj, type_info, must_free, arg);
-                break;
-            default:
-                g_assert_not_reached();
-                break;
+        case GI_TYPE_TAG_INTERFACE:
+            // The non-pointer interfaces are FLAGS, ENUM, and CALLBACK only.
+            // STRUCT and OBJECT interfaces are always pointer interfaces.
+            // g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
+            ret = convert_interface_object_to_arg(obj, type_info, must_free, arg);
+            break;
+        default:
+            g_assert_not_reached();
+            break;
         }
     }
     else
     {
-        switch(type_tag)
+        switch (type_tag)
         {
-            case GI_TYPE_TAG_BOOLEAN:
-            case GI_TYPE_TAG_DOUBLE:
-            case GI_TYPE_TAG_FLOAT:
-            case GI_TYPE_TAG_INT16:
-            case GI_TYPE_TAG_INT32:
-            case GI_TYPE_TAG_INT64:
-            case GI_TYPE_TAG_INT8:
-            case GI_TYPE_TAG_UINT16:
-            case GI_TYPE_TAG_UINT32:
-            case GI_TYPE_TAG_UINT64:
-            case GI_TYPE_TAG_UINT8:
-            case GI_TYPE_TAG_UNICHAR:
-                ret = gi_giargument_convert_immediate_pointer_object_to_arg(obj, arg_info, must_free, arg);
-                *must_free = GIR_FREE_NONE;
-                break;
+        case GI_TYPE_TAG_BOOLEAN:
+        case GI_TYPE_TAG_DOUBLE:
+        case GI_TYPE_TAG_FLOAT:
+        case GI_TYPE_TAG_INT16:
+        case GI_TYPE_TAG_INT32:
+        case GI_TYPE_TAG_INT64:
+        case GI_TYPE_TAG_INT8:
+        case GI_TYPE_TAG_UINT16:
+        case GI_TYPE_TAG_UINT32:
+        case GI_TYPE_TAG_UINT64:
+        case GI_TYPE_TAG_UINT8:
+        case GI_TYPE_TAG_UNICHAR:
+            ret = gi_giargument_convert_immediate_pointer_object_to_arg(obj, arg_info, must_free, arg);
+            *must_free = GIR_FREE_NONE;
+            break;
 
-            case GI_TYPE_TAG_UTF8:
-            case GI_TYPE_TAG_FILENAME:
-                ret = gi_giargument_convert_string_object_to_arg(obj, arg_info, must_free, arg);
-                break;
+        case GI_TYPE_TAG_UTF8:
+        case GI_TYPE_TAG_FILENAME:
+            ret = gi_giargument_convert_string_object_to_arg(obj, arg_info, must_free, arg);
+            break;
 
-            case GI_TYPE_TAG_VOID:
-                ret = convert_const_void_pointer_object_to_arg(obj, arg);
-                *must_free = GIR_FREE_NONE;
-                break;
+        case GI_TYPE_TAG_VOID:
+            ret = convert_const_void_pointer_object_to_arg(obj, arg);
+            *must_free = GIR_FREE_NONE;
+            break;
 
-            case GI_TYPE_TAG_GHASH:
-            case GI_TYPE_TAG_GLIST:
-            case GI_TYPE_TAG_GSLIST:
-                // FIXME: unhandled
-                g_critical("Unhandled argument type tag %d", type_tag);
-                g_assert_not_reached();
-                break;
+        case GI_TYPE_TAG_GHASH:
+        case GI_TYPE_TAG_GLIST:
+        case GI_TYPE_TAG_GSLIST:
+            // FIXME: unhandled
+            g_critical("Unhandled argument type tag %d", type_tag);
+            g_assert_not_reached();
+            break;
 
-            case GI_TYPE_TAG_INTERFACE:
-                ret = convert_interface_pointer_object_to_arg(obj, arg_info, must_free, arg);
-                *must_free = GIR_FREE_NONE;
-                break;
+        case GI_TYPE_TAG_INTERFACE:
+            ret = convert_interface_pointer_object_to_arg(obj, arg_info, must_free, arg);
+            *must_free = GIR_FREE_NONE;
+            break;
 
-            case GI_TYPE_TAG_GTYPE:
-                // No GType pointer inputs as far as I can tell.
-                g_critical("Unhandled argument type tag %d", type_tag);
-                g_assert_not_reached();
-                break;
+        case GI_TYPE_TAG_GTYPE:
+            // No GType pointer inputs as far as I can tell.
+            g_critical("Unhandled argument type tag %d", type_tag);
+            g_assert_not_reached();
+            break;
 
-            case GI_TYPE_TAG_ERROR:
-                // FIXME: unhandled
-                g_assert_not_reached();
-                //ret = gi_giargument_convert_error_to_arg(obj, arg_info, must_free, arg);
-                break;
+        case GI_TYPE_TAG_ERROR:
+            // FIXME: unhandled
+            g_assert_not_reached();
+            //ret = gi_giargument_convert_error_to_arg(obj, arg_info, must_free, arg);
+            break;
 
-            case GI_TYPE_TAG_ARRAY:
-            {
-                GITransfer array_transfer = g_arg_info_get_ownership_transfer (arg_info);
-                ret = convert_array_object_to_arg(obj, type_info, array_transfer, must_free, arg);
-                break;
-            }
+        case GI_TYPE_TAG_ARRAY:
+        {
+            GITransfer array_transfer = g_arg_info_get_ownership_transfer(arg_info);
+            ret = convert_array_object_to_arg(obj, type_info, array_transfer, must_free, arg);
+            break;
+        }
 
-            default:
-                g_assert_not_reached ();
+        default:
+            g_assert_not_reached();
         }
     }
-    g_base_info_unref (type_info);
+    g_base_info_unref(type_info);
 
     return ret;
- }
+}
 
 char *
 gi_giargument_describe_arg_in(GIArgInfo *arg_info)
 {
     GString *desc = g_string_new(NULL);
-    GITypeInfo *type_info = g_arg_info_get_type (arg_info);
-    GITypeTag type_tag = g_type_info_get_tag (type_info);
-    gboolean is_ptr = g_type_info_is_pointer (type_info);
+    GITypeInfo *type_info = g_arg_info_get_type(arg_info);
+    GITypeTag type_tag = g_type_info_get_tag(type_info);
+    gboolean is_ptr = g_type_info_is_pointer(type_info);
 
     if (g_arg_info_may_be_null(arg_info))
         g_string_append(desc, "#f for NULL or ");
 
     if (!is_ptr)
     {
-        switch(type_tag)
+        switch (type_tag)
         {
-            case GI_TYPE_TAG_BOOLEAN:
-                g_string_append(desc, "boolean");
-                break;
-            case GI_TYPE_TAG_DOUBLE:
-            case GI_TYPE_TAG_FLOAT:
-                g_string_append_printf(desc, "real number of size %s", g_type_tag_to_string(g_type_info_get_tag(type_info)));
-                break;
-            case GI_TYPE_TAG_INT16:
-            case GI_TYPE_TAG_INT32:
-            case GI_TYPE_TAG_INT64:
-            case GI_TYPE_TAG_INT8:
-            case GI_TYPE_TAG_UINT16:
-            case GI_TYPE_TAG_UINT32:
-            case GI_TYPE_TAG_UINT64:
-            case GI_TYPE_TAG_UINT8:
-                g_string_append_printf(desc, "exact integer of size %s", g_type_tag_to_string(g_type_info_get_tag(type_info)));
-                break;
-            case GI_TYPE_TAG_UNICHAR:
-                g_string_append_printf(desc, "character");
-                break;
-            case GI_TYPE_TAG_GTYPE:
-                g_string_append_printf(desc, "<GType>");
-                break;
+        case GI_TYPE_TAG_BOOLEAN:
+            g_string_append(desc, "boolean");
+            break;
+        case GI_TYPE_TAG_DOUBLE:
+        case GI_TYPE_TAG_FLOAT:
+            g_string_append_printf(desc, "real number of size %s", g_type_tag_to_string(g_type_info_get_tag(type_info)));
+            break;
+        case GI_TYPE_TAG_INT16:
+        case GI_TYPE_TAG_INT32:
+        case GI_TYPE_TAG_INT64:
+        case GI_TYPE_TAG_INT8:
+        case GI_TYPE_TAG_UINT16:
+        case GI_TYPE_TAG_UINT32:
+        case GI_TYPE_TAG_UINT64:
+        case GI_TYPE_TAG_UINT8:
+            g_string_append_printf(desc, "exact integer of size %s", g_type_tag_to_string(g_type_info_get_tag(type_info)));
+            break;
+        case GI_TYPE_TAG_UNICHAR:
+            g_string_append_printf(desc, "character");
+            break;
+        case GI_TYPE_TAG_GTYPE:
+            g_string_append_printf(desc, "<GType>");
+            break;
 
-            case GI_TYPE_TAG_VOID:
-            case GI_TYPE_TAG_ARRAY:
-            case GI_TYPE_TAG_UTF8:
-            case GI_TYPE_TAG_FILENAME:
-            case GI_TYPE_TAG_GHASH:
-            case GI_TYPE_TAG_GLIST:
-            case GI_TYPE_TAG_GSLIST:
-            case GI_TYPE_TAG_ERROR:
-                //g_assert_not_reached();
+        case GI_TYPE_TAG_VOID:
+        case GI_TYPE_TAG_ARRAY:
+        case GI_TYPE_TAG_UTF8:
+        case GI_TYPE_TAG_FILENAME:
+        case GI_TYPE_TAG_GHASH:
+        case GI_TYPE_TAG_GLIST:
+        case GI_TYPE_TAG_GSLIST:
+        case GI_TYPE_TAG_ERROR:
+            //g_assert_not_reached();
+            g_string_append_printf(desc, "Unhandled argument type tag %d", type_tag);
+            break;
+
+        case GI_TYPE_TAG_INTERFACE:
+        {
+            GIBaseInfo *referenced_base_info = g_type_info_get_interface(type_info);
+            GIInfoType referenced_base_type = g_base_info_get_type(referenced_base_info);
+            if (referenced_base_type == GI_INFO_TYPE_ENUM)
+                g_string_printf(desc, "exact integer of enum type %s", g_base_info_get_name(referenced_base_info));
+            else if (referenced_base_type == GI_INFO_TYPE_FLAGS)
+                g_string_printf(desc, "exact integer of flags type %s", g_base_info_get_name(referenced_base_info));
+            else if (referenced_base_type == GI_INFO_TYPE_CALLBACK)
+                g_string_printf(desc, "procedure of type %s", g_base_info_get_name(referenced_base_info));
+            else
                 g_string_append_printf(desc, "Unhandled argument type tag %d", type_tag);
-                break;
-
-            case GI_TYPE_TAG_INTERFACE:
-            {
-                GIBaseInfo *referenced_base_info = g_type_info_get_interface (type_info);
-                GIInfoType referenced_base_type = g_base_info_get_type (referenced_base_info);
-                if (referenced_base_type == GI_INFO_TYPE_ENUM)
-                    g_string_printf(desc, "exact integer of enum type %s", g_base_info_get_name (referenced_base_info));
-                else if (referenced_base_type == GI_INFO_TYPE_FLAGS)
-                    g_string_printf(desc, "exact integer of flags type %s", g_base_info_get_name (referenced_base_info));
-                else if (referenced_base_type == GI_INFO_TYPE_CALLBACK)
-                    g_string_printf(desc, "procedure of type %s", g_base_info_get_name(referenced_base_info));
-                else
-                    g_string_append_printf(desc, "Unhandled argument type tag %d", type_tag);
-                g_base_info_unref (referenced_base_info);
-                break;
-            }
-            default:
-                g_assert_not_reached();
-                break;
+            g_base_info_unref(referenced_base_info);
+            break;
+        }
+        default:
+            g_assert_not_reached();
+            break;
         }
     }
     else
     {
-        switch(type_tag)
+        switch (type_tag)
         {
-            case GI_TYPE_TAG_BOOLEAN:
-            case GI_TYPE_TAG_UNICHAR:
+        case GI_TYPE_TAG_BOOLEAN:
+        case GI_TYPE_TAG_UNICHAR:
+            g_string_append_printf(desc, "Unhandled argument type tag %d", type_tag);
+            break;
+        case GI_TYPE_TAG_DOUBLE:
+        case GI_TYPE_TAG_FLOAT:
+        case GI_TYPE_TAG_INT16:
+        case GI_TYPE_TAG_INT32:
+        case GI_TYPE_TAG_INT64:
+        case GI_TYPE_TAG_INT8:
+        case GI_TYPE_TAG_UINT16:
+        case GI_TYPE_TAG_UINT32:
+        case GI_TYPE_TAG_UINT64:
+        case GI_TYPE_TAG_UINT8:
+            g_string_append_printf(desc, "bytevector containing elements %s", g_type_tag_to_string(type_tag));
+            break;
+
+        case GI_TYPE_TAG_UTF8:
+            g_string_append(desc, "string");
+            break;
+        case GI_TYPE_TAG_FILENAME:
+            g_string_append(desc, "locale string");
+            break;
+
+        case GI_TYPE_TAG_VOID:
+            g_string_append(desc, "pointer");
+            break;
+
+        case GI_TYPE_TAG_GHASH:
+            g_string_append(desc, "<GHash>");
+            break;
+        case GI_TYPE_TAG_GLIST:
+            g_string_append(desc, "<GList>");
+            break;
+        case GI_TYPE_TAG_GSLIST:
+            g_string_append(desc, "<GSList>");
+            break;
+
+        case GI_TYPE_TAG_INTERFACE:
+        {
+            GIBaseInfo *referenced_base_info = g_type_info_get_interface(type_info);
+            GIInfoType referenced_base_type = g_base_info_get_type(referenced_base_info);
+            if (referenced_base_type == GI_INFO_TYPE_ENUM || referenced_base_type == GI_INFO_TYPE_FLAGS)
+                g_string_printf(desc, "bytevector containing %s", g_base_info_get_name(referenced_base_info));
+            else if (referenced_base_type == GI_INFO_TYPE_CALLBACK)
+                g_string_printf(desc, "list of procedures of type %s", g_base_info_get_name(referenced_base_info));
+            else if (referenced_base_type == GI_INFO_TYPE_STRUCT)
+                g_string_printf(desc, "struct %s", g_base_info_get_name(referenced_base_info));
+            else if (referenced_base_type == GI_INFO_TYPE_UNION)
+                g_string_printf(desc, "union %s", g_base_info_get_name(referenced_base_info));
+            else if (referenced_base_type == GI_INFO_TYPE_OBJECT)
+                g_string_printf(desc, "object %s", g_base_info_get_name(referenced_base_info));
+            else
                 g_string_append_printf(desc, "Unhandled argument type tag %d", type_tag);
-                break;
-            case GI_TYPE_TAG_DOUBLE:
-            case GI_TYPE_TAG_FLOAT:
-            case GI_TYPE_TAG_INT16:
-            case GI_TYPE_TAG_INT32:
-            case GI_TYPE_TAG_INT64:
-            case GI_TYPE_TAG_INT8:
-            case GI_TYPE_TAG_UINT16:
-            case GI_TYPE_TAG_UINT32:
-            case GI_TYPE_TAG_UINT64:
-            case GI_TYPE_TAG_UINT8:
-                g_string_append_printf(desc, "bytevector containing elements %s", g_type_tag_to_string(type_tag));
-                break;
+            g_base_info_unref(referenced_base_info);
+            break;
+        }
 
-            case GI_TYPE_TAG_UTF8:
-                g_string_append(desc, "string");
-                break;
-            case GI_TYPE_TAG_FILENAME:
-                g_string_append(desc, "locale string");
-                break;
+        case GI_TYPE_TAG_GTYPE:
+            // No GType pointer inputs as far as I can tell.
+            g_string_append_printf(desc, "Unhandled argument type tag %d", type_tag);
+            break;
 
-            case GI_TYPE_TAG_VOID:
-                g_string_append(desc, "pointer");
-                break;
+        case GI_TYPE_TAG_ERROR:
+            // FIXME: unhandled
+            g_string_append_printf(desc, "Unhandled argument type tag %d", type_tag);
+            //ret = gi_giargument_convert_error_to_arg(obj, arg_info, must_free, arg);
+            break;
 
-            case GI_TYPE_TAG_GHASH:
-                g_string_append(desc, "<GHash>");
-                break;
-            case GI_TYPE_TAG_GLIST:
-                g_string_append(desc, "<GList>");
-                break;
-            case GI_TYPE_TAG_GSLIST:
-                g_string_append(desc, "<GSList>");
-                break;
-
-            case GI_TYPE_TAG_INTERFACE:
+        case GI_TYPE_TAG_ARRAY:
+        {
+            GIArrayType array_type = g_type_info_get_array_type(type_info);
+            if (array_type == GI_ARRAY_TYPE_BYTE_ARRAY)
+                g_string_append_printf(desc, "A bytevector containing unspecified binary data");
+            else if (array_type == GI_ARRAY_TYPE_C)
             {
-                GIBaseInfo *referenced_base_info = g_type_info_get_interface (type_info);
-                GIInfoType referenced_base_type = g_base_info_get_type (referenced_base_info);
-                if (referenced_base_type == GI_INFO_TYPE_ENUM || referenced_base_type == GI_INFO_TYPE_FLAGS)
-                    g_string_printf(desc, "bytevector containing %s", g_base_info_get_name (referenced_base_info));
-                else if (referenced_base_type == GI_INFO_TYPE_CALLBACK)
-                    g_string_printf(desc, "list of procedures of type %s", g_base_info_get_name(referenced_base_info));
-                else if (referenced_base_type == GI_INFO_TYPE_STRUCT)
-                    g_string_printf(desc, "struct %s", g_base_info_get_name(referenced_base_info));
-                else if (referenced_base_type == GI_INFO_TYPE_UNION)
-                    g_string_printf(desc, "union %s", g_base_info_get_name(referenced_base_info));
-                else if (referenced_base_type == GI_INFO_TYPE_OBJECT)
-                    g_string_printf(desc, "object %s", g_base_info_get_name(referenced_base_info));
-                else
-                    g_string_append_printf(desc, "Unhandled argument type tag %d", type_tag);
-                g_base_info_unref (referenced_base_info);
-                break;
-            }
-
-            case GI_TYPE_TAG_GTYPE:
-                // No GType pointer inputs as far as I can tell.
-                g_string_append_printf(desc, "Unhandled argument type tag %d", type_tag);
-                break;
-
-            case GI_TYPE_TAG_ERROR:
-                // FIXME: unhandled
-                g_string_append_printf(desc, "Unhandled argument type tag %d", type_tag);
-                //ret = gi_giargument_convert_error_to_arg(obj, arg_info, must_free, arg);
-                break;
-
-            case GI_TYPE_TAG_ARRAY:
-            {
-                GIArrayType array_type = g_type_info_get_array_type (type_info);
-                if (array_type == GI_ARRAY_TYPE_BYTE_ARRAY)
-                    g_string_append_printf(desc, "A bytevector containing unspecified binary data");
-                else if (array_type == GI_ARRAY_TYPE_C)
+                GITypeInfo *item_type_info = g_type_info_get_param_type(type_info, 0);
+                GITypeTag item_type_tag = g_type_info_get_tag(item_type_info);
+                if (item_type_tag == GI_TYPE_TAG_INTERFACE)
                 {
-                    GITypeInfo *item_type_info = g_type_info_get_param_type(type_info, 0);
-                    GITypeTag item_type_tag = g_type_info_get_tag (item_type_info);
-                    if (item_type_tag == GI_TYPE_TAG_INTERFACE)
-                    {
-                        GIBaseInfo *referenced_base_info = g_type_info_get_interface (item_type_info);
-                        GIInfoType referenced_base_type = g_base_info_get_type (referenced_base_info);
-                        referenced_base_info = g_type_info_get_interface (item_type_info);
-                        referenced_base_type = g_base_info_get_type (referenced_base_info);
-                        if (referenced_base_type == GI_INFO_TYPE_ENUM)
-                            g_string_append_printf(desc, "A list of enum values of type %s as integers", g_base_info_get_name(referenced_base_info));
-                        else if (referenced_base_type == GI_INFO_TYPE_FLAGS)
-                            g_string_append_printf(desc, "A list of flag values of type %s as integers", g_base_info_get_name(referenced_base_info));
-                        else if (referenced_base_type == GI_INFO_TYPE_STRUCT)
-                            g_string_append_printf(desc, "A list of <GBox> containing structs of type %s", g_base_info_get_name(referenced_base_info));
-                        else if (referenced_base_type == GI_INFO_TYPE_UNION)
-                            g_string_append_printf(desc, "A list of <GBox> containing unions of type %s", g_base_info_get_name(referenced_base_info));
-                        else if (referenced_base_type == GI_INFO_TYPE_STRUCT)
-                            g_string_append_printf(desc, "A list of <GObject> containing objects of type %s", g_base_info_get_name(referenced_base_info));
-                        g_base_info_unref (referenced_base_info);
-                    }
-                    else if (item_type_tag == GI_TYPE_TAG_BOOLEAN)
-                        g_string_append_printf(desc, "A list of booleans");
-                    else if (item_type_tag == GI_TYPE_TAG_INT8)
-                        g_string_append_printf(desc, "A bytevector containing int8");
-                    else if (item_type_tag == GI_TYPE_TAG_UINT8)
-                        g_string_append_printf(desc, "A bytevector containing uint8");
-                    else if (item_type_tag == GI_TYPE_TAG_INT16)
-                        g_string_append_printf(desc, "A bytevector containing int16");
-                    else if (item_type_tag == GI_TYPE_TAG_UINT16)
-                        g_string_append_printf(desc, "A bytevector containing uint16");
-                    else if (item_type_tag == GI_TYPE_TAG_INT32)
-                        g_string_append_printf(desc, "A bytevector containing int32");
-                    else if (item_type_tag == GI_TYPE_TAG_UINT32)
-                        g_string_append_printf(desc, "A bytevector containing uint32");
-                    else if (item_type_tag == GI_TYPE_TAG_INT64)
-                        g_string_append_printf(desc, "A bytevector containing int64");
-                    else if (item_type_tag == GI_TYPE_TAG_UINT64)
-                        g_string_append_printf(desc, "A bytevector containing uint64");
-                    else if (item_type_tag == GI_TYPE_TAG_FLOAT)
-                        g_string_append_printf(desc, "A bytevector containing %d-byte floating-point numbers", sizeof(float));
-                    else if (item_type_tag == GI_TYPE_TAG_DOUBLE)
-                        g_string_append_printf(desc, "A bytevector containing %d-byte floating-point numbers", sizeof(double));
-                    else if ((item_type_tag == GI_TYPE_TAG_UTF8 || item_type_tag == GI_TYPE_TAG_FILENAME))
-                        g_string_append_printf(desc, "A list of strings");
-                    else if (item_type_tag == GI_TYPE_TAG_GTYPE)
-                        g_string_append_printf(desc, "A list of <GType>");
-                    else
-                    {
-                        g_string_append_printf(desc, "A bytevector containing some unknown type tag %d", item_type_tag);
-                        g_critical ("Unhandled array entry type in %s:%d", __FILE__, __LINE__);
-                    }
+                    GIBaseInfo *referenced_base_info = g_type_info_get_interface(item_type_info);
+                    GIInfoType referenced_base_type = g_base_info_get_type(referenced_base_info);
+                    referenced_base_info = g_type_info_get_interface(item_type_info);
+                    referenced_base_type = g_base_info_get_type(referenced_base_info);
+                    if (referenced_base_type == GI_INFO_TYPE_ENUM)
+                        g_string_append_printf(desc, "A list of enum values of type %s as integers", g_base_info_get_name(referenced_base_info));
+                    else if (referenced_base_type == GI_INFO_TYPE_FLAGS)
+                        g_string_append_printf(desc, "A list of flag values of type %s as integers", g_base_info_get_name(referenced_base_info));
+                    else if (referenced_base_type == GI_INFO_TYPE_STRUCT)
+                        g_string_append_printf(desc, "A list of <GBox> containing structs of type %s", g_base_info_get_name(referenced_base_info));
+                    else if (referenced_base_type == GI_INFO_TYPE_UNION)
+                        g_string_append_printf(desc, "A list of <GBox> containing unions of type %s", g_base_info_get_name(referenced_base_info));
+                    else if (referenced_base_type == GI_INFO_TYPE_STRUCT)
+                        g_string_append_printf(desc, "A list of <GObject> containing objects of type %s", g_base_info_get_name(referenced_base_info));
+                    g_base_info_unref(referenced_base_info);
                 }
-                break;
+                else if (item_type_tag == GI_TYPE_TAG_BOOLEAN)
+                    g_string_append_printf(desc, "A list of booleans");
+                else if (item_type_tag == GI_TYPE_TAG_INT8)
+                    g_string_append_printf(desc, "A bytevector containing int8");
+                else if (item_type_tag == GI_TYPE_TAG_UINT8)
+                    g_string_append_printf(desc, "A bytevector containing uint8");
+                else if (item_type_tag == GI_TYPE_TAG_INT16)
+                    g_string_append_printf(desc, "A bytevector containing int16");
+                else if (item_type_tag == GI_TYPE_TAG_UINT16)
+                    g_string_append_printf(desc, "A bytevector containing uint16");
+                else if (item_type_tag == GI_TYPE_TAG_INT32)
+                    g_string_append_printf(desc, "A bytevector containing int32");
+                else if (item_type_tag == GI_TYPE_TAG_UINT32)
+                    g_string_append_printf(desc, "A bytevector containing uint32");
+                else if (item_type_tag == GI_TYPE_TAG_INT64)
+                    g_string_append_printf(desc, "A bytevector containing int64");
+                else if (item_type_tag == GI_TYPE_TAG_UINT64)
+                    g_string_append_printf(desc, "A bytevector containing uint64");
+                else if (item_type_tag == GI_TYPE_TAG_FLOAT)
+                    g_string_append_printf(desc, "A bytevector containing %d-byte floating-point numbers", sizeof(float));
+                else if (item_type_tag == GI_TYPE_TAG_DOUBLE)
+                    g_string_append_printf(desc, "A bytevector containing %d-byte floating-point numbers", sizeof(double));
+                else if ((item_type_tag == GI_TYPE_TAG_UTF8 || item_type_tag == GI_TYPE_TAG_FILENAME))
+                    g_string_append_printf(desc, "A list of strings");
+                else if (item_type_tag == GI_TYPE_TAG_GTYPE)
+                    g_string_append_printf(desc, "A list of <GType>");
+                else
+                {
+                    g_string_append_printf(desc, "A bytevector containing some unknown type tag %d", item_type_tag);
+                    g_critical("Unhandled array entry type in %s:%d", __FILE__, __LINE__);
+                }
             }
+            break;
+        }
 
-            default:
-                g_assert_not_reached ();
+        default:
+            g_assert_not_reached();
         }
     }
-    g_base_info_unref (type_info);
+    g_base_info_unref(type_info);
 
     return g_string_free(desc, FALSE);
- }
-
+}
 
 GIArgumentStatus
 gi_giargument_convert_return_type_object_to_arg(SCM obj,
-             GITypeInfo *type_info,
-             GITransfer transfer, gboolean null_ok, gboolean skip,
-             GIArgument *arg)
+                                                GITypeInfo *type_info,
+                                                GITransfer transfer, gboolean null_ok, gboolean skip,
+                                                GIArgument *arg)
 {
     GIArgumentStatus ret = GI_GIARGUMENT_ERROR;
     gboolean is_ptr = g_type_info_is_pointer(type_info);
@@ -483,109 +476,109 @@ gi_giargument_convert_return_type_object_to_arg(SCM obj,
     }
     else if (!is_ptr)
     {
-        switch(type_tag)
+        switch (type_tag)
         {
-            case GI_TYPE_TAG_BOOLEAN:
-            case GI_TYPE_TAG_DOUBLE:
-            case GI_TYPE_TAG_FLOAT:
-            case GI_TYPE_TAG_INT16:
-            case GI_TYPE_TAG_INT32:
-            case GI_TYPE_TAG_INT64:
-            case GI_TYPE_TAG_INT8:
-            case GI_TYPE_TAG_UINT16:
-            case GI_TYPE_TAG_UINT32:
-            case GI_TYPE_TAG_UINT64:
-            case GI_TYPE_TAG_UINT8:
-            case GI_TYPE_TAG_UNICHAR:
-            case GI_TYPE_TAG_GTYPE:
-                ret = convert_immediate_object_to_arg(obj, type_tag, arg);
-                break;
+        case GI_TYPE_TAG_BOOLEAN:
+        case GI_TYPE_TAG_DOUBLE:
+        case GI_TYPE_TAG_FLOAT:
+        case GI_TYPE_TAG_INT16:
+        case GI_TYPE_TAG_INT32:
+        case GI_TYPE_TAG_INT64:
+        case GI_TYPE_TAG_INT8:
+        case GI_TYPE_TAG_UINT16:
+        case GI_TYPE_TAG_UINT32:
+        case GI_TYPE_TAG_UINT64:
+        case GI_TYPE_TAG_UINT8:
+        case GI_TYPE_TAG_UNICHAR:
+        case GI_TYPE_TAG_GTYPE:
+            ret = convert_immediate_object_to_arg(obj, type_tag, arg);
+            break;
 
-            case GI_TYPE_TAG_VOID:
-            case GI_TYPE_TAG_ARRAY:
-            case GI_TYPE_TAG_UTF8:
-            case GI_TYPE_TAG_FILENAME:
-            case GI_TYPE_TAG_GHASH:
-            case GI_TYPE_TAG_GLIST:
-            case GI_TYPE_TAG_GSLIST:
-            case GI_TYPE_TAG_ERROR:
-                g_assert_not_reached();
-                break;
+        case GI_TYPE_TAG_VOID:
+        case GI_TYPE_TAG_ARRAY:
+        case GI_TYPE_TAG_UTF8:
+        case GI_TYPE_TAG_FILENAME:
+        case GI_TYPE_TAG_GHASH:
+        case GI_TYPE_TAG_GLIST:
+        case GI_TYPE_TAG_GSLIST:
+        case GI_TYPE_TAG_ERROR:
+            g_assert_not_reached();
+            break;
 
-            case GI_TYPE_TAG_INTERFACE:
-                // The non-pointer interfaces are FLAGS, ENUM, and CALLBACK only.
-                // STRUCT and OBJECT interfaces are always pointer interfaces.
-                 ret = convert_interface_object_to_arg(obj, type_info, &must_free, arg);
-                break;
-            default:
-                g_assert_not_reached();
-                break;
+        case GI_TYPE_TAG_INTERFACE:
+            // The non-pointer interfaces are FLAGS, ENUM, and CALLBACK only.
+            // STRUCT and OBJECT interfaces are always pointer interfaces.
+            ret = convert_interface_object_to_arg(obj, type_info, &must_free, arg);
+            break;
+        default:
+            g_assert_not_reached();
+            break;
         }
     }
     else
     {
-        switch(type_tag)
+        switch (type_tag)
         {
-            case GI_TYPE_TAG_BOOLEAN:
-            case GI_TYPE_TAG_DOUBLE:
-            case GI_TYPE_TAG_FLOAT:
-            case GI_TYPE_TAG_INT16:
-            case GI_TYPE_TAG_INT32:
-            case GI_TYPE_TAG_INT64:
-            case GI_TYPE_TAG_INT8:
-            case GI_TYPE_TAG_UINT16:
-            case GI_TYPE_TAG_UINT32:
-            case GI_TYPE_TAG_UINT64:
-            case GI_TYPE_TAG_UINT8:
-            case GI_TYPE_TAG_UNICHAR:
-                g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
-                //ret = gi_giargument_convert_immediate_pointer_object_to_arg(obj, arg_info, must_free, arg);
-                //*must_free = GIR_FREE_NONE;
-                break;
+        case GI_TYPE_TAG_BOOLEAN:
+        case GI_TYPE_TAG_DOUBLE:
+        case GI_TYPE_TAG_FLOAT:
+        case GI_TYPE_TAG_INT16:
+        case GI_TYPE_TAG_INT32:
+        case GI_TYPE_TAG_INT64:
+        case GI_TYPE_TAG_INT8:
+        case GI_TYPE_TAG_UINT16:
+        case GI_TYPE_TAG_UINT32:
+        case GI_TYPE_TAG_UINT64:
+        case GI_TYPE_TAG_UINT8:
+        case GI_TYPE_TAG_UNICHAR:
+            g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
+            //ret = gi_giargument_convert_immediate_pointer_object_to_arg(obj, arg_info, must_free, arg);
+            //*must_free = GIR_FREE_NONE;
+            break;
 
-            case GI_TYPE_TAG_UTF8:
-            case GI_TYPE_TAG_FILENAME:
-                    g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
-                //ret = gi_giargument_convert_string_object_to_arg(obj, arg_info, must_free, arg);
-                break;
+        case GI_TYPE_TAG_UTF8:
+        case GI_TYPE_TAG_FILENAME:
+            g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
+            //ret = gi_giargument_convert_string_object_to_arg(obj, arg_info, must_free, arg);
+            break;
 
-            case GI_TYPE_TAG_VOID:
-                ret = convert_const_void_pointer_object_to_arg(obj, arg);
-                break;
+        case GI_TYPE_TAG_VOID:
+            ret = convert_const_void_pointer_object_to_arg(obj, arg);
+            break;
 
-            case GI_TYPE_TAG_GHASH:
-            case GI_TYPE_TAG_GLIST:
-            case GI_TYPE_TAG_GSLIST:
-                // FIXME: unhandled
-                g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
-                g_assert_not_reached();
-                break;
+        case GI_TYPE_TAG_GHASH:
+        case GI_TYPE_TAG_GLIST:
+        case GI_TYPE_TAG_GSLIST:
+            // FIXME: unhandled
+            g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
+            g_assert_not_reached();
+            break;
 
-            case GI_TYPE_TAG_INTERFACE:
-                g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
-                //ret = convert_interface_pointer_object_to_arg(obj, arg_info, must_free, arg);
-                //*must_free = GIR_FREE_NONE;
-                break;
+        case GI_TYPE_TAG_INTERFACE:
+            g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
+            //ret = convert_interface_pointer_object_to_arg(obj, arg_info, must_free, arg);
+            //*must_free = GIR_FREE_NONE;
+            break;
 
-            case GI_TYPE_TAG_GTYPE:
-                // No GType pointer inputs as far as I can tell.
-                g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
-                //g_assert_not_reached();
-                break;
+        case GI_TYPE_TAG_GTYPE:
+            // No GType pointer inputs as far as I can tell.
+            g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
+            //g_assert_not_reached();
+            break;
 
-            case GI_TYPE_TAG_ERROR:
-                // FIXME: unhandled
-                g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
-                //g_assert_not_reached();
-                //ret = gi_giargument_convert_error_to_arg(obj, arg_info, must_free, arg);
-                break;
+        case GI_TYPE_TAG_ERROR:
+            // FIXME: unhandled
+            g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
+            //g_assert_not_reached();
+            //ret = gi_giargument_convert_error_to_arg(obj, arg_info, must_free, arg);
+            break;
 
-            case GI_TYPE_TAG_ARRAY:
-                ret = convert_array_object_to_arg(obj, type_info, transfer, &must_free, arg);
-                break;
+        case GI_TYPE_TAG_ARRAY:
+            ret = convert_array_object_to_arg(obj, type_info, transfer, &must_free, arg);
+            break;
 
-            default:
-                g_assert_not_reached ();
+        default:
+            g_assert_not_reached();
         }
     }
     return ret;
@@ -634,7 +627,7 @@ convert_immediate_object_to_arg(SCM object, GITypeTag type_tag, GIArgument *arg)
         arg->v_size = scm_to_size_t(object);
         break;
     case GI_TYPE_TAG_UNICHAR:
-        arg->v_uint32 = SCM_CHAR (object);
+        arg->v_uint32 = SCM_CHAR(object);
         break;
     default:
         g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
@@ -648,11 +641,11 @@ static GIArgumentStatus
 convert_interface_object_to_arg(SCM obj, GITypeInfo *type_info, unsigned *must_free, GIArgument *arg)
 {
     GIArgumentStatus ret;
-    GITypeTag type_tag = g_type_info_get_tag (type_info);
-    g_assert (type_tag == GI_TYPE_TAG_INTERFACE);
+    GITypeTag type_tag = g_type_info_get_tag(type_info);
+    g_assert(type_tag == GI_TYPE_TAG_INTERFACE);
 
-    GIBaseInfo *referenced_base_info = g_type_info_get_interface (type_info);
-    GIInfoType referenced_base_type = g_base_info_get_type (referenced_base_info);
+    GIBaseInfo *referenced_base_info = g_type_info_get_interface(type_info);
+    GIInfoType referenced_base_type = g_base_info_get_type(referenced_base_info);
 
     if (referenced_base_type == GI_INFO_TYPE_ENUM || referenced_base_type == GI_INFO_TYPE_FLAGS)
     {
@@ -663,10 +656,10 @@ convert_interface_object_to_arg(SCM obj, GITypeInfo *type_info, unsigned *must_f
     else if (referenced_base_type == GI_INFO_TYPE_CALLBACK)
     {
         GICallbackInfo *callback_info = referenced_base_info;
-        if (scm_is_true (scm_procedure_p (obj)))
+        if (scm_is_true(scm_procedure_p(obj)))
         {
-            int arity = scm_to_int (scm_car (scm_procedure_minimum_arity (obj)));
-            int n_args = g_callable_info_get_n_args (callback_info);
+            int arity = scm_to_int(scm_car(scm_procedure_minimum_arity(obj)));
+            int n_args = g_callable_info_get_n_args(callback_info);
             if (arity != n_args)
             {
                 arg->v_pointer = NULL;
@@ -675,8 +668,8 @@ convert_interface_object_to_arg(SCM obj, GITypeInfo *type_info, unsigned *must_f
             }
             else
             {
-                arg->v_pointer  = gir_callback_get_ptr(callback_info, obj);
-                g_assert (arg->v_pointer != NULL);
+                arg->v_pointer = gir_callback_get_ptr(callback_info, obj);
+                g_assert(arg->v_pointer != NULL);
                 *must_free = GIR_FREE_NONE;
                 ret = GI_GIARGUMENT_OK;
             }
@@ -705,13 +698,13 @@ gi_giargument_convert_immediate_pointer_object_to_arg(SCM obj, GIArgInfo *arg_in
     // like in 'g_atomic_int_add', and sometimes a C array like in 'g_utf16_to_ucs4',
     // and there is no way to tell.  We'll use bytevector pointers, I guess, since
     // they can apply to both cases.
-    if (g_arg_info_may_be_null (arg_info) && scm_is_eq(obj, SCM_BOOL_F))
+    if (g_arg_info_may_be_null(arg_info) && scm_is_eq(obj, SCM_BOOL_F))
     {
         arg->v_pointer = NULL;
         *must_free = GIR_FREE_NONE;
         ret = GI_GIARGUMENT_OK;
     }
-    if (!scm_is_bytevector (obj))
+    if (!scm_is_bytevector(obj))
     {
         g_critical("Unhandled argument type, %s: %d", __FILE__, __LINE__);
         arg->v_pointer = NULL;
@@ -744,7 +737,7 @@ gi_giargument_convert_string_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigne
         *must_free = GIR_FREE_NONE;
         ret = GI_GIARGUMENT_OK;
     }
-    else if (!scm_is_string (obj))
+    else if (!scm_is_string(obj))
     {
         g_critical("Unhandled argument type, %s: %d", __FILE__, __LINE__);
         arg->v_string = NULL;
@@ -801,13 +794,13 @@ convert_interface_pointer_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *
 
     GITypeInfo *type_info = g_arg_info_get_type(arg_info);
 
-    g_assert (g_type_info_get_tag (type_info) == GI_TYPE_TAG_INTERFACE);
+    g_assert(g_type_info_get_tag(type_info) == GI_TYPE_TAG_INTERFACE);
 
-    GIBaseInfo *referenced_base_info = g_type_info_get_interface (type_info);
-    GIInfoType referenced_base_type = g_base_info_get_type (referenced_base_info);
+    GIBaseInfo *referenced_base_info = g_type_info_get_interface(type_info);
+    GIInfoType referenced_base_type = g_base_info_get_type(referenced_base_info);
 
-    g_base_info_unref (type_info);
-    if (scm_is_eq (obj, SCM_BOOL_F) && g_arg_info_may_be_null (arg_info))
+    g_base_info_unref(type_info);
+    if (scm_is_eq(obj, SCM_BOOL_F) && g_arg_info_may_be_null(arg_info))
     {
         arg->v_pointer = NULL;
         *must_free = GIR_FREE_NONE;
@@ -826,10 +819,9 @@ convert_interface_pointer_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *
         {
             GType type = g_registered_type_info_get_g_type(referenced_base_info);
             GirSmartPtr *sptr = scm_foreign_object_ref(obj, 0);
-            if ((sptr->holds == SPTR_HOLDS_STRUCT && referenced_base_type == GI_INFO_TYPE_STRUCT)
-                || (sptr->holds == SPTR_HOLDS_UNION && referenced_base_type == GI_INFO_TYPE_UNION))
+            if ((sptr->holds == SPTR_HOLDS_STRUCT && referenced_base_type == GI_INFO_TYPE_STRUCT) || (sptr->holds == SPTR_HOLDS_UNION && referenced_base_type == GI_INFO_TYPE_UNION))
             {
-                if (!g_type_is_a (sptr->type, type))
+                if (!g_type_is_a(sptr->type, type))
                 {
                     g_critical("Unhandled argument type, %s: %d", __FILE__, __LINE__);
                     arg->v_pointer = NULL;
@@ -857,8 +849,8 @@ convert_interface_pointer_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *
         else
         {
             GType type = g_registered_type_info_get_g_type(referenced_base_info);
-            g_debug ("testing if %p (a %s) is a child of %s", SCM_UNPACK_POINTER(obj), g_type_name(gi_gobject_get_ob_type (obj)), g_type_name(type));
-            if (!g_type_is_a (gi_gobject_get_ob_type(obj), type))
+            g_debug("testing if %p (a %s) is a child of %s", SCM_UNPACK_POINTER(obj), g_type_name(gi_gobject_get_ob_type(obj)), g_type_name(type));
+            if (!g_type_is_a(gi_gobject_get_ob_type(obj), type))
             {
                 g_critical("Unhandled argument type, %s: %d", __FILE__, __LINE__);
                 arg->v_pointer = NULL;
@@ -898,7 +890,7 @@ convert_interface_pointer_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *
         g_critical("Unhandled argument type, %s: %d", __FILE__, __LINE__);
         ret = GI_GIARGUMENT_UNHANDLED_TYPE;
     }
-    g_base_info_unref (referenced_base_info);
+    g_base_info_unref(referenced_base_info);
     return ret;
 }
 
@@ -911,19 +903,19 @@ convert_array_object_to_arg(SCM object, GITypeInfo *array_type_info, GITransfer 
     // So there are layers to all this ArgInfo stuff
     // LAYER 1: Let's start on layer 1, where this GIArgInfo tells
     // us we're an array.
-    GITypeTag array_type_tag = g_type_info_get_tag (array_type_info);
-    gboolean array_is_ptr = g_type_info_is_pointer (array_type_info);
-    gboolean array_is_zero_terminated = g_type_info_is_zero_terminated (array_type_info);
-    GIArrayType array_type = g_type_info_get_array_type (array_type_info);
+    GITypeTag array_type_tag = g_type_info_get_tag(array_type_info);
+    gboolean array_is_ptr = g_type_info_is_pointer(array_type_info);
+    gboolean array_is_zero_terminated = g_type_info_is_zero_terminated(array_type_info);
+    GIArrayType array_type = g_type_info_get_array_type(array_type_info);
 
     // Some obvious checks
-    g_assert (array_type_tag == GI_TYPE_TAG_ARRAY);
-    g_assert (array_is_ptr);
+    g_assert(array_type_tag == GI_TYPE_TAG_ARRAY);
+    g_assert(array_is_ptr);
 
     // In Glib 2.0 and GTK 3.0, the common type is C.
     if (array_type == GI_ARRAY_TYPE_BYTE_ARRAY)
     {
-        if (scm_is_bytevector (object))
+        if (scm_is_bytevector(object))
         {
             void *contents = SCM_BYTEVECTOR_CONTENTS(object);
             size_t len = SCM_BYTEVECTOR_LENGTH(object);
@@ -941,7 +933,7 @@ convert_array_object_to_arg(SCM object, GITypeInfo *array_type_info, GITransfer 
         }
     }
     // FIXME: later consider also handling BYTES type arrays and PTR_ARRAY types
-    g_return_val_if_fail (array_type == GI_ARRAY_TYPE_C, GI_GIARGUMENT_ERROR);
+    g_return_val_if_fail(array_type == GI_ARRAY_TYPE_C, GI_GIARGUMENT_ERROR);
 
     // LAYER 2 is where we figure out what the element type of the array is.
     GITransfer item_transfer;
@@ -950,8 +942,8 @@ convert_array_object_to_arg(SCM object, GITypeInfo *array_type_info, GITransfer 
     else
         item_transfer = GI_TRANSFER_EVERYTHING;
     GITypeInfo *item_type_info = g_type_info_get_param_type(array_type_info, 0);
-    GITypeTag item_type_tag = g_type_info_get_tag (item_type_info);
-    gboolean item_is_ptr = g_type_info_is_pointer (item_type_info);
+    GITypeTag item_type_tag = g_type_info_get_tag(item_type_info);
+    gboolean item_is_ptr = g_type_info_is_pointer(item_type_info);
     gsize item_size;
     if (item_is_ptr)
         item_size = sizeof(void *);
@@ -965,8 +957,8 @@ convert_array_object_to_arg(SCM object, GITypeInfo *array_type_info, GITransfer 
 
     if (item_type_tag == GI_TYPE_TAG_INTERFACE)
     {
-        referenced_base_info = g_type_info_get_interface (item_type_info);
-        referenced_base_type = g_base_info_get_type (referenced_base_info);
+        referenced_base_info = g_type_info_get_interface(item_type_info);
+        referenced_base_type = g_base_info_get_type(referenced_base_info);
         if (referenced_base_type == GI_INFO_TYPE_ENUM || referenced_base_type == GI_INFO_TYPE_FLAGS)
         {
             // We haven't bothered to make a special flag or enum class on
@@ -981,7 +973,7 @@ convert_array_object_to_arg(SCM object, GITypeInfo *array_type_info, GITransfer 
             const char *referenced_namespace = g_base_info_get_namespace(referenced_base_info);
             referenced_object_type = gir_lookup_type(referenced_name);
 
-            g_assert (referenced_object_type != G_TYPE_NONE);
+            g_assert(referenced_object_type != G_TYPE_NONE);
 
             if (!item_is_ptr && referenced_base_type == GI_INFO_TYPE_STRUCT)
             {
@@ -989,8 +981,8 @@ convert_array_object_to_arg(SCM object, GITypeInfo *array_type_info, GITransfer 
                 // (not struct pointers), we need to get the size of each
                 // struct.
                 GIStructInfo *referenced_struct_info = g_type_get_qdata(referenced_object_type, gtype_base_info_key);
-                g_assert (referenced_struct_info != NULL);
-                item_size = g_struct_info_get_size (referenced_struct_info);
+                g_assert(referenced_struct_info != NULL);
+                item_size = g_struct_info_get_size(referenced_struct_info);
             }
         }
     }
@@ -1003,7 +995,7 @@ convert_array_object_to_arg(SCM object, GITypeInfo *array_type_info, GITransfer 
 
     else if (TYPE_TAG_IS_EXACT_INTEGER(item_type_tag) || TYPE_TAG_IS_REAL_NUMBER(item_type_tag))
     {
-        if (scm_is_bytevector (object))
+        if (scm_is_bytevector(object))
         {
             gsize element_size;
             if (item_type_tag == GI_TYPE_TAG_INT8 || item_type_tag == GI_TYPE_TAG_UINT8)
@@ -1073,17 +1065,17 @@ convert_array_object_to_arg(SCM object, GITypeInfo *array_type_info, GITransfer 
         if (!item_is_ptr)
             ret = GI_GIARGUMENT_UNHANDLED_ARRAY_ELEMENT_TYPE;
 
-        else if (scm_is_true (scm_list_p (object)))
+        else if (scm_is_true(scm_list_p(object)))
         {
-            size_t len = scm_to_size_t (scm_length (object));
-            gchar **strv = g_new0 (gchar *, len + 1);
-            for (size_t i = 0; i < len; i ++)
+            size_t len = scm_to_size_t(scm_length(object));
+            gchar **strv = g_new0(gchar *, len + 1);
+            for (size_t i = 0; i < len; i++)
             {
-                SCM entry = scm_list_ref(object, scm_from_size_t (i));
+                SCM entry = scm_list_ref(object, scm_from_size_t(i));
                 if (item_type_tag == GI_TYPE_TAG_FILENAME)
-                    strv[i] = scm_to_locale_string (entry);
+                    strv[i] = scm_to_locale_string(entry);
                 else
-                    strv[i] = scm_to_utf8_string (entry);
+                    strv[i] = scm_to_utf8_string(entry);
             }
             strv[len] = NULL;
             arg->v_pointer = strv;
@@ -1102,17 +1094,17 @@ convert_array_object_to_arg(SCM object, GITypeInfo *array_type_info, GITransfer 
     {
         // On the Scheme size, an array of structs will be a list of GBox containing
         // smart pointers to GObject structs.
-        size_t len = scm_to_size_t (scm_length (object));
+        size_t len = scm_to_size_t(scm_length(object));
         gpointer ptr;
         if (array_is_zero_terminated)
             ptr = g_malloc0_n(item_size, len + 1);
         else
             ptr = g_malloc0_n(item_size, len);
-        for (gsize i = 0; i < len; i ++)
+        for (gsize i = 0; i < len; i++)
         {
-            SCM entry = scm_list_ref (object, scm_from_size_t(i));
+            SCM entry = scm_list_ref(object, scm_from_size_t(i));
             // Entry should be a GBox
-            gpointer entry_ptr = gi_gbox_ref_pointer (entry);
+            gpointer entry_ptr = gi_gbox_ref_pointer(entry);
             memcpy((char *)ptr + i * item_size, entry_ptr, item_size);
         }
         if (item_transfer == GI_TRANSFER_NOTHING)
@@ -1125,17 +1117,17 @@ convert_array_object_to_arg(SCM object, GITypeInfo *array_type_info, GITransfer 
     {
         // On the Scheme side, and array of pointers to structs will be a list of GBox containing
         // smart pointers to GObject structs.
-        size_t len = scm_to_size_t (scm_length (object));
+        size_t len = scm_to_size_t(scm_length(object));
         gpointer *ptr;
         if (array_is_zero_terminated)
             ptr = g_malloc0_n(sizeof(gpointer), len + 1);
         else
             ptr = g_malloc0_n(sizeof(gpointer), len);
-        for (gsize i = 0; i < len; i ++)
+        for (gsize i = 0; i < len; i++)
         {
-            SCM entry = scm_list_ref (object, scm_from_size_t(i));
+            SCM entry = scm_list_ref(object, scm_from_size_t(i));
             // Entry should be a GBox
-            ptr[i] = gi_gbox_ref_pointer (entry);
+            ptr[i] = gi_gbox_ref_pointer(entry);
         }
         if (item_transfer == GI_TRANSFER_NOTHING)
         {
@@ -1159,15 +1151,15 @@ convert_array_object_to_arg(SCM object, GITypeInfo *array_type_info, GITransfer 
     else if (item_type_tag == GI_TYPE_TAG_INTERFACE && referenced_base_type == G_TYPE_OBJECT && item_is_ptr)
     {
         // On the Scheme side, an array of pointers to objects will be a list of GObjects.
-        size_t len = scm_to_size_t (scm_length (object));
+        size_t len = scm_to_size_t(scm_length(object));
         gpointer *ptr;
         if (array_is_zero_terminated)
             ptr = g_malloc0_n(sizeof(gpointer), len + 1);
         else
             ptr = g_malloc0_n(sizeof(gpointer), len);
-        for (gsize i = 0; i < len; i ++)
+        for (gsize i = 0; i < len; i++)
         {
-            SCM entry = scm_list_ref (object, scm_from_size_t(i));
+            SCM entry = scm_list_ref(object, scm_from_size_t(i));
             // Entry should be a GObject
             // I guess we're not increasing refcnt?  At least that
             // it the case for g_socket_send_message.
@@ -1192,14 +1184,13 @@ convert_array_object_to_arg(SCM object, GITypeInfo *array_type_info, GITransfer 
 out:
     g_base_info_unref(item_type_info);
     if (referenced_base_info)
-        g_base_info_unref (referenced_base_info);
+        g_base_info_unref(referenced_base_info);
     return ret;
 }
 
-void
-gi_giargument_free_args(int n, unsigned *must_free, GIArgument *args)
+void gi_giargument_free_args(int n, unsigned *must_free, GIArgument *args)
 {
-    for (int i = 0; i < n; i ++)
+    for (int i = 0; i < n; i++)
     {
         if (must_free[i] == GIR_FREE_SIMPLE)
             g_free(args[i].v_pointer);
@@ -1211,12 +1202,12 @@ gi_giargument_free_args(int n, unsigned *must_free, GIArgument *args)
                 g_free(((char **)(args[i].v_pointer))[j]);
                 j++;
             }
-            g_free (args[i].v_pointer);
+            g_free(args[i].v_pointer);
         }
         else if (must_free[i] & GIR_FREE_PTR_ARRAY)
         {
             int count = GIR_FREE_PTR_COUNT(must_free[i]);
-            for (int j = 0; j < count; j ++)
+            for (int j = 0; j < count; j++)
                 g_free(((char **)(args[i].v_pointer))[j]);
             g_free(args[i].v_pointer);
         }
@@ -1343,7 +1334,7 @@ gi_giargument_preallocate_output_arg_and_object(GIArgInfo *arg_info, GIArgument 
                 // bytevector is big enough to hold the contents
                 // that are going to be copied into it.
                 arg->v_pointer = SCM_BYTEVECTOR_CONTENTS(*obj);
-        ret = GI_GIARGUMENT_OK;
+                ret = GI_GIARGUMENT_OK;
             }
             break;
 
@@ -1379,126 +1370,125 @@ gi_giargument_preallocate_output_arg_and_object(GIArgInfo *arg_info, GIArgument 
 GIArgumentStatus
 gi_giargument_convert_arg_to_object(GIArgument *arg, GIArgInfo *arg_info, SCM *obj)
 {
-    GITypeInfo *type_info = g_arg_info_get_type (arg_info);
-    GITypeTag type_tag = g_type_info_get_tag (type_info);
-    GITransfer transfer = g_arg_info_get_ownership_transfer (arg_info);
-    gboolean is_ptr = g_type_info_is_pointer (type_info);
+    GITypeInfo *type_info = g_arg_info_get_type(arg_info);
+    GITypeTag type_tag = g_type_info_get_tag(type_info);
+    GITransfer transfer = g_arg_info_get_ownership_transfer(arg_info);
+    gboolean is_ptr = g_type_info_is_pointer(type_info);
     GIArgumentStatus ret = GI_GIARGUMENT_ERROR;
 
-    g_base_info_unref (type_info);
+    g_base_info_unref(type_info);
     if (!is_ptr)
     {
-        switch(type_tag)
+        switch (type_tag)
         {
-            case GI_TYPE_TAG_VOID:
-                *obj = SCM_UNSPECIFIED;
-                ret = GI_GIARGUMENT_OK;
-                break;
+        case GI_TYPE_TAG_VOID:
+            *obj = SCM_UNSPECIFIED;
+            ret = GI_GIARGUMENT_OK;
+            break;
 
-            case GI_TYPE_TAG_BOOLEAN:
-            case GI_TYPE_TAG_DOUBLE:
-            case GI_TYPE_TAG_FLOAT:
-            case GI_TYPE_TAG_INT16:
-            case GI_TYPE_TAG_INT32:
-            case GI_TYPE_TAG_INT64:
-            case GI_TYPE_TAG_INT8:
-            case GI_TYPE_TAG_UINT16:
-            case GI_TYPE_TAG_UINT32:
-            case GI_TYPE_TAG_UINT64:
-            case GI_TYPE_TAG_UINT8:
-            case GI_TYPE_TAG_UNICHAR:
-            case GI_TYPE_TAG_GTYPE:
-                ret = convert_immediate_arg_to_object(arg, type_tag, obj);
-                break;
+        case GI_TYPE_TAG_BOOLEAN:
+        case GI_TYPE_TAG_DOUBLE:
+        case GI_TYPE_TAG_FLOAT:
+        case GI_TYPE_TAG_INT16:
+        case GI_TYPE_TAG_INT32:
+        case GI_TYPE_TAG_INT64:
+        case GI_TYPE_TAG_INT8:
+        case GI_TYPE_TAG_UINT16:
+        case GI_TYPE_TAG_UINT32:
+        case GI_TYPE_TAG_UINT64:
+        case GI_TYPE_TAG_UINT8:
+        case GI_TYPE_TAG_UNICHAR:
+        case GI_TYPE_TAG_GTYPE:
+            ret = convert_immediate_arg_to_object(arg, type_tag, obj);
+            break;
 
-            case GI_TYPE_TAG_ARRAY:
-            case GI_TYPE_TAG_UTF8:
-            case GI_TYPE_TAG_FILENAME:
-            case GI_TYPE_TAG_GHASH:
-            case GI_TYPE_TAG_GLIST:
-            case GI_TYPE_TAG_GSLIST:
-            case GI_TYPE_TAG_ERROR:
-                g_assert_not_reached();
-                break;
+        case GI_TYPE_TAG_ARRAY:
+        case GI_TYPE_TAG_UTF8:
+        case GI_TYPE_TAG_FILENAME:
+        case GI_TYPE_TAG_GHASH:
+        case GI_TYPE_TAG_GLIST:
+        case GI_TYPE_TAG_GSLIST:
+        case GI_TYPE_TAG_ERROR:
+            g_assert_not_reached();
+            break;
 
-            case GI_TYPE_TAG_INTERFACE:
-                ret = convert_interface_arg_to_object(arg, type_info, obj);
-                break;
-            default:
-                g_assert_not_reached();
-                break;
+        case GI_TYPE_TAG_INTERFACE:
+            ret = convert_interface_arg_to_object(arg, type_info, obj);
+            break;
+        default:
+            g_assert_not_reached();
+            break;
         }
     }
     else
     {
-        switch(type_tag)
+        switch (type_tag)
         {
-            case GI_TYPE_TAG_BOOLEAN:
-            case GI_TYPE_TAG_DOUBLE:
-            case GI_TYPE_TAG_FLOAT:
-            case GI_TYPE_TAG_INT16:
-            case GI_TYPE_TAG_INT32:
-            case GI_TYPE_TAG_INT64:
-            case GI_TYPE_TAG_INT8:
-            case GI_TYPE_TAG_UINT16:
-            case GI_TYPE_TAG_UINT32:
-            case GI_TYPE_TAG_UINT64:
-            case GI_TYPE_TAG_UINT8:
-            case GI_TYPE_TAG_UNICHAR:
-                g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
-                // ret = convert_immediate_pointer_arg_to_object(obj, arg_info, arg);
-                //*must_free = GIR_FREE_NONE;
-                break;
+        case GI_TYPE_TAG_BOOLEAN:
+        case GI_TYPE_TAG_DOUBLE:
+        case GI_TYPE_TAG_FLOAT:
+        case GI_TYPE_TAG_INT16:
+        case GI_TYPE_TAG_INT32:
+        case GI_TYPE_TAG_INT64:
+        case GI_TYPE_TAG_INT8:
+        case GI_TYPE_TAG_UINT16:
+        case GI_TYPE_TAG_UINT32:
+        case GI_TYPE_TAG_UINT64:
+        case GI_TYPE_TAG_UINT8:
+        case GI_TYPE_TAG_UNICHAR:
+            g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
+            // ret = convert_immediate_pointer_arg_to_object(obj, arg_info, arg);
+            //*must_free = GIR_FREE_NONE;
+            break;
 
-            case GI_TYPE_TAG_UTF8:
-            case GI_TYPE_TAG_FILENAME:
-                ret = convert_string_pointer_arg_to_object(arg, type_tag, transfer, obj);
-                break;
+        case GI_TYPE_TAG_UTF8:
+        case GI_TYPE_TAG_FILENAME:
+            ret = convert_string_pointer_arg_to_object(arg, type_tag, transfer, obj);
+            break;
 
-            case GI_TYPE_TAG_VOID:
-                ret = convert_const_void_pointer_arg_to_object(arg, obj);
-                break;
+        case GI_TYPE_TAG_VOID:
+            ret = convert_const_void_pointer_arg_to_object(arg, obj);
+            break;
 
-            case GI_TYPE_TAG_GHASH:
-            case GI_TYPE_TAG_GLIST:
-            case GI_TYPE_TAG_GSLIST:
-                // FIXME: unhandled
-                g_critical("Unhandled argument type tag %d", type_tag);
-                g_assert_not_reached();
-                break;
+        case GI_TYPE_TAG_GHASH:
+        case GI_TYPE_TAG_GLIST:
+        case GI_TYPE_TAG_GSLIST:
+            // FIXME: unhandled
+            g_critical("Unhandled argument type tag %d", type_tag);
+            g_assert_not_reached();
+            break;
 
-            case GI_TYPE_TAG_INTERFACE:
-                g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
-                // ret = convert_interface_pointer_arg_to_object(obj, arg_info, must_free, arg);
-                // *must_free = GIR_FREE_NONE;
-                break;
+        case GI_TYPE_TAG_INTERFACE:
+            g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
+            // ret = convert_interface_pointer_arg_to_object(obj, arg_info, must_free, arg);
+            // *must_free = GIR_FREE_NONE;
+            break;
 
-            case GI_TYPE_TAG_GTYPE:
-                g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
-                break;
+        case GI_TYPE_TAG_GTYPE:
+            g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
+            break;
 
-            case GI_TYPE_TAG_ERROR:
-                // FIXME: unhandled
-                g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
-                //ret = gi_giargument_convert_error_to_arg(obj, arg_info, must_free, arg);
-                break;
+        case GI_TYPE_TAG_ERROR:
+            // FIXME: unhandled
+            g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
+            //ret = gi_giargument_convert_error_to_arg(obj, arg_info, must_free, arg);
+            break;
 
-            case GI_TYPE_TAG_ARRAY:
-                g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
-                //ret = gi_giargument_convert_array_pointer_arg_to_object(obj, arg_info, must_free, arg);
-                break;
+        case GI_TYPE_TAG_ARRAY:
+            g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
+            //ret = gi_giargument_convert_array_pointer_arg_to_object(obj, arg_info, must_free, arg);
+            break;
 
-            default:
-                g_assert_not_reached ();
+        default:
+            g_assert_not_reached();
         }
     }
     return ret;
 }
 
-SCM
-gi_giargument_convert_return_val_to_object(GIArgument  *arg,
-             GITypeInfo *type_info,
-             GITransfer transfer, gboolean null_ok, gboolean skip)
+SCM gi_giargument_convert_return_val_to_object(GIArgument *arg,
+                                               GITypeInfo *type_info,
+                                               GITransfer transfer, gboolean null_ok, gboolean skip)
 {
     SCM obj = SCM_BOOL_F;
 
@@ -1507,146 +1497,145 @@ gi_giargument_convert_return_val_to_object(GIArgument  *arg,
     if (null_ok && arg->v_pointer == NULL)
         return SCM_BOOL_F;
 
-    GITypeTag type_tag = g_type_info_get_tag (type_info);
-    gboolean is_ptr = g_type_info_is_pointer (type_info);
+    GITypeTag type_tag = g_type_info_get_tag(type_info);
+    gboolean is_ptr = g_type_info_is_pointer(type_info);
     GIArgumentStatus ret = GI_GIARGUMENT_ERROR;
 
     if (!is_ptr)
     {
-        switch(type_tag)
+        switch (type_tag)
         {
-            case GI_TYPE_TAG_VOID:
-                obj = SCM_UNSPECIFIED;
-                ret = GI_GIARGUMENT_OK;
-                break;
+        case GI_TYPE_TAG_VOID:
+            obj = SCM_UNSPECIFIED;
+            ret = GI_GIARGUMENT_OK;
+            break;
 
-            case GI_TYPE_TAG_BOOLEAN:
-            case GI_TYPE_TAG_DOUBLE:
-            case GI_TYPE_TAG_FLOAT:
-            case GI_TYPE_TAG_INT16:
-            case GI_TYPE_TAG_INT32:
-            case GI_TYPE_TAG_INT64:
-            case GI_TYPE_TAG_INT8:
-            case GI_TYPE_TAG_UINT16:
-            case GI_TYPE_TAG_UINT32:
-            case GI_TYPE_TAG_UINT64:
-            case GI_TYPE_TAG_UINT8:
-            case GI_TYPE_TAG_UNICHAR:
-            case GI_TYPE_TAG_GTYPE:
-                ret = convert_immediate_arg_to_object(arg, type_tag, &obj);
-                break;
+        case GI_TYPE_TAG_BOOLEAN:
+        case GI_TYPE_TAG_DOUBLE:
+        case GI_TYPE_TAG_FLOAT:
+        case GI_TYPE_TAG_INT16:
+        case GI_TYPE_TAG_INT32:
+        case GI_TYPE_TAG_INT64:
+        case GI_TYPE_TAG_INT8:
+        case GI_TYPE_TAG_UINT16:
+        case GI_TYPE_TAG_UINT32:
+        case GI_TYPE_TAG_UINT64:
+        case GI_TYPE_TAG_UINT8:
+        case GI_TYPE_TAG_UNICHAR:
+        case GI_TYPE_TAG_GTYPE:
+            ret = convert_immediate_arg_to_object(arg, type_tag, &obj);
+            break;
 
-            case GI_TYPE_TAG_ARRAY:
-            case GI_TYPE_TAG_UTF8:
-            case GI_TYPE_TAG_FILENAME:
-            case GI_TYPE_TAG_GHASH:
-            case GI_TYPE_TAG_GLIST:
-            case GI_TYPE_TAG_GSLIST:
-            case GI_TYPE_TAG_ERROR:
-                g_assert_not_reached();
-                break;
+        case GI_TYPE_TAG_ARRAY:
+        case GI_TYPE_TAG_UTF8:
+        case GI_TYPE_TAG_FILENAME:
+        case GI_TYPE_TAG_GHASH:
+        case GI_TYPE_TAG_GLIST:
+        case GI_TYPE_TAG_GSLIST:
+        case GI_TYPE_TAG_ERROR:
+            g_assert_not_reached();
+            break;
 
-            case GI_TYPE_TAG_INTERFACE:
-                ret = convert_interface_arg_to_object(arg, type_info, &obj);
-                break;
-            default:
-                g_assert_not_reached();
-                break;
+        case GI_TYPE_TAG_INTERFACE:
+            ret = convert_interface_arg_to_object(arg, type_info, &obj);
+            break;
+        default:
+            g_assert_not_reached();
+            break;
         }
     }
     else
     {
-        switch(type_tag)
+        switch (type_tag)
         {
-            case GI_TYPE_TAG_BOOLEAN:
-            case GI_TYPE_TAG_DOUBLE:
-            case GI_TYPE_TAG_FLOAT:
-            case GI_TYPE_TAG_INT16:
-            case GI_TYPE_TAG_INT32:
-            case GI_TYPE_TAG_INT64:
-            case GI_TYPE_TAG_INT8:
-            case GI_TYPE_TAG_UINT16:
-            case GI_TYPE_TAG_UINT32:
-            case GI_TYPE_TAG_UINT64:
-            case GI_TYPE_TAG_UINT8:
-            case GI_TYPE_TAG_UNICHAR:
-                g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
-                // ret = gi_giargument_convert_immediate_pointer_object_to_arg(obj, arg_info, must_free, arg);
-                // *must_free = GIR_FREE_NONE;
-                break;
+        case GI_TYPE_TAG_BOOLEAN:
+        case GI_TYPE_TAG_DOUBLE:
+        case GI_TYPE_TAG_FLOAT:
+        case GI_TYPE_TAG_INT16:
+        case GI_TYPE_TAG_INT32:
+        case GI_TYPE_TAG_INT64:
+        case GI_TYPE_TAG_INT8:
+        case GI_TYPE_TAG_UINT16:
+        case GI_TYPE_TAG_UINT32:
+        case GI_TYPE_TAG_UINT64:
+        case GI_TYPE_TAG_UINT8:
+        case GI_TYPE_TAG_UNICHAR:
+            g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
+            // ret = gi_giargument_convert_immediate_pointer_object_to_arg(obj, arg_info, must_free, arg);
+            // *must_free = GIR_FREE_NONE;
+            break;
 
-            case GI_TYPE_TAG_UTF8:
-            case GI_TYPE_TAG_FILENAME:
-                // g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
-                ret = convert_string_pointer_arg_to_object(arg, type_tag, transfer, &obj);
-                break;
+        case GI_TYPE_TAG_UTF8:
+        case GI_TYPE_TAG_FILENAME:
+            // g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
+            ret = convert_string_pointer_arg_to_object(arg, type_tag, transfer, &obj);
+            break;
 
-            case GI_TYPE_TAG_VOID:
-                ret = convert_const_void_pointer_arg_to_object(arg, &obj);
-                break;
+        case GI_TYPE_TAG_VOID:
+            ret = convert_const_void_pointer_arg_to_object(arg, &obj);
+            break;
 
-            case GI_TYPE_TAG_GHASH:
-            case GI_TYPE_TAG_GLIST:
-            case GI_TYPE_TAG_GSLIST:
-                // FIXME: unhandled
-                g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
-                break;
+        case GI_TYPE_TAG_GHASH:
+        case GI_TYPE_TAG_GLIST:
+        case GI_TYPE_TAG_GSLIST:
+            // FIXME: unhandled
+            g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
+            break;
 
-            case GI_TYPE_TAG_INTERFACE:
-                {
-                    GIBaseInfo *referenced_base_info = g_type_info_get_interface(type_info);
-                    GIInfoType referenced_base_type = g_base_info_get_type(referenced_base_info);
-                    GType referenced_base_gtype = g_registered_type_info_get_g_type(referenced_base_info);
-                    g_base_info_unref(referenced_base_info);
+        case GI_TYPE_TAG_INTERFACE:
+        {
+            GIBaseInfo *referenced_base_info = g_type_info_get_interface(type_info);
+            GIInfoType referenced_base_type = g_base_info_get_type(referenced_base_info);
+            GType referenced_base_gtype = g_registered_type_info_get_g_type(referenced_base_info);
+            g_base_info_unref(referenced_base_info);
 
-                    if (referenced_base_type == GI_INFO_TYPE_STRUCT)
-                    {
-                        GIStructInfo *referenced_struct_info = g_type_get_qdata(referenced_base_gtype, gtype_base_info_key);
-                        g_assert(referenced_struct_info != NULL);
-
-                        return gir_new_struct_gbox(referenced_base_gtype, arg->v_pointer, transfer == GI_TRANSFER_EVERYTHING);
-                    }
-                    else if (referenced_base_type == GI_INFO_TYPE_OBJECT)
-                    {
-                        GIObjectInfo *referenced_object_info = g_type_get_qdata(referenced_base_gtype, gtype_base_info_key);
-                        g_assert(referenced_object_info != NULL);
-
-                        return gi_gobject_new(arg->v_pointer);
-                    }
-                    else
-                        g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
-                }
-                // ret = convert_interface_pointer_object_to_arg(obj, arg_info, must_free, arg);
-                // *must_free = GIR_FREE_NONE;
-                break;
-
-            case GI_TYPE_TAG_GTYPE:
-                // No GType pointer inputs as far as I can tell.
-                g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
-                g_assert_not_reached();
-                break;
-
-            case GI_TYPE_TAG_ERROR:
-                // FIXME: unhandled
-                g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
-                // g_assert_not_reached();
-                //ret = gi_giargument_convert_error_to_arg(obj, arg_info, must_free, arg);
-                break;
-
-            case GI_TYPE_TAG_ARRAY:
+            if (referenced_base_type == GI_INFO_TYPE_STRUCT)
             {
-                ret = convert_array_pointer_arg_to_object(arg, type_info, GI_TRANSFER_EVERYTHING, &obj);
-                break;
-            }
+                GIStructInfo *referenced_struct_info = g_type_get_qdata(referenced_base_gtype, gtype_base_info_key);
+                g_assert(referenced_struct_info != NULL);
 
-            default:
-                g_assert_not_reached ();
+                return gir_new_struct_gbox(referenced_base_gtype, arg->v_pointer, transfer == GI_TRANSFER_EVERYTHING);
+            }
+            else if (referenced_base_type == GI_INFO_TYPE_OBJECT)
+            {
+                GIObjectInfo *referenced_object_info = g_type_get_qdata(referenced_base_gtype, gtype_base_info_key);
+                g_assert(referenced_object_info != NULL);
+
+                return gi_gobject_new(arg->v_pointer);
+            }
+            else
+                g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
+        }
+        // ret = convert_interface_pointer_object_to_arg(obj, arg_info, must_free, arg);
+        // *must_free = GIR_FREE_NONE;
+        break;
+
+        case GI_TYPE_TAG_GTYPE:
+            // No GType pointer inputs as far as I can tell.
+            g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
+            g_assert_not_reached();
+            break;
+
+        case GI_TYPE_TAG_ERROR:
+            // FIXME: unhandled
+            g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
+            // g_assert_not_reached();
+            //ret = gi_giargument_convert_error_to_arg(obj, arg_info, must_free, arg);
+            break;
+
+        case GI_TYPE_TAG_ARRAY:
+        {
+            ret = convert_array_pointer_arg_to_object(arg, type_info, GI_TRANSFER_EVERYTHING, &obj);
+            break;
+        }
+
+        default:
+            g_assert_not_reached();
         }
     }
-    g_assert (ret == GI_GIARGUMENT_OK);
+    g_assert(ret == GI_GIARGUMENT_OK);
     return obj;
 }
-
 
 static GIArgumentStatus
 convert_immediate_arg_to_object(GIArgument *arg, GITypeTag type_tag, SCM *obj)
@@ -1702,10 +1691,10 @@ static GIArgumentStatus
 convert_interface_arg_to_object(GIArgument *arg, GITypeInfo *type_info, SCM *obj)
 {
     GIArgumentStatus ret = GI_GIARGUMENT_ERROR;
-    GITypeTag type_tag = g_type_info_get_tag (type_info);
-    g_assert (type_tag == GI_TYPE_TAG_INTERFACE);
+    GITypeTag type_tag = g_type_info_get_tag(type_info);
+    g_assert(type_tag == GI_TYPE_TAG_INTERFACE);
 
-    GIBaseInfo *referenced_base_info = g_type_info_get_interface (type_info);
+    GIBaseInfo *referenced_base_info = g_type_info_get_interface(type_info);
     GIInfoType referenced_info_type = g_base_info_get_type(referenced_base_info);
     if (referenced_info_type == GI_INFO_TYPE_ENUM || referenced_info_type == GI_INFO_TYPE_FLAGS)
     {
@@ -1715,7 +1704,7 @@ convert_interface_arg_to_object(GIArgument *arg, GITypeInfo *type_info, SCM *obj
     else if (referenced_info_type == GI_INFO_TYPE_CALLBACK)
     {
         gpointer callback_ptr = arg->v_pointer;
-    *obj = scm_from_pointer(callback_ptr, NULL);
+        *obj = scm_from_pointer(callback_ptr, NULL);
         ret = GI_GIARGUMENT_OK;
     }
     else
@@ -1724,9 +1713,9 @@ convert_interface_arg_to_object(GIArgument *arg, GITypeInfo *type_info, SCM *obj
         // If the object is already an appropriate GBOX (like for output arguments), we memcpy the contents
         // of the argument into the gbox.
         // If the object is not a GBOX (like for return values), we set it to a new GBOX.
-        g_assert_not_reached ();
+        g_assert_not_reached();
     }
-    g_base_info_unref (referenced_base_info);
+    g_base_info_unref(referenced_base_info);
     return ret;
 }
 
@@ -1743,14 +1732,14 @@ convert_string_pointer_arg_to_object(GIArgument *arg, GITypeTag type_tag, GITran
         if (!arg->v_string)
             *obj = scm_c_make_string(0, SCM_MAKE_CHAR(0));
         else
-    {
+        {
             if (type_tag == GI_TYPE_TAG_UTF8)
                 *obj = scm_from_utf8_string(arg->v_string);
             else
                 *obj = scm_from_locale_string(arg->v_string);
             if (transfer == GI_TRANSFER_EVERYTHING)
             {
-                g_free (arg->v_string);
+                g_free(arg->v_string);
                 arg->v_string = NULL;
             }
         }
@@ -1761,15 +1750,13 @@ convert_string_pointer_arg_to_object(GIArgument *arg, GITypeTag type_tag, GITran
     return GI_GIARGUMENT_OK;
 }
 
-
-
 static GIArgumentStatus
 gi_giargument_convert_array_to_vector(GIArgument *arg, GITypeTag item_type_tag, GITransfer item_transfer, SCM *obj)
 {
     /* Here we assume we've been passed a GArray packed in the GIArgument, and we convert that into
      * a plain Guile vector */
     GArray *array = arg->v_pointer;
-    gsize item_size = g_array_get_element_size (array);
+    gsize item_size = g_array_get_element_size(array);
 
     //if (item_type_tag == GI_TYPE_TAG_UINT8 || item_type_tag)
     //{
@@ -1782,35 +1769,35 @@ gi_giargument_convert_array_to_vector(GIArgument *arg, GITypeTag item_type_tag, 
     {
         *obj = scm_c_make_vector(array->len, scm_from_int(0));
         if (item_type_tag == GI_TYPE_TAG_INT8)
-            for (gsize i = 0; i < array->len; i ++)
-                scm_c_vector_set_x(*obj, i, scm_from_int8 (g_array_index (array, gint8, i)));
+            for (gsize i = 0; i < array->len; i++)
+                scm_c_vector_set_x(*obj, i, scm_from_int8(g_array_index(array, gint8, i)));
         else if (item_type_tag == GI_TYPE_TAG_UINT8)
-            for (gsize i = 0; i < array->len; i ++)
-                scm_c_vector_set_x(*obj, i, scm_from_uint8 (g_array_index (array, guint8, i)));
+            for (gsize i = 0; i < array->len; i++)
+                scm_c_vector_set_x(*obj, i, scm_from_uint8(g_array_index(array, guint8, i)));
         else if (item_type_tag == GI_TYPE_TAG_INT16)
-            for (gsize i = 0; i < array->len; i ++)
-                scm_c_vector_set_x(*obj, i, scm_from_int16 (g_array_index (array, gint16, i)));
+            for (gsize i = 0; i < array->len; i++)
+                scm_c_vector_set_x(*obj, i, scm_from_int16(g_array_index(array, gint16, i)));
         else if (item_type_tag == GI_TYPE_TAG_UINT16)
-            for (gsize i = 0; i < array->len; i ++)
-                scm_c_vector_set_x(*obj, i, scm_from_uint16 (g_array_index (array, guint16, i)));
+            for (gsize i = 0; i < array->len; i++)
+                scm_c_vector_set_x(*obj, i, scm_from_uint16(g_array_index(array, guint16, i)));
         else if (item_type_tag == GI_TYPE_TAG_INT32)
-            for (gsize i = 0; i < array->len; i ++)
-                scm_c_vector_set_x(*obj, i, scm_from_int32 (g_array_index (array, gint32, i)));
+            for (gsize i = 0; i < array->len; i++)
+                scm_c_vector_set_x(*obj, i, scm_from_int32(g_array_index(array, gint32, i)));
         else if (item_type_tag == GI_TYPE_TAG_UINT32)
-            for (gsize i = 0; i < array->len; i ++)
-                scm_c_vector_set_x(*obj, i, scm_from_uint32 (g_array_index (array, guint32, i)));
+            for (gsize i = 0; i < array->len; i++)
+                scm_c_vector_set_x(*obj, i, scm_from_uint32(g_array_index(array, guint32, i)));
         else if (item_type_tag == GI_TYPE_TAG_INT64)
-            for (gsize i = 0; i < array->len; i ++)
-                scm_c_vector_set_x(*obj, i, scm_from_int64 (g_array_index (array, gint64, i)));
+            for (gsize i = 0; i < array->len; i++)
+                scm_c_vector_set_x(*obj, i, scm_from_int64(g_array_index(array, gint64, i)));
         else if (item_type_tag == GI_TYPE_TAG_UINT64)
-            for (gsize i = 0; i < array->len; i ++)
-                scm_c_vector_set_x(*obj, i, scm_from_uint64 (g_array_index (array, guint64, i)));
+            for (gsize i = 0; i < array->len; i++)
+                scm_c_vector_set_x(*obj, i, scm_from_uint64(g_array_index(array, guint64, i)));
         else if (item_type_tag == GI_TYPE_TAG_FLOAT)
-            for (gsize i = 0; i < array->len; i ++)
-                scm_c_vector_set_x(*obj, i, scm_from_double (g_array_index (array, gfloat, i)));
+            for (gsize i = 0; i < array->len; i++)
+                scm_c_vector_set_x(*obj, i, scm_from_double(g_array_index(array, gfloat, i)));
         else if (item_type_tag == GI_TYPE_TAG_DOUBLE)
-            for (gsize i = 0; i < array->len; i ++)
-                scm_c_vector_set_x(*obj, i, scm_from_double (g_array_index (array, gdouble, i)));
+            for (gsize i = 0; i < array->len; i++)
+                scm_c_vector_set_x(*obj, i, scm_from_double(g_array_index(array, gdouble, i)));
         else
             return GI_GIARGUMENT_UNHANDLED_ARRAY_ELEMENT_TYPE;
     }
@@ -1819,17 +1806,16 @@ gi_giargument_convert_array_to_vector(GIArgument *arg, GITypeTag item_type_tag, 
 
     if (item_transfer == GI_TRANSFER_EVERYTHING)
     {
-        g_array_free (array, TRUE);
+        g_array_free(array, TRUE);
         arg->v_pointer = NULL;
     }
     else if (item_transfer == GI_TRANSFER_CONTAINER)
     {
-        g_array_free (array, FALSE);
+        g_array_free(array, FALSE);
         arg->v_pointer = NULL;
     }
     return GI_GIARGUMENT_OK;
 }
-
 
 static GIArgumentStatus convert_array_pointer_arg_to_object(GIArgument *arg, GITypeInfo *array_type_info, GITransfer array_transfer, SCM *obj)
 {
@@ -1852,14 +1838,14 @@ static GIArgumentStatus convert_array_pointer_arg_to_object(GIArgument *arg, GIT
 
     // LAYER 1: Let's start on layer 1, where this GIArgInfo tells
     // us we're an array.
-    GITypeTag array_type_tag = g_type_info_get_tag (array_type_info);
-    gboolean array_is_ptr = g_type_info_is_pointer (array_type_info);
-    gboolean array_is_zero_terminated = g_type_info_is_zero_terminated (array_type_info);
-    GIArrayType array_type = g_type_info_get_array_type (array_type_info);
+    GITypeTag array_type_tag = g_type_info_get_tag(array_type_info);
+    gboolean array_is_ptr = g_type_info_is_pointer(array_type_info);
+    gboolean array_is_zero_terminated = g_type_info_is_zero_terminated(array_type_info);
+    GIArrayType array_type = g_type_info_get_array_type(array_type_info);
 
     // Some obvious checks
-    g_assert (array_type_tag == GI_TYPE_TAG_ARRAY);
-    g_assert (array_is_ptr);
+    g_assert(array_type_tag == GI_TYPE_TAG_ARRAY);
+    g_assert(array_is_ptr);
 
     // In Glib 2.0 and GTK 3.0, the common type is C.
     //g_return_val_if_fail (array_type == GI_ARRAY_TYPE_C, GI_GIARGUMENT_ERROR);
@@ -1871,8 +1857,8 @@ static GIArgumentStatus convert_array_pointer_arg_to_object(GIArgument *arg, GIT
     else
         item_transfer = GI_TRANSFER_EVERYTHING;
     GITypeInfo *item_type_info = g_type_info_get_param_type(array_type_info, 0);
-    GITypeTag item_type_tag = g_type_info_get_tag (item_type_info);
-    gboolean item_is_ptr = g_type_info_is_pointer (item_type_info);
+    GITypeTag item_type_tag = g_type_info_get_tag(item_type_info);
+    gboolean item_is_ptr = g_type_info_is_pointer(item_type_info);
     gsize item_size;
     if (item_is_ptr)
         item_size = sizeof(void *);
@@ -1884,18 +1870,18 @@ static GIArgumentStatus convert_array_pointer_arg_to_object(GIArgument *arg, GIT
         *obj = scm_c_make_bytevector(byte_array->len);
         memcpy(SCM_BYTEVECTOR_CONTENTS(*obj), byte_array->data, byte_array->len);
         if (item_transfer == GI_TRANSFER_EVERYTHING)
-            g_byte_array_free (byte_array, TRUE);
+            g_byte_array_free(byte_array, TRUE);
         else
-            g_byte_array_free (byte_array, FALSE);
+            g_byte_array_free(byte_array, FALSE);
         ret = GI_GIARGUMENT_OK;
-        g_base_info_unref (item_type_info);
+        g_base_info_unref(item_type_info);
         return ret;
     }
 
     // FIXME, should also handle GI_ARRAY_TYPE_ARRAY and GI_ARRAY_TYPE_PTR_ARRAY
     if (array_type != GI_ARRAY_TYPE_C)
     {
-        g_critical ("Unhandled array type in %s:%d", __FILE__, __LINE__);
+        g_critical("Unhandled array type in %s:%d", __FILE__, __LINE__);
         return GI_GIARGUMENT_ERROR;
     }
 
@@ -1908,14 +1894,14 @@ static GIArgumentStatus convert_array_pointer_arg_to_object(GIArgument *arg, GIT
 
     if (item_type_tag == GI_TYPE_TAG_INTERFACE)
     {
-        referenced_base_info = g_type_info_get_interface (item_type_info);
-        referenced_base_type = g_base_info_get_type (referenced_base_info);
+        referenced_base_info = g_type_info_get_interface(item_type_info);
+        referenced_base_type = g_base_info_get_type(referenced_base_info);
         if (referenced_base_type == G_TYPE_ENUM || referenced_base_type == G_TYPE_FLAGS)
         {
             if (item_is_ptr)
             {
                 // Don't think there are any output arrays of pointers to flags or enums
-                g_critical ("Unhandled array type in %s:%d", __FILE__, __LINE__);
+                g_critical("Unhandled array type in %s:%d", __FILE__, __LINE__);
                 ret = GI_GIARGUMENT_ERROR;
             }
             // We haven't bothered to make a special flag or enum class on
@@ -1934,9 +1920,9 @@ static GIArgumentStatus convert_array_pointer_arg_to_object(GIArgument *arg, GIT
             // If we are a Struct or Object, we need to look up our actual GType.
             const char *referenced_name = g_base_info_get_namespace(referenced_base_info);
             const char *referenced_namespace = g_base_info_get_namespace(referenced_base_info);
-            referenced_object_type = gir_lookup_type (referenced_name);
+            referenced_object_type = gir_lookup_type(referenced_name);
 
-            g_assert (referenced_object_type != G_TYPE_NONE);
+            g_assert(referenced_object_type != G_TYPE_NONE);
 
             if (!item_is_ptr && referenced_base_type == GI_INFO_TYPE_STRUCT)
             {
@@ -1944,18 +1930,18 @@ static GIArgumentStatus convert_array_pointer_arg_to_object(GIArgument *arg, GIT
                 // (not struct pointers), we need to get the size of each
                 // struct.
                 GIStructInfo *referenced_struct_info = g_type_get_qdata(referenced_object_type, gtype_base_info_key);
-                g_assert (referenced_struct_info != NULL);
-                item_size = g_struct_info_get_size (referenced_struct_info);
+                g_assert(referenced_struct_info != NULL);
+                item_size = g_struct_info_get_size(referenced_struct_info);
 
                 // So we box up each struct in a new GBox
-                g_critical ("Unhandled array type in %s:%d", __FILE__, __LINE__);
+                g_critical("Unhandled array type in %s:%d", __FILE__, __LINE__);
                 ret = GI_GIARGUMENT_ERROR;
             }
             else
             {
                 // Pointers to structs or objects.
                 // We box them up into a new GObject or GBox
-                g_critical ("Unhandled array type in %s:%d", __FILE__, __LINE__);
+                g_critical("Unhandled array type in %s:%d", __FILE__, __LINE__);
                 ret = GI_GIARGUMENT_ERROR;
             }
         }
@@ -1987,10 +1973,9 @@ static GIArgumentStatus convert_array_pointer_arg_to_object(GIArgument *arg, GIT
     }
     else
     {
-        g_critical ("Unhandled array type in %s:%d", __FILE__, __LINE__);
+        g_critical("Unhandled array type in %s:%d", __FILE__, __LINE__);
         ret = GI_GIARGUMENT_ERROR;
         *obj = SCM_BOOL_F;
-
     }
 
     return ret;
@@ -2316,20 +2301,23 @@ arg_struct_to_scm(GIArgument *arg,
     // Once we get here, INTERFACE_INFO says we are a struct or
     // union, and g_type is the GObject GType of that struct or
     // union.
-    if (arg->v_pointer == NULL) {
+    if (arg->v_pointer == NULL)
+    {
         obj = SCM_BOOL_F;
         return 0;
     }
 
     // A struct/union/box containing a simple value?  Let's just unbox
     // that now.
-    if (g_type_is_a (g_type, G_TYPE_VALUE)) {
+    if (g_type_is_a(g_type, G_TYPE_VALUE))
+    {
         obj = gi_gvalue_as_scm(arg->v_pointer, FALSE);
         return 0;
     }
 
     // All the foreign types.
-    else if (is_foreign) {
+    else if (is_foreign)
+    {
         // FIXME: this is where you look up a special handler for
         // Cairo types
         return GI_GIARGUMENT_UNHANDLED_FOREIGN_TYPE;
@@ -2337,38 +2325,47 @@ arg_struct_to_scm(GIArgument *arg,
 
     // All the rest of the boxed types get re-wrapped into a
     // Scheme-friendly refcounted box.
-    else {
+    else
+    {
         gboolean copy_boxed = FALSE;
         gboolean own_ref = FALSE;
-    if (g_type_is_a (g_type, G_TYPE_BOXED)) {
-        if (transfer == GI_TRANSFER_EVERYTHING || is_allocated)
-        copy_boxed = TRUE;
-        if (is_allocated && g_struct_info_get_size (interface_info) > 0)
-        own_ref = TRUE;
-        obj = gir_new_gbox (SPTR_HOLDS_GBOXED, g_type, arg->v_pointer, copy_boxed);
-    } else if (g_type_is_a (g_type, G_TYPE_POINTER)) {
-        // Struct or union containing a pointer
-        obj = gir_new_gbox (SPTR_HOLDS_POINTER, g_type, arg->v_pointer, transfer == GI_TRANSFER_EVERYTHING);
-    } else if (g_type_is_a (g_type, G_TYPE_VARIANT)) {
-        if (transfer == GI_TRANSFER_NOTHING) {
-        g_variant_ref_sink (arg->v_pointer);
+        if (g_type_is_a(g_type, G_TYPE_BOXED))
+        {
+            if (transfer == GI_TRANSFER_EVERYTHING || is_allocated)
+                copy_boxed = TRUE;
+            if (is_allocated && g_struct_info_get_size(interface_info) > 0)
+                own_ref = TRUE;
+            obj = gir_new_gbox(SPTR_HOLDS_GBOXED, g_type, arg->v_pointer, copy_boxed);
         }
-        obj = gir_new_gbox (SPTR_HOLDS_STRUCT, g_type, arg->v_pointer, FALSE);
-    } else if (g_type == G_TYPE_NONE) {
-        if (transfer == GI_TRANSFER_EVERYTHING || is_allocated)
-        obj = gir_new_gbox (SPTR_HOLDS_STRUCT, g_type, arg->v_pointer, TRUE);
+        else if (g_type_is_a(g_type, G_TYPE_POINTER))
+        {
+            // Struct or union containing a pointer
+            obj = gir_new_gbox(SPTR_HOLDS_POINTER, g_type, arg->v_pointer, transfer == GI_TRANSFER_EVERYTHING);
+        }
+        else if (g_type_is_a(g_type, G_TYPE_VARIANT))
+        {
+            if (transfer == GI_TRANSFER_NOTHING)
+            {
+                g_variant_ref_sink(arg->v_pointer);
+            }
+            obj = gir_new_gbox(SPTR_HOLDS_STRUCT, g_type, arg->v_pointer, FALSE);
+        }
+        else if (g_type == G_TYPE_NONE)
+        {
+            if (transfer == GI_TRANSFER_EVERYTHING || is_allocated)
+                obj = gir_new_gbox(SPTR_HOLDS_STRUCT, g_type, arg->v_pointer, TRUE);
+            else
+                obj = gir_new_gbox(SPTR_HOLDS_STRUCT, g_type, arg->v_pointer, FALSE);
+        }
         else
-        obj = gir_new_gbox (SPTR_HOLDS_STRUCT, g_type, arg->v_pointer, FALSE);
-    } else
-    {
-        g_critical("Unhandled argument type, %s: %d", __FILE__, __LINE__);
-        return GI_GIARGUMENT_UNHANDLED_TYPE;
-    }
+        {
+            g_critical("Unhandled argument type, %s: %d", __FILE__, __LINE__);
+            return GI_GIARGUMENT_UNHANDLED_TYPE;
+        }
     }
 
     return GI_GIARGUMENT_OK;
 };
-
 
 gboolean
 gi_giargument_check_scm_type(SCM obj, GIArgInfo *ai, char **errstr)
@@ -2475,10 +2472,10 @@ gi_giargument_check_scm_type(SCM obj, GIArgInfo *ai, char **errstr)
         {
             ok = TRUE;
         }
-    else if (type_tag == GI_TYPE_TAG_ARRAY)
-    {
-        ok = TRUE;
-    }
+        else if (type_tag == GI_TYPE_TAG_ARRAY)
+        {
+            ok = TRUE;
+        }
         else
         {
             *errstr = g_strdup_printf("unhandled pointer type %u", type_tag);
@@ -2489,55 +2486,58 @@ gi_giargument_check_scm_type(SCM obj, GIArgInfo *ai, char **errstr)
 }
 
 gboolean
-gi_giargument_to_gssize (const char *func,
-             GIArgument *arg_in,
-                         GITypeTag  type_tag,
-                         gssize *gssize_out)
+gi_giargument_to_gssize(const char *func,
+                        GIArgument *arg_in,
+                        GITypeTag type_tag,
+                        gssize *gssize_out)
 {
-    const gchar *type_name = g_type_tag_to_string (type_tag);
+    const gchar *type_name = g_type_tag_to_string(type_tag);
 
-    switch (type_tag) {
+    switch (type_tag)
+    {
     case GI_TYPE_TAG_INT8:
-    *gssize_out = arg_in->v_int8;
-    return TRUE;
+        *gssize_out = arg_in->v_int8;
+        return TRUE;
     case GI_TYPE_TAG_UINT8:
-    *gssize_out = arg_in->v_uint8;
-    return TRUE;
+        *gssize_out = arg_in->v_uint8;
+        return TRUE;
     case GI_TYPE_TAG_INT16:
-    *gssize_out = arg_in->v_int16;
-    return TRUE;
+        *gssize_out = arg_in->v_int16;
+        return TRUE;
     case GI_TYPE_TAG_UINT16:
-    *gssize_out = arg_in->v_uint16;
-    return TRUE;
+        *gssize_out = arg_in->v_uint16;
+        return TRUE;
     case GI_TYPE_TAG_INT32:
-    *gssize_out = arg_in->v_int32;
-    return TRUE;
+        *gssize_out = arg_in->v_int32;
+        return TRUE;
     case GI_TYPE_TAG_UINT32:
-    *gssize_out = arg_in->v_uint32;
-    return TRUE;
+        *gssize_out = arg_in->v_uint32;
+        return TRUE;
     case GI_TYPE_TAG_INT64:
-    if (arg_in->v_int64 > G_MAXSSIZE || arg_in->v_int64 < G_MINSSIZE) {
-        scm_misc_error (func,
-                "Unable to marshal ~A to gssize",
-                scm_list_1 (scm_from_utf8_string (type_name)));
-        return FALSE;
-    }
-    *gssize_out = (gssize)arg_in->v_int64;
-    return TRUE;
+        if (arg_in->v_int64 > G_MAXSSIZE || arg_in->v_int64 < G_MINSSIZE)
+        {
+            scm_misc_error(func,
+                           "Unable to marshal ~A to gssize",
+                           scm_list_1(scm_from_utf8_string(type_name)));
+            return FALSE;
+        }
+        *gssize_out = (gssize)arg_in->v_int64;
+        return TRUE;
     case GI_TYPE_TAG_UINT64:
-    if (arg_in->v_uint64 > G_MAXSSIZE) {
-        scm_misc_error (func,
-                "Unable to marshal ~A to gssize",
-                scm_list_1 (scm_from_utf8_string (type_name)));
-        return FALSE;
-          }
-    *gssize_out = (gssize)arg_in->v_uint64;
-    return TRUE;
+        if (arg_in->v_uint64 > G_MAXSSIZE)
+        {
+            scm_misc_error(func,
+                           "Unable to marshal ~A to gssize",
+                           scm_list_1(scm_from_utf8_string(type_name)));
+            return FALSE;
+        }
+        *gssize_out = (gssize)arg_in->v_uint64;
+        return TRUE;
     default:
-    scm_misc_error (func,
-            "Unable to marshall ~A to gssize",
-            scm_list_1 (scm_from_utf8_string (type_name)));
-    return FALSE;
+        scm_misc_error(func,
+                       "Unable to marshall ~A to gssize",
+                       scm_list_1(scm_from_utf8_string(type_name)));
+        return FALSE;
     }
 }
 
@@ -2636,7 +2636,6 @@ arg_to_hash_pointer (const GIArgument *arg,
 }
 #endif
 
-
 /**
  * _pygi_argument_array_length_marshal:
  * @length_arg_index: Index of length argument in the callables args list.
@@ -2648,9 +2647,9 @@ arg_to_hash_pointer (const GIArgument *arg,
  * Returns: The length of the array or -1 on failure.
  */
 gssize
-gi_argument_array_length_marshal (gsize length_arg_index,
-                  void *user_data1,
-                  void *user_data2)
+gi_argument_array_length_marshal(gsize length_arg_index,
+                                 void *user_data1,
+                                 void *user_data2)
 {
     GIArgInfo length_arg_info;
     GITypeInfo length_type_info;
@@ -2659,16 +2658,17 @@ gi_argument_array_length_marshal (gsize length_arg_index,
     GValue *values = (GValue *)user_data1;
     GICallableInfo *callable_info = (GICallableInfo *)user_data2;
 
-    g_callable_info_load_arg (callable_info,
-                  (gint)length_arg_index, &length_arg_info);
-    g_arg_info_load_type (&length_arg_info, &length_type_info);
+    g_callable_info_load_arg(callable_info,
+                             (gint)length_arg_index, &length_arg_info);
+    g_arg_info_load_type(&length_arg_info, &length_type_info);
 
-    length_arg = gi_giargument_from_g_value ( &(values[length_arg_index]),
-                                              &length_type_info);
-    if (!gi_giargument_to_gssize (NULL,
-                  &length_arg,
-                g_type_info_get_tag (&length_type_info),
-                &array_len)) {
+    length_arg = gi_giargument_from_g_value(&(values[length_arg_index]),
+                                            &length_type_info);
+    if (!gi_giargument_to_gssize(NULL,
+                                 &length_arg,
+                                 g_type_info_get_tag(&length_type_info),
+                                 &array_len))
+    {
         return -1;
     }
 
@@ -2794,93 +2794,96 @@ gi_giargument_to_array (GIArgument  *arg,
 #endif
 
 GIArgument
-gi_argument_from_object (const char *func,
-             SCM object,
-             GITypeInfo *type_info,
-             GITransfer  transfer)
+gi_argument_from_object(const char *func,
+                        SCM object,
+                        GITypeInfo *type_info,
+                        GITransfer transfer)
 {
     GIArgument arg;
     GITypeTag type_tag;
     gpointer cleanup_data = NULL;
     gboolean is_ptr;
 
-    g_debug ("making GIArgument from object");
+    g_debug("making GIArgument from object");
     memset(&arg, 0, sizeof(GIArgument));
-    type_tag = g_type_info_get_tag (type_info);
-    is_ptr = g_type_info_is_pointer (type_info);
+    type_tag = g_type_info_get_tag(type_info);
+    is_ptr = g_type_info_is_pointer(type_info);
 
-    g_debug (" type1 %s",g_type_tag_to_string (type_tag));
+    g_debug(" type1 %s", g_type_tag_to_string(type_tag));
 
-    switch (type_tag) {
-        case GI_TYPE_TAG_ARRAY:
+    switch (type_tag)
+    {
+    case GI_TYPE_TAG_ARRAY:
+    {
+        ssize_t slength;
+        guint length, i;
+        gboolean is_zero_terminated;
+        GITypeInfo *item_type_info;
+        gsize item_size;
+        GArray *array;
+        GITransfer item_transfer;
+
+        if (scm_is_eq(object, SCM_BOOL_F) || scm_is_eq(object, SCM_EOL))
         {
-            ssize_t slength;
-            guint length, i;
-            gboolean is_zero_terminated;
-            GITypeInfo *item_type_info;
-            gsize item_size;
-            GArray *array;
-            GITransfer item_transfer;
+            arg.v_pointer = NULL;
+            break;
+        }
 
-            if (scm_is_eq (object, SCM_BOOL_F) || scm_is_eq (object, SCM_EOL))
+        /* Note, strings are sequences, but we cannot accept them here */
+        if (!scm_is_vector(object))
+            scm_misc_error(func, "expected vector", SCM_EOL);
+
+        slength = scm_to_ssize_t(scm_vector_length(object));
+        is_zero_terminated = g_type_info_is_zero_terminated(type_info);
+        item_type_info = g_type_info_get_param_type(type_info, 0);
+
+        /* we handle arrays that are really strings specially, see below */
+        if (g_type_info_get_tag(item_type_info) == GI_TYPE_TAG_UINT8)
+            item_size = 1;
+        else
+            item_size = sizeof(GIArgument);
+
+        array = g_array_sized_new(is_zero_terminated,
+                                  FALSE, (guint)item_size, length);
+        if (array == NULL)
+        {
+            g_base_info_unref((GIBaseInfo *)item_type_info);
+            scm_misc_error(func, "allocation error", SCM_EOL);
+            break;
+        }
+
+        if (g_type_info_get_tag(item_type_info) == GI_TYPE_TAG_UINT8)
+        {
+            if (scm_is_bytevector(object))
             {
-                arg.v_pointer = NULL;
-                break;
+                memcpy(array->data, SCM_BYTEVECTOR_CONTENTS(object), length);
+                array->len = length;
+                goto array_success;
             }
+        }
 
-            /* Note, strings are sequences, but we cannot accept them here */
-        if (!scm_is_vector (object))
-           scm_misc_error (func, "expected vector", SCM_EOL);
+        item_transfer = transfer == GI_TRANSFER_CONTAINER ? GI_TRANSFER_NOTHING : transfer;
 
-            slength = scm_to_ssize_t (scm_vector_length (object));
-            is_zero_terminated = g_type_info_is_zero_terminated (type_info);
-            item_type_info = g_type_info_get_param_type (type_info, 0);
+        for (i = 0; i < slength; i++)
+        {
+            SCM s_item;
+            GIArgument item;
 
-            /* we handle arrays that are really strings specially, see below */
-            if (g_type_info_get_tag (item_type_info) == GI_TYPE_TAG_UINT8)
-               item_size = 1;
-            else
-               item_size = sizeof (GIArgument);
+            s_item = scm_c_vector_ref(object, i);
+            /* if (py_item == NULL) { */
+            /*     goto array_item_error; */
+            /* } */
 
-            array = g_array_sized_new (is_zero_terminated,
-                       FALSE, (guint)item_size, length);
-            if (array == NULL) {
-                g_base_info_unref ( (GIBaseInfo *) item_type_info);
-        scm_misc_error (func, "allocation error", SCM_EOL);
-                break;
-            }
+            item = gi_argument_from_object(func, s_item, item_type_info, item_transfer);
 
-            if (g_type_info_get_tag(item_type_info) == GI_TYPE_TAG_UINT8)
-            {
-                if (scm_is_bytevector(object))
-                {
-                    memcpy(array->data, SCM_BYTEVECTOR_CONTENTS(object), length);
-                    array->len = length;
-                    goto array_success;
-                }
-            }
+            /* Py_DECREF (py_item); */
 
-            item_transfer = transfer == GI_TRANSFER_CONTAINER ? GI_TRANSFER_NOTHING : transfer;
+            /* if (PyErr_Occurred()) { */
+            /*     goto array_item_error; */
+            /* } */
 
-            for (i = 0; i < slength; i++) {
-                SCM s_item;
-                GIArgument item;
-
-                s_item = scm_c_vector_ref (object, i);
-                /* if (py_item == NULL) { */
-                /*     goto array_item_error; */
-                /* } */
-
-                item = gi_argument_from_object (func, s_item, item_type_info, item_transfer);
-
-                /* Py_DECREF (py_item); */
-
-                /* if (PyErr_Occurred()) { */
-                /*     goto array_item_error; */
-                /* } */
-
-                g_array_insert_val (array, i, item);
-                continue;
+            g_array_insert_val(array, i, item);
+            continue;
 #if 0
 
 array_item_error:
@@ -2892,85 +2895,86 @@ array_item_error:
                 _PyGI_ERROR_PREFIX ("Item %u: ", i);
                 break;
 #endif
-            }
+        }
 
-array_success:
+    array_success:
 #if 0
             arg.v_pointer = array;
             g_base_info_unref ( (GIBaseInfo *) item_type_info);
 #endif
-            break;
-        }
-        case GI_TYPE_TAG_INTERFACE:
+        break;
+    }
+    case GI_TYPE_TAG_INTERFACE:
+    {
+        GIBaseInfo *info;
+        GIInfoType info_type;
+
+        info = g_type_info_get_interface(type_info);
+        info_type = g_base_info_get_type(info);
+        g_debug("  type2 %s", g_info_type_to_string(info_type));
+        g_debug("  type3 %s", g_base_info_get_name(info));
+        switch (info_type)
         {
-            GIBaseInfo *info;
-            GIInfoType info_type;
+        case GI_INFO_TYPE_CALLBACK:
+            /* This should be handled in invoke() */
+            g_assert_not_reached();
+            break;
+        case GI_INFO_TYPE_BOXED:
+        case GI_INFO_TYPE_STRUCT:
+        case GI_INFO_TYPE_UNION:
+        {
+            GType g_type;
+            SCM s_type;
+            gboolean is_foreign = (info_type == GI_INFO_TYPE_STRUCT) &&
+                                  (g_struct_info_is_foreign((GIStructInfo *)info));
 
-            info = g_type_info_get_interface (type_info);
-            info_type = g_base_info_get_type (info);
-            g_debug ("  type2 %s", g_info_type_to_string (info_type));
-            g_debug ("  type3 %s", g_base_info_get_name (info));
-            switch (info_type) {
-                case GI_INFO_TYPE_CALLBACK:
-                    /* This should be handled in invoke() */
-                    g_assert_not_reached();
-                    break;
-                case GI_INFO_TYPE_BOXED:
-                case GI_INFO_TYPE_STRUCT:
-                case GI_INFO_TYPE_UNION:
-                {
-                    GType g_type;
-                    SCM s_type;
-                    gboolean is_foreign = (info_type == GI_INFO_TYPE_STRUCT) &&
-                                          (g_struct_info_is_foreign ((GIStructInfo *) info));
+            g_type = g_registered_type_info_get_g_type((GIRegisteredTypeInfo *)info);
+            //s_type = gi_type_import_by_gi_info ( (GIBaseInfo *) info);
+            s_type = gi_gtype_c2g(g_type);
 
-                    g_type = g_registered_type_info_get_g_type ( (GIRegisteredTypeInfo *) info);
-                    //s_type = gi_type_import_by_gi_info ( (GIBaseInfo *) info);
-                    s_type = gi_gtype_c2g(g_type);
-
-                    /* Note for G_TYPE_VALUE g_type:
+            /* Note for G_TYPE_VALUE g_type:
                      * This will currently leak the GValue that is allocated and
                      * stashed in arg.v_pointer. Out argument marshaling for caller
                      * allocated GValues already pass in memory for the GValue.
                      * Further re-factoring is needed to fix this leak.
                      * See: https://bugzilla.gnome.org/show_bug.cgi?id=693405
                      */
-                    /* pygi_arg_struct_from_py_marshal (object, */
-                    /*                                  &arg, */
-                    /*                                  NULL, /\*arg_name*\/ */
-                    /*                                  info, /\*interface_info*\/ */
-                    /*                                  g_type, */
-                    /*                                  py_type, */
-                    /*                                  transfer, */
-                    /*                                  FALSE, /\*copy_reference*\/ */
-                    /*                                  is_foreign, */
-                    /*                                  g_type_info_is_pointer (type_info)); */
-            g_critical ("Unimplemented");
+            /* pygi_arg_struct_from_py_marshal (object, */
+            /*                                  &arg, */
+            /*                                  NULL, /\*arg_name*\/ */
+            /*                                  info, /\*interface_info*\/ */
+            /*                                  g_type, */
+            /*                                  py_type, */
+            /*                                  transfer, */
+            /*                                  FALSE, /\*copy_reference*\/ */
+            /*                                  is_foreign, */
+            /*                                  g_type_info_is_pointer (type_info)); */
+            g_critical("Unimplemented");
 
-                    // Py_DECREF (py_type);
-                    break;
-                }
-                case GI_INFO_TYPE_ENUM:
-                case GI_INFO_TYPE_FLAGS:
-                {
-            arg.v_int = scm_to_int (object);
-                    break;
-                }
-                case GI_INFO_TYPE_INTERFACE:
-                case GI_INFO_TYPE_OBJECT:
-                    /* An error within this call will result in a NULL arg */
-                    /* pygi_arg_gobject_out_arg_from_py (object, &arg, transfer); */
-            g_critical ("In barely implemented OBJ->arg");
-            arg.v_pointer = gi_gobject_get_obj (object);
-            // g_assert_not_reached ();
-                    break;
-
-                default:
-                    g_assert_not_reached();
-            }
-            g_base_info_unref (info);
+            // Py_DECREF (py_type);
             break;
         }
+        case GI_INFO_TYPE_ENUM:
+        case GI_INFO_TYPE_FLAGS:
+        {
+            arg.v_int = scm_to_int(object);
+            break;
+        }
+        case GI_INFO_TYPE_INTERFACE:
+        case GI_INFO_TYPE_OBJECT:
+            /* An error within this call will result in a NULL arg */
+            /* pygi_arg_gobject_out_arg_from_py (object, &arg, transfer); */
+            g_critical("In barely implemented OBJ->arg");
+            arg.v_pointer = gi_gobject_get_obj(object);
+            // g_assert_not_reached ();
+            break;
+
+        default:
+            g_assert_not_reached();
+        }
+        g_base_info_unref(info);
+        break;
+    }
 #if 0
         case GI_TYPE_TAG_GLIST:
         case GI_TYPE_TAG_GSLIST:
@@ -3149,11 +3153,11 @@ hash_table_release:
             /* TODO */
             break;
 #endif
-        default:
-            /* Ignores cleanup data for now. */
-        gi_marshal_from_scm_basic_type (object, &arg, type_tag, is_ptr, transfer,
-                        &cleanup_data);
-            break;
+    default:
+        /* Ignores cleanup data for now. */
+        gi_marshal_from_scm_basic_type(object, &arg, type_tag, is_ptr, transfer,
+                                       &cleanup_data);
+        break;
     }
 
     return arg;
@@ -3277,12 +3281,12 @@ SCM gi_giargument_to_object(GIArgument *arg,
 
             if (info_type == GI_INFO_TYPE_STRUCT)
             {
-                object = gir_new_struct_gbox (g_type, arg->v_pointer, transfer == GI_TRANSFER_EVERYTHING);
+                object = gir_new_struct_gbox(g_type, arg->v_pointer, transfer == GI_TRANSFER_EVERYTHING);
                 break;
             }
             else if (info_type == GI_INFO_TYPE_UNION)
             {
-                object =  gir_new_union_gbox (g_type, arg->v_pointer, transfer == GI_TRANSFER_EVERYTHING);
+                object = gir_new_union_gbox(g_type, arg->v_pointer, transfer == GI_TRANSFER_EVERYTHING);
                 break;
             }
 
@@ -3502,44 +3506,45 @@ SCM gi_giargument_to_object(GIArgument *arg,
     return object;
 }
 
-void
-gi_giargument_release (GIArgument   *arg,
-                        GITypeInfo  *type_info,
-                        GITransfer   transfer,
-                        GIDirection  direction)
+void gi_giargument_release(GIArgument *arg,
+                           GITypeInfo *type_info,
+                           GITransfer transfer,
+                           GIDirection direction)
 {
     GITypeTag type_tag;
     gboolean is_out = (direction == GI_DIRECTION_OUT || direction == GI_DIRECTION_INOUT);
 
-    type_tag = g_type_info_get_tag (type_info);
+    type_tag = g_type_info_get_tag(type_info);
 
-    switch (type_tag) {
-        case GI_TYPE_TAG_VOID:
-            /* Don't do anything, it's transparent to the C side */
-            break;
-        case GI_TYPE_TAG_BOOLEAN:
-        case GI_TYPE_TAG_INT8:
-        case GI_TYPE_TAG_UINT8:
-        case GI_TYPE_TAG_INT16:
-        case GI_TYPE_TAG_UINT16:
-        case GI_TYPE_TAG_INT32:
-        case GI_TYPE_TAG_UINT32:
-        case GI_TYPE_TAG_INT64:
-        case GI_TYPE_TAG_UINT64:
-        case GI_TYPE_TAG_FLOAT:
-        case GI_TYPE_TAG_DOUBLE:
-        case GI_TYPE_TAG_GTYPE:
-        case GI_TYPE_TAG_UNICHAR:
-            break;
-        case GI_TYPE_TAG_FILENAME:
-        case GI_TYPE_TAG_UTF8:
-            /* With allow-none support the string could be NULL */
-            if ((arg->v_string != NULL &&
-                    (direction == GI_DIRECTION_IN && transfer == GI_TRANSFER_NOTHING))
-                    || (direction == GI_DIRECTION_OUT && transfer == GI_TRANSFER_EVERYTHING)) {
-                g_free (arg->v_string);
-            }
-            break;
+    switch (type_tag)
+    {
+    case GI_TYPE_TAG_VOID:
+        /* Don't do anything, it's transparent to the C side */
+        break;
+    case GI_TYPE_TAG_BOOLEAN:
+    case GI_TYPE_TAG_INT8:
+    case GI_TYPE_TAG_UINT8:
+    case GI_TYPE_TAG_INT16:
+    case GI_TYPE_TAG_UINT16:
+    case GI_TYPE_TAG_INT32:
+    case GI_TYPE_TAG_UINT32:
+    case GI_TYPE_TAG_INT64:
+    case GI_TYPE_TAG_UINT64:
+    case GI_TYPE_TAG_FLOAT:
+    case GI_TYPE_TAG_DOUBLE:
+    case GI_TYPE_TAG_GTYPE:
+    case GI_TYPE_TAG_UNICHAR:
+        break;
+    case GI_TYPE_TAG_FILENAME:
+    case GI_TYPE_TAG_UTF8:
+        /* With allow-none support the string could be NULL */
+        if ((arg->v_string != NULL &&
+             (direction == GI_DIRECTION_IN && transfer == GI_TRANSFER_NOTHING)) ||
+            (direction == GI_DIRECTION_OUT && transfer == GI_TRANSFER_EVERYTHING))
+        {
+            g_free(arg->v_string);
+        }
+        break;
 #if 0
         case GI_TYPE_TAG_ARRAY:
         {
@@ -3769,8 +3774,8 @@ gi_giargument_release (GIArgument   *arg,
             break;
         }
 #endif
-        default:
-            break;
+    default:
+        break;
     }
 }
 
@@ -3778,16 +3783,16 @@ static SCM
 scm_immediate_giargument_to_object(SCM s_arg, SCM s_type)
 {
     if (!SCM_IS_A_P(s_arg, gi_giargument_type))
-        scm_wrong_type_arg ("immediate-giargument->object", SCM_ARG1, s_arg);
-    GITypeTag type_tag = scm_to_int (s_type);
+        scm_wrong_type_arg("immediate-giargument->object", SCM_ARG1, s_arg);
+    GITypeTag type_tag = scm_to_int(s_type);
     SCM obj = SCM_BOOL_T;
 
-    GIArgument *arg = gi_giargument_get_argument (s_arg);
+    GIArgument *arg = gi_giargument_get_argument(s_arg);
     int ret = convert_immediate_arg_to_object(arg, type_tag, &obj);
     if (ret != GI_GIARGUMENT_OK)
         scm_misc_error("immediate-giargument->object",
-            gi_giargument_error_messages[ret],
-            SCM_EOL);
+                       gi_giargument_error_messages[ret],
+                       SCM_EOL);
     return obj;
 }
 
@@ -3796,18 +3801,17 @@ scm_immediate_object_to_giargument(SCM s_obj, SCM s_type)
 {
     GIArgumentStatus ret;
 
-    GITypeTag type_tag = scm_to_int (s_type);
-    GIArgument *arg = scm_gc_malloc (sizeof(GIArgument), "GIArgument");
-    memset (arg, 0, sizeof (GIArgument));
+    GITypeTag type_tag = scm_to_int(s_type);
+    GIArgument *arg = scm_gc_malloc(sizeof(GIArgument), "GIArgument");
+    memset(arg, 0, sizeof(GIArgument));
 
     ret = convert_immediate_object_to_arg(s_obj, type_tag, arg);
     if (ret != GI_GIARGUMENT_OK)
         scm_misc_error("immediate-object->giargument",
-            gi_giargument_error_messages[ret],
-            SCM_EOL);
+                       gi_giargument_error_messages[ret],
+                       SCM_EOL);
 
-
-    return scm_make_foreign_object_1 (gi_giargument_type, arg);
+    return scm_make_foreign_object_1(gi_giargument_type, arg);
 }
 
 #if 0
@@ -3836,17 +3840,17 @@ static SCM
 scm_string_giargument_to_object(SCM s_arg, SCM s_type, SCM s_transfer)
 {
     if (!SCM_IS_A_P(s_arg, gi_giargument_type))
-        scm_wrong_type_arg ("string-giargument->object", SCM_ARG1, s_arg);
-    GITypeTag type_tag = scm_to_int (s_type);
-    GITransfer transfer = scm_to_int (s_transfer);
+        scm_wrong_type_arg("string-giargument->object", SCM_ARG1, s_arg);
+    GITypeTag type_tag = scm_to_int(s_type);
+    GITransfer transfer = scm_to_int(s_transfer);
     SCM obj = SCM_BOOL_T;
 
-    GIArgument *arg = gi_giargument_get_argument (s_arg);
+    GIArgument *arg = gi_giargument_get_argument(s_arg);
     int ret = convert_string_pointer_arg_to_object(arg, type_tag, transfer, &obj);
     if (ret != GI_GIARGUMENT_OK)
         scm_misc_error("string-giargument->object",
-            gi_giargument_error_messages[ret],
-            SCM_EOL);
+                       gi_giargument_error_messages[ret],
+                       SCM_EOL);
     return obj;
 }
 
@@ -3854,22 +3858,22 @@ static SCM
 scm_giargument_to_pointer(SCM s_arg)
 {
     if (!SCM_IS_A_P(s_arg, gi_giargument_type))
-    scm_wrong_type_arg ("giargument->pointer", SCM_ARG1, s_arg);
+        scm_wrong_type_arg("giargument->pointer", SCM_ARG1, s_arg);
 
-    GIArgument *arg = gi_giargument_get_argument (s_arg);
+    GIArgument *arg = gi_giargument_get_argument(s_arg);
 
-    return scm_from_pointer (arg->v_pointer, NULL);
+    return scm_from_pointer(arg->v_pointer, NULL);
 }
 
 static SCM
 scm_pointer_to_giargument(SCM s_obj)
 {
-    if (!SCM_POINTER_P (s_obj))
-    scm_wrong_type_arg ("pointer->giargument", SCM_ARG1, s_obj);
+    if (!SCM_POINTER_P(s_obj))
+        scm_wrong_type_arg("pointer->giargument", SCM_ARG1, s_obj);
 
-    GIArgument *arg = scm_gc_malloc (sizeof(GIArgument), "GIArgument");
-    memset (arg, 0, sizeof (GIArgument));
-    arg->v_pointer = scm_to_pointer (s_obj);
+    GIArgument *arg = scm_gc_malloc(sizeof(GIArgument), "GIArgument");
+    memset(arg, 0, sizeof(GIArgument));
+    arg->v_pointer = scm_to_pointer(s_obj);
     return scm_make_foreign_object_1(gi_giargument_type, arg);
 }
 
@@ -3894,11 +3898,9 @@ scm_convert_giargument_to_object (SCM s_arg, SCM s_arg_info)
 }
 #endif
 
+#define SCONSTX(NAME) scm_permanent_object(scm_c_define(#NAME, scm_from_int(NAME)))
 
-#define SCONSTX(NAME) scm_permanent_object (scm_c_define (#NAME, scm_from_int (NAME)))
-
-void
-gi_init_giargument (void)
+void gi_init_giargument(void)
 {
     gi_init_giargument_type();
 
@@ -3928,10 +3930,10 @@ gi_init_giargument (void)
     SCONSTX(GI_TRANSFER_CONTAINER);
     SCONSTX(GI_TRANSFER_EVERYTHING);
 
-    scm_c_define_gsubr ("immediate-giargument->object", 2, 0, 0, scm_immediate_giargument_to_object);
-    scm_c_define_gsubr ("immediate-object->giargument", 2, 0, 0, scm_immediate_object_to_giargument);
-    scm_c_define_gsubr ("string-giargument->object", 3, 0, 0, scm_string_giargument_to_object);
+    scm_c_define_gsubr("immediate-giargument->object", 2, 0, 0, scm_immediate_giargument_to_object);
+    scm_c_define_gsubr("immediate-object->giargument", 2, 0, 0, scm_immediate_object_to_giargument);
+    scm_c_define_gsubr("string-giargument->object", 3, 0, 0, scm_string_giargument_to_object);
     //scm_c_define_gsubr ("string-object->giargument", 3, 0, 0, scm_string_object_to_giargument);
-    scm_c_define_gsubr ("giargument->pointer", 1, 0, 0, scm_giargument_to_pointer);
-    scm_c_define_gsubr ("pointer->giargument", 1, 0, 0, scm_pointer_to_giargument);
+    scm_c_define_gsubr("giargument->pointer", 1, 0, 0, scm_giargument_to_pointer);
+    scm_c_define_gsubr("pointer->giargument", 1, 0, 0, scm_pointer_to_giargument);
 }
