@@ -185,6 +185,8 @@ esac
 ################
 # Check for C library functions
 
+AC_CHECK_DECLS([isfinite], [], [], [[#include <math.h>]])
+
 ################
 # Check for system services
 
