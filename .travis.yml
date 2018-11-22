@@ -9,4 +9,7 @@ addons:
     - guile-2.0-dev
     - libtool
     - texinfo
-script: autoreconf -Wall && ./configure && make && make check    
+    - autoconf
+    - automake
+
+script: autoreconf -vif -Wall && ./configure --enable-hardening && make && make check    
