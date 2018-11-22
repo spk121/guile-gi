@@ -81,7 +81,7 @@
 
      (flush-all-ports)
      (usleep 100)
-     (pass-if "main loop context is default context"
+     (expect-fail "main loop context is default context"
               (set! ctx (MainLoop-get-context loop))
               (format #t "main loop context: ~S. default context: ~S.~%" ctx (MainContext-default))
               (equal? ctx (MainContext-default)))

@@ -5,7 +5,6 @@
 #include <glib.h>
 #include <glib-object.h>
 #include "__gi_gflags.h"
-#include "__gi_gflagscollection.h"
 
 extern GQuark gugflags_class_key;
 

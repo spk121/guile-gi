@@ -1,4 +1,4 @@
-# Makefile.am - top level
+# Makefile.am - m4 directory
 # Copyright (C) 2018 Michael L. Gran
 
 # This program is free software: you can redistribute it and/or modify
@@ -14,16 +14,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-ACLOCAL_AMFLAGS = -I m4 ${ACLOCAL_FLAGS}
-AM_DISTCHECK_CONFIGURE_FLAGS = --with-gnu-filesystem-hierarchy
-SUBDIRS = src doc docs m4 build-aux tools test
+# Aditional files to distribute
+EXTRA_DIST = attributes.m4
 
-# Build ChangeLog from GIT history
-dist: ChangeLog
-.PHONY: ChangeLog
-ChangeLog:
-	$(AM_V_GEN) if test -d $(top_srcdir)/.git; then \
-		GIT_DIR="$(top_srcdir)/.git" git log --stat > $@; \
-	fi
-
-CLEANFILES = ChangeLog

@@ -397,6 +397,8 @@ scm_import_typelib(SCM s_namespace, SCM s_version)
         GIBaseInfo *info;
         GIInfoType type;
         info = g_irepository_get_info(NULL, namespace_, i);
+        if (strstr(g_base_info_get_name(info), "sync") != 0)
+            printf("Blammo! %s\n", g_base_info_get_name(info));
         if (g_base_info_is_deprecated(info))
         {
             g_debug("Not importing '%s' because it is deprecated",

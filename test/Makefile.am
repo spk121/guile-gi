@@ -1,4 +1,4 @@
-# Makefile.am - top level
+# Makefile.am - test directory
 # Copyright (C) 2018 Michael L. Gran
 
 # This program is free software: you can redistribute it and/or modify
@@ -14,16 +14,31 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-ACLOCAL_AMFLAGS = -I m4 ${ACLOCAL_FLAGS}
-AM_DISTCHECK_CONFIGURE_FLAGS = --with-gnu-filesystem-hierarchy
-SUBDIRS = src doc docs m4 build-aux tools test
+################################################################
+# Test driver
 
-# Build ChangeLog from GIT history
-dist: ChangeLog
-.PHONY: ChangeLog
-ChangeLog:
-	$(AM_V_GEN) if test -d $(top_srcdir)/.git; then \
-		GIT_DIR="$(top_srcdir)/.git" git log --stat > $@; \
-	fi
+.PHONY: test
+test: check
 
-CLEANFILES = ChangeLog
+AM_TESTS_ENVIRONMENT = \
+  GUILE_AUTO_COMPILE=0; \
+  export GUILE_AUTO_COMPILE; \
+  LTDL_LIBRARY_PATH=${srcdir}; \
+  export LTDL_LIBRARY_PATH;
+
+TEST_EXTENSIONS = .scm
+
+noinst_DATA = lib.scm
+
+TESTS = \
+ memchk_1.scm \
+ memchk_2.scm \
+ mainloop.scm
+
+SCM_LOG_COMPILER = ${top_builddir}/libtool --mode=execute --dlopen=${top_builddir}/src/libguile-gi.la guile
+
+AM_SCM_LOG_FLAGS = --no-auto-compile -L ${top_srcdir}/src -L ${top_srcdir}/test -s
+
+EXTRA_DIST = \
+  $(TESTS) \
+  lib.scm
