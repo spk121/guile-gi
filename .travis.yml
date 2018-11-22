@@ -9,4 +9,4 @@ addons:
     - guile-2.0-dev
     - libtool
     - texinfo
-    
+script: autoreconf -Wall && ./configure && make && make check    
