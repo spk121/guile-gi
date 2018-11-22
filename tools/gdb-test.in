@@ -1,0 +1,29 @@
+#!/bin/sh
+
+# This script opens up a gdb session for a single guile-gi test
+
+# The splitter characters used for word splitting after expansion
+IFS="$(printf '\n\t')"
+
+# Exit immediately if a command returns a non-zero status
+set -e
+
+# Make sure there is exactly one parameter
+if [ "$#" -ne 1 ]; then
+    echo "Usage: $0 TEST" >&2
+    exit 1
+fi
+if ! [ -e ./"$1" ]; then
+    echo "$1 not found" >&2
+    exit 1
+fi
+if ! [ -f ./"$1" ]; then
+    echo "$1 not a regular file" >&2
+    exit 1
+fi
+
+# env (set by configure)
+XDG_CACHE_HOME=@top_builddir@/cache
+export XDG_CACHE_HOME
+exec @abs_top_builddir@/libtool --dlopen=@abs_top_builddir@/src/libguile-gi.la --mode=execute \
+    gdb --args guile -L @abs_top_srcdir@/src -L @abs_top_srcdir@ "$1"
