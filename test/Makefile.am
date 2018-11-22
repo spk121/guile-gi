@@ -22,22 +22,25 @@ test: check
 
 AM_TESTS_ENVIRONMENT = \
   GUILE_AUTO_COMPILE=0; \
-  export GUILE_AUTO_COMPILE; \
-  LTDL_LIBRARY_PATH=${srcdir}; \
-  export LTDL_LIBRARY_PATH;
+  export GUILE_AUTO_COMPILE;
 
 TEST_EXTENSIONS = .scm
 
-noinst_DATA = lib.scm
+noinst_DATA = lib.scm automake-test-lib.scm
 
 TESTS = \
  memchk_1.scm \
  memchk_2.scm \
- mainloop.scm
+ mainloop.scm \
+ byte_array_new.scm \
+ byte_array_new_take.scm
 
-SCM_LOG_COMPILER = ${top_builddir}/libtool --mode=execute --dlopen=${top_builddir}/src/libguile-gi.la guile
+SCM_LOG_COMPILER = \
+  ${top_builddir}/libtool \
+  --dlopen=${top_builddir}/src/libguile-gi.la \
+  --mode=execute guile
 
-AM_SCM_LOG_FLAGS = --no-auto-compile -L ${top_srcdir}/src -L ${top_srcdir}/test -s
+AM_SCM_LOG_FLAGS = --no-auto-compile -L $(abs_top_srcdir)/src -L $(abs_top_srcdir) -s
 
 EXTRA_DIST = \
   $(TESTS) \

@@ -1,19 +1,8 @@
 (use-modules (gi)
-	     (lib))
+	     (test automake-test-lib))
 
-(let* ((rpt (make-count-reporter))
-       (counter-proc (car rpt))
-       (results-proc (cadr rpt)))
-
-  (register-reporter counter-proc)
-  (register-reporter full-reporter)
-  
-  (with-test-prefix
-   "memchk1"
-   (pass-if "gc"
-	    (gc)
-	    #t))
-  
-  (print-counts (results-proc))
-  (exit-value (results-proc)))
-
+(automake-test
+ (begin
+   (format #t "Running a GC after loading (gi)~%")
+   (gc)
+   #t))
