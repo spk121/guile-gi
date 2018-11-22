@@ -1,7 +1,9 @@
 *.bak
+*.0
 *.gcda
 *.gcno
 *.la
+*.lo
 *.o
 *.obj
 *.orig
@@ -12,6 +14,7 @@
 .deps
 .dirstamp
 .libs
+*.out
 
 GPATH
 GRTAGS
@@ -39,6 +42,7 @@ configure.lineno
 libtool
 stamp-h1
 texinfo.tex
+INSTALL
 
 /build-aux/compile
 /build-aux/config.guess
@@ -53,20 +57,28 @@ texinfo.tex
 /m4/ltversion.m4
 /m4/lt~obsolete.m4
 
+/Debug/
+
 # build source
 __gi*.c
 __gi*.h
 
+# scripts
+tools/gdb-test
+tools/uninstalled-env
+
 # executables
 fo_gen
-gi2
-guile-gi
 a.out
 *.gir
 *.typelib
 *.exe
 *.dll
 *.a
+
+# Archives
+*.tar
+*.tar.gz
 
 # logs
 gir-log.txt
