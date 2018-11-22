@@ -24,12 +24,9 @@ fo_gen_SOURCES = \
 fo_gen_CFLAGS = \
   -std=c11 \
   $(GUILE_CFLAGS) \
-  $(GLIB_CFLAGS) \
-  $(GOBJECT_CFLAGS) \
-  $(GOBJECT_INTROSPECTION_CFLAGS) \
-  -DG_LOG_DOMAIN=\"GuileGI\"
+  $(GLIB_CFLAGS)
 
-fo_gen_LDADD = $(GUILE_LIBS) $(GOBJECT_INTROSPECTION_LIBS) $(GLIB_LIBS) $(GOBJECT_LIBS)
+fo_gen_LDADD = $(GUILE_LIBS) $(GLIB_LIBS)
 
 EXTRA_DIST = foreign-object-types.ini
 
