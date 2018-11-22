@@ -1190,7 +1190,6 @@ convert_array_object_to_arg(SCM object, GITypeInfo *array_type_info, GITransfer 
     }
 
 out:
-    g_base_info_unref(array_type_info);
     g_base_info_unref(item_type_info);
     if (referenced_base_info)
         g_base_info_unref (referenced_base_info);
