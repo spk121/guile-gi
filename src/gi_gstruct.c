@@ -1,4 +1,5 @@
 /* -*- Mode: C; c-basic-offset: 4 -*- */
+#include <girepository.h>
 #include "gi_gstruct.h"
 #include "gi_gtype.h"
 #include "gir_func2.h"
@@ -81,6 +82,7 @@ gir_new_gbox(GirPointerContents holds, GType gtype, gpointer ptr, gboolean use_d
         sptr->dealloc = SPTR_NO_FREE_FUNC;
 
     SCM obj = scm_make_foreign_object_2(gir_gbox_type, sptr, GINT_TO_POINTER (TRUE));
+ 
     return obj;
 }
 
@@ -110,7 +112,14 @@ gir_new_struct_gbox(GType type, void *ptr, gboolean free_on_dealloc)
     if (!ptr)
         return SCM_BOOL_F;
 
-    return gir_new_gbox(SPTR_HOLDS_STRUCT, type, ptr, free_on_dealloc);
+    SCM gbox = gir_new_gbox(SPTR_HOLDS_STRUCT, type, ptr, free_on_dealloc);
+
+    scm_t_bits *class_ptr = g_type_get_qdata(type, gtype_class_wrapper);
+    g_assert (class_ptr != NULL);
+    SCM class = SCM_PACK_POINTER(class_ptr);
+
+    SCM struct_gbox = scm_make (scm_list_2(class, gbox));
+    return struct_gbox;
 }
 
 SCM

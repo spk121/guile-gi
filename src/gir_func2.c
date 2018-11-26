@@ -25,6 +25,8 @@
 
 #define GIR_FUNC2_INIT_HASH_TABLE_SIZE 10
 
+static SCM class_meta;
+
 static SCM get_hash_table(const char *name);
 static void hash_table_insert(const char *table_name, const char *namespace_,
     const char *parent,
@@ -32,13 +34,14 @@ static void hash_table_insert(const char *table_name, const char *namespace_,
 static void method_table_insert(GType type,
     GIFunctionInfo *info);
 static gchar *type_public_name(const char *namespace_, const char *parent, GIBaseInfo *info);
+static gchar *type_class_public_name(const char *namespace_, const char *parent, GIBaseInfo *info);
 static gchar *flag_public_name(const char *namespace_, const char *parent, GIBaseInfo *info);
 static gchar *callable_public_name(const char *namespace_, const char *parent, GICallableInfo *info);
 static gchar *method_public_name(const char *namespace_, const char *parent, GICallableInfo *info);
 
 static void export_callback_info(GString **export, const char *namespace_, const char *parent, GICallableInfo *info);
 static void export_callable_info(GString **export, const char *namespace_, const char *parent, GICallableInfo *info);
-static void export_type_info(GString **export, const char *namespace_, const char *parent, GIRegisteredTypeInfo *info);
+static void export_type_info(GString **export, const char *namespace_, const char *parent, GIRegisteredTypeInfo *info, GIInfoType type);
 static void export_constant_info(GString **export, const char *namespace_, const char *parent, GIConstantInfo *info);
 static void export_method_info(GString **export, const char *namespace_, const char *parent, GICallableInfo *info);
 static void export_enum_info(GString **export, const char *namespace_, const char *parent, GIEnumInfo *info);
@@ -150,8 +153,11 @@ scm_load_typelib(SCM s_namespace, SCM s_version)
                 g_base_info_unref(info);
                 break;
             }
+
+            // Attach this GIStructInfo to the gtype for future reference
             g_base_info_ref(info);
             g_type_set_qdata(gtype, gtype_base_info_key, info);
+
             hash_table_insert("%gi-structs", namespace_, NULL, info);
             gint n_methods = g_struct_info_get_n_methods(info);
             for (gint m = 0; m < n_methods; m++)
@@ -180,8 +186,10 @@ scm_load_typelib(SCM s_namespace, SCM s_version)
                 g_base_info_unref(info);
                 break;
             }
+            // Attach this GIStructInfo to the gtype for future reference
             g_base_info_ref(info);
             g_type_set_qdata(gtype, gtype_base_info_key, info);
+            
             hash_table_insert("%gi-objects", namespace_, NULL, info);
             gint n_methods = g_object_info_get_n_methods(info);
             for (gint m = 0; m < n_methods; m++)
@@ -227,6 +235,20 @@ scm_load_typelib(SCM s_namespace, SCM s_version)
                 g_base_info_unref(info);
                 break;
             }
+
+            // Attach this GIStructInfo to the gtype for future reference
+            g_base_info_ref(info);
+            g_type_set_qdata(gtype, gtype_base_info_key, info);
+
+#if 0            
+            // Make a Guile type for this GType
+            char *cname = type_public_name(namespace_, NULL, info);
+            SCM name = scm_from_utf8_string (cname);
+            SCM class = scm_make_standard_class(class_meta, name, scm_list_1 (gir_gbox_type), SCM_EOL);
+            g_free (cname);
+            g_type_set_qdata(gtype, gtype_class_wrapper, SCM_UNPACK_POINTER(class));
+#endif        
+
             hash_table_insert("%gi-unions", namespace_, NULL, info);
             gint n_methods = g_union_info_get_n_methods(info);
             for (gint m = 0; m < n_methods; m++)
@@ -373,7 +395,7 @@ scm_import_typelib(SCM s_namespace, SCM s_version)
 
     SCM_ASSERT(scm_is_string(s_namespace), s_namespace, SCM_ARG1, "%import-typelib");
     SCM_ASSERT(scm_is_string(s_version), s_version, SCM_ARG2, "%import-typelib");
-
+    scm_load_goops ();
     namespace_ = scm_to_utf8_string(s_namespace);
     version = scm_to_utf8_string(s_version);
 
@@ -424,7 +446,7 @@ scm_import_typelib(SCM s_namespace, SCM s_version)
                 break;
             }
             g_base_info_ref(info);
-            export_type_info(&export, namespace_, NULL, info);
+            export_type_info(&export, namespace_, NULL, info, GI_INFO_TYPE_STRUCT);
             gint n_methods = g_struct_info_get_n_methods(info);
             for (gint m = 0; m < n_methods; m++)
             {
@@ -459,7 +481,7 @@ scm_import_typelib(SCM s_namespace, SCM s_version)
                 g_base_info_unref(info);
                 break;
             }
-            export_type_info(&export, namespace_, NULL, info);
+            export_type_info(&export, namespace_, NULL, info, GI_INFO_TYPE_OBJECT);
             gint n_methods = g_object_info_get_n_methods(info);
             for (gint m = 0; m < n_methods; m++)
             {
@@ -510,7 +532,7 @@ scm_import_typelib(SCM s_namespace, SCM s_version)
                 g_base_info_unref(info);
                 break;
             }
-            export_type_info(&export, namespace_, NULL, info);
+            export_type_info(&export, namespace_, NULL, info, GI_INFO_TYPE_UNION);
             gint n_methods = g_union_info_get_n_methods(info);
             for (gint m = 0; m < n_methods; m++)
             {
@@ -629,7 +651,7 @@ scm_export_typelib(SCM s_namespace, SCM s_version)
                 g_base_info_unref(info);
                 break;
             }
-            public_name = type_public_name (namespace_, NULL, info);
+            public_name = type_class_public_name (namespace_, NULL, info);
             types = g_slist_insert_sorted(types,
                  public_name,
                 (GCompareFunc)strcmp);
@@ -667,7 +689,7 @@ scm_export_typelib(SCM s_namespace, SCM s_version)
                 g_base_info_unref(info);
                 break;
             }
-            public_name = type_public_name (namespace_, NULL, info);
+            public_name = type_class_public_name (namespace_, NULL, info);
             types = g_slist_insert_sorted(types,
                 public_name,
                 (GCompareFunc)strcmp);
@@ -732,6 +754,7 @@ scm_export_typelib(SCM s_namespace, SCM s_version)
     export = g_string_new_len(NULL, 128 * 1024);
     g_string_append_printf(export, "(define-module (%s)\n", namespace_);
     g_string_append_printf(export, "  #:use-module (gi)\n");
+    g_string_append_printf(export, "  #:use-module (oop goops)\n");
     g_string_append_printf(export, "  #:export(\n");
 
     if (funcs)
@@ -899,23 +922,43 @@ type_public_name(const char *namespace_, const char *parent, GIBaseInfo *info)
                                   namespace_,
                                   g_base_info_get_name(info));
 #else
+    public_name = g_strdup_printf("<%s:gtype>", g_base_info_get_name(info));
+#endif
+    return public_name;
+}
+
+static gchar *
+type_class_public_name(const char *namespace_, const char *parent, GIBaseInfo *info)
+{
+    char *public_name;
+    g_assert (parent == NULL);
+#ifdef LONG_PUBLIC_NAMES
+    public_name = g_strdup_printf("<%s%s>",
+                                  namespace_,
+                                  g_base_info_get_name(info));
+#else
     public_name = g_strdup_printf("<%s>", g_base_info_get_name(info));
 #endif
     return public_name;
 }
 
 static void
-export_type_info(GString **export, const char *namespace_, const char *parent, GIRegisteredTypeInfo *info)
+export_type_info(GString **export, const char *namespace_, const char *parent, GIRegisteredTypeInfo *info, GIInfoType type)
 {
     g_assert(parent == NULL);
 
     char *public_name = type_public_name (namespace_, parent, info);
+    char *class_name = type_class_public_name (namespace_, parent, info);
     g_string_append_printf(*export,
         "(define %s\n  (gi-lookup-type \"%s-%s\"))\n\n",
         public_name,
         namespace_,
         g_base_info_get_name(info));
+    g_string_append_printf(*export,
+        "(define %s\n (gtype"
+    )
     g_free (public_name);
+    g_free (class_name);
 }
 
 static void
@@ -2771,6 +2814,9 @@ scm_dump_all_arg_types(void)
 
 void gir_init_func2(void)
 {
+    scm_load_goops ();
+    class_meta = scm_c_public_ref ("oop goops", "<class>");
+
 #ifdef FIGURE_OUT_ALL_ARG_TYPES
     gi_arg_infos = g_ptr_array_new();
 #endif

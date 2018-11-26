@@ -10,6 +10,8 @@
 
 GQuark gtype_wrapper_key;
 GQuark gtype_base_info_key;
+GQuark gtype_class_wrapper;
+GQuark guginterface_type_key, gugenum_class_key, gugflags_class_key, gugpointer_class_key, gugboxed_type_key, gugobject_class_key;
 
 /* In C, a GType is an integer.  It indicates a GObject type.
  * Behind the scenes, it is a complicated private structure,
@@ -169,13 +171,11 @@ scm_integer_to_gtype_unsafe(SCM obj)
     return gi_gtype_c2g(val);
 }
 
-#if 0
+
 static GQuark
-gu_type_key(GType type) {
+type_key(GType type) {
     GQuark key;
 
-    g_return_val_if_reached(0);
-#if 0
     if (g_type_is_a(type, G_TYPE_INTERFACE)) {
         key = guginterface_type_key;
     }
@@ -196,11 +196,10 @@ gu_type_key(GType type) {
     }
 
     return key;
-#endif
 }
 
 static SCM
-gir_GType_get_scheme_type(SCM self)
+scm_gtype_get_scheme_type(SCM self)
 {
     GQuark key;
     GType type;
@@ -209,20 +208,17 @@ gir_GType_get_scheme_type(SCM self)
 
     scm_assert_foreign_object_type(gi_gtype_type, self);
     type = gi_gtype_get_type(self);
-    key = gu_type_key(type);
+    key = type_key(type);
     ptr = g_type_get_qdata(type, key);
     if (!ptr)
-        return SCM_NONE;
+        return SCM_BOOL_F;
 
     return SCM_PACK_POINTER(ptr);
 }
 
 static SCM
-gir_GType_set_scheme_type_x(SCM self, SCM value)
+scm_gtype_set_scheme_type_x(SCM self, SCM value)
 {
-    g_return_val_if_reached(SCM_UNSPECIFIED);
-
-#if 0
     GQuark key;
     GType type;
     gpointer ptr;
@@ -230,19 +226,17 @@ gir_GType_set_scheme_type_x(SCM self, SCM value)
 
     scm_assert_foreign_object_type(gi_gtype_type, self);
     type = gi_gtype_get_type(self);
-    key = gu_type_key(type);
-    if (value == SCM_NONE)
+    key = type_key(type);
+    if (scm_is_eq(value, SCM_BOOL_F))
         g_type_set_qdata(type, key, NULL);
     else if (SCM_IS_A_P(value, gi_gtype_type))
-        g_type_set_qdata(type, key, value);
+        g_type_set_qdata(type, key, SCM_UNPACK_POINTER(value));
     else
-        scm_misc_error("GType-set-scheme-data!", "Value '~A' must be NONE or a type object",
+        scm_misc_error("gtype-set-scheme-type!", "Value '~A' must be NONE or a type object",
             scm_list_1(value));
-#endif
 
     return SCM_UNSPECIFIED;
 }
-#endif
 
 static SCM
 scm_gtype_get_name(SCM self)
@@ -491,6 +485,13 @@ SCM gi_gtype_c2g(GType type)
         gi_gtype_set_type(wrapper, type);
         g_type_set_qdata(type, gtype_wrapper_key, SCM_UNPACK_POINTER(wrapper));
         scm_hash_set_x(get_hash_table(), scm_from_size_t(type), wrapper);
+
+        g_debug("Creating a new GType foreign object type: %zu %s", g_type_name(type));
+        char *cname = g_strdup_printf("<%s>", g_type_name(type));
+        SCM sname = scm_from_utf8_string(cname);
+        SCM slots = scm_list_3(scm_from_utf8_symbol("sptr"), scm_from_utf8_symbol("valid"), scm_from_utf8_symbol ("extra"));
+        SCM fo_type = scm_make_foreign_object_type(sname, slots, NULL);
+        scm_gtype_set_scheme_type_x (wrapper, fo_type);
     }
     else
     {
@@ -516,6 +517,14 @@ gi_init_gtype(void)
     scm_permanent_object(scm_c_define("%gtypes", gtype_wrapper_hash));
     gtype_wrapper_key = g_quark_from_static_string("guile-gi-gtype-wrapper");
     gtype_base_info_key = g_quark_from_static_string("gtype-base-info");
+    gtype_class_wrapper = g_quark_from_static_string("gtype-class-wrapper");
+
+    guginterface_type_key = g_quark_from_static_string("guginterface-type");
+    gugenum_class_key = g_quark_from_static_string("gugenum-class");
+    gugflags_class_key = g_quark_from_static_string("gugflags-class");
+    gugpointer_class_key = g_quark_from_static_string("gugpointer-class");
+    gugboxed_type_key = g_quark_from_static_string("gugboxed-type");
+    gugobject_class_key = g_quark_from_static_string("gugobject-class");
 
 #define D(x) scm_permanent_object(scm_c_define(#x, gi_gtype_c2g (x)))
     // D(G_TYPE_INVALID);
@@ -544,6 +553,8 @@ gi_init_gtype(void)
     D(G_TYPE_POINTER);
 #undef D
 
+    scm_c_define_gsubr("gtype-get-scheme-type", 1, 0, 0, scm_gtype_get_scheme_type);
+    scm_c_define_gsubr("gtype-set-scheme-type!", 2, 0, 0, scm_gtype_set_scheme_type_x);
     scm_c_define_gsubr("->gtype", 1, 0, 0, scm_to_gtype);
     scm_c_define_gsubr("integer->gtype-unsafe", 1, 0, 0, scm_integer_to_gtype_unsafe);
     scm_c_define_gsubr("string->gtype", 1, 0, 0, scm_string_to_gtype);
