@@ -54,6 +54,7 @@ Sample Applications
 
 Tutorials
 
+* GObject Types and Guile Types::
 * Threads and Concurrency::
 * Debugging and Profiling::
 * Application Deployment::
@@ -147,13 +148,62 @@ it.
 @chapter Tutorials
 
 @menu
+* GObject Types and Guile Types::
 * Threads and Concurrency::
 * Debugging and Profiling::
 * Application Deployment::
 * Testing and Continuous Integration::
 @end menu
 
-@node Threads and Concurrency, Debugging and Profiling, Tutorials, Tutorials
+@node GObject Types and Guile Types, Threads and Concurrency, Tutorials, Tutorials
+@section GObject Types and Guile Types
+
+Every time you call a GObject procedure provided by Guile-GI, the
+Guile arguments need to be converted to C arguments, and the return
+values need to be converted back into Guile values. For integer and
+string arguments, the C to Guile conversions are straightforward; for
+GObject types -- such as GTK's @code{GtkWindow} or @code{GtkButton} or
+GLib's @code{GDate} -- a Guile object needs to be converted into a C
+structure.  Hopefully, in normal circumstances, this conversion will
+happen automatically without difficulty.
+
+GObject types have different categories.  Some are simple C structs
+and unions.  Others are @emph{objects}, which is GObject's class
+hierarchy upon which the windowing library GTK is built.
+
+Explaining how Guile-to-C type conversion is accomplished under the
+hood can be slightly confusing because there are several different
+things named `type':
+@enumerate
+@item
+the C typedef of a structure, union or object, such as @code{struct
+GtkWindow}
+@item
+the C @code{GType}, a unique integer ID that GObject libraries provide
+for each C typedef'd structure, union, or object
+@item
+the Guile-GI @code{<GType>}, a Guile type that holds this unique
+integer ID
+@item
+the Guile class created by Guile-GI for each GType to hold instances
+of the associated C structure
+@end enumerate
+
+For example, GLib has a type @code{GDate *} which holds information
+about a calendar date.  The @code{GDate *} typedef has an associated
+@code{GType} integer ID.  The Guile class @code{<Date>} is created to
+hold structures with that @code{GType}.  When using GLib's date
+functions from Guile, instances of @code{GDate *} are held by
+instances of the Guile class @code{<Date>}.
+
+Internally to Guile-GI, all of the Guile classes for GObject structs
+and unions are subclasses of Guile-GI's @code{<GBox>} @emph{foreign
+object} class, which handles managing the C pointer.  Similarly, all
+of the Guile classes for GObject objects are subclasses of Guile-GI's
+@code{<GObject>} class which handles any Guile-specified callback
+procedures and subclasses in addition to managing the C pointer.
+
+@node Threads and Concurrency, Debugging and Profiling, GObject Types and Guile Types, Tutorials
 @section Threads and Concurrency
 
 @node Debugging and Profiling, Application Deployment, Threads and Concurrency, Tutorials
