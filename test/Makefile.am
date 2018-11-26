@@ -33,7 +33,9 @@ TESTS = \
  memchk_2.scm \
  mainloop.scm \
  byte_array_new.scm \
- byte_array_new_take.scm
+ byte_array_new_take.scm \
+ bytes_new_null_size.scm \
+ bytes_new_null_contents.scm
 
 SCM_LOG_COMPILER = \
   ${top_builddir}/libtool \
