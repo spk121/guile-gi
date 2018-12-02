@@ -66,44 +66,83 @@ Next: <a href="Tutorials.html#Tutorials" accesskey="n" rel="next">Tutorials</a>,
 <a name="Getting-Started-1"></a>
 <h2 class="chapter">1 Getting Started</h2>
 
+<blockquote>
+<p><b>Warning:</b> All documentation and code examples are of how I hope this will
+ultimately work.  Right now, most of this is not implemented.
+</p></blockquote>
+
 <p>To get things started, we will try to run a very simple GTK+ based GUI
 application using the bindings provided by Guile GI.
 </p>
-<p>First, create a <code>(Gtk)</code> Guile module and a <code>(Gio)</code> Guile
-module.
+<p>Now, to understand how this works, you need to distinguish between
+what Guile-GI provides and the bindings that it creates.
+</p>
+<ul>
+<li> Guile-GI itself is a library that allows you to parse <code>typelib</code>
+files, which describe code modules.  It has a handful of procedures
+for inspecting <code>typelib</code> files as well as some helper procedures
+for dynamically creating procedures and types.
+</li><li> When Guile-GI is used, it creates procedures, variables, and types
+according to the instructions in the <code>typelib</code> files.  These are
+created <em>at runtime</em> when the Guile-GI procedure
+<code>import-typelib</code> is called.
+</li></ul>
+
+<p>First, for each GObject library that you want to use in your program,
+you need to have an export library.  A sample library for GTK+3 could
+take the following form.
 </p>
 <div class="example">
-<pre class="example">guile -L . -c '(use-modules (gi)) (display (export-typelib &quot;Gtk&quot; &quot;3.0&quot;))' &gt; Gtk.scm
-guile -L . -c '(use-modules (gi)) (display (export-typelib &quot;Gio&quot; &quot;2.0&quot;))' &gt; Gio.scm
-</pre></div>
-
-<p>The, a minimal GTK application looks like this
-</p>
-<div class="lisp">
-<pre class="lisp">(use-modules (gi)
-	     (Gtk)
-	     ((Gio) #:prefix Gio)
-	     )
+<pre class="example">(define-module (gtk)
+  #:use-module (gi))
 
 (load-typelib &quot;Gtk&quot; &quot;3.0&quot;)
-(load-typelib &quot;Gio&quot; &quot;2.0&quot;)
+</pre></div>
+
+<p>Note that Guile-GI provides export libraries for the most common
+GObject libraries.  It includes <code>(gi gtk 3.0)</code>, <code>(gi gio
+2.0)</code>, and <code>(gi glib 2.0)</code>, for example.
+</p>
+<p>For these auto-generated libraries, you are going to need some
+documentation. The procedure <code>document-typelib</code> creates some
+rough documentation for a <code>typelib</code>: it gives the procedure names
+and how they are called, plus a list of types and constants.  For
+example, the following commands would make some rough documentation
+for GTK and GIO.
+</p>
+<div class="example">
+<pre class="example">guile -L . -c '(use-modules (gi)) (display (document-typelib &quot;Gtk&quot; &quot;3.0&quot;))' &gt; Gtk.txt
+guile -L . -c '(use-modules (gi)) (display (document-typelib &quot;Gio&quot; &quot;2.0&quot;))' &gt; Gio.txt
+</pre></div>
+
+<p>See <a href="Typelib-Introspection.html#Typelib-Introspection">Typelib Introspection</a> for more information about <code>load-typelib</code> and <code>document-typelib</code>.
+</p>
+<p>A minimal GTK application looks like this
+</p>
+<div class="example">
+<pre class="example">(use-modules (gi gtk 3.0)
+             (gi gio 2.0))
 
 (define (activate app user-data)
   (let ((window (ApplicationWindow-new app)))
-    (Window-set-title window &quot;Window&quot;)
-    (Window-set-default-size window 200 200)
-    (Widget-show-all window)))
+    (send window (set-title &quot;Window&quot;))
+    (send window (set-default-size 200 200))
+    (send window (show-all))))
 
 (define (main)
   (let ((app (Application-new &quot;org.gtk.example&quot; 0)))
     (signal-connect app &quot;activate&quot; activate #f)
-    (GioApplication-run app (length (command-line)) (command-line))))
+    (send app (run (length (command-line)) (command-line)))))
 
 (main)
 </pre></div>
 
 <p>When it is run, it will create an empty window with a title.  Are you
 impressed?
+</p>
+<p>See <a href="GObject-Signals.html#GObject-Signals">GObject Signals</a> for information on
+<code>signal-connect</code>. See <a href="GObject-Methods.html#GObject-Methods">GObject Methods</a> for information on the
+<code>send</code> syntax.
 </p>
 <table class="menu" border="0" cellspacing="0">
 <tr><td align="left" valign="top">&bull; <a href="Installation.html#Installation" accesskey="1">Installation</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
@@ -112,6 +151,11 @@ impressed?
 </td></tr>
 </table>
 
+<hr>
+<div class="header">
+<p>
+Next: <a href="Tutorials.html#Tutorials" accesskey="n" rel="next">Tutorials</a>, Previous: <a href="Preface.html#Preface" accesskey="p" rel="prev">Preface</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="_005findex.html#g_t_005findex" title="Index" rel="index">Index</a>]</p>
+</div>
 
 
 

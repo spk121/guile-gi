@@ -1,0 +1,119 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 2018 Michael L. Gran
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, no Front-Cover Texts, and no Back-Cover
+Texts.  A copy of the license is included in the section entitled "GNU
+Free Documentation License". -->
+<!-- Created by GNU Texinfo 6.5, http://www.gnu.org/software/texinfo/ -->
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>GObject Types and Guile Types (Guile GI)</title>
+
+<meta name="description" content="GObject Types and Guile Types (Guile GI)">
+<meta name="keywords" content="GObject Types and Guile Types (Guile GI)">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="_005findex.html#g_t_005findex" rel="index" title="_index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Tutorials.html#Tutorials" rel="up" title="Tutorials">
+<link href="Threads-and-Concurrency.html#Threads-and-Concurrency" rel="next" title="Threads and Concurrency">
+<link href="Tutorials.html#Tutorials" rel="prev" title="Tutorials">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.indentedblock {margin-right: 0em}
+blockquote.smallindentedblock {margin-right: 0em; font-size: smaller}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style: oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nolinebreak {white-space: nowrap}
+span.roman {font-family: initial; font-weight: normal}
+span.sansserif {font-family: sans-serif; font-weight: normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+<link rel="stylesheet" type="text/css" href="document-1.0.1.css">
+
+
+</head>
+
+<body lang="en">
+<a name="GObject-Types-and-Guile-Types"></a>
+<div class="header">
+<p>
+Next: <a href="Threads-and-Concurrency.html#Threads-and-Concurrency" accesskey="n" rel="next">Threads and Concurrency</a>, Previous: <a href="Tutorials.html#Tutorials" accesskey="p" rel="prev">Tutorials</a>, Up: <a href="Tutorials.html#Tutorials" accesskey="u" rel="up">Tutorials</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="_005findex.html#g_t_005findex" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="GObject-Types-and-Guile-Types-1"></a>
+<h3 class="section">2.1 GObject Types and Guile Types</h3>
+
+<p>Every time you call a GObject procedure provided by Guile-GI, the
+Guile arguments need to be converted to C arguments, and the return
+values need to be converted back into Guile values. For integer and
+string arguments, the C to Guile conversions are straightforward; for
+GObject types &ndash; such as GTK&rsquo;s <code>GtkWindow</code> or <code>GtkButton</code> or
+GLib&rsquo;s <code>GDate</code> &ndash; a Guile object needs to be converted into a C
+structure.  Hopefully, in normal circumstances, this conversion will
+happen automatically without difficulty.
+</p>
+<p>GObject types have different categories.  Some are simple C structs
+and unions.  Others are <em>objects</em>, which is GObject&rsquo;s class
+hierarchy upon which the windowing library GTK is built.
+</p>
+<p>Explaining how Guile-to-C type conversion is accomplished under the
+hood can be slightly confusing because there are several different
+things named &lsquo;type&rsquo;:
+</p><ol>
+<li> the C typedef of a structure, union or object, such as <code>struct
+GtkWindow</code>
+</li><li> the C <code>GType</code>, a unique integer ID that GObject libraries provide
+for each C typedef&rsquo;d structure, union, or object
+</li><li> the Guile-GI <code>&lt;GType&gt;</code>, a Guile type that holds this unique
+integer ID
+</li><li> the Guile class created by Guile-GI for each GType to hold instances
+of the associated C structure
+</li></ol>
+
+<p>For example, GLib has a type <code>GDate *</code> which holds information
+about a calendar date.  The <code>GDate *</code> typedef has an associated
+<code>GType</code> integer ID.  The Guile class <code>&lt;Date&gt;</code> is created to
+hold structures with that <code>GType</code>.  When using GLib&rsquo;s date
+functions from Guile, instances of <code>GDate *</code> are held by
+instances of the Guile class <code>&lt;Date&gt;</code>.
+</p>
+<p>Internally to Guile-GI, all of the Guile classes for GObject structs
+and unions are subclasses of Guile-GI&rsquo;s <code>&lt;GBox&gt;</code> <em>foreign
+object</em> class, which handles managing the C pointer.  Similarly, all
+of the Guile classes for GObject objects are subclasses of Guile-GI&rsquo;s
+<code>&lt;GObject&gt;</code> class which handles any Guile-specified callback
+procedures and subclasses in addition to managing the C pointer.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Threads-and-Concurrency.html#Threads-and-Concurrency" accesskey="n" rel="next">Threads and Concurrency</a>, Previous: <a href="Tutorials.html#Tutorials" accesskey="p" rel="prev">Tutorials</a>, Up: <a href="Tutorials.html#Tutorials" accesskey="u" rel="up">Tutorials</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="_005findex.html#g_t_005findex" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

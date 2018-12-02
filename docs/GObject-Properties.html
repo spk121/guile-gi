@@ -11,19 +11,19 @@ Free Documentation License". -->
 <!-- Created by GNU Texinfo 6.5, http://www.gnu.org/software/texinfo/ -->
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<title>Application Deployment (Guile GI)</title>
+<title>GObject Properties (Guile GI)</title>
 
-<meta name="description" content="Application Deployment (Guile GI)">
-<meta name="keywords" content="Application Deployment (Guile GI)">
+<meta name="description" content="GObject Properties (Guile GI)">
+<meta name="keywords" content="GObject Properties (Guile GI)">
 <meta name="resource-type" content="document">
 <meta name="distribution" content="global">
 <meta name="Generator" content="makeinfo">
 <link href="index.html#Top" rel="start" title="Top">
 <link href="_005findex.html#g_t_005findex" rel="index" title="_index">
 <link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
-<link href="Tutorials.html#Tutorials" rel="up" title="Tutorials">
-<link href="Testing-and-Continuous-Integration.html#Testing-and-Continuous-Integration" rel="next" title="Testing and Continuous Integration">
-<link href="Debugging-and-Profiling.html#Debugging-and-Profiling" rel="prev" title="Debugging and Profiling">
+<link href="Reference-Guide.html#Reference-Guide" rel="up" title="Reference Guide">
+<link href="Custom-GObjects.html#Custom-GObjects" rel="next" title="Custom GObjects">
+<link href="GObject-Signals.html#GObject-Signals" rel="prev" title="GObject Signals">
 <style type="text/css">
 <!--
 a.summary-letter {text-decoration: none}
@@ -57,38 +57,36 @@ ul.no-bullet {list-style: none}
 </head>
 
 <body lang="en">
-<a name="Application-Deployment"></a>
+<a name="GObject-Properties"></a>
 <div class="header">
 <p>
-Next: <a href="Testing-and-Continuous-Integration.html#Testing-and-Continuous-Integration" accesskey="n" rel="next">Testing and Continuous Integration</a>, Previous: <a href="Debugging-and-Profiling.html#Debugging-and-Profiling" accesskey="p" rel="prev">Debugging and Profiling</a>, Up: <a href="Tutorials.html#Tutorials" accesskey="u" rel="up">Tutorials</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="_005findex.html#g_t_005findex" title="Index" rel="index">Index</a>]</p>
+Next: <a href="Custom-GObjects.html#Custom-GObjects" accesskey="n" rel="next">Custom GObjects</a>, Previous: <a href="GObject-Signals.html#GObject-Signals" accesskey="p" rel="prev">GObject Signals</a>, Up: <a href="Reference-Guide.html#Reference-Guide" accesskey="u" rel="up">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="_005findex.html#g_t_005findex" title="Index" rel="index">Index</a>]</p>
 </div>
 <hr>
-<a name="Application-Deployment-1"></a>
-<h3 class="section">2.4 Application Deployment</h3>
+<a name="GObject-Properties-1"></a>
+<h3 class="section">3.6 GObject Properties</h3>
 
-<p>If you write a program in Guile-GI and wish to share it
-with the world, you will need to ensure your users have
-all the prerequisites.
+<p>GObject objects may have one or more properties, which are variables
+attached to the object that may be gotten or set.  GObject properties
+usually have C-like types.  Remember that GObject objects are
+instances of a class that may have a parent class, and each parent
+class may one or more properties. So, for example, if the object is a
+radio button, you may get or set properties that apply specifically to
+radio buttons, or generic buttons, or generic widgets.
 </p>
-<p>At a minimum, Guile-GI scripts will require that users have the
-following packages.
-</p><ul>
-<li> Guile
-</li><li> Guile-GI
-</li><li> libffi
-</li><li> GLib
-</li><li> GObject-Introspection aka GIRepository
-</li></ul>
+<p>The <code>set-property!</code> and <code>get-property</code> procedures are provided
+to set GObject properties.
+</p>
+<dl>
+<dt><a name="index-set_002dproperty_0021"></a>Procedure: <strong>set-property!</strong> <em>obj prop val</em></dt>
+<dt><a name="index-get_002dproperty"></a>Procedure: <strong>get-property</strong> <em>obj prop</em></dt>
+<dd><p>Gets or sets and object&rsquo;s property. <var>prop</var> is the symbol name
+of the property to set.
+</p>
+<p>It will throw an error if the property does not exist, or if the
+setting value has the wrong type.
+</p></dd></dl>
 
-<p>And then, of course, a Guile-GI program will additionally
-require whatever libraries its uses (GTK, WebKit2) as well
-as their associated typelib files.
-</p>
-<p>FIXME: Write about a good directory structure for a GTK application.
-</p>
-<p>FIXME: Write about what to do with all the various GTK icons and XML
-files.
-</p>
 
 
 

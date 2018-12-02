@@ -1,0 +1,111 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 2018 Michael L. Gran
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, no Front-Cover Texts, and no Back-Cover
+Texts.  A copy of the license is included in the section entitled "GNU
+Free Documentation License". -->
+<!-- Created by GNU Texinfo 6.5, http://www.gnu.org/software/texinfo/ -->
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>GObject Methods (Guile GI)</title>
+
+<meta name="description" content="GObject Methods (Guile GI)">
+<meta name="keywords" content="GObject Methods (Guile GI)">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="_005findex.html#g_t_005findex" rel="index" title="_index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Reference-Guide.html#Reference-Guide" rel="up" title="Reference Guide">
+<link href="GObject-Signals.html#GObject-Signals" rel="next" title="GObject Signals">
+<link href="GType.html#GType" rel="prev" title="GType">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.indentedblock {margin-right: 0em}
+blockquote.smallindentedblock {margin-right: 0em; font-size: smaller}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style: oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nolinebreak {white-space: nowrap}
+span.roman {font-family: initial; font-weight: normal}
+span.sansserif {font-family: sans-serif; font-weight: normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+<link rel="stylesheet" type="text/css" href="document-1.0.1.css">
+
+
+</head>
+
+<body lang="en">
+<a name="GObject-Methods"></a>
+<div class="header">
+<p>
+Next: <a href="GObject-Signals.html#GObject-Signals" accesskey="n" rel="next">GObject Signals</a>, Previous: <a href="GType.html#GType" accesskey="p" rel="prev">GType</a>, Up: <a href="Reference-Guide.html#Reference-Guide" accesskey="u" rel="up">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="_005findex.html#g_t_005findex" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="GObject-Methods-1"></a>
+<h3 class="section">3.4 GObject Methods</h3>
+
+<p>The GObject system has its own functionality for methods.  It can
+have methods for GObject-based structs, unions, and objects.  To call
+a GObject method, use the <code>send</code> syntax or the <code>method-call</code>
+procedure.
+</p>
+<p>As an example, the following two calls are equivalent.
+</p>
+<div class="example">
+<pre class="example">(send window (set-title &quot;MAIN WINDOW&quot;))
+(call-method window &quot;set-title&quot; '(&quot;MAIN WINDOW&quot;))
+</pre></div>
+
+<dl>
+<dt><a name="index-send"></a>Syntax: <strong>send</strong> <em>object method</em></dt>
+<dd><p>Given a GObject <var>object</var>, this syntax attempts to find a match
+between the object and the given method.  If the object&rsquo;s type or
+any of its parent types have the specified method, it will be called.
+If the method doesn&rsquo;t exist, an error will be thrown.
+</p>
+<p><var>method</var> is list where the first element is a symbol that names
+the method to be called.  The remaining elements of the list are
+the arguments to the method call.
+</p></dd></dl>
+
+<p>The <code>send</code> syntax is built using the <code>call-method</code> procedure.
+</p>
+<dl>
+<dt><a name="index-call_002dmethod"></a>Procedure: <strong>call-method</strong> <em>object method-name list-of-args</em></dt>
+<dd><p>Given a GObject <var>object</var> and a string <var>method-name</var>, this
+procedure searches for a method of the given name associated with this
+object&rsquo;s type, or, failing that, with any of this object&rsquo;s parents&rsquo;
+types.  If an associated method is found, it is called with the given
+list of arguments.
+</p>
+<p>If no associated method is found, or if the list of arguments doesn&rsquo;t
+match the expected argument types or count, an error is thrown.
+</p></dd></dl>
+
+
+
+
+</body>
+</html>

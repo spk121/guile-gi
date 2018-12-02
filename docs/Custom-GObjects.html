@@ -1,0 +1,155 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 2018 Michael L. Gran
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, no Front-Cover Texts, and no Back-Cover
+Texts.  A copy of the license is included in the section entitled "GNU
+Free Documentation License". -->
+<!-- Created by GNU Texinfo 6.5, http://www.gnu.org/software/texinfo/ -->
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Custom GObjects (Guile GI)</title>
+
+<meta name="description" content="Custom GObjects (Guile GI)">
+<meta name="keywords" content="Custom GObjects (Guile GI)">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="_005findex.html#g_t_005findex" rel="index" title="_index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Reference-Guide.html#Reference-Guide" rel="up" title="Reference Guide">
+<link href="More-Stuff.html#More-Stuff" rel="next" title="More Stuff">
+<link href="GObject-Properties.html#GObject-Properties" rel="prev" title="GObject Properties">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.indentedblock {margin-right: 0em}
+blockquote.smallindentedblock {margin-right: 0em; font-size: smaller}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style: oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nolinebreak {white-space: nowrap}
+span.roman {font-family: initial; font-weight: normal}
+span.sansserif {font-family: sans-serif; font-weight: normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+<link rel="stylesheet" type="text/css" href="document-1.0.1.css">
+
+
+</head>
+
+<body lang="en">
+<a name="Custom-GObjects"></a>
+<div class="header">
+<p>
+Next: <a href="More-Stuff.html#More-Stuff" accesskey="n" rel="next">More Stuff</a>, Previous: <a href="GObject-Properties.html#GObject-Properties" accesskey="p" rel="prev">GObject Properties</a>, Up: <a href="Reference-Guide.html#Reference-Guide" accesskey="u" rel="up">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="_005findex.html#g_t_005findex" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Defining-new-GObject-classes"></a>
+<h3 class="section">3.7 Defining new GObject classes</h3>
+
+<p>Usually any GObjects you use will be created by procedures such as
+<code>Window-new</code>, and those GObject types will have been predefined
+in the typelib. But, it is possible to make custom GObject object
+classes using the <code>register-type</code> procedure.
+</p>
+<p>Any GObject class will not have the same flexibility of a Guile
+structure or a Goops class, but, if they descend from the GObject base
+class, they can be hooked into the GObject &lsquo;signals&rsquo; callback
+methodology.
+</p>
+<p>Defining a new GObject class is rather complicated.
+</p>
+<dl>
+<dt><a name="index-type_002dname"></a>register-type: <strong>type-name</strong> <em>parent-type list-of-properties list-of-signals disposer</em></dt>
+<dd><p>This procedure creates and returns a new <code>&lt;GType&gt;</code> of a GObject
+object.
+</p>
+<p><var>type-name</var> is the string name of the new type.
+</p>
+<p><var>parent-type</var> is the <code>&lt;GType&gt;</code> of the parent class to this
+class.  The parent class needs to be <code>&lt;Object&gt;</code> or a GObject
+class that descends from it.
+</p>
+<p><var>list-of-properties</var> is a list of parameter specifications.
+Each parameter specification is itself a list of several elements.
+The first four elements are
+</p><ol>
+<li> Property name, a string
+</li><li> Property type, a <code>&lt;GType&gt;</code>
+</li><li> Blurb, a short string usually the same as the property name
+</li><li> A string description of the property
+</li></ol>
+
+<p>The remaining elements of the parameter specification depends on the
+property type.
+</p>
+<p>Numerical types take four further parameters: min, max, default
+value, and param flags.
+</p>
+<p>Boolean types, enumerated types, flags, and strings each take two
+additonal parameters: default value and param flags.
+</p>
+<p>The param flags are a logical or of zero or more of <code>PARAM_READABLE</code>,
+<code>PARAM_WRITABLE</code>.
+</p>
+<p><var>list-of-signals</var> is a list of signal specifications.  Each signal
+specification is itself a list of four elements.
+</p><ol>
+<li> Signal name, a string
+</li><li> Return type, a <code>&lt;GType&gt;</code>
+</li><li> Signals parameters, a list of <code>&lt;GTypes&gt;</code> for the parameters for the
+callback
+</li><li> Flags
+</li></ol>
+
+<p>The flags value will be a logical or of one or more of <code>G_SIGNAL_RUN_FIRST</code>,
+<code>G_SIGNAL_RUN_LAST</code>, <code>G_SIGNAL_RUN_CLEANUP</code>, <code>G_SIGNAL_NO_RECURSE</code>,
+and maybe others.
+</p>
+<p>And finally the <var>disposer</var> procedure will be either <code>#f</code> or
+a procedure that that will be called when instances of this object
+are being garbage collected.  The procedure should take a single
+parameter which will be the object being garbage collected.
+</p></dd></dl>
+
+<p>To then make instances of your custom GObject type, use <code>make-gobject</code>.
+</p>
+<dl>
+<dt><a name="index-make_002dgobject"></a>Procedure: <strong>make-gobject</strong> <em>type properties-alist</em></dt>
+<dd><p>Given <var>type</var> &ndash; a <code>&lt;GType&gt;</code> of a GObject object class &ndash; and
+an association list of property names and their values, this returns
+an instance of that type.
+</p>
+<p>It will throw an error if the type is not a GObject object type, or
+if any of the specified properties cannot be set.
+</p></dd></dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="More-Stuff.html#More-Stuff" accesskey="n" rel="next">More Stuff</a>, Previous: <a href="GObject-Properties.html#GObject-Properties" accesskey="p" rel="prev">GObject Properties</a>, Up: <a href="Reference-Guide.html#Reference-Guide" accesskey="u" rel="up">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="_005findex.html#g_t_005findex" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

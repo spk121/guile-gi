@@ -62,8 +62,14 @@ Tutorials
 
 Reference Guide
 
-* typelib introspection procedures::
-* GObject types::
+* Typelib Introspection::
+* GObject Types::
+* GType::
+* GObject Methods::
+* GObject Signals::
+* GObject Properties::
+* Custom GObjects::
+* More Stuff::
 
 @end detailmenu
 @end menu
@@ -83,44 +89,85 @@ the way to go.
 @node Getting Started, Tutorials, Preface, Top
 @chapter Getting Started
 
+@quotation Warning
+All documentation and code examples are of how I hope this will
+ultimately work.  Right now, most of this is not implemented.
+@end quotation
+
 To get things started, we will try to run a very simple GTK+ based GUI
 application using the bindings provided by Guile GI.
 
-First, create a @code{(Gtk)} Guile module and a @code{(Gio)} Guile
-module.
+Now, to understand how this works, you need to distinguish between
+what Guile-GI provides and the bindings that it creates.
+
+@itemize
+@item
+Guile-GI itself is a library that allows you to parse @code{typelib}
+files, which describe code modules.  It has a handful of procedures
+for inspecting @code{typelib} files as well as some helper procedures
+for dynamically creating procedures and types.
+@item
+When Guile-GI is used, it creates procedures, variables, and types
+according to the instructions in the @code{typelib} files.  These are
+created @emph{at runtime} when the Guile-GI procedure
+@code{import-typelib} is called.
+@end itemize
+
+First, for each GObject library that you want to use in your program,
+you need to have an export library.  A sample library for GTK+3 could
+take the following form.
 
 @example
-guile -L . -c '(use-modules (gi)) (display (export-typelib "Gtk" "3.0"))' > Gtk.scm
-guile -L . -c '(use-modules (gi)) (display (export-typelib "Gio" "2.0"))' > Gio.scm
-@end example
-
-The, a minimal GTK application looks like this
-
-@lisp
-(use-modules (gi)
-	     (Gtk)
-	     ((Gio) #:prefix Gio)
-	     )
+(define-module (gtk)
+  #:use-module (gi))
 
 (load-typelib "Gtk" "3.0")
-(load-typelib "Gio" "2.0")
+@end example
+
+Note that Guile-GI provides export libraries for the most common
+GObject libraries.  It includes @code{(gi gtk 3.0)}, @code{(gi gio
+2.0)}, and @code{(gi glib 2.0)}, for example.
+
+For these auto-generated libraries, you are going to need some
+documentation. The procedure @code{document-typelib} creates some
+rough documentation for a @code{typelib}: it gives the procedure names
+and how they are called, plus a list of types and constants.  For
+example, the following commands would make some rough documentation
+for GTK and GIO.
+
+@example
+guile -L . -c '(use-modules (gi)) (display (document-typelib "Gtk" "3.0"))' > Gtk.txt
+guile -L . -c '(use-modules (gi)) (display (document-typelib "Gio" "2.0"))' > Gio.txt
+@end example
+
+@xref{Typelib Introspection} for more information about @code{load-typelib} and @code{document-typelib}.
+
+A minimal GTK application looks like this
+
+@example
+(use-modules (gi gtk 3.0)
+             (gi gio 2.0))
 
 (define (activate app user-data)
   (let ((window (ApplicationWindow-new app)))
-    (Window-set-title window "Window")
-    (Window-set-default-size window 200 200)
-    (Widget-show-all window)))
+    (send window (set-title "Window"))
+    (send window (set-default-size 200 200))
+    (send window (show-all))))
 
 (define (main)
   (let ((app (Application-new "org.gtk.example" 0)))
     (signal-connect app "activate" activate #f)
-    (GioApplication-run app (length (command-line)) (command-line))))
+    (send app (run (length (command-line)) (command-line)))))
 
 (main)
-@end lisp
+@end example
 
 When it is run, it will create an empty window with a title.  Are you
 impressed?
+
+@xref{GObject Signals} for information on
+@code{signal-connect}. @xref{GObject Methods} for information on the
+@code{send} syntax.
 
 @menu
 * Installation::
@@ -130,9 +177,22 @@ impressed?
 @node Installation, Sample Applications, Getting Started, Getting Started
 @section Installation
 
-The library has no proper build system yet.  It just has a simple
-@file{Makefile}.  If you are lucky, just typeing ``make'' may build
-it.
+In some happy future, you might be able to get this from whatever method
+your operating system normally uses to download free software.
+
+If you are trying to build this from the Git repository, use
+@command{git clone} to copy the tree onto your computer. After closing
+the repository, you need to run @command{autoreconf} to generate a
+@file{configure} file.
+
+If you are building from a @file{guile-gi.zip} file or a
+@file{guile-gi.tar.gz}, unpack the file.
+
+From there, running @command{configure}, then @command{make}, then
+@command{sudo make install} will give you a running system.
+
+In the file archives, look for files named @file{INSTALL} for detailed
+instructions.
 
 @node Sample Applications,  , Installation, Getting Started
 @section Sample Applications
@@ -206,14 +266,49 @@ procedures and subclasses in addition to managing the C pointer.
 @node Threads and Concurrency, Debugging and Profiling, GObject Types and Guile Types, Tutorials
 @section Threads and Concurrency
 
+While Guile is multi-threaded, applications using Guile-GI are not
+fully thread-safe.  Notably, applications using GTK or GLib's mainloop
+need all rendering and mainloop activities to occur in one thread.
+
 @node Debugging and Profiling, Application Deployment, Threads and Concurrency, Tutorials
 @section Debugging and Profiling
+
+Guile-GI makes use of GLib's debug logging.  Running a program with
+the @env{G_MESSAGES_DEBUG} environment variable set to @code{all} will
+provide a full trace of the function calls in Guile-GI.  For more
+information on how to take advantage of this logging, see
+@uref{https://developer.gnome.org/glib/stable/glib-running.html}.
 
 @node Application Deployment, Testing and Continuous Integration, Debugging and Profiling, Tutorials
 @section Application Deployment
 
+If you write a program in Guile-GI and wish to share it
+with the world, you will need to ensure your users have
+all the prerequisites.
+
+At a minimum, Guile-GI scripts will require that users have the
+following packages.
+@itemize
+@item Guile
+@item Guile-GI
+@item libffi
+@item GLib
+@item GObject-Introspection aka GIRepository
+@end itemize
+
+And then, of course, a Guile-GI program will additionally
+require whatever libraries its uses (GTK, WebKit2) as well
+as their associated typelib files.
+
+FIXME: Write about a good directory structure for a GTK application.
+
+FIXME: Write about what to do with all the various GTK icons and XML
+files.
+
 @node Testing and Continuous Integration,  , Application Deployment, Tutorials
 @section Testing and Continuous Integration
+
+FIXME: make Guile-GI autobuild on some Jenkins server somewhere.
 
 @node Reference Guide, Further Resources and Contact Info, Tutorials, Top
 @chapter Reference Guide
@@ -225,13 +320,19 @@ their @file{.typelib} files.
 
 @c -----------------------------------------------------------------
 @menu
-* typelib introspection procedures::
-* GObject types::
+* Typelib Introspection::
+* GObject Types::
+* GType::
+* GObject Methods::
+* GObject Signals::
+* GObject Properties::
+* Custom GObjects::
+* More Stuff::
 @end menu
 
 @c -----------------------------------------------------------------
-@node typelib introspection procedures, GObject types, Reference Guide, Reference Guide
-@section Typelib introspection procedures
+@node Typelib Introspection, GObject Types, Reference Guide, Reference Guide
+@section Typelib Introspection
 
 A GObject typelib file contains information on the public classes,
 functions, and variables in a GObject-based library, and most
@@ -251,21 +352,24 @@ the default typelib directory.
 @deffn Procedure prepend-typelib-search-path directory
 Given @var{directory}, a string representation of a filesystem
 directory, this prepends that directory to the typelib search path.
+
+If using this procedure in a script, it must be called before any
+calls to @code{load-typelib}.
 @end deffn
 
-@deffn Procedure export-typelib namespace version
+@deffn Procedure document-typelib namespace version
 Given @var{namespace}, a string that names a typelib library, such as
 ``Gtk'' or ``GLib'', and @var{version}, a string that names a version
 of a typelib library, like ``2.0'' or ``3.0'', this procedure parses a
-typelib file and generates the Scheme source code for a binding to the
-library.  The source code is returned as a string, which you should
-save to a file.
+typelib file and generates documentation of the Scheme procedures, types,
+and constants that will be provided by calling @code{load-typelib}.
+The documentation is returned a a string.
 
 The procedure may throw an error if a typelib file corresponding to
 @var{namespace} and @var{version} cannot be found.
 @end deffn
 
-@deffn Procedure import-typelib namespace version
+@deffn Procedure load-typelib namespace version
 Given @var{namespace}, a string that names a typelib library, such as
 ``Gtk'' or ``GLib'', and @var{version}, a string that names a version
 of a typelib library, like ``2.0'' or ``3.0'', this procedure parses a
@@ -274,107 +378,323 @@ loaded into the current environment.
 
 The procedure may throw an error if a typelib file corresponding to
 @var{namespace} and @var{version} cannot be found.
-
-This procedure implicitly calls @code{load-typelib}.
-
-The return value is unspecified.
 @end deffn
 
-@deffn Procedure load-typelib namespace version
-Given @var{namespace}, a string that names a typelib library, such as
-``Gtk'' or ``GLib'', and @var{version} a string that names a version
-of a typelib library , like ``2.0'' or ``3.0'', this procedure reads a
-typelib file, and indexes the information in the typelib file into
-several hash tables.  The hash tables are created in the current
-environment, and have names such as @code{%gi-constants} and
-@code{%gi-functions}.
-
-The procedure may throw an error if a typelib file corresponding to
-@var{namespace} and @var{version} cannot be found.
-
-The return value is unspecified.
-@end deffn
-
-@defvar %gi-constants
-@defvarx %gi-enums
-@defvarx %gi-flags
-@defvarx %gi-functions
-@defvarx %gi-methods
-@defvarx %gi-callbacks
-@defvarx %gi-structs
-@defvarx %gi-unions
-@defvarx %gi-objects
-@defvarx %gi-interfaces
-@defvarx %gi-signals
-These are all hash tables generated by @code{load-typelib}.  They
-contain information parsed from a typelib file and indexed for easier
-access by procedures such as @code{gi-constant-value} and
-@code{gi-function-invoke}.
-@end defvar
-
-@deffn Procedure gi-constant-value name
-@deffnx Procedure gi-flag-value category name
-@deffnx Procedure gi-enum-value category name
-@deffnx Procedure gi-struct-ref ptr type-name field-name
-@deffnx Procedure gi-struct-set ptr type-name field-name value
-@deffnx Procedure gi-function-invoke name [args...]
-@deffnx Procedure gi-method-prepare name [args...]
-@deffnx Procedure gi-method-send object list-of-args
-@deffnx Procedure gi-lookup-type name
-@deffnx Procedure gi-lookup-callback-info name
-These procedures are used to generate the bindings.  They lookup
-introspection information stored in hash tables generated by the
-@code{load-typelib} procedure and convert between C and Guile types.
-
-They are used in the procedures generated by @code{export-typelib} and
-@code{import-typelib}.
+@deffn Procedure load-typelib-full namespace version
+Like @code{load-typelib}, but it also loads any typelibs tagged as
+dependencies to the specified library.
 @end deffn
 
 @c -----------------------------------------------------------------
-@node GObject types,  , typelib introspection procedures, Reference Guide
+@node GObject Types, GType, Typelib Introspection, Reference Guide
 @section GObject Types
 
-If you inspect the bindings generated by @code{load-repository}, you
-will notice many references to the helper functions
-@code{gi-function-invoke}, @code{gi-method-prepare}, and
-@code{gi-method-send}.  These procedures convert Guile parameters and
-return values to GObject-friendly C parameters and return values.
-
-If you look at the bindings generated by @code{export-typelib}, the
-comments and docstrings indicate the types expected by the procedures.
-
 For integer and string arguments, the C to Guile conversions are the
-obvious ones. But for GObject types, things get a bit more complex.
-GObject has three classes of custom types: structs, unions, and
-objects.
+obvious ones. But for the specialized GObject types, things get a bit
+more complex.  GObject has three classes of custom types: structs,
+unions, and objects.
 
-GObject unions and structs are handled in Guile-GI by storing them in
-a @code{<GBox>} foreign object type.  @code{<GBox>} types are
-typically opaque.  The can be created and by GObject functions and
-used as arguments, but, their contents aren't otherwise modifyiable.
+GObject @emph{unions} and @emph{structs} are handled in Guile-GI by
+creating a foreign object type that wraps a C pointer.  Typically,
+instances can be created and by GObject functions and used as
+arguments, but, their contents aren't otherwise modifyiable.  GObject
+unions and structs may have GObject Methods, but, do not have signals
+or properties. @xref{GObject Methods} for more information.
 
-GObject objects are stored in a @code{<GObject>} foreign object type.
-They have slightly more interactivity available at the Guile layer.
-They have properties that can be queried and Guile procedures can be
-hooked into the GObject callback layer, which GObject calls ``signals''.
+GObject @emph{objects} are also stored by creating a foreign object
+type that wraps a C pointer.  Unlike GObject structs and unions, they
+have more interactivity available at the Guile layer.  They have
+properties that can be queried and Guile procedures can be hooked into
+the GObject callback layer, which GObject calls ``signals''.
 
-@deffn Procedure gobject-type-name obj
-Given @var{obj}, a GObject, this returns that name of its type as a
-string.
+For each custom GObject type, Guile-GI creates a variable that holds
+the foreign object type.  That variable has the form @code{<TYPE>},
+where TYPE is the GObject type name.  It also creates a predicate to
+test if an object has that type.  The predicate has the form
+@code{TYPE?}
+
+Each GObject struct, union, or object has a place in the GObject
+single-inheritance class structure.  A @code{RadioButton} is a type of
+@code{Button} is a type of @code{Widget}, for example.  If you wish to
+introspect a GObject's type, use @code{->gtype} and then use the GType
+procedures. @xref{GType}.
+
+
+@deffn Procedure gobject-get-pointer object
+@deffnx Procedure gobject-peek-pointer object
+Give @var{object}, a GObject struct, union or object, this procedure
+returns a pointer to the underlying C struct, union, or object.
+@code{gobject-get-pointer} will attempt to prevent the garbage
+collection of the information to which pointer
+points. @code{gobject-peek-pointer} makes no such attempt
 @end deffn
 
-@deffn Procedure gobject-get-property obj prop
-@deffnx Procedur gobject-set-property! obj prop val
-Given @var{obj}, a GObject and  @var{val}, a string name of an object property,
-these procedures get and set properties of the GObject.
+@c -----------------------------------------------------------------
+@node GType, GObject Methods, GObject Types, Reference Guide
+@section GType
+
+A @code{<GType>} is a Guile type that wraps GObject @code{GType}.
+Basically it is an integer ID that GObject uses to identify a type.
+It is a type that holds a type that IDs a type.
+
+GObject has its own custom class structure.  The following procedures
+provide information about how a @code{<GType>} forms part of that
+class structure.
+
+@deffn Procedure ->gtype object
+Given @var{object}, a GObject struct, union, or object, this procedure
+returns its GObject type as a @code{<GType>}.
+
+If the input parameter is an integer, this procedure will return a
+@code{<GType>} if that integer is a GType ID, or @code{#f} if it is
+not.
+
+If the input parameter is a string, the procedure will return a
+@code{<GType>} if that string happens to be the name of a type, or
+@code{#f} if it is not.
 @end deffn
 
-@deffn Procedure signal-connect obj signal-name procedure rest
-Given @var{obj}, a GObject instance, @var{signal-name}, @var{procedure},
-a procedure to be used as a callback, and @var{rest}, this attaches
-the callback procedure to the object so that it is called when the
-GObject signal is emitted.
+@deffn Procedure gtype-get-scheme-type gtype
+Given @var{gtype} of type @code{<GType>}, this procedure will return
+the Scheme type that holds instances of that type.
 @end deffn
+
+@deffn Procedure gtype-get-name gtype
+Given @var{gtype} of type @code{<GType>}, this procedure returns
+a string with GObject's internal name for this type.  This may differ
+slightly from the name that Guile-GI gives to the type.
+@end deffn
+
+@deffn Procedure gtype-get-parent gtype
+@deffnx Procedure gtype-get-children gtype
+These procedures return the parent type and the child types of a
+specified @code{<GType>}.
+@end deffn
+
+@deffn Procedure gtype-is-a? object type
+Returns @code{#t} of @var{object} is an instance of a @var{type}.
+@end deffn
+
+
+@c -----------------------------------------------------------------
+@node GObject Methods, GObject Signals, GType, Reference Guide
+@section GObject Methods
+
+The GObject system has its own functionality for methods.  It can
+have methods for GObject-based structs, unions, and objects.  To call
+a GObject method, use the @code{send} syntax or the @code{method-call}
+procedure.
+
+As an example, the following two calls are equivalent.
+
+@example
+(send window (set-title "MAIN WINDOW"))
+(call-method window "set-title" '("MAIN WINDOW"))
+@end example
+
+@deffn Syntax send object method
+Given a GObject @var{object}, this syntax attempts to find a match
+between the object and the given method.  If the object's type or
+any of its parent types have the specified method, it will be called.
+If the method doesn't exist, an error will be thrown.
+
+@var{method} is list where the first element is a symbol that names
+the method to be called.  The remaining elements of the list are
+the arguments to the method call.
+@end deffn
+
+The @code{send} syntax is built using the @code{call-method} procedure.
+
+@deffn Procedure call-method object method-name list-of-args
+Given a GObject @var{object} and a string @var{method-name}, this
+procedure searches for a method of the given name associated with this
+object's type, or, failing that, with any of this object's parents'
+types.  If an associated method is found, it is called with the given
+list of arguments.
+
+If no associated method is found, or if the list of arguments doesn't
+match the expected argument types or count, an error is thrown.
+@end deffn
+
+@c -----------------------------------------------------------------
+@node GObject Signals, GObject Properties, GObject Methods, Reference Guide
+@section GObject Signals
+
+GObjects have a functionality for defining and calling callback
+procedures that it calls @emph{signals}.  Note that these signals
+have nothing to do with Unix signals like @code{SIGTERM}.
+
+To hook a callback procedure to an object's signal, use the
+@code{signal-connect} procedure. Consider the following example.
+
+@example
+(define (activate app user-data)
+   ...
+   )
+
+(signal-connect app         ; A GObject
+                "activate"  ; The name of a signal it might emit
+                activate    ; A procedure to call when emitted
+                #f)         ; A user-supplied argument
+@end example
+
+In that example, the caller is attaching a procedure named
+@code{activate} to the object @code{app}'s ``activate'' signal.  When
+the gobject object calls all the callback procedures attached to its
+``activate'' signal it will call this @code{activate} procedure.
+
+When a callback procedure is called it may receives some arguments
+from the caller and some from user data.  In the example, @code{activate}
+is supposed to take two arguments.  The first argument @code{app} is
+supplied by the caller.  The second argument @code{user-data} is
+defined when the callback is registered.  In the above example the @code{#f}
+in the @code{signal-connect} call will be passed to @code{activate}
+as its @code{user-data} parameter.
+
+@quotation Warning
+User data parameters may only be pointers or @code{#f}, which makes
+them tricky to use.  It is best to avoid them.  Scheme procedures and
+lambdas are versatile enough that these user-data parameters are never
+necessary.
+@end quotation
+
+If you have decided to ignore the above warning and for some
+unimaginable reason want to use the user data parameter of a callback
+procedure, you can pass a pointer.  And if the parameter that you wish
+to pass is not a bytevector or other type that inherently can be
+converted to a pointer, the following kludge is provided.
+
+@deffn box label val
+This procedure takes a scheme object @var{val} and stores it in a
+preallocated location in memory, and returns that location as a
+pointer.  The @var{label}, which must be a one-letter symbol from
+@code{A} to @code{Z}, indicates which location into which it is to be
+stored.
+
+When callback procedures are called, Guile-GI will check to see if any
+user-data parameters are one of these twenty-six special memory
+locations, and, if so, will return the value stored there.  Thus,
+there is no unbox procedure needed.
+
+Since these boxes can be set at any time by any thread, it is up to
+the caller to manage the contents of the boxes.
+@end deffn
+
+@c -----------------------------------------------------------------
+@node GObject Properties, Custom GObjects, GObject Signals, Reference Guide
+@section GObject Properties
+
+GObject objects may have one or more properties, which are variables
+attached to the object that may be gotten or set.  GObject properties
+usually have C-like types.  Remember that GObject objects are
+instances of a class that may have a parent class, and each parent
+class may one or more properties. So, for example, if the object is a
+radio button, you may get or set properties that apply specifically to
+radio buttons, or generic buttons, or generic widgets.
+
+The @code{set-property!} and @code{get-property} procedures are provided
+to set GObject properties.
+
+@deffn Procedure set-property! obj prop val
+@deffnx Procedure get-property obj prop
+Gets or sets and object's property. @var{prop} is the symbol name
+of the property to set.
+
+It will throw an error if the property does not exist, or if the
+setting value has the wrong type.
+@end deffn
+
+@c ----------------------------------------------------------------
+@node Custom GObjects, More Stuff, GObject Properties, Reference Guide
+@section Defining new GObject classes
+
+Usually any GObjects you use will be created by procedures such as
+@code{Window-new}, and those GObject types will have been predefined
+in the typelib. But, it is possible to make custom GObject object
+classes using the @code{register-type} procedure.
+
+Any GObject class will not have the same flexibility of a Guile
+structure or a Goops class, but, if they descend from the GObject base
+class, they can be hooked into the GObject `signals' callback
+methodology.
+
+Defining a new GObject class is rather complicated.
+
+@deffn register-type type-name parent-type list-of-properties list-of-signals disposer
+This procedure creates and returns a new @code{<GType>} of a GObject
+object.
+
+@var{type-name} is the string name of the new type.
+
+@var{parent-type} is the @code{<GType>} of the parent class to this
+class.  The parent class needs to be @code{<Object>} or a GObject
+class that descends from it.
+
+@var{list-of-properties} is a list of parameter specifications.
+Each parameter specification is itself a list of several elements.
+The first four elements are
+@enumerate
+@item
+Property name, a string
+@item
+Property type, a @code{<GType>}
+@item
+Blurb, a short string usually the same as the property name
+@item
+A string description of the property
+@end enumerate
+
+The remaining elements of the parameter specification depends on the
+property type.
+
+Numerical types take four further parameters: min, max, default
+value, and param flags.
+
+Boolean types, enumerated types, flags, and strings each take two
+additonal parameters: default value and param flags.
+
+The param flags are a logical or of zero or more of @code{PARAM_READABLE},
+@code{PARAM_WRITABLE}.
+
+@var{list-of-signals} is a list of signal specifications.  Each signal
+specification is itself a list of four elements.
+@enumerate
+@item
+Signal name, a string
+@item
+Return type, a @code{<GType>}
+@item
+Signals parameters, a list of @code{<GTypes>} for the parameters for the
+callback
+@item
+Flags
+@end enumerate
+
+The flags value will be a logical or of one or more of @code{G_SIGNAL_RUN_FIRST},
+@code{G_SIGNAL_RUN_LAST}, @code{G_SIGNAL_RUN_CLEANUP}, @code{G_SIGNAL_NO_RECURSE},
+and maybe others.
+
+And finally the @var{disposer} procedure will be either @code{#f} or
+a procedure that that will be called when instances of this object
+are being garbage collected.  The procedure should take a single
+parameter which will be the object being garbage collected.
+@end deffn
+
+To then make instances of your custom GObject type, use @code{make-gobject}.
+
+@deffn Procedure make-gobject type properties-alist
+Given @var{type} -- a @code{<GType>} of a GObject object class -- and
+an association list of property names and their values, this returns
+an instance of that type.
+
+It will throw an error if the type is not a GObject object type, or
+if any of the specified properties cannot be set.
+@end deffn
+
+@c ----------------------------------------------------------------
+@node More Stuff,  , Custom GObjects, Reference Guide
+@section More Stuff
+
 
 @subsection On Guile to C Type Conversions
 

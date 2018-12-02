@@ -1,0 +1,121 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 2018 Michael L. Gran
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, no Front-Cover Texts, and no Back-Cover
+Texts.  A copy of the license is included in the section entitled "GNU
+Free Documentation License". -->
+<!-- Created by GNU Texinfo 6.5, http://www.gnu.org/software/texinfo/ -->
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>GType (Guile GI)</title>
+
+<meta name="description" content="GType (Guile GI)">
+<meta name="keywords" content="GType (Guile GI)">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="_005findex.html#g_t_005findex" rel="index" title="_index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Reference-Guide.html#Reference-Guide" rel="up" title="Reference Guide">
+<link href="GObject-Methods.html#GObject-Methods" rel="next" title="GObject Methods">
+<link href="GObject-Types.html#GObject-Types" rel="prev" title="GObject Types">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.indentedblock {margin-right: 0em}
+blockquote.smallindentedblock {margin-right: 0em; font-size: smaller}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style: oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nolinebreak {white-space: nowrap}
+span.roman {font-family: initial; font-weight: normal}
+span.sansserif {font-family: sans-serif; font-weight: normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+<link rel="stylesheet" type="text/css" href="document-1.0.1.css">
+
+
+</head>
+
+<body lang="en">
+<a name="GType"></a>
+<div class="header">
+<p>
+Next: <a href="GObject-Methods.html#GObject-Methods" accesskey="n" rel="next">GObject Methods</a>, Previous: <a href="GObject-Types.html#GObject-Types" accesskey="p" rel="prev">GObject Types</a>, Up: <a href="Reference-Guide.html#Reference-Guide" accesskey="u" rel="up">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="_005findex.html#g_t_005findex" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="GType-1"></a>
+<h3 class="section">3.3 GType</h3>
+
+<p>A <code>&lt;GType&gt;</code> is a Guile type that wraps GObject <code>GType</code>.
+Basically it is an integer ID that GObject uses to identify a type.
+It is a type that holds a type that IDs a type.
+</p>
+<p>GObject has its own custom class structure.  The following procedures
+provide information about how a <code>&lt;GType&gt;</code> forms part of that
+class structure.
+</p>
+<dl>
+<dt><a name="index-_002d_003egtype"></a>Procedure: <strong>-&gt;gtype</strong> <em>object</em></dt>
+<dd><p>Given <var>object</var>, a GObject struct, union, or object, this procedure
+returns its GObject type as a <code>&lt;GType&gt;</code>.
+</p>
+<p>If the input parameter is an integer, this procedure will return a
+<code>&lt;GType&gt;</code> if that integer is a GType ID, or <code>#f</code> if it is
+not.
+</p>
+<p>If the input parameter is a string, the procedure will return a
+<code>&lt;GType&gt;</code> if that string happens to be the name of a type, or
+<code>#f</code> if it is not.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gtype_002dget_002dscheme_002dtype"></a>Procedure: <strong>gtype-get-scheme-type</strong> <em>gtype</em></dt>
+<dd><p>Given <var>gtype</var> of type <code>&lt;GType&gt;</code>, this procedure will return
+the Scheme type that holds instances of that type.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gtype_002dget_002dname"></a>Procedure: <strong>gtype-get-name</strong> <em>gtype</em></dt>
+<dd><p>Given <var>gtype</var> of type <code>&lt;GType&gt;</code>, this procedure returns
+a string with GObject&rsquo;s internal name for this type.  This may differ
+slightly from the name that Guile-GI gives to the type.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gtype_002dget_002dparent"></a>Procedure: <strong>gtype-get-parent</strong> <em>gtype</em></dt>
+<dt><a name="index-gtype_002dget_002dchildren"></a>Procedure: <strong>gtype-get-children</strong> <em>gtype</em></dt>
+<dd><p>These procedures return the parent type and the child types of a
+specified <code>&lt;GType&gt;</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gtype_002dis_002da_003f"></a>Procedure: <strong>gtype-is-a?</strong> <em>object type</em></dt>
+<dd><p>Returns <code>#t</code> of <var>object</var> is an instance of a <var>type</var>.
+</p></dd></dl>
+
+
+
+
+
+</body>
+</html>
