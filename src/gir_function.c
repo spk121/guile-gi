@@ -326,9 +326,10 @@ static void gir_function_binding(ffi_cif *cif, void *ret, void **ffi_args,
 
     if (outlen == 0)
         *(ffi_arg *)ret = SCM_UNPACK(SCM_UNSPECIFIED);
-    if (outlen == 1)
+    else if (outlen == 1)
         *(ffi_arg *)ret = SCM_UNPACK(scm_car(output));
-    *(ffi_arg *)ret = SCM_UNPACK(output);
+    else
+        *(ffi_arg *)ret = SCM_UNPACK(output);
 }
 
 // This procedure counts the number of input arguments
