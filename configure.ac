@@ -204,5 +204,7 @@ AC_CONFIG_FILES([
  tools/Makefile
  ])
 AC_CONFIG_FILES([tools/uninstalled-env], [chmod +x tools/uninstalled-env])
-AC_CONFIG_FILES([tools/gdb-test], [chmod +x tools/uninstalled-env])
+AC_CONFIG_FILES([tools/run-guile], [chmod +x tools/run-guile])
+AC_CONFIG_FILES([tools/gdb-guile], [chmod +x tools/gdb-guile])
+AC_CONFIG_FILES([tools/gdb-test], [chmod +x tools/gdb-test])
 AC_OUTPUT
