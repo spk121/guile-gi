@@ -3,6 +3,7 @@
 #include <glib.h>
 #include <girepository.h>
 #include <ffi.h>
+#include <libguile.h>
 
 extern SCM gir_callback_type;
 

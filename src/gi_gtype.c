@@ -229,11 +229,8 @@ scm_gtype_set_scheme_type_x(SCM self, SCM value)
     key = type_key(type);
     if (scm_is_eq(value, SCM_BOOL_F))
         g_type_set_qdata(type, key, NULL);
-    else if (SCM_IS_A_P(value, gi_gtype_type))
-        g_type_set_qdata(type, key, SCM_UNPACK_POINTER(value));
     else
-        scm_misc_error("gtype-set-scheme-type!", "Value '~A' must be NONE or a type object",
-            scm_list_1(value));
+        g_type_set_qdata(type, key, SCM_UNPACK_POINTER(value));
 
     return SCM_UNSPECIFIED;
 }
@@ -488,7 +485,7 @@ SCM gi_gtype_c2g(GType type)
 
         g_debug("Creating a new GType foreign object type: %zu %s", g_type_name(type));
         char *cname = g_strdup_printf("<%s>", g_type_name(type));
-        SCM sname = scm_from_utf8_string(cname);
+        SCM sname = scm_from_utf8_symbol(cname);
         SCM slots = scm_list_3(scm_from_utf8_symbol("sptr"), scm_from_utf8_symbol("valid"), scm_from_utf8_symbol ("extra"));
         SCM fo_type = scm_make_foreign_object_type(sname, slots, NULL);
         scm_gtype_set_scheme_type_x (wrapper, fo_type);

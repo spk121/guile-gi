@@ -109,6 +109,8 @@ libguile_gi_la_SOURCES = \
  gir.c \
  gir_callback.c \
  gir_callback.h \
+ gir_function.c \
+ gir_function.h \
  gir_func.c \
  gir_func.h \
  gir_func2.c \

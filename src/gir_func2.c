@@ -19,6 +19,7 @@
 #include "gi_giargument.h"
 #include "gir_type.h"
 #include "gir_func2.h"
+#include "gir_function.h"
 #include "gi_gobject.h"
 #include "gi_gtype.h"
 #include "gi_gstruct.h"
@@ -142,6 +143,7 @@ scm_load_typelib(SCM s_namespace, SCM s_version)
             break;
         case GI_INFO_TYPE_FUNCTION:
             hash_table_insert("%gi-functions", namespace_, NULL, info);
+            gir_function_define_gsubr(namespace_, NULL, info);
             break;
         case GI_INFO_TYPE_STRUCT:
         {
@@ -954,9 +956,6 @@ export_type_info(GString **export, const char *namespace_, const char *parent, G
         public_name,
         namespace_,
         g_base_info_get_name(info));
-    g_string_append_printf(*export,
-        "(define %s\n (gtype"
-    )
     g_free (public_name);
     g_free (class_name);
 }
