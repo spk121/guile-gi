@@ -341,6 +341,8 @@ gir_function_count_input_args(GIFunctionInfo *info, int *required, int *optional
     int n_args = g_callable_info_get_n_args((GICallableInfo *)info);
     int opt_flag = TRUE;
 
+    *required = 0;
+    *optional = 0;
     for (int i = n_args - 1; i >= 0; i--)
     {
         GIArgInfo *ai = g_callable_info_get_arg((GICallableInfo *)info, i);
