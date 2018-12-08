@@ -17,6 +17,8 @@
 #include "gir_type.h"
 #include "gi_gstruct.h"
 #include "gir_callback.h"
+#include "gir_function.h"
+#include "gir_method.h"
 
 #ifdef _WIN32
 static const int _win32 = TRUE;
@@ -90,6 +92,8 @@ gir_init(void)
     gir_init_types();
     gi_init_gobject();
     gir_init_callback();
+    gir_init_function();
+    gir_init_method();
     g_debug("End libguile-gir initialization");
 
 #ifdef ENABLE_GCOV
