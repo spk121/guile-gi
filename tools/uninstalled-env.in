@@ -55,7 +55,7 @@ then
         GUILE_LOAD_PATH="${top_srcdir}/src"
     fi
 else
-  for d in "${top_srcdir}"
+  for d in "${top_srcdir}/src"
   do
     # This hair prevents double inclusion.
     # The ":" prevents prefix aliasing.
