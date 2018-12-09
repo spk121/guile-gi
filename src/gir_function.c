@@ -259,7 +259,7 @@ static void gir_function_binding(ffi_cif *cif, void *ret, void **ffi_args,
     {
         SCM s_entry = SCM_BOOL_F;
 
-        s_entry = SCM_PACK_POINTER(ffi_args[i]);
+        s_entry = SCM_PACK(*(scm_t_bits *)(ffi_args[i]));
         // I convert unspecified arguments to false because,
         // once you get here, unspecified arguments are shorthand for null
         // pointers

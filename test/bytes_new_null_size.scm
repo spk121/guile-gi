@@ -14,15 +14,12 @@
 ;;  You should have received a copy of the GNU General Public License
 ;;  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-;; Adapted somewhat from GLib's internal array-test.c test case
-
-(use-modules (gi)
+(use-modules (gi glib-2)
              (test automake-test-lib))
 
 (setlocale LC_ALL "C")
 (automake-test
  (begin
-   (import-typelib "GLib" "2.0")
    (let* ((self (Bytes-new #f 0))
 	  (siz (Bytes-get-size self)))
      (format #t "New Byte Array: ~S~%" self)
