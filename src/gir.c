@@ -1,4 +1,19 @@
 /* -*- Mode: C; c-basic-offset: 4 -*- */
+// Copyright (C) 2018 Michael L. Gran
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 #include <time.h>
 #include <glib-object.h>
 #include <glib.h>
@@ -19,6 +34,8 @@
 #include "gir_callback.h"
 #include "gir_function.h"
 #include "gir_method.h"
+#include "gir_constant.h"
+#include "gir_flag.h"
 
 #ifdef _WIN32
 static const int _win32 = TRUE;
@@ -94,6 +111,8 @@ gir_init(void)
     gir_init_callback();
     gir_init_function();
     gir_init_method();
+    gir_init_constant();
+    gir_init_flag();
     g_debug("End libguile-gir initialization");
 
 #ifdef ENABLE_GCOV

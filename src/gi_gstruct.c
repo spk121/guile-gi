@@ -1,8 +1,23 @@
 /* -*- Mode: C; c-basic-offset: 4 -*- */
+// Copyright (C) 2018 Michael L. Gran
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 #include <girepository.h>
 #include "gi_gstruct.h"
 #include "gi_gtype.h"
-#include "gir_func2.h"
+#include "gir_method.h"
 
 SCM gir_gbox_type;
 SCM gir_gbox_type_store;
@@ -268,7 +283,7 @@ gi_gbox_finalizer(SCM self)
 	    g_debug("In GBox SCM finalizer for %s", str);
             g_assert(sptr);
             g_assert(sptr->ptr);
-	    gir_unref_object (self);
+	    gir_method_unref_object (self);
 	    sptr->dealloc = SPTR_NO_FREE_FUNC;
         }
         gir_sptr_release(sptr);

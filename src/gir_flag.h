@@ -13,11 +13,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef _GIR_FUNC2_H
-#define _GIR_FUNC2_H
+#ifndef _GIR_FLAG_H_
+#define _GIR_FLAG_H_
+#include <girepository.h>
 
-// SCM
-// gi_type_import_by_gi_info (GIBaseInfo *info);
-GType gir_lookup_type(const char *name);
-void gir_init_func2(void);
+void gir_flag_define(GIEnumInfo *info);
+static inline void gir_flag_document(GString **str, GIEnumInfo *info) {}
+void gir_init_flag (void);
 #endif

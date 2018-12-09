@@ -13,11 +13,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef _GIR_FUNC2_H
-#define _GIR_FUNC2_H
+#ifndef _GIR_CONSTANT_H_
+#define _GIR_CONSTANT_H_
+#include <girepository.h>
 
-// SCM
-// gi_type_import_by_gi_info (GIBaseInfo *info);
-GType gir_lookup_type(const char *name);
-void gir_init_func2(void);
+void gir_constant_define(GIConstantInfo *info);
+static inline void gir_constant_document(GString **str, const char *namespace_, const char *parent, GIConstantInfo *info) {}
+void gir_init_constant(void);
 #endif

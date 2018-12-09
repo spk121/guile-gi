@@ -1,3 +1,18 @@
+// Copyright (C) 2018 Michael L. Gran
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 #include "gir_function.h"
 #include "gi_giargument.h"
 
@@ -6,8 +21,7 @@ GSList *function_list = NULL;
 static gir_gsubr_t *gir_function_create_gsubr(GIFunctionInfo *function_info, const char *name, int *n_required, int *n_optional);
 static char *gir_function_name_to_scm_name(const char *gname);
 static gchar *gir_function_make_name(const char *namespace_, const char *parent, GICallableInfo *info);
-static void gir_function_info_convert_args(GIFunctionInfo *func_info, SCM s_args, int *n_input_args, GIArgument **in_args, unsigned **in_args_free, int *n_output_args, GIArgument **out_args);
-static SCM gir_function_info_convert_output_args(const char *func_name, const GIFunctionInfo *func_info, int n_output_args, GIArgument *out_args);
+
 static void gir_function_info_count_args(GIFunctionInfo *info, int *in, int *out);
 static void gir_function_count_input_args(GIFunctionInfo *info, int *required, int *optional);
 static void gir_function_binding(ffi_cif *cif, void *ret, void **ffi_args,
@@ -404,7 +418,7 @@ gir_function_info_count_args(GIFunctionInfo *info, int *in, int *out)
     *out = n_output_args;
 }
 
-static void
+void
 gir_function_info_convert_args(GIFunctionInfo *func_info, SCM s_args, int *n_input_args, GIArgument **in_args, unsigned **in_args_free, int *n_output_args, GIArgument **out_args)
 {
     int n_args_received;
@@ -580,7 +594,7 @@ arg_err_cleanup:
 #endif
 }
 
-static SCM
+SCM
 gir_function_info_convert_output_args(const char *func_name, const GIFunctionInfo *func_info, int n_output_args, GIArgument *out_args)
 {
     SCM output = SCM_EOL;

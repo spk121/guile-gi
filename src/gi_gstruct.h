@@ -1,3 +1,18 @@
+// Copyright (C) 2018 Michael L. Gran
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 #ifndef _GI_GSTRUCT_H_
 #define _GI_GSTRUCT_H_
 #include <libguile.h>
@@ -56,6 +71,7 @@ SCM gir_new_struct_gbox (GType type, void *ptr, gboolean free_on_dealloc);
 SCM gir_new_union_gbox (GType type, void *ptr, gboolean free_on_dealloc);
 
 SCM gi_gbox_p (SCM self);
+
 
 void gi_init_gbox (void);
 #endif
