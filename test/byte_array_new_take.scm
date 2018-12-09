@@ -16,14 +16,13 @@
 
 ;; Adapted somewhat from GLib's internal array-test.c test case
 
-(use-modules (gi)
+(use-modules (gi glib-2)
 	     (rnrs bytevectors)
              (test automake-test-lib))
 
 (setlocale LC_ALL "")
 (automake-test
  (begin
-   (import-typelib "GLib" "2.0")
    (let* ((bv (make-bytevector 4 32))
 	  (bv2 (ByteArray-new-take bv 3)))
      (format #t "Input byte array should be 4 bytes: ~S~%" bv)

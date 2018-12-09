@@ -1278,90 +1278,6 @@ scm_gi_unload_repositories(void)
     return SCM_UNSPECIFIED;
 }
 
-GType gir_lookup_type(const char *name)
-{
-    gpointer ptr = NULL;
-    SCM h, val;
-    SCM s_type_name = scm_from_utf8_string(name);
-    h = get_hash_table("%gi-objects");
-    val = scm_hash_ref(h, s_type_name, SCM_BOOL_F);
-    if (scm_is_false(val))
-    {
-        h = get_hash_table("%gi-structs");
-        val = scm_hash_ref(h, s_type_name, SCM_BOOL_F);
-    }
-    if (scm_is_false(val))
-    {
-        h = get_hash_table("%gi-unions");
-        val = scm_hash_ref(h, s_type_name, SCM_BOOL_F);
-    }
-    if (scm_is_false(val))
-        scm_misc_error("gi-lookup-type",
-            "Cannot find an object, struct, or union type named '~a'",
-            scm_list_1(s_type_name));
-    ptr = scm_to_pointer(val);
-    return g_registered_type_info_get_g_type(ptr);
-}
-
-static SCM
-scm_gi_lookup_type(SCM s_type_name)
-{
-    SCM_ASSERT(scm_is_string(s_type_name), s_type_name, SCM_ARG1, "gi-lookup-type");
-    gpointer ptr = NULL;
-    SCM h, val;
-
-    h = get_hash_table("%gi-objects");
-    val = scm_hash_ref(h, s_type_name, SCM_BOOL_F);
-    if (scm_is_false(val))
-    {
-        h = get_hash_table("%gi-structs");
-        val = scm_hash_ref(h, s_type_name, SCM_BOOL_F);
-    }
-    if (scm_is_false(val))
-    {
-        h = get_hash_table("%gi-unions");
-        val = scm_hash_ref(h, s_type_name, SCM_BOOL_F);
-    }
-    if (scm_is_false(val))
-        scm_misc_error("gi-lookup-type",
-            "Cannot find an object, struct, or union type named '~a'",
-            scm_list_1(s_type_name));
-    ptr = scm_to_pointer(val);
-    return gi_gtype_c2g(g_registered_type_info_get_g_type(ptr));
-}
-
-/* re pygi_type_import_by_gi_info */
-SCM gi_type_import_by_gi_info(GIBaseInfo *info)
-{
-    const gchar *namespace_ = g_base_info_get_namespace(info);
-    const gchar *name = g_base_info_get_name(info);
-    GIInfoType info_type = g_base_info_get_type(info);
-    g_debug("gi_type_import_by_gi_info: namespace '%s' name '%s'",
-        namespace_, name);
-
-    switch (info_type)
-    {
-    case GI_INFO_TYPE_STRUCT:
-    {
-        GType g_type;
-        SCM h, val;
-        h = get_hash_table("%gi-structs");
-        val = scm_hash_ref(h, scm_from_utf8_string(name), SCM_BOOL_F);
-        if (scm_is_true(val))
-        {
-            g_debug("type name '%s' is found in structs", name);
-            /* Have we made a Guile type for this struct? */
-            g_type = g_registered_type_info_get_g_type((GIRegisteredTypeInfo *)scm_to_pointer(val));
-            return gi_gtype_c2g(g_type);
-        }
-    }
-    break;
-    default:
-        g_critical("unimplemented");
-    }
-    return SCM_UNSPECIFIED;
-}
-
 static SCM
 scm_gi_lookup_callback_info(SCM s_type_name)
 {
@@ -1564,7 +1480,6 @@ void gir_init_func2(void)
     scm_c_define_gsubr("load-typelib", 2, 0, 0, scm_load_typelib);
     scm_c_define_gsubr("document-typelib", 2, 0, 0, scm_document_typelib);
     scm_c_define_gsubr("gi-lookup-callback-info", 1, 0, 0, scm_gi_lookup_callback_info);
-    scm_c_define_gsubr("gi-lookup-type", 1, 0, 0, scm_gi_lookup_type);
 
 #if 0
     scm_permanent_object(scm_c_define("%gi-functions", scm_c_make_hash_table(GIR_FUNC2_INIT_HASH_TABLE_SIZE)));

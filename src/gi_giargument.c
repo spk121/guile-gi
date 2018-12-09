@@ -912,7 +912,6 @@ convert_array_object_to_arg(SCM object, GITypeInfo *array_type_info, GITransfer 
     g_assert(array_type_tag == GI_TYPE_TAG_ARRAY);
     g_assert(array_is_ptr);
 
-    // In Glib 2.0 and GTK 3.0, the common type is C.
     if (array_type == GI_ARRAY_TYPE_BYTE_ARRAY)
     {
         if (scm_is_bytevector(object))
@@ -928,7 +927,7 @@ convert_array_object_to_arg(SCM object, GITypeInfo *array_type_info, GITransfer 
         }
         else
         {
-            ret = GI_GIARGUMENT_WRONG_TYPE_ARG;
+            ret = GI_GIARGUMENT_WRONG_TYPE_BYTE_ARRAY_ARG;
             goto out;
         }
     }
@@ -969,9 +968,7 @@ convert_array_object_to_arg(SCM object, GITypeInfo *array_type_info, GITransfer 
         else if (referenced_base_type == GI_INFO_TYPE_STRUCT || referenced_base_type == GI_INFO_TYPE_OBJECT)
         {
             // If we are a Struct or Object, we need to look up our actual GType.
-            const char *referenced_name = g_base_info_get_namespace(referenced_base_info);
-            const char *referenced_namespace = g_base_info_get_namespace(referenced_base_info);
-            referenced_object_type = gir_lookup_type(referenced_name);
+            referenced_object_type = g_registered_type_info_get_g_type(referenced_base_info);
 
             g_assert(referenced_object_type != G_TYPE_NONE);
 
@@ -1918,9 +1915,7 @@ static GIArgumentStatus convert_array_pointer_arg_to_object(GIArgument *arg, GIT
         else if (referenced_base_type == GI_INFO_TYPE_STRUCT || referenced_base_type == GI_INFO_TYPE_OBJECT)
         {
             // If we are a Struct or Object, we need to look up our actual GType.
-            const char *referenced_name = g_base_info_get_namespace(referenced_base_info);
-            const char *referenced_namespace = g_base_info_get_namespace(referenced_base_info);
-            referenced_object_type = gir_lookup_type(referenced_name);
+            referenced_object_type = g_registered_type_info_get_g_type(referenced_base_info);
 
             g_assert(referenced_object_type != G_TYPE_NONE);
 

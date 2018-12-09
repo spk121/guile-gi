@@ -59,6 +59,7 @@ GQuark guginterface_type_key, gugenum_class_key, gugflags_class_key, gugpointer_
  /* A <gtype> is a foreign object type that contains a C GType
     integer. */
 
+static GHashTable *all_types = NULL;
 static SCM
 get_hash_table(void)
 {
@@ -149,6 +150,21 @@ gi_gtype_from_scm(SCM obj)
         "cannot convert '~a' to a GType",
         scm_list_1(obj));
     g_return_val_if_reached(0);
+}
+
+GType
+gi_gtype_from_base_info(GIBaseInfo *info)
+{
+    g_assert (info != NULL);
+
+    SCM h = get_hash_table();
+
+    int n = SCM_HASHTABLE_N_BUCKETS(h);
+    for (int i = 0; i < n; i ++)
+    {
+        SCM bucket = SCM_HASHTABLE_BUCKET(h, i);
+
+    }  
 }
 
 GType gi_infer_gtype_from_scm(SCM obj)
@@ -520,8 +536,16 @@ gi_gtype_finalizer(SCM self)
 }
 
 void
+gi_gtype_destroy(gpointer data)
+{
+    
+}
+
+void
 gi_init_gtype(void)
 {
+    all_types = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, gi_gtype_destroy);
+
     gi_init_gtype_type();
 
     SCM gtype_wrapper_hash = scm_c_make_hash_table(10);

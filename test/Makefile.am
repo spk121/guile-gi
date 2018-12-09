@@ -46,4 +46,5 @@ AM_SCM_LOG_FLAGS = --no-auto-compile -L $(abs_top_srcdir)/src -L $(abs_top_srcdi
 
 EXTRA_DIST = \
   $(TESTS) \
-  lib.scm
+  lib.scm \
+  automake-test-lib.scm 

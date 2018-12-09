@@ -20,7 +20,7 @@ GSList *function_list = NULL;
 
 static gir_gsubr_t *gir_function_create_gsubr(GIFunctionInfo *function_info, const char *name, int *n_required, int *n_optional);
 static char *gir_function_name_to_scm_name(const char *gname);
-static gchar *gir_function_make_name(const char *namespace_, const char *parent, GICallableInfo *info);
+static gchar *gir_function_make_name(const char *parent, GICallableInfo *info);
 
 static void gir_function_info_count_args(GIFunctionInfo *info, int *in, int *out);
 static void gir_function_count_input_args(GIFunctionInfo *info, int *required, int *optional);
@@ -37,7 +37,7 @@ gir_function_define_gsubr(const char *namespace_, const char *parent, GIFunction
     char *name;
     int n_required, n_optional;
 
-    name = gir_function_make_name(namespace_, parent, info);
+    name = gir_function_make_name(parent, info);
     func_gsubr = gir_function_create_gsubr(info, name, &n_required, &n_optional);
     scm_c_define_gsubr(name, n_required, n_optional, 0, func_gsubr);
     scm_c_export(name, NULL);
@@ -154,7 +154,7 @@ gir_function_cleanup (void)
 }
 
 static gchar*
-gir_function_make_name(const char *namespace_, const char *parent, GICallableInfo *info)
+gir_function_make_name(const char *parent, GICallableInfo *info)
 {
     char *public_name, *tmp_str, *tmp_str2;
     GITypeInfo *return_type;
@@ -166,13 +166,7 @@ gir_function_make_name(const char *namespace_, const char *parent, GICallableInf
 
     if (parent)
     {
-#ifdef LONG_PUBLIC_NAMES
-        tmp_str = g_strdup_printf("%s%s",
-                                  abbrev_namespace(namespace_),
-                                  parent);
-#else
         tmp_str = g_strdup(parent);
-#endif
         tmp_str2 = gir_function_name_to_scm_name(g_base_info_get_name(info));
         if (g_type_info_get_tag(return_type) == GI_TYPE_TAG_BOOLEAN
             && !g_type_info_is_pointer(return_type))
@@ -186,20 +180,10 @@ gir_function_make_name(const char *namespace_, const char *parent, GICallableInf
     {
         if (g_type_info_get_tag(return_type) == GI_TYPE_TAG_BOOLEAN
             && !g_type_info_is_pointer(return_type))
-#ifdef LONG_PUBLIC_NAMES
-            tmp_str = g_strdup_printf("%s-%s?", abbrev_namespace(namespace_),
-                                      g_base_info_get_name(info));
-#else
             tmp_str = g_strdup_printf("%s?", g_base_info_get_name(info));
-#endif
-            else
-#ifdef LONG_PUBLIC_NAMES
-            tmp_str = g_strdup_printf("%s-%s", abbrev_namespace(namespace_),
-                                      g_base_info_get_name(info));
-#else
+        else
             tmp_str = g_strdup_printf("%s",
                                       g_base_info_get_name(info));
-#endif
         public_name = gir_function_name_to_scm_name(tmp_str);
         g_free(tmp_str);
     }
