@@ -136,7 +136,6 @@ gir_constant_define(GIConstantInfo *info)
 
     scm_permanent_object(scm_c_define(public_name, ret));
     scm_c_export(public_name, NULL);
-    free(public_name);
 }
 
 void gir_init_constant(void)
