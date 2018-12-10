@@ -15,15 +15,15 @@
 ;;  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 (use-modules (gi)
+	     (gi glib-2)
 	     (srfi srfi-1)
              (test automake-test-lib))
 
 (setlocale LC_ALL "C")
 (automake-test
  (begin
-   (import-typelib "GLib" "2.0")
    (let* ((self (Bytes-new #f 0))
-	  (output (Bytes-get-data self))
+	  (output (call-method self "get-data"))
 	  (data (first output))
 	  (siz (second output)))
      
@@ -31,6 +31,5 @@
      (format #t "Output: ~S~%" output)
      (format #t "Data: ~S~%" data)
      (format #t "Size: ~S~%" siz)
-     (and (Bytes? self)
-	  (not data)
+     (and (not data)
 	  (equal? 0 siz)))))

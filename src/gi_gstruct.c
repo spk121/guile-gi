@@ -127,14 +127,29 @@ gir_new_struct_gbox(GType type, void *ptr, gboolean free_on_dealloc)
     if (!ptr)
         return SCM_BOOL_F;
 
-    SCM gbox = gir_new_gbox(SPTR_HOLDS_STRUCT, type, ptr, free_on_dealloc);
+    SCM wrapper = gi_gtype_c2g(type);
+    SCM scmtype = scm_gtype_get_scheme_type(wrapper);
 
-    scm_t_bits *class_ptr = g_type_get_qdata(type, gtype_class_wrapper);
-    g_assert (class_ptr != NULL);
-    SCM class = SCM_PACK_POINTER(class_ptr);
-
-    SCM struct_gbox = scm_make (scm_list_2(class, gbox));
-    return struct_gbox;
+    if (scm_is_true(scmtype))
+    {
+        g_debug("Creating GObject struct %s from %p", g_type_name(type), ptr);
+        GirSmartPtr *sptr = g_malloc0(sizeof(GirSmartPtr));
+        sptr->holds = SPTR_HOLDS_STRUCT;
+        sptr->ptr = ptr;
+        sptr->type = type;
+        g_atomic_int_set(&(sptr->count), 1);
+        if (free_on_dealloc)
+            sptr->dealloc = SPTR_SCM_UNREF_METHOD;
+        else
+            sptr->dealloc = SPTR_NO_FREE_FUNC;
+        return scm_make_foreign_object_2(scmtype, sptr, GINT_TO_POINTER(1));
+    }
+    else
+    {
+        // OK. There doesn't seem to be any way to make a Guile type.
+        g_warning("Creating new fallback GBox struct %s from %p", g_type_name(type), ptr);
+        return gir_new_gbox(SPTR_HOLDS_STRUCT, type, ptr, free_on_dealloc);
+    }
 }
 
 SCM

@@ -150,6 +150,7 @@ scm_call_method(SCM s_object, SCM s_method_name, SCM s_list_of_args)
 
     // Look up method by name
     SCM h, subhash;
+    GirSmartPtr *sptr;
     h = gir_method_get_table();
     subhash = scm_hash_ref(h, s_method_name, SCM_BOOL_F);
     if (scm_is_false(subhash))
@@ -165,9 +166,25 @@ scm_call_method(SCM s_object, SCM s_method_name, SCM s_list_of_args)
     else if (SCM_IS_A_P(s_object, gir_gbox_type))
         type = gi_gbox_get_type(s_object);
     else
+    {
+        // FIXME: here I should check to see if s_object is has
+        // of any of the previoulsy defined foreign object types.
+        if (scm_foreign_object_unsigned_ref(s_object, 1))
+        {
+            sptr = scm_foreign_object_ref(s_object, 0);
+            type = sptr->type;
+        }
+        else
+            scm_misc_error("call-method",
+                       "Cannot invoke ::~S~S for invalidated object ~S",
+                       scm_list_3(s_method_name, s_list_of_args, s_object));            
+    }
+#if 0    
+    else
         scm_misc_error("call-method",
                        "Cannot invoke ::~S~S for object ~S",
                        scm_list_3(s_method_name, s_list_of_args, s_object));
+#endif                       
 
     char *method_name = scm_to_utf8_string(s_method_name);
 
@@ -212,7 +229,10 @@ scm_call_method(SCM s_object, SCM s_method_name, SCM s_list_of_args)
     else if (SCM_IS_A_P(s_object, gir_gbox_type))
         in_args[0].v_pointer = gi_gbox_peek_pointer(s_object);
     else
-        g_abort();
+    {
+        sptr = scm_foreign_object_ref(s_object, 0);
+        in_args[0].v_pointer = sptr->ptr;
+    }
 
     GIArgument return_arg;
 
@@ -428,4 +448,5 @@ gir_method_document(GString **export, const char *namespace_,
 void gir_init_method(void)
 {
     scm_c_define_gsubr("call-method", 2, 0, 1, scm_call_method);
+    scm_c_export("call-method", NULL);
 }

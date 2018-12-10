@@ -98,7 +98,7 @@ static gchar *
 type_public_name(GIBaseInfo *info)
 {
     char *public_name;
-    public_name = g_strdup_printf("<%s:gtype>", g_base_info_get_name(info));
+    public_name = g_strdup_printf("%s:gtype", g_base_info_get_name(info));
     return public_name;
 }
 
@@ -119,14 +119,22 @@ gir_typelib_define_type(GType gtype, GIBaseInfo *info)
     g_type_set_qdata(gtype, gtype_base_info_key, info);
     SCM s_gtype = gi_gtype_c2g(gtype);
     gchar *type_name = type_public_name(info);
-    gchar *type_class_name = type_class_public_name(info);
     scm_permanent_object(scm_c_define(type_name, s_gtype));
-    g_debug("created new GType %s", type_name);
-    scm_permanent_object(scm_c_define(type_class_name, scm_gtype_get_scheme_type(s_gtype)));
-    g_debug("created new GObject foreign object type %s", type_class_name);
-    scm_c_export(type_name, type_class_name, NULL);
+    g_debug("created new GType instance %s", type_name);
     g_free(type_name);
+
+    // All of our custom introspected foreign object types will
+    // have the same 3 slots: sptr, valid, and extra
+    gchar *type_class_name = type_class_public_name(info);
+    SCM sname = scm_from_utf8_symbol(type_class_name);
+    SCM slots = scm_list_3(scm_from_utf8_symbol("sptr"), scm_from_utf8_symbol("valid"), scm_from_utf8_symbol ("extra"));
+    SCM fo_type = scm_make_foreign_object_type(sname, slots, NULL);
+    g_debug("Creating a new GType foreign object type: %p %s", SCM_UNPACK_POINTER(fo_type), type_class_name);
+    scm_gtype_set_scheme_type_x (s_gtype, fo_type);
+    scm_permanent_object(scm_c_define(type_class_name, scm_gtype_get_scheme_type(s_gtype)));
     g_free(type_class_name);
+
+    scm_c_export(type_name, type_class_name, NULL);
 }
 
 static SCM

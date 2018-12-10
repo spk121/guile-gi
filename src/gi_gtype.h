@@ -29,6 +29,7 @@ GType     gi_gtype_from_scm (SCM obj);
 GType     gi_infer_gtype_from_scm(SCM obj);
 SCM       gi_gtype_c2g (GType type);
 SCM       scm_gtype_get_scheme_type(SCM self);
+SCM       scm_gtype_set_scheme_type_x(SCM self, SCM value);
 
 void      gi_init_gtype (void);
 

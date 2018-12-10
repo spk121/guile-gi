@@ -245,7 +245,7 @@ scm_gtype_get_scheme_type(SCM self)
     return SCM_PACK_POINTER(ptr);
 }
 
-static SCM
+SCM
 scm_gtype_set_scheme_type_x(SCM self, SCM value)
 {
     GQuark key;
@@ -505,20 +505,11 @@ SCM gi_gtype_c2g(GType type)
     ptr = g_type_get_qdata(type, gtype_wrapper_key);
     if (!ptr)
     {
-        g_debug("Creating new GType wrapper: %zu %s", type, g_type_name(type));
-
+        g_debug("Encountered new GType '%zu' named '%s'", type, g_type_name(type));
         wrapper = scm_make_foreign_object_0(gi_gtype_type);
         gi_gtype_set_type(wrapper, type);
         g_type_set_qdata(type, gtype_wrapper_key, SCM_UNPACK_POINTER(wrapper));
-        scm_hash_set_x(get_hash_table(), scm_from_size_t(type), wrapper);
-
-        gchar *cname = g_strdup_printf("<%s>", g_type_name(type));
-        SCM sname = scm_from_utf8_symbol(cname);
-        SCM slots = scm_list_3(scm_from_utf8_symbol("sptr"), scm_from_utf8_symbol("valid"), scm_from_utf8_symbol ("extra"));
-        SCM fo_type = scm_make_foreign_object_type(sname, slots, NULL);
-        g_debug("Creating a new GType foreign object type: %p %s", SCM_UNPACK_POINTER(fo_type), cname);
-        g_free (cname);
-        scm_gtype_set_scheme_type_x (wrapper, fo_type);
+        scm_hash_set_x(get_hash_table(), scm_from_size_t(type), wrapper);      
     }
     else
     {
@@ -538,7 +529,7 @@ gi_gtype_finalizer(SCM self)
 void
 gi_gtype_destroy(gpointer data)
 {
-    
+
 }
 
 void
