@@ -160,7 +160,6 @@ gi_giargument_convert_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *must
         case GI_TYPE_TAG_INTERFACE:
             // The non-pointer interfaces are FLAGS, ENUM, and CALLBACK only.
             // STRUCT and OBJECT interfaces are always pointer interfaces.
-            // g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
             ret = convert_interface_object_to_arg(obj, type_info, must_free, arg);
             break;
         default:
@@ -698,12 +697,6 @@ gi_giargument_convert_immediate_pointer_object_to_arg(SCM obj, GIArgInfo *arg_in
     // like in 'g_atomic_int_add', and sometimes a C array like in 'g_utf16_to_ucs4',
     // and there is no way to tell.  We'll use bytevector pointers, I guess, since
     // they can apply to both cases.
-    if (g_arg_info_may_be_null(arg_info) && scm_is_eq(obj, SCM_BOOL_F))
-    {
-        arg->v_pointer = NULL;
-        *must_free = GIR_FREE_NONE;
-        ret = GI_GIARGUMENT_OK;
-    }
     if (!scm_is_bytevector(obj))
     {
         g_critical("Unhandled argument type, %s: %d", __FILE__, __LINE__);
@@ -731,13 +724,7 @@ gi_giargument_convert_string_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigne
 
     // The scm_to_..._string always makes a new copy, so if transfer isn't EVERYTHING, we'll have to free
     // the string later.
-    if (g_arg_info_may_be_null(arg_info) && scm_is_eq(obj, SCM_BOOL_F))
-    {
-        arg->v_string = NULL;
-        *must_free = GIR_FREE_NONE;
-        ret = GI_GIARGUMENT_OK;
-    }
-    else if (!scm_is_string(obj))
+    if (!scm_is_string(obj))
     {
         g_critical("Unhandled argument type, %s: %d", __FILE__, __LINE__);
         arg->v_string = NULL;
@@ -775,12 +762,9 @@ convert_const_void_pointer_object_to_arg(SCM obj, GIArgument *arg)
         arg->v_pointer = scm_to_pointer(obj);
     else
     {
-        // If we're passed some generic non-pointer object,
-        // we box it up for transport.
-        arg->v_pointer = g_new0(GirVoidBox, 1);
-        ((GirVoidBox *)(arg->v_pointer))->header = GIR_VOIDBOX_HEADER;
-        ((GirVoidBox *)(arg->v_pointer))->size = sizeof(obj);
-        ((GirVoidBox *)(arg->v_pointer))->body = obj;
+        g_critical("Unhandled argument type, %s: %d", __FILE__, __LINE__);
+        arg->v_pointer = NULL;
+        return GI_GIARGUMENT_WRONG_TYPE_ARG;
     }
 
     return GI_GIARGUMENT_OK;
@@ -791,84 +775,49 @@ convert_interface_pointer_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *
 {
     // Usually STRUCT, UNION, INTERFACE, OBJECT.  Handle NULL_OK
     GIArgumentStatus ret = GI_GIARGUMENT_ERROR;
-
-    GITypeInfo *type_info = g_arg_info_get_type(arg_info);
-
-    g_assert(g_type_info_get_tag(type_info) == GI_TYPE_TAG_INTERFACE);
-
-    GIBaseInfo *referenced_base_info = g_type_info_get_interface(type_info);
-    GIInfoType referenced_base_type = g_base_info_get_type(referenced_base_info);
-
-    g_base_info_unref(type_info);
-    if (scm_is_eq(obj, SCM_BOOL_F) && g_arg_info_may_be_null(arg_info))
-    {
-        arg->v_pointer = NULL;
-        *must_free = GIR_FREE_NONE;
-        ret = GI_GIARGUMENT_OK;
-    }
-    else if (referenced_base_type == GI_INFO_TYPE_STRUCT || referenced_base_type == GI_INFO_TYPE_UNION)
-    {
-        if (!SCM_IS_A_P(obj, gir_gbox_type))
-        {
-            g_critical("Unhandled argument type, %s: %d", __FILE__, __LINE__);
-            arg->v_pointer = NULL;
-            *must_free = GIR_FREE_NONE;
-            ret = GI_GIARGUMENT_WRONG_TYPE_ARG;
-        }
-        else
-        {
-            GType type = g_registered_type_info_get_g_type(referenced_base_info);
-            GirSmartPtr *sptr = scm_foreign_object_ref(obj, 0);
-            if ((sptr->holds == SPTR_HOLDS_STRUCT && referenced_base_type == GI_INFO_TYPE_STRUCT) || (sptr->holds == SPTR_HOLDS_UNION && referenced_base_type == GI_INFO_TYPE_UNION))
-            {
-                if (!g_type_is_a(sptr->type, type))
-                {
-                    g_critical("Unhandled argument type, %s: %d", __FILE__, __LINE__);
-                    arg->v_pointer = NULL;
-                    *must_free = GIR_FREE_NONE;
-                    ret = GI_GIARGUMENT_WRONG_TYPE_ARG;
-                }
-                else
-                {
-                    arg->v_pointer = sptr->ptr;
-                    *must_free = GIR_FREE_NONE;
-                    ret = GI_GIARGUMENT_OK;
-                }
-            }
-        }
-    }
-    else if (referenced_base_type == GI_INFO_TYPE_OBJECT)
-    {
-        if (!SCM_IS_A_P(obj, gi_gobject_type))
-        {
-            g_critical("Unhandled argument type, %s: %d", __FILE__, __LINE__);
-            arg->v_pointer = NULL;
-            *must_free = GIR_FREE_NONE;
-            ret = GI_GIARGUMENT_WRONG_TYPE_ARG;
-        }
-        else
-        {
-            GType type = g_registered_type_info_get_g_type(referenced_base_info);
-            g_debug("testing if %p (a %s) is a child of %s", SCM_UNPACK_POINTER(obj), g_type_name(gi_gobject_get_ob_type(obj)), g_type_name(type));
-            if (!g_type_is_a(gi_gobject_get_ob_type(obj), type))
-            {
-                g_critical("Unhandled argument type, %s: %d", __FILE__, __LINE__);
-                arg->v_pointer = NULL;
-                *must_free = GIR_FREE_NONE;
-                ret = GI_GIARGUMENT_WRONG_TYPE_ARG;
-            }
-            else
-            {
-                arg->v_pointer = gi_gobject_get_obj(obj);
-                *must_free = GIR_FREE_NONE;
-                ret = GI_GIARGUMENT_OK;
-            }
-        }
-    }
-    else if (referenced_base_type == GI_INFO_TYPE_CALLBACK)
+    GType obj_type = gi_infer_gtype_from_scm(obj);
+    if (obj_type == G_TYPE_NONE)
     {
         g_critical("Unhandled argument type, %s: %d", __FILE__, __LINE__);
-        g_abort();
+        arg->v_pointer = NULL;
+        *must_free = GIR_FREE_NONE;
+        ret = GI_GIARGUMENT_WRONG_TYPE_ARG;
+    }
+    else
+    {
+        GITypeInfo *type_info = g_arg_info_get_type(arg_info);
+
+        g_assert(g_type_info_get_tag(type_info) == GI_TYPE_TAG_INTERFACE);
+
+        GIBaseInfo *referenced_base_info = g_type_info_get_interface(type_info);
+        GIInfoType referenced_base_type = g_base_info_get_type(referenced_base_info);
+        g_base_info_unref(type_info);
+
+        GType arg_type = g_registered_type_info_get_g_type(referenced_base_info);
+        if (!g_type_is_a(obj_type, arg_type))
+        {
+            g_critical("Unhandled argument type, %s: %d", __FILE__, __LINE__);
+            arg->v_pointer = NULL;
+            *must_free = GIR_FREE_NONE;
+            ret = GI_GIARGUMENT_WRONG_TYPE_ARG;
+        }
+        else if (referenced_base_type == GI_INFO_TYPE_STRUCT || referenced_base_type == GI_INFO_TYPE_UNION)
+        {
+            GirSmartPtr *sptr = scm_foreign_object_ref(obj, 0);
+            arg->v_pointer = sptr->ptr;
+            *must_free = GIR_FREE_NONE;
+            ret = GI_GIARGUMENT_OK;
+        }
+        else if (referenced_base_type == GI_INFO_TYPE_OBJECT)
+        {
+            arg->v_pointer = gi_gobject_get_obj(obj);
+            *must_free = GIR_FREE_NONE;
+            ret = GI_GIARGUMENT_OK;
+        }
+        else if (referenced_base_type == GI_INFO_TYPE_CALLBACK)
+        {
+            g_critical("Unhandled argument type, %s: %d", __FILE__, __LINE__);
+            g_abort();
 #if 0
         if (SCM_IS_A_P(obj, gir_callback_type))
         {
@@ -883,14 +832,16 @@ convert_interface_pointer_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *
             ret = GI_GIARGUMENT_WRONG_TYPE_ARG;
         }
 #endif
+        }
+        else
+        {
+            // FIXME: definitely need to handle INTERFACE types.
+            g_critical("Unhandled argument type, %s: %d", __FILE__, __LINE__);
+            ret = GI_GIARGUMENT_UNHANDLED_TYPE;
+        }
+        g_base_info_unref(referenced_base_info);
     }
-    else
-    {
-        // FIXME: definitely need to handle INTERFACE types.
-        g_critical("Unhandled argument type, %s: %d", __FILE__, __LINE__);
-        ret = GI_GIARGUMENT_UNHANDLED_TYPE;
-    }
-    g_base_info_unref(referenced_base_info);
+
     return ret;
 }
 
