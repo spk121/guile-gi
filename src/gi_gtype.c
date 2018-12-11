@@ -59,55 +59,35 @@ GQuark guginterface_type_key, gugenum_class_key, gugflags_class_key, gugpointer_
  /* A <gtype> is a foreign object type that contains a C GType
     integer. */
 
-static GHashTable *all_types = NULL;
-static SCM
-get_hash_table(void)
-{
-    SCM hashtable;
-    static int first = TRUE;
-    static SCM sym;
-    if (first)
-    {
-        first = FALSE;
-        sym = scm_from_utf8_symbol("%gtypes");
+// This list contains all the GType integers in use.
+static GSList *all_types = NULL;
+
+static GQuark
+type_key(GType type) {
+    GQuark key;
+
+    if (g_type_is_a(type, G_TYPE_INTERFACE)) {
+        key = guginterface_type_key;
+    }
+    else if (g_type_is_a(type, G_TYPE_ENUM)) {
+        key = gugenum_class_key;
+    }
+    else if (g_type_is_a(type, G_TYPE_FLAGS)) {
+        key = gugflags_class_key;
+    }
+    else if (g_type_is_a(type, G_TYPE_POINTER)) {
+        key = gugpointer_class_key;
+    }
+    else if (g_type_is_a(type, G_TYPE_BOXED)) {
+        key = gugboxed_type_key;
+    }
+    else {
+        key = gugobject_class_key;
     }
 
-    hashtable = scm_module_variable(scm_current_module(), sym);
-    g_assert(scm_is_true(scm_hash_table_p(scm_variable_ref(hashtable))));
-    return scm_variable_ref(hashtable);
+    return key;
 }
 
-
-/* re pyg_type_get_bases */
-static SCM
-scm_gtype_get_bases(SCM self)
-{
-    GType gtype;
-    GType parent_type;
-    GType *interfaces;
-    guint n_interfaces;
-    SCM bases;
-
-    scm_assert_foreign_object_type(gi_gtype_type, self);
-    gtype = gi_gtype_get_type(self);
-    parent_type = g_type_parent(gtype);
-    interfaces = g_type_interfaces(gtype, &n_interfaces);
-
-    /* Put the parent at the beginning of the list */
-    if (parent_type)
-        bases = scm_list_1(gi_gtype_c2g(parent_type));
-    else
-        bases = SCM_EOL;
-
-    /* And traverse interfaces */
-    if (n_interfaces) {
-        for (guint i = 0; i < n_interfaces; i++) {
-            bases = scm_append(scm_list_2(bases, scm_list_1(gi_gtype_c2g(interfaces[i]))));
-        }
-    }
-    g_free(interfaces);
-    return bases;
-}
 
 ////////////////////////////////////////////////////////////////
 
@@ -141,9 +121,9 @@ gi_gtype_from_scm(SCM obj)
         SCM entry;
 
         val = scm_to_size_t(obj);
-        entry = scm_hash_ref(get_hash_table(), obj, SCM_BOOL_F);
-        if (!scm_is_false(entry))
-            return val;
+        gpointer entry_ptr = g_slist_find(all_types, GSIZE_TO_POINTER(val));
+        if (entry_ptr != NULL)
+            return GPOINTER_TO_SIZE(entry_ptr);
     }
 
     scm_misc_error("gi_gtype_from_scm",
@@ -152,21 +132,7 @@ gi_gtype_from_scm(SCM obj)
     g_return_val_if_reached(0);
 }
 
-GType
-gi_gtype_from_base_info(GIBaseInfo *info)
-{
-    g_assert (info != NULL);
-
-    SCM h = get_hash_table();
-
-    int n = SCM_HASHTABLE_N_BUCKETS(h);
-    for (int i = 0; i < n; i ++)
-    {
-        SCM bucket = SCM_HASHTABLE_BUCKET(h, i);
-
-    }  
-}
-
+// Try to find a GType for a given object
 GType gi_infer_gtype_from_scm(SCM obj)
 {
     if (scm_is_eq(obj, SCM_BOOL_F) || scm_is_eq(obj, SCM_BOOL_T))
@@ -178,10 +144,121 @@ GType gi_infer_gtype_from_scm(SCM obj)
     else if (scm_is_string(obj))
         return G_TYPE_STRING;
     else
-        g_critical("Could not infer typecode from object");
+    {
+        GSList *x = all_types;
+        while (x != NULL)
+        {
+            GType c_gtype = GPOINTER_TO_SIZE(x->data);
+            SCM s_gtype = gi_gtype_c2g(c_gtype);
+            SCM s_gtype_class = scm_gtype_get_scheme_type(s_gtype);
+            if (SCM_IS_A_P(obj, s_gtype_class))
+                return c_gtype;
+            x = x->next;
+        }
+    }
 
-    return G_TYPE_INT;
+    g_critical("Could not infer typecode from object");
+
+    return G_TYPE_NONE;
 }
+
+SCM gi_gtype_c2g(GType type)
+{
+    SCM wrapper;
+    gpointer ptr;
+    GType parent;
+
+    parent = g_type_parent(type);
+    if (parent != 0)
+        gi_gtype_c2g(parent);
+
+    /* Do we already have a wrapper for this type? */
+    ptr = g_type_get_qdata(type, gtype_wrapper_key);
+    if (!ptr)
+    {
+        g_debug("Encountered new GType '%zu' named '%s'", type, g_type_name(type));
+        wrapper = scm_make_foreign_object_0(gi_gtype_type);
+        gi_gtype_set_type(wrapper, type);
+        g_type_set_qdata(type, gtype_wrapper_key, SCM_UNPACK_POINTER(wrapper));
+        all_types = g_slist_append(all_types, GSIZE_TO_POINTER(type));
+    }
+    else
+    {
+        wrapper = SCM_PACK_POINTER(ptr);
+    }
+    return wrapper;
+}
+
+void
+gi_gtype_finalizer(SCM self)
+{
+    GType type = gi_gtype_get_type(self);
+    g_debug("Finalizing GType wrapper: %zu %s", type, g_type_name(type));
+    g_type_set_qdata(type, gtype_wrapper_key, NULL);
+}
+
+
+SCM
+gi_gtype_get_scheme_type(GType type)
+{
+    GQuark key;
+    gpointer ptr;
+    SCM scm_type;
+
+    key = type_key(type);
+    ptr = g_type_get_qdata(type, key);
+    if (!ptr)
+        return SCM_BOOL_F;
+
+    return SCM_PACK_POINTER(ptr);
+}
+
+void
+gi_gtype_set_scheme_type_x(GType type, SCM value)
+{
+    GQuark key;
+
+    key = type_key(type);
+    if (scm_is_eq(value, SCM_BOOL_F))
+        g_type_set_qdata(type, key, NULL);
+    else
+        g_type_set_qdata(type, key, SCM_UNPACK_POINTER(value));
+}
+
+
+////////////////////////////////////////////////////////////////
+
+static SCM
+scm_gtype_get_bases(SCM self)
+{
+    GType gtype;
+    GType parent_type;
+    GType *interfaces;
+    guint n_interfaces;
+    SCM bases;
+
+    scm_assert_foreign_object_type(gi_gtype_type, self);
+    gtype = gi_gtype_get_type(self);
+    parent_type = g_type_parent(gtype);
+    interfaces = g_type_interfaces(gtype, &n_interfaces);
+
+    /* Put the parent at the beginning of the list */
+    if (parent_type)
+        bases = scm_list_1(gi_gtype_c2g(parent_type));
+    else
+        bases = SCM_EOL;
+
+    /* And traverse interfaces */
+    if (n_interfaces) {
+        for (guint i = 0; i < n_interfaces; i++) {
+            bases = scm_append(scm_list_2(bases, scm_list_1(gi_gtype_c2g(interfaces[i]))));
+        }
+    }
+    g_free(interfaces);
+    return bases;
+}
+
+
 
 static SCM
 scm_to_gtype(SCM obj)
@@ -201,65 +278,24 @@ scm_integer_to_gtype_unsafe(SCM obj)
 }
 
 
-static GQuark
-type_key(GType type) {
-    GQuark key;
-
-    if (g_type_is_a(type, G_TYPE_INTERFACE)) {
-        key = guginterface_type_key;
-    }
-    else if (g_type_is_a(type, G_TYPE_ENUM)) {
-        key = gugenum_class_key;
-    }
-    else if (g_type_is_a(type, G_TYPE_FLAGS)) {
-        key = gugflags_class_key;
-    }
-    else if (g_type_is_a(type, G_TYPE_POINTER)) {
-        key = gugpointer_class_key;
-    }
-    else if (g_type_is_a(type, G_TYPE_BOXED)) {
-        key = gugboxed_type_key;
-    }
-    else {
-        key = gugobject_class_key;
-    }
-
-    return key;
-}
-
 SCM
 scm_gtype_get_scheme_type(SCM self)
 {
-    GQuark key;
     GType type;
-    gpointer ptr;
-    SCM scm_type;
 
     scm_assert_foreign_object_type(gi_gtype_type, self);
     type = gi_gtype_get_type(self);
-    key = type_key(type);
-    ptr = g_type_get_qdata(type, key);
-    if (!ptr)
-        return SCM_BOOL_F;
-
-    return SCM_PACK_POINTER(ptr);
+    return gi_gtype_get_scheme_type(type);
 }
 
 SCM
 scm_gtype_set_scheme_type_x(SCM self, SCM value)
 {
-    GQuark key;
     GType type;
-    gpointer ptr;
-    SCM scm_type;
 
     scm_assert_foreign_object_type(gi_gtype_type, self);
     type = gi_gtype_get_type(self);
-    key = type_key(type);
-    if (scm_is_eq(value, SCM_BOOL_F))
-        g_type_set_qdata(type, key, NULL);
-    else
-        g_type_set_qdata(type, key, SCM_UNPACK_POINTER(value));
+    gi_gtype_set_scheme_type_x(type, value);
 
     return SCM_UNSPECIFIED;
 }
@@ -491,40 +527,8 @@ scm_gtype_equal_p(SCM self, SCM other)
     return scm_from_bool(gi_gtype_get_type(self) == gi_gtype_get_type(other));
 }
 
-SCM gi_gtype_c2g(GType type)
-{
-    SCM wrapper;
-    gpointer ptr;
-    GType parent;
 
-    parent = g_type_parent(type);
-    if (parent != 0)
-        gi_gtype_c2g(parent);
 
-    /* Do we already have a wrapper for this type? */
-    ptr = g_type_get_qdata(type, gtype_wrapper_key);
-    if (!ptr)
-    {
-        g_debug("Encountered new GType '%zu' named '%s'", type, g_type_name(type));
-        wrapper = scm_make_foreign_object_0(gi_gtype_type);
-        gi_gtype_set_type(wrapper, type);
-        g_type_set_qdata(type, gtype_wrapper_key, SCM_UNPACK_POINTER(wrapper));
-        scm_hash_set_x(get_hash_table(), scm_from_size_t(type), wrapper);      
-    }
-    else
-    {
-        wrapper = SCM_PACK_POINTER(ptr);
-    }
-    return wrapper;
-}
-
-void
-gi_gtype_finalizer(SCM self)
-{
-    GType type = gi_gtype_get_type(self);
-    g_debug("Finalizing GType wrapper: %zu %s", type, g_type_name(type));
-    g_type_set_qdata(type, gtype_wrapper_key, NULL);
-}
 
 void
 gi_gtype_destroy(gpointer data)
@@ -535,8 +539,6 @@ gi_gtype_destroy(gpointer data)
 void
 gi_init_gtype(void)
 {
-    all_types = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, gi_gtype_destroy);
-
     gi_init_gtype_type();
 
     SCM gtype_wrapper_hash = scm_c_make_hash_table(10);
