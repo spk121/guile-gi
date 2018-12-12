@@ -93,15 +93,14 @@ you need to have an export library.  A sample library for GTK+3 could
 take the following form.
 </p>
 <div class="example">
-<pre class="example">(define-module (gtk)
+<pre class="example">(define-module (gi gtk-3)
   #:use-module (gi))
 
 (load-typelib &quot;Gtk&quot; &quot;3.0&quot;)
 </pre></div>
 
 <p>Note that Guile-GI provides export libraries for the most common
-GObject libraries.  It includes <code>(gi gtk 3.0)</code>, <code>(gi gio
-2.0)</code>, and <code>(gi glib 2.0)</code>, for example.
+GObject libraries.  It includes <code>(gi gtk-3)</code>, <code>(gi gio-2)</code>, and <code>(gi glib-2)</code>, for example.
 </p>
 <p>For these auto-generated libraries, you are going to need some
 documentation. The procedure <code>document-typelib</code> creates some
@@ -120,8 +119,8 @@ guile -L . -c '(use-modules (gi)) (display (document-typelib &quot;Gio&quot; &qu
 <p>A minimal GTK application looks like this
 </p>
 <div class="example">
-<pre class="example">(use-modules (gi gtk 3.0)
-             (gi gio 2.0))
+<pre class="example">(use-modules (gi gtk-3)
+             (gi gio-3))
 
 (define (activate app user-data)
   (let ((window (ApplicationWindow-new app)))

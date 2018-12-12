@@ -100,12 +100,10 @@ hold structures with that <code>GType</code>.  When using GLib&rsquo;s date
 functions from Guile, instances of <code>GDate *</code> are held by
 instances of the Guile class <code>&lt;Date&gt;</code>.
 </p>
-<p>Internally to Guile-GI, all of the Guile classes for GObject structs
-and unions are subclasses of Guile-GI&rsquo;s <code>&lt;GBox&gt;</code> <em>foreign
-object</em> class, which handles managing the C pointer.  Similarly, all
-of the Guile classes for GObject objects are subclasses of Guile-GI&rsquo;s
-<code>&lt;GObject&gt;</code> class which handles any Guile-specified callback
-procedures and subclasses in addition to managing the C pointer.
+<p>Internally to Guile-GI, all of the Guile classes for GObject structs,
+objects and unions are <em>foreign object</em> types that handle
+managing the C pointer.  The C pointer is usually the first slot in
+the foreign object type.
 </p>
 <hr>
 <div class="header">

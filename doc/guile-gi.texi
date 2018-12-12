@@ -97,7 +97,7 @@ ultimately work.  Right now, most of this is not implemented.
 To get things started, we will try to run a very simple GTK+ based GUI
 application using the bindings provided by Guile GI.
 
-Now, to understand how this works, you need to distinguish between
+Now, to understand how this works, one needs to distinguish between
 what Guile-GI provides and the bindings that it creates.
 
 @itemize
@@ -118,15 +118,14 @@ you need to have an export library.  A sample library for GTK+3 could
 take the following form.
 
 @example
-(define-module (gtk)
+(define-module (gi gtk-3)
   #:use-module (gi))
 
 (load-typelib "Gtk" "3.0")
 @end example
 
 Note that Guile-GI provides export libraries for the most common
-GObject libraries.  It includes @code{(gi gtk 3.0)}, @code{(gi gio
-2.0)}, and @code{(gi glib 2.0)}, for example.
+GObject libraries.  It includes @code{(gi gtk-3)}, @code{(gi gio-2)}, and @code{(gi glib-2)}, for example.
 
 For these auto-generated libraries, you are going to need some
 documentation. The procedure @code{document-typelib} creates some
@@ -145,8 +144,8 @@ guile -L . -c '(use-modules (gi)) (display (document-typelib "Gio" "2.0"))' > Gi
 A minimal GTK application looks like this
 
 @example
-(use-modules (gi gtk 3.0)
-             (gi gio 2.0))
+(use-modules (gi gtk-3)
+             (gi gio-3))
 
 (define (activate app user-data)
   (let ((window (ApplicationWindow-new app)))
@@ -256,12 +255,10 @@ hold structures with that @code{GType}.  When using GLib's date
 functions from Guile, instances of @code{GDate *} are held by
 instances of the Guile class @code{<Date>}.
 
-Internally to Guile-GI, all of the Guile classes for GObject structs
-and unions are subclasses of Guile-GI's @code{<GBox>} @emph{foreign
-object} class, which handles managing the C pointer.  Similarly, all
-of the Guile classes for GObject objects are subclasses of Guile-GI's
-@code{<GObject>} class which handles any Guile-specified callback
-procedures and subclasses in addition to managing the C pointer.
+Internally to Guile-GI, all of the Guile classes for GObject structs,
+objects and unions are @emph{foreign object} types that handle
+managing the C pointer.  The C pointer is usually the first slot in
+the foreign object type.
 
 @node Threads and Concurrency, Debugging and Profiling, GObject Types and Guile Types, Tutorials
 @section Threads and Concurrency
@@ -269,6 +266,8 @@ procedures and subclasses in addition to managing the C pointer.
 While Guile is multi-threaded, applications using Guile-GI are not
 fully thread-safe.  Notably, applications using GTK or GLib's mainloop
 need all rendering and mainloop activities to occur in one thread.
+Also, all calls to @code{load-typelib} need to be made from the same
+thread.
 
 @node Debugging and Profiling, Application Deployment, Threads and Concurrency, Tutorials
 @section Debugging and Profiling
@@ -380,10 +379,10 @@ The procedure may throw an error if a typelib file corresponding to
 @var{namespace} and @var{version} cannot be found.
 @end deffn
 
-@deffn Procedure load-typelib-full namespace version
-Like @code{load-typelib}, but it also loads any typelibs tagged as
-dependencies to the specified library.
-@end deffn
+@c @deffn Procedure load-typelib-full namespace version
+@c Like @code{load-typelib}, but it also loads any typelibs tagged as
+@c dependencies to the specified library.
+@c @end deffn
 
 @c -----------------------------------------------------------------
 @node GObject Types, GType, Typelib Introspection, Reference Guide
@@ -419,15 +418,14 @@ single-inheritance class structure.  A @code{RadioButton} is a type of
 introspect a GObject's type, use @code{->gtype} and then use the GType
 procedures. @xref{GType}.
 
-
-@deffn Procedure gobject-get-pointer object
-@deffnx Procedure gobject-peek-pointer object
-Give @var{object}, a GObject struct, union or object, this procedure
-returns a pointer to the underlying C struct, union, or object.
-@code{gobject-get-pointer} will attempt to prevent the garbage
-collection of the information to which pointer
-points. @code{gobject-peek-pointer} makes no such attempt
-@end deffn
+@c @deffn Procedure gobject-get-pointer object
+@c @deffnx Procedure gobject-peek-pointer object
+@c Give @var{object}, a GObject struct, union or object, this procedure
+@c returns a pointer to the underlying C struct, union, or object.
+@c @code{gobject-get-pointer} will attempt to prevent the garbage
+@c collection of the information to which pointer
+@c points. @code{gobject-peek-pointer} makes no such attempt
+@c @end deffn
 
 @c -----------------------------------------------------------------
 @node GType, GObject Methods, GObject Types, Reference Guide
@@ -670,9 +668,10 @@ callback
 Flags
 @end enumerate
 
-The flags value will be a logical or of one or more of @code{G_SIGNAL_RUN_FIRST},
-@code{G_SIGNAL_RUN_LAST}, @code{G_SIGNAL_RUN_CLEANUP}, @code{G_SIGNAL_NO_RECURSE},
-and maybe others.
+The flags value will be a logical or of one or more of
+@code{G_SIGNAL_RUN_FIRST}, @code{G_SIGNAL_RUN_LAST},
+@code{G_SIGNAL_RUN_CLEANUP}, @code{G_SIGNAL_NO_RECURSE}, and maybe
+others.
 
 And finally the @var{disposer} procedure will be either @code{#f} or
 a procedure that that will be called when instances of this object
