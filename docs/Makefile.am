@@ -14,8 +14,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-index.html: $(srcdir)/doc/guile-gi.texi
-	makeinfo $< --css-ref=document-1.0.1.css --html
+html-local:
+	makeinfo $(abs_top_srcdir)/doc/guile-gi.texi \
+	--css-ref=document-1.0.1.css --html --output=$(abs_top_srcdir)/docs
 
 EXTRA_DIST = document-1.0.1.css README
 distclean-local:
