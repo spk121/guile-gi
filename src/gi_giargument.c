@@ -92,6 +92,8 @@ TYPE_TAG_IS_REAL_NUMBER(GITypeTag x)
     return FALSE;
 }
 
+static SCM boxes[26];
+
 static GIArgumentStatus convert_immediate_object_to_arg(SCM obj, GITypeTag type_tag, GIArgument *arg);
 static GIArgumentStatus convert_interface_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *must_free, GIArgument *arg);
 static GIArgumentStatus gi_giargument_convert_immediate_pointer_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *must_free, GIArgument *arg);
@@ -722,9 +724,19 @@ gi_giargument_convert_string_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigne
 {
     GIArgumentStatus ret;
 
-    // The scm_to_..._string always makes a new copy, so if transfer isn't EVERYTHING, we'll have to free
-    // the string later.
-    if (!scm_is_string(obj))
+    if (scm_is_bytevector(obj))
+    {
+	// Some methods expect passed-in strings to be overwriteable,
+	// like g_date_strftime(char *s, ...) expects 's' to be
+	// a place to store an output.
+	if (g_arg_info_get_ownership_transfer(arg_info) == GI_TRANSFER_NOTHING)
+	    arg->v_string = SCM_BYTEVECTOR_CONTENTS(obj);
+	else
+	    arg->v_string = g_strdup(SCM_BYTEVECTOR_CONTENTS(obj));
+	// FIXME: how to make this robust?
+	ret = GI_GIARGUMENT_OK;
+    }
+    else if (!scm_is_string(obj))
     {
         g_critical("Unhandled argument type, %s: %d", __FILE__, __LINE__);
         arg->v_string = NULL;
@@ -733,6 +745,9 @@ gi_giargument_convert_string_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigne
     }
     else
     {
+	// The scm_to_..._string always makes a new copy, so if
+	// transfer isn't EVERYTHING, we'll have to free the string
+	// later.
         GITypeInfo *type_info = g_arg_info_get_type(arg_info);
         GITypeTag type_tag = g_type_info_get_tag(type_info);
 
@@ -1930,26 +1945,18 @@ static GIArgumentStatus convert_array_pointer_arg_to_object(GIArgument *arg, GIT
 static GIArgumentStatus
 convert_const_void_pointer_arg_to_object(GIArgument *arg, SCM *obj)
 {
-    // Void pointer arguments might hold a boxed Guile type.  Boxed
-    // Guile types can be identified by magic number.
-    GirVoidBox *vbox = arg->v_pointer;
-    if (vbox->header == GIR_VOIDBOX_HEADER)
+    // There are some boxes
+    int i = 0;
+    while (i < 26)
     {
-        int size = vbox->size;
-        if (size == sizeof(SCM))
-        {
-            *obj = vbox->body;
-            g_free(vbox);
-        }
-        else
-        {
-            // I guess this was an (extremely unlikely)
-            // naked pointer that happend to equal our magic number
-            *obj = scm_from_pointer(arg->v_pointer, NULL);
-        }
+	if (arg->v_pointer == &(boxes[i]))
+	{
+	    *obj = boxes[i];
+	    return GI_GIARGUMENT_OK;
+	}
+	i ++;
     }
-    else
-        *obj = scm_from_pointer(arg->v_pointer, NULL);
+    *obj = scm_from_pointer(arg->v_pointer, NULL);
     return GI_GIARGUMENT_OK;
 }
 
@@ -3846,10 +3853,29 @@ scm_convert_giargument_to_object (SCM s_arg, SCM s_arg_info)
 
 #define SCONSTX(NAME) scm_permanent_object(scm_c_define(#NAME, scm_from_int(NAME)))
 
+static SCM
+scm_box(SCM sym, SCM val)
+{
+    SCM_ASSERT(scm_is_symbol(sym), sym, SCM_ARG1, "box");
+    char *label = scm_to_utf8_string(scm_symbol_to_string(sym));
+    if (strlen(label) != 1 || label[0] < 'A' || label[0] > 'Z')
+    {
+	free (label);
+	scm_misc_error("box", "unknown box label ~s", scm_list_1(sym));
+	g_return_val_if_reached (SCM_UNSPECIFIED);
+    }
+    boxes[label[0]-'A'] = val;
+    return scm_from_pointer(&(boxes[label[0]-'A']), NULL);
+}
+		       
+
 void gi_init_giargument(void)
 {
     gi_init_giargument_type();
 
+    for (int i = 0; i < 26; i ++)
+	boxes[i] = SCM_UNSPECIFIED;
+    
     SCONSTX(GI_TYPE_TAG_VOID);
     SCONSTX(GI_TYPE_TAG_BOOLEAN);
     SCONSTX(GI_TYPE_TAG_INT8);
@@ -3882,4 +3908,7 @@ void gi_init_giargument(void)
     //scm_c_define_gsubr ("string-object->giargument", 3, 0, 0, scm_string_object_to_giargument);
     scm_c_define_gsubr("giargument->pointer", 1, 0, 0, scm_giargument_to_pointer);
     scm_c_define_gsubr("pointer->giargument", 1, 0, 0, scm_pointer_to_giargument);
+    scm_c_define_gsubr("box", 2, 0, 0, scm_box);
+
+    scm_c_export("box", NULL);
 }

@@ -5,8 +5,6 @@
 	    get-typelib-search-path
 	    prepend-typelib-search-path
 	    load-typelib
-	    import-typelib
-	    export-typelib
 	    gi-constant-value
 	    gi-flag-value
 	    gi-enum-value
@@ -72,9 +70,24 @@
 	    G_TYPE_POINTER
 	    ))
 
-(define (import-typelib namespace version)
-  (load-typelib namespace version)
-  (eval-string (%import-typelib namespace version)))
+(define-syntax send
+  (syntax-rules ()
+    ((_ s ( m ))
+     (call-method s (symbol->string m)))
+    ((_ s ( m a ))
+     (call-method s (symbol->string m) a))
+    ((_ s ( m a b ))
+     (call-method s (symbol->string m) a b))
+    ((_ s ( m a b c ))
+     (call-method s (symbol->string m) a b c))
+    ((_ s ( m a b c d ))
+     (call-method s (symbol->string m) a b c d ))
+    ((_ s ( m a b c d e))
+     (call-method s (symbol->string m) a b c d e))
+    ((_ s ( m a b c d e f))
+     (call-method s (symbol->string m) a b c d e f))
+    ((_ s ( m a b c d e f g))
+     (call-method s (symbol->string m) a b c d e f g))))
 
 (load-extension "libguile-gi" "gir_init")
 
