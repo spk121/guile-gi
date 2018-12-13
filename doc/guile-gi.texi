@@ -145,7 +145,7 @@ A minimal GTK application looks like this
 
 @example
 (use-modules (gi gtk-3)
-             (gi gio-3))
+             (gi gio-2))
 
 (define (activate app user-data)
   (let ((window (ApplicationWindow-new app)))
