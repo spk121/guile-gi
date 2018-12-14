@@ -20,7 +20,6 @@ GSList *function_list = NULL;
 
 static gir_gsubr_t *gir_function_create_gsubr(GIFunctionInfo *function_info, const char *name, int *n_required, int *n_optional);
 static char *gir_function_name_to_scm_name(const char *gname);
-static gchar *gir_function_make_name(const char *parent, GICallableInfo *info);
 
 static void gir_function_info_count_args(GIFunctionInfo *info, int *in, int *out);
 static void gir_function_count_input_args(GIFunctionInfo *info, int *required, int *optional);
@@ -153,7 +152,7 @@ gir_function_cleanup (void)
     function_list = NULL;
 }
 
-static gchar*
+gchar*
 gir_function_make_name(const char *parent, GICallableInfo *info)
 {
     char *public_name, *tmp_str, *tmp_str2;

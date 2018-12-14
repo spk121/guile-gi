@@ -84,7 +84,7 @@ gir_method_gname_to_scm_name(const char *gname)
     return g_string_free(str, FALSE);
 }
 
-static gchar*
+gchar*
 gir_method_public_name(GICallableInfo *info)
 {
     char *public_name, *tmp_str;

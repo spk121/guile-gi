@@ -14,5 +14,5 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-EXTRA_DIST = uninstalled-env.in run-guile.in gdb-guile.ingdb-test.in
+EXTRA_DIST = uninstalled-env.in run-guile.in gdb-guile.in gdb-test.in
 

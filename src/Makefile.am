@@ -158,7 +158,7 @@ libguile_gi_la_LIBADD = \
 ################################################################
 
 dist_guilesite_DATA = \
-  gi.scm
+  gi.scm gi/glib-2.scm gi/gtk-3.scm gi/gio-2.scm
 
 guileobject_DATA = $(guilesite_DATA:%.scm=%.go)
 

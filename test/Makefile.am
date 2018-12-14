@@ -31,7 +31,6 @@ noinst_DATA = lib.scm automake-test-lib.scm
 TESTS = \
  memchk_1.scm \
  memchk_2.scm \
- mainloop.scm \
  byte_array_new.scm \
  byte_array_new_take.scm \
  bytes_new_null_size.scm \
