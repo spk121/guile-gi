@@ -59,6 +59,7 @@ static const uintmax_t uintmax[GI_TYPE_TAG_N_TYPES] =
      [GI_TYPE_TAG_UINT64] = UINT64_MAX,
      [GI_TYPE_TAG_UNICHAR] = 0x10FFFF};
 
+#if 0
 static int
 arg_struct_to_scm(GIArgument *arg,
                   GIInterfaceInfo *interface_info,
@@ -67,6 +68,7 @@ arg_struct_to_scm(GIArgument *arg,
                   gboolean is_allocated,
                   gboolean is_foreign,
                   SCM obj);
+#endif                  
 
 static int
 TYPE_TAG_IS_EXACT_INTEGER(GITypeTag x)
@@ -816,16 +818,9 @@ convert_interface_pointer_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *
             *must_free = GIR_FREE_NONE;
             ret = GI_GIARGUMENT_WRONG_TYPE_ARG;
         }
-        else if (referenced_base_type == GI_INFO_TYPE_STRUCT || referenced_base_type == GI_INFO_TYPE_UNION)
+        else if (referenced_base_type == GI_INFO_TYPE_STRUCT || referenced_base_type == GI_INFO_TYPE_UNION || referenced_base_type == GI_INFO_TYPE_OBJECT)
         {
-            GirSmartPtr *sptr = scm_foreign_object_ref(obj, 0);
-            arg->v_pointer = sptr->ptr;
-            *must_free = GIR_FREE_NONE;
-            ret = GI_GIARGUMENT_OK;
-        }
-        else if (referenced_base_type == GI_INFO_TYPE_OBJECT)
-        {
-            arg->v_pointer = gi_gobject_get_obj(obj);
+            arg->v_pointer = scm_foreign_object_ref(obj, OBJ_SLOT);
             *must_free = GIR_FREE_NONE;
             ret = GI_GIARGUMENT_OK;
         }
@@ -931,7 +926,7 @@ convert_array_object_to_arg(SCM object, GITypeInfo *array_type_info, GITransfer 
             // just variables holding integers.
             item_type_tag = GI_TYPE_TAG_UINT32;
         }
-        else if (referenced_base_type == GI_INFO_TYPE_STRUCT || referenced_base_type == GI_INFO_TYPE_OBJECT)
+        else if (referenced_base_type == GI_INFO_TYPE_STRUCT || reference_base_type == GI_INFO_TYPE_UNION || referenced_base_type == GI_INFO_TYPE_OBJECT)
         {
             // If we are a Struct or Object, we need to look up our actual GType.
             referenced_object_type = g_registered_type_info_get_g_type(referenced_base_info);
@@ -1557,14 +1552,14 @@ SCM gi_giargument_convert_return_val_to_object(GIArgument *arg,
                 GIStructInfo *referenced_struct_info = g_type_get_qdata(referenced_base_gtype, gtype_base_info_key);
                 g_assert(referenced_struct_info != NULL);
 
-                return gir_new_struct_gbox(referenced_base_gtype, arg->v_pointer, transfer == GI_TRANSFER_EVERYTHING);
+                return gir_struct_new(referenced_base_gtype, arg->v_pointer, transfer == GI_TRANSFER_EVERYTHING);
             }
             else if (referenced_base_type == GI_INFO_TYPE_OBJECT)
             {
                 GIObjectInfo *referenced_object_info = g_type_get_qdata(referenced_base_gtype, gtype_base_info_key);
                 g_assert(referenced_object_info != NULL);
 
-                return gi_gobject_new(arg->v_pointer);
+                return gi_gobject_new(referenced_object_info, arg->v_pointer);
             }
             else
                 g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
@@ -2242,6 +2237,7 @@ convert_const_void_pointer_arg_to_object(GIArgument *arg, SCM *obj)
 }
 #endif
 
+#if 0
 static int
 arg_struct_to_scm(GIArgument *arg,
                   GIInterfaceInfo *interface_info,
@@ -2319,6 +2315,7 @@ arg_struct_to_scm(GIArgument *arg,
 
     return GI_GIARGUMENT_OK;
 };
+#endif
 
 gboolean
 gi_giargument_check_scm_type(SCM obj, GIArgInfo *ai, char **errstr)

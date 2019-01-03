@@ -19,6 +19,7 @@
 #include "gi_gtype.h"
 #include "gir_method.h"
 
+#if 0
 SCM gir_gbox_type;
 SCM gir_gbox_type_store;
 static GMutex mutex = G_STATIC_MUTEX_INIT;
@@ -384,4 +385,27 @@ gi_init_gbox(void)
     scm_c_define_gsubr("%gbox-get-refcount", 1, 0, 0, scm_gbox_get_refcount);
     scm_c_define_gsubr("gbox-printer", 2, 0, 0, scm_gbox_printer);
     scm_c_define_gsubr("gbox-set-finalizer!", 2, 0, 0, scm_gbox_set_finalizer_x);
+}
+#endif
+
+void
+gi_init_gbox(void)
+{
+    
+}
+
+SCM
+gir_struct_new(GIStructInfo *referenced_struct_info, void *obj, gboolean free)
+{
+    GType type = g_registered_type_info_get_g_type(referenced_struct_info);
+    SCM s_type = gi_gtype_c2g(type);
+    SCM s_class = scm_gtype_get_scheme_type(s_type);
+    void **contents = g_new0(void *, SLOT_COUNT);
+    contents[OB_TYPE_SLOT] = GSIZE_TO_POINTER(type);
+    contents[OB_REFCNT_SLOT] = GINT_TO_POINTER(1);
+    contents[OBJ_SLOT] = obj;
+    contents[DEALLOC_SLOT] = GINT_TO_POINTER(free);
+
+    SCM instance = scm_make_foreign_object_n(s_class, 8, contents);
+    g_free (contents);
 }

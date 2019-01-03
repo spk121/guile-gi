@@ -151,6 +151,14 @@ GType gi_infer_gtype_from_scm(SCM obj)
             GType c_gtype = GPOINTER_TO_SIZE(x->data);
             SCM s_gtype = gi_gtype_c2g(c_gtype);
             SCM s_gtype_class = scm_gtype_get_scheme_type(s_gtype);
+#if 1
+            {
+                SCM s_str = scm_simple_format(SCM_BOOL_F, scm_from_utf8_string("Testing if ~S is an ~S ~S ~S"), scm_list_4(obj, s_gtype_class, s_gtype, scm_from_utf8_string(g_type_name(c_gtype))));
+                char *str = scm_to_utf8_string(s_str);
+                g_debug(str);
+                free(str);
+            }
+#endif            
             if (SCM_IS_A_P(obj, s_gtype_class))
                 return c_gtype;
             x = x->next;
@@ -176,17 +184,39 @@ SCM gi_gtype_c2g(GType type)
     ptr = g_type_get_qdata(type, gtype_wrapper_key);
     if (!ptr)
     {
-        g_debug("Encountered new GType '%zu' named '%s'", type, g_type_name(type));
         wrapper = scm_make_foreign_object_0(gi_gtype_type);
         gi_gtype_set_type(wrapper, type);
         g_type_set_qdata(type, gtype_wrapper_key, SCM_UNPACK_POINTER(wrapper));
         all_types = g_slist_append(all_types, GSIZE_TO_POINTER(type));
+        g_debug("New GType '%s' = %p", g_type_name(type), type);
+        {
+            SCM s_str = scm_simple_format(SCM_BOOL_F, scm_from_utf8_string("New wrapper ~S for ~S"), scm_list_2(wrapper, scm_from_utf8_string(g_type_name(type))));
+            char *str = scm_to_utf8_string(s_str);
+            g_debug(str);
+            free(str);
+        }
+
     }
     else
     {
         wrapper = SCM_PACK_POINTER(ptr);
     }
     return wrapper;
+}
+
+SCM gi_gtype_define_wrapper(GType gtype, GIBaseInfo *info, SCM fo_type)
+{
+    gi_gtype_add_info(gtype, info);
+    SCM s_gtype = gi_gtype_c2g(gtype);
+    g_type_set_qdata(gtype, type_key(gtype), SCM_UNPACK_POINTER(fo_type));    
+
+    // Make a variable to hold the type.
+    gchar *type_name = g_strdup_printf("%s:gtype", g_base_info_get_name(info));
+    scm_permanent_object(scm_c_define(type_name, s_gtype));
+    g_debug("created new GType instance %s", type_name);
+    g_free(type_name);
+
+    return s_gtype;
 }
 
 void
@@ -288,6 +318,13 @@ scm_gtype_get_scheme_type(SCM self)
     return gi_gtype_get_scheme_type(type);
 }
 
+void
+gi_gtype_add_info(GType type, GIBaseInfo *info)
+{
+    g_base_info_ref(info);
+    g_type_set_qdata(type, gtype_base_info_key, info);
+}
+
 SCM
 scm_gtype_set_scheme_type_x(SCM self, SCM value)
 {
@@ -296,6 +333,12 @@ scm_gtype_set_scheme_type_x(SCM self, SCM value)
     scm_assert_foreign_object_type(gi_gtype_type, self);
     type = gi_gtype_get_type(self);
     gi_gtype_set_scheme_type_x(type, value);
+    {
+        SCM s_str = scm_simple_format(SCM_BOOL_F, scm_from_utf8_string("Attaching foreign object ~S to type ~S"), scm_list_2(value, self));
+        char *str = scm_to_utf8_string(s_str);
+        g_debug(str);
+        free(str);
+    }
 
     return SCM_UNSPECIFIED;
 }

@@ -28,6 +28,8 @@ extern GQuark gtype_class_wrapper;
 GType     gi_gtype_from_scm (SCM obj);
 GType     gi_infer_gtype_from_scm(SCM obj);
 SCM       gi_gtype_c2g (GType type);
+void      gi_gtype_add_info(GType type, GIBaseInfo *info);
+SCM       gi_gtype_define_wrapper(GType gtype, GIBaseInfo *info, SCM fo_type);
 SCM       gi_gtype_get_scheme_type(GType type);
 void      gi_gtype_set_scheme_type_x(GType type, SCM value);
 SCM       scm_gtype_get_scheme_type(SCM self);

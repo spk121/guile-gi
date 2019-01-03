@@ -29,7 +29,7 @@
 
 #define GIR_FUNC2_INIT_HASH_TABLE_SIZE 10
 
-GSList *all_fo_types = NULL;
+
 
 static SCM get_hash_table(const char *name);
 static void hash_table_insert(const char *table_name, const char *namespace_,
@@ -231,10 +231,19 @@ gir_typelib_define_type(GType gtype, GIBaseInfo *info)
 
     // Make a foreign object type for instances of this GType.
     // All of our custom introspected foreign object types will
-    // have the same 3 slots: sptr, valid, and extra
+    // have the same slots.
+    // ob_type,ob_refcnt,obj,inst_dict,weakreflist,flags
     gchar *type_class_name = type_class_public_name(info);
     SCM sname = scm_from_utf8_symbol(type_class_name);
-    SCM slots = scm_list_3(scm_from_utf8_symbol("sptr"), scm_from_utf8_symbol("valid"), scm_from_utf8_symbol ("extra"));
+    SCM slots = scm_list_n(scm_from_utf8_symbol("ob_type"),
+        scm_from_utf8_symbol("ob_refcnt"),
+        scm_from_utf8_symbol("obj"),
+        scm_from_utf8_symbol("dealloc"),
+        scm_from_utf8_symbol("free_func"),
+        scm_from_utf8_symbol("inst_dict"),
+        scm_from_utf8_symbol("weakreflist"),
+        scm_from_utf8_symbol("flags"),
+        SCM_UNDEFINED);
     SCM fo_type = scm_make_foreign_object_type(sname, slots, NULL);
     g_debug("Creating a new GType foreign object type: %p %s", SCM_UNPACK_POINTER(fo_type), type_class_name);
     scm_gtype_set_scheme_type_x (s_gtype, fo_type);

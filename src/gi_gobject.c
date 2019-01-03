@@ -170,7 +170,7 @@ gi_gobject_lookup_class(GType gtype)
 
 /* re pygobject-object.c:980, pygobject_new_full */
 static SCM
-gi_gobject_new_full(GObject *obj, gboolean steal, gpointer g_class)
+gi_gobject_new_full(GIObjectInfo *info, GObject *obj, gboolean steal, gpointer g_class)
 {
     gpointer ptr;
     SCM self;
@@ -223,9 +223,9 @@ gi_gobject_new_full(GObject *obj, gboolean steal, gpointer g_class)
 
 /* re pygobject-object.c: 1059 pygobject_new */
 SCM
-gi_gobject_new (GObject *obj)
+gi_gobject_new (GIObjectInfo *info, GObject *obj)
 {
-    return gi_gobject_new_full (obj, FALSE, NULL);
+    return gi_gobject_new_full (info, obj, FALSE, NULL);
 }
 
 /* re pygobject-object.c: 1067 pygobject_unwatch_closure */

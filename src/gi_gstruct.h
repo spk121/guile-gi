@@ -19,6 +19,7 @@
 #include <glib.h>
 #include <glib-object.h>
 
+#if 0
 extern SCM gir_gbox_type;
 extern SCM gir_gbox_type_store;
 
@@ -71,7 +72,10 @@ SCM gir_new_struct_gbox (GType type, void *ptr, gboolean free_on_dealloc);
 SCM gir_new_union_gbox (GType type, void *ptr, gboolean free_on_dealloc);
 
 SCM gi_gbox_p (SCM self);
+#endif
 
 
+
+SCM gir_struct_new(GIStructInfo *referenced_struct_info, void *obj, gboolean free);
 void gi_init_gbox (void);
 #endif
