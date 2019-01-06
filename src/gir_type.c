@@ -576,7 +576,7 @@ void gir_init_types(void)
         gir_type_register(x);                                          \
         scm_permanent_object(scm_c_define(#x, scm_from_uintptr_t(x))); \
         scm_c_export(#x, NULL);                                        \
-    } while (1)
+    } while (0)
 
     D(G_TYPE_NONE);
     D(G_TYPE_INTERFACE);
