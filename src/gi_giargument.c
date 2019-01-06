@@ -792,8 +792,8 @@ convert_interface_pointer_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *
 {
     // Usually STRUCT, UNION, INTERFACE, OBJECT.  Handle NULL_OK
     GIArgumentStatus ret = GI_GIARGUMENT_ERROR;
-    GType obj_type = gi_infer_gtype_from_scm(obj);
-    if (obj_type == G_TYPE_NONE)
+    GType obj_type = gir_type_get_gtype_from_obj (obj);
+    if (obj_type == G_TYPE_NONE || obj_type == G_TYPE_INVALID)
     {
         g_critical("Unhandled argument type, %s: %d", __FILE__, __LINE__);
         arg->v_pointer = NULL;
@@ -926,7 +926,7 @@ convert_array_object_to_arg(SCM object, GITypeInfo *array_type_info, GITransfer 
             // just variables holding integers.
             item_type_tag = GI_TYPE_TAG_UINT32;
         }
-        else if (referenced_base_type == GI_INFO_TYPE_STRUCT || reference_base_type == GI_INFO_TYPE_UNION || referenced_base_type == GI_INFO_TYPE_OBJECT)
+        else if (referenced_base_type == GI_INFO_TYPE_STRUCT || referenced_base_type == GI_INFO_TYPE_UNION || referenced_base_type == GI_INFO_TYPE_OBJECT)
         {
             // If we are a Struct or Object, we need to look up our actual GType.
             referenced_object_type = g_registered_type_info_get_g_type(referenced_base_info);
@@ -938,9 +938,7 @@ convert_array_object_to_arg(SCM object, GITypeInfo *array_type_info, GITransfer 
                 // If we have C pointer pointing to a C array of structs
                 // (not struct pointers), we need to get the size of each
                 // struct.
-                GIStructInfo *referenced_struct_info = g_type_get_qdata(referenced_object_type, gtype_base_info_key);
-                g_assert(referenced_struct_info != NULL);
-                item_size = g_struct_info_get_size(referenced_struct_info);
+                item_size = g_struct_info_get_size(referenced_base_info);
             }
         }
     }
@@ -1062,8 +1060,9 @@ convert_array_object_to_arg(SCM object, GITypeInfo *array_type_info, GITransfer 
         {
             SCM entry = scm_list_ref(object, scm_from_size_t(i));
             // Entry should be a GBox
-            gpointer entry_ptr = gi_gbox_ref_pointer(entry);
-            memcpy((char *)ptr + i * item_size, entry_ptr, item_size);
+            g_assert_not_reached();
+            //gpointer entry_ptr = gi_gbox_ref_pointer(entry);
+            //memcpy((char *)ptr + i * item_size, entry_ptr, item_size);
         }
         if (item_transfer == GI_TRANSFER_NOTHING)
             *must_free = GIR_FREE_SIMPLE;
@@ -1085,7 +1084,8 @@ convert_array_object_to_arg(SCM object, GITypeInfo *array_type_info, GITransfer 
         {
             SCM entry = scm_list_ref(object, scm_from_size_t(i));
             // Entry should be a GBox
-            ptr[i] = gi_gbox_ref_pointer(entry);
+            g_assert_not_reached();
+            //ptr[i] = gi_gbox_ref_pointer(entry);
         }
         if (item_transfer == GI_TRANSFER_NOTHING)
         {
@@ -1233,22 +1233,21 @@ gi_giargument_preallocate_output_arg_and_object(GIArgInfo *arg_info, GIArgument 
 
             if (referenced_base_type == GI_INFO_TYPE_STRUCT)
             {
-                GIStructInfo *referenced_struct_info = g_type_get_qdata(referenced_object_type, gtype_base_info_key);
-                g_assert(referenced_struct_info != NULL);
-
                 // If OBJ is already set, we typecheck that it is
                 // a box holding a pointer for a struct of the
                 // right type.  If it isn't set, we allocate a new
                 // box.
                 if (!scm_is_eq(*obj, SCM_BOOL_F))
                 {
-                    gsize item_size = g_struct_info_get_size(referenced_struct_info);
+                    gsize item_size = g_struct_info_get_size(referenced_base_info);
                     arg->v_pointer = g_malloc0(item_size);
-
-                    *obj = gir_new_struct_gbox(referenced_object_type, arg->v_pointer, TRUE);
+                    g_critical ("unhandled allocation");
+                    g_assert_not_reached();
+                    //*obj = gir_new_struct_gbox(referenced_object_type, arg->v_pointer, TRUE);
                 }
                 else
-                    arg->v_pointer = gi_gbox_ref_pointer(*obj);
+                    g_assert_not_reached();
+                    //arg->v_pointer = gi_gbox_ref_pointer(*obj);
             }
             else
                 g_assert_not_reached();
@@ -1547,19 +1546,9 @@ SCM gi_giargument_convert_return_val_to_object(GIArgument *arg,
             GType referenced_base_gtype = g_registered_type_info_get_g_type(referenced_base_info);
             g_base_info_unref(referenced_base_info);
 
-            if (referenced_base_type == GI_INFO_TYPE_STRUCT)
+            if (referenced_base_type == GI_INFO_TYPE_STRUCT || referenced_base_type == GI_INFO_TYPE_UNION || referenced_base_type == GI_INFO_TYPE_OBJECT)
             {
-                GIStructInfo *referenced_struct_info = g_type_get_qdata(referenced_base_gtype, gtype_base_info_key);
-                g_assert(referenced_struct_info != NULL);
-
-                return gir_struct_new(referenced_base_gtype, arg->v_pointer, transfer == GI_TRANSFER_EVERYTHING);
-            }
-            else if (referenced_base_type == GI_INFO_TYPE_OBJECT)
-            {
-                GIObjectInfo *referenced_object_info = g_type_get_qdata(referenced_base_gtype, gtype_base_info_key);
-                g_assert(referenced_object_info != NULL);
-
-                return gi_gobject_new(referenced_object_info, arg->v_pointer);
+                return gir_type_make_object(referenced_base_gtype, arg->v_pointer, transfer == GI_TRANSFER_EVERYTHING);
             }
             else
                 g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
@@ -1634,7 +1623,8 @@ convert_immediate_arg_to_object(GIArgument *arg, GITypeTag type_tag, SCM *obj)
         *obj = scm_from_double(arg->v_double);
         break;
     case GI_TYPE_TAG_GTYPE:
-        *obj = gi_gtype_c2g((GType)arg->v_size);
+        gir_type_register(arg->v_size);
+        *obj = scm_from_size_t(arg->v_size);
         break;
     case GI_TYPE_TAG_UNICHAR:
         *obj = SCM_MAKE_CHAR(arg->v_uint32);
@@ -1885,9 +1875,7 @@ static GIArgumentStatus convert_array_pointer_arg_to_object(GIArgument *arg, GIT
                 // If we have C pointer pointing to a C array of structs
                 // (not struct pointers), we need to get the size of each
                 // struct.
-                GIStructInfo *referenced_struct_info = g_type_get_qdata(referenced_object_type, gtype_base_info_key);
-                g_assert(referenced_struct_info != NULL);
-                item_size = g_struct_info_get_size(referenced_struct_info);
+                item_size = g_struct_info_get_size(referenced_base_info);
 
                 // So we box up each struct in a new GBox
                 g_critical("Unhandled array type in %s:%d", __FILE__, __LINE__);
@@ -2870,38 +2858,22 @@ array_item_error:
             g_assert_not_reached();
             break;
         case GI_INFO_TYPE_BOXED:
+            g_critical("Unhandled boxed type in %s:%d", __FILE__, __LINE__);
+            g_assert_not_reached();
+            break;
         case GI_INFO_TYPE_STRUCT:
         case GI_INFO_TYPE_UNION:
+        case GI_INFO_TYPE_OBJECT:
         {
-            GType g_type;
-            SCM s_type;
-            gboolean is_foreign = (info_type == GI_INFO_TYPE_STRUCT) &&
-                                  (g_struct_info_is_foreign((GIStructInfo *)info));
-
-            g_type = g_registered_type_info_get_g_type((GIRegisteredTypeInfo *)info);
-            //s_type = gi_type_import_by_gi_info ( (GIBaseInfo *) info);
-            s_type = gi_gtype_c2g(g_type);
-
-            /* Note for G_TYPE_VALUE g_type:
-                     * This will currently leak the GValue that is allocated and
-                     * stashed in arg.v_pointer. Out argument marshaling for caller
-                     * allocated GValues already pass in memory for the GValue.
-                     * Further re-factoring is needed to fix this leak.
-                     * See: https://bugzilla.gnome.org/show_bug.cgi?id=693405
-                     */
-            /* pygi_arg_struct_from_py_marshal (object, */
-            /*                                  &arg, */
-            /*                                  NULL, /\*arg_name*\/ */
-            /*                                  info, /\*interface_info*\/ */
-            /*                                  g_type, */
-            /*                                  py_type, */
-            /*                                  transfer, */
-            /*                                  FALSE, /\*copy_reference*\/ */
-            /*                                  is_foreign, */
-            /*                                  g_type_info_is_pointer (type_info)); */
-            g_critical("Unimplemented");
-
-            // Py_DECREF (py_type);
+            GType type_requested = g_registered_type_info_get_g_type((GIRegisteredTypeInfo *)info);
+            GType type_received = gir_type_get_gtype_from_obj(object);
+            if (g_type_is_a(type_received, type_requested))
+                arg.v_pointer = scm_foreign_object_ref(object, OBJ_SLOT);
+            else
+            {
+                g_critical("Typecheck failure in %s:%d", __FILE__, __LINE__);
+                g_assert_not_reached();
+            }
             break;
         }
         case GI_INFO_TYPE_ENUM:
@@ -2910,15 +2882,6 @@ array_item_error:
             arg.v_int = scm_to_int(object);
             break;
         }
-        case GI_INFO_TYPE_INTERFACE:
-        case GI_INFO_TYPE_OBJECT:
-            /* An error within this call will result in a NULL arg */
-            /* pygi_arg_gobject_out_arg_from_py (object, &arg, transfer); */
-            g_critical("In barely implemented OBJ->arg");
-            arg.v_pointer = gi_gobject_get_obj(object);
-            // g_assert_not_reached ();
-            break;
-
         default:
             g_assert_not_reached();
         }
@@ -3231,12 +3194,14 @@ SCM gi_giargument_to_object(GIArgument *arg,
 
             if (info_type == GI_INFO_TYPE_STRUCT)
             {
-                object = gir_new_struct_gbox(g_type, arg->v_pointer, transfer == GI_TRANSFER_EVERYTHING);
+                g_assert_not_reached();
+                //object = gir_new_struct_gbox(g_type, arg->v_pointer, transfer == GI_TRANSFER_EVERYTHING);
                 break;
             }
             else if (info_type == GI_INFO_TYPE_UNION)
             {
-                object = gir_new_union_gbox(g_type, arg->v_pointer, transfer == GI_TRANSFER_EVERYTHING);
+                g_assert_not_reached();
+                //object = gir_new_union_gbox(g_type, arg->v_pointer, transfer == GI_TRANSFER_EVERYTHING);
                 break;
             }
 

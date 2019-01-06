@@ -122,146 +122,6 @@ type_class_predicate_name(GIBaseInfo *info)
     return public_name;
 }
 
-typedef struct _GirPredicate
-{
-    ffi_closure *closure;
-    ffi_cif cif;
-    void *function_ptr;
-    SCM fo_type;
-} GirPredicate;
-
-// This is the core of a dynamically generated type predicate.
-// It converts an FFI argument to a SCM foreign object.
-// And checks if that foreign object has the type this
-// predicate is testing for.
-static void gir_predicate_binding(ffi_cif *cif, void *ret, void **ffi_args,
-    void *user_data)
-{
-    GirPredicate *gp = user_data;
-
-    g_assert (cif != NULL);
-    g_assert (ret != NULL);
-    g_assert (ffi_args != NULL);
-    g_assert (user_data != NULL);
-
-    unsigned int n_args = cif->nargs;
-
-    g_assert (n_args == 1);
-
-    SCM arg = SCM_PACK(*(scm_t_bits *)(ffi_args[0]));
-
-    if (SCM_IS_A_P(arg, gp->fo_type))
-        *(ffi_arg *)ret = SCM_UNPACK(SCM_BOOL_T);
-    else
-        *(ffi_arg *)ret = SCM_UNPACK(SCM_BOOL_F);
-}
-
-static void *
-gir_type_create_predicate(const char *name, SCM fo_type)
-{
-    GirPredicate *gp = g_new0(GirPredicate, 1);
-
-    ffi_type **ffi_args = NULL;
-    ffi_type *ffi_ret_type;
-
-    // STEP 1
-    // Allocate the block of memory that FFI uses to hold a closure object,
-    // and set a pointer to the corresponding executable address.
-    gp->fo_type = fo_type;
-    gp->closure = ffi_closure_alloc(sizeof(ffi_closure),
-        &(gp->function_ptr));
-
-    g_return_val_if_fail(gp->closure != NULL, NULL);
-    g_return_val_if_fail(gp->function_ptr != NULL, NULL);
-
-    // STEP 2
-    // Next, we begin to construct an FFI_CIF to describe the function call.
-
-    // Initialize the argument info vectors.
-    ffi_args = g_new0(ffi_type *, 1);
-
-    // Our argument will be SCM, so we use pointer storage.
-    ffi_args[0] = &ffi_type_pointer;
-    // The return type is also SCM, for which we use a pointer.
-    ffi_ret_type = &ffi_type_pointer;
-
-    // Initialize the CIF Call Interface Struct.
-    ffi_status prep_ok;
-    prep_ok = ffi_prep_cif(&(gp->cif),
-        FFI_DEFAULT_ABI,
-        1,
-        ffi_ret_type,
-        ffi_args);
-
-    if (prep_ok != FFI_OK)
-        scm_misc_error("gir-type-create-predicate",
-            "closure call interface preparation error #~A",
-            scm_list_1(scm_from_int(prep_ok)));
-
-    // STEP 3
-    // Initialize the closure
-    ffi_status closure_ok;
-    closure_ok = ffi_prep_closure_loc(gp->closure,
-        &(gp->cif),
-        gir_predicate_binding,
-        gp,                 // The 'user-data' passed to the function
-        gp->function_ptr);
-
-    if (closure_ok != FFI_OK)
-        scm_misc_error("gir-type-create-predicate",
-            "closure location preparation error #~A",
-            scm_list_1(scm_from_int(closure_ok)));
-
-    g_debug ("Created predicate %s", name);
-    return gp->function_ptr;
-}
-
-
-static void
-gir_typelib_define_type(GType gtype, GIBaseInfo *info)
-{
-    g_base_info_ref(info);
-    g_type_set_qdata(gtype, gtype_base_info_key, info);
-    SCM s_gtype = gi_gtype_c2g(gtype);
-
-    // Make a variable to hold the type.
-    gchar *type_name = type_public_name(info);
-    scm_permanent_object(scm_c_define(type_name, s_gtype));
-    g_debug("created new GType instance %s", type_name);
-
-    // Make a foreign object type for instances of this GType.
-    // All of our custom introspected foreign object types will
-    // have the same slots.
-    // ob_type,ob_refcnt,obj,inst_dict,weakreflist,flags
-    gchar *type_class_name = type_class_public_name(info);
-    SCM sname = scm_from_utf8_symbol(type_class_name);
-    SCM slots = scm_list_n(scm_from_utf8_symbol("ob_type"),
-        scm_from_utf8_symbol("ob_refcnt"),
-        scm_from_utf8_symbol("obj"),
-        scm_from_utf8_symbol("dealloc"),
-        scm_from_utf8_symbol("free_func"),
-        scm_from_utf8_symbol("inst_dict"),
-        scm_from_utf8_symbol("weakreflist"),
-        scm_from_utf8_symbol("flags"),
-        SCM_UNDEFINED);
-    SCM fo_type = scm_make_foreign_object_type(sname, slots, NULL);
-    g_debug("Creating a new GType foreign object type: %p %s", SCM_UNPACK_POINTER(fo_type), type_class_name);
-    scm_gtype_set_scheme_type_x (s_gtype, fo_type);
-    scm_permanent_object(scm_c_define(type_class_name, scm_gtype_get_scheme_type(s_gtype)));
-
-    // Make a predicate for this type.
-    all_fo_types = g_slist_append(all_fo_types, SCM_UNPACK_POINTER(fo_type));
-    gchar *predicate_name = type_class_predicate_name(info);
-    gpointer func = gir_type_create_predicate(predicate_name, fo_type);
-    if (func)
-        scm_c_define_gsubr(predicate_name, 1, 0, 0, func);
-
-    scm_c_export(type_name, type_class_name, predicate_name, NULL);
-    g_free(predicate_name);
-    g_free(type_class_name);
-    g_free(type_name);
-}
-
 static SCM
 scm_load_typelib(SCM s_namespace, SCM s_version)
 {
@@ -318,7 +178,7 @@ scm_load_typelib(SCM s_namespace, SCM s_version)
                 g_base_info_unref(info);
                 break;
             }
-            gir_typelib_define_type(gtype, info);
+            gir_type_define(gtype, info);
 
             gint n_methods = g_struct_info_get_n_methods(info);
             for (gint m = 0; m < n_methods; m++)
@@ -345,7 +205,7 @@ scm_load_typelib(SCM s_namespace, SCM s_version)
                 g_base_info_unref(info);
                 break;
             }
-            gir_typelib_define_type(gtype, info);
+            gir_type_define(gtype, info);
 
             gint n_methods = g_object_info_get_n_methods(info);
             for (gint m = 0; m < n_methods; m++)
@@ -391,7 +251,7 @@ scm_load_typelib(SCM s_namespace, SCM s_version)
                 g_base_info_unref(info);
                 break;
             }
-            gir_typelib_define_type(gtype, info);
+            gir_type_define(gtype, info);
 
             gint n_methods = g_union_info_get_n_methods(info);
             for (gint m = 0; m < n_methods; m++)

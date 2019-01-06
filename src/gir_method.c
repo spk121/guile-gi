@@ -20,6 +20,7 @@
 #include "gi_gobject.h"
 #include "gi_gstruct.h"
 #include "gi_giargument.h"
+#include "gir_type.h"
 
 static char METHOD_TABLE_NAME[12] = "%gi-methods";
 
@@ -150,7 +151,6 @@ scm_call_method(SCM s_object, SCM s_method_name, SCM s_list_of_args)
 
     // Look up method by name
     SCM h, subhash;
-    GirSmartPtr *sptr;
     h = gir_method_get_table();
     subhash = scm_hash_ref(h, s_method_name, SCM_BOOL_F);
     if (scm_is_false(subhash))
@@ -161,18 +161,19 @@ scm_call_method(SCM s_object, SCM s_method_name, SCM s_list_of_args)
     GType type, original_type;
     SCM val;
 
+#if 0
     if (SCM_IS_A_P(s_object, gi_gobject_type))
         type = gi_gobject_get_ob_type(s_object);
     else if (SCM_IS_A_P(s_object, gir_gbox_type))
         type = gi_gbox_get_type(s_object);
     else
+#endif    
     {
         // FIXME: here I should check to see if s_object is has
         // of any of the previoulsy defined foreign object types.
-        if (scm_foreign_object_unsigned_ref(s_object, 1))
+        if (scm_foreign_object_unsigned_ref(s_object, OB_REFCNT_SLOT))
         {
-            sptr = scm_foreign_object_ref(s_object, 0);
-            type = sptr->type;
+            type = scm_foreign_object_unsigned_ref(s_object, OB_TYPE_SLOT);
         }
         else
             scm_misc_error("call-method",
@@ -224,14 +225,15 @@ scm_call_method(SCM s_object, SCM s_method_name, SCM s_list_of_args)
     in_args = g_realloc_n(in_args, n_input_args + 1, sizeof(GIArgument));
     memmove(in_args + 1, in_args, sizeof(GIArgument) * n_input_args);
 
+#if 0
     if (SCM_IS_A_P(s_object, gi_gobject_type))
         in_args[0].v_pointer = gi_gobject_get_obj(s_object);
     else if (SCM_IS_A_P(s_object, gir_gbox_type))
         in_args[0].v_pointer = gi_gbox_peek_pointer(s_object);
     else
+#endif    
     {
-        sptr = scm_foreign_object_ref(s_object, 0);
-        in_args[0].v_pointer = sptr->ptr;
+        in_args[0].v_pointer = scm_foreign_object_ref(s_object, OBJ_SLOT);
     }
 
     GIArgument return_arg;
@@ -305,11 +307,13 @@ gir_method_unref_object(SCM s_object)
     GType type, original_type;
     GIFunctionInfo *info;
 
+#if 0
     if (SCM_IS_A_P(s_object, gi_gobject_type))
         type = gi_gobject_get_ob_type(s_object);
     else if (SCM_IS_A_P(s_object, gir_gbox_type))
         type = gi_gbox_get_type(s_object);
     else
+#endif    
         scm_misc_error("gir_method_unref_object",
             "Cannot invoke \'unref\' for object ~S",
             scm_list_1(s_object));
@@ -337,11 +341,14 @@ gir_method_unref_object(SCM s_object)
         g_type_name(original_type));
 
     GIArgument in_arg;
+#if 0    
     if (SCM_IS_A_P(s_object, gi_gobject_type))
         in_arg.v_pointer = gi_gobject_get_obj(s_object);
     else if (SCM_IS_A_P(s_object, gir_gbox_type))
         in_arg.v_pointer = gi_gbox_peek_pointer(s_object);
     else
+#endif
+    g_assert_not_reached();    
         g_abort();
 
     GIArgument return_arg;

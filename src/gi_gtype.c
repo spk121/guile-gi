@@ -21,6 +21,7 @@
 
 #include "gi_gtype.h"
 
+#if 0
 GQuark gtype_wrapper_key;
 GQuark gtype_base_info_key;
 GQuark gtype_class_wrapper;
@@ -228,21 +229,6 @@ gi_gtype_finalizer(SCM self)
 }
 
 
-SCM
-gi_gtype_get_scheme_type(GType type)
-{
-    GQuark key;
-    gpointer ptr;
-    SCM scm_type;
-
-    key = type_key(type);
-    ptr = g_type_get_qdata(type, key);
-    if (!ptr)
-        return SCM_BOOL_F;
-
-    return SCM_PACK_POINTER(ptr);
-}
-
 void
 gi_gtype_set_scheme_type_x(GType type, SCM value)
 {
@@ -307,17 +293,6 @@ scm_integer_to_gtype_unsafe(SCM obj)
     return gi_gtype_c2g(val);
 }
 
-
-SCM
-scm_gtype_get_scheme_type(SCM self)
-{
-    GType type;
-
-    scm_assert_foreign_object_type(gi_gtype_type, self);
-    type = gi_gtype_get_type(self);
-    return gi_gtype_get_scheme_type(type);
-}
-
 void
 gi_gtype_add_info(GType type, GIBaseInfo *info)
 {
@@ -341,41 +316,6 @@ scm_gtype_set_scheme_type_x(SCM self, SCM value)
     }
 
     return SCM_UNSPECIFIED;
-}
-
-static SCM
-scm_gtype_get_name(SCM self)
-{
-    GType type;
-    const char *name;
-
-    scm_assert_foreign_object_type(gi_gtype_type, self);
-    type = gi_gtype_get_type(self);
-    name = g_type_name(type);
-    if (name)
-        return scm_from_utf8_string(name);
-    else
-        g_critical("No name found for GType %zu", type);
-
-    return scm_from_latin1_string("invalid");
-}
-
-static SCM
-scm_gtype_get_parent(SCM self)
-{
-    GType type;
-    scm_assert_foreign_object_type(gi_gtype_type, self);
-    type = gi_gtype_get_type(self);
-    return gi_gtype_c2g(g_type_parent(type));
-}
-
-static SCM
-scm_gtype_get_fundamental(SCM self)
-{
-    GType type;
-    scm_assert_foreign_object_type(gi_gtype_type, self);
-    type = gi_gtype_get_type(self);
-    return gi_gtype_c2g(g_type_fundamental(type));
 }
 
 static SCM
@@ -624,14 +564,10 @@ gi_init_gtype(void)
     D(G_TYPE_POINTER);
 #undef D
 
-    scm_c_define_gsubr("gtype-get-scheme-type", 1, 0, 0, scm_gtype_get_scheme_type);
     scm_c_define_gsubr("gtype-set-scheme-type!", 2, 0, 0, scm_gtype_set_scheme_type_x);
     scm_c_define_gsubr("->gtype", 1, 0, 0, scm_to_gtype);
     scm_c_define_gsubr("integer->gtype-unsafe", 1, 0, 0, scm_integer_to_gtype_unsafe);
     scm_c_define_gsubr("string->gtype", 1, 0, 0, scm_string_to_gtype);
-    scm_c_define_gsubr("gtype-get-name", 1, 0, 0, scm_gtype_get_name);
-    scm_c_define_gsubr("gtype-get-parent", 1, 0, 0, scm_gtype_get_parent);
-    scm_c_define_gsubr("gtype-get-fundamental", 1, 0, 0, scm_gtype_get_fundamental);
     scm_c_define_gsubr("gtype-get-children", 1, 0, 0, scm_gtype_get_children);
     scm_c_define_gsubr("gtype-get-interfaces", 1, 0, 0, scm_gtype_get_interfaces);
     scm_c_define_gsubr("gtype-get-depth", 1, 0, 0, scm_gtype_get_depth);
@@ -650,3 +586,4 @@ gi_init_gtype(void)
     scm_c_define_gsubr("gtype-is-param?", 1, 0, 0, scm_gtype_is_param_p);
     scm_c_define_gsubr("gtype=?", 2, 0, 0, scm_gtype_equal_p);
 }
+#endif

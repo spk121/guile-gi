@@ -76,6 +76,6 @@ SCM gi_gbox_p (SCM self);
 
 
 
-SCM gir_struct_new(GIStructInfo *referenced_struct_info, void *obj, gboolean free);
-void gi_init_gbox (void);
+//SCM gir_struct_new(GIStructInfo *referenced_struct_info, void *obj, gboolean free);
+//void gi_init_gbox (void);
 #endif

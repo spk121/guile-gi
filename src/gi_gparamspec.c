@@ -1,6 +1,6 @@
 /* -*- Mode: C; c-basic-offset: 4 -*- */
 #include "gi_gvalue.h"
-#include "gi_gtype.h"
+#include "gir_type.h"
 #include "gi_gparamspec.h"
 
 #if 0
@@ -40,7 +40,7 @@ gi_gparamspec_from_scm (SCM x)
 #define scm_c_list_ref(x,n) scm_list_ref((x),scm_from_int(n))
     
     prop_name = scm_to_utf8_string (scm_c_list_ref (x, 0));
-    prop_type = gi_gtype_get_type (scm_c_list_ref (x, 1));
+    prop_type = scm_to_size_t (scm_c_list_ref (x, 1));
     nick = scm_to_utf8_string (scm_c_list_ref (x, 2));
     blurb = scm_to_utf8_string (scm_c_list_ref (x, 3));
     i = 4;
@@ -198,7 +198,11 @@ scm_gparamspec_value_type(SCM self)
     scm_assert_foreign_object_type(gi_gparamspec_type, self);
     spec = gi_gparamspec_get_spec(self);
     if (spec)
-        return gi_gtype_c2g(G_PARAM_SPEC_VALUE_TYPE(spec));
+    {
+        gir_type_register(G_PARAM_SPEC_VALUE_TYPE(spec));
+        return scm_from_size_t(G_PARAM_SPEC_VALUE_TYPE(spec));
+    }
+
     return SCM_BOOL_F;
 }
 
@@ -210,7 +214,10 @@ scm_gparamspec_type(SCM self)
     scm_assert_foreign_object_type(gi_gparamspec_type, self);
     spec = gi_gparamspec_get_spec(self);
     if (spec)
-        return gi_gtype_c2g(G_PARAM_SPEC_TYPE(spec));
+    {
+        gir_type_register(G_PARAM_SPEC_TYPE(spec));
+        return scm_from_size_t(G_PARAM_SPEC_TYPE(spec));
+    }
     return SCM_BOOL_F;
 }
 

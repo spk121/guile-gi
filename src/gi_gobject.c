@@ -198,14 +198,15 @@ gi_gobject_new_full(GIObjectInfo *info, GObject *obj, gboolean steal, gpointer g
             /* 	tp = gugobject_lookup_class (G_OBJECT_CLASS_TYPE (g_class)); */
             /* else */
             /* 	tp = gugobject_lookup_class (G_OBJECT_TYPE (obj)); */
-            tp = gi_gtype_c2g(G_OBJECT_TYPE(obj));
+            //tp = gi_gtype_c2g(G_OBJECT_TYPE(obj));
+            tp = scm_from_size_t(G_OBJECT_TYPE(obj));
         }
         g_assert(scm_is_true(tp));
 
         //if (gi_gtype_get_flags (tp) & Gu_TPFLAGS_HEAPTYPE)
         //    Gu_INCREF(tp);
         self = scm_make_foreign_object_0(gi_gobject_type);
-        gi_gobject_set_ob_type(self, gi_gtype_get_type(tp));
+        gi_gobject_set_ob_type(self, scm_to_size_t(tp));
         gi_gobject_set_inst_dict(self, SCM_BOOL_F);
         gi_gobject_set_weakreflist(self, SCM_BOOL_F);
         gi_gobject_set_flags(self, 0);
@@ -709,13 +710,13 @@ scm_register_guile_specified_gobject_type (SCM s_type_name,
 		s_type_name,
 		SCM_ARG1,
 		"register-type");
-    scm_assert_foreign_object_type (gi_gtype_type, s_parent_type);
+    //scm_assert_foreign_object_type (gi_gtype_type, s_parent_type);
     // SCM_ASSERT (scm_is_true (scm_list_p (s_properties)), s_properties, SCM_ARG3, "register-type");
     // SCM_ASSERT (scm_is_true (scm_list_p (s_signals)), s_signals, SCM_ARG4, "register-type");
     // SCM_ASSERT (scm_is_true (scm_procedure_p (s_disposer)), s_disposer, SCM_ARG5, "register-type");
 
     type_name = scm_to_utf8_string (s_type_name);
-    parent_type = gi_gtype_get_type (s_parent_type);
+    parent_type = scm_to_size_t (s_parent_type);
     properties = g_ptr_array_new ();
     signals = g_ptr_array_new_with_free_func ((GDestroyNotify) gi_free_signalspec);
 
@@ -749,11 +750,10 @@ scm_register_guile_specified_gobject_type (SCM s_type_name,
 				  properties,
 				  signals,
 				  SCM_BOOL_F);
-    return gi_gtype_c2g (new_type);
+    gir_type_register(new_type);
+    return scm_from_size_t (new_type);
 }
 
-
-	
 
 static SCM
 scm_make_gobject (SCM s_gtype, SCM s_prop_alist)
@@ -765,9 +765,9 @@ scm_make_gobject (SCM s_gtype, SCM s_prop_alist)
     SCM sobj;
     gpointer ptr;
 
-    scm_assert_foreign_object_type (gi_gtype_type, s_gtype);
+    //scm_assert_foreign_object_type (gi_gtype_type, s_gtype);
     
-    type = gi_gtype_get_type (s_gtype);
+    type = scm_to_size_t (s_gtype);
     obj = g_object_new_with_properties (type, 0, NULL, NULL);
     class = G_OBJECT_GET_CLASS(obj);
     if (scm_is_true (scm_list_p (s_prop_alist))) {
@@ -879,7 +879,8 @@ scm_gobject_type (SCM self)
     obj = gi_gobject_get_obj (self);
     type = G_OBJECT_TYPE (obj);
 
-    return gi_gtype_c2g (type);
+    return scm_from_size_t(type);
+    //return gi_gtype_c2g (type);
 }
 
 static SCM
@@ -1742,9 +1743,12 @@ gi_arg_gobject_to_scm (GIArgument *arg, GITransfer transfer)
 	    //g_param_spec_unref (arg->v_pointer);
 	    g_assert_not_reached ();
     } else {
+        g_assert_not_reached();
+#if 0        
 	s_obj = gi_gobject_new_full (arg->v_pointer,
 				     transfer == GI_TRANSFER_EVERYTHING, /* steal */
 				     NULL); /* type */
+#endif                     
     }
     return s_obj;
 }

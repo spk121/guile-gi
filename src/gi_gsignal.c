@@ -13,13 +13,13 @@ SignalSpec *gi_signalspec_from_obj (SCM obj)
     SignalSpec *spec = NULL;
 
     name = scm_to_utf8_string (scm_list_ref (obj, scm_from_int (0)));
-    return_type = gi_gtype_get_type (scm_list_ref (obj, scm_from_int (1)));
+    return_type = scm_to_size_t (scm_list_ref (obj, scm_from_int (1)));
     sparams = scm_list_ref (obj, scm_from_int (2));
     n_params = scm_to_uint (scm_length (sparams));
     params = g_new0(GType, n_params);
 
     for (guint i = 0; i < n_params; i ++)
-	params[i] = gi_gtype_get_type (scm_list_ref (sparams, scm_from_int (i)));
+	params[i] = scm_to_size_t (scm_list_ref (sparams, scm_from_int (i)));
     flags = scm_to_uint (scm_list_ref (obj, scm_from_int (3)));
 
     spec = g_new0(SignalSpec, 1);

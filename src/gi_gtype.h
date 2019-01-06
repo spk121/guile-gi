@@ -17,8 +17,9 @@
 #define _GI_GTYPE_H_
 
 #include <libguile.h>
+#include <girepository.h>
 #include <glib-object.h>
-#include "__gi_gtype.h"
+//#include "__gi_gtype.h"
 
 G_BEGIN_DECLS
 

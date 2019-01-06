@@ -21,7 +21,6 @@
 #include <libguile.h>
 #include "gi_gobject.h"
 #include "gi_gvalue.h"
-#include "gi_gtype.h"
 #include "gi_gsignal.h"
 #include "gi_gparamspec.h"
 #include "gi_ginterface.h"
@@ -97,13 +96,13 @@ gir_init(void)
         | G_LOG_FLAG_RECURSION, gir_log_handler, NULL);
 #endif
     g_debug("Begin libguile-gir initialization");
-    gi_init_gtype();
+    gir_init_types();
     gi_init_gvalue();
     gi_init_gsignal();
     gi_init_gparamspec();
-    gi_init_gbox();
+    // gi_init_gbox();
 
-    gir_init_funcs();
+    // gir_init_funcs();
     gir_init_func2();
     gi_init_giargument();
     gir_init_types();

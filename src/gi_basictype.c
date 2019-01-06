@@ -27,7 +27,7 @@
 #include <float.h>
 #include <girepository.h>
 #include "gi_basictype.h"
-#include "gi_gtype.h"
+#include "gir_type.h"
 
 /* re pygi_gpointer_from_py */
 static gpointer
@@ -39,7 +39,7 @@ scm_to_gpointer(SCM s_arg)
     }
     else if (scm_is_exact_integer(s_arg))
     {
-        return (gpointer)scm_to_uintmax(s_arg);
+        return (gpointer)scm_to_uintptr_t(s_arg);
     }
     else if (SCM_POINTER_P(s_arg))
     {
@@ -138,7 +138,8 @@ scm_from_gunichar(gunichar value)
 static GType
 scm_to_gtype(SCM s_arg)
 {
-    return gi_gtype_from_scm(s_arg);
+    // We're just using integers for gtypes, for now.
+    return scm_to_gsize(s_arg);
 }
 
 static gchar *
@@ -446,7 +447,8 @@ SCM gi_marshal_to_scm_basic_type(GIArgument *arg,
         return scm_from_double(arg->v_double);
 
     case GI_TYPE_TAG_GTYPE:
-        return gi_gtype_c2g((GType)arg->v_size);
+        gir_type_register(arg->v_size);
+        return scm_from_gsize(arg->v_size);
 
     case GI_TYPE_TAG_UNICHAR:
         return SCM_MAKE_CHAR(arg->v_uint32);

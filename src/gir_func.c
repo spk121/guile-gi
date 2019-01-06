@@ -4,6 +4,7 @@
 #include "gir_type.h"
 #include "gir_func.h"
 
+#if 0
 #define MAX_GERROR_MSG 100
 static char gerror_msg[MAX_GERROR_MSG];
 
@@ -1002,4 +1003,6 @@ gir_init_funcs(void)
           object, and return that object.  */
        return scm_make_foreign_object_1 (image_type, image);
      }
+#endif
+
 #endif

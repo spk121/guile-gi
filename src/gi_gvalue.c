@@ -2,7 +2,7 @@
 #include <girepository.h>
 #include "gi_gvalue.h"
 //#include "gi_gflags.h"
-#include "gi_gtype.h"
+#include "gir_type.h"
 #include "gir_xguile.h"
 #include "gi_gobject.h"
 
@@ -210,11 +210,11 @@ gi_gvalue_from_scm_with_error(GValue *value, SCM obj)
     case G_TYPE_POINTER:
 	{
 	    if (SCM_POINTER_P (obj))
-		g_value_set_pointer (value, scm_to_pointer (obj));
+			g_value_set_pointer (value, scm_to_pointer (obj));
 	    else if (scm_is_true (scm_bytevector_p (obj)))
-		g_value_set_pointer (value, SCM_BYTEVECTOR_CONTENTS (obj));
-	    else if (SCM_IS_A_P(obj, gi_gobject_type))
-		g_value_set_gtype (value, gi_gobject_get_obj (obj));
+			g_value_set_pointer (value, SCM_BYTEVECTOR_CONTENTS (obj));
+	    else if (gir_type_get_gtype_from_obj(obj) > G_TYPE_INVALID)
+			g_value_set_object (value, scm_foreign_object_ref (obj, OBJ_SLOT));
 	    else
 		return GI_GVALUE_WRONG_TYPE;
 	}
@@ -551,7 +551,7 @@ gi_gvalue_array_from_scm_list(GValue *value, SCM list)
         GType type;
         GValue item_value = { 0, };
 
-	type = gi_infer_gtype_from_scm (item);
+		type = gir_type_get_gtype_from_obj (item);
 
         g_value_init(&item_value, type);
         gi_gvalue_from_scm(&item_value, item);
@@ -636,7 +636,8 @@ gi_gvalue_to_scm_structured_type (const GValue *value, GType fundamental, gboole
     switch (fundamental) {
     case G_TYPE_INTERFACE:
         if (g_type_is_a(G_VALUE_TYPE(value), G_TYPE_OBJECT))
-            return gi_gobject_new(g_value_get_object(value));
+			g_assert_not_reached();
+            // return gi_gobject_new(g_value_get_object(value));
         else
             break;
 
@@ -694,7 +695,8 @@ gi_gvalue_to_scm_structured_type (const GValue *value, GType fundamental, gboole
         return pyg_param_spec_new(g_value_get_param(value));
 #endif
     case G_TYPE_OBJECT:
-        return gi_gobject_new(g_value_get_object(value));
+		g_assert_not_reached();
+        //return gi_gobject_new(g_value_get_object(value));
 #if 0	
     case G_TYPE_VARIANT:
 	{
@@ -789,9 +791,9 @@ scm_make_gvalue (SCM gtype)
     GType type;
     GValue *val;
     
-    scm_assert_foreign_object_type (gi_gtype_type, gtype);
+    //scm_assert_foreign_object_type (gi_gtype_type, gtype);
     
-    type = gi_gtype_get_type (gtype);
+    type = scm_to_size_t (gtype);
     val = g_new0(GValue,1);
     g_value_init (val, type);
     return gi_gvalue_c2g (val);
@@ -836,7 +838,8 @@ scm_gvalue_to_gtype (SCM self)
     val = gi_gvalue_get_value (self);
     if (val) {
 	type = G_VALUE_TYPE (val);
-	return gi_gtype_c2g (type);
+	gir_type_register(type);
+	return scm_from_size_t (type);
     }
     return SCM_BOOL_F;
 }
@@ -853,14 +856,9 @@ scm_gvalue_holds_p(SCM self, SCM gtype)
 				SCM_ARG1,
 				self,
 				"GValue");
-    if (!SCM_IS_A_P (gtype, gi_gtype_type))
-	scm_wrong_type_arg_msg ("gvalue-holds?",
-				SCM_ARG2,
-				gtype,
-				"GType");
 
     val = gi_gvalue_get_value (self);
-    type = gi_gtype_get_type (gtype);
+    type = scm_to_size_t (gtype);
     if (val) {
 	ret = G_VALUE_HOLDS (val, type);
 	return scm_from_bool (ret);

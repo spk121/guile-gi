@@ -35,7 +35,6 @@ BUILT_SOURCES = \
  __gi_genum.h __gi_genum.c \
  __gi_gflags.h __gi_gflags.c \
  __gi_gobject.h __gi_gobject.c \
- __gi_gtype.h __gi_gtype.c \
  __gi_gvalue.h __gi_gvalue.c \
  __gi_gparamspec.h __gi_gparamspec.c
 
@@ -54,10 +53,6 @@ __gi_gflags.c: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
 __gi_gobject.h: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
 	$(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini .
 __gi_gobject.c: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
-	$(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini .
-__gi_gtype.h: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
-	$(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini .
-__gi_gtype.c: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
 	$(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini .
 __gi_gvalue.h: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
 	$(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini .
@@ -78,8 +73,6 @@ nodist_libguile_gi_la_SOURCES = \
  __gi_gobject.h \
  __gi_gparamspec.c \
  __gi_gparamspec.h \
- __gi_gtype.c \
- __gi_gtype.h \
  __gi_gvalue.c \
  __gi_gvalue.h
 
@@ -100,8 +93,6 @@ libguile_gi_la_SOURCES = \
  gi_gsignal.h \
  gi_gstruct.c \
  gi_gstruct.h \
- gi_gtype.c \
- gi_gtype.h \
  gi_gvalue.c \
  gi_gvalue.h \
  gi_signal_closure.c \
@@ -117,8 +108,6 @@ libguile_gi_la_SOURCES = \
  gir_constant.h \
  gir_flag.c \
  gir_flag.h \
- gir_func.c \
- gir_func.h \
  gir_func2.c \
  gir_func2.h \
  gir_type.c \

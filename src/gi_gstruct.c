@@ -394,6 +394,7 @@ gi_init_gbox(void)
     
 }
 
+#if 0
 SCM
 gir_struct_new(GIStructInfo *referenced_struct_info, void *obj, gboolean free)
 {
@@ -409,3 +410,4 @@ gir_struct_new(GIStructInfo *referenced_struct_info, void *obj, gboolean free)
     SCM instance = scm_make_foreign_object_n(s_class, 8, contents);
     g_free (contents);
 }
+#endif
