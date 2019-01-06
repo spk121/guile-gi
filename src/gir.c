@@ -105,7 +105,6 @@ gir_init(void)
     // gir_init_funcs();
     gir_init_func2();
     gi_init_giargument();
-    gir_init_types();
     gi_init_gobject();
     gir_init_callback();
     gir_init_function();

@@ -140,15 +140,18 @@ gir_type_define(GType gtype, GIBaseInfo *info)
             gir_type_register (parent);        
 
         gchar *type_class_name = g_strdup_printf("<%s>", g_base_info_get_name(info));
-        gchar *predicate_name = g_strdup_printf("%s?", g_base_info_get_name(info));
+        g_debug("Creating a new GType foreign object type: %zu -> %s", gtype, type_class_name);
         SCM fo_type = gir_type_make_fo_type_from_name(type_class_name);
+        scm_permanent_object(scm_c_define(type_class_name, fo_type));
+        scm_c_export (type_class_name, NULL);
+        g_free(type_class_name);
+
+        gchar *predicate_name = g_strdup_printf("%s?", g_base_info_get_name(info));
         gpointer func = gir_type_create_predicate(predicate_name, fo_type);
         scm_c_define_gsubr(predicate_name, 1, 0, 0, func);
-        scm_c_export(type_class_name, predicate_name, NULL);
-        g_debug("Creating a new GType foreign object type: %zu -> %s", gtype, type_class_name);
+        scm_c_export(predicate_name, NULL);
         g_hash_table_insert(gir_type_gtype_hash, GSIZE_TO_POINTER(gtype), SCM_UNPACK_POINTER(fo_type));
         g_free(predicate_name);
-        g_free(type_class_name);
     }
     else
         g_debug("GType foriegn_object_type already exists for: %zu -> %s", gtype, g_base_info_get_name(info));
