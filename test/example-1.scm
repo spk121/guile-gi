@@ -1,10 +1,6 @@
 (use-modules (gi)
-	     (Gtk)
-	     ((Gio) #:prefix Gio)
-	     )
-
-(load-typelib "Gtk" "3.0")
-(load-typelib "Gio" "2.0")
+	         (gi gtk-3)
+             ((gi gio-2) #:prefix Gio))
 
 (define (print-hello widget data)
   (display "Hello World\n"))
