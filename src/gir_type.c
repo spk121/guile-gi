@@ -19,31 +19,29 @@
 #include <ffi.h>
 #include "gir_type.h"
 
-// In C, a GType is an integer.  It is an integer ID that maps to a type of GObject.
+// In C, a GType is an integer.  It is an integer ID that maps to a
+// type of GObject.
 
-// If Guile-GI does its job well, the users will never need to concern themselves with
-// these integers, and instead just use Guile types created from them.
-// But, internally, we need to wrap them up.
-// In Guile, we define a <GTypeID> foreign object type to hold these GType integer IDs.
-// The <GTypeID> has two slots
-// - type: a pointer-like integer
-// - info: a GIBaseInfo pointer
+// If Guile-GI does its job well, the users will never need to concern
+// themselves with these integers, and instead just use Guile types
+// created from them.
 
-// For most of the GType integer IDs, the ID is associated with a GObject struct type,
-// union type, or object type.  For those IDs that indicate a GObject struct, union,
-// or object type, we make a Guile foreign object type.
-// For example, if, for example, there were a GType ID 0xaabbccdd that mapped to the
-// C struct GtkWindow pointer type, on the Guile
-// side, a <GtkWindow> foreign object type would be created.
+// For most of the GType integer IDs, the ID is associated with a
+// GObject struct type, union type, or object type.  For those IDs
+// that indicate a GObject struct, union, or object type, we make a
+// Guile foreign object type.  For example, if, for example, there
+// were a GType ID 0xaabbccdd that mapped to the C struct GtkWindow
+// pointer type, on the Guile side, a <GtkWindow> foreign object type
+// would be created.
 
-// The Guile foreign object types that get created primarily are just boxes that
-// hold C Pointers.  The <GtkWindow> foreign object type has a slot "obj".  Instances
-// of the <GtkWindow> foreign object type will use the "obj" slot to hold a
-// C GtkWindow pointer.
+// The Guile foreign object types that get created primarily are just
+// boxes that hold C Pointers.  The <GtkWindow> foreign object type
+// has a slot "obj".  Instances of the <GtkWindow> foreign object type
+// will use the "obj" slot to hold a C GtkWindow pointer.
 
-// But, these Guile foreign object types also have slots that may be used for
-// bookkeeping and memory management.
-// The slots in all the Guile GObject foreign object types created by this library are
+// But, these Guile foreign object types also have slots that may be
+// used for bookkeeping and memory management.  The slots in all the
+// Guile GObject foreign object types created by this library are
 // - ob_type: the GType ID (unsigned pointer-like integer)
 // - ob_refcnt: an integer (unsigned integer)
 // - obj: a C pointer
@@ -51,12 +49,13 @@
 // - weakreflist: unused for now, but, might be used later for memory management
 // - flags: (unsigned integer)
 
-// I've decided not to use GOOPS.  One problem that results from this is that
-// there is no place in the Guile foreign object types to back-reference the GTypeID from which
-// the Guile type was created.  For example, the <GtkWindow> foreign object types
-// doesn't have a C++-like class static slot to hold the GTypeID.  As a workaround,
-// there is a hash table that maps GTypeIDs to their associated foreign object types.
-
+// I've decided not to use GOOPS.  One problem that results from this
+// is that there is no place in the Guile foreign object types to
+// back-reference the GType ID from which the Guile type was created.
+// For example, the <GtkWindow> foreign object types doesn't have a
+// C++-like class static slot to hold the GType ID.  As a workaround,
+// there is a hash table that maps GTypeIDs to their associated
+// foreign object types.
 
 /*
   * When parsing a Typelib file, an argument type is a sort of a triple
@@ -80,14 +79,14 @@
  *
  */
 
-// Maps GType (uint64) to SCM (pointer)
+// Maps GType to SCM (pointer)
 GHashTable *gir_type_gtype_hash = NULL;
 
 // Holds for foreign function info for predicates
 GSList *gir_type_predicates_list = NULL;
 
-// Holds information about dynamically created C procedures
-// used in Guile predicate procedure such as 'MyArray?'
+// Holds information about dynamically created C procedures used in
+// Guile predicate procedure such as 'MyArray?'
 typedef struct _GirPredicate
 {
     ffi_closure *closure;
@@ -102,11 +101,12 @@ static void *gir_type_create_predicate(const char *name, SCM fo_type);
 static void  gir_type_predicate_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data);
 
 // Given a GType integer but no introspection information, this stores
-// that GType in our hash table of known types.
+// that GType in our hash table of known types without creating an
+// associated foreign object type.
 void
 gir_type_register(GType gtype)
 {
-    g_assert(GSIZE_TO_POINTER(gtype) != NULL);
+    g_assert(gtype != G_TYPE_NONE);
 
     GType parent = g_type_parent(gtype);
     if (parent != 0)
@@ -137,7 +137,7 @@ gir_type_define(GType gtype, GIBaseInfo *info)
     {
         GType parent = g_type_parent(gtype);
         if (parent != 0)
-            gir_type_register (parent);        
+            gir_type_register (parent);
 
         gchar *type_class_name = g_strdup_printf("<%s>", g_base_info_get_name(info));
         g_debug("Creating a new GType foreign object type: %zu -> %s", gtype, type_class_name);
@@ -568,9 +568,9 @@ scm_type_gtype_is_a_p(SCM gself, SCM gparent)
 void gir_init_types(void)
 {
     gir_type_gtype_hash = g_hash_table_new(g_direct_hash, g_direct_equal);
-#ifdef GIR_FREE_MEMORY    
+#ifdef GIR_FREE_MEMORY
     atexit (gir_type_free_predicates);
-#endif    
+#endif
     atexit (gir_type_free_types);
 
 #define D(x)                                                           \

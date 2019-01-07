@@ -42,7 +42,6 @@ static const int _win32 = TRUE;
 static const int _win32 = FALSE;
 #endif
 
-
 void __gcov_reset(void);
 void __gcov_dump(void);
 
@@ -58,6 +57,8 @@ gir_log_handler(const gchar *log_domain,
     time(&timer);
     tm_info = localtime(&timer);
     strftime(buffer, 26, "%Y-%m-%d %H:%M:%S", tm_info);
+
+    // Opening and closing files as append in Win32 is noticeably slow.
     if (log_level == G_LOG_LEVEL_DEBUG && !_win32)
     {
         FILE *fp = fopen("gir-debug-log.xt", "at");
@@ -100,9 +101,7 @@ gir_init(void)
     gi_init_gvalue();
     gi_init_gsignal();
     gi_init_gparamspec();
-    // gi_init_gbox();
 
-    // gir_init_funcs();
     gir_init_func2();
     gi_init_giargument();
     gi_init_gobject();
