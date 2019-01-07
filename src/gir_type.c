@@ -344,13 +344,11 @@ static void gir_type_free_types (void)
     g_hash_table_remove_all (gir_type_gtype_hash);
 }
 
-
-/////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
 // GUILE API
 
-
-// This Guile API routine returns the integer GType ID of a given
-// GIR foreign object type, or an instance of a GIR foreign object type.
+// This Guile API routine returns the integer GType ID of a given GIR
+// foreign object type, or an instance of a GIR foreign object type.
 // It returns #f on failure.
 static SCM
 scm_type_get_gtype(SCM x)
@@ -387,8 +385,8 @@ scm_type_gtype_get_scheme_type(SCM s_gtype)
     return SCM_BOOL_F;
 }
 
-// Given an integer that is a GType, this returns a Guile string
-// of the type's name.
+// Given an integer that is a GType, this returns a Guile string of
+// the type's name.
 static SCM
 scm_type_gtype_get_name(SCM s_gtype)
 {
@@ -426,8 +424,8 @@ scm_type_gtype_get_fundamental(SCM s_gtype)
     return SCM_BOOL_F;
 }
 
-// Given a Guile integer that is a GType, this returns a list
-// of Guile integers that are the children types of this GType
+// Given a Guile integer that is a GType, this returns a list of Guile
+// integers that are the children types of this GType
 static SCM
 scm_type_gtype_get_children(SCM s_gtype)
 {
@@ -454,8 +452,8 @@ scm_type_gtype_get_children(SCM s_gtype)
     return ret;
 }
 
-// Given a Guile integer that is a GType, this returns a list
-// of Guile integers that are the interface types of this GType
+// Given a Guile integer that is a GType, this returns a list of Guile
+// integers that are the interface types of this GType
 static SCM
 scm_type_gtype_get_interfaces(SCM s_gtype)
 {
@@ -508,8 +506,8 @@ scm_type_gtype_is_interface_p(SCM s_gtype)
     return SCM_BOOL_F;
 }
 
-// Given a Guile integer that is a GType, this returns #t
-// if the GType is a GObject classed type.
+// Given a Guile integer that is a GType, this returns #t if the GType
+// is a GObject classed type.
 static SCM
 scm_type_gtype_is_classed_p(SCM s_gtype)
 {
@@ -521,8 +519,8 @@ scm_type_gtype_is_classed_p(SCM s_gtype)
     return SCM_BOOL_F;
 }
 
-// Given a Guile integer that is a GType, this returns #t
-// if the GType is a GObject type can be used to instantiate objects.
+// Given a Guile integer that is a GType, this returns #t if the GType
+// is a GObject type can be used to instantiate objects.
 static SCM
 scm_type_gtype_is_instantiatable_p(SCM s_gtype)
 {
@@ -534,8 +532,8 @@ scm_type_gtype_is_instantiatable_p(SCM s_gtype)
     return SCM_BOOL_F;
 }
 
-// Given a Guile integer that is a GType, this returns #t
-// if the GType is a GObject type than can be base class for another type.
+// Given a Guile integer that is a GType, this returns #t if the GType
+// is a GObject type than can be base class for another type.
 static SCM
 scm_type_gtype_is_derivable_p(SCM s_gtype)
 {
@@ -547,9 +545,8 @@ scm_type_gtype_is_derivable_p(SCM s_gtype)
     return SCM_BOOL_F;
 }
 
-// Given two Guile integers that are GTypes, with the first
-// this returns #t if the second class is a base class to the first
-// class
+// Given two Guile integers that are GTypes, with the first this
+// returns #t if the second class is a base class to the first class
 static SCM
 scm_type_gtype_is_a_p(SCM gself, SCM gparent)
 {
@@ -560,9 +557,35 @@ scm_type_gtype_is_a_p(SCM gself, SCM gparent)
     self = scm_to_uintptr_t(gself);
     parent = scm_to_uintptr_t(gparent);
 
-    if (g_hash_table_contains(gir_type_gtype_hash, GSIZE_TO_POINTER(self)) && g_hash_table_contains(gir_type_gtype_hash, GSIZE_TO_POINTER(parent)))
+    if (g_hash_table_contains(gir_type_gtype_hash, GSIZE_TO_POINTER(self))
+        && g_hash_table_contains(gir_type_gtype_hash, GSIZE_TO_POINTER(parent)))
         return scm_from_bool(g_type_is_a(self, parent));
     return SCM_BOOL_F;
+}
+
+static SCM
+scm_type_dump_type_table(void)
+{
+    GHashTableIter iter;
+    gpointer key, value;
+    SCM list = SCM_EOL;
+
+    g_hash_table_iter_init (&iter, gir_type_gtype_hash);
+    while (g_hash_table_iter_next (&iter, &key, &value))
+    {
+        SCM entry;
+        SCM fo_type;
+
+        if (value)
+            fo_type = SCM_UNPACK_POINTER(value);
+        else
+            fo_type = SCM_BOOL_F;
+        entry = scm_list_3 (scm_from_size_t(key),
+            scm_from_utf8_string (g_type_name (key)),
+            fo_type);
+        list = scm_append(scm_list_2 (list, scm_list_1 (entry)));
+    }
+    return list;
 }
 
 void gir_init_types(void)
@@ -581,7 +604,7 @@ void gir_init_types(void)
         scm_c_export(#x, NULL);                                        \
     } while (0)
 
-    D(G_TYPE_NONE);
+    // D(G_TYPE_NONE);
     D(G_TYPE_INTERFACE);
     D(G_TYPE_CHAR);
     D(G_TYPE_UCHAR);
@@ -619,18 +642,20 @@ void gir_init_types(void)
     scm_c_define_gsubr("gtype-is-instantiatable?", 1, 0, 0, scm_type_gtype_is_instantiatable_p);
     scm_c_define_gsubr("gtype-is-derivable?", 1, 0, 0, scm_type_gtype_is_derivable_p);
     scm_c_define_gsubr("gtype-is-a?", 2, 0, 0, scm_type_gtype_is_a_p);
+    scm_c_define_gsubr("%gtype-dump-table", 0, 0, 0, scm_type_dump_type_table);
     scm_c_export("get-gtype",
-                 "gtype-get-scheme-type",
-                 "gtype-get-name",
-                 "gtype-get-parent",
-                 "gtype-get-fundamental",
-                 "gtype-get-children",
-                 "gtype-get-interfaces",
-                 "gtype-get-depth",
-                 "gtype-is-interface?",
-                 "gtype-is-classed?",
-                 "gtype-is-instantiatable?",
-                 "gtype-is-derivable?",
-                 "gtype-is-a?",
-                 NULL);
+        "gtype-get-scheme-type",
+        "gtype-get-name",
+        "gtype-get-parent",
+        "gtype-get-fundamental",
+        "gtype-get-children",
+        "gtype-get-interfaces",
+        "gtype-get-depth",
+        "gtype-is-interface?",
+        "gtype-is-classed?",
+        "gtype-is-instantiatable?",
+        "gtype-is-derivable?",
+        "gtype-is-a?",
+        "%gtype-dump-table",
+        NULL);
 }
