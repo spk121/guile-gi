@@ -26,4 +26,4 @@ fi
 XDG_CACHE_HOME=@top_builddir@/cache
 export XDG_CACHE_HOME
 exec @abs_top_builddir@/libtool --dlopen=@abs_top_builddir@/src/libguile-gi.la --mode=execute \
-    gdb --args guile -L @abs_top_srcdir@/src -L @abs_top_srcdir@ "$1"
+    gdb --args "@GUILE@" -L @abs_top_srcdir@/src -L @abs_top_srcdir@ "$1"
