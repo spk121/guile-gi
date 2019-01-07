@@ -92,24 +92,25 @@ gir_init(void)
 {
 #if 0
     g_log_set_handler(G_LOG_DOMAIN, G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL
-        | G_LOG_FLAG_RECURSION, gir_log_handler, NULL);
+                      | G_LOG_FLAG_RECURSION, gir_log_handler, NULL);
     g_log_set_handler("GLib", G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL
-        | G_LOG_FLAG_RECURSION, gir_log_handler, NULL);
+                      | G_LOG_FLAG_RECURSION, gir_log_handler, NULL);
 #endif
     g_debug("Begin libguile-gir initialization");
     gir_init_types();
+    gir_init_typelib();
+    gir_init_constant();
+    gir_init_flag();
+
     gi_init_gvalue();
     gi_init_gsignal();
     gi_init_gparamspec();
 
-    gir_init_typelib();
     gi_init_giargument();
     gi_init_gobject();
     gir_init_callback();
     gir_init_function();
     gir_init_method();
-    gir_init_constant();
-    gir_init_flag();
     g_debug("End libguile-gir initialization");
 
 #ifdef ENABLE_GCOV

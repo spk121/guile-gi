@@ -3,14 +3,13 @@
 #include "gir_callback.h"
 #include "gi_giargument.h"
 
-static SCM scm_call_proc (void *user_data);
-static SCM scm_handler_proc (void *user_data, SCM key, SCM params);
+static SCM gir_callback_call_proc (void *user_data);
+static SCM gir_callback_handler_proc (void *user_data, SCM key, SCM params);
 
 GSList *callback_list = NULL;
 
 static ffi_type *
 type_info_to_ffi_type(GITypeInfo *type_info);
-
 
 // This is the core of a dynamically generated callback funcion.
 // It converts FFI arguments to SCM arguments, calls a SCM function
@@ -88,8 +87,8 @@ void callback_binding(ffi_cif *cif, void *ret, void **ffi_args,
     }
 
     s_ret = scm_c_catch(SCM_BOOL_T,
-        scm_call_proc, SCM_UNPACK_POINTER(scm_cons (gcb->s_func, s_args)),
-        scm_handler_proc, NULL, NULL, NULL);
+        gir_callback_call_proc, SCM_UNPACK_POINTER(scm_cons (gcb->s_func, s_args)),
+        gir_callback_handler_proc, NULL, NULL, NULL);
     if (scm_is_false(s_ret))
         *(ffi_arg *)ret = FALSE;
     else
@@ -112,14 +111,14 @@ void callback_binding(ffi_cif *cif, void *ret, void **ffi_args,
 }
 
 static SCM
-scm_call_proc (void *user_data)
+gir_callback_call_proc (void *user_data)
 {
     SCM func_args_pair = SCM_PACK_POINTER(user_data);
     return scm_apply_0(scm_car(func_args_pair), scm_cdr(func_args_pair));
 }
 
 static SCM
-scm_handler_proc (void *user_data, SCM key, SCM params)
+gir_callback_handler_proc (void *user_data, SCM key, SCM params)
 {
     g_critical("scheme procedure threw error in C callback");
     return SCM_BOOL_F;

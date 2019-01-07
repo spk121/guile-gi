@@ -695,7 +695,7 @@ gir_typelib_document_callable_info(GString **export, const char *namespace_, con
 static void
 gir_typelib_document_type(GString **export, char *parent, GITypeInfo *info)
 {
-    g_string_append_printf(*export, "Type <%s> with predicate '%s?;\n\n",
+    g_string_append_printf(*export, "TYPE <%s> with PREDICATE '%s?'\n\n",
         g_base_info_get_name(info),
         g_base_info_get_name(info));
 }
