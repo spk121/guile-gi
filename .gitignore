@@ -66,6 +66,8 @@ __gi*.h
 # scripts
 tools/gdb-test
 tools/uninstalled-env
+tools/gdb-guile
+tools/run-guile
 
 # executables
 fo_gen

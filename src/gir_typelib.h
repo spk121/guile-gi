@@ -1,4 +1,4 @@
-// Copyright (C) 2018 Michael L. Gran
+// Copyright (C) 2018, 2019 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -13,11 +13,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef _GIR_FUNC2_H
-#define _GIR_FUNC2_H
+#ifndef _GIR_TYPELIB_H
+#define _GIR_TYPELIB_H
 
-// SCM
-// gi_type_import_by_gi_info (GIBaseInfo *info);
-GType gir_lookup_type(const char *name);
-void gir_init_func2(void);
+void  gir_init_typelib(void);
+
 #endif

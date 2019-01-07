@@ -1,5 +1,5 @@
-// gir_func2.c - introspection of typelib files
-// Copyright (C) 2018 Michael L. Gran
+// gir_typelib.c - introspection of typelib files
+// Copyright (C) 2018, 2019 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 #include <girepository.h>
 #include "gi_giargument.h"
 #include "gir_type.h"
-#include "gir_func2.h"
+#include "gir_typelib.h"
 #include "gir_function.h"
 #include "gi_gobject.h"
 #include "gi_gtype.h"
@@ -28,8 +28,6 @@
 #include "gir_flag.h"
 
 #define GIR_FUNC2_INIT_HASH_TABLE_SIZE 10
-
-
 
 static SCM get_hash_table(const char *name);
 static void hash_table_insert(const char *table_name, const char *namespace_,
@@ -1426,7 +1424,7 @@ scm_dump_all_arg_types(void)
 #endif
 
 
-void gir_init_func2(void)
+void gir_init_typelib(void)
 {
 #ifdef FIGURE_OUT_ALL_ARG_TYPES
     gi_arg_infos = g_ptr_array_new();

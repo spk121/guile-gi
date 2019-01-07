@@ -27,7 +27,7 @@
 #include "gi_signal_closure.h"
 #include "gi_giargument.h"
 #include "gir_func.h"
-#include "gir_func2.h"
+#include "gir_typelib.h"
 #include "gir_type.h"
 #include "gi_gstruct.h"
 #include "gir_callback.h"
@@ -102,7 +102,7 @@ gir_init(void)
     gi_init_gsignal();
     gi_init_gparamspec();
 
-    gir_init_func2();
+    gir_init_typelib();
     gi_init_giargument();
     gi_init_gobject();
     gir_init_callback();

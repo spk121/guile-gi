@@ -108,8 +108,8 @@ libguile_gi_la_SOURCES = \
  gir_constant.h \
  gir_flag.c \
  gir_flag.h \
- gir_func2.c \
- gir_func2.h \
+ gir_typelib.c \
+ gir_typelib.h \
  gir_type.c \
  gir_type.h \
  gir_xguile.c \
@@ -161,8 +161,6 @@ GUILEC_FLAGS = -Warity-mismatch -Wformat
 	$(GUILE) compile --target="$(host)" $(GUILEC_FLAGS) \
 	-o "$@" "$<"
 
-ETAGS_ARGS = gi.scm
-
 CLEANFILES = $(guileobject_DATA) $(BUILT_SOURCES)
 
 ################################################################
@@ -172,6 +170,6 @@ CLEANFILES = $(guileobject_DATA) $(BUILT_SOURCES)
 check-syntax:
 	$(CC) -std=c11 $(GUILE_CFLAGS) $(GLIB_CFLAGS) $(GOBJECT_CFLAGS) \
 	 $(GOBJECT_INTROSPECTION_CFLAGS) $(FFI_CFLAGS) \
-	 DG_LOG_DOMAIN=\"GuileGI\" $(CFLAGS) -fsyntax-only $(CHK_SOURCES)
+	 -DG_LOG_DOMAIN=\"GuileGI\" $(CFLAGS) -fsyntax-only $(CHK_SOURCES)
 
 

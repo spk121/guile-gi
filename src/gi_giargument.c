@@ -8,7 +8,7 @@
 #include "gi_basictype.h"
 #include <math.h>
 #include "gi_gvalue.h"
-#include "gir_func2.h"
+#include "gir_typelib.h"
 #include "gir_type.h"
 #include "gi_gstruct.h"
 #include "gi_giargument.h"
