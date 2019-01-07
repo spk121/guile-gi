@@ -39,7 +39,7 @@ TESTS = \
 SCM_LOG_COMPILER = \
   ${top_builddir}/libtool \
   --dlopen=${top_builddir}/src/libguile-gi.la \
-  --mode=execute guile
+  --mode=execute $(GUILE)
 
 AM_SCM_LOG_FLAGS = --no-auto-compile -L $(abs_top_srcdir)/src -L $(abs_top_srcdir) -s
 
