@@ -1,4 +1,4 @@
-// Copyright (C) 2018 Michael L. Gran
+// Copyright (C) 2018, 2019 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,29 +22,14 @@
 #include "gi_giargument.h"
 #include "gir_type.h"
 
-static char METHOD_TABLE_NAME[12] = "%gi-methods";
-
-static SCM
-gir_method_get_table(void)
-{
-    SCM hashtable;
-
-    hashtable = scm_module_variable(scm_current_module(),
-                                    scm_from_utf8_symbol(METHOD_TABLE_NAME));
-
-    if (scm_is_false(hashtable))
-    {
-        g_debug("Creating method table %s", METHOD_TABLE_NAME);
-        scm_permanent_object(scm_c_define(METHOD_TABLE_NAME, scm_c_make_hash_table(10)));
-        scm_c_export(METHOD_TABLE_NAME, NULL);
-        hashtable = scm_module_variable(scm_current_module(),
-                                        scm_from_utf8_symbol(METHOD_TABLE_NAME));
-    }
-
-    g_assert(scm_is_true(scm_hash_table_p(scm_variable_ref(hashtable))));
-
-    return scm_variable_ref(hashtable);
-}
+// This structure is a hash table tree.
+// On the first level we have
+//  KEY: method name string
+//  VALUE: hash tables
+// On the second level we have
+//  KEY: GType
+//  VALUE: GIMethodInfo *
+GHashTable *gir_method_hash_table = NULL;
 
 // Convert the type of names that GTK uses into Guile-like names
 static char *
@@ -107,40 +92,70 @@ gir_method_public_name(GICallableInfo *info)
     return public_name;
 }
 
-
-/* In the method table
- * its VALUE is itself a hashtable mapping a GTYPE to a
- * FUNC_INFO.
- * This is because many methods have the same name but operate
- * on different GTypes */
+// In the method table its VALUE is itself a hashtable mapping a GTYPE
+// to a FUNC_INFO.  This is because many methods have the same name
+// but operate on different GTypes
 void
 gir_method_table_insert(GType type, GIFunctionInfo *info)
 {
-    SCM h, subhash;
-
     g_assert(type != 0);
     g_assert(info != NULL);
 
-    char *public_name = gir_method_public_name(info);
-    SCM s_name = scm_from_utf8_string(public_name);
+    gchar *public_name = gir_method_public_name(info);
 
-    g_debug("Creating method %s for type %s", public_name, g_type_name(type));
-    g_free(public_name);
-
-    h = gir_method_get_table();
-
-    subhash = scm_hash_ref(h,
-        s_name,
-        SCM_BOOL_F);
-    if (scm_is_false(subhash))
+    GHashTable *subhash = g_hash_table_lookup(gir_method_hash_table,
+                                              public_name);
+    if (!subhash)
     {
-        scm_hash_set_x(h, s_name, scm_c_make_hash_table(1));
-        subhash = scm_hash_ref(h, s_name, SCM_BOOL_F);
-        g_assert(scm_is_true(scm_hash_table_p(subhash)));
+        subhash = g_hash_table_new (g_direct_hash, g_direct_equal);
+        g_hash_table_insert(gir_method_hash_table, public_name, subhash);
     }
-    scm_hash_set_x(subhash,
-        scm_from_size_t(type),
-        scm_from_pointer(info, (scm_t_pointer_finalizer)g_base_info_unref));
+    g_hash_table_insert(subhash, GSIZE_TO_POINTER(type), info);
+    g_debug("Creating method %s for type %s", public_name, g_type_name(type));
+}
+
+static GICallableInfo *
+gir_method_lookup(SCM obj, const char *method_name)
+{
+    // Look up method by name
+    GHashTable *subhash = g_hash_table_lookup(gir_method_hash_table, method_name);
+    if (!subhash)
+    {
+        g_debug("Could not find a method '%s'", method_name);
+        return NULL;
+    }
+
+    GType type;
+    GICallableInfo *info;
+    GHashTableIter iter;
+    GType original_type = gir_type_get_gtype_from_obj(obj);
+
+    while (original_type >= 80)
+    {
+        g_hash_table_iter_init (&iter, subhash);
+        while (g_hash_table_iter_next (&iter,
+                                       (gpointer *) (&type),
+                                       (gpointer *) &info))
+        {
+            g_debug("checking if %s is a %s", g_type_name(original_type),
+                    g_type_name(type));
+            //if (g_type_is_a (original_type, type))
+            if (g_type_is_a (type, original_type))
+            {
+                g_debug("Matched method %s::%s to object of type %s",
+                        g_type_name(type),
+                        method_name,
+                        g_type_name(original_type));
+
+                return info;
+            }
+        }
+        original_type = g_type_parent(original_type);
+    }
+    g_debug("Could not match any method ::%s to object of type %s",
+            method_name,
+            g_type_name(original_type));
+    return NULL;
 }
 
 static SCM
@@ -150,91 +165,45 @@ scm_call_method(SCM s_object, SCM s_method_name, SCM s_list_of_args)
     SCM_ASSERT(scm_is_true(scm_list_p(s_list_of_args)), s_list_of_args, SCM_ARG3, "call-method");
 
     // Look up method by name
-    SCM h, subhash;
-    h = gir_method_get_table();
-    subhash = scm_hash_ref(h, s_method_name, SCM_BOOL_F);
-    if (scm_is_false(subhash))
-        scm_misc_error("call-method",
-                       "Unknown method ~a",
-                       scm_list_1(s_method_name));
-
-    GType type, original_type;
-    SCM val;
-
-#if 0
-    if (SCM_IS_A_P(s_object, gi_gobject_type))
-        type = gi_gobject_get_ob_type(s_object);
-    else if (SCM_IS_A_P(s_object, gir_gbox_type))
-        type = gi_gbox_get_type(s_object);
-    else
-#endif    
-    {
-        // FIXME: here I should check to see if s_object is has
-        // of any of the previoulsy defined foreign object types.
-        if (scm_foreign_object_unsigned_ref(s_object, OB_REFCNT_SLOT))
-        {
-            type = scm_foreign_object_unsigned_ref(s_object, OB_TYPE_SLOT);
-        }
-        else
-            scm_misc_error("call-method",
-                       "Cannot invoke ::~S~S for invalidated object ~S",
-                       scm_list_3(s_method_name, s_list_of_args, s_object));            
-    }
-#if 0    
-    else
-        scm_misc_error("call-method",
-                       "Cannot invoke ::~S~S for object ~S",
-                       scm_list_3(s_method_name, s_list_of_args, s_object));
-#endif                       
-
     char *method_name = scm_to_utf8_string(s_method_name);
-
-    original_type = type;
-    while (scm_is_false((val = scm_hash_ref(subhash, scm_from_size_t(type), SCM_BOOL_F))))
+    GICallableInfo *info = gir_method_lookup (s_object, method_name);
+    if (info == NULL)
     {
-        if (!(type = g_type_parent(type)))
-        {
-            free(method_name);
-            scm_misc_error("call-method",
-                           "Cannot find a method '~a' for ~s",
-                           scm_list_2(s_method_name,
-                                      s_object));
-        }
+        free(method_name);
+        scm_misc_error("call-method",
+                       "Cannot find a method '~a' for ~s",
+                       scm_list_2(s_method_name,
+                              s_object));
     }
 
-    void *info = scm_to_pointer(val);
-
-    SCM s_args_str = scm_simple_format(SCM_BOOL_F, scm_from_locale_string("~s"), scm_list_1(s_list_of_args));
+    SCM s_args_str = scm_simple_format(SCM_BOOL_F,
+                                       scm_from_locale_string("~s"),
+                                       scm_list_1(s_list_of_args));
     char *args_str = scm_to_utf8_string(s_args_str);
-    g_debug("Invoking %s::%s%s for object of type %s",
-            g_type_name(type),
+    g_debug("Invoking %s%s for object of type %s",
             method_name,
             args_str,
-            g_type_name(original_type));
+            g_type_name(gir_type_get_gtype_from_obj(s_object)));
     free(args_str);
 
     int n_input_args, n_output_args;
     GIArgument *in_args, *out_args;
     unsigned *in_args_free;
 
-    gir_function_info_convert_args(info, s_list_of_args, &n_input_args, &in_args, &in_args_free, &n_output_args,
-                               &out_args);
+    gir_function_info_convert_args(info,
+                                   s_list_of_args,
+                                   &n_input_args,
+                                   &in_args,
+                                   &in_args_free,
+                                   &n_output_args,
+                                   &out_args);
     scm_remember_upto_here_1(s_list_of_args);
 
     // Need to prepend 'self' to the input arguments on a method call
     in_args = g_realloc_n(in_args, n_input_args + 1, sizeof(GIArgument));
     memmove(in_args + 1, in_args, sizeof(GIArgument) * n_input_args);
 
-#if 0
-    if (SCM_IS_A_P(s_object, gi_gobject_type))
-        in_args[0].v_pointer = gi_gobject_get_obj(s_object);
-    else if (SCM_IS_A_P(s_object, gir_gbox_type))
-        in_args[0].v_pointer = gi_gbox_peek_pointer(s_object);
-    else
-#endif    
-    {
-        in_args[0].v_pointer = scm_foreign_object_ref(s_object, OBJ_SLOT);
-    }
+    in_args[0].v_pointer = scm_foreign_object_ref(s_object, OBJ_SLOT);
 
     GIArgument return_arg;
 
@@ -313,16 +282,16 @@ gir_method_unref_object(SCM s_object)
     else if (SCM_IS_A_P(s_object, gir_gbox_type))
         type = gi_gbox_get_type(s_object);
     else
-#endif    
+#endif
         scm_misc_error("gir_method_unref_object",
             "Cannot invoke \'unref\' for object ~S",
             scm_list_1(s_object));
 
+#if 0
     original_type = type;
     SCM val;
-    SCM h = gir_method_get_table();
     SCM s_name = scm_from_utf8_string("unref");
-    SCM subhash = scm_hash_ref(h, s_name,
+    SCM subhash = scm_hash_ref(gir_method_hash_table, s_name,
         SCM_BOOL_F);
 
     while (scm_is_false((val = scm_hash_ref(subhash, scm_from_size_t(type), SCM_BOOL_F))))
@@ -341,14 +310,14 @@ gir_method_unref_object(SCM s_object)
         g_type_name(original_type));
 
     GIArgument in_arg;
-#if 0    
+#if 0
     if (SCM_IS_A_P(s_object, gi_gobject_type))
         in_arg.v_pointer = gi_gobject_get_obj(s_object);
     else if (SCM_IS_A_P(s_object, gir_gbox_type))
         in_arg.v_pointer = gi_gbox_peek_pointer(s_object);
     else
 #endif
-    g_assert_not_reached();    
+    g_assert_not_reached();
         g_abort();
 
     GIArgument return_arg;
@@ -373,6 +342,7 @@ gir_method_unref_object(SCM s_object)
             "error invoking method 'unref': ~a",
             scm_list_2(s_name, scm_from_utf8_string(str)));
     }
+#endif
 }
 
 
@@ -454,6 +424,10 @@ gir_method_document(GString **export, const char *namespace_,
 
 void gir_init_method(void)
 {
+    gir_method_hash_table = g_hash_table_new_full (g_str_hash,
+                                                   g_str_equal,
+                                                   NULL,
+                                                   g_hash_table_remove_all);
     scm_c_define_gsubr("call-method", 2, 0, 1, scm_call_method);
     scm_c_export("call-method", NULL);
 }

@@ -122,7 +122,7 @@ scm_typelib_load(SCM s_namespace, SCM s_version)
         switch (type)
         {
         case GI_INFO_TYPE_CALLBACK:
-            g_critical("Unsupported irepository type 'CALLBACK'");
+            g_debug("Unsupported irepository type 'CALLBACK'");
             break;
         case GI_INFO_TYPE_FUNCTION:
             gir_function_define_gsubr(namespace_, NULL, info);

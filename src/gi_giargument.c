@@ -1,4 +1,17 @@
-/* -*- Mode: C; c-basic-offset: 4 -*- */
+// Copyright (C), 2019 2018 Michael L. Gran
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <stdint.h>
 #include <glib.h>
 #include <girepository.h>
@@ -115,7 +128,10 @@ static GIArgumentStatus convert_array_pointer_arg_to_object(GIArgument *arg, GIT
 //////////////////////////////////////////////////////////
 
 GIArgumentStatus
-gi_giargument_convert_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *must_free, GIArgument *arg)
+gi_giargument_convert_object_to_arg(SCM obj,
+                                    GIArgInfo *arg_info,
+                                    unsigned *must_free,
+                                    GIArgument *arg)
 {
     if (g_arg_info_may_be_null(arg_info) && scm_is_false(obj))
     {
@@ -788,7 +804,9 @@ convert_const_void_pointer_object_to_arg(SCM obj, GIArgument *arg)
 }
 
 static GIArgumentStatus
-convert_interface_pointer_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *must_free, GIArgument *arg)
+convert_interface_pointer_object_to_arg(SCM obj,
+                                        GIArgInfo *arg_info,
+                                        unsigned *must_free, GIArgument *arg)
 {
     // Usually STRUCT, UNION, INTERFACE, OBJECT.  Handle NULL_OK
     GIArgumentStatus ret = GI_GIARGUMENT_ERROR;
@@ -811,9 +829,12 @@ convert_interface_pointer_object_to_arg(SCM obj, GIArgInfo *arg_info, unsigned *
         g_base_info_unref(type_info);
 
         GType arg_type = g_registered_type_info_get_g_type(referenced_base_info);
-        if (!g_type_is_a(obj_type, arg_type))
+        if (!g_type_is_a(arg_type, obj_type))
         {
-            g_critical("Unhandled argument type, %s: %d", __FILE__, __LINE__);
+            g_critical("Unhandled argument %s is not a %s , %s: %d",
+                       g_type_name(obj_type),
+                       g_type_name(arg_type),
+                       __FILE__, __LINE__);
             arg->v_pointer = NULL;
             *must_free = GIR_FREE_NONE;
             ret = GI_GIARGUMENT_WRONG_TYPE_ARG;

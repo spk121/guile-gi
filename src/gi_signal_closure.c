@@ -1,21 +1,17 @@
-/* -*- mode: C; c-basic-offset: 4; indent-tabs-mode: nil; -*- */
-/*
- * Copyright (c) 2011  Laszlo Pandy <lpandy@src.gnome.org>
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, see <http://www.gnu.org/licenses/>.
- */
+// Copyright (C), 2019 2018 Michael L. Gran
 
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "gi_signal_closure.h"
 #include "gi_gobject.h"
 #include "gi_gvalue.h"
@@ -62,11 +58,11 @@ signal_closure_invalidate(gpointer data,
 
 static void
 gi_signal_closure_marshal(GClosure *closure,
-			  GValue *return_value,
-			  guint n_param_values,
-			  const GValue *param_values,
-			  gpointer invocation_hint,
-			  gpointer marshal_data)
+                          GValue *return_value,
+                          guint n_param_values,
+                          const GValue *param_values,
+                          gpointer invocation_hint,
+                          gpointer marshal_data)
 {
     GuGClosure *pc = (GuGClosure *)closure;
     SCM params, ret = SCM_BOOL_F;
@@ -78,8 +74,8 @@ gi_signal_closure_marshal(GClosure *closure,
     GSList *pass_by_ref_structs = NULL;
 
 
-    /* Here we take the parameters in *param_values and call the
-     * Scheme function stored in *closure */
+    // Here we take the parameters in *param_values and call the
+    // Scheme function stored in *closure.
     
     signal_info = pc->signal_info;
     n_sig_info_args = g_callable_info_get_n_args(signal_info);

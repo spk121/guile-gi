@@ -1,6 +1,8 @@
-(use-modules (gi)
-	         (gi gtk-3)
-             ((gi gio-2) #:prefix Gio))
+(use-modules (gi))
+
+(typelib-load "Gio" "2.0")
+(typelib-load "Gtk" "3.0")
+(typelib-load "GLib" "2.0")
 
 (define (print-hello widget data)
   (display "Hello World\n"))
@@ -9,21 +11,21 @@
   (let ((window (ApplicationWindow-new app))
 	(button-box (ButtonBox-new 0))
 	(button (Button-new-with-label "Hello World")))
-    (Window-set-title window "Window")
-    (Window-set-default-size window 200 200)
-    (Widget-show-all window)
+    (call-method window "set-title" "Window")
+    (call-method window "set-default-size" 200 200)
+    (call-method window "show-all")
 
-    (Container-add window button-box)
+    (call-method window "add" button-box)
 
     (signal-connect button "clicked" print-hello #f)
     (signal-connect button "clicked" (lambda x
-				       (Widget-destroy window)) #f)
-    (Container-add button-box button)
-    (Widget-show-all window)))
+				       (call-method window "destroy")) #f)
+    (call-method button-box "add" button)
+    (call-method window "show-all")))
 
 (define (main)
   (let ((app (Application-new "org.gtk.example" 0)))
     (signal-connect app "activate" activate #f)
-    (GioApplication-run app (length (command-line)) (command-line))))
+    (call-method app "run" (length (command-line)) (command-line))))
 
 (main)

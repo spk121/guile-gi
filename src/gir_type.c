@@ -1,5 +1,4 @@
-/* -*- Mode: C; c-basic-offset: 4 -*- */
-// Copyright (C) 2018 Michael L. Gran
+// Copyright (C), 2019 2018 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -133,49 +132,66 @@ gir_type_define(GType gtype, GIBaseInfo *info)
     // have the same slots.
     // ob_type,ob_refcnt,obj,inst_dict,weakreflist,flags
 
-     if (!g_hash_table_lookup(gir_type_gtype_hash, GSIZE_TO_POINTER(gtype)))
+    gboolean newkey;
+    gpointer orig_key, value;
+    newkey = g_hash_table_lookup_extended(gir_type_gtype_hash,
+                                          GSIZE_TO_POINTER(gtype),
+                                          &orig_key,
+                                          &value);
+    if (newkey == FALSE || value == NULL)
     {
         GType parent = g_type_parent(gtype);
         if (parent != 0)
             gir_type_register (parent);
 
-        gchar *type_class_name = g_strdup_printf("<%s>", g_base_info_get_name(info));
-        g_debug("Creating a new GType foreign object type: %zu -> %s", gtype, type_class_name);
+        //gchar *type_class_name = g_strdup_printf("<%s>", g_base_info_get_name(info));
+        gchar *type_class_name = g_strdup_printf("<%s>", g_type_name(gtype));
         SCM fo_type = gir_type_make_fo_type_from_name(type_class_name);
         scm_permanent_object(scm_c_define(type_class_name, fo_type));
         scm_c_export (type_class_name, NULL);
+        newkey = g_hash_table_insert(gir_type_gtype_hash,
+                                     GSIZE_TO_POINTER(gtype),
+                                     SCM_UNPACK_POINTER(fo_type));
+        if (newkey)
+            g_debug("Creating a new GType foreign object type: %zu -> %s aka %s", gtype, type_class_name, g_type_name(gtype));
+        else
+            g_debug("Updating a GType foreign object type: %zu -> %s aka %s", gtype, type_class_name, g_type_name(gtype));
         g_free(type_class_name);
+        g_debug("Hash table size %d", g_hash_table_size(gir_type_gtype_hash));
 
         gchar *predicate_name = g_strdup_printf("%s?", g_base_info_get_name(info));
         gpointer func = gir_type_create_predicate(predicate_name, fo_type);
         scm_c_define_gsubr(predicate_name, 1, 0, 0, func);
         scm_c_export(predicate_name, NULL);
-        g_hash_table_insert(gir_type_gtype_hash, GSIZE_TO_POINTER(gtype), SCM_UNPACK_POINTER(fo_type));
+
         g_free(predicate_name);
     }
     else
-        g_debug("GType foriegn_object_type already exists for: %zu -> %s", gtype, g_base_info_get_name(info));
+        g_debug("GType foriegn_object_type already exists for: %zu -> %s",
+                gtype,
+                g_base_info_get_name(info));
 }
 
 // This makes an instance of a Guile foreign object type for a GObject pointer.
 // FIXME: handle the TRANSFER argument.
 SCM
-gir_type_make_object(GType gtype, gpointer *obj, GITransfer transfer)
+gir_type_make_object(GType gtype, gpointer obj, GITransfer transfer)
 {
     g_assert (GSIZE_TO_POINTER(gtype) != NULL);
     g_assert (obj != NULL);
 
-    gpointer scm_ptr = g_hash_table_lookup (gir_type_gtype_hash, GSIZE_TO_POINTER(gtype));
+    gpointer scm_ptr = g_hash_table_lookup (gir_type_gtype_hash,
+                                            GSIZE_TO_POINTER(gtype));
 
     if (scm_ptr == NULL)
         return SCM_BOOL_F;
 
     void *params[6] = {GSIZE_TO_POINTER(gtype),
-        GINT_TO_POINTER(1),
-        obj,
-        NULL,
-        NULL,
-        GINT_TO_POINTER(0)};
+                       GINT_TO_POINTER(1),
+                       obj,
+                       NULL,
+                       NULL,
+                       GINT_TO_POINTER(0)};
 
     return scm_make_foreign_object_n(SCM_PACK_POINTER(scm_ptr), 6, params);
 }
@@ -314,9 +330,10 @@ gir_type_get_gtype_from_obj(SCM x)
     g_hash_table_iter_init (&iter, gir_type_gtype_hash);
     while (g_hash_table_iter_next (&iter, &key, &value))
     {
-        if (value == SCM_UNPACK_POINTER(x))
+        if (scm_is_eq(klass, SCM_UNPACK_POINTER(value)))
             return GPOINTER_TO_SIZE(key);
     }
+
     return G_TYPE_INVALID;
 }
 
@@ -590,7 +607,9 @@ scm_type_dump_type_table(void)
 
 void gir_init_types(void)
 {
+
     gir_type_gtype_hash = g_hash_table_new(g_direct_hash, g_direct_equal);
+
 #ifdef GIR_FREE_MEMORY
     atexit (gir_type_free_predicates);
 #endif
