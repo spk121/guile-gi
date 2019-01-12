@@ -137,12 +137,13 @@ gir_method_lookup(SCM obj, const char *method_name)
                                        (gpointer *) (&type),
                                        (gpointer *) &info))
         {
-            g_debug("checking if %s is a %s", g_type_name(original_type),
-                    g_type_name(type));
+            //g_debug("checking if %s should call %s:%s", g_type_name(original_type),
+            //        g_type_name(type), method_name);
             //if (g_type_is_a (original_type, type))
-            if (g_type_is_a (type, original_type))
+            //if (g_type_is_a (type, original_type))
+            if (original_type == type)
             {
-                g_debug("Matched method %s::%s to object of type %s",
+                g_debug("Matched method %s:%s to object of type %s",
                         g_type_name(type),
                         method_name,
                         g_type_name(original_type));
@@ -158,22 +159,78 @@ gir_method_lookup(SCM obj, const char *method_name)
     return NULL;
 }
 
+static GICallableInfo *
+gir_method_explicit_lookup(GType type, const char *method_name)
+{
+    // Look up method by name
+    GHashTable *subhash = g_hash_table_lookup(gir_method_hash_table, method_name);
+    if (!subhash)
+    {
+        g_debug("Could not find a method '%s'", method_name);
+        return NULL;
+    }
+
+    GICallableInfo *info;
+    info = g_hash_table_lookup(subhash, GSIZE_TO_POINTER(type));
+    if (info)
+    {
+        g_debug("Found method %s::%s",
+                g_type_name(type),
+                method_name);
+        return info;
+    }
+    g_debug("Could not find method ::%s of type %s",
+            method_name,
+            g_type_name(type));
+    return NULL;
+}
+
+// Look up method by name.  If the method is of the form TYPE:METHOD,
+// it will try to look up that explicit type's method.  If the method
+// is just of the form METHOD, it will try to find the correct type by
+// using the object's type.
+static GICallableInfo *
+gir_method_lookup_full(SCM s_object, SCM s_method_name)
+{
+    char *method_name = scm_to_utf8_string(s_method_name);
+    char *name1, *name2;
+    char *token = ":";
+    GICallableInfo *info;
+    
+    name1 = strtok(method_name, token);
+    name2 = strtok(NULL, token);
+    if (name2 == NULL)
+        info = gir_method_lookup (s_object, name1);
+    else
+    {
+        GType type = g_type_from_name(name1);
+        info = gir_method_explicit_lookup(type, name2);
+    }
+    free (method_name);
+    return info;
+}
+
+
+// Call the named method on the object and list of args.  If the
+// method has the form TYPE:METHOD, an explicit method is called.  If
+// the method has the form METHOD, we try to guess the TYPE by
+// inspecting S_OBJECT.
 static SCM
 scm_call_method(SCM s_object, SCM s_method_name, SCM s_list_of_args)
 {
     SCM_ASSERT(scm_is_string(s_method_name), s_method_name, SCM_ARG2, "call-method");
     SCM_ASSERT(scm_is_true(scm_list_p(s_list_of_args)), s_list_of_args, SCM_ARG3, "call-method");
 
-    // Look up method by name
+    GICallableInfo *info;
     char *method_name = scm_to_utf8_string(s_method_name);
-    GICallableInfo *info = gir_method_lookup (s_object, method_name);
+    info = gir_method_lookup_full(s_object, s_method_name);
     if (info == NULL)
     {
         free(method_name);
         scm_misc_error("call-method",
                        "Cannot find a method '~a' for ~s",
                        scm_list_2(s_method_name,
-                              s_object));
+                                  s_object));
     }
 
     SCM s_args_str = scm_simple_format(SCM_BOOL_F,
@@ -268,6 +325,7 @@ scm_call_method(SCM s_object, SCM s_method_name, SCM s_list_of_args)
         return scm_car(output);
     return output;
 }
+
 
 
 void

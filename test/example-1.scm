@@ -8,9 +8,9 @@
   (display "Hello World\n"))
 
 (define (activate app user-data)
-  (let ((window (ApplicationWindow-new app))
-	(button-box (ButtonBox-new 0))
-	(button (Button-new-with-label "Hello World")))
+  (let ((window (cast (ApplicationWindow-new app) <GtkApplicationWindow>))
+	    (button-box (cast (ButtonBox-new 0) <GtkButtonBox>))
+	    (button (Button-new-with-label "Hello World")))
     (call-method window "set-title" "Window")
     (call-method window "set-default-size" 200 200)
     (call-method window "show-all")

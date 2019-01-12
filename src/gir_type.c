@@ -330,7 +330,8 @@ gir_type_get_gtype_from_obj(SCM x)
     g_hash_table_iter_init (&iter, gir_type_gtype_hash);
     while (g_hash_table_iter_next (&iter, &key, &value))
     {
-        if (scm_is_eq(klass, SCM_UNPACK_POINTER(value)))
+        if (scm_is_eq(klass, SCM_UNPACK_POINTER(value))
+            || scm_is_eq(x, SCM_UNPACK_POINTER(value)))
             return GPOINTER_TO_SIZE(key);
     }
 
@@ -605,6 +606,14 @@ scm_type_dump_type_table(void)
     return list;
 }
 
+static SCM
+scm_type_cast(SCM s_obj, SCM s_fo_type)
+{
+    gpointer obj = scm_foreign_object_ref(s_obj, OBJ_SLOT);
+    GType type = gir_type_get_gtype_from_obj (s_fo_type);
+    return gir_type_make_object(type, obj, 0);
+}
+
 void gir_init_types(void)
 {
 
@@ -662,19 +671,21 @@ void gir_init_types(void)
     scm_c_define_gsubr("gtype-is-derivable?", 1, 0, 0, scm_type_gtype_is_derivable_p);
     scm_c_define_gsubr("gtype-is-a?", 2, 0, 0, scm_type_gtype_is_a_p);
     scm_c_define_gsubr("%gtype-dump-table", 0, 0, 0, scm_type_dump_type_table);
+    scm_c_define_gsubr("cast", 2, 0, 0, scm_type_cast);
     scm_c_export("get-gtype",
-        "gtype-get-scheme-type",
-        "gtype-get-name",
-        "gtype-get-parent",
-        "gtype-get-fundamental",
-        "gtype-get-children",
-        "gtype-get-interfaces",
-        "gtype-get-depth",
-        "gtype-is-interface?",
-        "gtype-is-classed?",
-        "gtype-is-instantiatable?",
-        "gtype-is-derivable?",
-        "gtype-is-a?",
-        "%gtype-dump-table",
+                 "gtype-get-scheme-type",
+                 "gtype-get-name",
+                 "gtype-get-parent",
+                 "gtype-get-fundamental",
+                 "gtype-get-children",
+                 "gtype-get-interfaces",
+                 "gtype-get-depth",
+                 "gtype-is-interface?",
+                 "gtype-is-classed?",
+                 "gtype-is-instantiatable?",
+                 "gtype-is-derivable?",
+                 "gtype-is-a?",
+                 "%gtype-dump-table",
+                 "cast",
         NULL);
 }

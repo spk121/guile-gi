@@ -829,7 +829,7 @@ convert_interface_pointer_object_to_arg(SCM obj,
         g_base_info_unref(type_info);
 
         GType arg_type = g_registered_type_info_get_g_type(referenced_base_info);
-        if (!g_type_is_a(arg_type, obj_type))
+        if (!g_type_is_a(obj_type, arg_type))
         {
             g_critical("Unhandled argument %s is not a %s , %s: %d",
                        g_type_name(obj_type),
