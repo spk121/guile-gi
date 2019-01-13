@@ -1,5 +1,5 @@
 # Makefile.am - test directory
-# Copyright (C) 2018 Michael L. Gran
+# Copyright (C) 2018,2019 Michael L. Gran
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -46,4 +46,5 @@ AM_SCM_LOG_FLAGS = --no-auto-compile -L $(abs_top_srcdir)/src -L $(abs_top_srcdi
 EXTRA_DIST = \
   $(TESTS) \
   lib.scm \
-  automake-test-lib.scm 
+  automake-test-lib.scm \
+  example-1.scm
