@@ -1,4 +1,4 @@
-// Copyright (C), 2019 2018 Michael L. Gran
+// Copyright (C) 2018, 2019 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -57,7 +57,7 @@
 // foreign object types.
 
 /*
-  * When parsing a Typelib file, an argument type is a sort of a triple
+ * When parsing a Typelib file, an argument type is a sort of a triple
  * - type_tag: either a simple type like "guint", else "INTERFACE"
  *             find this with g_type_info_get_tag (typeinfo)
  * - interface_type: one of struct, enum, object, flags
@@ -123,10 +123,9 @@ gir_type_register(GType gtype)
 // this makes a new Guile foreign object type and its associated predicate,
 // and it stores the type in our hash table of known types.
 void
-gir_type_define(GType gtype, GIBaseInfo *info)
+gir_type_define(GType gtype)
 {
     g_assert (GSIZE_TO_POINTER(gtype) != NULL);
-    g_assert (info != NULL);
     // Make a foreign object type for instances of this GType.
     // All of our custom introspected foreign object types will
     // have the same slots.
@@ -144,7 +143,6 @@ gir_type_define(GType gtype, GIBaseInfo *info)
         if (parent != 0)
             gir_type_register (parent);
 
-        //gchar *type_class_name = g_strdup_printf("<%s>", g_base_info_get_name(info));
         gchar *type_class_name = g_strdup_printf("<%s>", g_type_name(gtype));
         SCM fo_type = gir_type_make_fo_type_from_name(type_class_name);
         scm_permanent_object(scm_c_define(type_class_name, fo_type));
@@ -159,7 +157,7 @@ gir_type_define(GType gtype, GIBaseInfo *info)
         g_free(type_class_name);
         g_debug("Hash table size %d", g_hash_table_size(gir_type_gtype_hash));
 
-        gchar *predicate_name = g_strdup_printf("%s?", g_base_info_get_name(info));
+        gchar *predicate_name = g_strdup_printf("%s?", g_type_name(gtype));
         gpointer func = gir_type_create_predicate(predicate_name, fo_type);
         scm_c_define_gsubr(predicate_name, 1, 0, 0, func);
         scm_c_export(predicate_name, NULL);
@@ -168,8 +166,7 @@ gir_type_define(GType gtype, GIBaseInfo *info)
     }
     else
         g_debug("GType foriegn_object_type already exists for: %zu -> %s",
-                gtype,
-                g_base_info_get_name(info));
+                gtype, g_type_name(gtype));
 }
 
 // This makes an instance of a Guile foreign object type for a GObject pointer.
@@ -233,7 +230,7 @@ gir_type_create_predicate(const char *name, SCM fo_type)
     // and set a pointer to the corresponding executable address.
     gp->fo_type = fo_type;
     gp->closure = ffi_closure_alloc(sizeof(ffi_closure),
-        &(gp->function_ptr));
+                                    &(gp->function_ptr));
 
     g_return_val_if_fail(gp->closure != NULL, NULL);
     g_return_val_if_fail(gp->function_ptr != NULL, NULL);
@@ -252,29 +249,29 @@ gir_type_create_predicate(const char *name, SCM fo_type)
     // Initialize the CIF Call Interface Struct.
     ffi_status prep_ok;
     prep_ok = ffi_prep_cif(&(gp->cif),
-        FFI_DEFAULT_ABI,
-        1,
-        ffi_ret_type,
-        ffi_args);
+                           FFI_DEFAULT_ABI,
+                           1,
+                           ffi_ret_type,
+                           ffi_args);
 
     if (prep_ok != FFI_OK)
         scm_misc_error("gir-type-create-predicate",
-            "closure call interface preparation error #~A",
-            scm_list_1(scm_from_int(prep_ok)));
+                       "closure call interface preparation error #~A",
+                       scm_list_1(scm_from_int(prep_ok)));
 
     // STEP 3
     // Initialize the closure
     ffi_status closure_ok;
     closure_ok = ffi_prep_closure_loc(gp->closure,
-        &(gp->cif),
-        gir_type_predicate_binding,
-        gp,                 // The 'user-data' passed to the function
-        gp->function_ptr);
+                                      &(gp->cif),
+                                      gir_type_predicate_binding,
+                                      gp,                 // The 'user-data' passed to the function
+                                      gp->function_ptr);
 
     if (closure_ok != FFI_OK)
         scm_misc_error("gir-type-create-predicate",
-            "closure location preparation error #~A",
-            scm_list_1(scm_from_int(closure_ok)));
+                       "closure location preparation error #~A",
+                       scm_list_1(scm_from_int(closure_ok)));
 
     g_debug ("Created predicate %s", name);
 
@@ -291,7 +288,7 @@ gir_type_create_predicate(const char *name, SCM fo_type)
 // And checks if that foreign object has the type this
 // predicate is testing for.
 static void gir_type_predicate_binding(ffi_cif *cif, void *ret, void **ffi_args,
-    void *user_data)
+                                       void *user_data)
 {
     GirPredicate *gp = user_data;
 
@@ -507,7 +504,7 @@ scm_type_gtype_get_depth(SCM s_gtype)
     GType type = scm_to_uintptr_t(s_gtype);
 
     if (g_hash_table_contains(gir_type_gtype_hash, GSIZE_TO_POINTER(type)))
-       return scm_from_uint(g_type_depth(type));
+        return scm_from_uint(g_type_depth(type));
     return SCM_BOOL_F;
 }
 
@@ -520,7 +517,7 @@ scm_type_gtype_is_interface_p(SCM s_gtype)
     GType type = scm_to_uintptr_t(s_gtype);
 
     if (g_hash_table_contains(gir_type_gtype_hash, GSIZE_TO_POINTER(type)))
-       return scm_from_bool(G_TYPE_IS_INTERFACE(type));
+        return scm_from_bool(G_TYPE_IS_INTERFACE(type));
     return SCM_BOOL_F;
 }
 
@@ -533,7 +530,7 @@ scm_type_gtype_is_classed_p(SCM s_gtype)
     GType type = scm_to_uintptr_t(s_gtype);
 
     if (g_hash_table_contains(gir_type_gtype_hash, GSIZE_TO_POINTER(type)))
-       return scm_from_bool(G_TYPE_IS_CLASSED(type));
+        return scm_from_bool(G_TYPE_IS_CLASSED(type));
     return SCM_BOOL_F;
 }
 
@@ -546,7 +543,7 @@ scm_type_gtype_is_instantiatable_p(SCM s_gtype)
     GType type = scm_to_uintptr_t(s_gtype);
 
     if (g_hash_table_contains(gir_type_gtype_hash, GSIZE_TO_POINTER(type)))
-       return scm_from_bool(G_TYPE_IS_INSTANTIATABLE(type));
+        return scm_from_bool(G_TYPE_IS_INSTANTIATABLE(type));
     return SCM_BOOL_F;
 }
 
@@ -559,7 +556,7 @@ scm_type_gtype_is_derivable_p(SCM s_gtype)
     GType type = scm_to_uintptr_t(s_gtype);
 
     if (g_hash_table_contains(gir_type_gtype_hash, GSIZE_TO_POINTER(type)))
-       return scm_from_bool(G_TYPE_IS_DERIVABLE(type));
+        return scm_from_bool(G_TYPE_IS_DERIVABLE(type));
     return SCM_BOOL_F;
 }
 
@@ -599,8 +596,8 @@ scm_type_dump_type_table(void)
         else
             fo_type = SCM_BOOL_F;
         entry = scm_list_3 (scm_from_size_t(key),
-            scm_from_utf8_string (g_type_name (key)),
-            fo_type);
+                            scm_from_utf8_string (g_type_name (key)),
+                            fo_type);
         list = scm_append(scm_list_2 (list, scm_list_1 (entry)));
     }
     return list;
@@ -624,12 +621,12 @@ void gir_init_types(void)
 #endif
     atexit (gir_type_free_types);
 
-#define D(x)                                                           \
-    do                                                                 \
-    {                                                                  \
-        gir_type_register(x);                                          \
-        scm_permanent_object(scm_c_define(#x, scm_from_uintptr_t(x))); \
-        scm_c_export(#x, NULL);                                        \
+#define D(x)                                                            \
+    do                                                                  \
+    {                                                                   \
+        gir_type_register(x);                                           \
+        scm_permanent_object(scm_c_define(#x, scm_from_uintptr_t(x)));  \
+        scm_c_export(#x, NULL);                                         \
     } while (0)
 
     // D(G_TYPE_NONE);
@@ -687,5 +684,5 @@ void gir_init_types(void)
                  "gtype-is-a?",
                  "%gtype-dump-table",
                  "cast",
-        NULL);
+                 NULL);
 }

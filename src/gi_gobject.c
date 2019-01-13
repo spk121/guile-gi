@@ -1,4 +1,4 @@
-// Copyright (C), 2019 2018 Michael L. Gran
+// Copyright (C), 2018, 2019 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -259,11 +259,11 @@ gugobject_watch_closure(SCM self, GClosure *closure)
 
     g_return_if_fail(gir_type_get_gtype_from_obj(self) > G_TYPE_INVALID);
     g_return_if_fail(closure != NULL);
-    
+
     data = gugobject_get_inst_data(self);
     g_return_if_fail(data != NULL);
     g_return_if_fail(g_slist_find(data->closures, closure) == NULL);
-    
+
     data->closures = g_slist_prepend(data->closures, closure);
     g_closure_add_invalidate_notifier(closure, data, gugobject_unwatch_closure);
 }
@@ -275,7 +275,7 @@ gug_toggle_notify (gpointer data, GObject *object, gboolean is_last_ref)
      * instead of the user data argument.
      * See: https://bugzilla.gnome.org/show_bug.cgi?id=709223
      */
-    
+
     // SCM self = SCM_PACK_POINTER (g_object_get_qdata (object, gi_gobject_wrapper_key));
     /* if (self) { */
     /*     if (is_last_ref) */
@@ -349,7 +349,7 @@ connect_helper (SCM self, gchar *name, SCM callback, SCM extra_args,
 
     GObject *obj = scm_foreign_object_ref (self, OBJ_SLOT);
     GType gtype = G_OBJECT_TYPE(obj);
-    
+
     if (!g_signal_parse_name(name, gtype,
                              &sigid, &detail, TRUE))
     {
@@ -371,8 +371,11 @@ connect_helper (SCM self, gchar *name, SCM callback, SCM extra_args,
     {
         /* The signal is implemented at the Scheme level, probably */
         // closure = gug_closure_new (callback, extra_args, object);
-        g_critical ("unimplemented");
-        g_abort();
+        closure = gi_signal_closure_new (self, query_info.itype,
+                                         query_info.signal_name, callback,
+                                         extra_args);
+        //g_critical ("unimplemented");
+        //g_abort();
     }
 
     gugobject_watch_closure (self, closure);
@@ -405,7 +408,7 @@ scm_gobject_disconnect_by_func(SCM self, SCM func)
     GClosure *closure = NULL;
     GObject *obj;
     guint retval;
-    
+
     SCM_ASSERT (gir_type_get_gtype_from_obj (self) > G_TYPE_INVALID,
                 self, SCM_ARG1, "gobject-disconnect-by-func");
     SCM_ASSERT (scm_is_true (scm_procedure_p (func)), func, SCM_ARG2,
@@ -433,7 +436,7 @@ scm_gobject_handler_block_by_func(SCM self, SCM func)
     GClosure *closure = NULL;
     GObject *obj;
     guint retval;
-    
+
     SCM_ASSERT (gir_type_get_gtype_from_obj (self) > G_TYPE_INVALID,
                 self, SCM_ARG1, "gobject-handler-block-by-func");
     SCM_ASSERT (scm_is_true (scm_procedure_p (func)), func, SCM_ARG2,
@@ -444,7 +447,7 @@ scm_gobject_handler_block_by_func(SCM self, SCM func)
         scm_misc_error ("gobject-handler-block-by-func",
                         "nothing connected to ~S",
                         scm_list_1 (func));
-    
+
     obj = scm_foreign_object_ref (self, OBJ_SLOT);
     retval = g_signal_handlers_block_matched(obj,
                                              G_SIGNAL_MATCH_CLOSURE,
@@ -461,7 +464,7 @@ scm_gobject_handler_unblock_by_func(SCM self, SCM func)
     GClosure *closure = NULL;
     GObject *obj;
     guint retval;
-    
+
     SCM_ASSERT (gir_type_get_gtype_from_obj (self) > G_TYPE_INVALID,
                 self, SCM_ARG1, "gobject-handler-unblock-by-func");
     SCM_ASSERT (scm_is_true (scm_procedure_p (func)), func, SCM_ARG2,
@@ -472,7 +475,7 @@ scm_gobject_handler_unblock_by_func(SCM self, SCM func)
         scm_misc_error ("gobject-handler-unblock-by-func",
                         "nothing connected to ~S",
                         scm_list_1 (func));
-    
+
     obj = scm_foreign_object_ref (self, OBJ_SLOT);
     retval = g_signal_handlers_unblock_matched(obj,
                                                G_SIGNAL_MATCH_CLOSURE,
@@ -491,7 +494,7 @@ marshal_signals (GClosure *closure,
                  gpointer invocation_hint,
                  gpointer marshal_data)
 {
-    
+
 }
 
 static void
@@ -523,7 +526,7 @@ init_guile_specified_gobject_class(GObjectClass *class, gpointer class_info)
     class->get_property = get_guile_specified_property;
     class->dispose = dispose;
     class->finalize = finalize;
-    
+
     /* Since the parent type could be anything, some pointer math is
      * required to figure out where our part of the object class is
      * located. */
@@ -555,7 +558,7 @@ init_instance(GTypeInstance *instance, gpointer class_ptr)
 
     instance_data = (GuileSpecifiedGObjectInstanceData *) ((char *) instance + query.instance_size);
     properties = g_object_class_list_properties (class_ptr, &n_properties);
-    
+
     /* This is both the Guile-side representation of this object and
        the location in memory where the properties are stored. */
     obj = gir_type_make_object (type, instance, 0);
@@ -568,14 +571,14 @@ init_instance(GTypeInstance *instance, gpointer class_ptr)
     {
         SCM sval;
         GValue _default = G_VALUE_INIT;
-    
+
         g_value_init (&_default, G_PARAM_SPEC_TYPE (properties[i]));
         sval = gi_gvalue_as_scm (&_default, TRUE);
         scm_hash_set_x (inst_dict,
                         scm_from_utf8_string (g_param_spec_get_name (properties[i])),
                         sval);
     }
-    
+
     instance_data->obj = obj;
     g_object_set_qdata (G_OBJECT(instance),
                         gi_gobject_wrapper_key,
@@ -588,7 +591,7 @@ wrap_object (GObject *object)
     /* Somehow, you managed to make a pointer to a Guile-defined class
      * object without actually making the Scheme wrapper.  Let's try
      * to add it now. */
-    
+
 }
 
 static void
@@ -611,7 +614,7 @@ get_guile_specified_property (GObject *object, guint property_id,
     obj = SCM_PACK_POINTER (ptr);
 
     g_assert (scm_foreign_object_ref (obj, OBJ_SLOT) == object);
-    
+
     /* We're using a hash table as the property variable store for
        this object. */
     inst_dict = scm_foreign_object_ref(obj, INST_DICT_SLOT);
@@ -698,7 +701,7 @@ register_guile_specified_gobject_type (const char *type_name,
                                        &type_info,
                                        0);
     class_init_info->type = new_type;
-    
+
     /* Mark this type as a Guile-specified type. */
     g_type_set_qdata(new_type,
                      gi_gobject_custom_key,
@@ -721,7 +724,7 @@ scm_register_guile_specified_gobject_type (SCM s_type_name,
     size_t n_properties, n_signals;
     GPtrArray *properties;
     GPtrArray *signals;
-    
+
     SCM_ASSERT (scm_is_string (s_type_name),
                 s_type_name,
                 SCM_ARG1,
@@ -736,7 +739,7 @@ scm_register_guile_specified_gobject_type (SCM s_type_name,
     properties = g_ptr_array_new ();
     signals = g_ptr_array_new_with_free_func ((GDestroyNotify) gi_free_signalspec);
 
-    if (scm_is_true (scm_list_p (s_properties))) {
+    if (!SCM_UNBNDP(s_properties) && scm_is_true (scm_list_p (s_properties))) {
         n_properties = scm_to_size_t (scm_length (s_properties));
         for (size_t i = 0; i < n_properties; i ++) {
             GParamSpec *pspec;
@@ -744,8 +747,8 @@ scm_register_guile_specified_gobject_type (SCM s_type_name,
             g_ptr_array_add (properties, pspec);
         }
     }
-    
-    if (scm_is_true (scm_list_p (s_signals))) {
+
+    if (!SCM_UNBNDP(s_signals) && scm_is_true (scm_list_p (s_signals))) {
         n_signals = scm_to_size_t (scm_length (s_signals));
         for (size_t i = 0; i < n_signals; i ++) {
             SignalSpec *sspec;
@@ -753,8 +756,8 @@ scm_register_guile_specified_gobject_type (SCM s_type_name,
             g_ptr_array_add (signals, sspec);
         }
     }
-    
-    if (scm_is_true (scm_procedure_p (s_disposer)))
+
+    if (!SCM_UNBNDP(s_disposer) && scm_is_true (scm_procedure_p (s_disposer)))
         new_type = register_guile_specified_gobject_type (type_name,
                                                           parent_type,
                                                           properties,
@@ -766,7 +769,7 @@ scm_register_guile_specified_gobject_type (SCM s_type_name,
                                                           properties,
                                                           signals,
                                                           SCM_BOOL_F);
-    gir_type_register(new_type);
+    gir_type_define(new_type);
     return scm_from_size_t (new_type);
 }
 
@@ -782,7 +785,7 @@ scm_make_gobject (SCM s_gtype, SCM s_prop_alist)
     gpointer ptr;
 
     //scm_assert_foreign_object_type (gi_gtype_type, s_gtype);
-    
+
     type = scm_to_size_t (s_gtype);
     obj = g_object_new_with_properties (type, 0, NULL, NULL);
     class = G_OBJECT_GET_CLASS(obj);
@@ -833,16 +836,16 @@ scm_make_gobject (SCM s_gtype, SCM s_prop_alist)
                     else if (G_IS_PARAM_SPEC_UINT64 (pspec)) {
                         g_value_init (&value, G_TYPE_UINT64);
                         g_value_set_uint64 (&value, scm_to_uint64 (scm_cdr (entry)));
-            
+
                     }
                     else if (G_IS_PARAM_SPEC_FLOAT (pspec)) {
                         g_value_init (&value, G_TYPE_FLOAT);
-            
+
                         g_value_set_float (&value, scm_to_double (scm_cdr (entry)));
                     }
                     else if (G_IS_PARAM_SPEC_DOUBLE (pspec)) {
                         g_value_init (&value, G_TYPE_DOUBLE);
-            
+
                         g_value_set_double(&value, scm_to_double (scm_cdr (entry)));
                     }
                     else if (G_IS_PARAM_SPEC_ENUM (pspec)) {
@@ -855,7 +858,7 @@ scm_make_gobject (SCM s_gtype, SCM s_prop_alist)
                     }
                     else
                         g_abort();
-            
+
                     g_object_set_property (obj, key, &value);
                 }
                 free (key);
@@ -867,7 +870,7 @@ scm_make_gobject (SCM s_gtype, SCM s_prop_alist)
 
     g_assert (ptr);
     sobj = SCM_PACK_POINTER (ptr);
-    
+
     g_assert (scm_foreign_object_ref (sobj, OBJ_SLOT) == obj);
     return sobj;
 }
@@ -878,7 +881,7 @@ scm_gobject_is_object_p (SCM self)
     GObject *obj;
     gboolean ret;
 
-    
+
     scm_assert_foreign_object_type (gi_gobject_type, self);
     obj = gi_gobject_get_obj (self);
     ret = G_IS_OBJECT (obj);
@@ -892,7 +895,7 @@ scm_gobject_type (SCM self)
     GObject *obj;
 
     scm_assert_foreign_object_type (gi_gobject_type, self);
-    
+
     obj = gi_gobject_get_obj (self);
     type = G_OBJECT_TYPE (obj);
 
@@ -907,7 +910,7 @@ scm_gobject_type_name (SCM self)
     GObject *obj;
 
     scm_assert_foreign_object_type (gi_gobject_type, self);
-    
+
     obj = gi_gobject_get_obj (self);
     name = G_OBJECT_TYPE_NAME (obj);
 
@@ -1106,7 +1109,7 @@ gi_argument_from_object (const char *func,
     type_tag = g_type_info_get_tag (type_info);
 
     switch (type_tag) {
-#if 0   
+#if 0
     case GI_TYPE_TAG_ARRAY:
     {
         ssize_t py_length;
@@ -1123,9 +1126,9 @@ gi_argument_from_object (const char *func,
         }
 
         /* Note, strings are sequences, but we cannot accept them here */
-        if (!PySequence_Check (object) || 
+        if (!PySequence_Check (object) ||
 #if PY_VERSION_HEX < 0x03000000
-            PyString_Check (object) || 
+            PyString_Check (object) ||
 #endif
             PyUnicode_Check (object)) {
             PyErr_SetString (PyExc_TypeError, "expected sequence");
@@ -1219,7 +1222,7 @@ gi_argument_from_object (const char *func,
         case GI_INFO_TYPE_STRUCT:
         case GI_INFO_TYPE_UNION:
         {
-            
+
             GType g_type;
             SCM s_type;
             gboolean is_foreign = (info_type == GI_INFO_TYPE_STRUCT) &&
@@ -1463,7 +1466,7 @@ gi_set_property_value (const char *func,
                        GParamSpec *pspec,
                        SCM svalue)
 {
-#if 0    
+#if 0
     GIPropertyInfo *property_info = NULL;
     GITypeInfo *type_info = NULL;
     GITypeTag type_tag;
@@ -1636,7 +1639,7 @@ out:
     return ret_value;
 #else
     return 0;
-#endif        
+#endif
 }
 
 /* re pygobject_set_property */
@@ -1693,7 +1696,7 @@ gi_get_property_value (const char *func, SCM instance, GParamSpec *pspec)
     SCM svalue = SCM_BOOL_F;
     GType fundamental;
     gboolean handled;
-    
+
     if (!(pspec->flags & G_PARAM_READABLE)) {
         scm_misc_error (func, "property ~S is not readable",
                         scm_list_1 (scm_from_utf8_string (g_param_spec_get_name (pspec))));
@@ -1707,20 +1710,20 @@ gi_get_property_value (const char *func, SCM instance, GParamSpec *pspec)
     if (!handled)
 
         /* FIXME: else, attempt to marshal through GI */
-    
+
         /* Fallback to GValue marshalling. */
         gi_param_gvalue_as_scm (&value, TRUE, pspec);
 
     g_value_unset (&value);
     return svalue;
 }
-    
+
 static SCM
 scm_gobject_get_property (SCM self, SCM sname)
 {
     char *param_name;
     SCM ret;
-    
+
     scm_assert_foreign_object_type (gi_gobject_type, self);
     SCM_ASSERT (scm_is_string (sname), sname, SCM_ARG2, "gobject-get-property");
     param_name = scm_to_utf8_string (sname);
@@ -1761,11 +1764,11 @@ gi_arg_gobject_to_scm (GIArgument *arg, GITransfer transfer)
             g_assert_not_reached ();
     } else {
         g_assert_not_reached();
-#if 0        
+#if 0
         s_obj = gi_gobject_new_full (arg->v_pointer,
                                      transfer == GI_TRANSFER_EVERYTHING, /* steal */
                                      NULL); /* type */
-#endif                     
+#endif
     }
     return s_obj;
 }
@@ -1796,8 +1799,8 @@ gi_init_gobject (void)
     gi_gobject_wrapper_key = g_quark_from_static_string ("GuGObject::wrapper");
     gi_gobject_custom_key = g_quark_from_static_string ("GuGObject::custom");
     gi_gobject_instance_data_key = g_quark_from_static_string("GuGObject::instance-data");
-    
-    scm_c_define_gsubr ("register-type", 5, 0, 0, scm_register_guile_specified_gobject_type);
+
+    scm_c_define_gsubr ("register-type", 2, 3, 0, scm_register_guile_specified_gobject_type);
     scm_c_define_gsubr ("make-gobject", 1, 1, 0, scm_make_gobject);
     scm_c_define_gsubr ("gobject-is-object?", 1, 0, 0, scm_gobject_is_object_p);
     scm_c_define_gsubr ("gobject-type", 1, 0, 0, scm_gobject_type);
@@ -1825,4 +1828,3 @@ gi_init_gobject (void)
                   "signal-connect",
                   NULL);
 }
-

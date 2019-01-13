@@ -74,7 +74,7 @@ scm_typelib_prepend_search_path(SCM s_dir)
 {
     char *dir;
     SCM_ASSERT_TYPE(scm_is_string(s_dir), s_dir, SCM_ARG1,
-        "typelib-prepend-search-path", "string");
+                    "typelib-prepend-search-path", "string");
 
     dir = scm_to_utf8_string(s_dir);
     g_irepository_prepend_search_path(dir);
@@ -133,11 +133,11 @@ scm_typelib_load(SCM s_namespace, SCM s_version)
             if (gtype == G_TYPE_NONE)
             {
                 g_debug("Not loading struct type '%s' because is has no GType",
-                    g_base_info_get_name(info));
+                        g_base_info_get_name(info));
                 g_base_info_unref(info);
                 break;
             }
-            gir_type_define(gtype, info);
+            gir_type_define(gtype);
 
             gint n_methods = g_struct_info_get_n_methods(info);
             for (gint m = 0; m < n_methods; m++)
@@ -160,11 +160,11 @@ scm_typelib_load(SCM s_namespace, SCM s_version)
             if (gtype == G_TYPE_NONE)
             {
                 g_debug("Not loading object type '%s' because is has no GType",
-                    g_base_info_get_name(info));
+                        g_base_info_get_name(info));
                 g_base_info_unref(info);
                 break;
             }
-            gir_type_define(gtype, info);
+            gir_type_define(gtype);
 
             gint n_methods = g_object_info_get_n_methods(info);
             for (gint m = 0; m < n_methods; m++)
@@ -195,8 +195,28 @@ scm_typelib_load(SCM s_namespace, SCM s_version)
         }
         break;
         case GI_INFO_TYPE_INTERFACE:
-            g_critical("Unsupported irepository type 'INTERFACE'");
-            break;
+        {
+            GType gtype = g_registered_type_info_get_g_type(info);
+            if (gtype == G_TYPE_NONE)
+            {
+                g_debug("Not loading union type '%s' because is has no GType",
+                        g_base_info_get_name(info));
+                g_base_info_unref(info);
+                break;
+            }
+            gir_type_define(gtype);
+
+            gint n_methods = g_interface_info_get_n_methods(info);
+            for (gint m = 0; m < n_methods; m++)
+            {
+                GIFunctionInfo *func_info = g_interface_info_get_method(info, m);
+                if (g_function_info_get_flags(func_info) & GI_FUNCTION_IS_METHOD)
+                    gir_method_table_insert(gtype, func_info);
+                else
+                    gir_function_define_gsubr(namespace_, g_base_info_get_name(info), func_info);
+            }
+        }
+        break;
         case GI_INFO_TYPE_CONSTANT:
             gir_constant_define(info);
             break;
@@ -206,11 +226,11 @@ scm_typelib_load(SCM s_namespace, SCM s_version)
             if (gtype == G_TYPE_NONE)
             {
                 g_debug("Not loading union type '%s' because is has no GType",
-                    g_base_info_get_name(info));
+                        g_base_info_get_name(info));
                 g_base_info_unref(info);
                 break;
             }
-            gir_type_define(gtype, info);
+            gir_type_define(gtype);
 
             gint n_methods = g_union_info_get_n_methods(info);
             for (gint m = 0; m < n_methods; m++)
@@ -293,9 +313,9 @@ scm_typelib_document(SCM s_namespace, SCM s_version)
         info = g_irepository_get_info(NULL, namespace_, i);
         if (g_base_info_is_deprecated(info))
         {
-	    g_string_append_printf(export,
-				   "Not importing '%s' because it is deprecated.\n\n",
-				   g_base_info_get_name(info));
+            g_string_append_printf(export,
+                                   "Not importing '%s' because it is deprecated.\n\n",
+                                   g_base_info_get_name(info));
             g_base_info_unref(info);
             continue;
         }
@@ -314,7 +334,7 @@ scm_typelib_document(SCM s_namespace, SCM s_version)
             if (gtype == G_TYPE_NONE)
             {
                 g_debug("Not importing struct type '%s' because is has no GType",
-                    g_base_info_get_name(info));
+                        g_base_info_get_name(info));
                 g_base_info_unref(info);
                 break;
             }
@@ -327,14 +347,14 @@ scm_typelib_document(SCM s_namespace, SCM s_version)
                 if (g_function_info_get_flags(func_info)
                     & GI_FUNCTION_IS_METHOD)
                     gir_typelib_document_callable_info(&export,
-                        namespace_,
-                        g_base_info_get_name(info),
-                        func_info, 1);
+                                                       namespace_,
+                                                       g_base_info_get_name(info),
+                                                       func_info, 1);
                 else
                     gir_typelib_document_callable_info(&export,
-                        namespace_,
-                        g_base_info_get_name(info),
-                        func_info, 0);
+                                                       namespace_,
+                                                       g_base_info_get_name(info),
+                                                       func_info, 0);
             }
         }
         break;
@@ -359,14 +379,14 @@ scm_typelib_document(SCM s_namespace, SCM s_version)
                 GIFunctionInfo *func_info = g_object_info_get_method(info, m);
                 if (g_function_info_get_flags(func_info) & GI_FUNCTION_IS_METHOD)
                     gir_typelib_document_callable_info(&export,
-                        namespace_,
-                        g_base_info_get_name(info),
-                        func_info, 1);
+                                                       namespace_,
+                                                       g_base_info_get_name(info),
+                                                       func_info, 1);
                 else
                     gir_typelib_document_callable_info(&export,
-                        namespace_,
-                        g_base_info_get_name(info),
-                        func_info, 0);
+                                                       namespace_,
+                                                       g_base_info_get_name(info),
+                                                       func_info, 0);
             }
 #if 0
             gint n_signals = g_object_info_get_n_signals(info);
@@ -518,7 +538,7 @@ gir_typelib_document_callable_arguments(GString **export, GICallableInfo *info, 
         dir = g_arg_info_get_direction(arg);
         type_info = g_arg_info_get_type(arg);
         if (!(dir == GI_DIRECTION_OUT)
-	    || (dir == GI_DIRECTION_OUT && g_arg_info_is_caller_allocates(arg)))
+            || (dir == GI_DIRECTION_OUT && g_arg_info_is_caller_allocates(arg)))
         {
             if (style)
                 g_string_append(*export, ";;   ");
@@ -548,12 +568,12 @@ gir_typelib_document_callable_arguments(GString **export, GICallableInfo *info, 
     type_info = g_callable_info_get_return_type(info);
     if (style)
         g_string_append_printf(*export, ";; RETURN: %s%s\n",
-            g_type_tag_to_string(g_type_info_get_tag(type_info)),
-            g_type_info_is_pointer(type_info) ? "*" : "");
+                               g_type_tag_to_string(g_type_info_get_tag(type_info)),
+                               g_type_info_is_pointer(type_info) ? "*" : "");
     else
         g_string_append_printf(*export, "   RETURN: %s%s\n",
-            g_type_tag_to_string(g_type_info_get_tag(type_info)),
-            g_type_info_is_pointer(type_info) ? "*" : "");
+                               g_type_tag_to_string(g_type_info_get_tag(type_info)),
+                               g_type_info_is_pointer(type_info) ? "*" : "");
     g_base_info_unref(type_info);
 
     for (int i = 0; i < n_args; i++)
@@ -637,7 +657,7 @@ gir_typelib_document_callback_info(GString **export, const char *namespace_, con
 
 static void
 gir_typelib_document_callable_info(GString **export, const char *namespace_, const char *parent, GICallableInfo *info,
-		       gboolean method)
+                                   gboolean method)
 {
     gint n_args;
     GIArgInfo *arg;
@@ -649,13 +669,13 @@ gir_typelib_document_callable_info(GString **export, const char *namespace_, con
     g_assert(return_type);
 
     if (method)
-      public_name = gir_method_public_name(info);
+        public_name = gir_method_public_name(info);
     else
-      public_name = gir_function_make_name(parent, info);
+        public_name = gir_function_make_name(parent, info);
     if (method)
-      g_string_append_printf(*export, "%s's METHOD %s", parent, public_name);
+        g_string_append_printf(*export, "%s's METHOD %s", parent, public_name);
     else
-      g_string_append_printf(*export, "PROCEDURE %s", public_name);
+        g_string_append_printf(*export, "PROCEDURE %s", public_name);
 
     for (int i = 0; i < n_args; i++)
     {
@@ -696,8 +716,8 @@ static void
 gir_typelib_document_type(GString **export, char *parent, GITypeInfo *info)
 {
     g_string_append_printf(*export, "TYPE <%s> with PREDICATE '%s?'\n\n",
-        g_base_info_get_name(info),
-        g_base_info_get_name(info));
+                           g_base_info_get_name(info),
+                           g_base_info_get_name(info));
 }
 
 /* FIXME: this is a very sigmal way to export signal info */
@@ -774,13 +794,13 @@ scm_gi_struct_ref(SCM s_ptr, SCM s_type_name, SCM s_field_name)
     char *full_type_name = NULL;
 
     SCM_ASSERT(SCM_POINTER_P(s_ptr), s_ptr, SCM_ARG1,
-        "gi-struct-ref");
+               "gi-struct-ref");
     SCM_ASSERT(scm_is_string(s_namespace), s_namespace, SCM_ARG2,
-        "gi-struct-ref");
+               "gi-struct-ref");
     SCM_ASSERT(scm_is_string(s_type_name), s_type_name, SCM_ARG3,
-        "gi-struct-ref");
+               "gi-struct-ref");
     SCM_ASSERT(scm_is_string(s_field_name), s_field_name, SCM_ARG4,
-        "gi-struct-ref");
+               "gi-struct-ref");
 
 #ifdef PREFIX_NAME_IN_HASH
     {
@@ -800,8 +820,8 @@ scm_gi_struct_ref(SCM s_ptr, SCM s_type_name, SCM s_field_name)
 
     if (!si) {
         scm_misc_error("gi-struct-ref",
-            "unknown struct type '~a' in ~a",
-            scm_list_2(s_type_name, s_namespace));
+                       "unknown struct type '~a' in ~a",
+                       scm_list_2(s_type_name, s_namespace));
         return SCM_BOOL_F;
     }
 
@@ -815,8 +835,8 @@ scm_gi_struct_ref(SCM s_ptr, SCM s_type_name, SCM s_field_name)
         g_assert(fi != NULL);
 
         g_debug("field name search: %s == %s ?",
-            field_name,
-            g_base_info_get_name(fi));
+                field_name,
+                g_base_info_get_name(fi));
         if (strcmp(g_base_info_get_name(fi), field_name) == 0) {
             break;
         }
@@ -828,8 +848,8 @@ scm_gi_struct_ref(SCM s_ptr, SCM s_type_name, SCM s_field_name)
     free(field_name);
     if (i >= n_fields) {
         scm_misc_error("gi-struct-ref",
-            "unknown field '~a' in struct '~a' in ~a",
-            scm_list_3(s_field_name, s_type_name, s_namespace));
+                       "unknown field '~a' in struct '~a' in ~a",
+                       scm_list_3(s_field_name, s_type_name, s_namespace));
         return SCM_BOOL_F;
     }
     else {
@@ -842,8 +862,8 @@ scm_gi_struct_ref(SCM s_ptr, SCM s_type_name, SCM s_field_name)
 
         if (!ok) {
             scm_misc_error("gi-struct-ref",
-                "cannot unpack field '~a' in struct '~a'",
-                scm_list_2(s_field_name, s_type_name));
+                           "cannot unpack field '~a' in struct '~a'",
+                           scm_list_2(s_field_name, s_type_name));
             return SCM_BOOL_F;
         }
         else {
@@ -866,11 +886,11 @@ scm_gi_struct_set(SCM s_ptr, SCM s_namespace, SCM s_type_name, SCM s_field_name,
 
     // SCM_VALIDATE_POINTER (1, s_ptr);
     SCM_ASSERT(scm_is_string(s_namespace), s_namespace, SCM_ARG2,
-        "gi-struct-set");
+               "gi-struct-set");
     SCM_ASSERT(scm_is_string(s_type_name), s_type_name, SCM_ARG3,
-        "gi-struct-set");
+               "gi-struct-set");
     SCM_ASSERT(scm_is_string(s_field_name), s_field_name, SCM_ARG4,
-        "gi-struct-set");
+               "gi-struct-set");
 
 #ifdef PREFIX_NAME_IN_HASH
     {
@@ -890,8 +910,8 @@ scm_gi_struct_set(SCM s_ptr, SCM s_namespace, SCM s_type_name, SCM s_field_name,
 
     if (!si) {
         scm_misc_error("gi-struct-ref",
-            "unknown struct type '~a' in ~a",
-            scm_list_2(s_type_name, s_namespace));
+                       "unknown struct type '~a' in ~a",
+                       scm_list_2(s_type_name, s_namespace));
         return SCM_BOOL_F;
     }
 
@@ -905,8 +925,8 @@ scm_gi_struct_set(SCM s_ptr, SCM s_namespace, SCM s_type_name, SCM s_field_name,
         g_assert(fi != NULL);
 
         g_debug("field name search: %s == %s ?",
-            field_name,
-            g_base_info_get_name(fi));
+                field_name,
+                g_base_info_get_name(fi));
         if (strcmp(g_base_info_get_name(fi), field_name) == 0) {
             break;
         }
@@ -918,8 +938,8 @@ scm_gi_struct_set(SCM s_ptr, SCM s_namespace, SCM s_type_name, SCM s_field_name,
     free(field_name);
     if (i >= n_fields) {
         scm_misc_error("gi-struct-set",
-            "unknown field '~a' in struct '~a' in ~a",
-            scm_list_3(s_field_name, s_type_name, s_namespace));
+                       "unknown field '~a' in struct '~a' in ~a",
+                       scm_list_3(s_field_name, s_type_name, s_namespace));
         return SCM_BOOL_F;
     }
     else {
@@ -927,9 +947,9 @@ scm_gi_struct_set(SCM s_ptr, SCM s_namespace, SCM s_type_name, SCM s_field_name,
         GIArgument arg;
         GITypeInfo *ti = g_field_info_get_type(fi);
         arg = gi_argument_from_object("gi-struct-set",
-            s_value,
-            ti,
-            GI_TRANSFER_NOTHING);
+                                      s_value,
+                                      ti,
+                                      GI_TRANSFER_NOTHING);
         g_base_info_unref(ti);
         ti = NULL;
         void *ptr = scm_to_pointer(s_ptr);
@@ -939,8 +959,8 @@ scm_gi_struct_set(SCM s_ptr, SCM s_namespace, SCM s_type_name, SCM s_field_name,
 
         if (!ok) {
             scm_misc_error("gi-struct-set",
-                "cannot set field '~a' in struct '~a' to '~a'",
-                scm_list_3(s_field_name, s_type_name, s_value));
+                           "cannot set field '~a' in struct '~a' to '~a'",
+                           scm_list_3(s_field_name, s_type_name, s_value));
             return SCM_BOOL_F;
         }
         else {
@@ -1138,8 +1158,8 @@ void gir_init_typelib(void)
     scm_c_define_gsubr("typelib-document", 2, 0, 0, scm_typelib_document);
 
     scm_c_export("typelib-get-search-path",
-        "typelib-prepend-search-path",
-        "typelib-load",
-        "typelib-document",
-        NULL);
+                 "typelib-prepend-search-path",
+                 "typelib-load",
+                 "typelib-document",
+                 NULL);
 }

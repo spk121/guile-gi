@@ -1,4 +1,4 @@
-// Copyright (C), 2019 2018 Michael L. Gran
+// Copyright (C) 2018, 2019 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -222,7 +222,7 @@ gi_gvalue_from_scm_with_error(GValue *value, SCM obj)
         else if (gir_type_get_gtype_from_obj(obj) > G_TYPE_INVALID)
             g_value_set_object (value, scm_foreign_object_ref (obj, OBJ_SLOT));
         else
-        return GI_GVALUE_WRONG_TYPE;
+            return GI_GVALUE_WRONG_TYPE;
     }
 
     case G_TYPE_INTERFACE:
@@ -263,8 +263,8 @@ gi_gvalue_from_scm (GValue *value, SCM obj)
 
 SCM
 gi_param_gvalue_as_scm (const GValue *gvalue,
-            gboolean copy_boxed,
-            const GParamSpec *pspec)
+                        gboolean copy_boxed,
+                        const GParamSpec *pspec)
 {
     if (G_IS_PARAM_SPEC_UNICHAR(pspec))
     {
@@ -281,7 +281,7 @@ gi_param_gvalue_as_scm (const GValue *gvalue,
 
 GIArgument
 gi_giargument_from_g_value(const GValue *value,
-               GITypeInfo *type_info)
+                           GITypeInfo *type_info)
 {
     GIArgument arg = { 0, };
 
@@ -293,128 +293,128 @@ gi_giargument_from_g_value(const GValue *value,
     */
     switch (type_tag) {
     case GI_TYPE_TAG_BOOLEAN:
-    arg.v_boolean = g_value_get_boolean (value);
-    break;
+        arg.v_boolean = g_value_get_boolean (value);
+        break;
     case GI_TYPE_TAG_INT8:
-    arg.v_int8 = g_value_get_schar (value);
-    break;
+        arg.v_int8 = g_value_get_schar (value);
+        break;
     case GI_TYPE_TAG_INT16:
     case GI_TYPE_TAG_INT32:
-    if (g_type_is_a (G_VALUE_TYPE (value), G_TYPE_LONG))
-        arg.v_int32 = (gint32)g_value_get_long (value);
-    else
-        arg.v_int32 = (gint32)g_value_get_int (value);
-    break;
+        if (g_type_is_a (G_VALUE_TYPE (value), G_TYPE_LONG))
+            arg.v_int32 = (gint32)g_value_get_long (value);
+        else
+            arg.v_int32 = (gint32)g_value_get_int (value);
+        break;
     case GI_TYPE_TAG_INT64:
-    if (g_type_is_a (G_VALUE_TYPE (value), G_TYPE_LONG))
-        arg.v_int64 = g_value_get_long (value);
-    else
-        arg.v_int64 = g_value_get_int64 (value);
-    break;
+        if (g_type_is_a (G_VALUE_TYPE (value), G_TYPE_LONG))
+            arg.v_int64 = g_value_get_long (value);
+        else
+            arg.v_int64 = g_value_get_int64 (value);
+        break;
     case GI_TYPE_TAG_UINT8:
-    arg.v_uint8 = g_value_get_uchar (value);
-    break;
+        arg.v_uint8 = g_value_get_uchar (value);
+        break;
     case GI_TYPE_TAG_UINT16:
     case GI_TYPE_TAG_UINT32:
-    if (g_type_is_a (G_VALUE_TYPE (value), G_TYPE_ULONG))
-        arg.v_uint32 = (guint32)g_value_get_ulong (value);
-    else
-        arg.v_uint32 = (guint32)g_value_get_uint (value);
-    break;
+        if (g_type_is_a (G_VALUE_TYPE (value), G_TYPE_ULONG))
+            arg.v_uint32 = (guint32)g_value_get_ulong (value);
+        else
+            arg.v_uint32 = (guint32)g_value_get_uint (value);
+        break;
     case GI_TYPE_TAG_UINT64:
-    if (g_type_is_a (G_VALUE_TYPE (value), G_TYPE_ULONG))
-        arg.v_uint64 = g_value_get_ulong (value);
-    else
-        arg.v_uint64 = g_value_get_uint64 (value);
-    break;
+        if (g_type_is_a (G_VALUE_TYPE (value), G_TYPE_ULONG))
+            arg.v_uint64 = g_value_get_ulong (value);
+        else
+            arg.v_uint64 = g_value_get_uint64 (value);
+        break;
     case GI_TYPE_TAG_UNICHAR:
-    arg.v_uint32 = g_value_get_schar (value);
-    break;
+        arg.v_uint32 = g_value_get_schar (value);
+        break;
     case GI_TYPE_TAG_FLOAT:
-    arg.v_float = g_value_get_float (value);
-    break;
+        arg.v_float = g_value_get_float (value);
+        break;
     case GI_TYPE_TAG_DOUBLE:
-    arg.v_double = g_value_get_double (value);
-    break;
+        arg.v_double = g_value_get_double (value);
+        break;
     case GI_TYPE_TAG_GTYPE:
-    arg.v_size = g_value_get_gtype (value);
-    break;
+        arg.v_size = g_value_get_gtype (value);
+        break;
     case GI_TYPE_TAG_UTF8:
     case GI_TYPE_TAG_FILENAME:
-    /* Callers are responsible for ensuring the GValue stays alive
-     * long enough for the string to be copied. */
-    arg.v_string = (char *)g_value_get_string (value);
-    break;
+        /* Callers are responsible for ensuring the GValue stays alive
+         * long enough for the string to be copied. */
+        arg.v_string = (char *)g_value_get_string (value);
+        break;
     case GI_TYPE_TAG_GLIST:
     case GI_TYPE_TAG_GSLIST:
     case GI_TYPE_TAG_ARRAY:
     case GI_TYPE_TAG_GHASH:
-    if (G_VALUE_HOLDS_BOXED (value))
-        arg.v_pointer = g_value_get_boxed (value);
-    else
-        /* e. g. GSettings::change-event */
-        arg.v_pointer = g_value_get_pointer (value);
-    break;
+        if (G_VALUE_HOLDS_BOXED (value))
+            arg.v_pointer = g_value_get_boxed (value);
+        else
+            /* e. g. GSettings::change-event */
+            arg.v_pointer = g_value_get_pointer (value);
+        break;
     case GI_TYPE_TAG_INTERFACE:
-        {
-            GIBaseInfo *info;
-            GIInfoType info_type;
+    {
+        GIBaseInfo *info;
+        GIInfoType info_type;
 
-            info = g_type_info_get_interface (type_info);
-            info_type = g_base_info_get_type (info);
+        info = g_type_info_get_interface (type_info);
+        info_type = g_base_info_get_type (info);
 
-            g_base_info_unref (info);
+        g_base_info_unref (info);
 
-            switch (info_type) {
+        switch (info_type) {
         case GI_INFO_TYPE_FLAGS:
-        arg.v_uint = g_value_get_flags (value);
-        break;
+            arg.v_uint = g_value_get_flags (value);
+            break;
         case GI_INFO_TYPE_ENUM:
-        arg.v_int = g_value_get_enum (value);
-        break;
+            arg.v_int = g_value_get_enum (value);
+            break;
         case GI_INFO_TYPE_INTERFACE:
         case GI_INFO_TYPE_OBJECT:
-        if (G_VALUE_HOLDS_PARAM (value))
-            arg.v_pointer = g_value_get_param (value);
-        else
-            arg.v_pointer = g_value_get_object (value);
-        break;
+            if (G_VALUE_HOLDS_PARAM (value))
+                arg.v_pointer = g_value_get_param (value);
+            else
+                arg.v_pointer = g_value_get_object (value);
+            break;
         case GI_INFO_TYPE_BOXED:
         case GI_INFO_TYPE_STRUCT:
         case GI_INFO_TYPE_UNION:
-        if (G_VALUE_HOLDS (value, G_TYPE_BOXED)) {
-            arg.v_pointer = g_value_get_boxed (value);
-        } else if (G_VALUE_HOLDS (value, G_TYPE_VARIANT)) {
-            arg.v_pointer = g_value_get_variant (value);
-        } else if (G_VALUE_HOLDS (value, G_TYPE_POINTER)) {
-            arg.v_pointer = g_value_get_pointer (value);
-        } else {
-            /* PyErr_Format (PyExc_NotImplementedError, */
-            /*               "Converting GValue's of type '%s' is not implemented.", */
-            /*               g_type_name (G_VALUE_TYPE (value))); */
-            g_error ("Converting GValue's of type '%s' is not implemented.",
-                 g_type_name (G_VALUE_TYPE (value)));
-        }
-        break;
-        default:
-        /* PyErr_Format (PyExc_NotImplementedError, */
-        /*               "Converting GValue's of type '%s' is not implemented.", */
-        /*               g_info_type_to_string (info_type)); */
-        g_error ("Converting GValue's of type '%s' is not implemented.",
-             g_info_type_to_string (info_type));
-
-        break;
+            if (G_VALUE_HOLDS (value, G_TYPE_BOXED)) {
+                arg.v_pointer = g_value_get_boxed (value);
+            } else if (G_VALUE_HOLDS (value, G_TYPE_VARIANT)) {
+                arg.v_pointer = g_value_get_variant (value);
+            } else if (G_VALUE_HOLDS (value, G_TYPE_POINTER)) {
+                arg.v_pointer = g_value_get_pointer (value);
+            } else {
+                /* PyErr_Format (PyExc_NotImplementedError, */
+                /*               "Converting GValue's of type '%s' is not implemented.", */
+                /*               g_type_name (G_VALUE_TYPE (value))); */
+                g_error ("Converting GValue's of type '%s' is not implemented.",
+                         g_type_name (G_VALUE_TYPE (value)));
             }
             break;
+        default:
+            /* PyErr_Format (PyExc_NotImplementedError, */
+            /*               "Converting GValue's of type '%s' is not implemented.", */
+            /*               g_info_type_to_string (info_type)); */
+            g_error ("Converting GValue's of type '%s' is not implemented.",
+                     g_info_type_to_string (info_type));
+
+            break;
         }
+        break;
+    }
     case GI_TYPE_TAG_ERROR:
-    arg.v_pointer = g_value_get_boxed (value);
-    break;
+        arg.v_pointer = g_value_get_boxed (value);
+        break;
     case GI_TYPE_TAG_VOID:
-    arg.v_pointer = g_value_get_pointer (value);
-    break;
+        arg.v_pointer = g_value_get_pointer (value);
+        break;
     default:
-    break;
+        break;
     }
 
     return arg;
@@ -431,7 +431,7 @@ gi_gvalue_array_from_scm_list(GValue *value, SCM list)
     array = g_array_new(FALSE, TRUE, sizeof(GValue));
 
     for (i = 0; i < len; ++i) {
-    SCM item = scm_list_ref (list, scm_from_size_t (i));
+        SCM item = scm_list_ref (list, scm_from_size_t (i));
         GType type;
         GValue item_value = { 0, };
 
@@ -531,57 +531,72 @@ gi_gvalue_to_scm_structured_type (const GValue *value, GType fundamental,
             break;
 
     case G_TYPE_POINTER:
-    // If we get a simple pointer with no context information,
-    // what can we do other than return a dumb pointer?
-    return scm_from_pointer (g_value_get_pointer (value), NULL);
+        // If we get a simple pointer with no context information,
+        // what can we do other than return a dumb pointer?
+        return scm_from_pointer (g_value_get_pointer (value), NULL);
+    case G_TYPE_PARAM:
+    {
+        if (value->data->v_pointer)
+            return gir_type_make_object(G_VALUE_TYPE(value),
+                                        g_value_get_object(value),
+                                        0);
+        else
+            return SCM_BOOL_F;
+        /* gboolean handled; */
+        /* gboolean test = G_IS_PARAM_SPEC_STRING(value); */
+        /* GParamSpec *pspec = g_value_get_param(value); */
+        /* SCM val = gi_gvalue_scm_to_basic_type(value, G_PARAM_SPEC_TYPE(pspec), &handled); */
+        /* if (handled) */
+        /*     return val; */
+        /* break; */
+    }
+
 #if 0
     case G_TYPE_BOXED: {
         PyGTypeMarshal *bm;
         gboolean holds_value_array;
 
         G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-        holds_value_array = G_VALUE_HOLDS(value, G_TYPE_VALUE_ARRAY);
+            holds_value_array = G_VALUE_HOLDS(value, G_TYPE_VALUE_ARRAY);
         G_GNUC_END_IGNORE_DEPRECATIONS
 
-        if (G_VALUE_HOLDS(value, PY_TYPE_OBJECT)) {
-        PyObject *ret = (PyObject *)g_value_dup_boxed(value);
-        if (ret == NULL) {
-            Py_INCREF(Py_None);
-            return Py_None;
-        }
-        return ret;
-        } else if (G_VALUE_HOLDS(value, G_TYPE_VALUE)) {
-        GValue *n_value = g_value_get_boxed (value);
-        return pyg_value_as_pyobject(n_value, copy_boxed);
-        } else if (holds_value_array) {
-        GValueArray *array = (GValueArray *) g_value_get_boxed(value);
-        Py_ssize_t n_values = array ? array->n_values : 0;
-        PyObject *ret = PyList_New(n_values);
-        int i;
-        for (i = 0; i < n_values; ++i)
-            PyList_SET_ITEM(ret, i, pyg_value_as_pyobject
-                    (array->values + i, copy_boxed));
-        return ret;
-        } else if (G_VALUE_HOLDS(value, G_TYPE_GSTRING)) {
-        GString *string = (GString *) g_value_get_boxed(value);
-        PyObject *ret = PYGLIB_PyUnicode_FromStringAndSize(string->str, string->len);
-        return ret;
-        }
+            if (G_VALUE_HOLDS(value, PY_TYPE_OBJECT)) {
+                PyObject *ret = (PyObject *)g_value_dup_boxed(value);
+                if (ret == NULL) {
+                    Py_INCREF(Py_None);
+                    return Py_None;
+                }
+                return ret;
+            } else if (G_VALUE_HOLDS(value, G_TYPE_VALUE)) {
+                GValue *n_value = g_value_get_boxed (value);
+                return pyg_value_as_pyobject(n_value, copy_boxed);
+            } else if (holds_value_array) {
+                GValueArray *array = (GValueArray *) g_value_get_boxed(value);
+                Py_ssize_t n_values = array ? array->n_values : 0;
+                PyObject *ret = PyList_New(n_values);
+                int i;
+                for (i = 0; i < n_values; ++i)
+                    PyList_SET_ITEM(ret, i, pyg_value_as_pyobject
+                                    (array->values + i, copy_boxed));
+                return ret;
+            } else if (G_VALUE_HOLDS(value, G_TYPE_GSTRING)) {
+                GString *string = (GString *) g_value_get_boxed(value);
+                PyObject *ret = PYGLIB_PyUnicode_FromStringAndSize(string->str, string->len);
+                return ret;
+            }
         bm = pyg_type_lookup(G_VALUE_TYPE(value));
         if (bm) {
             return bm->fromvalue(value);
         } else {
             if (copy_boxed)
                 return pygi_gboxed_new(G_VALUE_TYPE(value),
-                       g_value_get_boxed(value), TRUE, TRUE);
+                                       g_value_get_boxed(value), TRUE, TRUE);
             else
                 return pygi_gboxed_new(G_VALUE_TYPE(value),
-                       g_value_get_boxed(value),FALSE,FALSE);
+                                       g_value_get_boxed(value),FALSE,FALSE);
         }
     }
 
-    case G_TYPE_PARAM:
-        return pyg_param_spec_new(g_value_get_param(value));
 #endif
     case G_TYPE_OBJECT:
         return gir_type_make_object(G_VALUE_TYPE(value),
@@ -592,8 +607,8 @@ gi_gvalue_to_scm_structured_type (const GValue *value, GType fundamental,
     {
         GVariant *v = g_value_get_variant(value);
         if (v == NULL) {
-        Py_INCREF(Py_None);
-        return Py_None;
+            Py_INCREF(Py_None);
+            return Py_None;
         }
         return pygi_struct_new_from_g_type (G_TYPE_VARIANT, g_variant_ref(v), FALSE);
     }
@@ -628,14 +643,14 @@ gi_gvalue_as_scm (const GValue *value, gboolean copy_boxed)
 
 #if 0
     if (fundamental == G_TYPE_CHAR)
-    return SCM_MAKE_CHAR (g_value_get_schar (value));
+        return SCM_MAKE_CHAR (g_value_get_schar (value));
     else if (fundamental == G_TYPE_UCHAR)
-    return SCM_MAKE_CHAR (g_value_get_uchar (value));
+        return SCM_MAKE_CHAR (g_value_get_uchar (value));
 #endif
 
     guobj = gi_gvalue_to_scm_basic_type (value, fundamental, &handled);
     if (!handled)
-    guobj = gi_gvalue_to_scm_structured_type (value, fundamental, copy_boxed);
+        guobj = gi_gvalue_to_scm_structured_type (value, fundamental, copy_boxed);
     return guobj;
 }
 
@@ -646,21 +661,21 @@ scm_gvalue_set_x (SCM self, SCM x)
     GValue *val;
 
     if (!SCM_IS_A_P (self, gi_gvalue_type))
-    scm_wrong_type_arg_msg ("gvalue-set!",
-                SCM_ARG1,
-                self,
-                "GValue");
+        scm_wrong_type_arg_msg ("gvalue-set!",
+                                SCM_ARG1,
+                                self,
+                                "GValue");
 
     val = gi_gvalue_get_value (self);
     if (val) {
-    int err = gi_gvalue_from_scm_with_error (val, x);
-    if (err == GI_GVALUE_WRONG_TYPE)
-        scm_wrong_type_arg_msg ("gvalue-set!",
-                    SCM_ARG2,
-                    x,
-                    G_VALUE_TYPE_NAME (val));
-    else if (err == GI_GVALUE_OUT_OF_RANGE)
-        scm_out_of_range_pos ("gvalue-set!", x, scm_from_int(2));
+        int err = gi_gvalue_from_scm_with_error (val, x);
+        if (err == GI_GVALUE_WRONG_TYPE)
+            scm_wrong_type_arg_msg ("gvalue-set!",
+                                    SCM_ARG2,
+                                    x,
+                                    G_VALUE_TYPE_NAME (val));
+        else if (err == GI_GVALUE_OUT_OF_RANGE)
+            scm_out_of_range_pos ("gvalue-set!", x, scm_from_int(2));
     }
     return SCM_UNSPECIFIED;
 }
@@ -697,18 +712,18 @@ scm_gvalue_type_name (SCM self)
     const gchar *name;
 
     if (!SCM_IS_A_P (self, gi_gvalue_type))
-    scm_wrong_type_arg_msg ("gvalue-type-name",
-                SCM_ARG1,
-                self,
-                "GValue");
+        scm_wrong_type_arg_msg ("gvalue-type-name",
+                                SCM_ARG1,
+                                self,
+                                "GValue");
 
     val = gi_gvalue_get_value (self);
     if (val) {
-    name = G_VALUE_TYPE_NAME (val);
-    if (name)
-        return scm_from_utf8_string (name);
-    else
-        return scm_from_utf8_string ("(unknown)");
+        name = G_VALUE_TYPE_NAME (val);
+        if (name)
+            return scm_from_utf8_string (name);
+        else
+            return scm_from_utf8_string ("(unknown)");
     }
     g_return_val_if_reached (SCM_BOOL_F);
 }
@@ -720,10 +735,10 @@ scm_gvalue_to_gtype (SCM self)
     GType type;
 
     if (!SCM_IS_A_P (self, gi_gvalue_type))
-    scm_wrong_type_arg_msg ("gvalue->gtype",
-                            SCM_ARG1,
-                            self,
-                            "GValue");
+        scm_wrong_type_arg_msg ("gvalue->gtype",
+                                SCM_ARG1,
+                                self,
+                                "GValue");
 
     val = gi_gvalue_get_value (self);
     if (val)
@@ -743,16 +758,16 @@ scm_gvalue_holds_p(SCM self, SCM gtype)
     gboolean ret;
 
     if (!SCM_IS_A_P (self, gi_gvalue_type))
-    scm_wrong_type_arg_msg ("gvalue-holds?",
-                SCM_ARG1,
-                self,
-                "GValue");
+        scm_wrong_type_arg_msg ("gvalue-holds?",
+                                SCM_ARG1,
+                                self,
+                                "GValue");
 
     val = gi_gvalue_get_value (self);
     type = scm_to_size_t (gtype);
     if (val) {
-    ret = G_VALUE_HOLDS (val, type);
-    return scm_from_bool (ret);
+        ret = G_VALUE_HOLDS (val, type);
+        return scm_from_bool (ret);
     }
     return SCM_BOOL_F;
 }
@@ -766,8 +781,8 @@ scm_gvalue_valid_p (SCM self)
     scm_assert_foreign_object_type (gi_gvalue_type, self);
     val = gi_gvalue_get_value (self);
     if (val) {
-    ret = G_IS_VALUE (val);
-    return scm_from_bool (ret);
+        ret = G_IS_VALUE (val);
+        return scm_from_bool (ret);
     }
     return SCM_BOOL_F;
 }
@@ -786,9 +801,9 @@ gi_init_gvalue (void)
     scm_c_define_gsubr ("gvalue-valid?", 1, 0, 0, scm_gvalue_valid_p);
 
     scm_c_export ("make-gvalue",
-          "gvalue-type-name",
-          "gvalue->gtype",
-          "gvalue-holds?",
-          "gvalue-valid?",
-          NULL);
+                  "gvalue-type-name",
+                  "gvalue->gtype",
+                  "gvalue-holds?",
+                  "gvalue-valid?",
+                  NULL);
 }
