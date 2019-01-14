@@ -146,8 +146,12 @@ libguile_gi_la_LIBADD = \
 
 ################################################################
 
+pkgguilesitedir=$(guilesitedir)/gi
+
 dist_guilesite_DATA = \
-  gi.scm gi/glib-2.scm gi/gtk-3.scm gi/gio-2.scm
+  gi.scm
+
+dist_pkgguilesite_DATA = gi/glib-2.scm gi/gtk-3.scm gi/gio-2.scm gi/webkit2-4.scm
 
 guileobject_DATA = $(guilesite_DATA:%.scm=%.go)
 
