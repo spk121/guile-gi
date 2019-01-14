@@ -307,10 +307,10 @@ static void gir_function_binding(ffi_cif *cif, void *ret, void **ffi_args,
     // a single return value or as aa plain list.  (maybe values list instead?). */
     GITypeInfo *return_typeinfo = g_callable_info_get_return_type(gfn->function_info);
     SCM s_return = gi_giargument_convert_return_val_to_object(&return_arg,
-        return_typeinfo,
-        g_callable_info_get_caller_owns(gfn->function_info),
-        g_callable_info_may_return_null(gfn->function_info),
-        g_callable_info_skip_return(gfn->function_info));
+                                                              return_typeinfo,
+                                                              g_callable_info_get_caller_owns(gfn->function_info),
+                                                              g_callable_info_may_return_null(gfn->function_info),
+                                                              g_callable_info_skip_return(gfn->function_info));
     g_base_info_unref(return_typeinfo);
     SCM output;
     if (scm_is_eq(s_return, SCM_UNSPECIFIED))

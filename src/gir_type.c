@@ -177,6 +177,9 @@ gir_type_make_object(GType gtype, gpointer obj, GITransfer transfer)
     g_assert (GSIZE_TO_POINTER(gtype) != NULL);
     g_assert (obj != NULL);
 
+    if (gtype == G_TYPE_OBJECT)
+        gtype = G_OBJECT_TYPE(obj);
+
     gpointer scm_ptr = g_hash_table_lookup (gir_type_gtype_hash,
                                             GSIZE_TO_POINTER(gtype));
 
