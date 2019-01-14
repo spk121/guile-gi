@@ -476,7 +476,9 @@ gi_giargument_describe_arg_in(GIArgInfo *arg_info)
 GIArgumentStatus
 gi_giargument_convert_return_type_object_to_arg(SCM obj,
                                                 GITypeInfo *type_info,
-                                                GITransfer transfer, gboolean null_ok, gboolean skip,
+                                                GITransfer transfer,
+                                                gboolean null_ok,
+                                                gboolean skip,
                                                 GIArgument *arg)
 {
     GIArgumentStatus ret = GI_GIARGUMENT_ERROR;
@@ -1466,12 +1468,14 @@ gi_giargument_convert_arg_to_object(GIArgument *arg, GIArgInfo *arg_info, SCM *o
 
 SCM gi_giargument_convert_return_val_to_object(GIArgument *arg,
                                                GITypeInfo *type_info,
-                                               GITransfer transfer, gboolean null_ok, gboolean skip)
+                                               GITransfer transfer,
+                                               gboolean null_ok,
+                                               gboolean skip)
 {
     SCM obj = SCM_BOOL_F;
 
-    if (skip)
-        return SCM_UNSPECIFIED;
+    /* if (skip) */
+    /*     return SCM_UNSPECIFIED; */
     if (null_ok && arg->v_pointer == NULL)
         return SCM_BOOL_F;
 
