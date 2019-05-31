@@ -68,7 +68,7 @@ case "x$with_gnu_filesystem_hierarchy" in
        # Follow the GNU Filesystem Heirarchy Standard correctly
        # Installed .scm scheme libraries go here
        AC_MSG_CHECKING([Guile site directory])
-       guilesitedir="\$(datadir)/guile/site/$guile_effective_version"
+       guilesitedir="\${datadir}/guile/site/$guile_effective_version"
        AC_MSG_RESULT([$guilesitedir])
        AC_SUBST(guilesitedir)
 
@@ -207,4 +207,5 @@ AC_CONFIG_FILES([tools/uninstalled-env], [chmod +x tools/uninstalled-env])
 AC_CONFIG_FILES([tools/run-guile], [chmod +x tools/run-guile])
 AC_CONFIG_FILES([tools/gdb-guile], [chmod +x tools/gdb-guile])
 AC_CONFIG_FILES([tools/gdb-test], [chmod +x tools/gdb-test])
+AC_CONFIG_FILES([tools/guile-gi], [chmod +x tools/guile-gi])
 AC_OUTPUT

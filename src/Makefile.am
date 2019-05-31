@@ -147,25 +147,26 @@ libguile_gi_la_LIBADD = \
 ################################################################
 
 pkgguilesitedir=$(guilesitedir)/gi
+pkgguileobjectdir=$(guileobjectdir)/gi
 
 dist_guilesite_DATA = \
   gi.scm
 
 dist_pkgguilesite_DATA = gi/glib-2.scm gi/gtk-3.scm gi/gio-2.scm gi/webkit2-4.scm
 
-guileobject_DATA = $(guilesite_DATA:%.scm=%.go)
+pkgguileobject_DATA = $(dist_guilesite_DATA:%.scm=%.go) $(dist_pkgguilesite_DATA:%.scm=%.go)
 
 $(pkgguileobject_DATA): libguile-gi.la
 
-GUILEC_FLAGS = -Warity-mismatch -Wformat
+GUILEC_FLAGS = -Warity-mismatch -Wformat --load-path=$(PWD)
 
 .scm.go:
 	GUILE_AUTO_COMPILE=0 \
 	LTDL_LIBRARY_PATH=$(abs_builddir)/.libs \
-	$(GUILE) compile --target="$(host)" $(GUILEC_FLAGS) \
+	$(GUILE_TOOLS) compile --target="$(host)" $(GUILEC_FLAGS) \
 	-o "$@" "$<"
 
-CLEANFILES = $(guileobject_DATA) $(BUILT_SOURCES)
+CLEANFILES = $(pkgguileobject_DATA) $(BUILT_SOURCES)
 
 ################################################################
 # FLYMAKE
@@ -175,5 +176,3 @@ check-syntax:
 	$(CC) -std=c11 $(GUILE_CFLAGS) $(GLIB_CFLAGS) $(GOBJECT_CFLAGS) \
 	 $(GOBJECT_INTROSPECTION_CFLAGS) $(FFI_CFLAGS) \
 	 -DG_LOG_DOMAIN=\"GuileGI\" $(CFLAGS) -fsyntax-only $(CHK_SOURCES)
-
-
