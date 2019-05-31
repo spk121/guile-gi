@@ -36,6 +36,9 @@ TESTS = \
  bytes_new_null_size.scm \
  bytes_new_null_contents.scm
 
+XFAIL_TESTS = \
+ bytes_new_null_size.scm
+
 SCM_LOG_COMPILER = \
   ${top_builddir}/libtool \
   --dlopen=${top_builddir}/src/libguile-gi.la \

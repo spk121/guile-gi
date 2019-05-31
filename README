@@ -21,3 +21,9 @@ box, but, you can use this library to generate those bindings
 automatically.
 
 For the moment, the docs are at https://spk121.github.io/guile-gi/
+
+Try:
+
+    guix environment --ad-hoc -l guix.scm guile
+    guile-gi test/example-1.scm
+    guile-gi test/browser.scm

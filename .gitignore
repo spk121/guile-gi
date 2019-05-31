@@ -68,6 +68,7 @@ tools/gdb-test
 tools/uninstalled-env
 tools/gdb-guile
 tools/run-guile
+tools/guile-gi
 
 # executables
 fo_gen
