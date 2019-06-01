@@ -27,3 +27,10 @@ Try:
     guix environment --ad-hoc -l guix.scm guile
     guile-gi test/example-1.scm
     guile-gi test/browser.scm
+
+Or, create and run in a development environment
+
+    guix environment -l guix.scm
+    ./bootstrap && ./configure && make
+    tools/uninstalled-env tools/guile-gi test/browser.scm
+    tools/uninstalled-env tools/guile-gi test/editor.scm
