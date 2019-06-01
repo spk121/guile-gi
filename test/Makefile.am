@@ -34,7 +34,8 @@ TESTS = \
  byte_array_new.scm \
  byte_array_new_take.scm \
  bytes_new_null_size.scm \
- bytes_new_null_contents.scm
+ bytes_new_null_contents.scm \
+ gapplication_1.scm
 
 SCM_LOG_COMPILER = \
   ${top_builddir}/libtool \
