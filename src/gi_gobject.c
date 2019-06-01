@@ -806,9 +806,9 @@ scm_make_gobject (SCM s_gtype, SCM s_prop_alist)
                                     SCM_F_WIND_EXPLICITLY);
 
         n_prop = scm_to_int (scm_length (s_prop_alist));
-        keys = malloc (sizeof (char *) * n_prop);
+        keys = calloc (n_prop, sizeof (char *));
         SCM_DYNWIND_OR_BUST ("make-gobject", keys);
-        values = malloc (sizeof (GValue) * n_prop);
+        values = calloc (n_prop, sizeof (GValue));
         SCM_DYNWIND_OR_BUST ("make-gobject", values);
 
         for (guint i = 0; i < n_prop; i++) {
@@ -880,6 +880,10 @@ scm_make_gobject (SCM s_gtype, SCM s_prop_alist)
                 else if (G_IS_PARAM_SPEC_FLAGS (pspec)) {
                     g_value_init (value, G_TYPE_FLAGS);
                     g_value_set_flags (value, scm_to_ulong (scm_cdr (entry)));
+                }
+                else if (G_IS_PARAM_SPEC_STRING (pspec)) {
+                    g_value_init (value, G_TYPE_STRING);
+                    g_value_set_string (value, scm_to_utf8_string (scm_cdr (entry)));
                 }
                 else
                     scm_misc_error ("make-gobject",
