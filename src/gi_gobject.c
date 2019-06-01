@@ -801,8 +801,9 @@ scm_make_gobject (SCM s_gtype, SCM s_prop_alist)
     scm_dynwind_begin (0);
 
     if (scm_is_true (scm_list_p (s_prop_alist))) {
-        class = g_type_class_peek (type);
-        g_assert (class);
+        class = g_type_class_ref (type);
+        scm_dynwind_unwind_handler (g_type_class_unref, class,
+                                    SCM_F_WIND_EXPLICITLY);
 
         n_prop = scm_to_int (scm_length (s_prop_alist));
         keys = malloc (sizeof (char *) * n_prop);
