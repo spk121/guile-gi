@@ -15,15 +15,15 @@
 ;;  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 (use-modules (gi)
-	     (gi glib-2)
+             (gi glib-2)
              (test automake-test-lib))
 
 (setlocale LC_ALL "C")
 (automake-test
  (begin
    (let* ((self (Bytes-new #f 0))
-	  (siz (call-method self "get-size")))
+          (siz (call-method self "get-size")))
      (format #t "New Byte Array: ~S~%" self)
      (format #t "Size: ~S~%" siz)
-     (and (Bytes? self)
-	  (equal? 0 siz)))))
+     (and (GBytes? self)
+          (equal? 0 siz)))))
