@@ -91,8 +91,6 @@ libguile_gi_la_SOURCES = \
  gi_gparamspec.h \
  gi_gsignal.c \
  gi_gsignal.h \
- gi_gstruct.c \
- gi_gstruct.h \
  gi_gvalue.c \
  gi_gvalue.h \
  gi_signal_closure.c \
@@ -175,5 +173,3 @@ check-syntax:
 	$(CC) -std=c11 $(GUILE_CFLAGS) $(GLIB_CFLAGS) $(GOBJECT_CFLAGS) \
 	 $(GOBJECT_INTROSPECTION_CFLAGS) $(FFI_CFLAGS) \
 	 -DG_LOG_DOMAIN=\"GuileGI\" $(CFLAGS) -fsyntax-only $(CHK_SOURCES)
-
-

@@ -16,17 +16,14 @@
 #include <glib.h>
 #include <girepository.h>
 #include <libguile.h>
-#include "gi_gtype.h"
 #include "gi_gobject.h"
 #include "gi_basictype.h"
 #include <math.h>
 #include "gi_gvalue.h"
 #include "gir_typelib.h"
 #include "gir_type.h"
-#include "gi_gstruct.h"
 #include "gi_giargument.h"
 #include "gi_gboxed.h"
-#include "gi_gstruct.h"
 #include "gir_callback.h"
 
 #ifndef FLT_MAX
@@ -81,7 +78,7 @@ arg_struct_to_scm(GIArgument *arg,
                   gboolean is_allocated,
                   gboolean is_foreign,
                   SCM obj);
-#endif                  
+#endif
 
 static int
 TYPE_TAG_IS_EXACT_INTEGER(GITypeTag x)
@@ -3854,7 +3851,7 @@ scm_box(SCM sym, SCM val)
     boxes[label[0]-'A'] = val;
     return scm_from_pointer(&(boxes[label[0]-'A']), NULL);
 }
-		       
+
 
 void gi_init_giargument(void)
 {
@@ -3862,7 +3859,7 @@ void gi_init_giargument(void)
 
     for (int i = 0; i < 26; i ++)
 	boxes[i] = SCM_UNSPECIFIED;
-    
+
     SCONSTX(GI_TYPE_TAG_VOID);
     SCONSTX(GI_TYPE_TAG_BOOLEAN);
     SCONSTX(GI_TYPE_TAG_INT8);

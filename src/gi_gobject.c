@@ -14,7 +14,6 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "gi_gobject.h"
 #include "gi_gvalue.h"
-#include "gi_gtype.h"
 #include "gi_gsignal.h"
 #include "gi_gparamspec.h"
 #include "gi_ginterface.h"
@@ -23,7 +22,6 @@
 #include "gir_func.h"
 #include "gir_typelib.h"
 #include "gir_type.h"
-#include "gi_gstruct.h"
 #include <glib-object.h>
 #include <glib.h>
 #include <girepository.h>
