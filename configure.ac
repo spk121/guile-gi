@@ -175,12 +175,23 @@ m4_define([compiler_flags_common],[ dnl
 
 AC_ARG_ENABLE([hardening],
             [AS_HELP_STRING([--enable-hardening],
-                            [Compile with common hardening flags])])
+                            [compile with common hardening flags])])
 case "x$enable_hardening" in
      xyes)
      CC_CHECK_CFLAGS_APPEND([compiler_flags_common])
      ;;
 esac
+
+AC_ARG_ENABLE([reverse-hash],
+            [AS_HELP_STRING([--enable-reverse-hash],
+                            [have reverse type lookup hash])])
+case "x$enable_reverse_hash" in
+     xyes)
+     AC_DEFINE([ENABLE_GIR_TYPE_SCM_HASH], [1],
+               [Define if SCM to GType hash is enabled.])
+     ;;
+esac
+
 
 ################
 # Check for C library functions
