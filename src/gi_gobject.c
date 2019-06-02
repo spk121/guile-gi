@@ -807,6 +807,11 @@ scm_make_gobject (SCM s_gtype, SCM s_prop_alist)
                      "typeid derived from G_TYPE_OBJECT or "
                      "scheme type derived from <GObject>");
 
+    if (scm_is_false (gir_type_get_scheme_type (type)))
+        scm_misc_error ("make-gobject",
+                        "type ~S lacks introspection",
+                        scm_list_1 (s_gtype));
+
     scm_dynwind_begin (0);
 
     if (scm_is_true (scm_list_p (s_prop_alist))) {
@@ -917,14 +922,8 @@ scm_make_gobject (SCM s_gtype, SCM s_prop_alist)
         sobj = SCM_PACK_POINTER (ptr);
     else {
         sobj = gir_type_make_object (type, obj, GI_TRANSFER_EVERYTHING);
-        if (scm_is_true (sobj))
-            g_object_set_qdata (G_OBJECT (obj), gi_gobject_wrapper_key,
+        g_object_set_qdata (G_OBJECT (obj), gi_gobject_wrapper_key,
                                 SCM_UNPACK_POINTER (sobj));
-        else {
-            g_warning ("attempted to create object of unknown scheme type");
-            g_object_unref (obj);
-            return sobj;
-        }
     }
 
     g_assert (scm_foreign_object_ref (sobj, OBJ_SLOT) == obj);

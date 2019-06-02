@@ -393,6 +393,15 @@ static void gir_type_free_types (void)
 #endif
 }
 
+SCM
+gir_type_get_scheme_type (GType gtype)
+{
+    gpointer *scm_ptr = g_hash_table_lookup(gir_type_gtype_hash, GSIZE_TO_POINTER(gtype));
+    if (scm_ptr)
+        return SCM_PACK_POINTER(scm_ptr);
+    return SCM_BOOL_F;
+}
+
 ////////////////////////////////////////////////////////////////
 // GUILE API
 
@@ -416,11 +425,7 @@ scm_type_gtype_get_scheme_type(SCM s_gtype)
 {
     SCM_ASSERT_TYPE(scm_is_integer(s_gtype), s_gtype, SCM_ARG1, "gtype-get-scheme-type", "integer");
     GType type = scm_to_uintptr_t(s_gtype);
-
-    gpointer *scm_ptr = g_hash_table_lookup(gir_type_gtype_hash, GSIZE_TO_POINTER(type));
-    if (scm_ptr)
-        return SCM_PACK_POINTER(scm_ptr);
-    return SCM_BOOL_F;
+    return gir_type_get_scheme_type (type);
 }
 
 // Given an integer that is a GType, this returns a Guile string of

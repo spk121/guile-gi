@@ -29,6 +29,7 @@
 void gir_type_register(GType gtype);
 void gir_type_define(GType gtype);
 GType gir_type_get_gtype_from_obj(SCM x);
+SCM gir_type_get_scheme_type(GType gtype);
 SCM  gir_type_make_object(GType gtype, gpointer obj, GITransfer transfer);
 void gir_init_types(void);
 
