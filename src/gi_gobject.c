@@ -772,14 +772,18 @@ scm_register_guile_specified_gobject_type (SCM s_type_name,
     return scm_from_size_t (new_type);
 }
 
-#define SCM_DYNWIND_OR_BUST(subr, mem)          \
-    do {                                        \
-        if (mem) scm_dynwind_free (mem);        \
-        else {                                  \
-            errno = ENOMEM;                     \
-            scm_syserror (subr);                \
-        }                                       \
-    } while (0)
+static void*
+scm_dynwind_or_bust (char *subr, void *mem)
+{
+    if (mem)
+        scm_dynwind_free (mem);
+    else
+    {
+        errno = ENOMEM;
+        scm_syserror (subr);
+    }
+    return mem;
+}
 
 static SCM
 scm_make_gobject (SCM s_gtype, SCM s_prop_alist)
@@ -811,10 +815,10 @@ scm_make_gobject (SCM s_gtype, SCM s_prop_alist)
                                     SCM_F_WIND_EXPLICITLY);
 
         n_prop = scm_to_int (scm_length (s_prop_alist));
-        keys = calloc (n_prop, sizeof (char *));
-        SCM_DYNWIND_OR_BUST ("make-gobject", keys);
-        values = calloc (n_prop, sizeof (GValue));
-        SCM_DYNWIND_OR_BUST ("make-gobject", values);
+        keys = scm_dynwind_or_bust ("make-gobject",
+                                    calloc (n_prop, sizeof (char *)));
+        values = scm_dynwind_or_bust ("make-gobject",
+                                      calloc (n_prop, sizeof (GValue)));
 
         for (guint i = 0; i < n_prop; i++) {
             SCM entry = scm_list_ref (s_prop_alist, scm_from_uint (i));
@@ -827,9 +831,8 @@ scm_make_gobject (SCM s_gtype, SCM s_prop_alist)
                              s_prop_alist, SCM_ARG2,
                              "make-gobject", "alist of strings to objects");
 
-            char* key = scm_to_utf8_string (scm_car (entry));
-            SCM_DYNWIND_OR_BUST ("make-gobject", key);
-            keys[i] = key;
+            keys[i] = scm_dynwind_or_bust ("make-gobject",
+                                           scm_to_utf8_string (scm_car (entry)));
             GParamSpec *pspec = g_object_class_find_property (class, keys[i]);
             if (!pspec) {
                 scm_misc_error ("make-gobject",
@@ -1703,7 +1706,8 @@ scm_gobject_set_property_x (SCM self, SCM sname, SCM sval)
     char *name;
     GParamSpec *pspec;
 
-    scm_assert_foreign_object_type (gi_gobject_type, self);
+    SCM_ASSERT (G_TYPE_IS_CLASSED (gir_type_get_gtype_from_obj (self)),
+                self, SCM_ARG1, "gobject-set-property!");
     SCM_ASSERT (scm_is_string (sname), sname, SCM_ARG2, "gobject-set-property!");
 
     obj = gi_gobject_get_obj (self);
@@ -1777,7 +1781,8 @@ scm_gobject_get_property (SCM self, SCM sname)
     char *param_name;
     SCM ret;
 
-    scm_assert_foreign_object_type (gi_gobject_type, self);
+    SCM_ASSERT (G_TYPE_IS_CLASSED (gir_type_get_gtype_from_obj (self)),
+                self, SCM_ARG1, "gobject-get-property");
     SCM_ASSERT (scm_is_string (sname), sname, SCM_ARG2, "gobject-get-property");
     param_name = scm_to_utf8_string (sname);
 
