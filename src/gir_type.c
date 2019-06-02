@@ -17,6 +17,9 @@
 #include <girepository.h>
 #include <ffi.h>
 #include "gir_type.h"
+#if HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 // In C, a GType is an integer.  It is an integer ID that maps to a
 // type of GObject.
@@ -80,6 +83,10 @@
 
 // Maps GType to SCM (pointer)
 GHashTable *gir_type_gtype_hash = NULL;
+#if ENABLE_GIR_TYPE_SCM_HASH
+// Maps SCM to GType
+GHashTable *gir_type_scm_hash = NULL;
+#endif
 
 // Holds for foreign function info for predicates
 GSList *gir_type_predicates_list = NULL;
@@ -115,7 +122,6 @@ gir_type_register(GType gtype)
     {
         g_hash_table_insert(gir_type_gtype_hash, GSIZE_TO_POINTER(gtype), NULL);
         g_debug("Registering a new GType: %zu -> %s", gtype, g_type_name(gtype));
-
     }
 }
 
@@ -154,8 +160,19 @@ gir_type_define(GType gtype)
             g_debug("Creating a new GType foreign object type: %zu -> %s aka %s", gtype, type_class_name, g_type_name(gtype));
         else
             g_debug("Updating a GType foreign object type: %zu -> %s aka %s", gtype, type_class_name, g_type_name(gtype));
+#if ENABLE_GIR_TYPE_SCM_HASH
+        g_hash_table_insert (gir_type_scm_hash,
+                             SCM_UNPACK_POINTER (fo_type),
+                             GSIZE_TO_POINTER (gtype));
+#endif
+
         g_free(type_class_name);
-        g_debug("Hash table size %d", g_hash_table_size(gir_type_gtype_hash));
+#if ENABLE_GIR_TYPE_SCM_HASH
+        g_debug ("Hash table sizes %d %d", g_hash_table_size(gir_type_gtype_hash),
+                 g_hash_table_size (gir_type_scm_hash));
+#else
+        g_debug ("Hash table size %d", g_hash_table_size(gir_type_gtype_hash));
+#endif
 
         gchar *predicate_name = g_strdup_printf("%s?", g_type_name(gtype));
         gpointer func = gir_type_create_predicate(predicate_name, fo_type);
@@ -318,6 +335,16 @@ static void gir_type_predicate_binding(ffi_cif *cif, void *ret, void **ffi_args,
 GType
 gir_type_get_gtype_from_obj(SCM x)
 {
+#if ENABLE_GIR_TYPE_SCM_HASH
+    gpointer value;
+    if ((value = g_hash_table_lookup (gir_type_scm_hash,
+                                      SCM_PACK_POINTER (x))))
+        return GPOINTER_TO_SIZE (value);
+    else if (SCM_INSTANCEP (x) &&
+             (value = g_hash_table_lookup (gir_type_scm_hash,
+                                           SCM_PACK_POINTER (SCM_CLASS_OF (x)))))
+        return GPOINTER_TO_SIZE (value);
+#else
     SCM klass;
     if (SCM_INSTANCEP (x))
         klass = SCM_CLASS_OF (x);
@@ -334,6 +361,7 @@ gir_type_get_gtype_from_obj(SCM x)
             || scm_is_eq(x, SCM_UNPACK_POINTER(value)))
             return GPOINTER_TO_SIZE(key);
     }
+#endif
 
     return G_TYPE_INVALID;
 }
@@ -360,6 +388,9 @@ static void gir_type_free_types (void)
 {
     g_debug ("Freeing gtype hash table");
     g_hash_table_remove_all (gir_type_gtype_hash);
+#if ENABLE_GIR_TYPE_SCM_HASH
+    g_hash_table_remove_all (gir_type_scm_hash);
+#endif
 }
 
 ////////////////////////////////////////////////////////////////
@@ -371,22 +402,11 @@ static void gir_type_free_types (void)
 static SCM
 scm_type_get_gtype(SCM x)
 {
-    SCM klass;
-    if (SCM_INSTANCEP (x))
-        klass = SCM_CLASS_OF (x);
+    GType type = gir_type_get_gtype_from_obj (x);
+    if (type != G_TYPE_INVALID)
+        return scm_from_size_t (type);
     else
-        klass = x;
-
-    GHashTableIter iter;
-    gpointer key, value;
-
-    g_hash_table_iter_init (&iter, gir_type_gtype_hash);
-    while (g_hash_table_iter_next (&iter, &key, &value))
-    {
-        if (value == SCM_UNPACK_POINTER(x))
-            return scm_from_size_t(GPOINTER_TO_SIZE(key));
-    }
-    return SCM_BOOL_F;
+        return SCM_BOOL_F;
 }
 
 // Given an integer that is a GType, this returns an associated Guile
@@ -618,6 +638,9 @@ void gir_init_types(void)
 {
 
     gir_type_gtype_hash = g_hash_table_new(g_direct_hash, g_direct_equal);
+#if ENABLE_GIR_TYPE_SCM_HASH
+    gir_type_scm_hash = g_hash_table_new(g_direct_hash, g_direct_equal);
+#endif
 
 #ifdef GIR_FREE_MEMORY
     atexit (gir_type_free_predicates);
