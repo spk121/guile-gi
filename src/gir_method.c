@@ -18,7 +18,6 @@
 #include "gir_method.h"
 #include "gir_function.h"
 #include "gi_gobject.h"
-#include "gi_gstruct.h"
 #include "gi_giargument.h"
 #include "gir_type.h"
 
@@ -196,7 +195,7 @@ gir_method_lookup_full(SCM s_object, SCM s_method_name)
     char *name1, *name2;
     char *token = ":";
     GICallableInfo *info;
-    
+
     name1 = strtok(method_name, token);
     name2 = strtok(NULL, token);
     if (name2 == NULL)

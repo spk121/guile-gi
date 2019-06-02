@@ -1,6 +1,5 @@
 /* -*- Mode: C; c-basic-offset: 4 -*- */
 #include "gi_gsignal.h"
-#include "gi_gtype.h"
 
 SignalSpec *gi_signalspec_from_obj (SCM obj)
 {
@@ -44,7 +43,7 @@ gi_free_signalspec (SignalSpec *spec)
 	g_free (spec);
     }
 }
-    
+
 void
 gi_init_gsignal (void)
 {

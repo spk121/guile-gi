@@ -91,8 +91,6 @@ libguile_gi_la_SOURCES = \
  gi_gparamspec.h \
  gi_gsignal.c \
  gi_gsignal.h \
- gi_gstruct.c \
- gi_gstruct.h \
  gi_gvalue.c \
  gi_gvalue.h \
  gi_signal_closure.c \

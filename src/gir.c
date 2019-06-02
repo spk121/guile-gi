@@ -29,7 +29,6 @@
 #include "gir_func.h"
 #include "gir_typelib.h"
 #include "gir_type.h"
-#include "gi_gstruct.h"
 #include "gir_callback.h"
 #include "gir_function.h"
 #include "gir_method.h"

@@ -21,8 +21,6 @@
 #include "gir_typelib.h"
 #include "gir_function.h"
 #include "gi_gobject.h"
-#include "gi_gtype.h"
-#include "gi_gstruct.h"
 #include "gir_method.h"
 #include "gir_constant.h"
 #include "gir_flag.h"
