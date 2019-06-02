@@ -795,8 +795,15 @@ scm_make_gobject (SCM s_gtype, SCM s_prop_alist)
     const char **keys;
     GValue *values;
 
-    type = scm_to_size_t (s_gtype);
-    g_assert (G_TYPE_IS_CLASSED (type));
+    if (scm_is_integer (s_gtype))
+        type = scm_to_size_t (s_gtype);
+    else
+        type = gir_type_get_gtype_from_obj (s_gtype);
+
+    SCM_ASSERT_TYPE (G_TYPE_IS_CLASSED (type), s_gtype, SCM_ARG1,
+                     "make-gobject",
+                     "typeid derived from G_TYPE_OBJECT or "
+                     "scheme type derived from <GObject>");
 
     scm_dynwind_begin (0);
 

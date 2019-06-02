@@ -35,7 +35,9 @@ TESTS = \
  byte_array_new_take.scm \
  bytes_new_null_size.scm \
  bytes_new_null_contents.scm \
- gapplication_1.scm
+ gapplication_1.scm \
+ gapplication_2.scm \
+ softerror_create.scm
 
 SCM_LOG_COMPILER = \
   ${top_builddir}/libtool \
