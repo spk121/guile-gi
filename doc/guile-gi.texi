@@ -110,7 +110,7 @@ for dynamically creating procedures and types.
 When Guile-GI is used, it creates procedures, variables, and types
 according to the instructions in the @code{typelib} files.  These are
 created @emph{at runtime} when the Guile-GI procedure
-@code{import-typelib} is called.
+@code{typelib-load} is called.
 @end itemize
 
 First, for each GObject library that you want to use in your program,
@@ -121,25 +121,25 @@ take the following form.
 (define-module (gi gtk-3)
   #:use-module (gi))
 
-(load-typelib "Gtk" "3.0")
+(typelib-load "Gtk" "3.0")
 @end example
 
 Note that Guile-GI provides export libraries for the most common
 GObject libraries.  It includes @code{(gi gtk-3)}, @code{(gi gio-2)}, and @code{(gi glib-2)}, for example.
 
 For these auto-generated libraries, you are going to need some
-documentation. The procedure @code{document-typelib} creates some
+documentation. The procedure @code{typelib-document} creates some
 rough documentation for a @code{typelib}: it gives the procedure names
 and how they are called, plus a list of types and constants.  For
 example, the following commands would make some rough documentation
 for GTK and GIO.
 
 @example
-guile -L . -c '(use-modules (gi)) (display (document-typelib "Gtk" "3.0"))' > Gtk.txt
-guile -L . -c '(use-modules (gi)) (display (document-typelib "Gio" "2.0"))' > Gio.txt
+guile -L . -c '(use-modules (gi)) (display (typelib-document "Gtk" "3.0"))' > Gtk.txt
+guile -L . -c '(use-modules (gi)) (display (typelib-document "Gio" "2.0"))' > Gio.txt
 @end example
 
-@xref{Typelib Introspection} for more information about @code{load-typelib} and @code{document-typelib}.
+@xref{Typelib Introspection} for more information about @code{typelib-load} and @code{typelib-document}.
 
 A minimal GTK application looks like this
 
@@ -266,7 +266,7 @@ the foreign object type.
 While Guile is multi-threaded, applications using Guile-GI are not
 fully thread-safe.  Notably, applications using GTK or GLib's mainloop
 need all rendering and mainloop activities to occur in one thread.
-Also, all calls to @code{load-typelib} need to be made from the same
+Also, all calls to @code{typelib-load} need to be made from the same
 thread.
 
 @node Debugging and Profiling, Application Deployment, Threads and Concurrency, Tutorials
@@ -353,22 +353,22 @@ Given @var{directory}, a string representation of a filesystem
 directory, this prepends that directory to the typelib search path.
 
 If using this procedure in a script, it must be called before any
-calls to @code{load-typelib}.
+calls to @code{typelib-load}.
 @end deffn
 
-@deffn Procedure document-typelib namespace version
+@deffn Procedure typelib-document namespace version
 Given @var{namespace}, a string that names a typelib library, such as
 ``Gtk'' or ``GLib'', and @var{version}, a string that names a version
 of a typelib library, like ``2.0'' or ``3.0'', this procedure parses a
 typelib file and generates documentation of the Scheme procedures, types,
-and constants that will be provided by calling @code{load-typelib}.
+and constants that will be provided by calling @code{typelib-load}.
 The documentation is returned a a string.
 
 The procedure may throw an error if a typelib file corresponding to
 @var{namespace} and @var{version} cannot be found.
 @end deffn
 
-@deffn Procedure load-typelib namespace version
+@deffn Procedure typelib-load namespace version
 Given @var{namespace}, a string that names a typelib library, such as
 ``Gtk'' or ``GLib'', and @var{version}, a string that names a version
 of a typelib library, like ``2.0'' or ``3.0'', this procedure parses a
@@ -380,7 +380,7 @@ The procedure may throw an error if a typelib file corresponding to
 @end deffn
 
 @c @deffn Procedure load-typelib-full namespace version
-@c Like @code{load-typelib}, but it also loads any typelibs tagged as
+@c Like @code{typelib-load}, but it also loads any typelibs tagged as
 @c dependencies to the specified library.
 @c @end deffn
 
@@ -415,7 +415,7 @@ test if an object has that type.  The predicate has the form
 Each GObject struct, union, or object has a place in the GObject
 single-inheritance class structure.  A @code{RadioButton} is a type of
 @code{Button} is a type of @code{Widget}, for example.  If you wish to
-introspect a GObject's type, use @code{->gtype} and then use the GType
+introspect a GObject's type, use @code{get-gtype} and then use the GType
 procedures. @xref{GType}.
 
 @c @deffn Procedure gobject-get-pointer object
@@ -439,7 +439,7 @@ GObject has its own custom class structure.  The following procedures
 provide information about how a @code{<GType>} forms part of that
 class structure.
 
-@deffn Procedure ->gtype object
+@deffn Procedure get-gtype object
 Given @var{object}, a GObject struct, union, or object, this procedure
 returns its GObject type as a @code{<GType>}.
 

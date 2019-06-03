@@ -96,25 +96,25 @@ take the following form.
 <pre class="example">(define-module (gi gtk-3)
   #:use-module (gi))
 
-(load-typelib &quot;Gtk&quot; &quot;3.0&quot;)
+(typelib-load &quot;Gtk&quot; &quot;3.0&quot;)
 </pre></div>
 
 <p>Note that Guile-GI provides export libraries for the most common
 GObject libraries.  It includes <code>(gi gtk-3)</code>, <code>(gi gio-2)</code>, and <code>(gi glib-2)</code>, for example.
 </p>
 <p>For these auto-generated libraries, you are going to need some
-documentation. The procedure <code>document-typelib</code> creates some
+documentation. The procedure <code>typelib-document</code> creates some
 rough documentation for a <code>typelib</code>: it gives the procedure names
 and how they are called, plus a list of types and constants.  For
 example, the following commands would make some rough documentation
 for GTK and GIO.
 </p>
 <div class="example">
-<pre class="example">guile -L . -c '(use-modules (gi)) (display (document-typelib &quot;Gtk&quot; &quot;3.0&quot;))' &gt; Gtk.txt
-guile -L . -c '(use-modules (gi)) (display (document-typelib &quot;Gio&quot; &quot;2.0&quot;))' &gt; Gio.txt
+<pre class="example">guile -L . -c '(use-modules (gi)) (display (typelib-document &quot;Gtk&quot; &quot;3.0&quot;))' &gt; Gtk.txt
+guile -L . -c '(use-modules (gi)) (display (typelib-document &quot;Gio&quot; &quot;2.0&quot;))' &gt; Gio.txt
 </pre></div>
 
-<p>See <a href="Typelib-Introspection.html#Typelib-Introspection">Typelib Introspection</a> for more information about <code>load-typelib</code> and <code>document-typelib</code>.
+<p>See <a href="Typelib-Introspection.html#Typelib-Introspection">Typelib Introspection</a> for more information about <code>typelib-load</code> and <code>typelib-document</code>.
 </p>
 <p>A minimal GTK application looks like this
 </p>
