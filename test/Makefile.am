@@ -52,9 +52,13 @@ AM_SCM_LOG_FLAGS = --no-auto-compile -L $(abs_top_srcdir)/src -L $(abs_top_srcdi
 EXTRA_DIST = \
   $(TESTS) \
   lib.scm \
-  automake-test-lib.scm
+  automake-test-lib.scm \
+  example-1.scm \
+  browser.scm
 
 exampledir = $(datadir)/doc/guile-gi
 dist_example_DATA = \
   example-1.scm \
+  example-1b.scm \
+  example-1c.scm \
   browser.scm
