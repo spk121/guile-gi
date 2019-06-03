@@ -627,7 +627,8 @@ gi_gvalue_to_scm_structured_type (const GValue *value, GType fundamental,
     if (type_name == NULL) {
         type_name = "(null)";
     }
-    scm_misc_error ("??a", "unknown type ~S", scm_from_utf8_string (type_name));
+    scm_misc_error ("??a", "unknown type ~S",
+                    scm_list_1 (scm_from_utf8_string (type_name)));
     g_return_val_if_reached (SCM_BOOL_F);
 }
 
