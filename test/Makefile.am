@@ -50,4 +50,6 @@ EXTRA_DIST = \
   $(TESTS) \
   lib.scm \
   automake-test-lib.scm \
-  example-1.scm
+  example-1.scm \
+  example-1b.scm \
+  example-1c.scm
