@@ -88,16 +88,16 @@ the default typelib directory.
 directory, this prepends that directory to the typelib search path.
 </p>
 <p>If using this procedure in a script, it must be called before any
-calls to <code>load-typelib</code>.
+calls to <code>typelib-load</code>.
 </p></dd></dl>
 
 <dl>
-<dt><a name="index-document_002dtypelib"></a>Procedure: <strong>document-typelib</strong> <em>namespace version</em></dt>
+<dt><a name="index-document_002dtypelib"></a>Procedure: <strong>typelib-document</strong> <em>namespace version</em></dt>
 <dd><p>Given <var>namespace</var>, a string that names a typelib library, such as
 &ldquo;Gtk&rdquo; or &ldquo;GLib&rdquo;, and <var>version</var>, a string that names a version
 of a typelib library, like &ldquo;2.0&rdquo; or &ldquo;3.0&rdquo;, this procedure parses a
 typelib file and generates documentation of the Scheme procedures, types,
-and constants that will be provided by calling <code>load-typelib</code>.
+and constants that will be provided by calling <code>typelib-load</code>.
 The documentation is returned a a string.
 </p>
 <p>The procedure may throw an error if a typelib file corresponding to
@@ -105,7 +105,7 @@ The documentation is returned a a string.
 </p></dd></dl>
 
 <dl>
-<dt><a name="index-load_002dtypelib"></a>Procedure: <strong>load-typelib</strong> <em>namespace version</em></dt>
+<dt><a name="index-load_002dtypelib"></a>Procedure: <strong>typelib-load</strong> <em>namespace version</em></dt>
 <dd><p>Given <var>namespace</var>, a string that names a typelib library, such as
 &ldquo;Gtk&rdquo; or &ldquo;GLib&rdquo;, and <var>version</var>, a string that names a version
 of a typelib library, like &ldquo;2.0&rdquo; or &ldquo;3.0&rdquo;, this procedure parses a

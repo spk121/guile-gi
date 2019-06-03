@@ -69,7 +69,7 @@ Next: <a href="Debugging-and-Profiling.html#Debugging-and-Profiling" accesskey="
 <p>While Guile is multi-threaded, applications using Guile-GI are not
 fully thread-safe.  Notably, applications using GTK or GLib&rsquo;s mainloop
 need all rendering and mainloop activities to occur in one thread.
-Also, all calls to <code>load-typelib</code> need to be made from the same
+Also, all calls to <code>typelib-load</code> need to be made from the same
 thread.
 </p>
 
