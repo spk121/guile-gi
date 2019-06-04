@@ -197,7 +197,7 @@ scm_typelib_load(SCM s_namespace, SCM s_version)
             GType gtype = g_registered_type_info_get_g_type(info);
             if (gtype == G_TYPE_NONE)
             {
-                g_debug("Not loading union type '%s' because is has no GType",
+                g_debug("Not loading interface type '%s' because is has no GType",
                         g_base_info_get_name(info));
                 g_base_info_unref(info);
                 break;
@@ -233,7 +233,7 @@ scm_typelib_load(SCM s_namespace, SCM s_version)
             gint n_methods = g_union_info_get_n_methods(info);
             for (gint m = 0; m < n_methods; m++)
             {
-                GIFunctionInfo *func_info = g_object_info_get_method(info, m);
+                GIFunctionInfo *func_info = g_union_info_get_method(info, m);
                 if (g_function_info_get_flags(func_info) & GI_FUNCTION_IS_METHOD)
                     gir_method_table_insert(gtype, func_info);
                 else
