@@ -17,6 +17,7 @@
 #include "gir_type.h"
 #include "gir_xguile.h"
 #include "gi_gobject.h"
+#include "gir_type.h"
 
 #ifndef FLT_MAX
 #define FLT_MAX 3.402823466e+38F
@@ -551,6 +552,21 @@ gi_gvalue_to_scm_structured_type (const GValue *value, GType fundamental,
         /* break; */
     }
 
+    case G_TYPE_BOXED:
+    {
+        if (G_VALUE_HOLDS(value, G_TYPE_VALUE)) {
+            GValue *n_value = g_value_get_boxed (value);
+            return gi_gvalue_as_scm(n_value, copy_boxed);
+        } else if (G_VALUE_HOLDS(value, G_TYPE_GSTRING)) {
+            GString *string = (GString *) g_value_get_boxed(value);
+            return scm_from_utf8_stringn(string->str, string->len);
+        } else {
+            return gir_type_make_object(G_VALUE_TYPE(value),
+                                        g_value_get_boxed(value),
+                                        copy_boxed);
+        }
+    }
+
 #if 0
     case G_TYPE_BOXED: {
         PyGTypeMarshal *bm;
@@ -623,11 +639,10 @@ gi_gvalue_to_scm_structured_type (const GValue *value, GType fundamental,
     }
     }
 
-    char *type_name = g_type_name (G_VALUE_TYPE (value));
-    if (type_name == NULL) {
+    const char *type_name = g_type_name (G_VALUE_TYPE (value));
+    if (type_name == NULL)
         type_name = "(null)";
-    }
-    scm_misc_error ("??a", "unknown type ~S",
+    scm_misc_error ("gi_gvalue_to_scm", "unknown type ~S",
                     scm_list_1 (scm_from_utf8_string (type_name)));
     g_return_val_if_reached (SCM_BOOL_F);
 }
