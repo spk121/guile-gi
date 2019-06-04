@@ -16,6 +16,7 @@
 (use-modules (gi))
 
 (typelib-load "Gio" "2.0")
+(typelib-load "Gdk" "3.0")
 (typelib-load "Gtk" "3.0")
 (typelib-load "GLib" "2.0")
 (typelib-load "WebKit2" "4.0")
@@ -23,9 +24,8 @@
 (define (print-goodbye widget data)
   (display "Goodbye World\n"))
 
-(define (key-press widget event)
-  (display "key\n")
-  (format "key: ~s\n" event)
+(define (key-press widget event xtra)
+  (format #t "key: ~s\n" (send event (get-scancode)))
   #f)
 
 (define (activate app user-data)
@@ -44,8 +44,7 @@
     (connect button (clicked (lambda x
                                (send window (destroy)))
                              #f))
-    ;; disable this and we are `fine'
-    (connect editor (key-press-event key-press #f)) ;; BOOM
+    (connect editor (key-press-event key-press #f))
     (send editor (grab-focus))
     (send button-box (add button))
     (send window (show-all))))
