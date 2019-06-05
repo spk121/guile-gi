@@ -242,47 +242,16 @@ scm_call_method(SCM s_object, SCM s_method_name, SCM s_list_of_args)
             g_type_name(gir_type_get_gtype_from_obj(s_object)));
     free(args_str);
 
-    int n_input_args, n_output_args;
-    GIArgument *in_args, *out_args;
-    unsigned *in_args_free;
+    GObject *object = scm_foreign_object_ref(s_object, OBJ_SLOT);
 
-    gir_function_info_convert_args(info,
-                                   s_list_of_args,
-                                   &n_input_args,
-                                   &in_args,
-                                   &in_args_free,
-                                   &n_output_args,
-                                   &out_args);
-    scm_remember_upto_here_1(s_list_of_args);
-
-    // Need to prepend 'self' to the input arguments on a method call
-    in_args = g_realloc_n(in_args, n_input_args + 1, sizeof(GIArgument));
-    memmove(in_args + 1, in_args, sizeof(GIArgument) * n_input_args);
-
-    in_args[0].v_pointer = scm_foreign_object_ref(s_object, OBJ_SLOT);
-
-    GIArgument return_arg;
-
-    // Make the call.
     GError *err = NULL;
-    gboolean ret = g_function_info_invoke(info, in_args, n_input_args + 1,
-                                          out_args, n_output_args,
-                                          &return_arg, &err);
-    if (ret)
-        g_debug("Invoked method %s", method_name);
-    else
-        g_debug("Failed to invoke method %s", method_name);
-
-    // FIXME: Free any allocated input
-    // gir_function_info_release_args(info, in_args + 1);
-    g_free(in_args);
-    g_free(in_args_free);
-    in_args = NULL;
-    in_args_free = NULL;
+    SCM output = gir_function_invoke (method_name, info, object, s_list_of_args, &err);
 
     /* If there is a GError, write an error, free, and exit. */
-    if (!ret)
+    if (err)
     {
+        g_debug("Failed to invoke method %s", method_name);
+
         char str[256];
         memset(str, 0, 256);
         strncpy(str, err->message, 255);
@@ -295,33 +264,8 @@ scm_call_method(SCM s_object, SCM s_method_name, SCM s_list_of_args)
         return SCM_BOOL_F;
     }
 
-    // We've actually made a successful call.  Hooray! Convert the output
-    // arguments and return values into Scheme objects.  Free the
-    // C objects if necessary.  Return the output either as
-    // a single return value or as aa plain list.  (maybe values list instead?). */
-    GITypeInfo *return_typeinfo = g_callable_info_get_return_type(info);
-    SCM s_return = gi_giargument_convert_return_val_to_object(&return_arg,
-                                                              return_typeinfo,
-                                                              g_callable_info_get_caller_owns(info),
-                                                              g_callable_info_may_return_null(info),
-                                                              g_callable_info_skip_return(info));
-    g_base_info_unref(return_typeinfo);
-    SCM output;
-    if (scm_is_eq(s_return, SCM_UNSPECIFIED))
-        output = SCM_EOL;
-    else
-        output = scm_list_1(s_return);
+    g_debug("Invoked method %s", method_name);
 
-    SCM output2 = gir_function_info_convert_output_args(method_name, info, n_output_args, out_args);
-    output = scm_append(scm_list_2(output, output2));
-    g_free(out_args);
-    g_free(method_name);
-    int outlen = scm_to_int(scm_length(output));
-
-    if (outlen == 0)
-        return SCM_UNSPECIFIED;
-    if (outlen == 1)
-        return scm_car(output);
     return output;
 }
 
