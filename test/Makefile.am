@@ -39,6 +39,9 @@ TESTS = \
  main_loop_new.scm \
  main_loop_runs.scm \
  main_loop_quit.scm \
+ main_loop_get_context.scm \
+ main_loop_timeout.scm \
+ main_loop_idle.scm \
  byte_array_new.scm \
  byte_array_new_take.scm \
  bytes_new_null_size.scm \

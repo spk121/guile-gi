@@ -12,11 +12,10 @@
 
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https:;;www.gnu.org/licenses/>.
-(use-modules (gi))
-
-(typelib-load "Gio" "2.0")
-(typelib-load "Gtk" "3.0")
-(typelib-load "GLib" "2.0")
+(use-modules (gi)
+             (gi gio-2)
+             (gi gtk-3)
+             (gi glib-2))
 
 (define (print-hello widget data)
   (display "Hello World\n"))
