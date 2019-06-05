@@ -9,5 +9,6 @@ RUN apt-get update \
   guile-2.2-dev libtool texinfo autoconf automake gnulib
 
 ENV LANG C.UTF-8
+ENV GUILD /usr/bin/guild
 
 # CMD ["autoreconf -vif -Wall && ./configure --enable-hardening && make && make check"]
