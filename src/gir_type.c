@@ -357,8 +357,9 @@ gir_type_get_gtype_from_obj(SCM x)
     g_hash_table_iter_init (&iter, gir_type_gtype_hash);
     while (g_hash_table_iter_next (&iter, &key, &value))
     {
-        if (scm_is_eq(klass, SCM_UNPACK_POINTER(value))
-            || scm_is_eq(x, SCM_UNPACK_POINTER(value)))
+        SCM svalue = SCM_PACK_POINTER(value);
+        if (scm_is_eq(klass, svalue)
+            || scm_is_eq(x, svalue))
             return GPOINTER_TO_SIZE(key);
     }
 #endif
@@ -620,7 +621,7 @@ scm_type_dump_type_table(void)
         SCM fo_type;
 
         if (value)
-            fo_type = SCM_UNPACK_POINTER(value);
+            fo_type = SCM_PACK_POINTER(value);
         else
             fo_type = SCM_BOOL_F;
         entry = scm_list_3 (scm_from_size_t(key),

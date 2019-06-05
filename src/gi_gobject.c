@@ -562,7 +562,7 @@ init_instance(GTypeInstance *instance, gpointer class_ptr)
        the location in memory where the properties are stored. */
     obj = gir_type_make_object (type, instance, 0);
     inst_dict = scm_make_hash_table (scm_from_int (10));
-    scm_foreign_object_set_x(obj, INST_DICT_SLOT, inst_dict);
+    scm_foreign_object_set_x(obj, INST_DICT_SLOT, SCM_UNPACK_POINTER (inst_dict));
 
     /* We're using a hash table as the property variable store for
        this object. */
@@ -616,7 +616,7 @@ get_guile_specified_property (GObject *object, guint property_id,
 
     /* We're using a hash table as the property variable store for
        this object. */
-    inst_dict = scm_foreign_object_ref(obj, INST_DICT_SLOT);
+    inst_dict = SCM_PACK_POINTER (scm_foreign_object_ref(obj, INST_DICT_SLOT));
     svalue = scm_hash_ref (inst_dict,
                            scm_from_utf8_string (g_param_spec_get_name (pspec)),
                            SCM_BOOL_F);
@@ -645,7 +645,7 @@ set_guile_specified_property (GObject *object, guint property_id,
 
     /* We're using a hash table as the property variable store for
        this object. */
-    inst_dict = scm_foreign_object_ref (obj, INST_DICT_SLOT);
+    inst_dict = SCM_PACK_POINTER (scm_foreign_object_ref (obj, INST_DICT_SLOT));
     svalue = gi_gvalue_as_scm (value, TRUE);
     scm_hash_set_x (inst_dict,
                     scm_from_utf8_string (g_param_spec_get_name (pspec)),

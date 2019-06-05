@@ -37,7 +37,7 @@ TESTS = \
  bytes_new_null_contents.scm \
  gapplication_1.scm \
  gapplication_2.scm \
- softerror_create.scm
+ softerror_create.scm 
 
 SCM_LOG_COMPILER = \
   ${top_builddir}/libtool \
@@ -51,5 +51,11 @@ EXTRA_DIST = \
   lib.scm \
   automake-test-lib.scm \
   example-1.scm \
+  browser.scm
+
+exampledir = $(datadir)/doc/guile-gi
+dist_example_DATA = \
+  example-1.scm \
   example-1b.scm \
-  example-1c.scm
+  example-1c.scm \
+  browser.scm

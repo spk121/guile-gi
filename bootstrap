@@ -1,0 +1,6 @@
+#! /bin/sh
+
+# Create the build system.
+
+set -e -x
+exec autoreconf -vfi
