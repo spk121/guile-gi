@@ -31,6 +31,14 @@ noinst_DATA = lib.scm automake-test-lib.scm
 TESTS = \
  memchk_1.scm \
  memchk_2.scm \
+ MAXINT16.scm \
+ MAXUINT64.scm \
+ MAJOR_VERSION.scm \
+ DIR_SEPARATOR_S.scm \
+ atomic_int_set.scm \
+ main_loop_new.scm \
+ main_loop_runs.scm \
+ main_loop_quit.scm \
  byte_array_new.scm \
  byte_array_new_take.scm \
  bytes_new_null_size.scm \
@@ -38,6 +46,9 @@ TESTS = \
  gapplication_1.scm \
  gapplication_2.scm \
  softerror_create.scm 
+
+XFAIL_TESTS = \
+ atomic_int_set.scm
 
 SCM_LOG_COMPILER = \
   ${top_builddir}/libtool \
