@@ -36,7 +36,11 @@ BUILT_SOURCES = \
  __gi_gflags.h __gi_gflags.c \
  __gi_gobject.h __gi_gobject.c \
  __gi_gvalue.h __gi_gvalue.c \
- __gi_gparamspec.h __gi_gparamspec.c
+ __gi_gparamspec.h __gi_gparamspec.c \
+ __gi_ginterface.h __gi_ginterface.c \
+ __gi_giargument.h __gi_giargument.c \
+ __gi_gflagscollection.h __gi_gflagscollection.c \
+ __gi_genumcollection.h __gi_genumcollection.c
 
 __gi_gboxed.c: foreign-object-types.ini $(builddir)/fo_gen$(EXEEXT) Makefile
 	$(builddir)/fo_gen$(EXEEXT) $< .
@@ -156,7 +160,7 @@ pkgguileobject_DATA = $(dist_guilesite_DATA:%.scm=%.go) $(dist_pkgguilesite_DATA
 
 $(pkgguileobject_DATA): libguile-gi.la
 
-GUILEC_FLAGS = -Warity-mismatch -Wformat --load-path=$(PWD)
+GUILEC_FLAGS = -Warity-mismatch -Wformat --load-path=$(abs_srcdir)
 
 .scm.go:
 	GUILE_AUTO_COMPILE=0 \
