@@ -67,9 +67,9 @@ __gi_gparamspec.h: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
 	$(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini .
 __gi_gparamspec.c: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
 	$(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini .
-__gi_interface.h: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
+__gi_ginterface.h: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
 	$(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini .
-__gi_interface.c: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
+__gi_ginterface.c: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
 	$(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini .
 
 nodist_libguile_gi_la_SOURCES = \
