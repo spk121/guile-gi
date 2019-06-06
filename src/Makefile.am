@@ -71,6 +71,10 @@ __gi_ginterface.h: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
 	$(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini .
 __gi_ginterface.c: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
 	$(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini .
+__gi_giargument.h: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
+	$(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini .
+__gi_giargument.c: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
+	$(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini .
 
 nodist_libguile_gi_la_SOURCES = \
  __gi_gboxed.c \
