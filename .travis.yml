@@ -5,4 +5,4 @@ services:
 before_install:
  - docker build -t spk121/guile-gi .
 
-script: docker run spk121/guile-gi /bin/sh -c "cd /app; autoreconf -vif -Wall && ./configure --enable-hardening && make && make check"
+script: docker run spk121/guile-gi /bin/sh -c "cd /app; ./bootstrap && ./configure --enable-hardening && make -j2 distcheck"
