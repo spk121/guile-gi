@@ -10,5 +10,6 @@ RUN apt-get update \
 
 ENV LANG C.UTF-8
 ENV GUILD /usr/bin/guild
+ENV TERM dumb
 
 # CMD ["autoreconf -vif -Wall && ./configure --enable-hardening && make && make check"]
