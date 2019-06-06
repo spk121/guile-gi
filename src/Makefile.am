@@ -81,7 +81,9 @@ nodist_libguile_gi_la_SOURCES = \
  __gi_gparamspec.c \
  __gi_gparamspec.h \
  __gi_gvalue.c \
- __gi_gvalue.h
+ __gi_gvalue.h \
+ __gi_ginterface.c \
+ __gi_ginterface.h
 
 libguile_gi_la_SOURCES = \
  gi_basictype.c \
