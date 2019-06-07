@@ -246,6 +246,7 @@ gir_function_invoke (char *name, GIFunctionInfo *info, GObject *object, SCM args
     GIArgument *in_args, *in_args0, *out_args, return_arg;
     unsigned *in_args_free, *in_args_free0;
 
+    // Count the number of required input arguments, and allocate arg infos.
     gir_function_info_count_args(info, &n_input_args0, &n_output_args);
     if (object)
         n_input_args = n_input_args0 + 1;
@@ -267,6 +268,7 @@ gir_function_invoke (char *name, GIFunctionInfo *info, GObject *object, SCM args
         in_args_free0 = in_args_free;
     }
 
+    // Convert arguments
     gir_function_info_convert_args(info, args, n_input_args0, in_args0, in_args_free0, n_output_args, out_args);
 
     // Make the actual call.
@@ -460,8 +462,6 @@ gir_function_info_convert_args(GIFunctionInfo *func_info,
     GIArgumentStatus status = GI_GIARGUMENT_ERROR;
     SCM obj;
 
-    // Count the number of required input arguments, and store
-    // the arg info in a newly allocate array.
     if (SCM_UNBNDP(s_args))
         n_args_received = 0;
     else
