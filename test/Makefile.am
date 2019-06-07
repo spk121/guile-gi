@@ -42,6 +42,7 @@ TESTS = \
  main_loop_get_context.scm \
  main_loop_timeout.scm \
  main_loop_idle.scm \
+ malloc.scm \
  byte_array_new.scm \
  byte_array_new_take.scm \
  bytes_new_null_size.scm \
