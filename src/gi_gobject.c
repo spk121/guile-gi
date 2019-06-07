@@ -1767,13 +1767,7 @@ gi_get_property_value (const char *func, SCM instance, GParamSpec *pspec)
     g_object_get_property (gi_gobject_get_obj(instance), pspec->name, &value);
     fundamental = G_TYPE_FUNDAMENTAL (G_VALUE_TYPE (&value));
 
-    svalue = gi_gvalue_to_scm_basic_type (&value, fundamental, &handled);
-    if (!handled)
-
-        /* FIXME: else, attempt to marshal through GI */
-
-        /* Fallback to GValue marshalling. */
-        gi_param_gvalue_as_scm (&value, TRUE, pspec);
+    svalue = gi_param_gvalue_as_scm (&value, TRUE, pspec);
 
     g_value_unset (&value);
     return svalue;
