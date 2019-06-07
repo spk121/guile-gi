@@ -26,7 +26,6 @@
 #include "gi_ginterface.h"
 #include "gi_signal_closure.h"
 #include "gi_giargument.h"
-#include "gir_func.h"
 #include "gir_typelib.h"
 #include "gir_type.h"
 #include "gir_callback.h"

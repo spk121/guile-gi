@@ -5,7 +5,7 @@
 @c %**end of header
 
 @copying
-Copyright @copyright{} 2018 Michael L. Gran
+Copyright @copyright{} 2018, 2019 Michael L. Gran
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3
@@ -144,28 +144,44 @@ guile -L . -c '(use-modules (gi)) (display (typelib-document "Gio" "2.0"))' > Gi
 A minimal GTK application looks like this
 
 @example
-(use-modules (gi gtk-3)
-             (gi gio-2))
-
-(define (activate app user-data)
-  (let ((window (ApplicationWindow-new app)))
-    (send window (set-title "Window"))
-    (send window (set-default-size 200 200))
-    (send window (show-all))))
-
-(define (main)
-  (let ((app (Application-new "org.gtk.example" 0)))
-    (signal-connect app "activate" activate #f)
-    (send app (run (length (command-line)) (command-line)))))
-
-(main)
+@include example-1.scm
 @end example
 
 When it is run, it will create an empty window with a title.  Are you
 impressed?
 
-@xref{GObject Signals} for information on
-@code{signal-connect}. @xref{GObject Methods} for information on the
+Let's walk through this example.  First off, you may notice three important
+pieces of syntax @code{cast}, @code{send}, @code{connect}.  These three
+macros allow one to interact with GObject's very odd class system.
+
+For GObject-derived libraries, there is a class hierarchy based on
+single inheritance.  For example a GtkApplicationWindow, is a type of a
+GtkWindow which is a type of a GtkWidget, and so on. @code{cast} can be
+used to coerce one GObject type into another.  This is necessary because
+some Gtk widget constructors do not return the type you would expect.
+For example, @code{ApplicationWindow-new} returns a @code{<GtkWidget>}
+instead of a @code{<GtkApplicationWindow>}.  This seems odd to me, but,
+that's what the C headers say, and that's what the introspection
+information says, too.  Since this project generates its bindings
+automatically from the provided introspection information, it is what it
+is.
+
+Next is the @code{send} syntax.  It will attempt to find a GObject
+method for a given object, searching the object's class and its parent
+classes.
+
+And lastly is the @code{connect} syntax.  It hooks a procedure to a
+GObject @emph{signal}.  GObject signals are its native way of advising
+objects of the occurrence of events.
+
+Note that @code{send} and @code{connect} are Guile procedures for
+sockets, and including @code{(gi)} shadows those socket procedures,
+which is perhaps confusing.  However, @code{send} and @code{connect} are
+GObject official recommendations for how Lispy bindings should work, so
+we're rolling with it.
+
+@xref{GObject Signals} for more information on
+@code{connect}. @xref{GObject Methods} for information on the
 @code{send} syntax.
 
 @menu
@@ -307,7 +323,11 @@ files.
 @node Testing and Continuous Integration,  , Application Deployment, Tutorials
 @section Testing and Continuous Integration
 
-FIXME: make Guile-GI autobuild on some Jenkins server somewhere.
+The distribution does contain a couple of scripts that should enable it
+to be built by Travis-CI.  In the root directory, there is a
+@code{.travis.yml} and a @code{Dockerfile} that work together.  The
+docker container pulls the latest version of Ubuntu, and the YML file
+builds the project and runs @code{make check}.
 
 @node Reference Guide, Further Resources and Contact Info, Tutorials, Top
 @chapter Reference Guide
