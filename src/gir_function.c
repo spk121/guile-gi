@@ -41,7 +41,11 @@ gir_function_define_gsubr(const char *namespace_, const char *parent, GIFunction
     scm_c_define_gsubr(name, n_required, n_optional, 0, func_gsubr);
     scm_c_export(name, NULL);
 
-    g_debug("dynamically bound %s to %s with %d required and %d optional arguments", name, g_base_info_get_name(info), n_required, n_optional);
+    g_debug("dynamically bound %s to %s with %d required and %d optional arguments",
+            name,
+            g_base_info_get_name(info),
+            n_required,
+            n_optional);
     g_free (name);
 }
 
@@ -62,7 +66,7 @@ gir_function_create_gsubr(GIFunctionInfo *function_info, const char *name, int *
             return gfn->function_ptr;
         }
         x = x->next;
-    }    
+    }
 
     // Note that the scheme binding argument count doesn't include
     // any output arguments that don't require pre-allocation.
@@ -353,7 +357,9 @@ gir_function_count_input_args(GIFunctionInfo *info, int *required, int *optional
         g_assert(ai != NULL);
 
         GIDirection dir = g_arg_info_get_direction(ai);
-        if (dir == GI_DIRECTION_IN || dir == GI_DIRECTION_INOUT || (dir == GI_DIRECTION_OUT && g_arg_info_is_caller_allocates(ai)))
+        if (dir == GI_DIRECTION_IN
+            || dir == GI_DIRECTION_INOUT
+            || (dir == GI_DIRECTION_OUT && g_arg_info_is_caller_allocates(ai)))
         {
             if (opt_flag && g_arg_info_may_be_null(ai))
                 *optional = *optional + 1;
@@ -403,7 +409,13 @@ gir_function_info_count_args(GIFunctionInfo *info, int *in, int *out)
 }
 
 void
-gir_function_info_convert_args(GIFunctionInfo *func_info, SCM s_args, int *n_input_args, GIArgument **in_args, unsigned **in_args_free, int *n_output_args, GIArgument **out_args)
+gir_function_info_convert_args(GIFunctionInfo *func_info,
+                               SCM s_args,
+                               int *n_input_args,
+                               GIArgument **in_args,
+                               unsigned **in_args_free,
+                               int *n_output_args,
+                               GIArgument **out_args)
 {
     int n_args_received;
     int n_args;
@@ -413,23 +425,26 @@ gir_function_info_convert_args(GIFunctionInfo *func_info, SCM s_args, int *n_inp
     GIArgumentStatus status = GI_GIARGUMENT_ERROR;
     SCM obj;
 
-    // Count the number of required input arguments, and store
-    // the arg info in a newly allocate array.
+    // Count the number of required input arguments, and store the arg
+    // info in a newly allocate array.
     if (SCM_UNBNDP(s_args))
         n_args_received = 0;
     else
         n_args_received = scm_to_int(scm_length(s_args));
     n_args = g_callable_info_get_n_args((GICallableInfo *)func_info);
     gir_function_info_count_args(func_info, n_input_args, n_output_args);
-    g_debug("%s: %d arguments received", g_base_info_get_name(func_info), n_args_received);
-    g_debug("%s: %d args expected (%d input, %d output)", g_base_info_get_name(func_info), n_args, *n_input_args, *n_output_args);
+    g_debug("%s: %d arguments received",
+            g_base_info_get_name(func_info),
+            n_args_received);
+    g_debug("%s: %d args expected (%d input, %d output)",
+            g_base_info_get_name(func_info),
+            n_args, *n_input_args, *n_output_args);
 
     *in_args = g_new0(GIArgument, *n_input_args);
     *in_args_free = g_new0(unsigned, *n_input_args);
     *out_args = g_new0(GIArgument, *n_output_args);
 
-    // Step through the scheme arguments, trying to convert them
-    // to C
+    // Step through the scheme arguments, trying to convert them to C
     i_input_arg = 0;    // index into in_args
     i_output_arg = 0;   // index into out_args
     i_received_arg = 0; // index into s_args
@@ -442,9 +457,10 @@ gir_function_info_convert_args(GIFunctionInfo *func_info, SCM s_args, int *n_inp
 
         if (dir == GI_DIRECTION_IN || dir == GI_DIRECTION_INOUT)
         {
-            // If a C function requires an input argument, we match the next passed-in
-            // argument to it.  If we've run out of passed-in arguments but the C
-            // argument is optional, we handle that case.
+            // If a C function requires an input argument, we match
+            // the next passed-in argument to it.  If we've run out of
+            // passed-in arguments but the C argument is optional, we
+            // handle that case.
             if (i_received_arg >= n_args_received)
             {
                 if (g_arg_info_may_be_null(arg_info))
@@ -480,10 +496,11 @@ gir_function_info_convert_args(GIFunctionInfo *func_info, SCM s_args, int *n_inp
         }
         else if (dir == GI_DIRECTION_OUT)
         {
-            // Only those output arguments that require pre-allocation, e.g.
-            // that require more than a simple GIArgument to store them
-            // required passed-in scheme arguments.  For simple output
-            // arguments, no input scheme argument is used.
+            // Only those output arguments that require
+            // pre-allocation, e.g.  that require more than a simple
+            // GIArgument to store them required passed-in scheme
+            // arguments.  For simple output arguments, no input
+            // scheme argument is used.
             if (g_arg_info_is_caller_allocates(arg_info))
             {
                 // If we've run out of arguments, but this argument is
@@ -511,7 +528,12 @@ gir_function_info_convert_args(GIFunctionInfo *func_info, SCM s_args, int *n_inp
             else
             {
                 // An output argument that doesn't require pre-allocation.
-                // We don't require SCMs for those.
+                g_debug("Non caller-allocated output arg: transfer %d",
+                        g_arg_info_get_ownership_transfer(arg_info));
+                if (g_arg_info_get_ownership_transfer(arg_info) ==
+                    GI_TRANSFER_EVERYTHING) {
+                    out_args[i_output_arg]->v_pointer = g_new0(GIArgument, 1);
+                }
                 i_output_arg++;
             }
         }
@@ -579,7 +601,10 @@ arg_err_cleanup:
 }
 
 SCM
-gir_function_info_convert_output_args(const char *func_name, const GIFunctionInfo *func_info, int n_output_args, GIArgument *out_args)
+gir_function_info_convert_output_args(const char *func_name,
+                                      const GIFunctionInfo *func_info,
+                                      int n_output_args,
+                                      GIArgument *out_args)
 {
     SCM output = SCM_EOL;
     int n_args = g_callable_info_get_n_args((GICallableInfo *)func_info);
@@ -598,6 +623,14 @@ gir_function_info_convert_output_args(const char *func_name, const GIFunctionInf
             {
                 GITypeInfo *arg_typeinfo = g_arg_info_get_type(arg_info);
                 SCM obj = SCM_BOOL_F;
+                if (g_arg_info_get_ownership_transfer(arg_info) ==
+                    GI_TRANSFER_EVERYTHING)
+                {
+                    GIArgument *refarg = out_args[i].v_pointer;
+                    out_args[i].v_pointer = refarg->v_pointer;
+                    g_free(refarg);
+                }
+
                 gi_giargument_convert_arg_to_object(&out_args[i], arg_info, &obj);
                 output = scm_append(scm_list_2(output, scm_list_1(obj)));
                 g_base_info_unref(arg_typeinfo);
