@@ -25,7 +25,7 @@
   (display "Goodbye World\n"))
 
 (define (key-press widget event xtra)
-  (format #t "key: ~s\n" (send event (get-scancode)))
+  (format #t "key: ~s\n" (send event (get-keyval?)))
   #f)
 
 (define (activate app user-data)
@@ -34,6 +34,7 @@
         (editor (cast (TextView-new) <GtkTextView>))
         (button-box (cast (ButtonBox-new 0) <GtkButtonBox>))
         (button (Button-new-with-label "Quit")))
+    (send editor (add-events EVENT_MASK_KEY_PRESS_MASK))
     (send window (set-title "Window"))
     (send window (set-default-size 200 200))
     (send window (show-all))

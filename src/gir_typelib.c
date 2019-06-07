@@ -425,7 +425,7 @@ scm_typelib_document(SCM s_namespace, SCM s_version)
             gint n_methods = g_union_info_get_n_methods(info);
             for (gint m = 0; m < n_methods; m++)
             {
-                GIFunctionInfo *func_info = g_object_info_get_method(info, m);
+                GIFunctionInfo *func_info = g_union_info_get_method(info, m);
                 if (g_function_info_get_flags(func_info) & GI_FUNCTION_IS_METHOD)
                     gir_typelib_document_callable_info(&export, namespace_, g_base_info_get_name(info), func_info, 1);
                 else

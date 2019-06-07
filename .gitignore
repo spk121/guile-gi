@@ -15,6 +15,7 @@
 .dirstamp
 .libs
 *.out
+*.go
 
 GPATH
 GRTAGS
