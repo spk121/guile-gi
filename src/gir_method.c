@@ -30,6 +30,8 @@
 //  VALUE: GIMethodInfo *
 GHashTable *gir_method_hash_table = NULL;
 
+static void gir_fini_method(void);
+
 // Convert the type of names that GTK uses into Guile-like names
 static char *
 gir_method_gname_to_scm_name(const char *gname)
@@ -109,8 +111,13 @@ gir_method_table_insert(GType type, GIFunctionInfo *info)
         subhash = g_hash_table_new (g_direct_hash, g_direct_equal);
         g_hash_table_insert(gir_method_hash_table, public_name, subhash);
     }
-    g_hash_table_insert(subhash, GSIZE_TO_POINTER(type), info);
+
+    gboolean key_exists;
+    key_exists = g_hash_table_insert(subhash, GSIZE_TO_POINTER(type), info);
     g_debug("Creating method %s for type %s", public_name, g_type_name(type));
+
+    if (key_exists)
+        g_free(public_name);
 }
 
 static GICallableInfo *
@@ -425,10 +432,34 @@ gir_method_document(GString **export, const char *namespace_,
 
 void gir_init_method(void)
 {
-    gir_method_hash_table = g_hash_table_new_full (g_str_hash,
-                                                   g_str_equal,
-                                                   NULL,
-                                                   g_hash_table_remove_all);
+    gir_method_hash_table = g_hash_table_new (g_str_hash,
+                                              g_str_equal);
     scm_c_define_gsubr("call-method", 2, 0, 1, scm_call_method);
     scm_c_export("call-method", NULL);
+    atexit(gir_fini_method);
+}
+
+static void
+gir_fini_method(void)
+{
+    // Free the hash table.
+    GHashTableIter iter;
+    gpointer key, value;
+
+    g_hash_table_iter_init (&iter, gir_method_hash_table);
+    while (g_hash_table_iter_next (&iter, &key, &value))
+    {
+        char *key_str = key;
+        GHashTable *value_hash = value;
+
+        GHashTableIter iter2;
+        gpointer key2, value2;
+        g_hash_table_iter_init(&iter2, value_hash);
+        while (g_hash_table_iter_next (&iter2, &key2, &value2))
+            g_base_info_unref((GIBaseInfo *) value2);
+        g_hash_table_destroy(value_hash);
+        g_free(key_str);
+    }
+    g_hash_table_destroy (gir_method_hash_table);
+    g_debug("Freed method table");
 }
