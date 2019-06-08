@@ -28,11 +28,15 @@ static void gir_function_binding(ffi_cif *cif, void *ret, void **ffi_args,
 
 static SCM gir_function_info_convert_output_args(const char *func_name, const GIFunctionInfo *func_info, int n_output_args, GIArgument *out_args);
 static void gir_function_info_convert_args(GIFunctionInfo *func_info, SCM s_args, int n_input_args, GIArgument *in_args, unsigned *in_args_free, int n_output_args, GIArgument *out_args);
+static void gir_fini_function (void);
 
-// Given some function introspection information from a typelib file, this procedure
-// creates a SCM wrapper for that procedure in the current module.
+// Given some function introspection information from a typelib file,
+// this procedure creates a SCM wrapper for that procedure in the
+// current module.
 void
-gir_function_define_gsubr(const char *namespace_, const char *parent, GIFunctionInfo *info)
+gir_function_define_gsubr(const char *namespace_,
+                          const char *parent,
+                          GIFunctionInfo *info)
 {
     gir_gsubr_t *func_gsubr;
     char *name;
@@ -52,9 +56,13 @@ gir_function_define_gsubr(const char *namespace_, const char *parent, GIFunction
 }
 
 static gir_gsubr_t *
-gir_function_create_gsubr(GIFunctionInfo *function_info, const char *name, int *n_required, int *n_optional)
+gir_function_create_gsubr(GIFunctionInfo *function_info,
+                          const char *name,
+                          int *n_required,
+                          int *n_optional)
 {
-    // Check the cache to see if this function has already been created.
+    // Check the cache to see if this function has already been
+    // created.
     GSList *x = function_list;
     GirFunction *gfn;
 
@@ -65,13 +73,14 @@ gir_function_create_gsubr(GIFunctionInfo *function_info, const char *name, int *
         {
             *n_required = gfn->n_required;
             *n_optional = gfn->n_optional;
+            g_base_info_unref (function_info);
             return gfn->function_ptr;
         }
         x = x->next;
     }
 
-    // Note that the scheme binding argument count doesn't include
-    // any output arguments that don't require pre-allocation.
+    // Note that the scheme binding argument count doesn't include any
+    // output arguments that don't require pre-allocation.
     gir_function_count_input_args(function_info, n_required, n_optional);
 
     gfn = g_new0(GirFunction, 1);
@@ -85,21 +94,27 @@ gir_function_create_gsubr(GIFunctionInfo *function_info, const char *name, int *
     g_base_info_ref(function_info);
 
     // STEP 1
-    // Allocate the block of memory that FFI uses to hold a closure object,
-    // and set a pointer to the corresponding executable address.
+    // Allocate the block of memory that FFI uses to hold a closure
+    // object, and set a pointer to the corresponding executable
+    // address.
     gfn->closure = ffi_closure_alloc(sizeof(ffi_closure),
-        &(gfn->function_ptr));
+                                     &(gfn->function_ptr));
 
     g_return_val_if_fail(gfn->closure != NULL, NULL);
     g_return_val_if_fail(gfn->function_ptr != NULL, NULL);
 
     // STEP 2
-    // Next, we begin to construct an FFI_CIF to describe the function call.
+    // Next, we begin to construct an FFI_CIF to describe the function
+    // call.
 
     // Initialize the argument info vectors.
     if (*n_required + *n_optional > 0)
+    {
         ffi_args = g_new0(ffi_type *, *n_required + *n_optional);
-
+        gfn->atypes = ffi_args;
+    }
+    else
+        gfn->atypes = NULL;
     // All of our arguments will be SCM, so we use pointer storage.
     for (int i = 0; i < *n_required + *n_optional; i++)
         ffi_args[i] = &ffi_type_pointer;
@@ -109,54 +124,37 @@ gir_function_create_gsubr(GIFunctionInfo *function_info, const char *name, int *
     // Initialize the CIF Call Interface Struct.
     ffi_status prep_ok;
     prep_ok = ffi_prep_cif(&(gfn->cif),
-        FFI_DEFAULT_ABI,
-        *n_required + *n_optional,
-        ffi_ret_type,
-        ffi_args);
+                           FFI_DEFAULT_ABI,
+                           *n_required + *n_optional,
+                           ffi_ret_type,
+                           ffi_args);
 
     if (prep_ok != FFI_OK)
         scm_misc_error("gir-function-create-gsubr",
-            "closure call interface preparation error #~A",
-            scm_list_1(scm_from_int(prep_ok)));
+                       "closure call interface preparation error #~A",
+                       scm_list_1(scm_from_int(prep_ok)));
 
     // STEP 3
     // Initialize the closure
     ffi_status closure_ok;
     closure_ok = ffi_prep_closure_loc(gfn->closure,
-        &(gfn->cif),
-        gir_function_binding,
-        gfn,                 // The 'user-data' passed to the function
-        gfn->function_ptr);
+                                      &(gfn->cif),
+                                      gir_function_binding,
+                                      gfn, // The 'user-data' passed to the function
+                                      gfn->function_ptr);
 
     if (closure_ok != FFI_OK)
         scm_misc_error("gir-function-create-gsubr",
-            "closure location preparation error #~A",
-            scm_list_1(scm_from_int(closure_ok)));
+                       "closure location preparation error #~A",
+                       scm_list_1(scm_from_int(closure_ok)));
 
-    // We add the allocated structs to a list so we
-    // can deallocate nicely later.
+    // We add the allocated structs to a list so we can deallocate
+    // nicely later.
     function_list = g_slist_prepend(function_list, gfn);
 
     return gfn->function_ptr;
 }
 
-static void
-gir_function_cleanup (void)
-{
-    GSList *x = function_list;
-    g_debug ("In gir_function_cleanup");
-
-    while (x != NULL)
-    {
-        GirFunction *gfn = x->data;
-        g_free(gfn->name);
-        g_base_info_unref(gfn->function_info);
-        g_free(x->data);
-        x = x->next;
-    }
-    g_slist_free(function_list);
-    function_list = NULL;
-}
 
 gchar*
 gir_function_make_name(const char *parent, GICallableInfo *info)
@@ -671,5 +669,24 @@ gir_function_info_convert_output_args(const char *func_name,
 void
 gir_init_function(void)
 {
-    atexit(gir_function_cleanup);
+    atexit(gir_fini_function);
+}
+
+static void
+gir_fini_function (void)
+{
+    GSList *x = function_list;
+    g_debug ("In gir_function_cleanup");
+
+    while (x != NULL)
+    {
+        GirFunction *gfn = x->data;
+        g_free(gfn->name);
+        g_base_info_unref(gfn->function_info);
+        g_free(gfn->atypes);
+        g_free(x->data);
+        x = x->next;
+    }
+    g_slist_free(function_list);
+    function_list = NULL;
 }

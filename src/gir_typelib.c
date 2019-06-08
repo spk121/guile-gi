@@ -132,7 +132,6 @@ scm_typelib_load(SCM s_namespace, SCM s_version)
             {
                 g_debug("Not loading struct type '%s' because is has no GType",
                         g_base_info_get_name(info));
-                g_base_info_unref(info);
                 break;
             }
             gir_type_define(gtype);
@@ -144,7 +143,9 @@ scm_typelib_load(SCM s_namespace, SCM s_version)
                 if (g_function_info_get_flags(func_info) & GI_FUNCTION_IS_METHOD)
                     gir_method_table_insert(gtype, func_info);
                 else
-                    gir_function_define_gsubr(namespace_, g_base_info_get_name(info), func_info);
+                    gir_function_define_gsubr(namespace_,
+                                              g_base_info_get_name(info),
+                                              func_info);
             }
         }
         break;
@@ -159,7 +160,6 @@ scm_typelib_load(SCM s_namespace, SCM s_version)
             {
                 g_debug("Not loading object type '%s' because is has no GType",
                         g_base_info_get_name(info));
-                g_base_info_unref(info);
                 break;
             }
             gir_type_define(gtype);
@@ -171,7 +171,9 @@ scm_typelib_load(SCM s_namespace, SCM s_version)
                 if (g_function_info_get_flags(func_info) & GI_FUNCTION_IS_METHOD)
                     gir_method_table_insert(gtype, func_info);
                 else
-                    gir_function_define_gsubr(namespace_, g_base_info_get_name(info), func_info);
+                    gir_function_define_gsubr(namespace_,
+                                              g_base_info_get_name(info),
+                                              func_info);
             }
 #if 0
             gint n_signals = g_object_info_get_n_signals(info);
@@ -199,7 +201,6 @@ scm_typelib_load(SCM s_namespace, SCM s_version)
             {
                 g_debug("Not loading interface type '%s' because is has no GType",
                         g_base_info_get_name(info));
-                g_base_info_unref(info);
                 break;
             }
             gir_type_define(gtype);
@@ -211,7 +212,9 @@ scm_typelib_load(SCM s_namespace, SCM s_version)
                 if (g_function_info_get_flags(func_info) & GI_FUNCTION_IS_METHOD)
                     gir_method_table_insert(gtype, func_info);
                 else
-                    gir_function_define_gsubr(namespace_, g_base_info_get_name(info), func_info);
+                    gir_function_define_gsubr(namespace_,
+                                              g_base_info_get_name(info),
+                                              func_info);
             }
         }
         break;
@@ -225,7 +228,6 @@ scm_typelib_load(SCM s_namespace, SCM s_version)
             {
                 g_debug("Not loading union type '%s' because is has no GType",
                         g_base_info_get_name(info));
-                g_base_info_unref(info);
                 break;
             }
             gir_type_define(gtype);
@@ -237,7 +239,9 @@ scm_typelib_load(SCM s_namespace, SCM s_version)
                 if (g_function_info_get_flags(func_info) & GI_FUNCTION_IS_METHOD)
                     gir_method_table_insert(gtype, func_info);
                 else
-                    gir_function_define_gsubr(namespace_, g_base_info_get_name(info), func_info);
+                    gir_function_define_gsubr(namespace_,
+                                              g_base_info_get_name(info),
+                                              func_info);
             }
         }
         break;
@@ -268,6 +272,7 @@ scm_typelib_load(SCM s_namespace, SCM s_version)
             g_critical("Unsupported irepository type %d", type);
             break;
         }
+        g_base_info_unref(info);
     }
     free(version);
     free(namespace_);
