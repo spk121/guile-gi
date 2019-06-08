@@ -18,7 +18,6 @@
 #include "gi_gparamspec.h"
 #include "gi_ginterface.h"
 #include "gi_signal_closure.h"
-#include "gi_giargument.h"
 #include "gir_typelib.h"
 #include "gir_type.h"
 #include <glib-object.h>
@@ -1756,7 +1755,6 @@ gi_get_property_value (const char *func, SCM instance, GParamSpec *pspec)
     GValue value = { 0, };
     SCM svalue = SCM_BOOL_F;
     GType fundamental;
-    gboolean handled;
 
     if (!(pspec->flags & G_PARAM_READABLE)) {
         scm_misc_error (func, "property ~S is not readable",
