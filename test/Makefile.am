@@ -118,11 +118,13 @@ EXTRA_DIST = \
   lib.scm \
   automake-test-lib.scm \
   example-1.scm \
-  browser.scm
+  browser.scm \
+  editor.scm
 
 exampledir = $(datadir)/doc/guile-gi
 dist_example_DATA = \
   example-1.scm \
   example-1b.scm \
   example-1c.scm \
-  browser.scm
+  browser.scm \
+  editor.scm

@@ -21,6 +21,11 @@
 (typelib-load "GLib" "2.0")
 (typelib-load "WebKit2" "4.0")
 
+;; Oddly, the introspection information does not provide a constructor
+;; for GtkTextIter.
+(define (TextIter-new)
+  (make-gstruct <GtkTextIter>))
+
 (define (print-goodbye widget data)
   (display "Goodbye World\n"))
 
@@ -33,7 +38,8 @@
         (vbox (cast (VBox-new 0 0) <GtkVBox>))
         (editor (cast (TextView-new) <GtkTextView>))
         (button-box (cast (ButtonBox-new 0) <GtkButtonBox>))
-        (button (Button-new-with-label "Quit")))
+        (button (Button-new-with-label "Quit"))
+        (button2 (Button-new-with-label "Hello")))
     (send editor (add-events EVENT_MASK_KEY_PRESS_MASK))
     (send window (set-title "Window"))
     (send window (set-default-size 200 200))
@@ -46,7 +52,22 @@
                                (send window (destroy)))
                              #f))
     (connect editor (key-press-event key-press #f))
+
+    ;; When the 'hello' button is clicked, write the current contents
+    ;; of the editor to the console, and replace the buffer contents
+    ;; with 'Hello, world'.
+    (connect button2 (clicked (lambda x
+                                (let ((buffer (send editor (get-buffer)))
+                                      (iter1 (TextIter-new))
+                                      (iter2 (TextIter-new)))
+                                  (send buffer (get-bounds iter1 iter2))
+                                  (let ((txt (send buffer (get-text iter1 iter2 #t))))
+                                    (write txt) (newline))
+                                  (send buffer (set-text "Hello, world" 12))))
+                              #f))
+                                      
     (send editor (grab-focus))
+    (send button-box (add button2))
     (send button-box (add button))
     (send window (show-all))))
 
