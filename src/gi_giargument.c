@@ -815,9 +815,6 @@ object_to_c_interface_arg(char *subr, int argpos, SCM obj,
     GIBaseInfo *referenced_base_info = g_type_info_get_interface(type_info);
     GIInfoType referenced_base_type = g_base_info_get_type(referenced_base_info);
 
-    // As far as I know the only interface objects that aren't pointer
-    // objects are ENUM, FLAGS, and CALLBACK.
-
     if ((referenced_base_type == GI_INFO_TYPE_ENUM)
         || (referenced_base_type == GI_INFO_TYPE_FLAGS))
     {
@@ -843,6 +840,15 @@ object_to_c_interface_arg(char *subr, int argpos, SCM obj,
                 scm_wrong_type_arg_msg (subr, argpos, obj, str);
             }
         }
+    }
+    else if ((referenced_base_type == GI_INFO_TYPE_STRUCT)
+              || (referenced_base_type == GI_INFO_TYPE_UNION)
+              || (referenced_base_type == GI_INFO_TYPE_OBJECT))
+    {
+        // This is uncommon case where a struct is used directly,
+        // and not as a pointer, such as in gtk_text_buffer_get_bounds.
+
+        arg->v_pointer = scm_foreign_object_ref(obj, OBJ_SLOT);
     }
     else
         g_assert_not_reached();

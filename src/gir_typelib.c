@@ -135,6 +135,12 @@ scm_typelib_load(SCM s_namespace, SCM s_version)
                 break;
             }
             gir_type_define(gtype);
+            if (g_struct_info_get_size(info) > 0)
+            {
+                GQuark size_quark = g_quark_from_string("size");
+                g_type_set_qdata(gtype, size_quark,
+                                 GSIZE_TO_POINTER(g_struct_info_get_size(info)));
+            }
 
             gint n_methods = g_struct_info_get_n_methods(info);
             for (gint m = 0; m < n_methods; m++)
@@ -231,6 +237,12 @@ scm_typelib_load(SCM s_namespace, SCM s_version)
                 break;
             }
             gir_type_define(gtype);
+            if (g_union_info_get_size(info) > 0)
+            {
+                GQuark size_quark = g_quark_from_string("size");
+                g_type_set_qdata(gtype, size_quark,
+                                 GSIZE_TO_POINTER(g_union_info_get_size(info)));
+            }
 
             gint n_methods = g_union_info_get_n_methods(info);
             for (gint m = 0; m < n_methods; m++)
