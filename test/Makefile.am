@@ -29,21 +29,63 @@ TEST_EXTENSIONS = .scm
 
 noinst_DATA = lib.scm automake-test-lib.scm
 
-TESTS = \
- memchk_1.scm \
- memchk_2.scm \
+VERSION_INFORMATION_TESTS = \
+ MAJOR_VERSION.scm \
+ MINOR_VERSION.scm \
+ MICRO_VERSION.scm \
+ VERSION_MIN_REQUIRED.scm
+
+BASIC_TYPE_TESTS = \
  MAXINT16.scm \
  MAXUINT64.scm \
- MAJOR_VERSION.scm \
+ GINT32_FORMAT.scm
+
+STANDARD_MACROS_TESTS = \
  DIR_SEPARATOR_S.scm \
- atomic_int_set.scm \
+ DIR_SEPARATOR.scm \
+ SEARCHPATH_SEPARATOR.scm \
+ SEARCHPATH_SEPARATOR_S.scm
+
+BYTE_ORDER_MACROS_TESTS = \
+ BIG_ENDIAN.scm \
+ LITTLE_ENDIAN.scm
+
+NUMERICAL_DEFINITIONS_TESTS = \
+ IEEE754_FLOAT_BIAS.scm \
+ E.scm \
+ PI.scm
+
+ATOMIC_OPERATIONS_TESTS = \
+ atomic_int_set.scm
+
+MAIN_EVENT_LOOP_TESTS = \
  main_loop_new.scm \
  main_loop_runs.scm \
  main_loop_quit.scm \
  main_loop_get_context.scm \
  main_loop_timeout.scm \
- main_loop_idle.scm \
+ main_loop_idle.scm
+
+MEMORY_ALLOCATION_TESTS = \
  malloc.scm \
+ try_malloc0.scm
+
+MEMORY_SLICES_TESTS = \
+ slice_alloc.scm
+
+IO_CHANNELS_TESTS = \
+ io_channel_pipe.scm
+
+TESTS = \
+ $(VERSION_INFORMATION_TESTS) \
+ $(BASIC_TYPE_TESTS) \
+ $(STANDARD_MACROS_TESTS) \
+ $(BYTE_ORDER_MACROS_TESTS) \
+ $(NUMERICAL_DEFINITIONS_TESTS) \
+ $(MAIN_EVENT_LOOP_TESTS) \
+ $(MEMORY_ALLOCATION_TESTS) \
+ memchk_1.scm \
+ memchk_2.scm \
  byte_array_new.scm \
  byte_array_new_take.scm \
  bytes_new_null_size.scm \
