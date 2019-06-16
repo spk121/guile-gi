@@ -3968,113 +3968,6 @@ void gi_giargument_release(GIArgument *arg,
     }
 }
 
-static SCM
-scm_immediate_giargument_to_object(SCM s_arg, SCM s_type)
-{
-    if (!SCM_IS_A_P(s_arg, gi_giargument_type))
-        scm_wrong_type_arg("immediate-giargument->object", SCM_ARG1, s_arg);
-    GITypeTag type_tag = scm_to_int(s_type);
-    SCM obj = SCM_BOOL_T;
-
-    GIArgument *arg = gi_giargument_get_argument(s_arg);
-    convert_immediate_arg_to_object(arg, type_tag, &obj);
-    return obj;
-}
-
-static SCM
-scm_immediate_object_to_giargument(SCM s_obj, SCM s_type)
-{
-#define FUNC_NAME "immediate-object->giargument"    
-    GITypeTag type_tag = scm_to_int(s_type);
-    GIArgument *arg = scm_gc_malloc(sizeof(GIArgument), "GIArgument");
-    memset(arg, 0, sizeof(GIArgument));
-
-    object_to_c_immediate_arg(FUNC_NAME, SCM_ARG1, s_obj, type_tag, arg);
-
-    return scm_make_foreign_object_1(gi_giargument_type, arg);
-#undef FUNC_NAME    
-}
-
-#if 0
-static SCM
-scm_string_object_to_giargument(SCM s_obj, SCM s_type, SCM s_transfer)
-{
-    void ret;
-
-    GITypeTag type_tag = scm_to_int (s_type);
-    GITransfer transfer = scm_to_int (s_transfer);
-    GIArgument *arg = scm_gc_malloc (sizeof(GIArgument), "GIArgument");
-    memset (arg, 0, sizeof (GIArgument));
-
-    ret = gi_giargument_convert_string_object_to_arg(s_obj, type_tag, transfer, arg);
-    if (ret != GI_GIARGUMENT_OK)
-        scm_misc_error("string-object->giargument",
-                       gi_giargument_error_messages[ret],
-                       SCM_EOL);
-
-
-    return scm_make_foreign_object_1 (gi_giargument_type, arg);
-}
-#endif
-
-static SCM
-scm_string_giargument_to_object(SCM s_arg, SCM s_type, SCM s_transfer)
-{
-    if (!SCM_IS_A_P(s_arg, gi_giargument_type))
-        scm_wrong_type_arg("string-giargument->object", SCM_ARG1, s_arg);
-    GITypeTag type_tag = scm_to_int(s_type);
-    GITransfer transfer = scm_to_int(s_transfer);
-    SCM obj = SCM_BOOL_T;
-
-    GIArgument *arg = gi_giargument_get_argument(s_arg);
-    convert_string_pointer_arg_to_object(arg, type_tag, transfer, &obj);
-    return obj;
-}
-
-static SCM
-scm_giargument_to_pointer(SCM s_arg)
-{
-    if (!SCM_IS_A_P(s_arg, gi_giargument_type))
-        scm_wrong_type_arg("giargument->pointer", SCM_ARG1, s_arg);
-
-    GIArgument *arg = gi_giargument_get_argument(s_arg);
-
-    return scm_from_pointer(arg->v_pointer, NULL);
-}
-
-static SCM
-scm_pointer_to_giargument(SCM s_obj)
-{
-    if (!SCM_POINTER_P(s_obj))
-        scm_wrong_type_arg("pointer->giargument", SCM_ARG1, s_obj);
-
-    GIArgument *arg = scm_gc_malloc(sizeof(GIArgument), "GIArgument");
-    memset(arg, 0, sizeof(GIArgument));
-    arg->v_pointer = scm_to_pointer(s_obj);
-    return scm_make_foreign_object_1(gi_giargument_type, arg);
-}
-
-#if 0
-static SCM
-scm_convert_giargument_to_object (SCM s_arg, SCM s_arg_info)
-{
-    if (!SCM_IS_A_P(gi_giargument_type, s_arg))
-        scm_wrong_type_arg ("convert-giargument-to-object", SCM_ARG1, s_arg);
-    if (!SCM_IS_A_P(s_GIArgInfo_type, s_arg_info))
-        scm_wrong_type_arg ("convert-giargument-to-object", SCM_ARG2, s_arg_info);
-
-    GIArgument *arg = gi_giargument_get_argument(s_arg);
-    GIArgInfo *arg_info = scm_foreign_object_ref (s_arg_info, 0);
-
-    SCM obj = SCM_BOOL_F;
-    int err = gi_giargument_convert_to_object (arg, arg_info, obj);
-
-    if (err)
-        scm_misc_error ("convert-giargument-to-object", "marshalling error", SCM_EOL);
-    return obj;
-}
-#endif
-
 #define SCONSTX(NAME) scm_permanent_object(scm_c_define(#NAME, scm_from_int(NAME)))
 
 static SCM
@@ -4095,8 +3988,6 @@ scm_box(SCM sym, SCM val)
 
 void gi_init_giargument(void)
 {
-    gi_init_giargument_type();
-
     for (int i = 0; i < 26; i ++)
         boxes[i] = SCM_UNSPECIFIED;
 
@@ -4126,12 +4017,6 @@ void gi_init_giargument(void)
     SCONSTX(GI_TRANSFER_CONTAINER);
     SCONSTX(GI_TRANSFER_EVERYTHING);
 
-    scm_c_define_gsubr("immediate-giargument->object", 2, 0, 0, scm_immediate_giargument_to_object);
-    scm_c_define_gsubr("immediate-object->giargument", 2, 0, 0, scm_immediate_object_to_giargument);
-    scm_c_define_gsubr("string-giargument->object", 3, 0, 0, scm_string_giargument_to_object);
-    //scm_c_define_gsubr ("string-object->giargument", 3, 0, 0, scm_string_object_to_giargument);
-    scm_c_define_gsubr("giargument->pointer", 1, 0, 0, scm_giargument_to_pointer);
-    scm_c_define_gsubr("pointer->giargument", 1, 0, 0, scm_pointer_to_giargument);
     scm_c_define_gsubr("box", 2, 0, 0, scm_box);
 
     scm_c_export("box", NULL);

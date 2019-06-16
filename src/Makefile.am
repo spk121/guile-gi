@@ -38,7 +38,6 @@ BUILT_SOURCES = \
  __gi_gvalue.h __gi_gvalue.c \
  __gi_gparamspec.h __gi_gparamspec.c \
  __gi_ginterface.h __gi_ginterface.c \
- __gi_giargument.h __gi_giargument.c \
  __gi_gflagscollection.h __gi_gflagscollection.c \
  __gi_genumcollection.h  __gi_genumcollection.c \
  __gi_ginterface.h __gi_ginterface.c
@@ -71,10 +70,6 @@ __gi_ginterface.h: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
 	$(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini .
 __gi_ginterface.c: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
 	$(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini .
-__gi_giargument.h: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
-	$(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini .
-__gi_giargument.c: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
-	$(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini .
 __gi_gflagscollection.h: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
 	$(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini .
 __gi_gflagscollection.c: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
@@ -87,8 +82,6 @@ __gi_genumcollection.c: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Mak
 nodist_libguile_gi_la_SOURCES = \
  __gi_gboxed.c \
  __gi_gboxed.h \
- __gi_giargument.c \
- __gi_giargument.h \
  __gi_ginterface.h \
  __gi_gobject.c \
  __gi_gobject.h \
