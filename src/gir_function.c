@@ -535,13 +535,14 @@ gir_function_object_list_to_c_args(char *subr, SCM s_args,
             }
             else // i_received_arg < n_args_received
             {
-                obj = scm_list_ref(s_args, scm_from_int(i_received_arg++));
+                obj = scm_list_ref(s_args, scm_from_int(i_received_arg));
                 // Attempt to convert the SCM object to a GIArgument
                 gi_giargument_object_to_c_arg(subr, i_received_arg,
                                                        obj,
                                                        arg_info,
                                                        &(in_args_free[i_input_arg]),
                                                        &(in_args[i_input_arg]));
+                i_received_arg++;
                 if (dir == GI_DIRECTION_INOUT)
                 {
                     out_args[i_output_arg].v_pointer = in_args[i_input_arg].v_pointer;
@@ -582,13 +583,14 @@ gir_function_object_list_to_c_args(char *subr, SCM s_args,
                     // FIXME: typecheck the argument we received to ensure
                     // it matches the preallocated argument we need.
 
-                    obj = scm_list_ref(s_args, scm_from_int(i_received_arg++));
+                    obj = scm_list_ref(s_args, scm_from_int(i_received_arg));
                     // Attempt to convert the SCM object to a GIArgument
                     unsigned must_free;
                     gi_giargument_object_to_c_arg(subr, i_received_arg, obj,
                                                            arg_info,
                                                            &must_free,
                                                            &(out_args[i_output_arg]));
+                    i_received_arg++;
                     i_output_arg ++;
                 }
             }
@@ -604,7 +606,8 @@ gir_function_object_list_to_c_args(char *subr, SCM s_args,
         g_base_info_unref(arg_info);
     }
 
-    if (i_received_arg != n_input_args)
+
+    if (i_received_arg != n_args_received)
     {
         scm_misc_error("function-invoke",
             "wrong number of input arguments for function '~a', received ~a, used ~a",
@@ -683,8 +686,8 @@ gir_function_info_convert_output_args(const char *func_name,
                 gi_giargument_convert_arg_to_object(&out_args[i_output_arg], arg_info, &obj);
                 output = scm_append(scm_list_2(output, scm_list_1(obj)));
                 g_base_info_unref(arg_typeinfo);
-                i_output_arg++;
             }
+            i_output_arg++;
         }
         g_base_info_unref(arg_info);
     }
