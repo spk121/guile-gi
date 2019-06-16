@@ -95,8 +95,8 @@ void callback_binding(ffi_cif *cif, void *ret, void **ffi_args,
     {
         GIArgument giarg;
         GITypeInfo *ret_type_info = g_callable_info_get_return_type(gcb->callback_info);
-        GIArgumentStatus ret2;
-        ret2 = gi_giargument_convert_return_type_object_to_arg(s_ret,
+
+        gi_giargument_convert_return_type_object_to_arg(s_ret,
                                                                ret_type_info,
                                                                g_callable_info_get_caller_owns(gcb->callback_info),
                                                                g_callable_info_may_return_null(gcb->callback_info),

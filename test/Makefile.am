@@ -24,6 +24,7 @@ AM_TESTS_ENVIRONMENT = \
   GUILE_AUTO_COMPILE=0; \
   export GUILE_AUTO_COMPILE;
 
+AM_CFLAGS = $(GUILE_CFLAGS) $(GOBJECT_INTROSPECTION_CFLAGS)
 TEST_EXTENSIONS = .scm
 
 noinst_DATA = lib.scm automake-test-lib.scm
@@ -49,10 +50,14 @@ TESTS = \
  bytes_new_null_contents.scm \
  gapplication_1.scm \
  gapplication_2.scm \
- softerror_create.scm 
+ softerror_create.scm \
+ strjoinv.scm \
+ convert.scm \
+ convert_latin1.scm
 
 XFAIL_TESTS = \
- atomic_int_set.scm
+ atomic_int_set.scm \
+ strjoinv.scm
 
 SCM_LOG_COMPILER = \
   ${top_builddir}/libtool \
