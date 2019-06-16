@@ -38,7 +38,7 @@ struct array_info
     gboolean array_is_zero_terminated;
     GIArrayType array_type;
     GITransfer array_transfer;
-    
+
     // The elements of the array
     GITransfer item_transfer;
     GITypeTag item_type_tag;
@@ -184,11 +184,11 @@ object_to_c_native_immediate_array_arg(char *subr, int argpos, SCM object,
 static void
 object_to_c_native_string_array_arg(char *subr, int argpos, SCM object,
                             struct array_info *ai,
-                                    GIArgument *arg);                                       
+                                    GIArgument *arg);
 static void
 object_to_c_native_interface_array_arg(char *subr, int argpos, SCM object,
                             struct array_info *ai,
-                                    GIArgument *arg);                                       
+                                    GIArgument *arg);
 static void
 object_to_c_ptr_array_arg(char *subr, int argpos, SCM object,
                             struct array_info *ai,
@@ -219,7 +219,7 @@ gi_giargument_object_to_c_arg(char *subr, int argpos,
                               GIArgInfo *arg_info,
                               unsigned *must_free,
                               GIArgument *arg)
-{    
+{
     // SCM #f means either NULL or FALSE.  Here we handle NULL.
     if (g_arg_info_may_be_null(arg_info) && scm_is_false(obj))
     {
@@ -269,7 +269,7 @@ gi_giargument_object_to_c_arg(char *subr, int argpos,
         case GI_TYPE_TAG_GSLIST:
         case GI_TYPE_TAG_ERROR:
         default:
-            // These are C pointer types, so they should never occur in 
+            // These are C pointer types, so they should never occur in
             // the non-pointer form.
             g_assert_not_reached();
             break;
@@ -595,10 +595,13 @@ gi_giargument_convert_return_type_object_to_arg(SCM obj,
     gboolean is_ptr = g_type_info_is_pointer(type_info);
     GITypeTag type_tag = g_type_info_get_tag(type_info);
     unsigned must_free;
+
     if (skip)
     {
         arg->v_pointer = NULL;
+        return;
     }
+
     if (null_ok && scm_is_eq(obj, SCM_BOOL_F))
     {
         arg->v_pointer = NULL;
@@ -667,9 +670,10 @@ gi_giargument_convert_return_type_object_to_arg(SCM obj,
             break;
 
         case GI_TYPE_TAG_UTF8:
+            arg->v_string = scm_to_utf8_string(obj);
+            break;
         case GI_TYPE_TAG_FILENAME:
-            g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
-            //ret = object_to_c_string_arg(obj, arg_info, must_free, arg);
+            arg->v_string = scm_to_locale_string(obj);
             break;
 
         case GI_TYPE_TAG_VOID:
@@ -717,7 +721,7 @@ gi_giargument_convert_return_type_object_to_arg(SCM obj,
 
 static void
 object_to_c_immediate_arg(char *subr, int argpos, SCM object, GITypeTag type_tag, GIArgument *arg)
-{   
+{
     switch (type_tag)
     {
     case GI_TYPE_TAG_INT8:
@@ -790,7 +794,7 @@ object_to_c_immediate_arg(char *subr, int argpos, SCM object, GITypeTag type_tag
         {
             scm_wrong_type_arg_msg(subr, argpos, object, "char");
         }
-        
+
         break;
     default:
         // Should never get here.
@@ -813,7 +817,7 @@ object_to_c_interface_arg(char *subr, int argpos, SCM obj,
 
     // As far as I know the only interface objects that aren't pointer
     // objects are ENUM, FLAGS, and CALLBACK.
-    
+
     if ((referenced_base_type == GI_INFO_TYPE_ENUM)
         || (referenced_base_type == GI_INFO_TYPE_FLAGS))
     {
@@ -854,7 +858,7 @@ object_to_c_immediate_pointer_arg(char *subr, int argpos,
     // Here we handle the uncommon case of converting an SCM to a
     // pointer to a simple C type like 'int *', but not objects or
     // arrays, which are handled elsewhere.
-    
+
     // This case is unfortunate because sometimes we're referring to a
     // single value like in 'g_atomic_int_add', and sometimes a C
     // array like in 'g_utf16_to_ucs4' which really should have been
@@ -936,7 +940,7 @@ object_to_c_string_arg(char *subr, int argpos,
 
 static void
 object_to_c_void_pointer_arg(char *subr, int argpos, SCM obj, GIArgument *arg)
-{   
+{
     // The interpretation of void pointer objects is tricky, because
     // in C they can be anything.
     if (SCM_POINTER_P(obj))
@@ -1083,7 +1087,7 @@ object_to_c_array_arg(char *subr, int argpos, SCM object,
         }
         g_base_info_unref(item_type_info);
         object_to_c_native_array_arg(subr, argpos, object, &ai, arg);
-    } 
+    }
         break;
     case GI_ARRAY_TYPE_ARRAY:
         object_to_c_garray_array_arg(subr, argpos, object, &ai, arg);
@@ -1167,7 +1171,7 @@ object_to_c_native_immediate_array_arg(char *subr, int argpos,
             g_assert_not_reached();
             break;
         }
-        
+
         if (ai->item_transfer == GI_TRANSFER_NOTHING)
         {
             if (!ai->array_is_zero_terminated)
@@ -1205,7 +1209,7 @@ object_to_c_native_immediate_array_arg(char *subr, int argpos,
 #undef FUNC_NAME
 }
 
-static void 
+static void
 object_to_c_byte_array_arg(char *subr, int argpos, SCM object,
                             struct array_info *ai,
                            GIArgument *arg)
@@ -1223,7 +1227,7 @@ object_to_c_byte_array_arg(char *subr, int argpos, SCM object,
         scm_wrong_type_arg_msg(subr, argpos, object, "bytevector");
 }
 
-static void 
+static void
 object_to_c_garray_array_arg(char *subr, int argpos, SCM object, struct array_info *ai,
                              GIArgument *arg)
 {
@@ -1234,7 +1238,7 @@ object_to_c_garray_array_arg(char *subr, int argpos, SCM object, struct array_in
 #undef FUNC_NAME
 }
 
-static void 
+static void
 object_to_c_ptr_array_arg(char *subr, int argpos, SCM object, struct array_info *ai,
                              GIArgument *arg)
 {
@@ -1275,7 +1279,7 @@ object_to_c_native_direct_struct_array_arg(char *subr, int argpos, SCM object,
 static void
 object_to_c_native_indirect_object_array_arg(char *subr, int argpos, SCM object,
                                         struct array_info *ai,
-                                        GIArgument *arg) 
+                                        GIArgument *arg)
 {
     // Arrays of pointers to OBJECTS.  The only example I could find
     // is g_socket_send_message.
@@ -1335,7 +1339,7 @@ object_to_c_native_interface_array_arg(char *subr,
         // If we are a Struct or Object, we need to look up
         // our actual GType.
         g_assert(ai->referenced_object_type != G_TYPE_NONE);
-        
+
 #if 1
         g_assert_not_reached();
 #else
@@ -1369,7 +1373,7 @@ object_to_c_native_string_array_arg(char *subr, int argpos,
                                     SCM object,
                                     struct array_info *ai,
                                     GIArgument *arg)
-{    
+{
     // UTF8 or FILENAME pointers.  It seems that arrays of type UTF8
     // can mean two things.
     // 1. If zero-terminated, it means a NULL-pointer-terminated list
