@@ -32,7 +32,7 @@ AC_CONFIG_MACRO_DIR([m4])
 ################
 # Libtool versioning
 
-LIBGUILE_GI_INTERFACE="0:0:0"
+LIBGUILE_GI_INTERFACE="1:0:0"
 AC_SUBST([LIBGUILE_GI_INTERFACE])
 
 ################

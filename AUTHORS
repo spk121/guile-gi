@@ -1,4 +1,9 @@
-Mike Gran
+Maintained (lol) by
+ Mike Gran
+
+Including patches from
+ Jan Nieuwenhuizen
+ LordYuuma
 
 Also some of this code was inspired by or adapted from PyGObject, and
 I need to try to figure out which code that still remains was lifted
