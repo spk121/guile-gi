@@ -1264,22 +1264,17 @@ object_to_c_native_direct_struct_array_arg(char *subr, int argpos, SCM object,
     // an array of structs themselves, rather than an array
     // of pointers to structs.  These may be null terminated.
     // For example, gtk_tree_view_enable_model_drag_dest
-        size_t len = scm_to_size_t(scm_length(object));
-        gpointer ptr;
-        if (ai->array_is_zero_terminated)
-            ptr = g_malloc0_n(ai->item_size, len + 1);
-        else
-            ptr = g_malloc0_n(ai->item_size, len);
-        for (gsize i = 0; i < len; i++)
-        {
-
-            SCM entry = scm_list_ref(object, scm_from_size_t(i));
-            gpointer entry_ptr = gi_gobject_get_obj(object);
-            memcpy((char *)ptr + i * ai->item_size, entry_ptr, ai->item_size);
-        }
-        if (ai->item_transfer == GI_TRANSFER_NOTHING)
-            ai->must_free = GIR_FREE_SIMPLE;
-
+    size_t len = scm_to_size_t(scm_length(object));
+    gpointer ptr;
+    if (ai->array_is_zero_terminated)
+        ptr = g_malloc0_n(ai->item_size, len + 1);
+    else
+        ptr = g_malloc0_n(ai->item_size, len);
+    gpointer entry_ptr = gi_gobject_get_obj(object);
+    for (gsize i = 0; i < len; i++)
+        memcpy((char *)ptr + i * ai->item_size, entry_ptr, ai->item_size);
+    if (ai->item_transfer == GI_TRANSFER_NOTHING)
+        ai->must_free = GIR_FREE_SIMPLE;
 }
 
 static void
@@ -1454,7 +1449,7 @@ gi_giargument_preallocate_output_arg_and_object(GIArgInfo *arg_info, GIArgument 
 
     GITypeInfo *type_info = g_arg_info_get_type(arg_info);
     GITypeTag type_tag = g_type_info_get_tag(type_info);
-    gboolean alloc = g_arg_info_is_caller_allocates(arg_info);
+    // gboolean alloc = g_arg_info_is_caller_allocates(arg_info);
     gboolean is_ptr = g_type_info_is_pointer(type_info);
 
     g_base_info_unref(type_info);
@@ -1497,7 +1492,7 @@ gi_giargument_preallocate_output_arg_and_object(GIArgInfo *arg_info, GIArgument 
         {
             GIBaseInfo *referenced_base_info = g_type_info_get_interface(type_info);
             GIInfoType referenced_base_type = g_base_info_get_type(referenced_base_info);
-            GType referenced_object_type = g_registered_type_info_get_g_type(referenced_base_info);
+            // GType referenced_object_type = g_registered_type_info_get_g_type(referenced_base_info);
 
             if (referenced_base_type == GI_INFO_TYPE_STRUCT)
             {
@@ -1968,7 +1963,7 @@ gi_giargument_convert_array_to_vector(GIArgument *arg, GITypeTag item_type_tag, 
     /* Here we assume we've been passed a GArray packed in the GIArgument, and we convert that into
      * a plain Guile vector */
     GArray *array = arg->v_pointer;
-    gsize item_size = g_array_get_element_size(array);
+    // gsize item_size = g_array_get_element_size(array);
 
     //if (item_type_tag == GI_TYPE_TAG_UINT8 || item_type_tag)
     //{
@@ -2034,7 +2029,7 @@ convert_array_pointer_arg_to_object(GIArgument *arg,
                                     GITransfer array_transfer,
                                     SCM *obj)
 {
-    // Just like its gi_giargument_convert_array_object_to arg, this
+    // Just like its convert_array_object_to arg, this
     // is a rats' nest of types.
 
     // Array outputs include
@@ -2099,9 +2094,9 @@ convert_array_pointer_arg_to_object(GIArgument *arg,
         return;
     }
 
-    // LAYER 3. If, in Layer 2, we discovered that the array holds an INTERFACE type
-    // we need to dig into what type of interface
-    // we're talking about, STRUCT, OBJECT, ENUM or FLAGS
+    // LAYER 3. If, in Layer 2, we discovered that the array holds an
+    // INTERFACE type we need to dig into what type of interface we're
+    // talking about, STRUCT, OBJECT, ENUM or FLAGS
     GIBaseInfo *referenced_base_info = NULL;
     GIInfoType referenced_base_type = GI_INFO_TYPE_UNRESOLVED;
     GType referenced_object_type = G_TYPE_NONE;
@@ -2197,6 +2192,39 @@ convert_array_pointer_arg_to_object(GIArgument *arg,
             *obj = scm_c_make_bytevector(len);
             memcpy(SCM_BYTEVECTOR_CONTENTS(*obj), arg->v_pointer, len);
         }
+    }
+    else if (item_type_tag == GI_TYPE_TAG_UTF8 || item_type_tag == GI_TYPE_TAG_FILENAME)
+    {
+        size_t len = g_type_info_get_array_fixed_size(array_type_info);
+        SCM out = SCM_EOL;
+        if (array_is_zero_terminated)
+        {
+            if (arg->v_pointer == NULL)
+                len = 0;
+            else
+            {
+                // This must be a NULL-terminated list of string pointers.
+                len = 0;
+                while(((char **)arg->v_pointer)[len] != NULL)
+                    len++;
+            }
+        }
+        for (int i = 0; i < len; i ++)
+        {
+            char *p = ((char **)arg->v_pointer)[i];
+            if (!p)
+                out = scm_append(scm_list_2(out, scm_list_1(SCM_BOOL_F)));
+            else
+            {
+                SCM entry;
+                if (item_type_tag == GI_TYPE_TAG_UTF8)
+                    entry = scm_from_utf8_string(((char **)arg->v_pointer)[i]);
+                else
+                    entry = scm_from_locale_string(((char **)arg->v_pointer)[i]);
+                out = scm_append(scm_list_2(out, scm_list_1(entry)));
+            }
+        }
+        *obj = out;
     }
     else
     {
@@ -3711,7 +3739,6 @@ void gi_giargument_release(GIArgument *arg,
                            GIDirection direction)
 {
     GITypeTag type_tag;
-    gboolean is_out = (direction == GI_DIRECTION_OUT || direction == GI_DIRECTION_INOUT);
 
     type_tag = g_type_info_get_tag(type_info);
 
