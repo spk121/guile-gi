@@ -962,7 +962,7 @@ object_to_c_interface_pointer_arg(char *subr, int argpos, SCM obj,
 {
     // Usually STRUCT, UNION, INTERFACE, OBJECT.  Handle NULL_OK
     GITypeInfo *type_info = g_arg_info_get_type(arg_info);
-    g_assert_cmpint(g_type_info_get_tag(type_info), =, GI_TYPE_TAG_INTERFACE);
+    g_assert_cmpint(g_type_info_get_tag(type_info), ==, GI_TYPE_TAG_INTERFACE);
     GIBaseInfo *referenced_base_info = g_type_info_get_interface(type_info);
     GIInfoType referenced_base_type = g_base_info_get_type(referenced_base_info);
     g_base_info_unref(type_info);
@@ -1020,7 +1020,7 @@ object_to_c_array_arg(char *subr, int argpos, SCM object,
     ai.array_transfer = array_transfer;
 
     // Some obvious checks
-    g_assert_cmpint(ai.array_type_tag, =, GI_TYPE_TAG_ARRAY);
+    g_assert_cmpint(ai.array_type_tag, ==, GI_TYPE_TAG_ARRAY);
     g_assert_true(ai.array_is_ptr);
 
     if ((ai.array_transfer == GI_TRANSFER_CONTAINER)
