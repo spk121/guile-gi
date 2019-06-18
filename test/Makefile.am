@@ -74,7 +74,22 @@ MEMORY_SLICES_TESTS = \
  slice_alloc.scm
 
 IO_CHANNELS_TESTS = \
- io_channel_pipe.scm
+ io_channel_pipe.scm \
+ io_channel_new_file.scm \
+ io_channel_unichar.scm
+
+MESSAGE_OUTPUT_TESTS = \
+ log_set_handler.scm \
+ log_writer_is_journald.scm
+
+STRING_UTILITY_TESTS = \
+ strdup.scm \
+ strndup.scm \
+ strnfill.scm \
+ stpcpy.scm \
+ strstr_len.scm \
+ str_has_prefix.scm \
+ str_tokenize_and_fold.scm
 
 BASE64_ENCODING_TESTS = \
  base64_encode.scm
@@ -86,8 +101,13 @@ TESTS = \
  $(BYTE_ORDER_MACROS_TESTS) \
  $(NUMERICAL_DEFINITIONS_TESTS) \
  $(ATOMIC_OPERATIONS_TESTS) \
+ $(MESSAGE_OUTPUT_TESTS) \
  $(MAIN_EVENT_LOOP_TESTS) \
  $(MEMORY_ALLOCATION_TESTS) \
+ $(MEMORY_SLICES_TESTS) \
+ $(IO_CHANNELS_TESTS) \
+ $(MEMORY_OUTPUT_TESTS) \
+ $(STRING_UTILITY_TESTS) \
  $(BASE64_ENCODING_TESTS) \
  memchk_1.scm \
  memchk_2.scm \
