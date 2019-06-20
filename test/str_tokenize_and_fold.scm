@@ -1,6 +1,7 @@
 (use-modules (gi) (gi glib-2)
              (rnrs bytevectors)
-             (test automake-test-lib))
+             (test automake-test-lib)
+             (srfi srfi-1))
 
 ;; FIXME: the ascii-alternates output parameter
 ;; is from a gchar*** output parameter.  This is
@@ -17,5 +18,5 @@
          (ascii-alternates (cadr out)))
      (write tokens) (newline)
      (write ascii-alternates) (newline)
-     (equal? tokens (list "Les" "pâtes")))))
-
+     ;; take case-folding into account
+     (every string-ci=? (list "Les" "pâtes") tokens))))

@@ -2196,7 +2196,7 @@ convert_array_pointer_arg_to_object(GIArgument *arg,
     else if (item_type_tag == GI_TYPE_TAG_UTF8 || item_type_tag == GI_TYPE_TAG_FILENAME)
     {
         size_t len = g_type_info_get_array_fixed_size(array_type_info);
-        SCM out = SCM_EOL;
+        SCM out = SCM_EOL, out_iter;
         if (array_is_zero_terminated)
         {
             if (arg->v_pointer == NULL)
@@ -2209,20 +2209,21 @@ convert_array_pointer_arg_to_object(GIArgument *arg,
                     len++;
             }
         }
+        out = scm_make_list (scm_from_size_t (len), SCM_BOOL_F);
+        out_iter = out;
         for (int i = 0; i < len; i ++)
         {
             char *p = ((char **)arg->v_pointer)[i];
-            if (!p)
-                out = scm_append(scm_list_2(out, scm_list_1(SCM_BOOL_F)));
-            else
+            if (p)
             {
                 SCM entry;
                 if (item_type_tag == GI_TYPE_TAG_UTF8)
                     entry = scm_from_utf8_string(((char **)arg->v_pointer)[i]);
                 else
                     entry = scm_from_locale_string(((char **)arg->v_pointer)[i]);
-                out = scm_append(scm_list_2(out, scm_list_1(entry)));
+                scm_set_car_x (out_iter, entry);
             }
+            out_iter = scm_cdr (out_iter);
         }
         *obj = out;
     }
