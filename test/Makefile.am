@@ -148,3 +148,5 @@ dist_example_DATA = \
   example-1c.scm \
   browser.scm \
   editor.scm
+
+CLEANFILES = tmp.txt
