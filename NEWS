@@ -1,3 +1,5 @@
+XXXX-XX-XX: version 0.0.3
+
 2019-06-16: version 0.0.2
 - Improvements in C-to-SCM procedure argument conversions
 - Guix skeleton (thanks Jan)

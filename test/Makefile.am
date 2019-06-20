@@ -89,10 +89,22 @@ STRING_UTILITY_TESTS = \
  stpcpy.scm \
  strstr_len.scm \
  str_has_prefix.scm \
- str_tokenize_and_fold.scm
+ str_tokenize_and_fold.scm \
+ strjoinv.scm
+
+CHARACTER_SET_CONVERSION_TESTS = \
+ convert.scm \
+ convert_latin1.scm
 
 BASE64_ENCODING_TESTS = \
  base64_encode.scm
+
+UNICODE_MANIPULATION_TESTS = \
+ unichar_validate_zero.scm \
+ unichar_isalpha.scm \
+ unichar_compose.scm \
+ unichar_combining_class.scm \
+ unicode_canonical_ordering.scm
 
 TESTS = \
  $(VERSION_INFORMATION_TESTS) \
@@ -108,7 +120,9 @@ TESTS = \
  $(IO_CHANNELS_TESTS) \
  $(MEMORY_OUTPUT_TESTS) \
  $(STRING_UTILITY_TESTS) \
+ $(CHARACTER_SET_CONVERSION_TESTS) \
  $(BASE64_ENCODING_TESTS) \
+ $(UNICODE_MANIPULATION_TESTS) \
  memchk_1.scm \
  memchk_2.scm \
  byte_array_new.scm \
@@ -117,10 +131,7 @@ TESTS = \
  bytes_new_null_contents.scm \
  gapplication_1.scm \
  gapplication_2.scm \
- softerror_create.scm \
- strjoinv.scm \
- convert.scm \
- convert_latin1.scm
+ softerror_create.scm
 
 XFAIL_TESTS = \
  atomic_int_set.scm \
@@ -148,3 +159,5 @@ dist_example_DATA = \
   example-1c.scm \
   browser.scm \
   editor.scm
+
+CLEANFILES = tmp.txt
