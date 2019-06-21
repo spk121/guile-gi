@@ -96,15 +96,30 @@ CHARACTER_SET_CONVERSION_TESTS = \
  convert.scm \
  convert_latin1.scm
 
-BASE64_ENCODING_TESTS = \
- base64_encode.scm
-
 UNICODE_MANIPULATION_TESTS = \
  unichar_validate_zero.scm \
  unichar_isalpha.scm \
  unichar_compose.scm \
  unichar_combining_class.scm \
  unicode_canonical_ordering.scm
+
+BASE64_ENCODING_TESTS = \
+ base64_encode.scm
+
+DATA_CHECKSUM_TESTS = \
+ checksum.scm
+
+SECURE_HMAC_DIGESTS_TESTS = \
+ hmac.scm \
+ hmac_data.scm \
+ hmac_bytes.scm
+
+DATE_AND_TIME_FUNCTIONS_TESTS = \
+ get_monotonic_time.scm \
+ get_real_time.scm \
+ date_new.scm \
+ date_copy.scm \
+ date_clear.scm
 
 TESTS = \
  $(VERSION_INFORMATION_TESTS) \
@@ -123,6 +138,9 @@ TESTS = \
  $(CHARACTER_SET_CONVERSION_TESTS) \
  $(BASE64_ENCODING_TESTS) \
  $(UNICODE_MANIPULATION_TESTS) \
+ $(DATA_CHECKSUM_TESTS) \
+ $(SECURE_HMAC_DIGESTS_TESTS) \
+ $(DATE_AND_TIME_FUNCTIONS_TESTS) \
  memchk_1.scm \
  memchk_2.scm \
  byte_array_new.scm \
