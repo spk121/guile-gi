@@ -1767,6 +1767,11 @@ SCM gi_giargument_convert_return_val_to_object(GIArgument *arg,
     }
     else
     {
+        if (arg->v_pointer == NULL)
+            scm_misc_error("%return-val->object",
+                           "Unexpected NULL pointer received from C procedure",
+                           SCM_EOL);
+
         switch (type_tag)
         {
         case GI_TYPE_TAG_BOOLEAN:
