@@ -53,6 +53,99 @@ struct array_info
     unsigned must_free;
 };
 
+static void
+fill_array_info (struct array_info *ai,
+                 GITypeInfo *array_type_info,
+                 GITransfer array_transfer)
+{
+    // So there are layers to all this ArgInfo stuff
+    // LAYER 1: Let's start on layer 1, where this GIArgInfo tells
+    // us we're an array.
+    ai->array_type_tag = g_type_info_get_tag(array_type_info);
+    ai->array_is_ptr = g_type_info_is_pointer(array_type_info);
+    ai->array_fixed_size = g_type_info_get_array_fixed_size(array_type_info);
+    ai->array_is_zero_terminated = g_type_info_is_zero_terminated(array_type_info);
+    ai->array_type = g_type_info_get_array_type(array_type_info);
+    ai->array_transfer = array_transfer;
+
+    g_assert_cmpint(ai->array_type_tag, ==, GI_TYPE_TAG_ARRAY);
+    g_assert_true(ai->array_is_ptr);
+
+    if ((ai->array_transfer == GI_TRANSFER_CONTAINER)
+        || ai->array_transfer == GI_TRANSFER_NOTHING)
+        ai->item_transfer = GI_TRANSFER_NOTHING;
+    else
+        ai->item_transfer = GI_TRANSFER_EVERYTHING;
+
+    // LAYER 2 is where we figure out what the element type of the array is.
+    GITypeInfo *item_type_info = g_type_info_get_param_type(array_type_info, 0);
+    ai->item_type_tag = g_type_info_get_tag(item_type_info);
+    ai->item_is_ptr = g_type_info_is_pointer(item_type_info);
+
+    if (ai->item_is_ptr)
+        ai->item_size = sizeof (void *);
+
+    switch (ai->item_type_tag)
+    {
+    case GI_TYPE_TAG_INT8:
+    case GI_TYPE_TAG_UINT8:
+        ai->item_size = 1;
+        break;
+    case GI_TYPE_TAG_INT16:
+    case GI_TYPE_TAG_UINT16:
+        ai->item_size = 2;
+        break;
+    case GI_TYPE_TAG_INT32:
+    case GI_TYPE_TAG_UINT32:
+        ai->item_size = 4;
+        break;
+    case GI_TYPE_TAG_INT64:
+    case GI_TYPE_TAG_UINT64:
+        ai->item_size = 8;
+        break;
+    case GI_TYPE_TAG_FLOAT:
+        ai->item_size = sizeof(float);
+        break;
+    case GI_TYPE_TAG_DOUBLE:
+        ai->item_size = sizeof(double);
+        break;
+    case GI_TYPE_TAG_INTERFACE:
+    {
+        GIBaseInfo *referenced_base_info = g_type_info_get_interface(item_type_info);
+        ai->referenced_base_type = g_base_info_get_type(referenced_base_info);
+
+        switch (ai->referenced_base_type)
+        {
+        case GI_INFO_TYPE_ENUM:
+        case GI_INFO_TYPE_FLAGS:
+
+            g_assert_false (ai->item_is_ptr);
+            ai->item_size = sizeof (int);
+            break;
+        case GI_INFO_TYPE_STRUCT:
+            ai->referenced_object_type = g_registered_type_info_get_g_type(referenced_base_info);
+            if (!ai->item_is_ptr)
+                ai->item_size = g_struct_info_get_size(referenced_base_info);
+            break;
+        case GI_INFO_TYPE_UNION:
+            ai->referenced_object_type = g_registered_type_info_get_g_type(referenced_base_info);
+            if (!ai->item_is_ptr)
+                ai->item_size = g_union_info_get_size(referenced_base_info);
+            break;
+        case GI_INFO_TYPE_OBJECT:
+            ai->referenced_object_type = g_registered_type_info_get_g_type(referenced_base_info);
+            if (!ai->item_is_ptr)
+                ai->item_size = sizeof (void *);
+            break;
+        }
+        g_base_info_unref (referenced_base_info);
+        break;
+    }
+    }
+
+    g_base_info_unref (item_type_info);
+}
+
 /*
  * vim: tabstop=4 shiftwidth=4 expandtab
  *
@@ -1018,92 +1111,13 @@ object_to_c_array_arg(char *subr, int argpos, SCM object,
                       GIArgument *arg)
 {
     struct array_info ai = {0};
-
-    // So there are layers to all this ArgInfo stuff
-    // LAYER 1: Let's start on layer 1, where this GIArgInfo tells
-    // us we're an array.
-    ai.array_type_tag = g_type_info_get_tag(array_type_info);
-    ai.array_is_ptr = g_type_info_is_pointer(array_type_info);
-    ai.array_is_zero_terminated = g_type_info_is_zero_terminated(array_type_info);
-    ai.array_type = g_type_info_get_array_type(array_type_info);
-    ai.array_transfer = array_transfer;
-
-    // Some obvious checks
-    g_assert_cmpint(ai.array_type_tag, ==, GI_TYPE_TAG_ARRAY);
-    g_assert_true(ai.array_is_ptr);
-
-    if ((ai.array_transfer == GI_TRANSFER_CONTAINER)
-        || ai.array_transfer == GI_TRANSFER_NOTHING)
-        ai.item_transfer = GI_TRANSFER_NOTHING;
-    else
-        ai.item_transfer = GI_TRANSFER_EVERYTHING;
-
+    fill_array_info (&ai, array_type_info, array_transfer);
 
     switch (ai.array_type)
     {
     case GI_ARRAY_TYPE_C:
-    {
-        GITypeInfo *item_type_info = g_type_info_get_param_type(array_type_info, 0);
-        ai.item_type_tag = g_type_info_get_tag(item_type_info);
-        ai.item_is_ptr = g_type_info_is_pointer(item_type_info);
-        switch (ai.item_type_tag)
-        {
-        case GI_TYPE_TAG_INT8:
-        case GI_TYPE_TAG_UINT8:
-            ai.item_size = 1;
-            break;
-        case GI_TYPE_TAG_INT16:
-        case GI_TYPE_TAG_UINT16:
-            ai.item_size = 2;
-            break;
-        case GI_TYPE_TAG_INT32:
-        case GI_TYPE_TAG_UINT32:
-            ai.item_size = 4;
-            break;
-        case GI_TYPE_TAG_INT64:
-        case GI_TYPE_TAG_UINT64:
-            ai.item_size = 8;
-            break;
-        case GI_TYPE_TAG_FLOAT:
-            ai.item_size = sizeof(float);
-            break;
-        case GI_TYPE_TAG_DOUBLE:
-            ai.item_size = sizeof(double);
-            break;
-        case GI_TYPE_TAG_INTERFACE:
-        {
-            GIBaseInfo *referenced_base_info = g_type_info_get_interface(item_type_info);
-            ai.referenced_base_type = g_base_info_get_type(referenced_base_info);
-            if (ai.referenced_base_type == GI_INFO_TYPE_STRUCT)
-            {
-                ai.referenced_object_type = g_registered_type_info_get_g_type(referenced_base_info);
-                if (ai.item_is_ptr)
-                    ai.item_size = sizeof(void *);
-                else
-                    ai.item_size = g_struct_info_get_size(referenced_base_info);
-            }
-            else if (ai.referenced_base_type == GI_INFO_TYPE_UNION)
-            {
-                ai.referenced_object_type = g_registered_type_info_get_g_type(referenced_base_info);
-                if (ai.item_is_ptr)
-                    ai.item_size = sizeof(void *);
-                else
-                    ai.item_size = g_union_info_get_size(referenced_base_info);
-            }
-            else if (ai.referenced_base_type == GI_INFO_TYPE_OBJECT)
-            {
-                ai.referenced_object_type = g_registered_type_info_get_g_type(referenced_base_info);
-                ai.item_size = sizeof(void *);
-            }
-            g_base_info_unref(referenced_base_info);
-        }
-        default:
-            break;
-        }
-        g_base_info_unref(item_type_info);
         object_to_c_native_array_arg(subr, argpos, object, &ai, arg);
-    }
-    break;
+        break;
     case GI_ARRAY_TYPE_ARRAY:
         object_to_c_garray_array_arg(subr, argpos, object, &ai, arg);
         break;
@@ -1155,38 +1169,10 @@ object_to_c_native_immediate_array_arg(char *subr, int argpos,
     // GI_TRANSFER_EVERYTHING, we need to make a deep copy.  If the
     // argument is NULL_OK and the SCM is #f, we pass NULL.
 
+    g_assert_cmpint (ai->item_size, !=, 0);
+
     if (scm_is_bytevector(object))
     {
-        gsize element_size;
-        switch (ai->item_type_tag)
-        {
-        case GI_TYPE_TAG_INT8:
-        case GI_TYPE_TAG_UINT8:
-            element_size = 1;
-            break;
-        case GI_TYPE_TAG_INT16:
-        case GI_TYPE_TAG_UINT16:
-            element_size = 2;
-            break;
-        case GI_TYPE_TAG_INT32:
-        case GI_TYPE_TAG_UINT32:
-            element_size = 4;
-            break;
-        case GI_TYPE_TAG_INT64:
-        case GI_TYPE_TAG_UINT64:
-            element_size = 8;
-            break;
-        case GI_TYPE_TAG_FLOAT:
-            element_size = sizeof(float);
-            break;
-        case GI_TYPE_TAG_DOUBLE:
-            element_size = sizeof(double);
-            break;
-        default:
-            g_assert_not_reached();
-            break;
-        }
-
         if (ai->item_transfer == GI_TRANSFER_NOTHING)
         {
             if (!ai->array_is_zero_terminated)
@@ -1198,7 +1184,7 @@ object_to_c_native_immediate_array_arg(char *subr, int argpos,
             {
                 size_t len = SCM_BYTEVECTOR_LENGTH(object);
                 // Adding null terminator element.
-                arg->v_pointer = g_malloc0(len + element_size);
+                arg->v_pointer = g_malloc0(len + ai->item_size);
                 memcpy(arg->v_pointer, SCM_BYTEVECTOR_CONTENTS(object), len);
                 ai->must_free = GIR_FREE_SIMPLE;
             }
@@ -1214,7 +1200,7 @@ object_to_c_native_immediate_array_arg(char *subr, int argpos,
             {
                 size_t len = SCM_BYTEVECTOR_LENGTH(object);
                 // Note, null terminated here.
-                arg->v_pointer = g_malloc0(len + element_size);
+                arg->v_pointer = g_malloc0(len + ai->item_size);
                 memcpy(arg->v_pointer, SCM_BYTEVECTOR_CONTENTS(object), len);
             }
         }
@@ -1338,7 +1324,6 @@ object_to_c_native_interface_array_arg(char *subr,
         // class on the Scheme side of things.  On the scheme
         // side, enums and flags are just variables holding
         // integers.
-        ai->item_type_tag = GI_TYPE_TAG_UINT32;
         object_to_c_native_immediate_array_arg(subr,argpos,object,
                                                ai, arg);
     }
@@ -2038,85 +2023,8 @@ convert_array_pointer_arg_to_object(GIArgument *arg,
                                     GITransfer array_transfer,
                                     SCM *obj)
 {
-    // Just like its convert_array_object_to arg, this
-    // is a rats' nest of types.
-
-    // Array outputs include
-    // - deep-copied arrays of string pointers
-    // - arrays of const string pointers
-    // - arrays of guint8 or gint8
-    // - zero-terminated arrays of guint8
-    // - caller-allocated arrays of guint8
-    // - arrays of int32
-    // - zero-terminated arrays of int32
-    // - arrays of double
-    // - arrays of structs
-    // - arrays of struct pointers
-    // - zero-terminated arrays of variants
-
     struct array_info ai = {0};
-
-    // So there are layers to all this ArgInfo stuff
-    // LAYER 1: Let's start on layer 1, where this GIArgInfo tells
-    // us we're an array.
-    ai.array_type_tag = g_type_info_get_tag(array_type_info);
-    ai.array_is_ptr = g_type_info_is_pointer(array_type_info);
-    ai.array_fixed_size = g_type_info_get_array_fixed_size(array_type_info);
-    ai.array_is_zero_terminated = g_type_info_is_zero_terminated(array_type_info);
-    ai.array_type = g_type_info_get_array_type(array_type_info);
-    ai.array_transfer = array_transfer;
-
-    // Some obvious checks
-    g_assert_cmpint(ai.array_type_tag, ==, GI_TYPE_TAG_ARRAY);
-    g_assert_true(ai.array_is_ptr);
-
-    if ((ai.array_transfer == GI_TRANSFER_CONTAINER)
-        || ai.array_transfer == GI_TRANSFER_NOTHING)
-        ai.item_transfer = GI_TRANSFER_NOTHING;
-    else
-        ai.item_transfer = GI_TRANSFER_EVERYTHING;
-
-    // LAYER 2 is where we figure out what the element type of the array is.
-    GITypeInfo *item_type_info = g_type_info_get_param_type(array_type_info, 0);
-    ai.item_type_tag = g_type_info_get_tag(item_type_info);
-    ai.item_is_ptr = g_type_info_is_pointer(item_type_info);
-    if (ai.item_is_ptr)
-        ai.item_size = sizeof(void *);
-
-    switch (ai.item_type_tag)
-    {
-    case GI_TYPE_TAG_INT8:
-    case GI_TYPE_TAG_UINT8:
-        ai.item_size = 1;
-        break;
-    case GI_TYPE_TAG_INT16:
-    case GI_TYPE_TAG_UINT16:
-        ai.item_size = 2;
-        break;
-    case GI_TYPE_TAG_INT32:
-    case GI_TYPE_TAG_UINT32:
-        ai.item_size = 4;
-        break;
-    case GI_TYPE_TAG_INT64:
-    case GI_TYPE_TAG_UINT64:
-        ai.item_size = 8;
-        break;
-    case GI_TYPE_TAG_FLOAT:
-        ai.item_size = sizeof(float);
-        break;
-    case GI_TYPE_TAG_DOUBLE:
-        ai.item_size = sizeof(double);
-        break;
-    case GI_TYPE_TAG_INTERFACE:
-    {
-        GIBaseInfo *referenced_base_info = g_type_info_get_interface(item_type_info);
-        ai.referenced_base_type = g_base_info_get_type(referenced_base_info);
-        if (!ai.item_is_ptr && ai.referenced_base_type == GI_INFO_TYPE_STRUCT)
-            ai.item_size = g_struct_info_get_size(referenced_base_info);
-        g_base_info_unref (item_type_info);
-        break;
-    }
-    }
+    fill_array_info (&ai, array_type_info, array_transfer);
 
     switch (ai.array_type)
     {
@@ -2132,7 +2040,6 @@ convert_array_pointer_arg_to_object(GIArgument *arg,
         break;
     }
 
-    g_base_info_unref(item_type_info);
     return;
 }
 
@@ -2167,7 +2074,6 @@ object_from_c_native_array_arg(struct array_info *ai,
                 g_critical("Unhandled array type in %s:%d", __FILE__, __LINE__);
                 g_assert_not_reached();
             }
-            ai->item_size = sizeof (int);
             break;
         case GI_INFO_TYPE_STRUCT:
         case GI_INFO_TYPE_OBJECT:
