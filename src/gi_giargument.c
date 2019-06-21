@@ -1715,8 +1715,8 @@ SCM gi_giargument_convert_return_val_to_object(GIArgument *arg,
 {
     SCM obj = SCM_BOOL_F;
 
-    /* if (skip) */
-    /*     return SCM_UNSPECIFIED; */
+    if (skip)
+        return SCM_UNSPECIFIED;
     if (null_ok && arg->v_pointer == NULL)
         return SCM_BOOL_F;
 
