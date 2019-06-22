@@ -121,6 +121,23 @@ DATE_AND_TIME_FUNCTIONS_TESTS = \
  date_copy.scm \
  date_clear.scm
 
+MEMCHK_TESTS = \
+ memchk_1.scm \
+ memchk_2.scm
+
+BYTE_ARRAY_TESTS = \
+ byte_array_new.scm \
+ byte_array_new_take.scm \
+ bytes_new_null_size.scm \
+ bytes_new_null_contents.scm
+
+GAPPLICATION_TESTS = \
+ gapplication_1.scm \
+ gapplication_2.scm
+
+FUZZY_MATCH_TESTS = \
+ fuzzy_match.scm
+
 TESTS = \
  $(VERSION_INFORMATION_TESTS) \
  $(BASIC_TYPE_TESTS) \
@@ -141,14 +158,10 @@ TESTS = \
  $(DATA_CHECKSUM_TESTS) \
  $(SECURE_HMAC_DIGESTS_TESTS) \
  $(DATE_AND_TIME_FUNCTIONS_TESTS) \
- memchk_1.scm \
- memchk_2.scm \
- byte_array_new.scm \
- byte_array_new_take.scm \
- bytes_new_null_size.scm \
- bytes_new_null_contents.scm \
- gapplication_1.scm \
- gapplication_2.scm \
+ $(MEMCHK_TESTS) \
+ $(BYTE_ARRAY_TESTS) \
+ $(GAPPLICATION_TESTS) \
+ $(FUZZY_MATCH_TESTS) \
  softerror_create.scm
 
 XFAIL_TESTS = \

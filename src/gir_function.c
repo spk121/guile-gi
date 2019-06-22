@@ -345,7 +345,7 @@ gir_function_invoke (char *name, GIFunctionInfo *info, GObject *object, SCM args
     case 1:
         return scm_car (output);
     default:
-        return output;
+        return scm_values (output);
     }
 }
 
