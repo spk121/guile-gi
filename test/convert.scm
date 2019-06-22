@@ -10,7 +10,7 @@
 
 (automake-test
  (receive (converted bytes-read bytes-written)
-     (convert (u8-list->bytevector '(65 66 67 68 69)) ; ASCII 'ABCDE'
+     (convert #vu8(65 66 67 68 69) ; ASCII 'ABCDE'
               5
               "UTF-8"
               "US-ASCII")
