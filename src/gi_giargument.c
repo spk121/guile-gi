@@ -1709,8 +1709,8 @@ SCM gi_giargument_convert_return_val_to_object(GIArgument *arg,
 {
     SCM obj = SCM_BOOL_F;
 
-    /* if (skip) */
-    /*     return SCM_UNSPECIFIED; */
+    if (skip)
+        return SCM_UNSPECIFIED;
     if (null_ok && arg->v_pointer == NULL)
         return SCM_BOOL_F;
 
@@ -1761,6 +1761,11 @@ SCM gi_giargument_convert_return_val_to_object(GIArgument *arg,
     }
     else
     {
+        if (arg->v_pointer == NULL)
+            scm_misc_error("%return-val->object",
+                           "Unexpected NULL pointer received from C procedure",
+                           SCM_EOL);
+
         switch (type_tag)
         {
         case GI_TYPE_TAG_BOOLEAN:
