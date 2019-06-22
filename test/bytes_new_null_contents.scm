@@ -15,21 +15,17 @@
 ;;  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 (use-modules (gi)
-	     (gi glib-2)
-	     (srfi srfi-1)
+	         (gi glib-2)
+	         (ice-9 receive)
              (test automake-test-lib))
 
 (setlocale LC_ALL "C")
 (automake-test
  (begin
-   (let* ((self (Bytes-new #f 0))
-	  (output (call-method self "get-data"))
-	  (data (first output))
-	  (siz (second output)))
-     
-     (format #t "New Byte Array: ~S~%" self)
-     (format #t "Output: ~S~%" output)
-     (format #t "Data: ~S~%" data)
-     (format #t "Size: ~S~%" siz)
-     (and (not data)
-	  (equal? 0 siz)))))
+   (let ((self (Bytes-new #f 0)))
+     (receive (data siz) (call-method self "get-data")
+       (format #t "New Byte Array: ~S~%" self)
+       (format #t "Data: ~S~%" data)
+       (format #t "Size: ~S~%" siz)
+       (and (not data)
+	        (equal? 0 siz))))))

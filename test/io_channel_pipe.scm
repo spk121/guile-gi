@@ -1,5 +1,6 @@
 (use-modules (gi) (gi glib-2)
              (rnrs bytevectors)
+             (ice-9 receive)
              (test automake-test-lib))
 
 (define SIZ 10)
@@ -10,7 +11,6 @@
     bv2))
 
 (automake-test
-
  ;; let's make a pipe to push data through
  (let* ((ports (pipe))
         (in-port (car ports))
@@ -31,15 +31,13 @@
        (display "hello" out-port)
        (close out-port)
 
-       ;; 
-       (let ((status-nbytes (send channel (read-chars buf SIZ))))
-         (let ((status (car status-nbytes))
-               (nbytes-read (cadr status-nbytes)))
-               
-           (write (utf8->string buf)) (newline)
-           (write status-nbytes) (newline)
+       ;;
+       (receive (status nbytes-read)
+           (send channel (read-chars buf SIZ))
+         (write (utf8->string buf)) (newline)
+           (write (list status nbytes-read)) (newline)
            (and (string=?
                  (utf8->string (subbytevector buf 0 5))
                  "hello")
                 (equal? 5               ; the number of bytes in 'hello'
-                        nbytes-read))))))))
+                        nbytes-read)))))))

@@ -1,6 +1,6 @@
 (use-modules (gi) (gi glib-2)
              (rnrs bytevectors)
-             (srfi srfi-1)
+             (ice-9 receive)
              (test automake-test-lib))
 
 (define SIZ 10)
@@ -22,10 +22,9 @@
          (buf (make-bytevector SIZ 0)))
 
      ;; Read as much as we can.
-     (let ((status/nbytes (send channel (read-chars buf SIZ))))
-       (let ((status      (first  status/nbytes))
-             (nbytes      (second status/nbytes)))
-         (let ((bv (subbytevector buf 0 nbytes)))
+     (receive (status nbytes)
+         (send channel (read-chars buf SIZ))
+       (let ((bv (subbytevector buf 0 nbytes)))
            (format #t "Output bytevector contents: ~S~%" bv)
            (format #t "Output bytevector as UTF8: ~S~%" (utf8->string bv))
            (format #t "Bytes read: ~S~%" nbytes)
@@ -34,4 +33,4 @@
                  (utf8->string bv)
                  "foobar")
                 (equal? 6               ; the number of bytes in 'foobar'
-                        nbytes))))))))
+                        nbytes)))))))
