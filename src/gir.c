@@ -1,5 +1,5 @@
 /* -*- Mode: C; c-basic-offset: 4 -*- */
-// Copyright (C) 2018 Michael L. Gran
+// Copyright (C) 2018, 2019 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -41,8 +41,10 @@ static const int _win32 = TRUE;
 static const int _win32 = FALSE;
 #endif
 
+#ifdef ENABLE_GCOV
 void __gcov_reset(void);
 void __gcov_dump(void);
+#endif
 
 void
 gir_log_handler(const gchar *log_domain,

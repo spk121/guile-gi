@@ -135,6 +135,9 @@ libguile_gi_la_CPPFLAGS = -DG_LOG_DOMAIN=\"GuileGI\"
 if BUILDING_DLL
 libguile_gi_la_CPPFLAGS += -DGIR_DLL -DGIR_DLL_EXPORTS
 endif
+if COVERAGE
+libguile_gi_la_CPPFLAGS += -DENABLE_GCOV --coverage
+endif
 
 libguile_gi_la_CFLAGS = \
   -std=c11 \
@@ -151,6 +154,10 @@ libguile_gi_la_LDFLAGS = \
 
 if !DLL_VERSION_INFO
 libguile_gi_la_LDFLAGS += -avoid-version
+endif
+
+if COVERAGE
+libguile_gi_la_LDFLAGS += --coverage -Wl,--dynamic-list-data
 endif
 
 libguile_gi_la_LIBADD = \
