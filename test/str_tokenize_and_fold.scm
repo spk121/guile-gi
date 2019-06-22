@@ -1,6 +1,7 @@
 (use-modules (gi) (gi glib-2)
              (rnrs bytevectors)
              (test automake-test-lib)
+             (ice-9 receive)
              (srfi srfi-1))
 
 ;; FIXME: the ascii-alternates output parameter
@@ -13,10 +14,9 @@
 ;;                         gchar ***ascii_alternates);
 
 (automake-test
- (let ((out (str-tokenize-and-fold "Les pâtes" "fr_FR")))
-   (let ((tokens (car out))
-         (ascii-alternates (cadr out)))
-     (write tokens) (newline)
+ (receive (tokens ascii-alternates)
+     (str-tokenize-and-fold "Les pâtes" "fr_FR")
+   (write tokens) (newline)
      (write ascii-alternates) (newline)
      ;; take case-folding into account
-     (every string-ci=? (list "Les" "pâtes") tokens))))
+     (every string-ci=? (list "Les" "pâtes") tokens)))
