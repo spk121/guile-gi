@@ -13,11 +13,9 @@
                        2
                        "UTF-8"
                        "ISO-8859-1")))
-   (let ((output (bytevector->u8-list
-                  (pointer->bytevector
-                   (first input)          ; a pointer
-                   (third input)          ; number of output bytes
-                   ))))
+   ;; for some reason, the null byte is still included in the output
+   (let ((output (take (bytevector->u8-list (first input))
+                       (third input))))
      (write output)
      (equal? output '(195 129           ; UTF-8 encoded Á
                           195 137       ; UTF-8 encoded É

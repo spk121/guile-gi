@@ -13,10 +13,7 @@
                        5
                        "UTF-8"
                        "US-ASCII")))
-   (let ((output (bytevector->u8-list
-                  (pointer->bytevector
-                   (first input)          ; a pointer
-                   (third input)          ; number of output bytes
-                   ))))
+   (let ((output (take (bytevector->u8-list (first input))
+                       (third input))))
      (equal? output '(65 66 67 68 69)   ; UTF-8 'ABCDE'
              ))))
