@@ -382,6 +382,10 @@ static SCM
 object_from_c_byte_array_arg(struct array_info *ai,
                              GIArgument *arg);
 
+static SCM
+object_from_c_garray_arg(struct array_info *ai,
+                         GIArgument *arg);
+
 static void convert_immediate_arg_to_object(GIArgument *arg, GITypeTag type_tag, SCM *obj);
 static void convert_interface_arg_to_object(GIArgument *arg, GITypeInfo *type_info, SCM *obj);
 static void convert_string_pointer_arg_to_object(GIArgument *arg, GITypeTag type_tag, GITransfer transfer, SCM *obj);
@@ -2052,6 +2056,9 @@ convert_array_pointer_arg_to_object(GIArgument *arg,
     case GI_ARRAY_TYPE_C:
         *obj = object_from_c_native_array_arg (&ai, arg);
         break;
+    case GI_ARRAY_TYPE_ARRAY:
+        *obj = object_from_c_garray_arg (&ai, arg);
+        break;
     default:
         g_critical("Unhandled array type in %s:%d", __FILE__, __LINE__);
         g_assert_not_reached();
@@ -2156,6 +2163,38 @@ object_from_c_byte_array_arg(struct array_info *ai,
         g_byte_array_free(byte_array, TRUE);
     else
         g_byte_array_free(byte_array, FALSE);
+    return obj;
+}
+
+static SCM
+object_from_c_garray_arg(struct array_info *ai,
+                         GIArgument *arg)
+{
+    GArray *array = arg->v_pointer;
+    gpointer data = array->data;
+    SCM obj;
+
+    // We hopefully never have to deal with GArrays of pointer types,
+    // given that GPtrArray exists.
+    g_assert_false (ai->item_is_ptr);
+    g_assert_cmpint (ai->item_size, !=, 0);
+
+    obj = scm_c_make_vector (array->len, SCM_UNDEFINED);
+
+    scm_t_array_handle handle;
+    gsize len, inc, item_size = ai->item_size;
+    SCM *elt;
+
+    elt = scm_vector_writable_elements (obj, &handle, &len, &inc);
+    g_assert (len == array->len);
+
+    for (gsize i = 0; i < len; i++, elt += inc, data += item_size)
+    {
+        *elt = scm_c_make_bytevector (item_size);
+        memcpy (SCM_BYTEVECTOR_CONTENTS(*elt), data, item_size);
+    }
+    scm_array_handle_release (&handle);
+
     return obj;
 }
 
