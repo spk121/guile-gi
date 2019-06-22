@@ -2091,8 +2091,8 @@ object_from_c_native_array_arg(struct array_info *ai,
     case GI_TYPE_TAG_INTERFACE:
         switch (ai->referenced_base_type)
         {
-        case G_TYPE_ENUM:
-        case G_TYPE_FLAGS:
+        case GI_INFO_TYPE_ENUM:
+        case GI_INFO_TYPE_FLAGS:
             if (ai->item_is_ptr)
             {
                 // Don't think there are any output arrays of pointers to flags or enums
@@ -2138,8 +2138,7 @@ object_from_c_native_array_arg(struct array_info *ai,
         g_assert_not_reached();
     }
 
-    if (obj == SCM_UNDEFINED &&
-        ai->item_size)
+    if (SCM_UNBNDP(obj) && ai->item_size)
     {
         size_t _array_length = array_length (ai, arg);
         g_assert_cmpint (_array_length, !=, -1);
