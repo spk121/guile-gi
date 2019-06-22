@@ -36,6 +36,7 @@ struct array_info
     GITypeTag array_type_tag;
     gboolean array_is_ptr;
     gsize array_fixed_size;
+    gsize array_length;
     gboolean array_is_zero_terminated;
     GIArrayType array_type;
     GITransfer array_transfer;
@@ -63,6 +64,7 @@ fill_array_info (struct array_info *ai,
     // us we're an array.
     ai->array_type_tag = g_type_info_get_tag(array_type_info);
     ai->array_is_ptr = g_type_info_is_pointer(array_type_info);
+    ai->array_length = g_type_info_get_array_length(array_type_info);
     ai->array_fixed_size = g_type_info_get_array_fixed_size(array_type_info);
     ai->array_is_zero_terminated = g_type_info_is_zero_terminated(array_type_info);
     ai->array_type = g_type_info_get_array_type(array_type_info);
@@ -144,6 +146,83 @@ fill_array_info (struct array_info *ai,
     }
 
     g_base_info_unref (item_type_info);
+}
+
+static size_t
+array_length (struct array_info *ai,
+              GIArgument *arg)
+{
+    if (ai->array_length != -1)
+        return ai->array_length;
+    else if (ai->array_fixed_size != -1)
+        return ai->array_fixed_size;
+    else if (ai->array_is_zero_terminated)
+    {
+        gpointer array = arg->v_pointer;
+        if (array == NULL)
+            return 0;
+
+        size_t length = 0;
+
+        if (ai->item_type_tag == GI_TYPE_TAG_UTF8 ||
+            ai->item_type_tag == GI_TYPE_TAG_FILENAME)
+        {
+            char **ptr = array;
+            while (ptr[length] != NULL)
+                length++;
+            return length;
+        }
+
+        switch (ai->item_size)
+        {
+        case 0:
+            g_assert_not_reached ();
+        case 1:
+            return strlen (array);
+        case 2:
+        {
+            gint16 *ptr = array;
+            while (ptr++ != 0)
+                length++;
+            return length;
+        }
+        case 4:
+        {
+            gint32 *ptr = array;
+            while (ptr++ != 0)
+                length++;
+            return length;
+        }
+        case 8:
+        {
+            gint64 *ptr = array;
+            while (ptr++ != 0)
+                length++;
+            return length;
+        }
+        default:
+        {
+            gchar *ptr = array;
+            gboolean non_null;
+            length = -1;
+            do
+            {
+                length++;
+                non_null = FALSE;
+                for (size_t i = 0; i <= ai->item_size; i++)
+                    if (ptr + i != 0)
+                    {
+                        non_null = TRUE;
+                        break;
+                    }
+                ptr += ai->item_size;
+            } while (non_null);
+
+            return length;
+        }
+        }
+    }
+    g_assert_not_reached ();
 }
 
 /*
@@ -1957,72 +2036,6 @@ convert_string_pointer_arg_to_object(GIArgument *arg, GITypeTag type_tag, GITran
 }
 
 static void
-gi_giargument_convert_array_to_vector(GIArgument *arg, GITypeTag item_type_tag, GITransfer item_transfer, SCM *obj)
-{
-    /* Here we assume we've been passed a GArray packed in the GIArgument, and we convert that into
-     * a plain Guile vector */
-    GArray *array = arg->v_pointer;
-    // gsize item_size = g_array_get_element_size(array);
-
-    //if (item_type_tag == GI_TYPE_TAG_UINT8 || item_type_tag)
-    //{
-    //    *obj = scm_c_make_bytevector (array->len);
-    //    memcpy (SCM_BYTEVECTOR_CONTENTS(*obj), array->data, array->len);
-    //}
-    //else
-
-    if (TYPE_TAG_IS_EXACT_INTEGER(item_type_tag) || TYPE_TAG_IS_REAL_NUMBER(item_type_tag))
-    {
-        *obj = scm_c_make_vector(array->len, scm_from_int(0));
-        if (item_type_tag == GI_TYPE_TAG_INT8)
-            for (gsize i = 0; i < array->len; i++)
-                scm_c_vector_set_x(*obj, i, scm_from_int8(g_array_index(array, gint8, i)));
-        else if (item_type_tag == GI_TYPE_TAG_UINT8)
-            for (gsize i = 0; i < array->len; i++)
-                scm_c_vector_set_x(*obj, i, scm_from_uint8(g_array_index(array, guint8, i)));
-        else if (item_type_tag == GI_TYPE_TAG_INT16)
-            for (gsize i = 0; i < array->len; i++)
-                scm_c_vector_set_x(*obj, i, scm_from_int16(g_array_index(array, gint16, i)));
-        else if (item_type_tag == GI_TYPE_TAG_UINT16)
-            for (gsize i = 0; i < array->len; i++)
-                scm_c_vector_set_x(*obj, i, scm_from_uint16(g_array_index(array, guint16, i)));
-        else if (item_type_tag == GI_TYPE_TAG_INT32)
-            for (gsize i = 0; i < array->len; i++)
-                scm_c_vector_set_x(*obj, i, scm_from_int32(g_array_index(array, gint32, i)));
-        else if (item_type_tag == GI_TYPE_TAG_UINT32)
-            for (gsize i = 0; i < array->len; i++)
-                scm_c_vector_set_x(*obj, i, scm_from_uint32(g_array_index(array, guint32, i)));
-        else if (item_type_tag == GI_TYPE_TAG_INT64)
-            for (gsize i = 0; i < array->len; i++)
-                scm_c_vector_set_x(*obj, i, scm_from_int64(g_array_index(array, gint64, i)));
-        else if (item_type_tag == GI_TYPE_TAG_UINT64)
-            for (gsize i = 0; i < array->len; i++)
-                scm_c_vector_set_x(*obj, i, scm_from_uint64(g_array_index(array, guint64, i)));
-        else if (item_type_tag == GI_TYPE_TAG_FLOAT)
-            for (gsize i = 0; i < array->len; i++)
-                scm_c_vector_set_x(*obj, i, scm_from_double(g_array_index(array, gfloat, i)));
-        else if (item_type_tag == GI_TYPE_TAG_DOUBLE)
-            for (gsize i = 0; i < array->len; i++)
-                scm_c_vector_set_x(*obj, i, scm_from_double(g_array_index(array, gdouble, i)));
-        else
-            g_assert_not_reached();
-    }
-    else
-        g_assert_not_reached();
-
-    if (item_transfer == GI_TRANSFER_EVERYTHING)
-    {
-        g_array_free(array, TRUE);
-        arg->v_pointer = NULL;
-    }
-    else if (item_transfer == GI_TRANSFER_CONTAINER)
-    {
-        g_array_free(array, FALSE);
-        arg->v_pointer = NULL;
-    }
-}
-
-static void
 convert_array_pointer_arg_to_object(GIArgument *arg,
                                     GITypeInfo *array_type_info,
                                     GITransfer array_transfer,
@@ -2092,22 +2105,8 @@ object_from_c_native_array_arg(struct array_info *ai,
     case GI_TYPE_TAG_UTF8:
     case GI_TYPE_TAG_FILENAME:
     {
-        size_t len;
+        size_t len = array_length (ai, arg);
         SCM out_iter;
-        if (ai->array_is_zero_terminated)
-        {
-            if (arg->v_pointer == NULL)
-                len = 0;
-            else
-            {
-                // This must be a NULL-terminated list of string pointers.
-                len = 0;
-                while(((char **)arg->v_pointer)[len] != NULL)
-                    len++;
-            }
-        }
-        else
-            len = ai->array_fixed_size;
 
         obj = scm_make_list (scm_from_size_t (len), SCM_BOOL_F);
         out_iter = obj;
@@ -2135,29 +2134,12 @@ object_from_c_native_array_arg(struct array_info *ai,
     if (obj == SCM_UNDEFINED &&
         ai->item_size)
     {
-        size_t len = -1;
-        if (ai->array_fixed_size >= 0)
-            len = ai->item_size * ai->array_fixed_size;
-        else if (ai->array_is_zero_terminated)
-        {
-            // TODO: generalize to any item size, so that we don't need the
-            //       ugly pointer hack below
-            if (arg->v_pointer == NULL)
-                len = 0;
-            else if (ai->item_size == 1)
-                len = strlen(arg->v_pointer);
-        }
-        if (len == -1)
-            // Couldn't find the length of this array, so return a pointer.
-            // FIXME: what are the GC implications of this?
-            obj = scm_from_pointer(arg->v_pointer, NULL);
-        else
-        {
-            // We know how long this is, so make a vector.
-            // FIXME: maybe return a typed vector or list
-            obj = scm_c_make_bytevector(len);
-            memcpy(SCM_BYTEVECTOR_CONTENTS(obj), arg->v_pointer, len);
-        }
+        size_t _array_length = array_length (ai, arg);
+        g_assert_cmpint (_array_length, !=, -1);
+        size_t len = _array_length * ai->item_size;
+        // FIXME: maybe return a typed vector or list
+        obj = scm_c_make_bytevector(len);
+        memcpy(SCM_BYTEVECTOR_CONTENTS(obj), arg->v_pointer, len);
     }
 
     return obj;
