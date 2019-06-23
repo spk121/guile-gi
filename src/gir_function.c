@@ -15,11 +15,11 @@
 
 #include "gir_function.h"
 #include "gi_giargument.h"
+#include "utils.h"
 
 GSList *function_list = NULL;
 
 static gir_gsubr_t *gir_function_create_gsubr(GIFunctionInfo *function_info, const char *name, int *n_required, int *n_optional);
-static char *gir_function_name_to_scm_name(const char *gname);
 
 static void gir_function_info_count_args(GIFunctionInfo *info, int *in, int *out);
 static void gir_function_count_input_args(GIFunctionInfo *info, int *required, int *optional);
@@ -178,7 +178,7 @@ gir_function_make_name(const char *parent, GICallableInfo *info)
         // For the method names, we want a CamelCase type followed by a
         // lowercase string with hyphens such as 'TypeName-method-name'
         tmp_str = g_strdup(parent);
-        tmp_str2 = gir_function_name_to_scm_name(g_base_info_get_name(info));
+        tmp_str2 = gname_to_scm_name (g_base_info_get_name(info));
         if (g_type_info_get_tag(return_type) == GI_TYPE_TAG_BOOLEAN
             && !g_type_info_is_pointer(return_type))
             public_name = g_strdup_printf("%s-%s?", tmp_str, tmp_str2);
@@ -195,53 +195,12 @@ gir_function_make_name(const char *parent, GICallableInfo *info)
         else
             tmp_str = g_strdup_printf("%s",
                                       g_base_info_get_name(info));
-        public_name = gir_function_name_to_scm_name(tmp_str);
+        public_name = gname_to_scm_name(tmp_str);
         g_free(tmp_str);
     }
 
     g_base_info_unref(return_type);
     return public_name;
-}
-
-/* Convert the type of names that GTK uses into Guile-like names */
-static char *
-gir_function_name_to_scm_name(const char *gname)
-{
-    size_t len = strlen(gname);
-    GString *str = g_string_new(NULL);
-    gboolean was_lower = FALSE;
-
-    for (size_t i = 0; i < len; i++)
-    {
-        if (g_ascii_islower(gname[i]))
-        {
-            g_string_append_c(str, gname[i]);
-            was_lower = TRUE;
-        }
-        else if (gname[i] == '_' || gname[i] == '-')
-        {
-            g_string_append_c(str, '-');
-            was_lower = FALSE;
-        }
-        else if (gname[i] == '?')
-        {
-            g_string_append_c(str, '?');
-            was_lower = FALSE;
-        }
-        else if (g_ascii_isdigit(gname[i]))
-        {
-            g_string_append_c(str, gname[i]);
-            was_lower = FALSE;
-        }
-        else if (g_ascii_isupper(gname[i]))
-        {
-            if (was_lower)
-                g_string_append_c(str, '-');
-            g_string_append_c(str, g_ascii_tolower(gname[i]));
-            was_lower = FALSE;
-        }
-    }
-    return g_string_free(str, FALSE);
 }
 
 SCM

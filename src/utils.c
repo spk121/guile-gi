@@ -39,6 +39,12 @@ gname_to_scm_name(const char *gname)
             g_string_append_c(str, '-');
             was_lower = FALSE;
         }
+        else if (gname[i] == '?')
+        {
+            // does this even occur?
+            g_string_append_c(str, '?');
+            was_lower = FALSE;
+        }
         else if (g_ascii_isdigit(gname[i]))
         {
             g_string_append_c(str, gname[i]);
