@@ -13,7 +13,8 @@
 
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https:;;www.gnu.org/licenses/>.
-(use-modules (gi))
+(use-modules (gi)
+             (ice-9 receive))
 
 (typelib-load "Gio" "2.0")
 (typelib-load "Gdk" "3.0")
@@ -30,8 +31,10 @@
   (display "Goodbye World\n"))
 
 (define (key-press widget event xtra)
-  (format #t "key: ~s\n" (send event (get-keyval?)))
-  #f)
+  (receive (ok keyval)
+      (send event (get-keyval?))
+      (format #t "key: ~s\n" keyval)
+      #f))
 
 (define (activate app user-data)
   (let ((window (cast (ApplicationWindow-new app) <GtkApplicationWindow>))

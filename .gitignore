@@ -44,6 +44,7 @@ libtool
 stamp-h1
 texinfo.tex
 INSTALL
+ChangeLog
 
 /build-aux/compile
 /build-aux/config.guess
@@ -89,6 +90,9 @@ gir-log.txt
 *.trs
 *.log
 \#*\#
+*.gcov
+*.gcda
+*.gcno
 
 # Crashes
 core*
@@ -96,3 +100,5 @@ vgcore*
 
 # Temp docs
 *.info
+tmp
+tmp.*

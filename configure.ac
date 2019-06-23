@@ -192,6 +192,16 @@ case "x$enable_reverse_hash" in
      ;;
 esac
 
+AC_ARG_ENABLE([coverage],
+              [AS_HELP_STRING([--enable-coverage],
+                              [compile with gcov support])],
+              [case "${enableval}" in
+                 yes) cov=true ;;
+                 no)  cov=false ;;
+                 *) AC_MSG_ERROR([bad value ${enableval} for --enable-debug]) ;;
+               esac],
+              [cov=false])
+AM_CONDITIONAL([COVERAGE], [test x$cov = xtrue])
 
 ################
 # Check for C library functions
