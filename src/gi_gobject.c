@@ -120,7 +120,7 @@ gugobject_data_free(GuGObjectData *data)
     g_free(data);
 }
 
-static inline GuGObjectData *
+static inline GuGObjectData * __attribute__((malloc))
 gugobject_data_new(void)
 {
     GuGObjectData *data;
@@ -1754,7 +1754,6 @@ gi_get_property_value (const char *func, SCM instance, GParamSpec *pspec)
 {
     GValue value = { 0, };
     SCM svalue = SCM_BOOL_F;
-    GType fundamental;
 
     if (!(pspec->flags & G_PARAM_READABLE)) {
         scm_misc_error (func, "property ~S is not readable",
@@ -1763,7 +1762,6 @@ gi_get_property_value (const char *func, SCM instance, GParamSpec *pspec)
 
     g_value_init (&value, G_PARAM_SPEC_VALUE_TYPE (pspec));
     g_object_get_property (gi_gobject_get_obj(instance), pspec->name, &value);
-    fundamental = G_TYPE_FUNDAMENTAL (G_VALUE_TYPE (&value));
 
     svalue = gi_param_gvalue_as_scm (&value, TRUE, pspec);
 

@@ -450,7 +450,6 @@ gir_fini_method(void)
     g_hash_table_iter_init (&iter, gir_method_hash_table);
     while (g_hash_table_iter_next (&iter, &key, &value))
     {
-        char *key_str = key;
         GHashTable *value_hash = value;
 
         GHashTableIter iter2;

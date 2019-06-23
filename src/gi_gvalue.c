@@ -522,12 +522,9 @@ gi_gvalue_to_scm_structured_type (const GValue *value, GType fundamental,
     switch (fundamental) {
     case G_TYPE_INTERFACE:
         if (g_type_is_a(G_VALUE_TYPE(value), G_TYPE_OBJECT))
-        {
-            GType type = G_VALUE_TYPE(value);
             return gir_type_make_object(G_VALUE_TYPE(value),
                                         g_value_get_object(value),
                                         0);
-        }
         else
             break;
 

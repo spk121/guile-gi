@@ -4,7 +4,7 @@
 
 FILE *fp;
 
-static char *
+static char * __attribute__((malloc))
 getter (const char *self, const char *type, int n)
 {
   if ((strlen (type) > 2 && type[strlen(type)-1] == '*')
@@ -27,7 +27,7 @@ getter (const char *self, const char *type, int n)
   }
 }
 
-static char *
+static char * __attribute__((malloc))
 setter (const char *self, const char *var, const char *type, int n)
 {
   if ((strlen (type) > 2 && type[strlen(type)-1] == '*')

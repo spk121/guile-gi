@@ -70,13 +70,15 @@ gi_signal_closure_marshal(GClosure *closure,
     GISignalInfo *signal_info;
     gint n_sig_info_args;
     gint sig_info_highest_arg;
+#if 0
     GSList *list_item = NULL;
+#endif
     GSList *pass_by_ref_structs = NULL;
 
 
     // Here we take the parameters in *param_values and call the
     // Scheme function stored in *closure.
-    
+
     signal_info = pc->signal_info;
     n_sig_info_args = g_callable_info_get_n_args(signal_info);
     g_assert_cmpint (n_sig_info_args, >=, 0);
@@ -87,8 +89,8 @@ gi_signal_closure_marshal(GClosure *closure,
 
     /* construct a scheme list for the parameter values */
     params = SCM_EOL;
-    gboolean swap = G_CCLOSURE_SWAP_DATA(closure);
     // FIXME: handle swap
+    /* gboolean swap = G_CCLOSURE_SWAP_DATA(closure); */
     for (i = 0; i < n_param_values; i++) {
         if ( TRUE /*i == 0*/ ) {
             /* We know that the first argument is always some sort of
@@ -102,14 +104,16 @@ gi_signal_closure_marshal(GClosure *closure,
         } else if (i < (guint)sig_info_highest_arg) {
             /* The rest of the parameters could be anything, so we query
                the arginfo for more information */
-            
+
             GIArgInfo arg_info;
             GITypeInfo type_info;
             GITypeTag type_tag;
             GIArgument arg = { 0, };
-	    SCM item = SCM_BOOL_F;
+            SCM item = SCM_BOOL_F;
+#if 0
             gboolean free_array = FALSE;
             gboolean pass_struct_by_ref = FALSE;
+#endif
 
             g_callable_info_load_arg(signal_info, i - 1, &arg_info);
             g_arg_info_load_type(&arg_info, &type_info);
@@ -119,7 +123,7 @@ gi_signal_closure_marshal(GClosure *closure,
             type_tag = g_type_info_get_tag (&type_info);
             if (type_tag == GI_TYPE_TAG_ARRAY) {
                 g_assert_not_reached ();
-#if 0	      
+#if 0
                 /* Skip the self argument of param_values */
                 arg.v_pointer = _pygi_argument_to_array (&arg,
                                                          gi_giargument_array_length_marshal,
@@ -127,7 +131,7 @@ gi_signal_closure_marshal(GClosure *closure,
                                                          signal_info,
                                                          &type_info,
                                                          &free_array);
-#endif		
+#endif
             }
 
             /* Hack to ensure struct arguments are passed-by-reference allowing
@@ -140,7 +144,7 @@ gi_signal_closure_marshal(GClosure *closure,
              */
             else if (type_tag == GI_TYPE_TAG_INTERFACE) {
 	      g_assert_not_reached ();
-#if 0	      
+#if 0
                 GIBaseInfo *info = g_type_info_get_interface (&type_info);
                 GIInfoType info_type = g_base_info_get_type (info);
 
@@ -195,7 +199,7 @@ gi_signal_closure_marshal(GClosure *closure,
     }
     /* Now we actuall do the call! */
     ret = scm_apply_0 (pc->callback, params);
-#if 0    
+#if 0
     if (ret == NULL) {
         if (pc->exception_handler)
             pc->exception_handler(return_value, n_param_values, param_values);
@@ -225,7 +229,7 @@ gi_signal_closure_marshal(GClosure *closure,
      * stored a ref somewhere else. In this case we make an internal copy of
      * the boxed struct so Python can own the memory to it.
      */
-#if 0    
+#if 0
     list_item = pass_by_ref_structs;
     while (list_item) {
         PyObject *item = list_item->data;

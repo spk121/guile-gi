@@ -99,6 +99,7 @@ fill_array_info (struct array_info *ai,
         break;
     case GI_TYPE_TAG_INT32:
     case GI_TYPE_TAG_UINT32:
+    case GI_TYPE_TAG_UNICHAR:
         ai->item_size = 4;
         break;
     case GI_TYPE_TAG_INT64:
@@ -110,6 +111,12 @@ fill_array_info (struct array_info *ai,
         break;
     case GI_TYPE_TAG_DOUBLE:
         ai->item_size = sizeof(double);
+        break;
+    case GI_TYPE_TAG_GTYPE:
+        ai->item_size = sizeof (GType);
+        break;
+    case GI_TYPE_TAG_BOOLEAN:
+        ai->item_size = sizeof (gboolean);
         break;
     case GI_TYPE_TAG_INTERFACE:
     {
@@ -139,10 +146,28 @@ fill_array_info (struct array_info *ai,
             if (!ai->item_is_ptr)
                 ai->item_size = sizeof (void *);
             break;
+        default:
+            g_critical("Unhandled item type in %s:%d", __FILE__, __LINE__);
+            g_assert_not_reached ();
         }
         g_base_info_unref (referenced_base_info);
         break;
     }
+    case GI_TYPE_TAG_UTF8:
+    case GI_TYPE_TAG_FILENAME:
+        break;
+
+    case GI_TYPE_TAG_ARRAY:
+    case GI_TYPE_TAG_GLIST:
+    case GI_TYPE_TAG_GSLIST:
+    case GI_TYPE_TAG_GHASH:
+        g_critical ("do you seriously want to nest containers in such a manner?");
+        g_assert_not_reached ();
+        break;
+
+    default:
+        g_critical("Unhandled item type in %s:%d", __FILE__, __LINE__);
+        g_assert_not_reached ();
     }
 
     g_base_info_unref (item_type_info);
@@ -1334,7 +1359,7 @@ object_to_c_ptr_array_arg(char *subr, int argpos, SCM object, struct array_info 
 }
 
 
-static void
+static void __attribute__((unused))
 object_to_c_native_direct_struct_array_arg(char *subr, int argpos, SCM object,
                                            struct array_info *ai, GIArgument *arg)
 {
@@ -1355,7 +1380,7 @@ object_to_c_native_direct_struct_array_arg(char *subr, int argpos, SCM object,
         ai->must_free = GIR_FREE_SIMPLE;
 }
 
-static void
+static void __attribute__((unused))
 object_to_c_native_indirect_object_array_arg(char *subr, int argpos, SCM object,
                                              struct array_info *ai,
                                              GIArgument *arg)
@@ -2086,6 +2111,9 @@ object_from_c_native_array_arg(struct array_info *ai,
     case GI_TYPE_TAG_UINT64:
     case GI_TYPE_TAG_FLOAT:
     case GI_TYPE_TAG_DOUBLE:
+    case GI_TYPE_TAG_GTYPE:
+    case GI_TYPE_TAG_BOOLEAN:
+    case GI_TYPE_TAG_UNICHAR:
         // we already determined the item size earlier, nothing to do here
         break;
     case GI_TYPE_TAG_INTERFACE:
@@ -2106,7 +2134,11 @@ object_from_c_native_array_arg(struct array_info *ai,
 
             g_critical("Unhandled array type in %s:%d", __FILE__, __LINE__);
             g_assert_not_reached();
-        break;
+            break;
+        default:
+            g_critical("Unhandled array type in %s:%d", __FILE__, __LINE__);
+            g_assert_not_reached();
+            break;
         }
 
     case GI_TYPE_TAG_UTF8:
@@ -3464,8 +3496,8 @@ SCM gi_giargument_to_object(GIArgument *arg,
         {
 
             GType g_type = g_registered_type_info_get_g_type((GIRegisteredTypeInfo *)info);
-            gboolean is_foreign = (info_type == GI_INFO_TYPE_STRUCT) &&
-                (g_struct_info_is_foreign((GIStructInfo *)info));
+            /* gboolean is_foreign = (info_type == GI_INFO_TYPE_STRUCT) && */
+            /*     (g_struct_info_is_foreign((GIStructInfo *)info)); */
 
             if (info_type == GI_INFO_TYPE_STRUCT)
             {
