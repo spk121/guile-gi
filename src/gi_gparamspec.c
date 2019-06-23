@@ -44,69 +44,69 @@ gi_gparamspec_from_scm (SCM x)
     blurb = scm_to_utf8_string (scm_c_list_ref (x, 3));
     i = 4;
 
-#define NUMBER_TYPE(ftype,ctype,gtype,scmtype)			    \
-    case G_TYPE_ ## ftype:					    \
-	{							    \
-	    ctype _min, _max, _default;				    \
-	    _min = scm_to_ ## scmtype (scm_c_list_ref (x, i++));	    \
-	    _max = scm_to_ ## scmtype (scm_c_list_ref (x, i++));	    \
-	    _default = scm_to_ ## scmtype (scm_c_list_ref (x, i++));    \
-	    flags = scm_to_ulong (scm_c_list_ref (x, i++));		\
-	    pspec = g_param_spec_ ## gtype (prop_name, nick, blurb, _min, \
-					    _max, _default, flags);	\
-	}								\
-	break
+#define NUMBER_TYPE(ftype,ctype,gtype,scmtype)                          \
+    case G_TYPE_ ## ftype:                                              \
+    {                                                                   \
+        ctype _min, _max, _default;                                     \
+        _min = scm_to_ ## scmtype (scm_c_list_ref (x, i++));            \
+        _max = scm_to_ ## scmtype (scm_c_list_ref (x, i++));            \
+        _default = scm_to_ ## scmtype (scm_c_list_ref (x, i++));        \
+        flags = scm_to_ulong (scm_c_list_ref (x, i++));                 \
+        pspec = g_param_spec_ ## gtype (prop_name, nick, blurb, _min,   \
+                                        _max, _default, flags);         \
+    }                                                                   \
+    break
 
     switch (G_TYPE_FUNDAMENTAL (prop_type)) {
-	NUMBER_TYPE(CHAR, gint8, char, int8);
-	NUMBER_TYPE(UCHAR, guint8, uchar, uint8);
-	NUMBER_TYPE(INT, gint, int, int);
-	NUMBER_TYPE(UINT, guint, uint, uint);
-	NUMBER_TYPE(LONG, glong, long, long);
-	NUMBER_TYPE(ULONG, gulong, ulong, ulong);
-	NUMBER_TYPE(INT64, guint64, int64, int64);
-	NUMBER_TYPE(UINT64, guint64, uint64, uint64);
-	NUMBER_TYPE(FLOAT, float, float, double);
-	NUMBER_TYPE(DOUBLE, double, double, double);
+        NUMBER_TYPE(CHAR, gint8, char, int8);
+        NUMBER_TYPE(UCHAR, guint8, uchar, uint8);
+        NUMBER_TYPE(INT, gint, int, int);
+        NUMBER_TYPE(UINT, guint, uint, uint);
+        NUMBER_TYPE(LONG, glong, long, long);
+        NUMBER_TYPE(ULONG, gulong, ulong, ulong);
+        NUMBER_TYPE(INT64, guint64, int64, int64);
+        NUMBER_TYPE(UINT64, guint64, uint64, uint64);
+        NUMBER_TYPE(FLOAT, float, float, double);
+        NUMBER_TYPE(DOUBLE, double, double, double);
     case G_TYPE_BOOLEAN:
-	{
-	    gboolean _default;
-	    _default = scm_to_bool (scm_c_list_ref (x, i++));
-	    flags = scm_to_ulong (scm_c_list_ref (x, i++));
-	    pspec = g_param_spec_boolean (prop_name, nick, blurb,
-					  _default, flags);
-	}
-	break;
+    {
+        gboolean _default;
+        _default = scm_to_bool (scm_c_list_ref (x, i++));
+        flags = scm_to_ulong (scm_c_list_ref (x, i++));
+        pspec = g_param_spec_boolean (prop_name, nick, blurb,
+                                      _default, flags);
+    }
+    break;
     case G_TYPE_ENUM:
-	{
-	    gint _default;
-	    _default = scm_to_uint (scm_c_list_ref (x, i++));
-	    flags = scm_to_ulong (scm_c_list_ref (x, i++));
-	    pspec = g_param_spec_enum (prop_name, nick, blurb,
-				       prop_type, _default, flags);
-	}
-	break;
+    {
+        gint _default;
+        _default = scm_to_uint (scm_c_list_ref (x, i++));
+        flags = scm_to_ulong (scm_c_list_ref (x, i++));
+        pspec = g_param_spec_enum (prop_name, nick, blurb,
+                                   prop_type, _default, flags);
+    }
+    break;
     case G_TYPE_FLAGS:
-	{
-	    guint _default;
-	    _default = scm_to_uint (scm_c_list_ref (x, i++));
-	    flags = scm_to_ulong (scm_c_list_ref (x, i++));
-	    pspec = g_param_spec_flags (prop_name, nick, blurb,
-					prop_type, _default, flags);
-	}
-	break;
+    {
+        guint _default;
+        _default = scm_to_uint (scm_c_list_ref (x, i++));
+        flags = scm_to_ulong (scm_c_list_ref (x, i++));
+        pspec = g_param_spec_flags (prop_name, nick, blurb,
+                                    prop_type, _default, flags);
+    }
+    break;
     case G_TYPE_STRING:
-	{
-	    char *_default;
-	    _default = scm_to_utf8_string (scm_c_list_ref (x, i++));
-	    flags = scm_to_ulong (scm_c_list_ref (x, i++));
-	    pspec = g_param_spec_string (prop_name, nick, blurb,
-					 _default, flags);
-	    free (_default);
-	}
-	break;
+    {
+        char *_default;
+        _default = scm_to_utf8_string (scm_c_list_ref (x, i++));
+        flags = scm_to_ulong (scm_c_list_ref (x, i++));
+        pspec = g_param_spec_string (prop_name, nick, blurb,
+                                     _default, flags);
+        free (_default);
+    }
+    break;
     default:
-	return NULL;
+        return NULL;
     }
     return pspec;
 }
@@ -118,9 +118,9 @@ scm_list_to_gparamspec (SCM x)
     GParamSpec *spec = gi_gparamspec_from_scm (x);
 
     if (spec) {
-	obj = scm_make_foreign_object_0 (gi_gparamspec_type);
-	gi_gparamspec_set_spec (obj, spec);
-	return obj;
+        obj = scm_make_foreign_object_0 (gi_gparamspec_type);
+        gi_gparamspec_set_spec (obj, spec);
+        return obj;
     }
     return SCM_BOOL_F;
 }
@@ -138,8 +138,8 @@ scm_gparam_value_is_valid_p (SCM self, SCM gval)
     spec = gi_gparamspec_get_spec (self);
     val = gi_gvalue_get_value (gval);
     if (spec && val) {
-	ret = g_param_value_validate (spec, val);
-	return scm_from_bool (ret);
+        ret = g_param_value_validate (spec, val);
+        return scm_from_bool (ret);
     }
     return SCM_BOOL_F;
 }
@@ -155,12 +155,12 @@ scm_gparamspec_get_default_value (SCM self)
     scm_assert_foreign_object_type (gi_gparamspec_type, self);
     spec = gi_gparamspec_get_spec (self);
     if (spec) {
-	val = g_param_spec_get_default_value (spec);
-	type = G_VALUE_TYPE (val);
-	val2 = g_new0(GValue, 1);
-	g_value_init (val2, type);
-	g_value_copy (val, val2);
-	return gi_gvalue_c2g (val2);
+        val = g_param_spec_get_default_value (spec);
+        type = G_VALUE_TYPE (val);
+        val2 = g_new0(GValue, 1);
+        g_value_init (val2, type);
+        g_value_copy (val, val2);
+        return gi_gvalue_c2g (val2);
     }
     return SCM_BOOL_F;
 }
@@ -173,7 +173,7 @@ scm_gparamspec_unref (SCM self)
     scm_assert_foreign_object_type (gi_gparamspec_type, self);
     spec = gi_gparamspec_get_spec (self);
     if (spec)
-	g_param_spec_unref (spec);
+        g_param_spec_unref (spec);
     return SCM_UNSPECIFIED;
 }
 
@@ -185,7 +185,7 @@ scm_gparamspec_ref (SCM self)
     scm_assert_foreign_object_type (gi_gparamspec_type, self);
     spec = gi_gparamspec_get_spec (self);
     if (spec)
-	g_param_spec_ref (spec);
+        g_param_spec_ref (spec);
     return SCM_UNSPECIFIED;
 }
 
@@ -239,7 +239,7 @@ gi_gparamspec_finalizer (SCM self)
 
     spec = gi_gparamspec_get_spec (self);
     if (spec)
-	g_param_spec_unref (spec);
+        g_param_spec_unref (spec);
     g_free (spec);
     gi_gparamspec_set_spec (self, NULL);
 }
@@ -266,17 +266,17 @@ gi_init_gparamspec (void)
     scm_c_define_gsubr("gparamspec-type", 1, 0, 0, scm_gparamspec_type);
     scm_c_define_gsubr("gparamspec-type-name", 1, 0, 0, scm_gparamspec_type_name);
     scm_c_export ("G_PARAM_READABLE",
-		  "G_PARAM_WRITABLE",
-		  "G_PARAM_READWRITE",
-		  "G_PARAM_CONSTRUCT",
-		  "G_PARAM_CONSTRUCT_ONLY",
-		  "list->gparamspec",
-		  "gparam-value-is-valid?",
-		  "gparamspec-get-default-value",
-		  "gparamspec-ref",
-		  "gparamspec-unref",
-		  "gparamspec-value-type",
-		  "gparamspec-type",
-		  "gparamspec-type-name",
-		  NULL);
+                  "G_PARAM_WRITABLE",
+                  "G_PARAM_READWRITE",
+                  "G_PARAM_CONSTRUCT",
+                  "G_PARAM_CONSTRUCT_ONLY",
+                  "list->gparamspec",
+                  "gparam-value-is-valid?",
+                  "gparamspec-get-default-value",
+                  "gparamspec-ref",
+                  "gparamspec-unref",
+                  "gparamspec-value-type",
+                  "gparamspec-type",
+                  "gparamspec-type-name",
+                  NULL);
 }
