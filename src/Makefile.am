@@ -128,8 +128,6 @@ libguile_gi_la_SOURCES = \
  gir_typelib.h \
  gir_type.c \
  gir_type.h \
- gir_xguile.c \
- gir_xguile.h \
  utils.c \
  utils.h
 

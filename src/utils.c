@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
+#include <libguile.h>
 #include <glib.h>
 #include "utils.h"
 
@@ -59,4 +59,10 @@ gname_to_scm_name(const char *gname)
         }
     }
     return g_string_free(str, FALSE);
+}
+
+SCM
+scm_c_list_ref (SCM list, size_t k)
+{
+    return scm_list_ref (list, scm_from_size_t (k));
 }

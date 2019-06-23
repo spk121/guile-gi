@@ -33,7 +33,7 @@ gug_enum_add (SCM module,
 
     g_debug ("In stub version of gug_enum_add");
     return SCM_UNSPECIFIED;
-#if 0    
+#if 0
     g_return_val_if_fail(typename != NULL, NULL);
     if (!g_type_is_a (gtype, G_TYPE_ENUM)) {
         PyErr_Format (PyExc_TypeError, "Trying to register gtype '%s' as enum when in fact it is of type '%s'",
@@ -82,7 +82,7 @@ gug_enum_add (SCM module,
     values = PyDict_New();
     for (i = 0; i < eclass->n_values; i++) {
 	PyObject *item, *intval;
-      
+
         intval = PYGLIB_PyLong_FromLong(eclass->values[i].value);
 	item = pyg_enum_val_new(stub, gtype, intval);
 	PyDict_SetItem(values, intval, item);
@@ -230,7 +230,6 @@ int main(int argc, char **argv)
   gir_init_g_type();
   gir_init_g_value();
   gir_init_gobject();
-  gir_init_xguile();
   scm_shell(argc, argv);
   return 0;
 }

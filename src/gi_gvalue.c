@@ -15,7 +15,6 @@
 #include <girepository.h>
 #include "gi_gvalue.h"
 #include "gir_type.h"
-#include "gir_xguile.h"
 #include "gi_gobject.h"
 #include "gir_type.h"
 

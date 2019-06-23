@@ -16,7 +16,7 @@
 #ifndef _UTILS_H_
 #define _UTILS_H_
 
-char *
-gname_to_scm_name(const char *gname);
+char * gname_to_scm_name(const char *gname);
+SCM scm_c_list_ref (SCM list, size_t k);
 
 #endif

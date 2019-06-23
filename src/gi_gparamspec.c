@@ -2,6 +2,7 @@
 #include "gi_gvalue.h"
 #include "gir_type.h"
 #include "gi_gparamspec.h"
+#include "utils.h"
 
 #if 0
 static gboolean
@@ -35,16 +36,14 @@ gi_gparamspec_from_scm (SCM x)
     char *blurb;
     GParamFlags flags;
     GParamSpec *pspec;
-    int i;
+    size_t i;
 
-#define scm_c_list_ref(x,n) scm_list_ref((x),scm_from_int(n))
-    
     prop_name = scm_to_utf8_string (scm_c_list_ref (x, 0));
     prop_type = scm_to_size_t (scm_c_list_ref (x, 1));
     nick = scm_to_utf8_string (scm_c_list_ref (x, 2));
     blurb = scm_to_utf8_string (scm_c_list_ref (x, 3));
     i = 4;
-    
+
 #define NUMBER_TYPE(ftype,ctype,gtype,scmtype)			    \
     case G_TYPE_ ## ftype:					    \
 	{							    \
@@ -57,7 +56,7 @@ gi_gparamspec_from_scm (SCM x)
 					    _max, _default, flags);	\
 	}								\
 	break
-    
+
     switch (G_TYPE_FUNDAMENTAL (prop_type)) {
 	NUMBER_TYPE(CHAR, gint8, char, int8);
 	NUMBER_TYPE(UCHAR, guint8, uchar, uint8);
@@ -117,7 +116,7 @@ scm_list_to_gparamspec (SCM x)
 {
     SCM obj;
     GParamSpec *spec = gi_gparamspec_from_scm (x);
-    
+
     if (spec) {
 	obj = scm_make_foreign_object_0 (gi_gparamspec_type);
 	gi_gparamspec_set_spec (obj, spec);
@@ -237,7 +236,7 @@ void
 gi_gparamspec_finalizer (SCM self)
 {
     GParamSpec *spec;
-    
+
     spec = gi_gparamspec_get_spec (self);
     if (spec)
 	g_param_spec_unref (spec);
