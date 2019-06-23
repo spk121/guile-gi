@@ -24,11 +24,11 @@
 #include "gir_method.h"
 #include "gir_constant.h"
 #include "gir_flag.h"
+#include "utils.h"
 
 static void gir_typelib_document_callback_info(GString **export, const char *namespace_, const char *parent, GICallableInfo *info);
 static void gir_typelib_document_callable_info(GString **export, const char *namespace_, const char *parent, GICallableInfo *info, gboolean method);
 static void gir_typelib_document_type(GString **export, char *parent, GITypeInfo *info);
-static char *gname_to_scm_name(const char *gname);
 
 #define MAX_GERROR_MSG 100
 static char gerror_msg[MAX_GERROR_MSG];
@@ -493,43 +493,6 @@ struct _arg_info_func_name
 
 static GPtrArray *gi_arg_infos = NULL;
 #endif
-
-
-/* Convert the type of names that GTK uses into Guile-like names */
-static char *
-gname_to_scm_name(const char *gname)
-{
-    size_t len = strlen(gname);
-    GString *str = g_string_new(NULL);
-    gboolean was_lower = FALSE;
-
-    for (size_t i = 0; i < len; i++)
-    {
-        if (g_ascii_islower(gname[i]))
-        {
-            g_string_append_c(str, gname[i]);
-            was_lower = TRUE;
-        }
-        else if (gname[i] == '_' || gname[i] == '-')
-        {
-            g_string_append_c(str, '-');
-            was_lower = FALSE;
-        }
-        else if (g_ascii_isdigit(gname[i]))
-        {
-            g_string_append_c(str, gname[i]);
-            was_lower = FALSE;
-        }
-        else if (g_ascii_isupper(gname[i]))
-        {
-            if (was_lower)
-                g_string_append_c(str, '-');
-            g_string_append_c(str, g_ascii_tolower(gname[i]));
-            was_lower = FALSE;
-        }
-    }
-    return g_string_free(str, FALSE);
-}
 
 static void
 gir_typelib_document_callable_arguments(GString **export, GICallableInfo *info, gboolean style)

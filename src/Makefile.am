@@ -129,7 +129,9 @@ libguile_gi_la_SOURCES = \
  gir_type.c \
  gir_type.h \
  gir_xguile.c \
- gir_xguile.h
+ gir_xguile.h \
+ utils.c \
+ utils.h
 
 libguile_gi_la_CPPFLAGS = -DG_LOG_DOMAIN=\"GuileGI\"
 if BUILDING_DLL
@@ -150,6 +152,7 @@ libguile_gi_la_CFLAGS = \
 libguile_gi_la_LDFLAGS = \
  -no-undefined \
  -version-info $(LIBGUILE_GI_INTERFACE) \
+ -export-symbols-regex '^gir?_' \
  $(GUILE_LDFLAGS)
 
 if !DLL_VERSION_INFO
