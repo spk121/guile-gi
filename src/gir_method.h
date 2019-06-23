@@ -19,7 +19,6 @@
 #include <girepository.h>
 
 void gir_method_table_insert(GType type, GIFunctionInfo *info);
-void gir_method_unref_object(SCM s_object);
 void gir_method_document(GString **export, const char *namespace_,
                    const char *parent, GICallableInfo *info);
 gchar*
