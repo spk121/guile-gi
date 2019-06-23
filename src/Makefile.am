@@ -93,8 +93,6 @@ nodist_libguile_gi_la_SOURCES = \
  __gi_ginterface.h
 
 libguile_gi_la_SOURCES = \
- gi_basictype.c \
- gi_basictype.h \
  gi_gboxed.c \
  gi_gboxed.h \
  gi_gflags.h \

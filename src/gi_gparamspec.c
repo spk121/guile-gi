@@ -4,29 +4,6 @@
 #include "gi_gparamspec.h"
 #include "utils.h"
 
-#if 0
-static gboolean
-gi_gparamspec_typecheck_scm(const char *func, SCM x)
-{
-    size_t len;
-
-    if (scm_is_false(scm_list_p(x)))
-        scm_misc_error(func, "expected a property list: ~S", scm_list_1(x));
-    len = scm_to_size_t(scm_length(x));
-    if (len < 4)
-        scm_misc_error(func, "not enough elements in property list: ~S", scm_list_1(x));
-    if (!scm_is_string(scm_list_ref(x, scm_from_size_t(0))))
-        scm_misc_error(func, "first element of property list should be a string name: ~S", scm_list_1(x));
-    if (!SCM_IS_A_P(scm_list_ref(x, scm_from_size_t(1)), gi_gtype_type))
-        scm_misc_error(func, "second element of property list should be a parent type: ~S", scm_list_1(x));
-    if (!scm_is_string(scm_list_ref(x, scm_from_size_t(2))))
-        scm_misc_error(func, "third element of property list should be a string blurb: ~S", scm_list_1(x));
-    if (!scm_is_string(scm_list_ref(x, scm_from_size_t(3))))
-        scm_misc_error(func, "fourth element of property list should be a string description: ~S", scm_list_1(x));
-    return TRUE;
-}
-#endif
-
 GParamSpec *
 gi_gparamspec_from_scm (SCM x)
 {

@@ -577,44 +577,6 @@ gir_function_object_list_to_c_args(char *subr, SCM s_args,
     }
     scm_remember_upto_here_1(obj);
     return;
-
-arg_err_cleanup:
-    gi_giargument_free_args(n_input_args, in_args_free, in_args);
-    g_free(in_args);
-    g_free(out_args);
-    g_free(in_args_free);
-
-    g_return_if_reached();
-#if 0
-    GIDirection dir;
-    GIArgInfo *arg_info;
-    GIArgument *in_args = g_new0(GIArgument, scm_to_int(scm_length(s_args)));
-
-    int n_args = g_callable_info_get_n_args((GICallableInfo *)func_info);
-    int i_input = 0;
-
-    for (int i = 0; i < n_args; i++)
-    {
-        arg_info = g_callable_info_get_arg((GICallableInfo *)func_info, i);
-        g_assert(arg_info != NULL);
-
-        dir = g_arg_info_get_direction(arg_info);
-
-        if (dir == GI_DIRECTION_IN || dir == GI_DIRECTION_INOUT)
-        {
-            SCM arg = scm_list_ref(s_args, scm_from_int(i_input));
-            in_args[i_input] = gi_argument_from_object("gi-function-invoke",
-                arg,
-                g_arg_info_get_type(arg_info),
-                g_arg_info_get_ownership_transfer(arg_info));
-            i_input++;
-        }
-        g_base_info_unref(arg_info);
-    }
-
-    return in_args;
-#endif
-#undef FUNC_NAME
 }
 
 static SCM
