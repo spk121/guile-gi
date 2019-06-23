@@ -338,11 +338,11 @@ gir_type_get_gtype_from_obj(SCM x)
 #if ENABLE_GIR_TYPE_SCM_HASH
     gpointer value;
     if ((value = g_hash_table_lookup (gir_type_scm_hash,
-                                      SCM_PACK_POINTER (x))))
+                                      SCM_UNPACK_POINTER (x))))
         return GPOINTER_TO_SIZE (value);
     else if (SCM_INSTANCEP (x) &&
              (value = g_hash_table_lookup (gir_type_scm_hash,
-                                           SCM_PACK_POINTER (SCM_CLASS_OF (x)))))
+                                           SCM_UNPACK_POINTER (SCM_CLASS_OF (x)))))
         return GPOINTER_TO_SIZE (value);
 #else
     SCM klass;
