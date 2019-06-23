@@ -2,7 +2,7 @@
 #include "gi_gvalue.h"
 #include "gir_type.h"
 #include "gi_gparamspec.h"
-#include "utils.h"
+#include "gi_util.h"
 
 GParamSpec *
 gi_gparamspec_from_scm (SCM x)

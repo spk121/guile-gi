@@ -16,7 +16,6 @@
 #include "gi_gvalue.h"
 #include "gi_gsignal.h"
 #include "gi_gparamspec.h"
-#include "gi_ginterface.h"
 #include "gi_signal_closure.h"
 #include "gir_typelib.h"
 #include "gir_type.h"

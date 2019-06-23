@@ -24,7 +24,7 @@
 #include "gir_method.h"
 #include "gir_constant.h"
 #include "gir_flag.h"
-#include "utils.h"
+#include "gi_util.h"
 
 static void gir_typelib_document_callback_info(GString **export, const char *namespace_, const char *parent, GICallableInfo *info);
 static void gir_typelib_document_callable_info(GString **export, const char *namespace_, const char *parent, GICallableInfo *info, gboolean method);

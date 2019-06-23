@@ -15,7 +15,7 @@
 
 #include "gir_function.h"
 #include "gi_giargument.h"
-#include "utils.h"
+#include "gi_util.h"
 
 GSList *function_list = NULL;
 

@@ -20,7 +20,7 @@
 #include "gi_gobject.h"
 #include "gi_giargument.h"
 #include "gir_type.h"
-#include "utils.h"
+#include "gi_util.h"
 
 // This structure is a hash table tree.
 // On the first level we have

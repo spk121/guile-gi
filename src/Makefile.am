@@ -95,10 +95,8 @@ nodist_libguile_gi_la_SOURCES = \
 libguile_gi_la_SOURCES = \
  gi_gboxed.c \
  gi_gboxed.h \
- gi_gflags.h \
  gi_giargument.c \
  gi_giargument.h \
- gi_ginterface.h \
  gi_gobject.c \
  gi_gobject.h \
  gi_gparamspec.c \
@@ -126,8 +124,8 @@ libguile_gi_la_SOURCES = \
  gir_typelib.h \
  gir_type.c \
  gir_type.h \
- utils.c \
- utils.h
+ gi_util.c \
+ gi_util.h
 
 libguile_gi_la_CPPFLAGS = -DG_LOG_DOMAIN=\"GuileGI\"
 if BUILDING_DLL
