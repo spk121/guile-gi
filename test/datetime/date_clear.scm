@@ -2,7 +2,7 @@
              (test automake-test-lib))
 
 (automake-test
- (let* ([date (Date-new-dmy 25 12 1990)]
+ (let* ([date (date:new-dmy 25 12 1990)]
         [date2 (send date (copy))])
 
    ;; Clear one GDate starting at the memory location in date2.  This

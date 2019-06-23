@@ -25,7 +25,7 @@
  (begin
    (set-record-type-printer! <GBox> gbox-printer)
    (import-typelib "GLib" "2.0")
-   (let ((B (Bytes-new #f 0)))
+   (let ((B (bytes:new #f 0)))
      (format #t "New Bytes: ~S~%" B)
      (and (is-a? B )
 	  (= 0 (bytevector-length B))))))

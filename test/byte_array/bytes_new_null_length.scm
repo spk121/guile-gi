@@ -25,8 +25,8 @@
 (automake-test
  (begin
    (import-typelib "GLib" "2.0")
-   (let* ((self (Bytes-new #f 0))
-	  (siz (Bytes-get-size self)))
+   (let* ((self (bytes:new #f 0))
+	  (siz (bytes:get-size self)))
      (format #t "New Byte Array: ~S~%" self)
      (format #t "size: ~S~%" siz)
      (and (Bytes? self)

@@ -2,5 +2,5 @@
              (test automake-test-lib))
 
 (automake-test
- (let ((mainloop (MainLoop-new #f #t)))
+ (let ((mainloop (main-loop:new #f #t)))
    (send mainloop (is-running?))))

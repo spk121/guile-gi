@@ -24,7 +24,7 @@
 
 ;; Oddly, the introspection information does not provide a constructor
 ;; for GtkTextIter.
-(define (TextIter-new)
+(define (text-iter:new)
   (make-gstruct <GtkTextIter>))
 
 (define (print-goodbye widget data)
@@ -37,12 +37,12 @@
       #f))
 
 (define (activate app user-data)
-  (let ((window (cast (ApplicationWindow-new app) <GtkApplicationWindow>))
-        (vbox (cast (VBox-new 0 0) <GtkVBox>))
-        (editor (cast (TextView-new) <GtkTextView>))
-        (button-box (cast (ButtonBox-new 0) <GtkButtonBox>))
-        (button (Button-new-with-label "Quit"))
-        (button2 (Button-new-with-label "Hello")))
+  (let ((window (cast (application-window:new app) <GtkApplicationWindow>))
+        (vbox (cast (vbox:new 0 0) <GtkVBox>))
+        (editor (cast (text-view:new) <GtkTextView>))
+        (button-box (cast (button-box:new 0) <GtkButtonBox>))
+        (button (button:new-with-label "Quit"))
+        (button2 (button:new-with-label "Hello")))
     (send editor (add-events EVENT_MASK_KEY_PRESS_MASK))
     (send window (set-title "Window"))
     (send window (set-default-size 200 200))
@@ -61,8 +61,8 @@
     ;; with 'Hello, world'.
     (connect button2 (clicked (lambda x
                                 (let ((buffer (send editor (get-buffer)))
-                                      (iter1 (TextIter-new))
-                                      (iter2 (TextIter-new)))
+                                      (iter1 (text-iter:new))
+                                      (iter2 (text-iter:new)))
                                   (send buffer (get-bounds iter1 iter2))
                                   (let ((txt (send buffer (get-text iter1 iter2 #t))))
                                     (write txt) (newline))
@@ -75,7 +75,7 @@
     (send window (show-all))))
 
 (define (main)
-  (let ((app (Application-new "org.gtk.example" 0)))
+  (let ((app (application:new "org.gtk.example" 0)))
     (connect app (activate activate #f))
     (send app (run (length (command-line)) (command-line)))))
 

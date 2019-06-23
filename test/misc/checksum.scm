@@ -3,7 +3,7 @@
              (test automake-test-lib))
 
 (automake-test
- (let ((cksum (Checksum-new CHECKSUM_TYPE_SHA256))
+ (let ((cksum (checksum:new CHECKSUM_TYPE_SHA256))
        (bv (string->utf8 "ABCDEFGHIJKLMNOPQRSTUVWXYZ\n")))
    (write cksum) (newline)
    (write bv) (newline)

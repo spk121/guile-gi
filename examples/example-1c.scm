@@ -26,7 +26,7 @@
                                                         ("default-height" . 200)
                                                         ("default-width" . 200)
                                                         ("title" . "Window"))))
-         (button-box (cast (ButtonBox-new 0) <GtkButtonBox>))
+         (button-box (cast (button-box:new 0) <GtkButtonBox>))
          (button (make-gobject <GtkButton> `(("label" . "Hello World")
                                              ("parent" . ,button-box)))))
     (send window (add button-box))

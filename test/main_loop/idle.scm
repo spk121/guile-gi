@@ -4,7 +4,7 @@
 (format #t "Will try to run on-idle callback 5 times...\n")
 
 (automake-test
- (let ((mainloop (MainLoop-new #f #t))
+ (let ((mainloop (main-loop:new #f #t))
        (n 1))
    (let ((source-id (idle-add PRIORITY_DEFAULT
                                  ;; This callback should run 5 times.

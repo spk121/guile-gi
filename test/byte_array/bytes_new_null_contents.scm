@@ -22,7 +22,7 @@
 (setlocale LC_ALL "C")
 (automake-test
  (begin
-   (let ((self (Bytes-new #f 0)))
+   (let ((self (bytes:new #f 0)))
      (receive (data siz) (call-method self "get-data")
        (format #t "New Byte Array: ~S~%" self)
        (format #t "Data: ~S~%" data)

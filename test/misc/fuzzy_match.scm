@@ -23,7 +23,7 @@
      (cdr c-struct))))
 
 (automake-test
- (let ((idx (FuzzyMutableIndex-new #f))
+ (let ((idx (fuzzy-mutable-index:new #f))
        (matches '()))
    (send idx (insert "lorem" (new-data)))
    (send idx (insert "ipsum" (new-data)))

@@ -2,6 +2,6 @@
              (test automake-test-lib))
 
 (automake-test
- (let ((mainloop (MainLoop-new #f #t)))
+ (let ((mainloop (main-loop:new #f #t)))
    (let ((ctx (send mainloop (get-context))))
      (GMainContext? ctx))))

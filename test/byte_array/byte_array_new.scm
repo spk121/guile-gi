@@ -23,7 +23,7 @@
 (setlocale LC_ALL "")
 (automake-test
  (begin
-   (let ((barray (ByteArray-new)))
+   (let ((barray (byte-array:new)))
      (format #t "New Byte Array: ~S~%" barray)
      (and (bytevector? barray)
 	  (= 0 (bytevector-length barray))))))

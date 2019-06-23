@@ -13,12 +13,12 @@
 (automake-test
  (begin
    ;; Let's make a channel that writes to a file.
-   (let ((channel (IOChannel-new-file "tmp.txt" "w")))
+   (let ((channel (iochannel:new-file "tmp.txt" "w")))
      (let ((result (send channel (write-chars (string->utf8 "foobar") 6))))
        (send channel (shutdown #t))))
 
    ;; Now, make a channel that reads from that file.
-   (let ((channel (IOChannel-new-file "tmp.txt" "r"))
+   (let ((channel (iochannel:new-file "tmp.txt" "r"))
          (buf (make-bytevector SIZ 0)))
 
      ;; Read as much as we can.

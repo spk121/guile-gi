@@ -23,11 +23,11 @@
 (setlocale LC_ALL "")
 (automake-test
  (begin
-   (Date-valid-day? 1)
-   (Checksum-new 1)
-   (Date-valid-dmy? 1 2 3)
+   (date:valid-day? 1)
+   (checksum:new 1)
+   (date:valid-dmy? 1 2 3)
    (let* ((bv (make-bytevector 4 32))
-	  (bv2 (ByteArray-new-take bv 3)))
+	  (bv2 (byte-array:new-take bv 3)))
      (format #t "Input byte array should be 4 bytes: ~S~%" bv)
      (format #t "Output byte array should be 3 bytes: ~S~%" bv2)
      (and (bytevector? bv2)

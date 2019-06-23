@@ -4,7 +4,7 @@
 (format #t "Will try to run timed callback 5 times...\n")
 
 (automake-test
- (let ((mainloop (MainLoop-new #f #t))
+ (let ((mainloop (main-loop:new #f #t))
        (n 1))
    (let ((source-id (timeout-add PRIORITY_DEFAULT
                                  100                    ; milliseconds

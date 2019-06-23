@@ -21,7 +21,7 @@
    (let ((in-fd (port->fdes in-port))
          (out-fd (port->fdes out-port)))
      (format #t "In FD ~S, Out FD ~S~%" in-fd out-fd)
-     (let ((channel (IOChannel-unix-new in-fd))
+     (let ((channel (iochannel:unix-new in-fd))
 
            ;; This is where we'll put the output
            (buf (make-bytevector SIZ 0)))
