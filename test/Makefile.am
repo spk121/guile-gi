@@ -133,7 +133,8 @@ BYTE_ARRAY_TESTS = \
 
 GAPPLICATION_TESTS = \
  gapplication_1.scm \
- gapplication_2.scm
+ gapplication_2.scm \
+ gapplication_set_resource_path.scm
 
 FUZZY_MATCH_TESTS = \
  fuzzy_match.scm

@@ -960,41 +960,42 @@ scm_gobject_is_floating_p (SCM self)
     return scm_from_bool (ret);
 }
 
-/* re pygi_set_property_value */
-static int
-gi_set_property_value (const char *func,
-                       SCM instance,
-                       GParamSpec *pspec,
-                       SCM svalue)
-{
-    g_critical ("not implemented");
-    g_assert_not_reached ();
-}
-
 /* re pygobject_set_property */
 static SCM
-scm_gobject_set_property_x (SCM self, SCM sname, SCM sval)
+scm_gobject_set_property_x (SCM self, SCM sname, SCM svalue)
 {
+#define FUNC_NAME "gobject-set-property!"
     GObject *obj;
     char *name;
     GParamSpec *pspec;
+    GValue value = { 0, };
 
     SCM_ASSERT (G_TYPE_IS_CLASSED (gir_type_get_gtype_from_obj (self)),
-                self, SCM_ARG1, "gobject-set-property!");
-    SCM_ASSERT (scm_is_string (sname), sname, SCM_ARG2, "gobject-set-property!");
+                self, SCM_ARG1, FUNC_NAME);
+    SCM_ASSERT (scm_is_string (sname), sname, SCM_ARG2, FUNC_NAME);
 
     obj = gi_gobject_get_obj (self);
     name = scm_to_utf8_string (sname);
     pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (obj), name);
     free (name);
     if (!pspec)
-        scm_misc_error ("gobject-set-property!",
+        scm_misc_error (FUNC_NAME,
                         "object of type ~S does not have property ~S",
                         scm_list_2(scm_from_utf8_string (g_type_name (G_OBJECT_TYPE (obj))),
                                    sname));
 
-    gi_set_property_value ("gobject-set-property!", self, pspec, sval);
+    if (!(pspec->flags & G_PARAM_WRITABLE)) {
+        scm_misc_error (FUNC_NAME, "property ~S is not writable",
+                        scm_list_1 (scm_from_utf8_string (g_param_spec_get_name (pspec))));
+    }
+
+    g_value_init (&value, G_PARAM_SPEC_VALUE_TYPE (pspec));
+    gi_gvalue_from_scm_with_error (FUNC_NAME, &value, svalue, SCM_ARG3);
+
+    g_object_set_property (gi_gobject_get_obj(self), pspec->name, &value);
+
     return SCM_UNSPECIFIED;
+#undef FUNC_NAME
 }
 
 /* re pygi_get_property_value_by_name */

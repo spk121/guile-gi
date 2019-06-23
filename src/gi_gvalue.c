@@ -60,7 +60,7 @@ void gi_gvalue_finalizer(SCM self)
  * Returns: 0 on success, -1 on error.
  */
 int
-gi_gvalue_from_scm_with_error(GValue *value, SCM obj)
+gi_gvalue_from_scm(GValue *value, SCM obj)
 {
     g_assert (value != NULL);
 
@@ -253,11 +253,20 @@ gi_gvalue_from_scm_with_error(GValue *value, SCM obj)
     return 0;
 }
 
-int
-gi_gvalue_from_scm (GValue *value, SCM obj)
+void
+gi_gvalue_from_scm_with_error (const char *subr, GValue *value, SCM obj, int pos)
 {
-    int res = gi_gvalue_from_scm_with_error (value, obj);
-    return res;
+    int res = gi_gvalue_from_scm (value, obj);
+    switch (res)
+    {
+    case 0:
+        return;
+    case GI_GVALUE_WRONG_TYPE:
+        scm_wrong_type_arg (subr, pos, obj);
+        break;
+    case GI_GVALUE_OUT_OF_RANGE:
+        scm_out_of_range_pos (subr, obj, scm_from_int (pos));
+    }
 }
 
 
@@ -679,16 +688,8 @@ scm_gvalue_set_x (SCM self, SCM x)
                                 "GValue");
 
     val = gi_gvalue_get_value (self);
-    if (val) {
-        int err = gi_gvalue_from_scm_with_error (val, x);
-        if (err == GI_GVALUE_WRONG_TYPE)
-            scm_wrong_type_arg_msg ("gvalue-set!",
-                                    SCM_ARG2,
-                                    x,
-                                    G_VALUE_TYPE_NAME (val));
-        else if (err == GI_GVALUE_OUT_OF_RANGE)
-            scm_out_of_range_pos ("gvalue-set!", x, scm_from_int(2));
-    }
+    if (val)
+        gi_gvalue_from_scm_with_error ("gvalue_set!", val, x, SCM_ARG2);
     return SCM_UNSPECIFIED;
 }
 
