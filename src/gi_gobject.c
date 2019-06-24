@@ -17,6 +17,7 @@
 #include "gi_gsignal.h"
 #include "gi_gparamspec.h"
 #include "gi_signal_closure.h"
+#include "gi_util.h"
 #include "gir_typelib.h"
 #include "gir_type.h"
 #include <glib-object.h>
@@ -716,10 +717,6 @@ scm_register_guile_specified_gobject_type (SCM s_type_name,
                 s_type_name,
                 SCM_ARG1,
                 "register-type");
-    //scm_assert_foreign_object_type (gi_gtype_type, s_parent_type);
-    // SCM_ASSERT (scm_is_true (scm_list_p (s_properties)), s_properties, SCM_ARG3, "register-type");
-    // SCM_ASSERT (scm_is_true (scm_list_p (s_signals)), s_signals, SCM_ARG4, "register-type");
-    // SCM_ASSERT (scm_is_true (scm_procedure_p (s_disposer)), s_disposer, SCM_ARG5, "register-type");
 
     type_name = scm_to_utf8_string (s_type_name);
 
@@ -733,39 +730,57 @@ scm_register_guile_specified_gobject_type (SCM s_type_name,
                         "type ~S lacks introspection",
                         scm_list_1 (s_parent_type));
 
+    SCM_UNBND_TO_BOOL_F (s_properties);
+    SCM_UNBND_TO_BOOL_F (s_signals);
+    SCM_UNBND_TO_BOOL_F (s_disposer);
+
+    SCM_ASSERT_TYPE (scm_is_false (s_properties) ||
+                     scm_is_list (s_properties),
+                     s_properties, SCM_ARG3,
+                     "register-type", "list of param specs or #f");
+
+    SCM_ASSERT_TYPE (scm_is_false (s_signals) ||
+                     scm_is_list (s_signals),
+                     s_signals, SCM_ARG4,
+                     "register-type", "list of signal specs or #f");
+
+    SCM_ASSERT_TYPE (scm_is_false (s_disposer) ||
+                     scm_is_true (scm_procedure_p (s_disposer)),
+                     s_disposer, SCM_ARG5,
+                     "register-type", "procedure or #f");
+
     properties = g_ptr_array_new ();
     signals = g_ptr_array_new_with_free_func ((GDestroyNotify) gi_free_signalspec);
 
-    if (!SCM_UNBNDP(s_properties) && scm_is_true (scm_list_p (s_properties))) {
+    if (scm_is_list (s_properties))
+    {
         n_properties = scm_to_size_t (scm_length (s_properties));
-        for (size_t i = 0; i < n_properties; i ++) {
+        for (size_t i = 0; i < n_properties; i ++)
+        {
             GParamSpec *pspec;
             pspec = gi_gparamspec_from_scm (scm_list_ref (s_properties, scm_from_size_t (i)));
             g_ptr_array_add (properties, pspec);
         }
     }
 
-    if (!SCM_UNBNDP(s_signals) && scm_is_true (scm_list_p (s_signals))) {
+    if (scm_is_list (s_signals))
+    {
         n_signals = scm_to_size_t (scm_length (s_signals));
-        for (size_t i = 0; i < n_signals; i ++) {
+        for (size_t i = 0; i < n_signals; i ++)
+        {
             SignalSpec *sspec;
             sspec = gi_signalspec_from_obj (scm_list_ref (s_signals , scm_from_size_t (i)));
             g_ptr_array_add (signals, sspec);
         }
+
     }
 
-    if (!SCM_UNBNDP(s_disposer) && scm_is_true (scm_procedure_p (s_disposer)))
-        new_type = register_guile_specified_gobject_type (type_name,
-                                                          parent_type,
-                                                          properties,
-                                                          signals,
-                                                          s_disposer);
-    else
-        new_type = register_guile_specified_gobject_type (type_name,
-                                                          parent_type,
-                                                          properties,
-                                                          signals,
-                                                          SCM_BOOL_F);
+    new_type = register_guile_specified_gobject_type (type_name,
+                                                      parent_type,
+                                                      properties,
+                                                      signals,
+                                                      s_disposer);
+
     gir_type_define(new_type);
     return gir_type_get_scheme_type (new_type);
 }

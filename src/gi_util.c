@@ -91,3 +91,9 @@ scm_c_list_ref (SCM list, size_t k)
 {
     return scm_list_ref (list, scm_from_size_t (k));
 }
+
+int
+scm_is_list (SCM obj)
+{
+    return scm_is_true (scm_list_p (obj));
+}
