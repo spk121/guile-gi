@@ -5,13 +5,15 @@
   #:use-module (test example1 exampleappwindow)
   #:export(example-app-new))
 
-(define EXAMPLE_APP_TYPE
+(define <ExampleApp>
   (register-type
    "ExampleApp"                         ; type name
    <GtkApplication>                     ; parent_type
    #f                                   ; No additional properties
    #f                                   ; No new signals
    #f))                                 ; No disposer func
+
+;; (define EXAMPLE_APP_TYPE (get-gtype <ExampleApp>))
 
 (define (example-app-init app)
   #f)
@@ -35,7 +37,7 @@
   (let ((app
          (make-gobject
           ;; GType of GType integer
-          EXAMPLE_APP_TYPE
+          <ExampleApp>
           ;; Alist of properties
           '(("application-id" . "org.gtk.exampleapp")
             ("flags" . 4)))))

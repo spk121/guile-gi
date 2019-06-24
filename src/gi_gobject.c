@@ -749,7 +749,7 @@ scm_register_guile_specified_gobject_type (SCM s_type_name,
                                                           signals,
                                                           SCM_BOOL_F);
     gir_type_define(new_type);
-    return scm_from_size_t (new_type);
+    return gir_type_get_scheme_type (new_type);
 }
 
 static void*
@@ -871,7 +871,7 @@ scm_make_gobject (SCM s_gtype, SCM s_prop_alist)
                     g_value_set_enum (value, scm_to_ulong (scm_cdr (entry)));
                 }
                 else if (G_IS_PARAM_SPEC_FLAGS (pspec)) {
-                    g_value_init (value, G_TYPE_FLAGS);
+                    g_value_init (value, G_PARAM_SPEC_VALUE_TYPE(pspec));
                     g_value_set_flags (value, scm_to_ulong (scm_cdr (entry)));
                 }
                 else if (G_IS_PARAM_SPEC_STRING (pspec)) {
