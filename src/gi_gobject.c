@@ -906,11 +906,22 @@ scm_make_gobject (SCM s_gtype, SCM s_prop_alist)
                     g_value_init (value, G_TYPE_STRING);
                     g_value_set_string (value, scm_to_utf8_string (scm_cdr (entry)));
                 }
-                else if (G_IS_PARAM_SPEC_OBJECT (pspec) &&
-                         g_type_is_a (gir_type_get_gtype_from_obj (scm_cdr (entry)),
-                                      pspec->value_type)) {
-                    g_value_init (value, pspec->value_type);
-                    g_value_set_object (value, scm_foreign_object_ref (scm_cdr (entry), OBJ_SLOT));
+                else if (G_IS_PARAM_SPEC_OBJECT (pspec))
+                {
+                    SCM src = scm_cdr(entry);
+                    GType src_type = gir_type_get_gtype_from_obj(src);
+                    GType dest_type = G_PARAM_SPEC_VALUE_TYPE(pspec);
+                    if (g_type_is_a (src_type, dest_type))
+                    {
+                        g_value_init (value, dest_type);
+                        g_value_set_object (value, scm_foreign_object_ref (src, OBJ_SLOT));
+                    }
+                    else
+                        scm_misc_error ("make-gobject",
+                                        "unable to convert parameter ~S of type ~S into a ~S",
+                                        scm_list_3 (src,
+                                                    scm_from_utf8_string(g_type_name(src_type)),
+                                                    scm_from_utf8_string(g_type_name(dest_type))));
                 }
                 else
                     scm_misc_error ("make-gobject",
