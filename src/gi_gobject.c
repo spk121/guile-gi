@@ -625,13 +625,31 @@ set_guile_specified_property (GObject *object, guint property_id,
 static void
 dispose (GObject *object)
 {
-    g_critical ("dispose: implement me");
+    GType type, parent_type;
+    gpointer _parent_class;
+    GObjectClass *parent_class;
+
+    type = G_OBJECT_TYPE (object);
+    parent_type = g_type_parent (type);
+
+    g_assert (G_TYPE_IS_CLASSED (type));
+    g_assert (G_TYPE_IS_CLASSED (parent_type));
+
+    g_info ("dispose is currently just calling the parent's dispose");
+
+    g_debug ("disposing parent type");
+    _parent_class = g_type_class_ref (parent_type);
+    parent_class = G_OBJECT_CLASS (_parent_class);
+
+    parent_class->dispose (object);
+
+    g_type_class_unref (_parent_class);
 }
 
 static void
 finalize (GObject *object)
 {
-    g_critical ("finalize: implement me");
+    g_info ("finalization is not yet implemented, this is a noop");
 }
 
 
