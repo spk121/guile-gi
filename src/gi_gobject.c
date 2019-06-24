@@ -732,7 +732,17 @@ scm_register_guile_specified_gobject_type (SCM s_type_name,
     // SCM_ASSERT (scm_is_true (scm_procedure_p (s_disposer)), s_disposer, SCM_ARG5, "register-type");
 
     type_name = scm_to_utf8_string (s_type_name);
-    parent_type = scm_to_size_t (s_parent_type);
+
+    if (scm_is_integer (s_parent_type))
+        parent_type = scm_to_size_t (s_parent_type);
+    else
+        parent_type = gir_type_get_gtype_from_obj (s_parent_type);
+
+    if (scm_is_false (gir_type_get_scheme_type (parent_type)))
+        scm_misc_error ("register-type",
+                        "type ~S lacks introspection",
+                        scm_list_1 (s_parent_type));
+
     properties = g_ptr_array_new ();
     signals = g_ptr_array_new_with_free_func ((GDestroyNotify) gi_free_signalspec);
 
