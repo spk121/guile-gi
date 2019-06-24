@@ -172,8 +172,7 @@ TESTS = \
 
 XFAIL_TESTS = \
  atomic_int_set.scm \
- strjoinv.scm \
- paramspec_default.scm
+ strjoinv.scm
 
 SCM_LOG_COMPILER = \
   ${top_builddir}/libtool \

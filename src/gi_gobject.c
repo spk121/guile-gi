@@ -540,10 +540,10 @@ init_instance(GTypeInstance *instance, gpointer class_ptr)
     for (guint i = 0; i < n_properties; i ++)
     {
         SCM sval;
-        GValue _default = G_VALUE_INIT;
+        const GValue* _default;
 
-        g_value_init (&_default, G_PARAM_SPEC_TYPE (properties[i]));
-        sval = gi_gvalue_as_scm (&_default, TRUE);
+        _default = g_param_spec_get_default_value (properties[i]);
+        sval = gi_gvalue_as_scm (_default, TRUE);
         scm_hash_set_x (inst_dict,
                         scm_from_utf8_string (g_param_spec_get_name (properties[i])),
                         sval);
@@ -561,7 +561,7 @@ wrap_object (GObject *object)
     /* Somehow, you managed to make a pointer to a Guile-defined class
      * object without actually making the Scheme wrapper.  Let's try
      * to add it now. */
-
+    g_assert_not_reached ();
 }
 
 static void
