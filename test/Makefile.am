@@ -139,6 +139,10 @@ GAPPLICATION_TESTS = \
 FUZZY_MATCH_TESTS = \
  fuzzy_match.scm
 
+PARAMSPEC_TESTS = \
+ paramspec.scm \
+ paramspec_default.scm
+
 TESTS = \
  $(VERSION_INFORMATION_TESTS) \
  $(BASIC_TYPE_TESTS) \
@@ -163,11 +167,13 @@ TESTS = \
  $(BYTE_ARRAY_TESTS) \
  $(GAPPLICATION_TESTS) \
  $(FUZZY_MATCH_TESTS) \
+ $(PARAMSPEC_TESTS) \
  softerror_create.scm
 
 XFAIL_TESTS = \
  atomic_int_set.scm \
- strjoinv.scm
+ strjoinv.scm \
+ paramspec_default.scm
 
 SCM_LOG_COMPILER = \
   ${top_builddir}/libtool \

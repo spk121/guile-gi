@@ -23,10 +23,7 @@ scm_make_gstruct(SCM s_gtype)
 {
     GType type;
 
-    if (scm_is_integer (s_gtype))
-        type = scm_to_size_t (s_gtype);
-    else
-        type = gir_type_get_gtype_from_obj (s_gtype);
+    type = scm_to_gtype (s_gtype);
 
     if (scm_is_false (gir_type_get_scheme_type (type)))
         scm_misc_error ("make-struct",
@@ -63,10 +60,7 @@ scm_make_gunion(SCM s_gtype)
 {
     GType type;
 
-    if (scm_is_integer (s_gtype))
-        type = scm_to_size_t (s_gtype);
-    else
-        type = gir_type_get_gtype_from_obj (s_gtype);
+    type = scm_to_gtype (s_gtype);
 
     if (scm_is_false (gir_type_get_scheme_type (type)))
         scm_misc_error ("make-union",

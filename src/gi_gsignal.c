@@ -1,5 +1,6 @@
 /* -*- Mode: C; c-basic-offset: 4 -*- */
 #include "gi_gsignal.h"
+#include "gir_type.h"
 
 SignalSpec *gi_signalspec_from_obj (SCM obj)
 {
@@ -12,7 +13,7 @@ SignalSpec *gi_signalspec_from_obj (SCM obj)
     SignalSpec *spec = NULL;
 
     name = scm_to_utf8_string (scm_list_ref (obj, scm_from_int (0)));
-    return_type = scm_to_size_t (scm_list_ref (obj, scm_from_int (1)));
+    return_type = scm_to_gtype (scm_list_ref (obj, scm_from_int (1)));
     sparams = scm_list_ref (obj, scm_from_int (2));
     n_params = scm_to_uint (scm_length (sparams));
     params = g_new0(GType, n_params);

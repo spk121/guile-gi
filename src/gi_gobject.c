@@ -720,10 +720,7 @@ scm_register_guile_specified_gobject_type (SCM s_type_name,
 
     type_name = scm_to_utf8_string (s_type_name);
 
-    if (scm_is_integer (s_parent_type))
-        parent_type = scm_to_size_t (s_parent_type);
-    else
-        parent_type = gir_type_get_gtype_from_obj (s_parent_type);
+    parent_type = scm_to_gtype (s_parent_type);
 
     if (scm_is_false (gir_type_get_scheme_type (parent_type)))
         scm_misc_error ("register-type",
@@ -810,10 +807,7 @@ scm_make_gobject (SCM s_gtype, SCM s_prop_alist)
     const char **keys;
     GValue *values;
 
-    if (scm_is_integer (s_gtype))
-        type = scm_to_size_t (s_gtype);
-    else
-        type = gir_type_get_gtype_from_obj (s_gtype);
+    type = scm_to_gtype (s_gtype);
 
     SCM_ASSERT_TYPE (G_TYPE_IS_CLASSED (type), s_gtype, SCM_ARG1,
                      "make-gobject",

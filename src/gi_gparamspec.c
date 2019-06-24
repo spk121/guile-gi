@@ -4,8 +4,24 @@
 #include "gi_gparamspec.h"
 #include "gi_util.h"
 
+static GParamSpec * gi_gparamspec_from_list (SCM x);
+
 GParamSpec *
 gi_gparamspec_from_scm (SCM x)
+{
+    SCM_ASSERT_TYPE (scm_is_list (x) ||
+                     scm_is_true (gi_gparamspec_p (x)),
+                     x, SCM_ARG1, "%scm->gparamspec",
+                     "list or param spec object");
+
+    if (scm_is_list (x))
+        return gi_gparamspec_from_list (x);
+    else
+        return gi_gparamspec_get_spec (x);
+}
+
+static GParamSpec *
+gi_gparamspec_from_list (SCM x)
 {
     char *prop_name;
     GType prop_type;
@@ -16,7 +32,7 @@ gi_gparamspec_from_scm (SCM x)
     size_t i;
 
     prop_name = scm_to_utf8_string (scm_c_list_ref (x, 0));
-    prop_type = scm_to_size_t (scm_c_list_ref (x, 1));
+    prop_type = scm_to_gtype (scm_c_list_ref (x, 1));
     nick = scm_to_utf8_string (scm_c_list_ref (x, 2));
     blurb = scm_to_utf8_string (scm_c_list_ref (x, 3));
     i = 4;
@@ -92,7 +108,9 @@ static SCM
 scm_list_to_gparamspec (SCM x)
 {
     SCM obj;
-    GParamSpec *spec = gi_gparamspec_from_scm (x);
+    SCM_ASSERT_TYPE (scm_is_list (x), x, SCM_ARG1, "list->gparamspec",
+                     "list");
+    GParamSpec *spec = gi_gparamspec_from_list (x);
 
     if (spec) {
         obj = scm_make_foreign_object_0 (gi_gparamspec_type);

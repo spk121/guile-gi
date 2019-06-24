@@ -664,7 +664,7 @@ scm_make_gvalue (SCM gtype)
 
     //scm_assert_foreign_object_type (gi_gtype_type, gtype);
 
-    type = scm_to_size_t (gtype);
+    type = scm_to_gtype (gtype);
     val = g_new0(GValue,1);
     g_value_init (val, type);
     return gi_gvalue_c2g (val);
@@ -730,7 +730,7 @@ scm_gvalue_holds_p(SCM self, SCM gtype)
                                 "GValue");
 
     val = gi_gvalue_get_value (self);
-    type = scm_to_size_t (gtype);
+    type = scm_to_gtype (gtype);
     if (val) {
         ret = G_VALUE_HOLDS (val, type);
         return scm_from_bool (ret);

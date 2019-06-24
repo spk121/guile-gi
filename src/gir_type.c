@@ -329,6 +329,21 @@ static void gir_type_predicate_binding(ffi_cif *cif, void *ret, void **ffi_args,
         *(ffi_arg *)ret = SCM_UNPACK(SCM_BOOL_F);
 }
 
+// This routine returns the integer GType ID of a scheme object, that is
+// - already a GType ID encoded as size_t,
+// - a foreign object for a GType
+// - a foreign object for an object instance
+// The last one is accidental, as internally `gir_type_get_gtype_from_obj'
+// is used. This may change in future and should not be relied on.
+GType
+scm_to_gtype (SCM x)
+{
+    if (scm_is_integer (x))
+        return scm_to_size_t (x);
+    else
+        return gir_type_get_gtype_from_obj (x);
+}
+
 // This routine returns the integer GType ID of a given
 // GIR foreign object type, or an instance of a GIR foreign object type.
 // It returns #f on failure.
