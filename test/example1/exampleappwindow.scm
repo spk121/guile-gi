@@ -3,7 +3,7 @@
   #:use-module (gi gtk-3)
   #:export (example-app-window-new))
 
-(define EXAMPLE_APP_WINDOW_TYPE
+(define <ExampleAppWindow>
   (register-type
    "ExampleAppWindow"                   ; type name
    <GtkApplicationWindow>               ; parent_type
@@ -13,6 +13,5 @@
 
 (define (example-app-window-new app)
   (make-gobject
-   EXAMPLE_APP_WINDOW_TYPE
-   `(("application" . ,(cast app <GtkApplication>)))))
-
+   <ExampleAppWindow>
+   `(("application" . ,app))))

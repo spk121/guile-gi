@@ -15,11 +15,11 @@
 
 #include "gir_function.h"
 #include "gi_giargument.h"
+#include "gi_util.h"
 
 GSList *function_list = NULL;
 
 static gir_gsubr_t *gir_function_create_gsubr(GIFunctionInfo *function_info, const char *name, int *n_required, int *n_optional);
-static char *gir_function_name_to_scm_name(const char *gname);
 
 static void gir_function_info_count_args(GIFunctionInfo *info, int *in, int *out);
 static void gir_function_count_input_args(GIFunctionInfo *info, int *required, int *optional);
@@ -175,9 +175,10 @@ gir_function_make_name(const char *parent, GICallableInfo *info)
 
     if (parent)
     {
+        // For the method names, we want a CamelCase type followed by a
+        // lowercase string with hyphens such as 'TypeName-method-name'
         tmp_str = g_strdup(parent);
-        tmp_str2 = gir_function_name_to_scm_name(g_base_info_get_name(info));
-        // tmp_str2 = gir_function_name_to_scm_name(g_type_name(g_base_info_get_type(info)));
+        tmp_str2 = gname_to_scm_name (g_base_info_get_name(info));
         if (g_type_info_get_tag(return_type) == GI_TYPE_TAG_BOOLEAN
             && !g_type_info_is_pointer(return_type))
             public_name = g_strdup_printf("%s-%s?", tmp_str, tmp_str2);
@@ -194,53 +195,12 @@ gir_function_make_name(const char *parent, GICallableInfo *info)
         else
             tmp_str = g_strdup_printf("%s",
                                       g_base_info_get_name(info));
-        public_name = gir_function_name_to_scm_name(tmp_str);
+        public_name = gname_to_scm_name(tmp_str);
         g_free(tmp_str);
     }
 
     g_base_info_unref(return_type);
     return public_name;
-}
-
-/* Convert the type of names that GTK uses into Guile-like names */
-static char *
-gir_function_name_to_scm_name(const char *gname)
-{
-    size_t len = strlen(gname);
-    GString *str = g_string_new(NULL);
-    gboolean was_lower = FALSE;
-
-    for (size_t i = 0; i < len; i++)
-    {
-        if (g_ascii_islower(gname[i]))
-        {
-            g_string_append_c(str, gname[i]);
-            was_lower = TRUE;
-        }
-        else if (gname[i] == '_' || gname[i] == '-')
-        {
-            g_string_append_c(str, '-');
-            was_lower = FALSE;
-        }
-        else if (gname[i] == '?')
-        {
-            g_string_append_c(str, '?');
-            was_lower = FALSE;
-        }
-        else if (g_ascii_isdigit(gname[i]))
-        {
-            g_string_append_c(str, gname[i]);
-            was_lower = FALSE;
-        }
-        else if (g_ascii_isupper(gname[i]))
-        {
-            if (was_lower)
-                g_string_append_c(str, '-');
-            g_string_append_c(str, g_ascii_tolower(gname[i]));
-            was_lower = FALSE;
-        }
-    }
-    return g_string_free(str, FALSE);
 }
 
 SCM
@@ -617,44 +577,6 @@ gir_function_object_list_to_c_args(char *subr, SCM s_args,
     }
     scm_remember_upto_here_1(obj);
     return;
-
-arg_err_cleanup:
-    gi_giargument_free_args(n_input_args, in_args_free, in_args);
-    g_free(in_args);
-    g_free(out_args);
-    g_free(in_args_free);
-
-    g_return_if_reached();
-#if 0
-    GIDirection dir;
-    GIArgInfo *arg_info;
-    GIArgument *in_args = g_new0(GIArgument, scm_to_int(scm_length(s_args)));
-
-    int n_args = g_callable_info_get_n_args((GICallableInfo *)func_info);
-    int i_input = 0;
-
-    for (int i = 0; i < n_args; i++)
-    {
-        arg_info = g_callable_info_get_arg((GICallableInfo *)func_info, i);
-        g_assert(arg_info != NULL);
-
-        dir = g_arg_info_get_direction(arg_info);
-
-        if (dir == GI_DIRECTION_IN || dir == GI_DIRECTION_INOUT)
-        {
-            SCM arg = scm_list_ref(s_args, scm_from_int(i_input));
-            in_args[i_input] = gi_argument_from_object("gi-function-invoke",
-                arg,
-                g_arg_info_get_type(arg_info),
-                g_arg_info_get_ownership_transfer(arg_info));
-            i_input++;
-        }
-        g_base_info_unref(arg_info);
-    }
-
-    return in_args;
-#endif
-#undef FUNC_NAME
 }
 
 static SCM

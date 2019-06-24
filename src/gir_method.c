@@ -20,6 +20,7 @@
 #include "gi_gobject.h"
 #include "gi_giargument.h"
 #include "gir_type.h"
+#include "gi_util.h"
 
 // This structure is a hash table tree.
 // On the first level we have
@@ -32,56 +33,15 @@ GHashTable *gir_method_hash_table = NULL;
 
 static void gir_fini_method(void);
 
-// Convert the type of names that GTK uses into Guile-like names
-static char *
-gir_method_gname_to_scm_name(const char *gname)
-{
-    g_assert (gname != NULL);
-    g_assert (strlen(gname) > 0);
-
-    size_t len = strlen(gname);
-    GString *str = g_string_new(NULL);
-    gboolean was_lower = FALSE;
-
-    for (size_t i = 0; i < len; i++)
-    {
-        if (g_ascii_islower(gname[i]))
-        {
-            g_string_append_c(str, gname[i]);
-            was_lower = TRUE;
-        }
-        else if (gname[i] == '_' || gname[i] == '-')
-        {
-            g_string_append_c(str, '-');
-            was_lower = FALSE;
-        }
-        else if (g_ascii_isdigit(gname[i]))
-        {
-            g_string_append_c(str, gname[i]);
-            was_lower = FALSE;
-        }
-        else if (g_ascii_isupper(gname[i]))
-        {
-            if (was_lower)
-                g_string_append_c(str, '-');
-            g_string_append_c(str, g_ascii_tolower(gname[i]));
-            was_lower = FALSE;
-        }
-    }
-    return g_string_free(str, FALSE);
-}
-
 gchar*
 gir_method_public_name(GICallableInfo *info)
 {
     char *public_name, *tmp_str;
     GITypeInfo *return_type;
 
-    // For the method names, we want a CamelCase type followed by a
-    // lowercase string with hyphens such as 'TypeName-method-name'
     return_type = g_callable_info_get_return_type(info);
     g_assert(return_type);
-    tmp_str = gir_method_gname_to_scm_name(g_base_info_get_name(info));
+    tmp_str = gname_to_scm_name(g_base_info_get_name(info));
     if (g_type_info_get_tag(return_type) == GI_TYPE_TAG_BOOLEAN
         && !g_type_info_is_pointer(return_type))
         public_name = g_strdup_printf("%s?", tmp_str);
@@ -275,84 +235,6 @@ scm_call_method(SCM s_object, SCM s_method_name, SCM s_list_of_args)
     return output;
 }
 
-
-
-void
-gir_method_unref_object(SCM s_object)
-{
-    GType type, original_type;
-    GIFunctionInfo *info;
-
-#if 0
-    if (SCM_IS_A_P(s_object, gi_gobject_type))
-        type = gi_gobject_get_ob_type(s_object);
-    else if (SCM_IS_A_P(s_object, gir_gbox_type))
-        type = gi_gbox_get_type(s_object);
-    else
-#endif
-        scm_misc_error("gir_method_unref_object",
-            "Cannot invoke \'unref\' for object ~S",
-            scm_list_1(s_object));
-
-#if 0
-    original_type = type;
-    SCM val;
-    SCM s_name = scm_from_utf8_string("unref");
-    SCM subhash = scm_hash_ref(gir_method_hash_table, s_name,
-        SCM_BOOL_F);
-
-    while (scm_is_false((val = scm_hash_ref(subhash, scm_from_size_t(type), SCM_BOOL_F))))
-    {
-        if (!(type = g_type_parent(type)))
-        {
-            // Should be impossible.
-            scm_misc_error("gir_method_unref_object", "Unknown object type ~s",
-                           scm_list_1(s_object));
-        }
-    }
-    info = scm_to_pointer(val);
-
-    g_debug("Invoking %s::unref for object of type %s",
-        g_type_name(type),
-        g_type_name(original_type));
-
-    GIArgument in_arg;
-#if 0
-    if (SCM_IS_A_P(s_object, gi_gobject_type))
-        in_arg.v_pointer = gi_gobject_get_obj(s_object);
-    else if (SCM_IS_A_P(s_object, gir_gbox_type))
-        in_arg.v_pointer = gi_gbox_peek_pointer(s_object);
-    else
-#endif
-    g_assert_not_reached();
-        g_abort();
-
-    GIArgument return_arg;
-
-    /* Make the call. */
-    GError *err = NULL;
-    gboolean ret = g_function_info_invoke(info, &in_arg, 1, NULL, 0, &return_arg, &err);
-    if (ret)
-        g_debug("Invoked unref");
-    else
-        g_debug("Failed to invoke unref");
-
-    /* If there is a GError, write an error, free, and exit. */
-    if (!ret)
-    {
-        char str[256];
-        memset(str, 0, 256);
-        strncpy(str, err->message, 255);
-        g_error_free(err);
-
-        scm_misc_error("gir_method_unref_object",
-            "error invoking method 'unref': ~a",
-            scm_list_2(s_name, scm_from_utf8_string(str)));
-    }
-#endif
-}
-
-
 void
 gir_method_document(GString **export, const char *namespace_,
                    const char *parent, GICallableInfo *info)
@@ -450,7 +332,6 @@ gir_fini_method(void)
     g_hash_table_iter_init (&iter, gir_method_hash_table);
     while (g_hash_table_iter_next (&iter, &key, &value))
     {
-        char *key_str = key;
         GHashTable *value_hash = value;
 
         GHashTableIter iter2;

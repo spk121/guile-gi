@@ -15,8 +15,8 @@
 ;;  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 (use-modules (gi)
-	         (gi glib-2)
-	         (ice-9 receive)
+             (gi glib-2)
+             (ice-9 receive)
              (test automake-test-lib))
 
 (setlocale LC_ALL "C")
@@ -28,4 +28,4 @@
        (format #t "Data: ~S~%" data)
        (format #t "Size: ~S~%" siz)
        (and (not data)
-	        (equal? 0 siz))))))
+            (equal? 0 siz))))))

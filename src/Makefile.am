@@ -93,14 +93,10 @@ nodist_libguile_gi_la_SOURCES = \
  __gi_ginterface.h
 
 libguile_gi_la_SOURCES = \
- gi_basictype.c \
- gi_basictype.h \
  gi_gboxed.c \
  gi_gboxed.h \
- gi_gflags.h \
  gi_giargument.c \
  gi_giargument.h \
- gi_ginterface.h \
  gi_gobject.c \
  gi_gobject.h \
  gi_gparamspec.c \
@@ -128,8 +124,8 @@ libguile_gi_la_SOURCES = \
  gir_typelib.h \
  gir_type.c \
  gir_type.h \
- gir_xguile.c \
- gir_xguile.h
+ gi_util.c \
+ gi_util.h
 
 libguile_gi_la_CPPFLAGS = -DG_LOG_DOMAIN=\"GuileGI\"
 if BUILDING_DLL
@@ -150,6 +146,7 @@ libguile_gi_la_CFLAGS = \
 libguile_gi_la_LDFLAGS = \
  -no-undefined \
  -version-info $(LIBGUILE_GI_INTERFACE) \
+ -export-symbols-regex '^gir?_' \
  $(GUILE_LDFLAGS)
 
 if !DLL_VERSION_INFO

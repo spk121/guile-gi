@@ -9,12 +9,10 @@
 
 (automake-test
  (receive (converted bytes-read bytes-written)
-     (convert (u8-list->bytevector '(193 ; Latin-1 encoded Á
-                                     201)) ; Latin-1 encoded É
-                       2
-                       "UTF-8"
-                       "ISO-8859-1")
-
+     (convert #vu8(193 201) ; Latin-1 encoded ÁÉ
+              2
+              "UTF-8"
+              "ISO-8859-1")
    (equal? (take (bytevector->u8-list converted) bytes-written)
            '(195 129           ; UTF-8 encoded Á
                  195 137       ; UTF-8 encoded É

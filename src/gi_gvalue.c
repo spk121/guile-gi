@@ -15,7 +15,6 @@
 #include <girepository.h>
 #include "gi_gvalue.h"
 #include "gir_type.h"
-#include "gir_xguile.h"
 #include "gi_gobject.h"
 #include "gir_type.h"
 
@@ -61,7 +60,7 @@ void gi_gvalue_finalizer(SCM self)
  * Returns: 0 on success, -1 on error.
  */
 int
-gi_gvalue_from_scm_with_error(GValue *value, SCM obj)
+gi_gvalue_from_scm(GValue *value, SCM obj)
 {
     g_assert (value != NULL);
 
@@ -254,11 +253,20 @@ gi_gvalue_from_scm_with_error(GValue *value, SCM obj)
     return 0;
 }
 
-int
-gi_gvalue_from_scm (GValue *value, SCM obj)
+void
+gi_gvalue_from_scm_with_error (const char *subr, GValue *value, SCM obj, int pos)
 {
-    int res = gi_gvalue_from_scm_with_error (value, obj);
-    return res;
+    int res = gi_gvalue_from_scm (value, obj);
+    switch (res)
+    {
+    case 0:
+        return;
+    case GI_GVALUE_WRONG_TYPE:
+        scm_wrong_type_arg (subr, pos, obj);
+        break;
+    case GI_GVALUE_OUT_OF_RANGE:
+        scm_out_of_range_pos (subr, obj, scm_from_int (pos));
+    }
 }
 
 
@@ -522,12 +530,9 @@ gi_gvalue_to_scm_structured_type (const GValue *value, GType fundamental,
     switch (fundamental) {
     case G_TYPE_INTERFACE:
         if (g_type_is_a(G_VALUE_TYPE(value), G_TYPE_OBJECT))
-        {
-            GType type = G_VALUE_TYPE(value);
             return gir_type_make_object(G_VALUE_TYPE(value),
                                         g_value_get_object(value),
                                         0);
-        }
         else
             break;
 
@@ -567,53 +572,6 @@ gi_gvalue_to_scm_structured_type (const GValue *value, GType fundamental,
         }
     }
 
-#if 0
-    case G_TYPE_BOXED: {
-        PyGTypeMarshal *bm;
-        gboolean holds_value_array;
-
-        G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-            holds_value_array = G_VALUE_HOLDS(value, G_TYPE_VALUE_ARRAY);
-        G_GNUC_END_IGNORE_DEPRECATIONS
-
-            if (G_VALUE_HOLDS(value, PY_TYPE_OBJECT)) {
-                PyObject *ret = (PyObject *)g_value_dup_boxed(value);
-                if (ret == NULL) {
-                    Py_INCREF(Py_None);
-                    return Py_None;
-                }
-                return ret;
-            } else if (G_VALUE_HOLDS(value, G_TYPE_VALUE)) {
-                GValue *n_value = g_value_get_boxed (value);
-                return pyg_value_as_pyobject(n_value, copy_boxed);
-            } else if (holds_value_array) {
-                GValueArray *array = (GValueArray *) g_value_get_boxed(value);
-                Py_ssize_t n_values = array ? array->n_values : 0;
-                PyObject *ret = PyList_New(n_values);
-                int i;
-                for (i = 0; i < n_values; ++i)
-                    PyList_SET_ITEM(ret, i, pyg_value_as_pyobject
-                                    (array->values + i, copy_boxed));
-                return ret;
-            } else if (G_VALUE_HOLDS(value, G_TYPE_GSTRING)) {
-                GString *string = (GString *) g_value_get_boxed(value);
-                PyObject *ret = PYGLIB_PyUnicode_FromStringAndSize(string->str, string->len);
-                return ret;
-            }
-        bm = pyg_type_lookup(G_VALUE_TYPE(value));
-        if (bm) {
-            return bm->fromvalue(value);
-        } else {
-            if (copy_boxed)
-                return pygi_gboxed_new(G_VALUE_TYPE(value),
-                                       g_value_get_boxed(value), TRUE, TRUE);
-            else
-                return pygi_gboxed_new(G_VALUE_TYPE(value),
-                                       g_value_get_boxed(value),FALSE,FALSE);
-        }
-    }
-
-#endif
     case G_TYPE_OBJECT:
         return gir_type_make_object(G_VALUE_TYPE(value),
                                     g_value_get_object(value),
@@ -683,16 +641,8 @@ scm_gvalue_set_x (SCM self, SCM x)
                                 "GValue");
 
     val = gi_gvalue_get_value (self);
-    if (val) {
-        int err = gi_gvalue_from_scm_with_error (val, x);
-        if (err == GI_GVALUE_WRONG_TYPE)
-            scm_wrong_type_arg_msg ("gvalue-set!",
-                                    SCM_ARG2,
-                                    x,
-                                    G_VALUE_TYPE_NAME (val));
-        else if (err == GI_GVALUE_OUT_OF_RANGE)
-            scm_out_of_range_pos ("gvalue-set!", x, scm_from_int(2));
-    }
+    if (val)
+        gi_gvalue_from_scm_with_error ("gvalue_set!", val, x, SCM_ARG2);
     return SCM_UNSPECIFIED;
 }
 

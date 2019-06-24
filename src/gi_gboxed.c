@@ -1,7 +1,6 @@
 /* -*- Mode: C; c-basic-offset: 4 -*- */
 #include <libguile.h>
 #include <glib.h>
-#include "gir_xguile.h"
 #include "gi_gboxed.h"
 
 GQuark gugboxed_type_key;
@@ -25,7 +24,7 @@ gi_register_gboxed (SCM module, const gchar *class_name,
 		    GType boxed_type)
 {
     SCM type;
-    
+
     g_return_if_fail(dict != NULL);
     g_return_if_fail(class_name != NULL);
     g_return_if_fail(boxed_type != 0);
@@ -40,26 +39,14 @@ gi_gboxed_new (GType boxed_type, gpointer boxed, gboolean copy_boxed, gboolean o
     void *ptr;
     SCM tp;
     SCM self;
-    
-    if (!boxed) {
-	return SCM_NONE;
-    }
-    ptr = g_type_get_qdata(boxed_type, gugboxed_type_key);
-    /* if (!ptr) */
-    /* 	ptr = gi_gtype_import_by_g_type (boxed_type); */
-    if (ptr)
-	tp = SCM_PACK_POINTER (ptr);
-    else
-	tp = gi_gboxed_type;
 
-    /* if (!gi_gtype_is_subtype (tp, gi_gboxed_type)) */
-    /* 	scm_misc_error ("gi_gboxed_new", */
-    /* 			"~S isn't a GBoxed", scm_list_1 (tp)); */
-    
+    if (!boxed)
+        return SCM_UNDEFINED;
+
     self = scm_make_foreign_object_0 (gi_gboxed_type);
-    
+
     if (copy_boxed)
-	boxed = g_boxed_copy(boxed_type, boxed);
+        boxed = g_boxed_copy(boxed_type, boxed);
     gi_gboxed_set_ptr (self, boxed);
     gi_gboxed_set_gtype (self, boxed_type);
     gi_gboxed_set_free_on_dealloc (self, own_ref);
