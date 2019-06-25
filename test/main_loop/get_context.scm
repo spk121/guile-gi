@@ -4,4 +4,4 @@
 (automake-test
  (let ((mainloop (main-loop:new #f #t)))
    (let ((ctx (send mainloop (get-context))))
-     (GMainContext? ctx))))
+     (gmain-context? ctx))))

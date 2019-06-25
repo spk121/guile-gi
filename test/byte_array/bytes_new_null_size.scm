@@ -25,5 +25,5 @@
           (siz (call-method self "get-size")))
      (format #t "New Byte Array: ~S~%" self)
      (format #t "Size: ~S~%" siz)
-     (and (GBytes? self)
+     (and (gbytes? self)
           (equal? 0 siz)))))

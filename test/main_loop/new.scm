@@ -2,4 +2,4 @@
              (test automake-test-lib))
 
 (automake-test
- (GMainLoop? (main-loop:new #f #t)))
+ (gmain-loop? (main-loop:new #f #t)))

@@ -17,6 +17,7 @@
 #include <girepository.h>
 #include <ffi.h>
 #include "gir_type.h"
+#include "gi_util.h"
 #if HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -174,12 +175,14 @@ gir_type_define(GType gtype)
         g_debug ("Hash table size %d", g_hash_table_size(gir_type_gtype_hash));
 #endif
 
-        gchar *predicate_name = g_strdup_printf("%s?", g_type_name(gtype));
+        gchar *type_name = gname_to_scm_name (g_type_name (gtype));
+        gchar *predicate_name = g_strdup_printf("%s?", type_name);
         gpointer func = gir_type_create_predicate(predicate_name, fo_type);
         scm_c_define_gsubr(predicate_name, 1, 0, 0, func);
         scm_c_export(predicate_name, NULL);
 
-        g_free(predicate_name);
+        g_free (type_name);
+        g_free (predicate_name);
     }
     else
         g_debug("GType foriegn_object_type already exists for: %zu -> %s",
