@@ -168,7 +168,8 @@ TESTS = \
  $(GAPPLICATION_TESTS) \
  $(FUZZY_MATCH_TESTS) \
  $(PARAMSPEC_TESTS) \
- misc/softerror_create.scm
+ misc/softerror_create.scm \
+ misc/use-typelibs.scm
 
 XFAIL_TESTS = \
  misc/atomic_int_set.scm \
