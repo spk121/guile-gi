@@ -1,4 +1,4 @@
-(define-module (test example1 exampleappwindow)
+(define-module (example1 exampleappwindow)
   #:use-module (gi)
   #:use-module (gi gtk-3)
   #:export (example-app-window-new))

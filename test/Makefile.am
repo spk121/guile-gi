@@ -30,118 +30,118 @@ TEST_EXTENSIONS = .scm
 noinst_DATA = lib.scm automake-test-lib.scm
 
 VERSION_INFORMATION_TESTS = \
- MAJOR_VERSION.scm \
- MINOR_VERSION.scm \
- MICRO_VERSION.scm \
- VERSION_MIN_REQUIRED.scm
+ version_info/MAJOR_VERSION.scm \
+ version_info/MINOR_VERSION.scm \
+ version_info/MICRO_VERSION.scm \
+ version_info/VERSION_MIN_REQUIRED.scm
 
 BASIC_TYPE_TESTS = \
- MAXINT16.scm \
- MAXUINT64.scm \
- GINT32_FORMAT.scm
+ basic_types/MAXINT16.scm \
+ basic_types/MAXUINT64.scm \
+ basic_types/GINT32_FORMAT.scm
 
 STANDARD_MACROS_TESTS = \
- DIR_SEPARATOR_S.scm \
- DIR_SEPARATOR.scm \
- SEARCHPATH_SEPARATOR.scm \
- SEARCHPATH_SEPARATOR_S.scm
+ std_macros/DIR_SEPARATOR_S.scm \
+ std_macros/DIR_SEPARATOR.scm \
+ std_macros/SEARCHPATH_SEPARATOR.scm \
+ std_macros/SEARCHPATH_SEPARATOR_S.scm
 
 BYTE_ORDER_MACROS_TESTS = \
- BIG_ENDIAN.scm \
- LITTLE_ENDIAN.scm
+ byte_order/BIG_ENDIAN.scm \
+ byte_order/LITTLE_ENDIAN.scm
 
 NUMERICAL_DEFINITIONS_TESTS = \
- IEEE754_FLOAT_BIAS.scm \
- E.scm \
- PI.scm
+ basic_types/IEEE754_FLOAT_BIAS.scm \
+ basic_types/E.scm \
+ basic_types/PI.scm
 
 ATOMIC_OPERATIONS_TESTS = \
- atomic_int_set.scm
+ misc/atomic_int_set.scm
 
 MAIN_EVENT_LOOP_TESTS = \
- main_loop_new.scm \
- main_loop_runs.scm \
- main_loop_quit.scm \
- main_loop_get_context.scm \
- main_loop_timeout.scm \
- main_loop_idle.scm
+ main_loop/new.scm \
+ main_loop/runs.scm \
+ main_loop/quit.scm \
+ main_loop/get_context.scm \
+ main_loop/timeout.scm \
+ main_loop/idle.scm
 
 MEMORY_ALLOCATION_TESTS = \
- malloc.scm \
- try_malloc0.scm
+ mem/malloc.scm \
+ mem/try_malloc0.scm
 
 MEMORY_SLICES_TESTS = \
- slice_alloc.scm
+ mem/slice_alloc.scm
 
 IO_CHANNELS_TESTS = \
- io_channel_pipe.scm \
- io_channel_new_file.scm \
- io_channel_unichar.scm
+ io/io_channel_pipe.scm \
+ io/io_channel_new_file.scm \
+ io/io_channel_unichar.scm
 
 MESSAGE_OUTPUT_TESTS = \
- log_set_handler.scm \
- log_writer_is_journald.scm
+ io/log_set_handler.scm \
+ io/log_writer_is_journald.scm
 
 STRING_UTILITY_TESTS = \
- strdup.scm \
- strndup.scm \
- strnfill.scm \
- stpcpy.scm \
- strstr_len.scm \
- str_has_prefix.scm \
- str_tokenize_and_fold.scm \
- strjoinv.scm
+ string/strdup.scm \
+ string/strndup.scm \
+ string/strnfill.scm \
+ string/stpcpy.scm \
+ string/strstr_len.scm \
+ string/str_has_prefix.scm \
+ string/str_tokenize_and_fold.scm \
+ string/strjoinv.scm
 
 CHARACTER_SET_CONVERSION_TESTS = \
- convert.scm \
- convert_latin1.scm
+ convert/ascii.scm \
+ convert/latin1.scm
 
 UNICODE_MANIPULATION_TESTS = \
- unichar_validate_zero.scm \
- unichar_isalpha.scm \
- unichar_compose.scm \
- unichar_combining_class.scm \
- unicode_canonical_ordering.scm
+ unichar/validate_zero.scm \
+ unichar/isalpha.scm \
+ unichar/compose.scm \
+ unichar/combining_class.scm \
+ misc/unicode_canonical_ordering.scm
 
 BASE64_ENCODING_TESTS = \
- base64_encode.scm
+ misc/base64_encode.scm
 
 DATA_CHECKSUM_TESTS = \
- checksum.scm
+ misc/checksum.scm
 
 SECURE_HMAC_DIGESTS_TESTS = \
- hmac.scm \
- hmac_data.scm \
- hmac_bytes.scm
+ hmac/string.scm \
+ hmac/data.scm \
+ hmac/bytes.scm
 
 DATE_AND_TIME_FUNCTIONS_TESTS = \
- get_monotonic_time.scm \
- get_real_time.scm \
- date_new.scm \
- date_copy.scm \
- date_clear.scm
+ datetime/get_monotonic_time.scm \
+ datetime/get_real_time.scm \
+ datetime/date_new.scm \
+ datetime/date_copy.scm \
+ datetime/date_clear.scm
 
 MEMCHK_TESTS = \
- memchk_1.scm \
- memchk_2.scm
+ mem/memchk_1.scm \
+ mem/memchk_2.scm
 
 BYTE_ARRAY_TESTS = \
- byte_array_new.scm \
- byte_array_new_take.scm \
- bytes_new_null_size.scm \
- bytes_new_null_contents.scm
+ byte_array/byte_array_new.scm \
+ byte_array/byte_array_new_take.scm \
+ byte_array/bytes_new_null_size.scm \
+ byte_array/bytes_new_null_contents.scm
 
 GAPPLICATION_TESTS = \
- gapplication_1.scm \
- gapplication_2.scm \
- gapplication_set_resource_path.scm
+ gapplication/create1.scm \
+ gapplication/create2.scm \
+ gapplication/set_resource_path.scm
 
 FUZZY_MATCH_TESTS = \
- fuzzy_match.scm
+ misc/fuzzy_match.scm
 
 PARAMSPEC_TESTS = \
- paramspec.scm \
- paramspec_default.scm
+ paramspec/getset.scm \
+ paramspec/default.scm
 
 TESTS = \
  $(VERSION_INFORMATION_TESTS) \
@@ -168,11 +168,11 @@ TESTS = \
  $(GAPPLICATION_TESTS) \
  $(FUZZY_MATCH_TESTS) \
  $(PARAMSPEC_TESTS) \
- softerror_create.scm
+ misc/softerror_create.scm
 
 XFAIL_TESTS = \
- atomic_int_set.scm \
- strjoinv.scm
+ misc/atomic_int_set.scm \
+ string/strjoinv.scm
 
 SCM_LOG_COMPILER = \
   ${top_builddir}/libtool \
@@ -184,17 +184,6 @@ AM_SCM_LOG_FLAGS = --no-auto-compile -L $(abs_top_srcdir)/src -L $(abs_top_srcdi
 EXTRA_DIST = \
   $(TESTS) \
   lib.scm \
-  automake-test-lib.scm \
-  example-1.scm \
-  browser.scm \
-  editor.scm
-
-exampledir = $(datadir)/doc/guile-gi
-dist_example_DATA = \
-  example-1.scm \
-  example-1b.scm \
-  example-1c.scm \
-  browser.scm \
-  editor.scm
+  automake-test-lib.scm
 
 CLEANFILES = tmp.txt

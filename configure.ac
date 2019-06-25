@@ -223,6 +223,7 @@ AC_CONFIG_FILES([
  build-aux/Makefile
  test/Makefile
  tools/Makefile
+ examples/Makefile
  ])
 AC_CONFIG_FILES([tools/uninstalled-env], [chmod +x tools/uninstalled-env])
 AC_CONFIG_FILES([tools/run-guile], [chmod +x tools/run-guile])
