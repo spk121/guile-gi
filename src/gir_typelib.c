@@ -27,7 +27,10 @@
 #include "gi_util.h"
 
 static void gir_typelib_document_callback_info(GString **export, const char *namespace_, const char *parent, GICallableInfo *info);
-static void gir_typelib_document_callable_info(GString **export, const char *namespace_, const char *parent, GICallableInfo *info, gboolean method);
+static void gir_typelib_document_function_info(GString **export,
+                                               const char *parent,
+                                               GIFunctionInfo *info,
+                                               gboolean method);
 static void gir_typelib_document_type(GString **export, char *parent, GITypeInfo *info);
 
 #define MAX_GERROR_MSG 100
@@ -123,7 +126,7 @@ scm_typelib_load(SCM s_namespace, SCM s_version)
             g_debug("Unsupported irepository type 'CALLBACK'");
             break;
         case GI_INFO_TYPE_FUNCTION:
-            gir_function_define_gsubr(namespace_, NULL, info);
+            gir_function_define_gsubr(NULL, info);
             break;
         case GI_INFO_TYPE_STRUCT:
         {
@@ -149,8 +152,7 @@ scm_typelib_load(SCM s_namespace, SCM s_version)
                 if (g_function_info_get_flags(func_info) & GI_FUNCTION_IS_METHOD)
                     gir_method_table_insert(gtype, func_info);
                 else
-                    gir_function_define_gsubr(namespace_,
-                                              g_base_info_get_name(info),
+                    gir_function_define_gsubr(g_base_info_get_name(info),
                                               func_info);
             }
         }
@@ -177,8 +179,7 @@ scm_typelib_load(SCM s_namespace, SCM s_version)
                 if (g_function_info_get_flags(func_info) & GI_FUNCTION_IS_METHOD)
                     gir_method_table_insert(gtype, func_info);
                 else
-                    gir_function_define_gsubr(namespace_,
-                                              g_base_info_get_name(info),
+                    gir_function_define_gsubr(g_base_info_get_name(info),
                                               func_info);
             }
 #if 0
@@ -218,8 +219,7 @@ scm_typelib_load(SCM s_namespace, SCM s_version)
                 if (g_function_info_get_flags(func_info) & GI_FUNCTION_IS_METHOD)
                     gir_method_table_insert(gtype, func_info);
                 else
-                    gir_function_define_gsubr(namespace_,
-                                              g_base_info_get_name(info),
+                    gir_function_define_gsubr(g_base_info_get_name(info),
                                               func_info);
             }
         }
@@ -251,8 +251,7 @@ scm_typelib_load(SCM s_namespace, SCM s_version)
                 if (g_function_info_get_flags(func_info) & GI_FUNCTION_IS_METHOD)
                     gir_method_table_insert(gtype, func_info);
                 else
-                    gir_function_define_gsubr(namespace_,
-                                              g_base_info_get_name(info),
+                    gir_function_define_gsubr(g_base_info_get_name(info),
                                               func_info);
             }
         }
@@ -341,7 +340,7 @@ scm_typelib_document(SCM s_namespace, SCM s_version)
             gir_typelib_document_callback_info(&export, namespace_, NULL, info);
             break;
         case GI_INFO_TYPE_FUNCTION:
-            gir_typelib_document_callable_info(&export, namespace_, NULL, info, 0);
+            gir_typelib_document_function_info(&export, NULL, info, 0);
             break;
         case GI_INFO_TYPE_STRUCT:
         {
@@ -361,13 +360,11 @@ scm_typelib_document(SCM s_namespace, SCM s_version)
                 GIFunctionInfo *func_info = g_struct_info_get_method(info, m);
                 if (g_function_info_get_flags(func_info)
                     & GI_FUNCTION_IS_METHOD)
-                    gir_typelib_document_callable_info(&export,
-                                                       namespace_,
+                    gir_typelib_document_function_info(&export,
                                                        g_base_info_get_name(info),
                                                        func_info, 1);
                 else
-                    gir_typelib_document_callable_info(&export,
-                                                       namespace_,
+                    gir_typelib_document_function_info(&export,
                                                        g_base_info_get_name(info),
                                                        func_info, 0);
             }
@@ -393,13 +390,11 @@ scm_typelib_document(SCM s_namespace, SCM s_version)
             {
                 GIFunctionInfo *func_info = g_object_info_get_method(info, m);
                 if (g_function_info_get_flags(func_info) & GI_FUNCTION_IS_METHOD)
-                    gir_typelib_document_callable_info(&export,
-                                                       namespace_,
+                    gir_typelib_document_function_info(&export,
                                                        g_base_info_get_name(info),
                                                        func_info, 1);
                 else
-                    gir_typelib_document_callable_info(&export,
-                                                       namespace_,
+                    gir_typelib_document_function_info(&export,
                                                        g_base_info_get_name(info),
                                                        func_info, 0);
             }
@@ -444,9 +439,13 @@ scm_typelib_document(SCM s_namespace, SCM s_version)
             {
                 GIFunctionInfo *func_info = g_union_info_get_method(info, m);
                 if (g_function_info_get_flags(func_info) & GI_FUNCTION_IS_METHOD)
-                    gir_typelib_document_callable_info(&export, namespace_, g_base_info_get_name(info), func_info, 1);
+                    gir_typelib_document_function_info(&export,
+                                                       g_base_info_get_name(info),
+                                                       func_info, 1);
                 else
-                    gir_typelib_document_callable_info(&export, namespace_, g_base_info_get_name(info), func_info, 0);
+                    gir_typelib_document_function_info(&export,
+                                                       g_base_info_get_name(info),
+                                                       func_info, 0);
             }
         }
         break;
@@ -634,7 +633,9 @@ gir_typelib_document_callback_info(GString **export, const char *namespace_, con
 }
 
 static void
-gir_typelib_document_callable_info(GString **export, const char *namespace_, const char *parent, GICallableInfo *info,
+gir_typelib_document_function_info(GString **export,
+                                   const char *parent,
+                                   GIFunctionInfo *info,
                                    gboolean method)
 {
     gint n_args;

@@ -27,17 +27,17 @@ gi_constant_strip_prefix(const gchar *name, const gchar *strip_prefix)
      * return the rest of the part which doesn't match
      */
     for (i = 0; i < prefix_len; i++) {
-	if (name[i] != strip_prefix[i] && name[i] != '_') {
-	    return &name[i];
-	}
+        if (name[i] != strip_prefix[i] && name[i] != '_') {
+            return &name[i];
+        }
     }
 
     /* strip off prefix from value name, while keeping it a valid
      * identifier */
     for (i = prefix_len + 1; i > 0; i--) {
-	if (g_ascii_isalpha(name[i - 1]) || name[i - 1] == '_') {
-	    return &name[i - 1];
-	}
+        if (g_ascii_isalpha(name[i - 1]) || name[i - 1] == '_') {
+            return &name[i - 1];
+        }
     }
     return name;
 }

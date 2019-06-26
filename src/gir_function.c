@@ -20,9 +20,9 @@
 GSList *function_list = NULL;
 
 static gir_gsubr_t *gir_function_create_gsubr(GIFunctionInfo *function_info, const char *name, int *n_required, int *n_optional);
-
 static void gir_function_info_count_args(GIFunctionInfo *info, int *in, int *out);
 static void gir_function_count_input_args(GIFunctionInfo *info, int *required, int *optional);
+static gboolean gir_function_info_is_predicate(GIFunctionInfo *info);
 static void gir_function_binding(ffi_cif *cif, void *ret, void **ffi_args,
     void *user_data);
 
@@ -40,8 +40,7 @@ static void gir_fini_function (void);
 // this procedure creates a SCM wrapper for that procedure in the
 // current module.
 void
-gir_function_define_gsubr(const char *namespace_,
-                          const char *parent,
+gir_function_define_gsubr(const char *parent,
                           GIFunctionInfo *info)
 {
     gir_gsubr_t *func_gsubr;
@@ -163,15 +162,14 @@ gir_function_create_gsubr(GIFunctionInfo *function_info,
 
 
 gchar*
-gir_function_make_name(const char *parent, GICallableInfo *info)
+gir_function_make_name(const char *parent, GIFunctionInfo *info)
 {
     char *public_name, *tmp_str, *tmp_str2;
-    GITypeInfo *return_type;
+    gboolean predicate;
 
     // For the callable names, we want a lowercase string of the form
     // 'func-name-with-hyphens'
-    return_type = g_callable_info_get_return_type(info);
-    g_assert(return_type);
+    predicate = gir_function_info_is_predicate(info);
 
     if (parent)
     {
@@ -180,8 +178,7 @@ gir_function_make_name(const char *parent, GICallableInfo *info)
         // 'type-name:method-name'
         tmp_str = gname_to_scm_name (parent);
         tmp_str2 = gname_to_scm_name (g_base_info_get_name(info));
-        if (g_type_info_get_tag(return_type) == GI_TYPE_TAG_BOOLEAN
-            && !g_type_info_is_pointer(return_type))
+        if (predicate)
             public_name = g_strdup_printf("%s:%s?", tmp_str, tmp_str2);
         else
             public_name = g_strdup_printf("%s:%s", tmp_str, tmp_str2);
@@ -190,17 +187,14 @@ gir_function_make_name(const char *parent, GICallableInfo *info)
     }
     else
     {
-        if (g_type_info_get_tag(return_type) == GI_TYPE_TAG_BOOLEAN
-            && !g_type_info_is_pointer(return_type))
+        if (predicate)
             tmp_str = g_strdup_printf("%s?", g_base_info_get_name(info));
         else
-            tmp_str = g_strdup_printf("%s",
-                                      g_base_info_get_name(info));
+            tmp_str = g_strdup_printf("%s", g_base_info_get_name(info));
         public_name = gname_to_scm_name(tmp_str);
         g_free(tmp_str);
     }
 
-    g_base_info_unref(return_type);
     return public_name;
 }
 
@@ -432,6 +426,27 @@ gir_function_info_count_args(GIFunctionInfo *info, int *in, int *out)
     //  n_input_args ++;
     *in = n_input_args;
     *out = n_output_args;
+}
+
+static gboolean
+gir_function_info_is_predicate(GIFunctionInfo *info)
+{
+    gboolean predicate = FALSE;
+    GITypeInfo *return_type;
+
+    return_type = g_callable_info_get_return_type(info);
+
+    if (g_type_info_get_tag(return_type) == GI_TYPE_TAG_BOOLEAN
+        && !g_type_info_is_pointer(return_type))
+    {
+        int in, out;
+
+        gir_function_info_count_args(info, &in, &out);
+        if (out == 0)
+            predicate = TRUE;
+    }
+    g_base_info_unref(return_type);
+    return predicate;
 }
 
 static void
