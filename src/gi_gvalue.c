@@ -504,57 +504,50 @@ SCM gi_gvalue_to_scm_basic_type(const GValue *value, GType fundamental, gboolean
     case G_TYPE_DOUBLE:
         return scm_from_double(g_value_get_double(value));
     case G_TYPE_STRING:
-        return scm_from_utf8_string(g_value_get_string(value));
+    {
+        const gchar *str = g_value_get_string(value);
+        if (str)
+            return scm_from_utf8_string(str);
+        else
+            return SCM_BOOL_F;
+    }
     default:
         *handled = FALSE;
         return SCM_BOOL_F;
     }
-    g_return_val_if_reached (SCM_BOOL_F);
+    g_return_val_if_reached(SCM_BOOL_F);
 }
 
-/**
- * value_to_py_structured_type:
- * @value: the GValue object.
- * @copy_boxed: true if boxed values should be copied.
- *
- * This function creates/returns a Python wrapper object that
- * represents the GValue passed as an argument.
- *
- * Returns: a PyObject representing the value or NULL and sets an error;
- */
+// This function creates and returns a Scheme value that
+// represents the GValue passed as an argument.
 static SCM
 gi_gvalue_to_scm_structured_type (const GValue *value, GType fundamental,
                                   gboolean copy_boxed)
 {
-    // const gchar *type_name;
     switch (fundamental) {
     case G_TYPE_INTERFACE:
-        if (g_type_is_a(G_VALUE_TYPE(value), G_TYPE_OBJECT))
-            return gir_type_make_object(G_VALUE_TYPE(value),
-                                        g_value_get_object(value),
-                                        0);
+    {
+        gpointer obj = g_value_get_object(value);
+        if (!obj)
+            return SCM_BOOL_F;
+        else if (g_type_is_a(G_VALUE_TYPE(value), G_TYPE_OBJECT))
+            return gir_type_make_object(G_VALUE_TYPE(value), obj, 0);
         else
             break;
-
+    }
     case G_TYPE_POINTER:
         // If we get a simple pointer with no context information,
         // what can we do other than return a dumb pointer?
         return scm_from_pointer (g_value_get_pointer (value), NULL);
     case G_TYPE_PARAM:
     {
-        if (value->data->v_pointer)
+        GParamSpec *pspec = g_value_get_param(value);
+        if (pspec)
             return gir_type_make_object(G_VALUE_TYPE(value),
-                                        g_value_get_object(value),
+                                        pspec,
                                         0);
         else
             return SCM_BOOL_F;
-        /* gboolean handled; */
-        /* gboolean test = G_IS_PARAM_SPEC_STRING(value); */
-        /* GParamSpec *pspec = g_value_get_param(value); */
-        /* SCM val = gi_gvalue_scm_to_basic_type(value, G_PARAM_SPEC_TYPE(pspec), &handled); */
-        /* if (handled) */
-        /*     return val; */
-        /* break; */
     }
 
     case G_TYPE_BOXED:
@@ -573,9 +566,14 @@ gi_gvalue_to_scm_structured_type (const GValue *value, GType fundamental,
     }
 
     case G_TYPE_OBJECT:
-        return gir_type_make_object(G_VALUE_TYPE(value),
-                                    g_value_get_object(value),
-                                    0);
+    {
+        gpointer obj = g_value_get_object(value);
+        if (obj)
+            return gir_type_make_object(G_VALUE_TYPE(value), obj, 0);
+        else
+            return SCM_BOOL_F;
+    }
+
 #if 0
     case G_TYPE_VARIANT:
     {
