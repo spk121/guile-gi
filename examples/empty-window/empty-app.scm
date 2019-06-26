@@ -1,46 +1,31 @@
-(define-module (example1 exampleapp)
+(define-module (empty-window empty-app)
   #:use-module (gi)
   #:use-module (gi gio-2)
   #:use-module (gi gtk-3)
-  #:use-module (example1 exampleappwindow)
-  #:export(example-app-new))
+  #:use-module (empty-window empty-app-window)
+  #:export(empty-app-new))
 
-(define <ExampleApp>
+(define <EmptyApp>
   (register-type
-   "ExampleApp"                         ; type name
+   "EmptyApp"                           ; type name
    <GtkApplication>                     ; parent_type
    #f                                   ; No additional properties
    #f                                   ; No new signals
    #f))                                 ; No disposer func
 
-;; (define EXAMPLE_APP_TYPE (get-gtype <ExampleApp>))
-
-(define (example-app-init app)
+(define (empty-app-init app)
   #f)
 
-(define (example-app-activate app dummy)
-  (let ((win (example-app-window-new app)))
+(define (empty-app-activate app dummy)
+  (let ((win (empty-app-window-new app)))
     (send win (present))))
 
-(define (example-app-open app files n_files hint)
-  (let ((windows (send app (get-windows))))
-    (let ((win
-           (if window
-               (windows->data)
-               (example-app-window-new app))))
-      (for-each files
-                (send win (open)))
-      (send win (present)))))
-
-
-(define (example-app-new)
+(define (empty-app-new)
   (let ((app
          (make-gobject
-          ;; GType of GType integer
-          <ExampleApp>
+          <EmptyApp>
           ;; Alist of properties
           '(("application-id" . "org.gtk.exampleapp")
             ("flags" . 4)))))
-    (connect app (activate example-app-activate))
-    (connect app (open example-app-open))
+    (connect app (activate empty-app-activate))
     app))

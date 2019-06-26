@@ -1,9 +1,9 @@
 (use-modules (gi)
              (gi gtk-3)
-             (example1 exampleapp))
+             (empty-window empty-app))
 
 (define (main)
-  (let ((app (example-app-new)))
+  (let ((app (empty-app-new)))
     (send app (run (length (command-line)) (command-line)))))
 
 (main)
