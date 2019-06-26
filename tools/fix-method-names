@@ -1,0 +1,11 @@
+#!/usr/bin/awk -f
+{
+  found = match($0, "\\((([A-Z][a-zA-Z]*)-)", arr);
+  if (found)
+  {
+    after = gensub (/([a-z])([A-Z])/, "\\1-\\2", "g", arr[2]);
+    after = tolower (after);
+    sub (arr[1], after ":");
+  }
+  print $0
+}

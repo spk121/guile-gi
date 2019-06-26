@@ -175,15 +175,16 @@ gir_function_make_name(const char *parent, GICallableInfo *info)
 
     if (parent)
     {
-        // For the method names, we want a CamelCase type followed by a
-        // lowercase string with hyphens such as 'TypeName-method-name'
-        tmp_str = g_strdup(parent);
+        // For the method names, we want a lowercase type with hyphens
+        // followed by a lowercase string with hyphens such as
+        // 'type-name:method-name'
+        tmp_str = gname_to_scm_name (parent);
         tmp_str2 = gname_to_scm_name (g_base_info_get_name(info));
         if (g_type_info_get_tag(return_type) == GI_TYPE_TAG_BOOLEAN
             && !g_type_info_is_pointer(return_type))
-            public_name = g_strdup_printf("%s-%s?", tmp_str, tmp_str2);
+            public_name = g_strdup_printf("%s:%s?", tmp_str, tmp_str2);
         else
-            public_name = g_strdup_printf("%s-%s", tmp_str, tmp_str2);
+            public_name = g_strdup_printf("%s:%s", tmp_str, tmp_str2);
         g_free(tmp_str);
         g_free(tmp_str2);
     }

@@ -17,6 +17,7 @@
 #include <girepository.h>
 #include <ffi.h>
 #include "gir_type.h"
+#include "gi_util.h"
 #if HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -174,12 +175,14 @@ gir_type_define(GType gtype)
         g_debug ("Hash table size %d", g_hash_table_size(gir_type_gtype_hash));
 #endif
 
-        gchar *predicate_name = g_strdup_printf("%s?", g_type_name(gtype));
+        gchar *type_name = gname_to_scm_name (g_type_name (gtype));
+        gchar *predicate_name = g_strdup_printf("%s?", type_name);
         gpointer func = gir_type_create_predicate(predicate_name, fo_type);
         scm_c_define_gsubr(predicate_name, 1, 0, 0, func);
         scm_c_export(predicate_name, NULL);
 
-        g_free(predicate_name);
+        g_free (type_name);
+        g_free (predicate_name);
     }
     else
         g_debug("GType foriegn_object_type already exists for: %zu -> %s",
@@ -327,6 +330,21 @@ static void gir_type_predicate_binding(ffi_cif *cif, void *ret, void **ffi_args,
         *(ffi_arg *)ret = SCM_UNPACK(SCM_BOOL_T);
     else
         *(ffi_arg *)ret = SCM_UNPACK(SCM_BOOL_F);
+}
+
+// This routine returns the integer GType ID of a scheme object, that is
+// - already a GType ID encoded as size_t,
+// - a foreign object for a GType
+// - a foreign object for an object instance
+// The last one is accidental, as internally `gir_type_get_gtype_from_obj'
+// is used. This may change in future and should not be relied on.
+GType
+scm_to_gtype (SCM x)
+{
+    if (scm_is_integer (x))
+        return scm_to_size_t (x);
+    else
+        return gir_type_get_gtype_from_obj (x);
 }
 
 // This routine returns the integer GType ID of a given

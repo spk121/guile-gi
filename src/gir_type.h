@@ -16,6 +16,8 @@
 #ifndef GIR_TYPE_H
 #define GIR_TYPE_H
 
+#include <girepository.h>
+
 #define SLOT_COUNT 8
 #define OB_TYPE_SLOT 0
 #define OB_REFCNT_SLOT 1
@@ -28,6 +30,7 @@
 
 void gir_type_register(GType gtype);
 void gir_type_define(GType gtype);
+GType scm_to_gtype (SCM x);
 GType gir_type_get_gtype_from_obj(SCM x);
 SCM gir_type_get_scheme_type(GType gtype);
 SCM  gir_type_make_object(GType gtype, gpointer obj, GITransfer transfer);
