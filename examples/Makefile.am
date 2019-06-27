@@ -16,3 +16,5 @@ builderdir = $(datadir)/doc/guile-gi/builder
 dist_builder_DATA = \
  builder/main.scm \
  builder/builder.ui
+
+SUBDIRS = resources
