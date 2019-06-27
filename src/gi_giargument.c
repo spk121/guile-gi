@@ -969,7 +969,7 @@ object_to_c_immediate_arg(char *subr, int argpos, SCM object, GITypeTag type_tag
         if (!scm_is_real(object))
             scm_wrong_type_arg_msg(subr, argpos, object, "float32");
         double dtmp = scm_to_double(object);
-        if (dtmp > FLT_MAX || dtmp < FLT_MIN)
+        if (dtmp > FLT_MAX || dtmp < -FLT_MAX)
             scm_wrong_type_arg_msg(subr, argpos, object, "float32");
         arg->v_float = (float) dtmp;
         break;

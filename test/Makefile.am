@@ -143,6 +143,10 @@ PARAMSPEC_TESTS = \
  paramspec/getset.scm \
  paramspec/default.scm
 
+GTK_ENTRY_TESTS = \
+ gtk_entry/set_alignment.scm \
+ gtk_entry/set_alignment_zero.scm
+
 TESTS = \
  $(VERSION_INFORMATION_TESTS) \
  $(BASIC_TYPE_TESTS) \
@@ -168,6 +172,7 @@ TESTS = \
  $(GAPPLICATION_TESTS) \
  $(FUZZY_MATCH_TESTS) \
  $(PARAMSPEC_TESTS) \
+ $(GTK_ENTRY_TESTS) \
  misc/softerror_create.scm \
  misc/use-typelibs.scm
 
