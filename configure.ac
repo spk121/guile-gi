@@ -230,4 +230,5 @@ AC_CONFIG_FILES([tools/run-guile], [chmod +x tools/run-guile])
 AC_CONFIG_FILES([tools/gdb-guile], [chmod +x tools/gdb-guile])
 AC_CONFIG_FILES([tools/gdb-test], [chmod +x tools/gdb-test])
 AC_CONFIG_FILES([tools/guile-gi], [chmod +x tools/guile-gi])
+AC_CONFIG_FILES([tools/lcov.sh], [chmod +x tools/lcov.sh])
 AC_OUTPUT

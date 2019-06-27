@@ -1,0 +1,19 @@
+#! @SHELL@
+
+# Generate a test coverage report
+rm -r @abs_top_srcdir@/coverage
+mkdir -p @abs_top_srcdir@/coverage
+lcov --capture --initial \
+     --directory @abs_top_srcdir@/src/.libs \
+     --output-file @abs_top_srcdir@/coverage/guile-gi-base.info
+make -k check
+lcov --capture \
+     --directory @abs_top_srcdir@/src/.libs \
+     --output @abs_top_srcdir@/coverage/guile-gi-test.info
+lcov --add-tracefile @abs_top_srcdir@/coverage/guile-gi-base.info \
+     --add-tracefile @abs_top_srcdir@/coverage/guile-gi-test.info \
+     --output-file @abs_top_srcdir@/coverage/guile-gi-total.info
+lcov --remove @abs_top_srcdir@/coverage/guile-gi-total.info '/usr/include/*' '/usr/lib/*' \
+     -o @abs_top_srcdir@/coverage/guile-gi-filtered.info
+genhtml --prefix src --ignore-errors source @abs_top_srcdir@/coverage/guile-gi-filtered.info \
+     --legend --title "commit SHA1" --output-directory=@abs_top_srcdir@/coverage
