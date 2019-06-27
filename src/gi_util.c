@@ -100,7 +100,7 @@ scm_is_list (SCM obj)
 }
 
 void*
-scm_dynwind_or_bust (char *subr, void *mem)
+scm_dynwind_or_bust (const char *subr, void *mem)
 {
     if (mem)
         scm_dynwind_free (mem);
