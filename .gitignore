@@ -71,6 +71,7 @@ tools/uninstalled-env
 tools/gdb-guile
 tools/run-guile
 tools/guile-gi
+tools/lcov.sh
 
 # executables
 fo_gen
@@ -102,3 +103,4 @@ vgcore*
 *.info
 tmp
 tmp.*
+coverage
