@@ -32,6 +32,7 @@ static void gir_typelib_document_function_info(GString **export,
                                                GIFunctionInfo *info,
                                                gboolean method);
 static void gir_typelib_document_type(GString **export, char *parent, GITypeInfo *info);
+static void scm_i_typelib_load(const char *namespace, const char *version);
 
 #define MAX_GERROR_MSG 100
 static char gerror_msg[MAX_GERROR_MSG];
@@ -87,24 +88,37 @@ scm_typelib_load(SCM s_namespace, SCM s_version)
 {
     gchar *namespace_;
     gchar *version;
-    GITypelib *tl;
-    GError *error = NULL;
 
     SCM_ASSERT_TYPE(scm_is_string(s_namespace), s_namespace, SCM_ARG1, "typelib-load", "string");
     SCM_ASSERT_TYPE(scm_is_string(s_version), s_version, SCM_ARG2, "typelib-load", "string");
 
-    namespace_ = scm_to_utf8_string(s_namespace);
-    version = scm_to_utf8_string(s_version);
+    scm_dynwind_begin(0);
+
+    namespace_ = scm_dynwind_or_bust("typelib-load",
+                                     scm_to_utf8_string(s_namespace));
+    version =  scm_dynwind_or_bust("typelib-load",
+                                   scm_to_utf8_string(s_version));
+
+    scm_i_typelib_load (namespace_, version);
+
+    scm_dynwind_end();
+
+    return SCM_UNSPECIFIED;
+}
+
+static void
+scm_i_typelib_load(const char *namespace_, const char *version)
+{
+    GITypelib *tl;
+    GError *error = NULL;
 
     tl = g_irepository_require(NULL, namespace_, version, 0, &error);
     if (tl == NULL)
     {
-        free(version);
-        free(namespace_);
         store_gerror_message(error->message);
         g_error_free(error);
         scm_misc_error("typelib-load", gerror_msg, SCM_EOL);
-        return SCM_UNSPECIFIED;
+        return;
     }
 
     g_debug("Loading irepository %s %s", namespace_, version);
@@ -285,10 +299,6 @@ scm_typelib_load(SCM s_namespace, SCM s_version)
         }
         g_base_info_unref(info);
     }
-    free(version);
-    free(namespace_);
-
-    return SCM_UNSPECIFIED;
 }
 
 static SCM
@@ -938,6 +948,79 @@ scm_dump_all_arg_types(void)
     return SCM_UNSPECIFIED;
 }
 #endif
+
+static void
+scm_typelib_do_define_module (void *data)
+{
+    const char **real_data = data;
+    scm_i_typelib_load (real_data[0], real_data[1]);
+}
+
+static SCM
+scm_typelib_define_module (SCM s_lib, SCM s_version)
+{
+    gchar *name, *data[2];
+
+    SCM_ASSERT_TYPE(scm_is_string(s_namespace), s_namespace, SCM_ARG1, "typelib-load", "string");
+    SCM_ASSERT_TYPE(scm_is_string(s_version), s_version, SCM_ARG2, "typelib-load", "string");
+
+    scm_dynwind_begin (0);
+
+    data[0] = scm_dynwind_or_bust("%typelib-define-module",
+                                  scm_to_utf8_string (s_lib));
+    data[1] = scm_dynwind_or_bust("%typelib-define-module",
+                                  scm_to_utf8_string (s_version));
+
+    SCM_ASSERT(!strchr(data[0], ' '), s_lib, SCM_ARG1,
+               "%typelib-define-module");
+    SCM_ASSERT(!strchr(data[1], ' '), s_version, SCM_ARG2,
+               "%typelib-define-module");
+
+    name = scm_dynwind_or_bust("%typelib-define-module",
+                               g_strdup_printf("%%gi %s-%s", data[0], data[1]));
+    scm_c_define_module (name, scm_typelib_do_define_module, data);
+
+    scm_dynwind_end ();
+    return SCM_UNSPECIFIED;
+}
+
+static SCM
+scm_typelib_module_name (SCM s_lib, SCM s_version)
+{
+    gchar *name, *lib, *version;
+    SCM ret;
+
+    SCM_ASSERT_TYPE(scm_is_string(s_namespace), s_namespace, SCM_ARG1, "typelib-load", "string");
+    SCM_ASSERT_TYPE(scm_is_string(s_version), s_version, SCM_ARG2, "typelib-load", "string");
+
+    scm_dynwind_begin (0);
+
+    lib = scm_dynwind_or_bust("%typelib-module-name",
+                              scm_to_utf8_string (s_lib));
+    version = scm_dynwind_or_bust("%typelib-module-name",
+                                  scm_to_utf8_string (s_version));
+
+    // spaces in module names are bad
+    SCM_ASSERT(!strchr(data[0], ' '), s_lib, SCM_ARG1,
+               "%typelib-define-module");
+    SCM_ASSERT(!strchr(data[1], ' '), s_version, SCM_ARG2,
+               "%typelib-define-module");
+
+    name = g_strdup_printf("%s-%s", lib, version);
+
+    ret = scm_list_2(scm_from_utf8_symbol("%gi"),
+                     scm_from_utf8_symbol(name));
+
+    scm_dynwind_end ();
+    return ret;
+}
+
+void gir_init_typelib_private(void)
+{
+    scm_c_define_gsubr("%typelib-module-name", 2, 0, 0, scm_typelib_module_name);
+    scm_c_define_gsubr("%typelib-define-module", 2, 0, 0, scm_typelib_define_module);
+}
+
 
 void gir_init_typelib(void)
 {

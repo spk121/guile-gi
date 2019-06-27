@@ -1,6 +1,7 @@
 #include <libguile.h>
 #include <glib.h>
 #include <glib-object.h>
+#include <errno.h>
 #include "gi_util.h"
 
 /**
@@ -96,4 +97,17 @@ int
 scm_is_list (SCM obj)
 {
     return scm_is_true (scm_list_p (obj));
+}
+
+void*
+scm_dynwind_or_bust (char *subr, void *mem)
+{
+    if (mem)
+        scm_dynwind_free (mem);
+    else
+    {
+        errno = ENOMEM;
+        scm_syserror (subr);
+    }
+    return mem;
 }

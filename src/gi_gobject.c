@@ -24,7 +24,6 @@
 #include <glib.h>
 #include <girepository.h>
 #include <libguile.h>
-#include <errno.h>
 
 GQuark gi_gobject_instance_data_key;
 
@@ -780,19 +779,6 @@ scm_register_guile_specified_gobject_type (SCM s_type_name,
 
     gir_type_define(new_type);
     return gir_type_get_scheme_type (new_type);
-}
-
-static void*
-scm_dynwind_or_bust (char *subr, void *mem)
-{
-    if (mem)
-        scm_dynwind_free (mem);
-    else
-    {
-        errno = ENOMEM;
-        scm_syserror (subr);
-    }
-    return mem;
 }
 
 static SCM
