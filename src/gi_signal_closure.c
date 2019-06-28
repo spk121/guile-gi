@@ -16,7 +16,6 @@
 #include "gi_gobject.h"
 #include "gi_gvalue.h"
 #include "gi_giargument.h"
-#include "gi_gboxed.h"
 
 static GISignalInfo *
 lookup_signal_from_g_type(GType g_type, const gchar *signal_name)

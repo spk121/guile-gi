@@ -31,7 +31,6 @@ fo_gen_LDADD = $(GUILE_LIBS) $(GLIB_LIBS)
 EXTRA_DIST = foreign-object-types.ini
 
 BUILT_SOURCES = \
- __gi_gboxed.h __gi_gboxed.c \
  __gi_genum.h __gi_genum.c \
  __gi_gflags.h __gi_gflags.c \
  __gi_gobject.h __gi_gobject.c \
@@ -42,10 +41,6 @@ BUILT_SOURCES = \
  __gi_genumcollection.h  __gi_genumcollection.c \
  __gi_ginterface.h __gi_ginterface.c
 
-__gi_gboxed.c: foreign-object-types.ini $(builddir)/fo_gen$(EXEEXT) Makefile
-	$(builddir)/fo_gen$(EXEEXT) $< .
-__gi_gboxed.h: foreign-object-types.ini $(builddir)/fo_gen$(EXEEXT) Makefile
-	$(builddir)/fo_gen$(EXEEXT) $< .
 __gi_genum.c: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
 	$(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini .
 __gi_genum.h: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
@@ -80,8 +75,6 @@ __gi_genumcollection.c: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Mak
 	$(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini .
 
 nodist_libguile_gi_la_SOURCES = \
- __gi_gboxed.c \
- __gi_gboxed.h \
  __gi_ginterface.h \
  __gi_gobject.c \
  __gi_gobject.h \
@@ -93,8 +86,6 @@ nodist_libguile_gi_la_SOURCES = \
  __gi_ginterface.h
 
 libguile_gi_la_SOURCES = \
- gi_gboxed.c \
- gi_gboxed.h \
  gi_giargument.c \
  gi_giargument.h \
  gi_gobject.c \

@@ -22,7 +22,6 @@
 #include "gir_typelib.h"
 #include "gir_type.h"
 #include "gi_giargument.h"
-#include "gi_gboxed.h"
 #include "gir_callback.h"
 
 #ifndef FLT_MAX
@@ -1879,9 +1878,6 @@ convert_interface_arg_to_object(GIArgument *arg, GITypeInfo *type_info, SCM *obj
     }
     else {
         // This case of returning a struct directly.
-        // If the object is already an appropriate GBOX (like for output arguments), we memcpy the contents
-        // of the argument into the gbox.
-        // If the object is not a GBOX (like for return values), we set it to a new GBOX.
         g_assert_not_reached();
     }
     g_base_info_unref(referenced_base_info);
@@ -2082,75 +2078,6 @@ convert_const_void_pointer_arg_to_object(GIArgument *arg, SCM *obj)
     }
     *obj = scm_from_pointer(arg->v_pointer, NULL);
 }
-
-#if 0
-static int
-arg_struct_to_scm(GIArgument *arg,
-                  GIInterfaceInfo *interface_info,
-                  GType g_type,
-                  GITransfer transfer, gboolean is_allocated, gboolean is_foreign, SCM obj)
-{
-    // Once we get here, INTERFACE_INFO says we are a struct or
-    // union, and g_type is the GObject GType of that struct or
-    // union.
-    if (arg->v_pointer == NULL) {
-        obj = SCM_BOOL_F;
-        return 0;
-    }
-
-    // A struct/union/box containing a simple value?  Let's just unbox
-    // that now.
-    if (g_type_is_a(g_type, G_TYPE_VALUE)) {
-        obj = gi_gvalue_as_scm(arg->v_pointer, FALSE);
-        return 0;
-    }
-
-    // All the foreign types.
-    else if (is_foreign) {
-        // FIXME: this is where you look up a special handler for
-        // Cairo types
-        return GI_GIARGUMENT_UNHANDLED_FOREIGN_TYPE;
-    }
-
-    // All the rest of the boxed types get re-wrapped into a
-    // Scheme-friendly refcounted box.
-    else {
-        gboolean copy_boxed = FALSE;
-        gboolean own_ref = FALSE;
-        if (g_type_is_a(g_type, G_TYPE_BOXED)) {
-            if (transfer == GI_TRANSFER_EVERYTHING || is_allocated)
-                copy_boxed = TRUE;
-            if (is_allocated && g_struct_info_get_size(interface_info) > 0)
-                own_ref = TRUE;
-            obj = gir_new_gbox(SPTR_HOLDS_GBOXED, g_type, arg->v_pointer, copy_boxed);
-        }
-        else if (g_type_is_a(g_type, G_TYPE_POINTER)) {
-            // Struct or union containing a pointer
-            obj =
-                gir_new_gbox(SPTR_HOLDS_POINTER, g_type, arg->v_pointer,
-                             transfer == GI_TRANSFER_EVERYTHING);
-        }
-        else if (g_type_is_a(g_type, G_TYPE_VARIANT)) {
-            if (transfer == GI_TRANSFER_NOTHING) {
-                g_variant_ref_sink(arg->v_pointer);
-            }
-            obj = gir_new_gbox(SPTR_HOLDS_STRUCT, g_type, arg->v_pointer, FALSE);
-        }
-        else if (g_type == G_TYPE_NONE) {
-            if (transfer == GI_TRANSFER_EVERYTHING || is_allocated)
-                obj = gir_new_gbox(SPTR_HOLDS_STRUCT, g_type, arg->v_pointer, TRUE);
-            else
-                obj = gir_new_gbox(SPTR_HOLDS_STRUCT, g_type, arg->v_pointer, FALSE);
-        }
-        else {
-            g_critical("Unhandled argument type, %s: %d", __FILE__, __LINE__);
-            return GI_GIARGUMENT_UNHANDLED_TYPE;
-        }
-    }
-
-    return GI_GIARGUMENT_OK;
-};
-#endif
 
 gboolean
 gi_giargument_check_scm_type(SCM obj, GIArgInfo *ai, char **errstr)
