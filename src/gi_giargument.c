@@ -54,9 +54,7 @@ struct array_info
 };
 
 static void
-fill_array_info (struct array_info *ai,
-                 GITypeInfo *array_type_info,
-                 GITransfer array_transfer)
+fill_array_info(struct array_info *ai, GITypeInfo *array_type_info, GITransfer array_transfer)
 {
     // So there are layers to all this ArgInfo stuff
     // LAYER 1: Let's start on layer 1, where this GIArgInfo tells
@@ -84,10 +82,9 @@ fill_array_info (struct array_info *ai,
     ai->item_is_ptr = g_type_info_is_pointer(item_type_info);
 
     if (ai->item_is_ptr)
-        ai->item_size = sizeof (void *);
+        ai->item_size = sizeof(void *);
 
-    switch (ai->item_type_tag)
-    {
+    switch (ai->item_type_tag) {
     case GI_TYPE_TAG_INT8:
     case GI_TYPE_TAG_UINT8:
         ai->item_size = 1;
@@ -112,23 +109,22 @@ fill_array_info (struct array_info *ai,
         ai->item_size = sizeof(double);
         break;
     case GI_TYPE_TAG_GTYPE:
-        ai->item_size = sizeof (GType);
+        ai->item_size = sizeof(GType);
         break;
     case GI_TYPE_TAG_BOOLEAN:
-        ai->item_size = sizeof (gboolean);
+        ai->item_size = sizeof(gboolean);
         break;
     case GI_TYPE_TAG_INTERFACE:
     {
         GIBaseInfo *referenced_base_info = g_type_info_get_interface(item_type_info);
         ai->referenced_base_type = g_base_info_get_type(referenced_base_info);
 
-        switch (ai->referenced_base_type)
-        {
+        switch (ai->referenced_base_type) {
         case GI_INFO_TYPE_ENUM:
         case GI_INFO_TYPE_FLAGS:
 
-            g_assert_false (ai->item_is_ptr);
-            ai->item_size = sizeof (int);
+            g_assert_false(ai->item_is_ptr);
+            ai->item_size = sizeof(int);
             break;
         case GI_INFO_TYPE_STRUCT:
             ai->referenced_object_type = g_registered_type_info_get_g_type(referenced_base_info);
@@ -143,13 +139,13 @@ fill_array_info (struct array_info *ai,
         case GI_INFO_TYPE_OBJECT:
             ai->referenced_object_type = g_registered_type_info_get_g_type(referenced_base_info);
             if (!ai->item_is_ptr)
-                ai->item_size = sizeof (void *);
+                ai->item_size = sizeof(void *);
             break;
         default:
             g_critical("Unhandled item type in %s:%d", __FILE__, __LINE__);
-            g_assert_not_reached ();
+            g_assert_not_reached();
         }
-        g_base_info_unref (referenced_base_info);
+        g_base_info_unref(referenced_base_info);
         break;
     }
     case GI_TYPE_TAG_UTF8:
@@ -160,49 +156,44 @@ fill_array_info (struct array_info *ai,
     case GI_TYPE_TAG_GLIST:
     case GI_TYPE_TAG_GSLIST:
     case GI_TYPE_TAG_GHASH:
-        g_critical ("do you seriously want to nest containers in such a manner?");
-        g_assert_not_reached ();
+        g_critical("do you seriously want to nest containers in such a manner?");
+        g_assert_not_reached();
         break;
 
     default:
         g_critical("Unhandled item type in %s:%d", __FILE__, __LINE__);
-        g_assert_not_reached ();
+        g_assert_not_reached();
     }
 
-    g_base_info_unref (item_type_info);
+    g_base_info_unref(item_type_info);
 }
 
 static size_t
-array_length (struct array_info *ai,
-              GIArgument *arg)
+array_length(struct array_info *ai, GIArgument *arg)
 {
     if (ai->array_length != -1)
         return ai->array_length;
     else if (ai->array_fixed_size != -1)
         return ai->array_fixed_size;
-    else if (ai->array_is_zero_terminated)
-    {
+    else if (ai->array_is_zero_terminated) {
         gpointer array = arg->v_pointer;
         if (array == NULL)
             return 0;
 
         size_t length = 0;
 
-        if (ai->item_type_tag == GI_TYPE_TAG_UTF8 ||
-            ai->item_type_tag == GI_TYPE_TAG_FILENAME)
-        {
+        if (ai->item_type_tag == GI_TYPE_TAG_UTF8 || ai->item_type_tag == GI_TYPE_TAG_FILENAME) {
             char **ptr = array;
             while (ptr[length] != NULL)
                 length++;
             return length;
         }
 
-        switch (ai->item_size)
-        {
+        switch (ai->item_size) {
         case 0:
-            g_assert_not_reached ();
+            g_assert_not_reached();
         case 1:
-            return strlen (array);
+            return strlen(array);
         case 2:
         {
             gint16 *ptr = array;
@@ -229,13 +220,11 @@ array_length (struct array_info *ai,
             gchar *ptr = array;
             gboolean non_null;
             length = -1;
-            do
-            {
+            do {
                 length++;
                 non_null = FALSE;
                 for (size_t i = 0; i <= ai->item_size; i++)
-                    if (ptr + i != 0)
-                    {
+                    if (ptr + i != 0) {
                         non_null = TRUE;
                         break;
                     }
@@ -246,7 +235,7 @@ array_length (struct array_info *ai,
         }
         }
     }
-    g_assert_not_reached ();
+    g_assert_not_reached();
 }
 
 /*
@@ -270,24 +259,21 @@ array_length (struct array_info *ai,
  * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
-static const intmax_t intmin[GI_TYPE_TAG_N_TYPES] =
-{
+static const intmax_t intmin[GI_TYPE_TAG_N_TYPES] = {
     [GI_TYPE_TAG_INT8] = INT8_MIN,
     [GI_TYPE_TAG_INT16] = INT16_MIN,
     [GI_TYPE_TAG_INT32] = INT32_MIN,
     [GI_TYPE_TAG_INT64] = INT64_MIN
 };
 
-static const intmax_t intmax[GI_TYPE_TAG_N_TYPES] =
-{
+static const intmax_t intmax[GI_TYPE_TAG_N_TYPES] = {
     [GI_TYPE_TAG_INT8] = INT8_MAX,
     [GI_TYPE_TAG_INT16] = INT16_MAX,
     [GI_TYPE_TAG_INT32] = INT32_MAX,
     [GI_TYPE_TAG_INT64] = INT64_MAX
 };
 
-static const uintmax_t uintmax[GI_TYPE_TAG_N_TYPES] =
-{
+static const uintmax_t uintmax[GI_TYPE_TAG_N_TYPES] = {
     [GI_TYPE_TAG_UINT8] = UINT8_MAX,
     [GI_TYPE_TAG_UINT16] = UINT16_MAX,
     [GI_TYPE_TAG_UINT32] = UINT32_MAX,
@@ -332,78 +318,57 @@ TYPE_TAG_IS_REAL_NUMBER(GITypeTag x)
 static SCM boxes[26];
 
 static void object_to_c_immediate_arg(char *subr, int argpos,
-                                      SCM obj,
-                                      GITypeTag type_tag,
-                                      GIArgument *arg);
+                                      SCM obj, GITypeTag type_tag, GIArgument *arg);
 static void object_to_c_interface_arg(char *subr, int argpos,
-                                      SCM obj,
-                                      GITypeInfo *arg_info,
-                                      GIArgument *arg);
+                                      SCM obj, GITypeInfo *arg_info, GIArgument *arg);
 static void object_to_c_immediate_pointer_arg(char *subr, int argpos,
                                               SCM obj,
                                               GIArgInfo *arg_info,
-                                              unsigned *must_free,
-                                              GIArgument *arg);
+                                              unsigned *must_free, GIArgument *arg);
 static void object_to_c_string_arg(char *subr, int argpos,
                                    SCM obj,
-                                   GIArgInfo *arg_info,
-                                   unsigned *must_free,
-                                   GIArgument *arg);
+                                   GIArgInfo *arg_info, unsigned *must_free, GIArgument *arg);
 static void object_to_c_void_pointer_arg(char *subr, int argpos, SCM obj, GIArgument *arg);
 static void object_to_c_interface_pointer_arg(char *subr, int argpos, SCM object,
                                               GIArgInfo *arg_info,
-                                              unsigned *must_free,
-                                              GIArgument *arg);
+                                              unsigned *must_free, GIArgument *arg);
 static void object_to_c_array_arg(char *subr, int argpos, SCM object,
                                   GITypeInfo *array_type_info,
-                                  GITransfer array_transfer,
-                                  unsigned *must_free,
-                                  GIArgument *arg);
+                                  GITransfer array_transfer, unsigned *must_free, GIArgument *arg);
 static void
 object_to_c_native_array_arg(char *subr, int argpos, SCM object,
-                             struct array_info *ai,
-                             GIArgument *arg);
+                             struct array_info *ai, GIArgument *arg);
 static void
 object_to_c_native_immediate_array_arg(char *subr, int argpos, SCM object,
-                                       struct array_info *ai,
-                                       GIArgument *arg);
+                                       struct array_info *ai, GIArgument *arg);
 static void
 object_to_c_native_string_array_arg(char *subr, int argpos, SCM object,
-                                    struct array_info *ai,
-                                    GIArgument *arg);
+                                    struct array_info *ai, GIArgument *arg);
 static void
 object_to_c_native_interface_array_arg(char *subr, int argpos, SCM object,
-                                       struct array_info *ai,
-                                       GIArgument *arg);
+                                       struct array_info *ai, GIArgument *arg);
 static void
 object_to_c_ptr_array_arg(char *subr, int argpos, SCM object,
-                          struct array_info *ai,
-                          GIArgument *arg);
+                          struct array_info *ai, GIArgument *arg);
 static void
 object_to_c_garray_array_arg(char *subr, int argpos, SCM object,
-                             struct array_info *ai,
-                             GIArgument *arg);
+                             struct array_info *ai, GIArgument *arg);
 static void
 object_to_c_byte_array_arg(char *subr, int argpos, SCM object,
-                           struct array_info *ai,
-                           GIArgument *arg);
-static SCM
-object_from_c_native_array_arg(struct array_info *ai,
-                               GIArgument *arg);
+                           struct array_info *ai, GIArgument *arg);
+static SCM object_from_c_native_array_arg(struct array_info *ai, GIArgument *arg);
 
-static SCM
-object_from_c_byte_array_arg(struct array_info *ai,
-                             GIArgument *arg);
+static SCM object_from_c_byte_array_arg(struct array_info *ai, GIArgument *arg);
 
-static SCM
-object_from_c_garray_arg(struct array_info *ai,
-                         GIArgument *arg);
+static SCM object_from_c_garray_arg(struct array_info *ai, GIArgument *arg);
 
 static void convert_immediate_arg_to_object(GIArgument *arg, GITypeTag type_tag, SCM *obj);
 static void convert_interface_arg_to_object(GIArgument *arg, GITypeInfo *type_info, SCM *obj);
-static void convert_string_pointer_arg_to_object(GIArgument *arg, GITypeTag type_tag, GITransfer transfer, SCM *obj);
+static void convert_string_pointer_arg_to_object(GIArgument *arg, GITypeTag type_tag,
+                                                 GITransfer transfer, SCM *obj);
 static void convert_const_void_pointer_arg_to_object(GIArgument *arg, SCM *obj);
-static void convert_array_pointer_arg_to_object(GIArgument *arg, GITypeInfo *array_type_info, GITransfer array_transfer, SCM *obj);
+static void convert_array_pointer_arg_to_object(GIArgument *arg, GITypeInfo *array_type_info,
+                                                GITransfer array_transfer, SCM *obj);
 
 //////////////////////////////////////////////////////////
 // CONVERTING SCM OBJECTS TO GIARGUMENTS
@@ -413,14 +378,10 @@ static void convert_array_pointer_arg_to_object(GIArgument *arg, GITypeInfo *arr
 // GIArguments.
 void
 gi_giargument_object_to_c_arg(char *subr, int argpos,
-                              SCM obj,
-                              GIArgInfo *arg_info,
-                              unsigned *must_free,
-                              GIArgument *arg)
+                              SCM obj, GIArgInfo *arg_info, unsigned *must_free, GIArgument *arg)
 {
     // SCM #f means either NULL or FALSE.  Here we handle NULL.
-    if (g_arg_info_may_be_null(arg_info) && scm_is_false(obj))
-    {
+    if (g_arg_info_may_be_null(arg_info) && scm_is_false(obj)) {
         arg->v_pointer = NULL;
         *must_free = GIR_FREE_NONE;
         return;
@@ -430,10 +391,8 @@ gi_giargument_object_to_c_arg(char *subr, int argpos,
     GITypeTag type_tag = g_type_info_get_tag(type_info);
     gboolean is_ptr = g_type_info_is_pointer(type_info);
 
-    if (!is_ptr)
-    {
-        switch (type_tag)
-        {
+    if (!is_ptr) {
+        switch (type_tag) {
         case GI_TYPE_TAG_BOOLEAN:
         case GI_TYPE_TAG_DOUBLE:
         case GI_TYPE_TAG_FLOAT:
@@ -473,10 +432,8 @@ gi_giargument_object_to_c_arg(char *subr, int argpos,
             break;
         }
     }
-    else
-    {
-        switch (type_tag)
-        {
+    else {
+        switch (type_tag) {
         case GI_TYPE_TAG_BOOLEAN:
         case GI_TYPE_TAG_DOUBLE:
         case GI_TYPE_TAG_FLOAT:
@@ -489,11 +446,7 @@ gi_giargument_object_to_c_arg(char *subr, int argpos,
         case GI_TYPE_TAG_UINT64:
         case GI_TYPE_TAG_UINT8:
         case GI_TYPE_TAG_UNICHAR:
-            object_to_c_immediate_pointer_arg(subr, argpos,
-                                              obj,
-                                              arg_info,
-                                              must_free,
-                                              arg);
+            object_to_c_immediate_pointer_arg(subr, argpos, obj, arg_info, must_free, arg);
             break;
 
         case GI_TYPE_TAG_UTF8:
@@ -507,19 +460,13 @@ gi_giargument_object_to_c_arg(char *subr, int argpos,
             break;
 
         case GI_TYPE_TAG_GHASH:
-            scm_misc_error(subr,
-                           "marshalling to GHash is not implemented: ~S",
-                           scm_list_1(obj));
+            scm_misc_error(subr, "marshalling to GHash is not implemented: ~S", scm_list_1(obj));
             break;
         case GI_TYPE_TAG_GLIST:
-            scm_misc_error(subr,
-                           "marshalling to GList is not implemented: ~S",
-                           scm_list_1(obj));
+            scm_misc_error(subr, "marshalling to GList is not implemented: ~S", scm_list_1(obj));
             break;
         case GI_TYPE_TAG_GSLIST:
-            scm_misc_error(subr,
-                           "marshalling to GSList is not implemented: ~S",
-                           scm_list_1(obj));
+            scm_misc_error(subr, "marshalling to GSList is not implemented: ~S", scm_list_1(obj));
             break;
 
         case GI_TYPE_TAG_INTERFACE:
@@ -530,8 +477,7 @@ gi_giargument_object_to_c_arg(char *subr, int argpos,
         case GI_TYPE_TAG_GTYPE:
             // No GType pointer inputs as far as I can tell.
             scm_misc_error(subr,
-                           "marshalling to GType pointer is not implemented: ~S",
-                           scm_list_1(obj));
+                           "marshalling to GType pointer is not implemented: ~S", scm_list_1(obj));
             break;
 
         case GI_TYPE_TAG_ERROR:
@@ -544,11 +490,7 @@ gi_giargument_object_to_c_arg(char *subr, int argpos,
         case GI_TYPE_TAG_ARRAY:
         {
             GITransfer array_transfer = g_arg_info_get_ownership_transfer(arg_info);
-            object_to_c_array_arg(subr, argpos, obj,
-                                  type_info,
-                                  array_transfer,
-                                  must_free,
-                                  arg);
+            object_to_c_array_arg(subr, argpos, obj, type_info, array_transfer, must_free, arg);
             break;
         }
 
@@ -572,16 +514,15 @@ gi_giargument_describe_arg_in(GIArgInfo *arg_info)
     if (g_arg_info_may_be_null(arg_info))
         g_string_append(desc, "#f for NULL or ");
 
-    if (!is_ptr)
-    {
-        switch (type_tag)
-        {
+    if (!is_ptr) {
+        switch (type_tag) {
         case GI_TYPE_TAG_BOOLEAN:
             g_string_append(desc, "boolean");
             break;
         case GI_TYPE_TAG_DOUBLE:
         case GI_TYPE_TAG_FLOAT:
-            g_string_append_printf(desc, "real number of size %s", g_type_tag_to_string(g_type_info_get_tag(type_info)));
+            g_string_append_printf(desc, "real number of size %s",
+                                   g_type_tag_to_string(g_type_info_get_tag(type_info)));
             break;
         case GI_TYPE_TAG_INT16:
         case GI_TYPE_TAG_INT32:
@@ -591,7 +532,8 @@ gi_giargument_describe_arg_in(GIArgInfo *arg_info)
         case GI_TYPE_TAG_UINT32:
         case GI_TYPE_TAG_UINT64:
         case GI_TYPE_TAG_UINT8:
-            g_string_append_printf(desc, "exact integer of size %s", g_type_tag_to_string(g_type_info_get_tag(type_info)));
+            g_string_append_printf(desc, "exact integer of size %s",
+                                   g_type_tag_to_string(g_type_info_get_tag(type_info)));
             break;
         case GI_TYPE_TAG_UNICHAR:
             g_string_append_printf(desc, "character");
@@ -617,11 +559,14 @@ gi_giargument_describe_arg_in(GIArgInfo *arg_info)
             GIBaseInfo *referenced_base_info = g_type_info_get_interface(type_info);
             GIInfoType referenced_base_type = g_base_info_get_type(referenced_base_info);
             if (referenced_base_type == GI_INFO_TYPE_ENUM)
-                g_string_printf(desc, "exact integer of enum type %s", g_base_info_get_name(referenced_base_info));
+                g_string_printf(desc, "exact integer of enum type %s",
+                                g_base_info_get_name(referenced_base_info));
             else if (referenced_base_type == GI_INFO_TYPE_FLAGS)
-                g_string_printf(desc, "exact integer of flags type %s", g_base_info_get_name(referenced_base_info));
+                g_string_printf(desc, "exact integer of flags type %s",
+                                g_base_info_get_name(referenced_base_info));
             else if (referenced_base_type == GI_INFO_TYPE_CALLBACK)
-                g_string_printf(desc, "procedure of type %s", g_base_info_get_name(referenced_base_info));
+                g_string_printf(desc, "procedure of type %s",
+                                g_base_info_get_name(referenced_base_info));
             else
                 g_string_append_printf(desc, "Unhandled argument type tag %d", type_tag);
             g_base_info_unref(referenced_base_info);
@@ -632,10 +577,8 @@ gi_giargument_describe_arg_in(GIArgInfo *arg_info)
             break;
         }
     }
-    else
-    {
-        switch (type_tag)
-        {
+    else {
+        switch (type_tag) {
         case GI_TYPE_TAG_BOOLEAN:
         case GI_TYPE_TAG_UNICHAR:
             g_string_append_printf(desc, "Unhandled argument type tag %d", type_tag);
@@ -650,7 +593,8 @@ gi_giargument_describe_arg_in(GIArgInfo *arg_info)
         case GI_TYPE_TAG_UINT32:
         case GI_TYPE_TAG_UINT64:
         case GI_TYPE_TAG_UINT8:
-            g_string_append_printf(desc, "bytevector containing elements %s", g_type_tag_to_string(type_tag));
+            g_string_append_printf(desc, "bytevector containing elements %s",
+                                   g_type_tag_to_string(type_tag));
             break;
 
         case GI_TYPE_TAG_UTF8:
@@ -678,10 +622,13 @@ gi_giargument_describe_arg_in(GIArgInfo *arg_info)
         {
             GIBaseInfo *referenced_base_info = g_type_info_get_interface(type_info);
             GIInfoType referenced_base_type = g_base_info_get_type(referenced_base_info);
-            if (referenced_base_type == GI_INFO_TYPE_ENUM || referenced_base_type == GI_INFO_TYPE_FLAGS)
-                g_string_printf(desc, "bytevector containing %s", g_base_info_get_name(referenced_base_info));
+            if (referenced_base_type == GI_INFO_TYPE_ENUM ||
+                referenced_base_type == GI_INFO_TYPE_FLAGS)
+                g_string_printf(desc, "bytevector containing %s",
+                                g_base_info_get_name(referenced_base_info));
             else if (referenced_base_type == GI_INFO_TYPE_CALLBACK)
-                g_string_printf(desc, "list of procedures of type %s", g_base_info_get_name(referenced_base_info));
+                g_string_printf(desc, "list of procedures of type %s",
+                                g_base_info_get_name(referenced_base_info));
             else if (referenced_base_type == GI_INFO_TYPE_STRUCT)
                 g_string_printf(desc, "struct %s", g_base_info_get_name(referenced_base_info));
             else if (referenced_base_type == GI_INFO_TYPE_UNION)
@@ -710,26 +657,34 @@ gi_giargument_describe_arg_in(GIArgInfo *arg_info)
             GIArrayType array_type = g_type_info_get_array_type(type_info);
             if (array_type == GI_ARRAY_TYPE_BYTE_ARRAY)
                 g_string_append_printf(desc, "A bytevector containing unspecified binary data");
-            else if (array_type == GI_ARRAY_TYPE_C)
-            {
+            else if (array_type == GI_ARRAY_TYPE_C) {
                 GITypeInfo *item_type_info = g_type_info_get_param_type(type_info, 0);
                 GITypeTag item_type_tag = g_type_info_get_tag(item_type_info);
-                if (item_type_tag == GI_TYPE_TAG_INTERFACE)
-                {
+                if (item_type_tag == GI_TYPE_TAG_INTERFACE) {
                     GIBaseInfo *referenced_base_info = g_type_info_get_interface(item_type_info);
                     GIInfoType referenced_base_type = g_base_info_get_type(referenced_base_info);
                     referenced_base_info = g_type_info_get_interface(item_type_info);
                     referenced_base_type = g_base_info_get_type(referenced_base_info);
                     if (referenced_base_type == GI_INFO_TYPE_ENUM)
-                        g_string_append_printf(desc, "A list of enum values of type %s as integers", g_base_info_get_name(referenced_base_info));
+                        g_string_append_printf(desc,
+                                               "A list of enum values of type %s as integers",
+                                               g_base_info_get_name(referenced_base_info));
                     else if (referenced_base_type == GI_INFO_TYPE_FLAGS)
-                        g_string_append_printf(desc, "A list of flag values of type %s as integers", g_base_info_get_name(referenced_base_info));
+                        g_string_append_printf(desc,
+                                               "A list of flag values of type %s as integers",
+                                               g_base_info_get_name(referenced_base_info));
                     else if (referenced_base_type == GI_INFO_TYPE_STRUCT)
-                        g_string_append_printf(desc, "A list of <GBox> containing structs of type %s", g_base_info_get_name(referenced_base_info));
+                        g_string_append_printf(desc,
+                                               "A list of <GBox> containing structs of type %s",
+                                               g_base_info_get_name(referenced_base_info));
                     else if (referenced_base_type == GI_INFO_TYPE_UNION)
-                        g_string_append_printf(desc, "A list of <GBox> containing unions of type %s", g_base_info_get_name(referenced_base_info));
+                        g_string_append_printf(desc,
+                                               "A list of <GBox> containing unions of type %s",
+                                               g_base_info_get_name(referenced_base_info));
                     else if (referenced_base_type == GI_INFO_TYPE_STRUCT)
-                        g_string_append_printf(desc, "A list of <GObject> containing objects of type %s", g_base_info_get_name(referenced_base_info));
+                        g_string_append_printf(desc,
+                                               "A list of <GObject> containing objects of type %s",
+                                               g_base_info_get_name(referenced_base_info));
                     g_base_info_unref(referenced_base_info);
                 }
                 else if (item_type_tag == GI_TYPE_TAG_BOOLEAN)
@@ -753,7 +708,7 @@ gi_giargument_describe_arg_in(GIArgInfo *arg_info)
                 else if (item_type_tag == GI_TYPE_TAG_FLOAT)
                     g_string_append_printf(desc,
                                            "A bytevector containing %d-byte floating-point numbers",
-                                           (int) sizeof(float));
+                                           (int)sizeof(float));
                 else if (item_type_tag == GI_TYPE_TAG_DOUBLE)
                     g_string_append_printf(desc,
                                            "A bytevector containing %d-byte floating-point numbers",
@@ -763,9 +718,10 @@ gi_giargument_describe_arg_in(GIArgInfo *arg_info)
                     g_string_append_printf(desc, "A list of strings");
                 else if (item_type_tag == GI_TYPE_TAG_GTYPE)
                     g_string_append_printf(desc, "A list of <GType>");
-                else
-                {
-                    g_string_append_printf(desc, "A bytevector containing some unknown type tag %d", item_type_tag);
+                else {
+                    g_string_append_printf(desc,
+                                           "A bytevector containing some unknown type tag %d",
+                                           item_type_tag);
                     g_critical("Unhandled array entry type in %s:%d", __FILE__, __LINE__);
                 }
             }
@@ -785,29 +741,23 @@ void
 gi_giargument_convert_return_type_object_to_arg(SCM obj,
                                                 GITypeInfo *type_info,
                                                 GITransfer transfer,
-                                                gboolean null_ok,
-                                                gboolean skip,
-                                                GIArgument *arg)
+                                                gboolean null_ok, gboolean skip, GIArgument *arg)
 {
 #define FUNC_NAME "%returned-object->c-arg"
     gboolean is_ptr = g_type_info_is_pointer(type_info);
     GITypeTag type_tag = g_type_info_get_tag(type_info);
     unsigned must_free;
 
-    if (skip)
-    {
+    if (skip) {
         arg->v_pointer = NULL;
         return;
     }
 
-    if (null_ok && scm_is_eq(obj, SCM_BOOL_F))
-    {
+    if (null_ok && scm_is_eq(obj, SCM_BOOL_F)) {
         arg->v_pointer = NULL;
     }
-    else if (!is_ptr)
-    {
-        switch (type_tag)
-        {
+    else if (!is_ptr) {
+        switch (type_tag) {
         case GI_TYPE_TAG_BOOLEAN:
         case GI_TYPE_TAG_DOUBLE:
         case GI_TYPE_TAG_FLOAT:
@@ -846,10 +796,8 @@ gi_giargument_convert_return_type_object_to_arg(SCM obj,
             break;
         }
     }
-    else
-    {
-        switch (type_tag)
-        {
+    else {
+        switch (type_tag) {
         case GI_TYPE_TAG_BOOLEAN:
         case GI_TYPE_TAG_DOUBLE:
         case GI_TYPE_TAG_FLOAT:
@@ -920,8 +868,7 @@ gi_giargument_convert_return_type_object_to_arg(SCM obj,
 static void
 object_to_c_immediate_arg(char *subr, int argpos, SCM object, GITypeTag type_tag, GIArgument *arg)
 {
-    switch (type_tag)
-    {
+    switch (type_tag) {
     case GI_TYPE_TAG_INT8:
         if (!scm_is_signed_integer(object, INT8_MIN, INT8_MAX))
             scm_wrong_type_arg_msg(subr, argpos, object, "int8");
@@ -971,7 +918,7 @@ object_to_c_immediate_arg(char *subr, int argpos, SCM object, GITypeTag type_tag
         double dtmp = scm_to_double(object);
         if (dtmp > FLT_MAX || dtmp < -FLT_MAX)
             scm_wrong_type_arg_msg(subr, argpos, object, "float32");
-        arg->v_float = (float) dtmp;
+        arg->v_float = (float)dtmp;
         break;
     case GI_TYPE_TAG_DOUBLE:
         if (!scm_is_real(object))
@@ -988,8 +935,7 @@ object_to_c_immediate_arg(char *subr, int argpos, SCM object, GITypeTag type_tag
             arg->v_uint32 = SCM_CHAR(object);
         else if (scm_is_unsigned_integer(object, 0, SCM_CODEPOINT_MAX))
             arg->v_uint32 = scm_to_uint32(object);
-        else
-        {
+        else {
             scm_wrong_type_arg_msg(subr, argpos, object, "char");
         }
 
@@ -1003,9 +949,7 @@ object_to_c_immediate_arg(char *subr, int argpos, SCM object, GITypeTag type_tag
 // Handle SCM conversion to non-pointer objects that aren't simple C
 // types.
 static void
-object_to_c_interface_arg(char *subr, int argpos, SCM obj,
-                          GITypeInfo *type_info,
-                          GIArgument *arg)
+object_to_c_interface_arg(char *subr, int argpos, SCM obj, GITypeInfo *type_info, GIArgument *arg)
 {
     GITypeTag type_tag = g_type_info_get_tag(type_info);
     g_assert(type_tag == GI_TYPE_TAG_INTERFACE);
@@ -1014,35 +958,29 @@ object_to_c_interface_arg(char *subr, int argpos, SCM obj,
     GIInfoType referenced_base_type = g_base_info_get_type(referenced_base_info);
 
     if ((referenced_base_type == GI_INFO_TYPE_ENUM)
-        || (referenced_base_type == GI_INFO_TYPE_FLAGS))
-    {
+        || (referenced_base_type == GI_INFO_TYPE_FLAGS)) {
         arg->v_uint32 = scm_to_uint32(obj);
     }
-    else if (referenced_base_type == GI_INFO_TYPE_CALLBACK)
-    {
+    else if (referenced_base_type == GI_INFO_TYPE_CALLBACK) {
         GICallbackInfo *callback_info = referenced_base_info;
-        if (scm_is_true(scm_procedure_p(obj)))
-        {
+        if (scm_is_true(scm_procedure_p(obj))) {
             int arity = scm_to_int(scm_car(scm_procedure_minimum_arity(obj)));
             int n_args = g_callable_info_get_n_args(callback_info);
-            if (arity == n_args)
-            {
+            if (arity == n_args) {
                 arg->v_pointer = gir_callback_get_ptr(callback_info, obj);
                 g_assert(arg->v_pointer != NULL);
             }
-            else
-            {
+            else {
                 const char *msg = "a procedure requiring %d arguments";
                 char str[strlen(msg) + 20];
                 snprintf(str, sizeof(str), msg, n_args);
-                scm_wrong_type_arg_msg (subr, argpos, obj, str);
+                scm_wrong_type_arg_msg(subr, argpos, obj, str);
             }
         }
     }
     else if ((referenced_base_type == GI_INFO_TYPE_STRUCT)
              || (referenced_base_type == GI_INFO_TYPE_UNION)
-             || (referenced_base_type == GI_INFO_TYPE_OBJECT))
-    {
+             || (referenced_base_type == GI_INFO_TYPE_OBJECT)) {
         // This is uncommon case where a struct is used directly,
         // and not as a pointer, such as in gtk_text_buffer_get_bounds.
 
@@ -1055,9 +993,7 @@ object_to_c_interface_arg(char *subr, int argpos, SCM obj,
 static void
 object_to_c_immediate_pointer_arg(char *subr, int argpos,
                                   SCM obj,
-                                  GIArgInfo *arg_info,
-                                  unsigned *must_free,
-                                  GIArgument *arg)
+                                  GIArgInfo *arg_info, unsigned *must_free, GIArgument *arg)
 {
     // Here we handle the uncommon case of converting an SCM to a
     // pointer to a simple C type like 'int *', but not objects or
@@ -1071,16 +1007,13 @@ object_to_c_immediate_pointer_arg(char *subr, int argpos,
 
     // We'll require an input of bytevectors, since they can apply to
     // most cases, and this case is underspecified anyway.
-    if (!scm_is_bytevector(obj))
-    {
+    if (!scm_is_bytevector(obj)) {
         scm_wrong_type_arg_msg(subr, argpos, obj, "a bytevector");
     }
-    else
-    {
+    else {
         // FIXME: add bytevector minimum length checks.
         if (g_arg_info_get_ownership_transfer(arg_info) == GI_TRANSFER_EVERYTHING)
-            arg->v_pointer = g_memdup(SCM_BYTEVECTOR_CONTENTS(obj),
-                                      SCM_BYTEVECTOR_LENGTH(obj));
+            arg->v_pointer = g_memdup(SCM_BYTEVECTOR_CONTENTS(obj), SCM_BYTEVECTOR_LENGTH(obj));
         else
             arg->v_pointer = SCM_BYTEVECTOR_CONTENTS(obj);
         *must_free = GIR_FREE_NONE;
@@ -1089,40 +1022,34 @@ object_to_c_immediate_pointer_arg(char *subr, int argpos,
 
 static void
 object_to_c_string_arg(char *subr, int argpos,
-                       SCM obj,
-                       GIArgInfo *arg_info,
-                       unsigned *must_free,
-                       GIArgument *arg)
+                       SCM obj, GIArgInfo *arg_info, unsigned *must_free, GIArgument *arg)
 {
     // Here we convert an input string into an argument.  The input
     // string is either UTF8 or locale encoded.
-    if (scm_is_bytevector(obj))
-    {
+    if (scm_is_bytevector(obj)) {
         // Some methods expect passed-in strings to be overwriteable,
         // like g_date_strftime(char *s, ...) expects 's' to be a
         // place to store an output.  Since Glib strings and Guile
         // strings have no encoding in common, we can use
         // bytevectors...
-        if (g_arg_info_get_ownership_transfer(arg_info) == GI_TRANSFER_NOTHING)
-        {
+        if (g_arg_info_get_ownership_transfer(arg_info) == GI_TRANSFER_NOTHING) {
             // But when we're using bytevectors as a possibly writable
             // location, they do need to be null terminated.
             gboolean terminated = FALSE;
-            for (int i = 0; i < SCM_BYTEVECTOR_LENGTH(obj); i ++)
+            for (int i = 0; i < SCM_BYTEVECTOR_LENGTH(obj); i++)
                 if (SCM_BYTEVECTOR_CONTENTS(obj)[i] == 0)
                     terminated = TRUE;
             if (!terminated)
                 scm_wrong_type_arg_msg(subr, argpos, obj, "null-terminated bytevector");
-            arg->v_string = (gchar *) SCM_BYTEVECTOR_CONTENTS(obj);
+            arg->v_string = (gchar *)SCM_BYTEVECTOR_CONTENTS(obj);
         }
         else
             // But when we're copying the contents of the string, the
             // null termination can be enforced here.
-            arg->v_string = g_strndup((const gchar *) SCM_BYTEVECTOR_CONTENTS(obj),
+            arg->v_string = g_strndup((const gchar *)SCM_BYTEVECTOR_CONTENTS(obj),
                                       SCM_BYTEVECTOR_LENGTH(obj));
     }
-    else if (scm_is_string(obj))
-    {
+    else if (scm_is_string(obj)) {
         // The scm_to_..._string always makes a new copy, so if
         // transfer isn't EVERYTHING, we'll have to free the string
         // later.
@@ -1155,8 +1082,7 @@ object_to_c_void_pointer_arg(char *subr, int argpos, SCM obj, GIArgument *arg)
 
 static void
 object_to_c_interface_pointer_arg(char *subr, int argpos, SCM obj,
-                                  GIArgInfo *arg_info,
-                                  unsigned *must_free, GIArgument *arg)
+                                  GIArgInfo *arg_info, unsigned *must_free, GIArgument *arg)
 {
     // Usually STRUCT, UNION, INTERFACE, OBJECT.  Handle NULL_OK
     GITypeInfo *type_info = g_arg_info_get_type(arg_info);
@@ -1165,32 +1091,28 @@ object_to_c_interface_pointer_arg(char *subr, int argpos, SCM obj,
     GIInfoType referenced_base_type = g_base_info_get_type(referenced_base_info);
     g_base_info_unref(type_info);
 
-    GType obj_type = gir_type_get_gtype_from_obj (obj);
+    GType obj_type = gir_type_get_gtype_from_obj(obj);
     if (obj_type == G_TYPE_NONE || obj_type == G_TYPE_INVALID)
         scm_wrong_type_arg_msg(subr, argpos, obj, "a GObject struct, union, interface, or object");
 
     GType arg_type = g_registered_type_info_get_g_type(referenced_base_info);
-    if (!g_type_is_a(obj_type, arg_type))
-    {
+    if (!g_type_is_a(obj_type, arg_type)) {
         char msg[80];
         snprintf(msg, 80, "a GObject that is a type of %s", g_type_name(arg_type));
         scm_wrong_type_arg_msg(subr, argpos, obj, msg);
     }
     else if ((referenced_base_type == GI_INFO_TYPE_STRUCT)
              || (referenced_base_type == GI_INFO_TYPE_UNION)
-             || (referenced_base_type == GI_INFO_TYPE_OBJECT))
-    {
+             || (referenced_base_type == GI_INFO_TYPE_OBJECT)) {
         arg->v_pointer = scm_foreign_object_ref(obj, OBJ_SLOT);
         *must_free = GIR_FREE_NONE;
     }
-    else if (referenced_base_type == GI_INFO_TYPE_CALLBACK)
-    {
+    else if (referenced_base_type == GI_INFO_TYPE_CALLBACK) {
         scm_misc_error(subr,
                        "Marshalling to C callback pointer args is unimplemented: ~S",
                        scm_list_1(obj));
     }
-    else if (referenced_base_type == GI_INFO_TYPE_INTERFACE)
-    {
+    else if (referenced_base_type == GI_INFO_TYPE_INTERFACE) {
         scm_misc_error(subr,
                        "Marshalling to C interface pointer args is unimplemented: ~S",
                        scm_list_1(obj));
@@ -1202,15 +1124,12 @@ object_to_c_interface_pointer_arg(char *subr, int argpos, SCM obj,
 static void
 object_to_c_array_arg(char *subr, int argpos, SCM object,
                       GITypeInfo *array_type_info,
-                      GITransfer array_transfer,
-                      unsigned *must_free,
-                      GIArgument *arg)
+                      GITransfer array_transfer, unsigned *must_free, GIArgument *arg)
 {
-    struct array_info ai = {0};
-    fill_array_info (&ai, array_type_info, array_transfer);
+    struct array_info ai = { 0 };
+    fill_array_info(&ai, array_type_info, array_transfer);
 
-    switch (ai.array_type)
-    {
+    switch (ai.array_type) {
     case GI_ARRAY_TYPE_C:
         object_to_c_native_array_arg(subr, argpos, object, &ai, arg);
         break;
@@ -1231,8 +1150,7 @@ object_to_c_array_arg(char *subr, int argpos, SCM object,
 
 static void
 object_to_c_native_array_arg(char *subr, int argpos, SCM object,
-                             struct array_info *ai,
-                             GIArgument *arg)
+                             struct array_info *ai, GIArgument *arg)
 {
     if (TYPE_TAG_IS_EXACT_INTEGER(ai->item_type_tag)
         || TYPE_TAG_IS_REAL_NUMBER(ai->item_type_tag))
@@ -1240,21 +1158,17 @@ object_to_c_native_array_arg(char *subr, int argpos, SCM object,
     else if ((ai->item_type_tag == GI_TYPE_TAG_UTF8)
              || (ai->item_type_tag == GI_TYPE_TAG_FILENAME))
         object_to_c_native_string_array_arg(subr, argpos, object, ai, arg);
-    else if (ai->item_type_tag == GI_TYPE_TAG_INTERFACE)
-    {
+    else if (ai->item_type_tag == GI_TYPE_TAG_INTERFACE) {
         object_to_c_native_interface_array_arg(subr, argpos, object, ai, arg);
     }
-    else
-    {
+    else {
         scm_misc_error(subr, "Unhandled array type", SCM_EOL);
     }
 }
 
 static void
 object_to_c_native_immediate_array_arg(char *subr, int argpos,
-                                       SCM object,
-                                       struct array_info *ai,
-                                       GIArgument *arg)
+                                       SCM object, struct array_info *ai, GIArgument *arg)
 {
 #define FUNC_NAME "%object->c-native-immediate-array-arg"
     // IMMEDIATE TYPES.  It seems only boolean, double, and 8 and
@@ -1265,19 +1179,15 @@ object_to_c_native_immediate_array_arg(char *subr, int argpos,
     // GI_TRANSFER_EVERYTHING, we need to make a deep copy.  If the
     // argument is NULL_OK and the SCM is #f, we pass NULL.
 
-    g_assert_cmpint (ai->item_size, !=, 0);
+    g_assert_cmpint(ai->item_size, !=, 0);
 
-    if (scm_is_bytevector(object))
-    {
-        if (ai->item_transfer == GI_TRANSFER_NOTHING)
-        {
-            if (!ai->array_is_zero_terminated)
-            {
+    if (scm_is_bytevector(object)) {
+        if (ai->item_transfer == GI_TRANSFER_NOTHING) {
+            if (!ai->array_is_zero_terminated) {
                 // The fast path
                 arg->v_pointer = SCM_BYTEVECTOR_CONTENTS(object);
             }
-            else
-            {
+            else {
                 size_t len = SCM_BYTEVECTOR_LENGTH(object);
                 // Adding null terminator element.
                 arg->v_pointer = g_malloc0(len + ai->item_size);
@@ -1285,15 +1195,12 @@ object_to_c_native_immediate_array_arg(char *subr, int argpos,
                 ai->must_free = GIR_FREE_SIMPLE;
             }
         }
-        else if (ai->item_transfer == GI_TRANSFER_EVERYTHING)
-        {
-            if (!ai->array_is_zero_terminated)
-            {
+        else if (ai->item_transfer == GI_TRANSFER_EVERYTHING) {
+            if (!ai->array_is_zero_terminated) {
                 arg->v_pointer = g_memdup(SCM_BYTEVECTOR_CONTENTS(object),
                                           SCM_BYTEVECTOR_LENGTH(object));
             }
-            else
-            {
+            else {
                 size_t len = SCM_BYTEVECTOR_LENGTH(object);
                 // Note, null terminated here.
                 arg->v_pointer = g_malloc0(len + ai->item_size);
@@ -1308,11 +1215,9 @@ object_to_c_native_immediate_array_arg(char *subr, int argpos,
 
 static void
 object_to_c_byte_array_arg(char *subr, int argpos, SCM object,
-                           struct array_info *ai,
-                           GIArgument *arg)
+                           struct array_info *ai, GIArgument *arg)
 {
-    if (scm_is_bytevector(object))
-    {
+    if (scm_is_bytevector(object)) {
         void *contents = SCM_BYTEVECTOR_CONTENTS(object);
         size_t len = SCM_BYTEVECTOR_LENGTH(object);
         if (ai->array_transfer == GI_TRANSFER_EVERYTHING)
@@ -1346,10 +1251,12 @@ object_to_c_ptr_array_arg(char *subr, int argpos, SCM object, struct array_info 
 #undef FUNC_NAME
 }
 
-
-static void __attribute__((unused))
+/* *INDENT-OFF* */
+__attribute__((unused)) static void
 object_to_c_native_direct_struct_array_arg(char *subr, int argpos, SCM object,
                                            struct array_info *ai, GIArgument *arg)
+/* *INDENT-ON* */
+
 {
     // This is the uncommon case of the argument containing
     // an array of structs themselves, rather than an array
@@ -1368,17 +1275,18 @@ object_to_c_native_direct_struct_array_arg(char *subr, int argpos, SCM object,
         ai->must_free = GIR_FREE_SIMPLE;
 }
 
-static void __attribute__((unused))
+/* *INDENT-OFF* */
+__attribute__((unused)) static void
 object_to_c_native_indirect_object_array_arg(char *subr, int argpos, SCM object,
-                                             struct array_info *ai,
-                                             GIArgument *arg)
+                                             struct array_info *ai, GIArgument *arg)
+/* *INDENT-ON* */
+
 {
     // Arrays of pointers to OBJECTS.  The only example I could find
     // is g_socket_send_message.
     if ((ai->item_type_tag == GI_TYPE_TAG_INTERFACE)
         && (ai->referenced_base_type == G_TYPE_OBJECT)
-        && ai->item_is_ptr)
-    {
+        && ai->item_is_ptr) {
         // On the Scheme side, an array of pointers to objects will be
         // a list of GObjects.
         size_t len = scm_to_size_t(scm_length(object));
@@ -1387,16 +1295,14 @@ object_to_c_native_indirect_object_array_arg(char *subr, int argpos, SCM object,
             ptr = g_malloc0_n(sizeof(gpointer), len + 1);
         else
             ptr = g_malloc0_n(sizeof(gpointer), len);
-        for (gsize i = 0; i < len; i++)
-        {
+        for (gsize i = 0; i < len; i++) {
             SCM entry = scm_list_ref(object, scm_from_size_t(i));
             // Entry should be a GObject.  I guess we're not
             // increasing refcnt?  At least that is the case for
             // g_socket_send_message.
             ptr[i] = gi_gobject_get_obj(entry);
         }
-        if (ai->item_transfer == GI_TRANSFER_NOTHING)
-        {
+        if (ai->item_transfer == GI_TRANSFER_NOTHING) {
             if (ai->array_is_zero_terminated)
                 ai->must_free = GIR_FREE_STRV;
             else
@@ -1408,25 +1314,20 @@ object_to_c_native_indirect_object_array_arg(char *subr, int argpos, SCM object,
 static void
 object_to_c_native_interface_array_arg(char *subr,
                                        int argpos,
-                                       SCM object,
-                                       struct array_info *ai,
-                                       GIArgument *arg)
+                                       SCM object, struct array_info *ai, GIArgument *arg)
 {
 #define FUNC_NAME "%object->c-native-interface-array-arg"
     if ((ai->referenced_base_type == GI_INFO_TYPE_ENUM)
-        || (ai->referenced_base_type == GI_INFO_TYPE_FLAGS))
-    {
+        || (ai->referenced_base_type == GI_INFO_TYPE_FLAGS)) {
         // We haven't bothered to make a special flag or enum
         // class on the Scheme side of things.  On the scheme
         // side, enums and flags are just variables holding
         // integers.
-        object_to_c_native_immediate_array_arg(subr,argpos,object,
-                                               ai, arg);
+        object_to_c_native_immediate_array_arg(subr, argpos, object, ai, arg);
     }
     else if ((ai->referenced_base_type == GI_INFO_TYPE_STRUCT)
              || (ai->referenced_base_type == GI_INFO_TYPE_UNION)
-             || (ai->referenced_base_type == GI_INFO_TYPE_OBJECT))
-    {
+             || (ai->referenced_base_type == GI_INFO_TYPE_OBJECT)) {
         // If we are a Struct or Object, we need to look up
         // our actual GType.
         g_assert(ai->referenced_object_type != G_TYPE_NONE);
@@ -1451,8 +1352,7 @@ object_to_c_native_interface_array_arg(char *subr,
             object_to_c_native_indirect_object_array_arg(subr, argpos, object, ai, arg);
 #endif
     }
-    else
-    {
+    else {
         // Everything else is unhandled.
         g_critical("Unhandled argument type, %s: %d", __FILE__, __LINE__);
     }
@@ -1461,9 +1361,7 @@ object_to_c_native_interface_array_arg(char *subr,
 
 static void
 object_to_c_native_string_array_arg(char *subr, int argpos,
-                                    SCM object,
-                                    struct array_info *ai,
-                                    GIArgument *arg)
+                                    SCM object, struct array_info *ai, GIArgument *arg)
 {
     // UTF8 or FILENAME pointers.  It seems that arrays of type UTF8
     // can mean two things.
@@ -1478,12 +1376,10 @@ object_to_c_native_string_array_arg(char *subr, int argpos,
 
     // We're adding a zero termination despite the value of
     // array_is_zero_terminated, because it does no harm.
-    if (scm_is_true(scm_list_p(object)))
-    {
+    if (scm_is_true(scm_list_p(object))) {
         size_t len = scm_to_size_t(scm_length(object));
         gchar **strv = g_new0(gchar *, len + 1);
-        for (size_t i = 0; i < len; i++)
-        {
+        for (size_t i = 0; i < len; i++) {
             SCM entry = scm_list_ref(object, scm_from_size_t(i));
             if (ai->item_type_tag == GI_TYPE_TAG_FILENAME)
                 strv[i] = scm_to_locale_string(entry);
@@ -1501,24 +1397,21 @@ object_to_c_native_string_array_arg(char *subr, int argpos,
 
 
 
-void gi_giargument_free_args(int n, unsigned *must_free, GIArgument *args)
+void
+gi_giargument_free_args(int n, unsigned *must_free, GIArgument *args)
 {
-    for (int i = 0; i < n; i++)
-    {
+    for (int i = 0; i < n; i++) {
         if (must_free[i] == GIR_FREE_SIMPLE)
             g_free(args[i].v_pointer);
-        else if (must_free[i] == GIR_FREE_STRV)
-        {
+        else if (must_free[i] == GIR_FREE_STRV) {
             int j = 0;
-            while (((char **)(args[i].v_pointer))[j] != NULL)
-            {
+            while (((char **)(args[i].v_pointer))[j] != NULL) {
                 g_free(((char **)(args[i].v_pointer))[j]);
                 j++;
             }
             g_free(args[i].v_pointer);
         }
-        else if (must_free[i] & GIR_FREE_PTR_ARRAY)
-        {
+        else if (must_free[i] & GIR_FREE_PTR_ARRAY) {
             int count = GIR_FREE_PTR_COUNT(must_free[i]);
             for (int j = 0; j < count; j++)
                 g_free(((char **)(args[i].v_pointer))[j]);
@@ -1543,10 +1436,8 @@ gi_giargument_preallocate_output_arg_and_object(GIArgInfo *arg_info, GIArgument 
     gboolean is_ptr = g_type_info_is_pointer(type_info);
 
     g_base_info_unref(type_info);
-    if (!is_ptr)
-    {
-        switch (type_tag)
-        {
+    if (!is_ptr) {
+        switch (type_tag) {
         case GI_TYPE_TAG_BOOLEAN:
         case GI_TYPE_TAG_DOUBLE:
         case GI_TYPE_TAG_FLOAT:
@@ -1584,17 +1475,15 @@ gi_giargument_preallocate_output_arg_and_object(GIArgInfo *arg_info, GIArgument 
             GIInfoType referenced_base_type = g_base_info_get_type(referenced_base_info);
             // GType referenced_object_type = g_registered_type_info_get_g_type(referenced_base_info);
 
-            if (referenced_base_type == GI_INFO_TYPE_STRUCT)
-            {
+            if (referenced_base_type == GI_INFO_TYPE_STRUCT) {
                 // If OBJ is already set, we typecheck that it is
                 // a box holding a pointer for a struct of the
                 // right type.  If it isn't set, we allocate a new
                 // box.
-                if (!scm_is_eq(*obj, SCM_BOOL_F))
-                {
+                if (!scm_is_eq(*obj, SCM_BOOL_F)) {
                     gsize item_size = g_struct_info_get_size(referenced_base_info);
                     arg->v_pointer = g_malloc0(item_size);
-                    g_critical ("unhandled allocation");
+                    g_critical("unhandled allocation");
                     g_assert_not_reached();
                     //*obj = gir_new_struct_gbox(referenced_object_type, arg->v_pointer, TRUE);
                 }
@@ -1605,16 +1494,14 @@ gi_giargument_preallocate_output_arg_and_object(GIArgInfo *arg_info, GIArgument 
             else
                 g_assert_not_reached();
         }
-        break;
+            break;
         default:
             g_assert_not_reached();
             break;
         }
     }
-    else
-    {
-        switch (type_tag)
-        {
+    else {
+        switch (type_tag) {
         case GI_TYPE_TAG_BOOLEAN:
         case GI_TYPE_TAG_DOUBLE:
         case GI_TYPE_TAG_FLOAT:
@@ -1636,8 +1523,7 @@ gi_giargument_preallocate_output_arg_and_object(GIArgInfo *arg_info, GIArgument 
 
             // Uniquely, g_unichar_to_utf8 requires a pre-allocated UTF8
             // output buffer.
-            if (scm_is_bytevector(*obj))
-            {
+            if (scm_is_bytevector(*obj)) {
                 // FIXME: we're just hoping that this
                 // bytevector is big enough to hold the contents
                 // that are going to be copied into it.
@@ -1681,10 +1567,8 @@ gi_giargument_convert_arg_to_object(GIArgument *arg, GIArgInfo *arg_info, SCM *o
     GITransfer transfer = g_arg_info_get_ownership_transfer(arg_info);
     gboolean is_ptr = g_type_info_is_pointer(type_info);
 
-    if (!is_ptr)
-    {
-        switch (type_tag)
-        {
+    if (!is_ptr) {
+        switch (type_tag) {
         case GI_TYPE_TAG_VOID:
             *obj = SCM_UNSPECIFIED;
             break;
@@ -1723,10 +1607,8 @@ gi_giargument_convert_arg_to_object(GIArgument *arg, GIArgInfo *arg_info, SCM *o
             break;
         }
     }
-    else
-    {
-        switch (type_tag)
-        {
+    else {
+        switch (type_tag) {
         case GI_TYPE_TAG_BOOLEAN:
         case GI_TYPE_TAG_DOUBLE:
         case GI_TYPE_TAG_FLOAT:
@@ -1784,10 +1666,7 @@ gi_giargument_convert_arg_to_object(GIArgument *arg, GIArgInfo *arg_info, SCM *o
 
         case GI_TYPE_TAG_ARRAY:
             // g_critical("Unhandled array argument type %s %d", __FILE__, __LINE__);
-            convert_array_pointer_arg_to_object(arg,
-                                                type_info,
-                                                GI_TRANSFER_EVERYTHING,
-                                                obj);
+            convert_array_pointer_arg_to_object(arg, type_info, GI_TRANSFER_EVERYTHING, obj);
             break;
 
         default:
@@ -1797,11 +1676,10 @@ gi_giargument_convert_arg_to_object(GIArgument *arg, GIArgInfo *arg_info, SCM *o
     g_base_info_unref(type_info);
 }
 
-SCM gi_giargument_convert_return_val_to_object(GIArgument *arg,
-                                               GITypeInfo *type_info,
-                                               GITransfer transfer,
-                                               gboolean null_ok,
-                                               gboolean skip)
+SCM
+gi_giargument_convert_return_val_to_object(GIArgument *arg,
+                                           GITypeInfo *type_info,
+                                           GITransfer transfer, gboolean null_ok, gboolean skip)
 {
     SCM obj = SCM_BOOL_F;
 
@@ -1813,10 +1691,8 @@ SCM gi_giargument_convert_return_val_to_object(GIArgument *arg,
     GITypeTag type_tag = g_type_info_get_tag(type_info);
     gboolean is_ptr = g_type_info_is_pointer(type_info);
 
-    if (!is_ptr)
-    {
-        switch (type_tag)
-        {
+    if (!is_ptr) {
+        switch (type_tag) {
         case GI_TYPE_TAG_VOID:
             obj = SCM_UNSPECIFIED;
             break;
@@ -1855,15 +1731,12 @@ SCM gi_giargument_convert_return_val_to_object(GIArgument *arg,
             break;
         }
     }
-    else
-    {
+    else {
         if (arg->v_pointer == NULL)
             scm_misc_error("%return-val->object",
-                           "Unexpected NULL pointer received from C procedure",
-                           SCM_EOL);
+                           "Unexpected NULL pointer received from C procedure", SCM_EOL);
 
-        switch (type_tag)
-        {
+        switch (type_tag) {
         case GI_TYPE_TAG_BOOLEAN:
         case GI_TYPE_TAG_DOUBLE:
         case GI_TYPE_TAG_FLOAT:
@@ -1905,16 +1778,18 @@ SCM gi_giargument_convert_return_val_to_object(GIArgument *arg,
             GType referenced_base_gtype = g_registered_type_info_get_g_type(referenced_base_info);
             g_base_info_unref(referenced_base_info);
 
-            if (referenced_base_type == GI_INFO_TYPE_STRUCT || referenced_base_type == GI_INFO_TYPE_UNION || referenced_base_type == GI_INFO_TYPE_OBJECT)
-            {
-                return gir_type_make_object(referenced_base_gtype, arg->v_pointer, transfer == GI_TRANSFER_EVERYTHING);
+            if (referenced_base_type == GI_INFO_TYPE_STRUCT ||
+                referenced_base_type == GI_INFO_TYPE_UNION ||
+                referenced_base_type == GI_INFO_TYPE_OBJECT) {
+                return gir_type_make_object(referenced_base_gtype, arg->v_pointer,
+                                            transfer == GI_TRANSFER_EVERYTHING);
             }
             else
                 g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
         }
-        // ret = convert_interface_pointer_object_to_arg(obj, arg_info, must_free, arg);
-        // *must_free = GIR_FREE_NONE;
-        break;
+            // ret = convert_interface_pointer_object_to_arg(obj, arg_info, must_free, arg);
+            // *must_free = GIR_FREE_NONE;
+            break;
 
         case GI_TYPE_TAG_GTYPE:
             // No GType pointer inputs as far as I can tell.
@@ -1946,8 +1821,7 @@ SCM gi_giargument_convert_return_val_to_object(GIArgument *arg,
 static void
 convert_immediate_arg_to_object(GIArgument *arg, GITypeTag type_tag, SCM *obj)
 {
-    switch (type_tag)
-    {
+    switch (type_tag) {
     case GI_TYPE_TAG_BOOLEAN:
         *obj = scm_from_bool(arg->v_boolean);
         break;
@@ -2002,17 +1876,14 @@ convert_interface_arg_to_object(GIArgument *arg, GITypeInfo *type_info, SCM *obj
 
     GIBaseInfo *referenced_base_info = g_type_info_get_interface(type_info);
     GIInfoType referenced_info_type = g_base_info_get_type(referenced_base_info);
-    if (referenced_info_type == GI_INFO_TYPE_ENUM || referenced_info_type == GI_INFO_TYPE_FLAGS)
-    {
+    if (referenced_info_type == GI_INFO_TYPE_ENUM || referenced_info_type == GI_INFO_TYPE_FLAGS) {
         *obj = scm_from_uint32(arg->v_uint32);
     }
-    else if (referenced_info_type == GI_INFO_TYPE_CALLBACK)
-    {
+    else if (referenced_info_type == GI_INFO_TYPE_CALLBACK) {
         gpointer callback_ptr = arg->v_pointer;
         *obj = scm_from_pointer(callback_ptr, NULL);
     }
-    else
-    {
+    else {
         // This case of returning a struct directly.
         // If the object is already an appropriate GBOX (like for output arguments), we memcpy the contents
         // of the argument into the gbox.
@@ -2023,25 +1894,23 @@ convert_interface_arg_to_object(GIArgument *arg, GITypeInfo *type_info, SCM *obj
 }
 
 static void
-convert_string_pointer_arg_to_object(GIArgument *arg, GITypeTag type_tag, GITransfer transfer, SCM *obj)
+convert_string_pointer_arg_to_object(GIArgument *arg, GITypeTag type_tag, GITransfer transfer,
+                                     SCM *obj)
 {
     // We can't transfer strings directly, since GObject and Guile use
     // different internal encodings.  So for GI_TRANSFER_EVERYTHGING,
     // we just free.
-    switch (type_tag)
-    {
+    switch (type_tag) {
     case GI_TYPE_TAG_UTF8:
     case GI_TYPE_TAG_FILENAME:
         if (!arg->v_string)
             *obj = scm_c_make_string(0, SCM_MAKE_CHAR(0));
-        else
-        {
+        else {
             if (type_tag == GI_TYPE_TAG_UTF8)
                 *obj = scm_from_utf8_string(arg->v_string);
             else
                 *obj = scm_from_locale_string(arg->v_string);
-            if (transfer == GI_TRANSFER_EVERYTHING)
-            {
+            if (transfer == GI_TRANSFER_EVERYTHING) {
                 g_free(arg->v_string);
                 arg->v_string = NULL;
             }
@@ -2055,22 +1924,20 @@ convert_string_pointer_arg_to_object(GIArgument *arg, GITypeTag type_tag, GITran
 static void
 convert_array_pointer_arg_to_object(GIArgument *arg,
                                     GITypeInfo *array_type_info,
-                                    GITransfer array_transfer,
-                                    SCM *obj)
+                                    GITransfer array_transfer, SCM *obj)
 {
-    struct array_info ai = {0};
-    fill_array_info (&ai, array_type_info, array_transfer);
+    struct array_info ai = { 0 };
+    fill_array_info(&ai, array_type_info, array_transfer);
 
-    switch (ai.array_type)
-    {
+    switch (ai.array_type) {
     case GI_ARRAY_TYPE_BYTE_ARRAY:
-        *obj = object_from_c_byte_array_arg (&ai, arg);
+        *obj = object_from_c_byte_array_arg(&ai, arg);
         break;
     case GI_ARRAY_TYPE_C:
-        *obj = object_from_c_native_array_arg (&ai, arg);
+        *obj = object_from_c_native_array_arg(&ai, arg);
         break;
     case GI_ARRAY_TYPE_ARRAY:
-        *obj = object_from_c_garray_arg (&ai, arg);
+        *obj = object_from_c_garray_arg(&ai, arg);
         break;
     default:
         g_critical("Unhandled array type in %s:%d", __FILE__, __LINE__);
@@ -2082,13 +1949,11 @@ convert_array_pointer_arg_to_object(GIArgument *arg,
 }
 
 static SCM
-object_from_c_native_array_arg(struct array_info *ai,
-                               GIArgument *arg)
+object_from_c_native_array_arg(struct array_info *ai, GIArgument *arg)
 {
     SCM obj = SCM_UNDEFINED;
 
-    switch (ai->item_type_tag)
-    {
+    switch (ai->item_type_tag) {
     case GI_TYPE_TAG_INT8:
     case GI_TYPE_TAG_UINT8:
     case GI_TYPE_TAG_INT16:
@@ -2105,12 +1970,10 @@ object_from_c_native_array_arg(struct array_info *ai,
         // we already determined the item size earlier, nothing to do here
         break;
     case GI_TYPE_TAG_INTERFACE:
-        switch (ai->referenced_base_type)
-        {
+        switch (ai->referenced_base_type) {
         case GI_INFO_TYPE_ENUM:
         case GI_INFO_TYPE_FLAGS:
-            if (ai->item_is_ptr)
-            {
+            if (ai->item_is_ptr) {
                 // Don't think there are any output arrays of pointers to flags or enums
                 g_critical("Unhandled array type in %s:%d", __FILE__, __LINE__);
                 g_assert_not_reached();
@@ -2132,24 +1995,22 @@ object_from_c_native_array_arg(struct array_info *ai,
     case GI_TYPE_TAG_UTF8:
     case GI_TYPE_TAG_FILENAME:
     {
-        size_t len = array_length (ai, arg);
+        size_t len = array_length(ai, arg);
         SCM out_iter;
 
-        obj = scm_make_list (scm_from_size_t (len), SCM_BOOL_F);
+        obj = scm_make_list(scm_from_size_t(len), SCM_BOOL_F);
         out_iter = obj;
-        for (int i = 0; i < len; i ++)
-        {
+        for (int i = 0; i < len; i++) {
             char *p = ((char **)arg->v_pointer)[i];
-            if (p)
-            {
+            if (p) {
                 SCM entry;
                 if (ai->item_type_tag == GI_TYPE_TAG_UTF8)
                     entry = scm_from_utf8_string(((char **)arg->v_pointer)[i]);
                 else
                     entry = scm_from_locale_string(((char **)arg->v_pointer)[i]);
-                scm_set_car_x (out_iter, entry);
+                scm_set_car_x(out_iter, entry);
             }
-            out_iter = scm_cdr (out_iter);
+            out_iter = scm_cdr(out_iter);
         }
         break;
     }
@@ -2158,10 +2019,9 @@ object_from_c_native_array_arg(struct array_info *ai,
         g_assert_not_reached();
     }
 
-    if (SCM_UNBNDP(obj) && ai->item_size)
-    {
-        size_t _array_length = array_length (ai, arg);
-        g_assert_cmpint (_array_length, !=, -1);
+    if (SCM_UNBNDP(obj) && ai->item_size) {
+        size_t _array_length = array_length(ai, arg);
+        g_assert_cmpint(_array_length, !=, -1);
         size_t len = _array_length * ai->item_size;
         // FIXME: maybe return a typed vector or list
         obj = scm_c_make_bytevector(len);
@@ -2172,8 +2032,7 @@ object_from_c_native_array_arg(struct array_info *ai,
 }
 
 static SCM
-object_from_c_byte_array_arg(struct array_info *ai,
-                             GIArgument *arg)
+object_from_c_byte_array_arg(struct array_info *ai, GIArgument *arg)
 {
     GByteArray *byte_array = arg->v_pointer;
     SCM obj = scm_c_make_bytevector(byte_array->len);
@@ -2186,8 +2045,7 @@ object_from_c_byte_array_arg(struct array_info *ai,
 }
 
 static SCM
-object_from_c_garray_arg(struct array_info *ai,
-                         GIArgument *arg)
+object_from_c_garray_arg(struct array_info *ai, GIArgument *arg)
 {
     GArray *array = arg->v_pointer;
     gpointer data = array->data;
@@ -2195,24 +2053,23 @@ object_from_c_garray_arg(struct array_info *ai,
 
     // We hopefully never have to deal with GArrays of pointer types,
     // given that GPtrArray exists.
-    g_assert_false (ai->item_is_ptr);
-    g_assert_cmpint (ai->item_size, !=, 0);
+    g_assert_false(ai->item_is_ptr);
+    g_assert_cmpint(ai->item_size, !=, 0);
 
-    obj = scm_c_make_vector (array->len, SCM_UNDEFINED);
+    obj = scm_c_make_vector(array->len, SCM_UNDEFINED);
 
     scm_t_array_handle handle;
     gsize len, inc, item_size = ai->item_size;
     SCM *elt;
 
-    elt = scm_vector_writable_elements (obj, &handle, &len, &inc);
-    g_assert (len == array->len);
+    elt = scm_vector_writable_elements(obj, &handle, &len, &inc);
+    g_assert(len == array->len);
 
-    for (gsize i = 0; i < len; i++, elt += inc, data += item_size)
-    {
-        *elt = scm_c_make_bytevector (item_size);
-        memcpy (SCM_BYTEVECTOR_CONTENTS(*elt), data, item_size);
+    for (gsize i = 0; i < len; i++, elt += inc, data += item_size) {
+        *elt = scm_c_make_bytevector(item_size);
+        memcpy(SCM_BYTEVECTOR_CONTENTS(*elt), data, item_size);
     }
-    scm_array_handle_release (&handle);
+    scm_array_handle_release(&handle);
 
     return obj;
 }
@@ -2222,14 +2079,12 @@ convert_const_void_pointer_arg_to_object(GIArgument *arg, SCM *obj)
 {
     // There are some boxes
     int i = 0;
-    while (i < 26)
-    {
-        if (arg->v_pointer == &(boxes[i]))
-        {
+    while (i < 26) {
+        if (arg->v_pointer == &(boxes[i])) {
             *obj = boxes[i];
             return;
         }
-        i ++;
+        i++;
     }
     *obj = scm_from_pointer(arg->v_pointer, NULL);
 }
@@ -2239,31 +2094,25 @@ static int
 arg_struct_to_scm(GIArgument *arg,
                   GIInterfaceInfo *interface_info,
                   GType g_type,
-                  GITransfer transfer,
-                  gboolean is_allocated,
-                  gboolean is_foreign,
-                  SCM obj)
+                  GITransfer transfer, gboolean is_allocated, gboolean is_foreign, SCM obj)
 {
     // Once we get here, INTERFACE_INFO says we are a struct or
     // union, and g_type is the GObject GType of that struct or
     // union.
-    if (arg->v_pointer == NULL)
-    {
+    if (arg->v_pointer == NULL) {
         obj = SCM_BOOL_F;
         return 0;
     }
 
     // A struct/union/box containing a simple value?  Let's just unbox
     // that now.
-    if (g_type_is_a(g_type, G_TYPE_VALUE))
-    {
+    if (g_type_is_a(g_type, G_TYPE_VALUE)) {
         obj = gi_gvalue_as_scm(arg->v_pointer, FALSE);
         return 0;
     }
 
     // All the foreign types.
-    else if (is_foreign)
-    {
+    else if (is_foreign) {
         // FIXME: this is where you look up a special handler for
         // Cairo types
         return GI_GIARGUMENT_UNHANDLED_FOREIGN_TYPE;
@@ -2271,40 +2120,35 @@ arg_struct_to_scm(GIArgument *arg,
 
     // All the rest of the boxed types get re-wrapped into a
     // Scheme-friendly refcounted box.
-    else
-    {
+    else {
         gboolean copy_boxed = FALSE;
         gboolean own_ref = FALSE;
-        if (g_type_is_a(g_type, G_TYPE_BOXED))
-        {
+        if (g_type_is_a(g_type, G_TYPE_BOXED)) {
             if (transfer == GI_TRANSFER_EVERYTHING || is_allocated)
                 copy_boxed = TRUE;
             if (is_allocated && g_struct_info_get_size(interface_info) > 0)
                 own_ref = TRUE;
             obj = gir_new_gbox(SPTR_HOLDS_GBOXED, g_type, arg->v_pointer, copy_boxed);
         }
-        else if (g_type_is_a(g_type, G_TYPE_POINTER))
-        {
+        else if (g_type_is_a(g_type, G_TYPE_POINTER)) {
             // Struct or union containing a pointer
-            obj = gir_new_gbox(SPTR_HOLDS_POINTER, g_type, arg->v_pointer, transfer == GI_TRANSFER_EVERYTHING);
+            obj =
+                gir_new_gbox(SPTR_HOLDS_POINTER, g_type, arg->v_pointer,
+                             transfer == GI_TRANSFER_EVERYTHING);
         }
-        else if (g_type_is_a(g_type, G_TYPE_VARIANT))
-        {
-            if (transfer == GI_TRANSFER_NOTHING)
-            {
+        else if (g_type_is_a(g_type, G_TYPE_VARIANT)) {
+            if (transfer == GI_TRANSFER_NOTHING) {
                 g_variant_ref_sink(arg->v_pointer);
             }
             obj = gir_new_gbox(SPTR_HOLDS_STRUCT, g_type, arg->v_pointer, FALSE);
         }
-        else if (g_type == G_TYPE_NONE)
-        {
+        else if (g_type == G_TYPE_NONE) {
             if (transfer == GI_TRANSFER_EVERYTHING || is_allocated)
                 obj = gir_new_gbox(SPTR_HOLDS_STRUCT, g_type, arg->v_pointer, TRUE);
             else
                 obj = gir_new_gbox(SPTR_HOLDS_STRUCT, g_type, arg->v_pointer, FALSE);
         }
-        else
-        {
+        else {
             g_critical("Unhandled argument type, %s: %d", __FILE__, __LINE__);
             return GI_GIARGUMENT_UNHANDLED_TYPE;
         }
@@ -2326,33 +2170,25 @@ gi_giargument_check_scm_type(SCM obj, GIArgInfo *ai, char **errstr)
 
     g_assert(dir == GI_DIRECTION_IN || dir == GI_DIRECTION_INOUT);
 
-    if (!is_ptr)
-    {
-        if (TYPE_TAG_IS_EXACT_INTEGER(type_tag))
-        {
-            if (!scm_is_exact_integer(obj))
-            {
+    if (!is_ptr) {
+        if (TYPE_TAG_IS_EXACT_INTEGER(type_tag)) {
+            if (!scm_is_exact_integer(obj)) {
                 *errstr = g_strdup_printf("expected exact integer");
                 ok = FALSE;
             }
-            else
-            {
-                if (TYPE_TAG_IS_SIGNED_INTEGER(type_tag))
-                {
+            else {
+                if (TYPE_TAG_IS_SIGNED_INTEGER(type_tag)) {
                     intmax_t val = scm_to_intmax(obj);
-                    if (val < intmin[type_tag] || val > intmax[type_tag])
-                    {
+                    if (val < intmin[type_tag] || val > intmax[type_tag]) {
                         *errstr = g_strdup_printf("integer out of range");
                         ok = FALSE;
                     }
                     else
                         ok = TRUE;
                 }
-                else
-                {
+                else {
                     uintmax_t val = scm_to_uintmax(obj);
-                    if (val > uintmax[type_tag])
-                    {
+                    if (val > uintmax[type_tag]) {
                         *errstr = g_strdup_printf("unsigned integer out of range");
                         ok = FALSE;
                     }
@@ -2361,23 +2197,18 @@ gi_giargument_check_scm_type(SCM obj, GIArgInfo *ai, char **errstr)
                 }
             }
         }
-        else if (TYPE_TAG_IS_REAL_NUMBER(type_tag))
-        {
-            if (!scm_is_real(obj))
-            {
+        else if (TYPE_TAG_IS_REAL_NUMBER(type_tag)) {
+            if (!scm_is_real(obj)) {
                 *errstr = g_strdup_printf("expected real number");
                 ok = FALSE;
             }
-            else
-            {
+            else {
                 // FIXME, if you really wanted to, you could make a
                 // scheme integer bigger than DBL_MAX, so this would
                 // throw.
                 double val = scm_to_double(obj);
-                if (type_tag == GI_TYPE_TAG_FLOAT)
-                {
-                    if (val < -G_MAXFLOAT || val > G_MAXFLOAT)
-                    {
+                if (type_tag == GI_TYPE_TAG_FLOAT) {
+                    if (val < -G_MAXFLOAT || val > G_MAXFLOAT) {
                         *errstr = g_strdup_printf("real number out of range");
                         ok = FALSE;
                     }
@@ -2388,48 +2219,40 @@ gi_giargument_check_scm_type(SCM obj, GIArgInfo *ai, char **errstr)
                     ok = TRUE;
             }
         }
-        else if (type_tag == GI_TYPE_TAG_BOOLEAN)
-        {
-            if (!scm_is_eq(obj, SCM_BOOL_F) && !scm_is_eq(obj, SCM_BOOL_T))
-            {
+        else if (type_tag == GI_TYPE_TAG_BOOLEAN) {
+            if (!scm_is_eq(obj, SCM_BOOL_F) && !scm_is_eq(obj, SCM_BOOL_T)) {
                 *errstr = g_strdup_printf("expected boolean");
                 ok = FALSE;
             }
             else
                 ok = TRUE;
         }
-        else
-        {
+        else {
             *errstr = g_strdup_printf("unhandled type %u", type_tag);
             ok = FALSE;
         }
     }
-    else /* is_ptr */
-    {
+    else {                      /* is_ptr */
+
         if (TYPE_TAG_IS_EXACT_INTEGER(type_tag)
             || TYPE_TAG_IS_REAL_NUMBER(type_tag)
             || (type_tag == GI_TYPE_TAG_UTF8)
             || (type_tag == GI_TYPE_TAG_FILENAME)
-            || (type_tag == GI_TYPE_TAG_VOID))
-        {
-            if (!scm_is_bytevector(obj) && !scm_is_string(obj))
-            {
+            || (type_tag == GI_TYPE_TAG_VOID)) {
+            if (!scm_is_bytevector(obj) && !scm_is_string(obj)) {
                 *errstr = g_strdup_printf("expected bytevector or string");
                 ok = FALSE;
             }
             else
                 ok = TRUE;
         }
-        else if (type_tag == GI_TYPE_TAG_INTERFACE)
-        {
+        else if (type_tag == GI_TYPE_TAG_INTERFACE) {
             ok = TRUE;
         }
-        else if (type_tag == GI_TYPE_TAG_ARRAY)
-        {
+        else if (type_tag == GI_TYPE_TAG_ARRAY) {
             ok = TRUE;
         }
-        else
-        {
+        else {
             *errstr = g_strdup_printf("unhandled pointer type %u", type_tag);
             ok = FALSE;
         }
@@ -2439,14 +2262,11 @@ gi_giargument_check_scm_type(SCM obj, GIArgInfo *ai, char **errstr)
 
 gboolean
 gi_giargument_to_gssize(const char *func,
-                        GIArgument *arg_in,
-                        GITypeTag type_tag,
-                        gssize *gssize_out)
+                        GIArgument *arg_in, GITypeTag type_tag, gssize *gssize_out)
 {
     const gchar *type_name = g_type_tag_to_string(type_tag);
 
-    switch (type_tag)
-    {
+    switch (type_tag) {
     case GI_TYPE_TAG_INT8:
         *gssize_out = arg_in->v_int8;
         return TRUE;
@@ -2466,8 +2286,7 @@ gi_giargument_to_gssize(const char *func,
         *gssize_out = arg_in->v_uint32;
         return TRUE;
     case GI_TYPE_TAG_INT64:
-        if (arg_in->v_int64 > G_MAXSSIZE || arg_in->v_int64 < G_MINSSIZE)
-        {
+        if (arg_in->v_int64 > G_MAXSSIZE || arg_in->v_int64 < G_MINSSIZE) {
             scm_misc_error(func,
                            "Unable to marshal ~A to gssize",
                            scm_list_1(scm_from_utf8_string(type_name)));
@@ -2476,8 +2295,7 @@ gi_giargument_to_gssize(const char *func,
         *gssize_out = (gssize)arg_in->v_int64;
         return TRUE;
     case GI_TYPE_TAG_UINT64:
-        if (arg_in->v_uint64 > G_MAXSSIZE)
-        {
+        if (arg_in->v_uint64 > G_MAXSSIZE) {
             scm_misc_error(func,
                            "Unable to marshal ~A to gssize",
                            scm_list_1(scm_from_utf8_string(type_name)));
@@ -2495,22 +2313,22 @@ gi_giargument_to_gssize(const char *func,
 
 #if 0
 static GITypeTag
-get_storage_type (GITypeInfo *type_info)
+get_storage_type(GITypeInfo *type_info)
 {
-    GITypeTag type_tag = g_type_info_get_tag (type_info);
+    GITypeTag type_tag = g_type_info_get_tag(type_info);
 
     if (type_tag == GI_TYPE_TAG_INTERFACE) {
-        GIBaseInfo *iface = g_type_info_get_interface (type_info);
-        switch (g_base_info_get_type (iface)) {
+        GIBaseInfo *iface = g_type_info_get_interface(type_info);
+        switch (g_base_info_get_type(iface)) {
         case GI_INFO_TYPE_ENUM:
         case GI_INFO_TYPE_FLAGS:
-            type_tag = g_enum_info_get_storage_type ((GIEnumInfo *)iface);
+            type_tag = g_enum_info_get_storage_type((GIEnumInfo *)iface);
             break;
         default:
             /* FIXME: we might have something to do for other types */
             break;
         }
-        g_base_info_unref (iface);
+        g_base_info_unref(iface);
     }
     return type_tag;
 }
@@ -2518,32 +2336,31 @@ get_storage_type (GITypeInfo *type_info)
 
 #if 0
 static void
-hash_pointer_to_arg (GIArgument *arg,
-                     GITypeInfo *type_info)
+hash_pointer_to_arg(GIArgument *arg, GITypeInfo *type_info)
 {
-    GITypeTag type_tag = get_storage_type (type_info);
+    GITypeTag type_tag = get_storage_type(type_info);
 
     switch (type_tag) {
     case GI_TYPE_TAG_INT8:
-        arg->v_int8 = (gint8)GPOINTER_TO_INT (arg->v_pointer);
+        arg->v_int8 = (gint8) GPOINTER_TO_INT(arg->v_pointer);
         break;
     case GI_TYPE_TAG_INT16:
-        arg->v_int16 = (gint16)GPOINTER_TO_INT (arg->v_pointer);
+        arg->v_int16 = (gint16) GPOINTER_TO_INT(arg->v_pointer);
         break;
     case GI_TYPE_TAG_INT32:
-        arg->v_int32 = (gint32)GPOINTER_TO_INT (arg->v_pointer);
+        arg->v_int32 = (gint32) GPOINTER_TO_INT(arg->v_pointer);
         break;
     case GI_TYPE_TAG_UINT8:
-        arg->v_uint8 = (guint8)GPOINTER_TO_UINT (arg->v_pointer);
+        arg->v_uint8 = (guint8) GPOINTER_TO_UINT(arg->v_pointer);
         break;
     case GI_TYPE_TAG_UINT16:
-        arg->v_uint16 = (guint16)GPOINTER_TO_UINT (arg->v_pointer);
+        arg->v_uint16 = (guint16) GPOINTER_TO_UINT(arg->v_pointer);
         break;
     case GI_TYPE_TAG_UINT32:
-        arg->v_uint32 = (guint32)GPOINTER_TO_UINT (arg->v_pointer);
+        arg->v_uint32 = (guint32) GPOINTER_TO_UINT(arg->v_pointer);
         break;
     case GI_TYPE_TAG_GTYPE:
-        arg->v_size = GPOINTER_TO_SIZE (arg->v_pointer);
+        arg->v_size = GPOINTER_TO_SIZE(arg->v_pointer);
         break;
     case GI_TYPE_TAG_UTF8:
     case GI_TYPE_TAG_FILENAME:
@@ -2551,38 +2368,37 @@ hash_pointer_to_arg (GIArgument *arg,
     case GI_TYPE_TAG_ARRAY:
         break;
     default:
-        g_critical ("Unsupported type %s", g_type_tag_to_string(type_tag));
+        g_critical("Unsupported type %s", g_type_tag_to_string(type_tag));
     }
 }
 
 static gpointer
-arg_to_hash_pointer (const GIArgument *arg,
-                     GITypeInfo       *type_info)
+arg_to_hash_pointer(const GIArgument *arg, GITypeInfo *type_info)
 {
-    GITypeTag type_tag = gi_get_storage_type (type_info);
+    GITypeTag type_tag = gi_get_storage_type(type_info);
 
     switch (type_tag) {
     case GI_TYPE_TAG_INT8:
-        return GINT_TO_POINTER (arg->v_int8);
+        return GINT_TO_POINTER(arg->v_int8);
     case GI_TYPE_TAG_UINT8:
-        return GINT_TO_POINTER (arg->v_uint8);
+        return GINT_TO_POINTER(arg->v_uint8);
     case GI_TYPE_TAG_INT16:
-        return GINT_TO_POINTER (arg->v_int16);
+        return GINT_TO_POINTER(arg->v_int16);
     case GI_TYPE_TAG_UINT16:
-        return GINT_TO_POINTER (arg->v_uint16);
+        return GINT_TO_POINTER(arg->v_uint16);
     case GI_TYPE_TAG_INT32:
-        return GINT_TO_POINTER (arg->v_int32);
+        return GINT_TO_POINTER(arg->v_int32);
     case GI_TYPE_TAG_UINT32:
-        return GINT_TO_POINTER (arg->v_uint32);
+        return GINT_TO_POINTER(arg->v_uint32);
     case GI_TYPE_TAG_GTYPE:
-        return GSIZE_TO_POINTER (arg->v_size);
+        return GSIZE_TO_POINTER(arg->v_size);
     case GI_TYPE_TAG_UTF8:
     case GI_TYPE_TAG_FILENAME:
     case GI_TYPE_TAG_INTERFACE:
     case GI_TYPE_TAG_ARRAY:
         return arg->v_pointer;
     default:
-        g_critical ("Unsupported type %s", g_type_tag_to_string(type_tag));
+        g_critical("Unsupported type %s", g_type_tag_to_string(type_tag));
         return arg->v_pointer;
     }
 }
@@ -2599,9 +2415,7 @@ arg_to_hash_pointer (const GIArgument *arg,
  * Returns: The length of the array or -1 on failure.
  */
 gssize
-gi_argument_array_length_marshal(gsize length_arg_index,
-                                 void *user_data1,
-                                 void *user_data2)
+gi_argument_array_length_marshal(gsize length_arg_index, void *user_data1, void *user_data2)
 {
     GIArgInfo length_arg_info;
     GITypeInfo length_type_info;
@@ -2610,34 +2424,28 @@ gi_argument_array_length_marshal(gsize length_arg_index,
     GValue *values = (GValue *)user_data1;
     GICallableInfo *callable_info = (GICallableInfo *)user_data2;
 
-    g_callable_info_load_arg(callable_info,
-                             (gint)length_arg_index, &length_arg_info);
+    g_callable_info_load_arg(callable_info, (gint)length_arg_index, &length_arg_info);
     g_arg_info_load_type(&length_arg_info, &length_type_info);
 
-    length_arg = gi_giargument_from_g_value(&(values[length_arg_index]),
-                                            &length_type_info);
+    length_arg = gi_giargument_from_g_value(&(values[length_arg_index]), &length_type_info);
     if (!gi_giargument_to_gssize(NULL,
                                  &length_arg,
-                                 g_type_info_get_tag(&length_type_info),
-                                 &array_len))
-    {
+                                 g_type_info_get_tag(&length_type_info), &array_len)) {
         return -1;
     }
 
     return array_len;
 }
 
-void gi_giargument_release(GIArgument *arg,
-                           GITypeInfo *type_info,
-                           GITransfer transfer,
-                           GIDirection direction)
+void
+gi_giargument_release(GIArgument *arg,
+                      GITypeInfo *type_info, GITransfer transfer, GIDirection direction)
 {
     GITypeTag type_tag;
 
     type_tag = g_type_info_get_tag(type_info);
 
-    switch (type_tag)
-    {
+    switch (type_tag) {
     case GI_TYPE_TAG_VOID:
         /* Don't do anything, it's transparent to the C side */
         break;
@@ -2660,8 +2468,7 @@ void gi_giargument_release(GIArgument *arg,
         /* With allow-none support the string could be NULL */
         if ((arg->v_string != NULL &&
              (direction == GI_DIRECTION_IN && transfer == GI_TRANSFER_NOTHING)) ||
-            (direction == GI_DIRECTION_OUT && transfer == GI_TRANSFER_EVERYTHING))
-        {
+            (direction == GI_DIRECTION_OUT && transfer == GI_TRANSFER_EVERYTHING)) {
             g_free(arg->v_string);
         }
         break;
@@ -2677,20 +2484,20 @@ scm_box(SCM sym, SCM val)
 {
     SCM_ASSERT(scm_is_symbol(sym), sym, SCM_ARG1, "box");
     char *label = scm_to_utf8_string(scm_symbol_to_string(sym));
-    if (strlen(label) != 1 || label[0] < 'A' || label[0] > 'Z')
-    {
-        free (label);
+    if (strlen(label) != 1 || label[0] < 'A' || label[0] > 'Z') {
+        free(label);
         scm_misc_error("box", "unknown box label ~s", scm_list_1(sym));
-        g_return_val_if_reached (SCM_UNSPECIFIED);
+        g_return_val_if_reached(SCM_UNSPECIFIED);
     }
-    boxes[label[0]-'A'] = val;
-    return scm_from_pointer(&(boxes[label[0]-'A']), NULL);
+    boxes[label[0] - 'A'] = val;
+    return scm_from_pointer(&(boxes[label[0] - 'A']), NULL);
 }
 
 
-void gi_init_giargument(void)
+void
+gi_init_giargument(void)
 {
-    for (int i = 0; i < 26; i ++)
+    for (int i = 0; i < 26; i++)
         boxes[i] = SCM_UNSPECIFIED;
 
     SCONSTX(GI_TYPE_TAG_VOID);

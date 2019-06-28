@@ -16,6 +16,7 @@
 .libs
 *.out
 *.go
+*.gresource
 
 GPATH
 GRTAGS

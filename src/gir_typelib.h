@@ -16,6 +16,6 @@
 #ifndef _GIR_TYPELIB_H
 #define _GIR_TYPELIB_H
 
-void  gir_init_typelib(void);
+void gir_init_typelib(void);
 
 #endif

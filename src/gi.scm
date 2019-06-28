@@ -17,6 +17,10 @@
             connect
             use-typelibs))
 
+(eval-when (expand load eval)
+  ;; required for %typelib-module-name, which is used at expand time
+  (load-extension "libguile-gi" "gir_init_typelib_private"))
+
 ;; This macro derives from
 ;; https:;;lists.gnu.org/archive/html/guile-user/2018-12/msg00037.html
 
@@ -38,10 +42,6 @@
                                   (syntax->datum #'method))))
          #'(signal-connect self method-str arg ...))))))
 
-(define (%gi-scheme-module name version)
-  (list '%gi
-        (string->symbol (string-append name "-" version))))
-
 (define (%gi->module-use x lib version params)
   (cond
    ((not (string? (syntax->datum lib)))
@@ -49,8 +49,8 @@
    ((not (string? (syntax->datum version)))
     #`(syntax-error "expected string but got " version))
    (else
-    (let ((module (datum->syntax x (%gi-scheme-module (syntax->datum lib)
-                                                      (syntax->datum version)))))
+    (let ((module (datum->syntax x (%typelib-module-name (syntax->datum lib)
+                                                         (syntax->datum version)))))
       #`(#,module #,@params)))))
 
 (define (%gi->module-def x lib version)
@@ -60,17 +60,11 @@
    ((not (string? (syntax->datum version)))
     #`(syntax-error "expected string but got" version))
    (else
-    (let ((module (datum->syntax x (%gi-scheme-module (syntax->datum lib)
-                                                      (syntax->datum version)))))
+    (let ((module (datum->syntax x (%typelib-module-name (syntax->datum lib)
+                                                         (syntax->datum version)))))
 
       #`(unless (resolve-module '#,module #:ensure #f)
-          (save-module-excursion
-           (lambda ()
-             (eval
-              '(begin (define-module #,module
-                        #:use-module (gi))
-                      (typelib-load #,lib #,version))
-              (interaction-environment)))))))))
+          (%typelib-define-module #,lib #,version))))))
 
 (define-syntax use-typelibs
   (lambda (x)
@@ -97,7 +91,6 @@
          #`(eval-when (expand load eval)
              #,@module-defs
              (use-modules #,@module-uses)))))))
-
 
 (load-extension "libguile-gi" "gir_init")
 

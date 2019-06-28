@@ -103,9 +103,9 @@ typedef struct _GirPredicate
 } GirPredicate;
 
 
-static SCM   gir_type_make_fo_type_from_name(const gchar *type_class_name);
+static SCM gir_type_make_fo_type_from_name(const gchar *type_class_name);
 static void *gir_type_create_predicate(const char *name, SCM fo_type);
-static void  gir_type_predicate_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data);
+static void gir_type_predicate_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data);
 
 // Given a GType integer but no introspection information, this stores
 // that GType in our hash table of known types without creating an
@@ -117,10 +117,9 @@ gir_type_register(GType gtype)
 
     GType parent = g_type_parent(gtype);
     if (parent != 0)
-        gir_type_register (parent);
+        gir_type_register(parent);
 
-    if (!g_hash_table_contains(gir_type_gtype_hash, GSIZE_TO_POINTER(gtype)))
-    {
+    if (!g_hash_table_contains(gir_type_gtype_hash, GSIZE_TO_POINTER(gtype))) {
         g_hash_table_insert(gir_type_gtype_hash, GSIZE_TO_POINTER(gtype), NULL);
         g_debug("Registering a new GType: %zu -> %s", gtype, g_type_name(gtype));
     }
@@ -132,7 +131,7 @@ gir_type_register(GType gtype)
 void
 gir_type_define(GType gtype)
 {
-    g_assert (GSIZE_TO_POINTER(gtype) != NULL);
+    g_assert(GSIZE_TO_POINTER(gtype) != NULL);
     // Make a foreign object type for instances of this GType.
     // All of our custom introspected foreign object types will
     // have the same slots.
@@ -141,48 +140,45 @@ gir_type_define(GType gtype)
     gboolean newkey;
     gpointer orig_key, value;
     newkey = g_hash_table_lookup_extended(gir_type_gtype_hash,
-                                          GSIZE_TO_POINTER(gtype),
-                                          &orig_key,
-                                          &value);
-    if (newkey == FALSE || value == NULL)
-    {
+                                          GSIZE_TO_POINTER(gtype), &orig_key, &value);
+    if (newkey == FALSE || value == NULL) {
         GType parent = g_type_parent(gtype);
         if (parent != 0)
-            gir_type_register (parent);
+            gir_type_register(parent);
 
         gchar *type_class_name = g_strdup_printf("<%s>", g_type_name(gtype));
         SCM fo_type = gir_type_make_fo_type_from_name(type_class_name);
         scm_permanent_object(scm_c_define(type_class_name, fo_type));
-        scm_c_export (type_class_name, NULL);
+        scm_c_export(type_class_name, NULL);
         newkey = g_hash_table_insert(gir_type_gtype_hash,
-                                     GSIZE_TO_POINTER(gtype),
-                                     SCM_UNPACK_POINTER(fo_type));
+                                     GSIZE_TO_POINTER(gtype), SCM_UNPACK_POINTER(fo_type));
         if (newkey)
-            g_debug("Creating a new GType foreign object type: %zu -> %s aka %s", gtype, type_class_name, g_type_name(gtype));
+            g_debug("Creating a new GType foreign object type: %zu -> %s aka %s", gtype,
+                    type_class_name, g_type_name(gtype));
         else
-            g_debug("Updating a GType foreign object type: %zu -> %s aka %s", gtype, type_class_name, g_type_name(gtype));
+            g_debug("Updating a GType foreign object type: %zu -> %s aka %s", gtype,
+                    type_class_name, g_type_name(gtype));
 #if ENABLE_GIR_TYPE_SCM_HASH
-        g_hash_table_insert (gir_type_scm_hash,
-                             SCM_UNPACK_POINTER (fo_type),
-                             GSIZE_TO_POINTER (gtype));
+        g_hash_table_insert(gir_type_scm_hash,
+                            SCM_UNPACK_POINTER(fo_type), GSIZE_TO_POINTER(gtype));
 #endif
 
         g_free(type_class_name);
 #if ENABLE_GIR_TYPE_SCM_HASH
-        g_debug ("Hash table sizes %d %d", g_hash_table_size(gir_type_gtype_hash),
-                 g_hash_table_size (gir_type_scm_hash));
+        g_debug("Hash table sizes %d %d", g_hash_table_size(gir_type_gtype_hash),
+                g_hash_table_size(gir_type_scm_hash));
 #else
-        g_debug ("Hash table size %d", g_hash_table_size(gir_type_gtype_hash));
+        g_debug("Hash table size %d", g_hash_table_size(gir_type_gtype_hash));
 #endif
 
-        gchar *type_name = gname_to_scm_name (g_type_name (gtype));
+        gchar *type_name = gname_to_scm_name(g_type_name(gtype));
         gchar *predicate_name = g_strdup_printf("%s?", type_name);
         gpointer func = gir_type_create_predicate(predicate_name, fo_type);
         scm_c_define_gsubr(predicate_name, 1, 0, 0, func);
         scm_c_export(predicate_name, NULL);
 
-        g_free (type_name);
-        g_free (predicate_name);
+        g_free(type_name);
+        g_free(predicate_name);
     }
     else
         g_debug("GType foriegn_object_type already exists for: %zu -> %s",
@@ -194,24 +190,25 @@ gir_type_define(GType gtype)
 SCM
 gir_type_make_object(GType gtype, gpointer obj, GITransfer transfer)
 {
-    g_assert (GSIZE_TO_POINTER(gtype) != NULL);
-    g_assert (obj != NULL);
+    g_assert(GSIZE_TO_POINTER(gtype) != NULL);
+    g_assert(obj != NULL);
 
     if (gtype == G_TYPE_OBJECT)
         gtype = G_OBJECT_TYPE(obj);
 
-    gpointer scm_ptr = g_hash_table_lookup (gir_type_gtype_hash,
-                                            GSIZE_TO_POINTER(gtype));
+    gpointer scm_ptr = g_hash_table_lookup(gir_type_gtype_hash,
+                                           GSIZE_TO_POINTER(gtype));
 
     if (scm_ptr == NULL)
         return SCM_BOOL_F;
 
-    void *params[6] = {GSIZE_TO_POINTER(gtype),
-                       GINT_TO_POINTER(1),
-                       obj,
-                       NULL,
-                       NULL,
-                       GINT_TO_POINTER(0)};
+    void *params[6] = { GSIZE_TO_POINTER(gtype),
+        GINT_TO_POINTER(1),
+        obj,
+        NULL,
+        NULL,
+        GINT_TO_POINTER(0)
+    };
 
     return scm_make_foreign_object_n(SCM_PACK_POINTER(scm_ptr), 6, params);
 }
@@ -220,7 +217,7 @@ gir_type_make_object(GType gtype, gpointer obj, GITransfer transfer)
 static SCM
 gir_type_make_fo_type_from_name(const gchar *type_class_name)
 {
-    g_assert (type_class_name != NULL);
+    g_assert(type_class_name != NULL);
 
     SCM sname = scm_from_utf8_symbol(type_class_name);
     SCM slots = scm_list_n(scm_from_utf8_symbol("ob_type"),
@@ -241,7 +238,7 @@ gir_type_make_fo_type_from_name(const gchar *type_class_name)
 static void *
 gir_type_create_predicate(const char *name, SCM fo_type)
 {
-    g_assert (name != NULL);
+    g_assert(name != NULL);
 
     GirPredicate *gp = g_new0(GirPredicate, 1);
 
@@ -252,8 +249,7 @@ gir_type_create_predicate(const char *name, SCM fo_type)
     // Allocate the block of memory that FFI uses to hold a closure object,
     // and set a pointer to the corresponding executable address.
     gp->fo_type = fo_type;
-    gp->closure = ffi_closure_alloc(sizeof(ffi_closure),
-                                    &(gp->function_ptr));
+    gp->closure = ffi_closure_alloc(sizeof(ffi_closure), &(gp->function_ptr));
 
     g_return_val_if_fail(gp->closure != NULL, NULL);
     g_return_val_if_fail(gp->function_ptr != NULL, NULL);
@@ -271,11 +267,7 @@ gir_type_create_predicate(const char *name, SCM fo_type)
 
     // Initialize the CIF Call Interface Struct.
     ffi_status prep_ok;
-    prep_ok = ffi_prep_cif(&(gp->cif),
-                           FFI_DEFAULT_ABI,
-                           1,
-                           ffi_ret_type,
-                           ffi_args);
+    prep_ok = ffi_prep_cif(&(gp->cif), FFI_DEFAULT_ABI, 1, ffi_ret_type, ffi_args);
 
     if (prep_ok != FFI_OK)
         scm_misc_error("gir-type-create-predicate",
@@ -285,10 +277,7 @@ gir_type_create_predicate(const char *name, SCM fo_type)
     // STEP 3
     // Initialize the closure
     ffi_status closure_ok;
-    closure_ok = ffi_prep_closure_loc(gp->closure,
-                                      &(gp->cif),
-                                      gir_type_predicate_binding,
-                                      gp,                 // The 'user-data' passed to the function
+    closure_ok = ffi_prep_closure_loc(gp->closure, &(gp->cif), gir_type_predicate_binding, gp,  // The 'user-data' passed to the function
                                       gp->function_ptr);
 
     if (closure_ok != FFI_OK)
@@ -296,7 +285,7 @@ gir_type_create_predicate(const char *name, SCM fo_type)
                        "closure location preparation error #~A",
                        scm_list_1(scm_from_int(closure_ok)));
 
-    g_debug ("Created predicate %s", name);
+    g_debug("Created predicate %s", name);
 
     // We stash the predicates in a list so they may be freed
     // on shutdown.
@@ -310,26 +299,26 @@ gir_type_create_predicate(const char *name, SCM fo_type)
 // It converts an FFI argument to a SCM foreign object.
 // And checks if that foreign object has the type this
 // predicate is testing for.
-static void gir_type_predicate_binding(ffi_cif *cif, void *ret, void **ffi_args,
-                                       void *user_data)
+static void
+gir_type_predicate_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
 {
     GirPredicate *gp = user_data;
 
-    g_assert (cif != NULL);
-    g_assert (ret != NULL);
-    g_assert (ffi_args != NULL);
-    g_assert (user_data != NULL);
+    g_assert(cif != NULL);
+    g_assert(ret != NULL);
+    g_assert(ffi_args != NULL);
+    g_assert(user_data != NULL);
 
     unsigned int n_args = cif->nargs;
 
-    g_assert (n_args == 1);
+    g_assert(n_args == 1);
 
-    SCM arg = SCM_PACK(*(scm_t_bits *)(ffi_args[0]));
+    SCM arg = SCM_PACK(*(scm_t_bits *) (ffi_args[0]));
 
     if (SCM_IS_A_P(arg, gp->fo_type))
-        *(ffi_arg *)ret = SCM_UNPACK(SCM_BOOL_T);
+        *(ffi_arg *) ret = SCM_UNPACK(SCM_BOOL_T);
     else
-        *(ffi_arg *)ret = SCM_UNPACK(SCM_BOOL_F);
+        *(ffi_arg *) ret = SCM_UNPACK(SCM_BOOL_F);
 }
 
 // This routine returns the integer GType ID of a scheme object, that is
@@ -339,12 +328,12 @@ static void gir_type_predicate_binding(ffi_cif *cif, void *ret, void **ffi_args,
 // The last one is accidental, as internally `gir_type_get_gtype_from_obj'
 // is used. This may change in future and should not be relied on.
 GType
-scm_to_gtype (SCM x)
+scm_to_gtype(SCM x)
 {
-    if (scm_is_integer (x))
-        return scm_to_size_t (x);
+    if (scm_is_integer(x))
+        return scm_to_size_t(x);
     else
-        return gir_type_get_gtype_from_obj (x);
+        return gir_type_get_gtype_from_obj(x);
 }
 
 // This routine returns the integer GType ID of a given
@@ -355,26 +344,23 @@ gir_type_get_gtype_from_obj(SCM x)
 {
 #if ENABLE_GIR_TYPE_SCM_HASH
     gpointer value;
-    if ((value = g_hash_table_lookup (gir_type_scm_hash,
-                                      SCM_UNPACK_POINTER (x))))
-        return GPOINTER_TO_SIZE (value);
-    else if (SCM_INSTANCEP (x) &&
-             (value = g_hash_table_lookup (gir_type_scm_hash,
-                                           SCM_UNPACK_POINTER (SCM_CLASS_OF (x)))))
-        return GPOINTER_TO_SIZE (value);
+    if ((value = g_hash_table_lookup(gir_type_scm_hash, SCM_UNPACK_POINTER(x))))
+        return GPOINTER_TO_SIZE(value);
+    else if (SCM_INSTANCEP(x) &&
+             (value = g_hash_table_lookup(gir_type_scm_hash, SCM_UNPACK_POINTER(SCM_CLASS_OF(x)))))
+        return GPOINTER_TO_SIZE(value);
 #else
     SCM klass;
-    if (SCM_INSTANCEP (x))
-        klass = SCM_CLASS_OF (x);
+    if (SCM_INSTANCEP(x))
+        klass = SCM_CLASS_OF(x);
     else
         klass = x;
 
     GHashTableIter iter;
     gpointer key, value;
 
-    g_hash_table_iter_init (&iter, gir_type_gtype_hash);
-    while (g_hash_table_iter_next (&iter, &key, &value))
-    {
+    g_hash_table_iter_init(&iter, gir_type_gtype_hash);
+    while (g_hash_table_iter_next(&iter, &key, &value)) {
         SCM svalue = SCM_PACK_POINTER(value);
         if (scm_is_eq(klass, svalue)
             || scm_is_eq(x, svalue))
@@ -389,31 +375,34 @@ gir_type_get_gtype_from_obj(SCM x)
 // Note that since there is not such thing as undefining
 // a gsubr (no scm_c_undefine_gsubr), we don't normally want
 // to free any of our ffi predicates, except under Valgrind.
-static void gir_type_predicate_free (GirPredicate *gp)
+static void
+gir_type_predicate_free(GirPredicate *gp)
 {
     ffi_closure_free(gp->closure);
     g_free(gp);
 }
 
-void gir_type_free_predicates (void)
+void
+gir_type_free_predicates(void)
 {
-    g_debug ("Freeing type predicates");
-    g_slist_free_full (gir_type_predicates_list, gir_type_predicate_free);
+    g_debug("Freeing type predicates");
+    g_slist_free_full(gir_type_predicates_list, gir_type_predicate_free);
 }
 
 #endif
 
-static void gir_type_free_types (void)
+static void
+gir_type_free_types(void)
 {
-    g_debug ("Freeing gtype hash table");
-    g_hash_table_remove_all (gir_type_gtype_hash);
+    g_debug("Freeing gtype hash table");
+    g_hash_table_remove_all(gir_type_gtype_hash);
 #if ENABLE_GIR_TYPE_SCM_HASH
-    g_hash_table_remove_all (gir_type_scm_hash);
+    g_hash_table_remove_all(gir_type_scm_hash);
 #endif
 }
 
 SCM
-gir_type_get_scheme_type (GType gtype)
+gir_type_get_scheme_type(GType gtype)
 {
     gpointer *scm_ptr = g_hash_table_lookup(gir_type_gtype_hash, GSIZE_TO_POINTER(gtype));
     if (scm_ptr)
@@ -430,9 +419,9 @@ gir_type_get_scheme_type (GType gtype)
 static SCM
 scm_type_get_gtype(SCM x)
 {
-    GType type = gir_type_get_gtype_from_obj (x);
+    GType type = gir_type_get_gtype_from_obj(x);
     if (type != G_TYPE_INVALID)
-        return scm_from_size_t (type);
+        return scm_from_size_t(type);
     else
         return SCM_BOOL_F;
 }
@@ -442,9 +431,10 @@ scm_type_get_gtype(SCM x)
 static SCM
 scm_type_gtype_get_scheme_type(SCM s_gtype)
 {
-    SCM_ASSERT_TYPE(scm_is_integer(s_gtype), s_gtype, SCM_ARG1, "gtype-get-scheme-type", "integer");
+    SCM_ASSERT_TYPE(scm_is_integer(s_gtype), s_gtype, SCM_ARG1, "gtype-get-scheme-type",
+                    "integer");
     GType type = scm_to_uintptr_t(s_gtype);
-    return gir_type_get_scheme_type (type);
+    return gir_type_get_scheme_type(type);
 }
 
 // Given an integer that is a GType, this returns a Guile string of
@@ -455,7 +445,7 @@ scm_type_gtype_get_name(SCM s_gtype)
     SCM_ASSERT_TYPE(scm_is_integer(s_gtype), s_gtype, SCM_ARG1, "gtype-get-name", "integer");
     GType type = scm_to_uintptr_t(s_gtype);
     if (g_hash_table_contains(gir_type_gtype_hash, GSIZE_TO_POINTER(type)))
-        return scm_from_utf8_string (g_type_name (type));
+        return scm_from_utf8_string(g_type_name(type));
 
     return scm_from_utf8_string("invalid");
 }
@@ -469,7 +459,7 @@ scm_type_gtype_get_parent(SCM s_gtype)
     GType type = scm_to_uintptr_t(s_gtype);
 
     if (g_hash_table_contains(gir_type_gtype_hash, GSIZE_TO_POINTER(type)))
-        return scm_from_uintptr_t (g_type_parent (type));
+        return scm_from_uintptr_t(g_type_parent(type));
     return SCM_BOOL_F;
 }
 
@@ -478,11 +468,12 @@ scm_type_gtype_get_parent(SCM s_gtype)
 static SCM
 scm_type_gtype_get_fundamental(SCM s_gtype)
 {
-    SCM_ASSERT_TYPE(scm_is_integer(s_gtype), s_gtype, SCM_ARG1, "gtype-get-fundamental", "integer");
+    SCM_ASSERT_TYPE(scm_is_integer(s_gtype), s_gtype, SCM_ARG1, "gtype-get-fundamental",
+                    "integer");
     GType type = scm_to_uintptr_t(s_gtype);
 
     if (g_hash_table_contains(gir_type_gtype_hash, GSIZE_TO_POINTER(type)))
-        return scm_from_uintptr_t (g_type_fundamental (type));
+        return scm_from_uintptr_t(g_type_fundamental(type));
     return SCM_BOOL_F;
 }
 
@@ -496,15 +487,13 @@ scm_type_gtype_get_children(SCM s_gtype)
 
     SCM ret = SCM_EOL;
 
-    if (g_hash_table_contains(gir_type_gtype_hash, GSIZE_TO_POINTER(type)))
-    {
+    if (g_hash_table_contains(gir_type_gtype_hash, GSIZE_TO_POINTER(type))) {
         GType *children;
         guint n_children, i;
         SCM entry;
 
         children = g_type_children(type, &n_children);
-        for (i = 0; i < n_children; i++)
-        {
+        for (i = 0; i < n_children; i++) {
             entry = scm_from_uintptr_t(children[i]);
             ret = scm_append(scm_list_2(ret, scm_list_1(entry)));
         }
@@ -524,15 +513,13 @@ scm_type_gtype_get_interfaces(SCM s_gtype)
 
     SCM ret = SCM_EOL;
 
-    if (g_hash_table_contains(gir_type_gtype_hash, GSIZE_TO_POINTER(type)))
-    {
+    if (g_hash_table_contains(gir_type_gtype_hash, GSIZE_TO_POINTER(type))) {
         GType *interfaces;
         guint n_interfaces, i;
         SCM entry;
 
         interfaces = g_type_interfaces(type, &n_interfaces);
-        for (i = 0; i < n_interfaces; i++)
-        {
+        for (i = 0; i < n_interfaces; i++) {
             entry = scm_from_uintptr_t(interfaces[i]);
             ret = scm_append(scm_list_2(ret, scm_list_1(entry)));
         }
@@ -586,7 +573,8 @@ scm_type_gtype_is_classed_p(SCM s_gtype)
 static SCM
 scm_type_gtype_is_instantiatable_p(SCM s_gtype)
 {
-    SCM_ASSERT_TYPE(scm_is_integer(s_gtype), s_gtype, SCM_ARG1, "gtype-is-instantiatable?", "integer");
+    SCM_ASSERT_TYPE(scm_is_integer(s_gtype), s_gtype, SCM_ARG1, "gtype-is-instantiatable?",
+                    "integer");
     GType type = scm_to_uintptr_t(s_gtype);
 
     if (g_hash_table_contains(gir_type_gtype_hash, GSIZE_TO_POINTER(type)))
@@ -632,9 +620,8 @@ scm_type_dump_type_table(void)
     gpointer key, value;
     SCM list = SCM_EOL;
 
-    g_hash_table_iter_init (&iter, gir_type_gtype_hash);
-    while (g_hash_table_iter_next (&iter, &key, &value))
-    {
+    g_hash_table_iter_init(&iter, gir_type_gtype_hash);
+    while (g_hash_table_iter_next(&iter, &key, &value)) {
         SCM entry;
         SCM fo_type;
 
@@ -642,10 +629,8 @@ scm_type_dump_type_table(void)
             fo_type = SCM_PACK_POINTER(value);
         else
             fo_type = SCM_BOOL_F;
-        entry = scm_list_3 (scm_from_size_t(key),
-                            scm_from_utf8_string (g_type_name (key)),
-                            fo_type);
-        list = scm_append(scm_list_2 (list, scm_list_1 (entry)));
+        entry = scm_list_3(scm_from_size_t(key), scm_from_utf8_string(g_type_name(key)), fo_type);
+        list = scm_append(scm_list_2(list, scm_list_1(entry)));
     }
     return list;
 }
@@ -654,11 +639,12 @@ static SCM
 scm_type_cast(SCM s_obj, SCM s_fo_type)
 {
     gpointer obj = scm_foreign_object_ref(s_obj, OBJ_SLOT);
-    GType type = gir_type_get_gtype_from_obj (s_fo_type);
+    GType type = gir_type_get_gtype_from_obj(s_fo_type);
     return gir_type_make_object(type, obj, 0);
 }
 
-void gir_init_types(void)
+void
+gir_init_types(void)
 {
 
     gir_type_gtype_hash = g_hash_table_new(g_direct_hash, g_direct_equal);
@@ -667,9 +653,9 @@ void gir_init_types(void)
 #endif
 
 #ifdef GIR_FREE_MEMORY
-    atexit (gir_type_free_predicates);
+    atexit(gir_type_free_predicates);
 #endif
-    atexit (gir_type_free_types);
+    atexit(gir_type_free_types);
 
 #define D(x)                                                            \
     do                                                                  \
@@ -730,9 +716,5 @@ void gir_init_types(void)
                  "gtype-is-interface?",
                  "gtype-is-classed?",
                  "gtype-is-instantiatable?",
-                 "gtype-is-derivable?",
-                 "gtype-is-a?",
-                 "%gtype-dump-table",
-                 "cast",
-                 NULL);
+                 "gtype-is-derivable?", "gtype-is-a?", "%gtype-dump-table", "cast", NULL);
 }

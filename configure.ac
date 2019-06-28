@@ -55,6 +55,8 @@ GUILE_PROGS
 GUILE_FLAGS
 GUILE_SITE_DIR
 
+AC_PATH_PROG([GLIB_COMPILE_RESOURCES],[glib-compile-resources])
+
 ################
 # Guile has three directories that don't follow the GNU Filesystem
 # Heirarchy Standards.  If one follows the GNU FHS, files get installed
@@ -224,6 +226,7 @@ AC_CONFIG_FILES([
  test/Makefile
  tools/Makefile
  examples/Makefile
+ examples/resources/Makefile
  ])
 AC_CONFIG_FILES([tools/uninstalled-env], [chmod +x tools/uninstalled-env])
 AC_CONFIG_FILES([tools/run-guile], [chmod +x tools/run-guile])

@@ -15,8 +15,8 @@ typedef struct _SignalSpec
     GType *param_types;
 } SignalSpec;
 
-SignalSpec *gi_signalspec_from_obj (SCM obj);
-void gi_free_signalspec (SignalSpec *spec);
-void gi_init_gsignal (void);
+SignalSpec *gi_signalspec_from_obj(SCM obj);
+void gi_free_signalspec(SignalSpec *spec);
+void gi_init_gsignal(void);
 
 #endif
