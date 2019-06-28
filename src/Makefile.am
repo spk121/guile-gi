@@ -31,51 +31,29 @@ fo_gen_LDADD = $(GUILE_LIBS) $(GLIB_LIBS)
 EXTRA_DIST = foreign-object-types.ini
 
 BUILT_SOURCES = \
- __gi_genum.h __gi_genum.c \
- __gi_gflags.h __gi_gflags.c \
  __gi_gobject.h __gi_gobject.c \
  __gi_gvalue.h __gi_gvalue.c \
  __gi_gparamspec.h __gi_gparamspec.c \
- __gi_ginterface.h __gi_ginterface.c \
- __gi_gflagscollection.h __gi_gflagscollection.c \
- __gi_genumcollection.h  __gi_genumcollection.c \
  __gi_ginterface.h __gi_ginterface.c
 
-__gi_genum.c: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
-	$(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini .
-__gi_genum.h: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
-	$(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini .
-__gi_gflags.h: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
-	$(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini .
-__gi_gflags.c: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
-	$(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini .
 __gi_gobject.h: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
-	$(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini .
+	$(builddir)/fo_gen$(EXEEXT) $(srcdir)/foreign-object-types.ini .
 __gi_gobject.c: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
-	$(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini .
+	$(builddir)/fo_gen$(EXEEXT) $(srcdir)/foreign-object-types.ini .
 __gi_gvalue.h: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
-	$(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini .
+	$(builddir)/fo_gen$(EXEEXT) $(srcdir)/foreign-object-types.ini .
 __gi_gvalue.c: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
-	$(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini .
+	$(builddir)/fo_gen$(EXEEXT) $(srcdir)/foreign-object-types.ini .
 __gi_gparamspec.h: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
-	$(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini .
+	$(builddir)/fo_gen$(EXEEXT) $(srcdir)/foreign-object-types.ini .
 __gi_gparamspec.c: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
-	$(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini .
+	$(builddir)/fo_gen$(EXEEXT) $(srcdir)/foreign-object-types.ini .
 __gi_ginterface.h: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
-	$(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini .
+	$(builddir)/fo_gen$(EXEEXT) $(srcdir)/foreign-object-types.ini .
 __gi_ginterface.c: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
-	$(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini .
-__gi_gflagscollection.h: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
-	$(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini .
-__gi_gflagscollection.c: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
-	$(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini .
-__gi_genumcollection.h: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
-	$(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini .
-__gi_genumcollection.c: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
-	$(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini .
+	$(builddir)/fo_gen$(EXEEXT) $(srcdir)/foreign-object-types.ini .
 
 nodist_libguile_gi_la_SOURCES = \
- __gi_ginterface.h \
  __gi_gobject.c \
  __gi_gobject.h \
  __gi_gparamspec.c \
