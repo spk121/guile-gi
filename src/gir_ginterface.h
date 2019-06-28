@@ -5,5 +5,5 @@
 extern GQuark guginterface_type_key;
 extern SCM GuGInterface_Type;
 
-void gir_init_ginterface (void);
+void gir_init_ginterface(void);
 #endif

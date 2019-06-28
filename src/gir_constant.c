@@ -33,8 +33,7 @@ gir_constant_define(GIConstantInfo *info)
 
     g_constant_info_get_value(info, &value);
 
-    switch (typetag)
-    {
+    switch (typetag) {
     case GI_TYPE_TAG_BOOLEAN:
         g_debug("defining boolean constant %s as %d", public_name, value.v_boolean);
         ret = scm_from_bool(value.v_boolean);
@@ -80,8 +79,7 @@ gir_constant_define(GIConstantInfo *info)
         ret = scm_from_utf8_string(value.v_string);
         break;
     default:
-        g_critical("Constant %s has unsupported type %d",
-            public_name, typetag);
+        g_critical("Constant %s has unsupported type %d", public_name, typetag);
         ret = SCM_BOOL_F;
     }
     g_constant_info_free_value(info, &value);
@@ -91,7 +89,8 @@ gir_constant_define(GIConstantInfo *info)
     scm_c_export(public_name, NULL);
 }
 
-void gir_init_constant(void)
+void
+gir_init_constant(void)
 {
-    
+
 }

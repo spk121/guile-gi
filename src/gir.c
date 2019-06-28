@@ -47,20 +47,17 @@ void __gcov_dump(void);
 
 void
 gir_log_handler(const gchar *log_domain,
-    GLogLevelFlags log_level,
-    const gchar *message,
-    gpointer user_data)
+                GLogLevelFlags log_level, const gchar *message, gpointer user_data)
 {
     time_t timer;
     char buffer[26];
-    struct tm* tm_info;
+    struct tm *tm_info;
     time(&timer);
     tm_info = localtime(&timer);
     strftime(buffer, 26, "%Y-%m-%d %H:%M:%S", tm_info);
 
     // Opening and closing files as append in Win32 is noticeably slow.
-    if (log_level == G_LOG_LEVEL_DEBUG && !_win32)
-    {
+    if (log_level == G_LOG_LEVEL_DEBUG && !_win32) {
         FILE *fp = fopen("gir-debug-log.xt", "at");
         fprintf(fp, "%s: %s %d %s\n", buffer, log_domain, log_level, message);
         fclose(fp);
@@ -72,7 +69,7 @@ gir_log_handler(const gchar *log_domain,
 
 #ifdef ENABLE_GCOV
 static SCM
-scm_gcov_reset (void)
+scm_gcov_reset(void)
 {
     __gcov_reset();
     return SCM_UNSPECIFIED;
@@ -80,7 +77,7 @@ scm_gcov_reset (void)
 
 
 static SCM
-scm_gcov_dump (void)
+scm_gcov_dump(void)
 {
     __gcov_dump();
     return SCM_UNSPECIFIED;
@@ -120,7 +117,8 @@ gir_init(void)
 #endif
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
     scm_init_guile();
 

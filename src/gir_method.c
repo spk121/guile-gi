@@ -33,7 +33,7 @@ GHashTable *gir_method_hash_table = NULL;
 
 static void gir_fini_method(void);
 
-gchar*
+gchar *
 gir_method_public_name(GICallableInfo *info)
 {
     char *public_name, *tmp_str;
@@ -67,9 +67,8 @@ gir_method_table_insert(GType type, GIFunctionInfo *info)
     GHashTable *subhash = g_hash_table_lookup(gir_method_hash_table,
                                               public_name);
     g_debug("Creating method %s for type %s", public_name, g_type_name(type));
-    if (!subhash)
-    {
-        subhash = g_hash_table_new (g_direct_hash, g_direct_equal);
+    if (!subhash) {
+        subhash = g_hash_table_new(g_direct_hash, g_direct_equal);
         g_hash_table_insert(gir_method_hash_table, public_name, subhash);
     }
     else
@@ -84,8 +83,7 @@ gir_method_lookup(SCM obj, const char *method_name)
 {
     // Look up method by name
     GHashTable *subhash = g_hash_table_lookup(gir_method_hash_table, method_name);
-    if (!subhash)
-    {
+    if (!subhash) {
         g_debug("Could not find a method '%s'", method_name);
         return NULL;
     }
@@ -95,23 +93,16 @@ gir_method_lookup(SCM obj, const char *method_name)
     GHashTableIter iter;
     GType original_type = gir_type_get_gtype_from_obj(obj);
 
-    while (original_type >= 80)
-    {
-        g_hash_table_iter_init (&iter, subhash);
-        while (g_hash_table_iter_next (&iter,
-                                       (gpointer *) (&type),
-                                       (gpointer *) &info))
-        {
+    while (original_type >= 80) {
+        g_hash_table_iter_init(&iter, subhash);
+        while (g_hash_table_iter_next(&iter, (gpointer *) (&type), (gpointer *) & info)) {
             //g_debug("checking if %s should call %s:%s", g_type_name(original_type),
             //        g_type_name(type), method_name);
             //if (g_type_is_a (original_type, type))
             //if (g_type_is_a (type, original_type))
-            if (original_type == type)
-            {
+            if (original_type == type) {
                 g_debug("Matched method %s:%s to object of type %s",
-                        g_type_name(type),
-                        method_name,
-                        g_type_name(original_type));
+                        g_type_name(type), method_name, g_type_name(original_type));
 
                 return info;
             }
@@ -119,8 +110,7 @@ gir_method_lookup(SCM obj, const char *method_name)
         original_type = g_type_parent(original_type);
     }
     g_debug("Could not match any method ::%s to object of type %s",
-            method_name,
-            g_type_name(original_type));
+            method_name, g_type_name(original_type));
     return NULL;
 }
 
@@ -129,24 +119,18 @@ gir_method_explicit_lookup(GType type, const char *method_name)
 {
     // Look up method by name
     GHashTable *subhash = g_hash_table_lookup(gir_method_hash_table, method_name);
-    if (!subhash)
-    {
+    if (!subhash) {
         g_debug("Could not find a method '%s'", method_name);
         return NULL;
     }
 
     GICallableInfo *info;
     info = g_hash_table_lookup(subhash, GSIZE_TO_POINTER(type));
-    if (info)
-    {
-        g_debug("Found method %s::%s",
-                g_type_name(type),
-                method_name);
+    if (info) {
+        g_debug("Found method %s::%s", g_type_name(type), method_name);
         return info;
     }
-    g_debug("Could not find method ::%s of type %s",
-            method_name,
-            g_type_name(type));
+    g_debug("Could not find method ::%s of type %s", method_name, g_type_name(type));
     return NULL;
 }
 
@@ -165,13 +149,12 @@ gir_method_lookup_full(SCM s_object, SCM s_method_name)
     name1 = strtok(method_name, token);
     name2 = strtok(NULL, token);
     if (name2 == NULL)
-        info = gir_method_lookup (s_object, name1);
-    else
-    {
+        info = gir_method_lookup(s_object, name1);
+    else {
         GType type = g_type_from_name(name1);
         info = gir_method_explicit_lookup(type, name2);
     }
-    free (method_name);
+    free(method_name);
     return info;
 }
 
@@ -189,13 +172,10 @@ scm_call_method(SCM s_object, SCM s_method_name, SCM s_list_of_args)
     GICallableInfo *info;
     char *method_name = scm_to_utf8_string(s_method_name);
     info = gir_method_lookup_full(s_object, s_method_name);
-    if (info == NULL)
-    {
+    if (info == NULL) {
         free(method_name);
         scm_misc_error("call-method",
-                       "Cannot find a method '~a' for ~s",
-                       scm_list_2(s_method_name,
-                                  s_object));
+                       "Cannot find a method '~a' for ~s", scm_list_2(s_method_name, s_object));
     }
 
     SCM s_args_str = scm_simple_format(SCM_BOOL_F,
@@ -203,19 +183,16 @@ scm_call_method(SCM s_object, SCM s_method_name, SCM s_list_of_args)
                                        scm_list_1(s_list_of_args));
     char *args_str = scm_to_utf8_string(s_args_str);
     g_debug("Invoking %s%s for object of type %s",
-            method_name,
-            args_str,
-            g_type_name(gir_type_get_gtype_from_obj(s_object)));
+            method_name, args_str, g_type_name(gir_type_get_gtype_from_obj(s_object)));
     free(args_str);
 
     GObject *object = scm_foreign_object_ref(s_object, OBJ_SLOT);
 
     GError *err = NULL;
-    SCM output = gir_function_invoke (method_name, info, object, s_list_of_args, &err);
+    SCM output = gir_function_invoke(method_name, info, object, s_list_of_args, &err);
 
     /* If there is a GError, write an error, free, and exit. */
-    if (err)
-    {
+    if (err) {
         g_debug("Failed to invoke method %s", method_name);
 
         char str[256];
@@ -236,8 +213,8 @@ scm_call_method(SCM s_object, SCM s_method_name, SCM s_list_of_args)
 }
 
 void
-gir_method_document(GString **export, const char *namespace_,
-                   const char *parent, GICallableInfo *info)
+gir_method_document(GString ** export, const char *namespace_,
+                    const char *parent, GICallableInfo *info)
 {
 #if 0
     gint n_args;
@@ -247,20 +224,18 @@ gir_method_document(GString **export, const char *namespace_,
     n_args = g_callable_info_get_n_args(info);
     g_assert(parent != NULL);
 
-    public_name = gir_method_public_name (info);
+    public_name = gir_method_public_name(info);
     lookup_name = g_strdup_printf("%s", g_base_info_get_name(info));
 
     g_string_append_printf(*export, "(define (%s self", public_name);
 
     // Write the docstring
-    for (int i = 0; i < n_args; i++)
-    {
+    for (int i = 0; i < n_args; i++) {
         arg = g_callable_info_get_arg(info, i);
         GIDirection dir = g_arg_info_get_direction(arg);
         if (dir == GI_DIRECTION_IN
             || dir == GI_DIRECTION_INOUT
-            || (dir == GI_DIRECTION_OUT && g_arg_info_is_caller_allocates(arg)))
-        {
+            || (dir == GI_DIRECTION_OUT && g_arg_info_is_caller_allocates(arg))) {
             g_string_append_c(*export, ' ');
             tmp_str = gname_to_scm_name(g_base_info_get_name(arg));
             if (dir == GI_DIRECTION_OUT)
@@ -287,14 +262,12 @@ gir_method_document(GString **export, const char *namespace_,
     g_string_append_printf(*export, "  (gi-method-send self \n");
     g_string_append_printf(*export, "     (gi-method-prepare \"%s\"", lookup_name);
 
-    for (int i = 0; i < n_args; i++)
-    {
+    for (int i = 0; i < n_args; i++) {
         arg = g_callable_info_get_arg(info, i);
         GIDirection dir = g_arg_info_get_direction(arg);
         if (dir == GI_DIRECTION_IN
             || dir == GI_DIRECTION_INOUT
-            || (dir == GI_DIRECTION_OUT && g_arg_info_is_caller_allocates(arg)))
-        {
+            || (dir == GI_DIRECTION_OUT && g_arg_info_is_caller_allocates(arg))) {
             g_string_append_c(*export, ' ');
             tmp_str = gname_to_scm_name(g_base_info_get_name(arg));
             if (dir == GI_DIRECTION_OUT)
@@ -311,12 +284,10 @@ gir_method_document(GString **export, const char *namespace_,
 #endif
 }
 
-void gir_init_method(void)
+void
+gir_init_method(void)
 {
-    gir_method_hash_table = g_hash_table_new_full (g_str_hash,
-                                                   g_str_equal,
-                                                   g_free,
-                                                   NULL);
+    gir_method_hash_table = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
     scm_c_define_gsubr("call-method", 2, 0, 1, scm_call_method);
     scm_c_export("call-method", NULL);
     atexit(gir_fini_method);
@@ -329,18 +300,17 @@ gir_fini_method(void)
     GHashTableIter iter;
     gpointer key, value;
 
-    g_hash_table_iter_init (&iter, gir_method_hash_table);
-    while (g_hash_table_iter_next (&iter, &key, &value))
-    {
+    g_hash_table_iter_init(&iter, gir_method_hash_table);
+    while (g_hash_table_iter_next(&iter, &key, &value)) {
         GHashTable *value_hash = value;
 
         GHashTableIter iter2;
         gpointer key2, value2;
         g_hash_table_iter_init(&iter2, value_hash);
-        while (g_hash_table_iter_next (&iter2, &key2, &value2))
-            g_base_info_unref((GIBaseInfo *) value2);
+        while (g_hash_table_iter_next(&iter2, &key2, &value2))
+            g_base_info_unref((GIBaseInfo *)value2);
         g_hash_table_destroy(value_hash);
     }
-    g_hash_table_destroy (gir_method_hash_table);
+    g_hash_table_destroy(gir_method_hash_table);
     g_debug("Freed method table");
 }

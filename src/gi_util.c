@@ -46,38 +46,32 @@ gi_constant_strip_prefix(const gchar *name, const gchar *strip_prefix)
 char *
 gname_to_scm_name(const char *gname)
 {
-    g_assert (gname != NULL);
-    g_assert (strlen(gname) > 0);
+    g_assert(gname != NULL);
+    g_assert(strlen(gname) > 0);
 
     size_t len = strlen(gname);
     GString *str = g_string_new(NULL);
     gboolean was_lower = FALSE;
 
-    for (size_t i = 0; i < len; i++)
-    {
-        if (g_ascii_islower(gname[i]))
-        {
+    for (size_t i = 0; i < len; i++) {
+        if (g_ascii_islower(gname[i])) {
             g_string_append_c(str, gname[i]);
             was_lower = TRUE;
         }
-        else if (gname[i] == '_' || gname[i] == '-')
-        {
+        else if (gname[i] == '_' || gname[i] == '-') {
             g_string_append_c(str, '-');
             was_lower = FALSE;
         }
-        else if (gname[i] == '?')
-        {
+        else if (gname[i] == '?') {
             // does this even occur?
             g_string_append_c(str, '?');
             was_lower = FALSE;
         }
-        else if (g_ascii_isdigit(gname[i]))
-        {
+        else if (g_ascii_isdigit(gname[i])) {
             g_string_append_c(str, gname[i]);
             was_lower = FALSE;
         }
-        else if (g_ascii_isupper(gname[i]))
-        {
+        else if (g_ascii_isupper(gname[i])) {
             if (was_lower)
                 g_string_append_c(str, '-');
             g_string_append_c(str, g_ascii_tolower(gname[i]));
@@ -88,26 +82,25 @@ gname_to_scm_name(const char *gname)
 }
 
 SCM
-scm_c_list_ref (SCM list, size_t k)
+scm_c_list_ref(SCM list, size_t k)
 {
-    return scm_list_ref (list, scm_from_size_t (k));
+    return scm_list_ref(list, scm_from_size_t(k));
 }
 
 int
-scm_is_list (SCM obj)
+scm_is_list(SCM obj)
 {
-    return scm_is_true (scm_list_p (obj));
+    return scm_is_true(scm_list_p(obj));
 }
 
-void*
-scm_dynwind_or_bust (const char *subr, void *mem)
+void *
+scm_dynwind_or_bust(const char *subr, void *mem)
 {
     if (mem)
-        scm_dynwind_free (mem);
-    else
-    {
+        scm_dynwind_free(mem);
+    else {
         errno = ENOMEM;
-        scm_syserror (subr);
+        scm_syserror(subr);
     }
     return mem;
 }

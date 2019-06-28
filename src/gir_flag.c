@@ -26,25 +26,20 @@ gir_flag_gname_to_scm_constant_name(const char *gname)
     GString *str = g_string_new(NULL);
     gboolean was_lower = FALSE;
 
-    for (size_t i = 0; i < len; i++)
-    {
-        if (g_ascii_islower(gname[i]))
-        {
+    for (size_t i = 0; i < len; i++) {
+        if (g_ascii_islower(gname[i])) {
             g_string_append_c(str, g_ascii_toupper(gname[i]));
             was_lower = TRUE;
         }
-        else if (gname[i] == '_' || gname[i] == '-')
-        {
+        else if (gname[i] == '_' || gname[i] == '-') {
             g_string_append_c(str, '_');
             was_lower = FALSE;
         }
-        else if (g_ascii_isdigit(gname[i]))
-        {
+        else if (g_ascii_isdigit(gname[i])) {
             g_string_append_c(str, gname[i]);
             was_lower = FALSE;
         }
-        else if (g_ascii_isupper(gname[i]))
-        {
+        else if (g_ascii_isupper(gname[i])) {
             if (was_lower)
                 g_string_append_c(str, '_');
             g_string_append_c(str, gname[i]);
@@ -53,8 +48,7 @@ gir_flag_gname_to_scm_constant_name(const char *gname)
     }
 
     char *fptr = strstr(str->str, "_FLAGS");
-    if (fptr)
-    {
+    if (fptr) {
         memcpy(fptr, fptr + 6, str->len - (fptr - str->str) - 6);
         memset(str->str + str->len - 6, 0, 6);
         str->len -= 6;
@@ -76,15 +70,14 @@ gir_flag_public_name(const char *parent, GIBaseInfo *info)
 void
 gir_flag_define(GIEnumInfo *info)
 {
-    g_assert (info != NULL);
+    g_assert(info != NULL);
 
     gint n_values = g_enum_info_get_n_values(info);
     gint i = 0;
     GIValueInfo *vi = NULL;
     char *public_name;
 
-    while (i < n_values)
-    {
+    while (i < n_values) {
         vi = g_enum_info_get_value(info, i);
         public_name = gir_flag_public_name(g_base_info_get_name(info), vi);
         gint64 val = g_value_info_get_value(vi);

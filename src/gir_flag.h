@@ -18,6 +18,10 @@
 #include <girepository.h>
 
 void gir_flag_define(GIEnumInfo *info);
-static inline void gir_flag_document(GString **str, GIEnumInfo *info) {}
-void gir_init_flag (void);
+static inline void
+gir_flag_document(GString ** str, GIEnumInfo *info)
+{
+}
+
+void gir_init_flag(void);
 #endif

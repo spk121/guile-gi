@@ -8,7 +8,7 @@
 GQuark guginterface_type_key;
 GQuark guginterface_info_key;
 
-static void GuGInterface_finalize (SCM x);
+static void GuGInterface_finalize(SCM x);
 
 ////////////////////////////////////////////////////////////////
 // GuGInterface Type: A foreign object type that in an envelope for a
@@ -47,7 +47,7 @@ SCM GuGInterface_Type_Store;
 #define GUGINTERFACE_N_SLOTS 6
 
 static void
-GuGInterface_finalize (SCM x)
+GuGInterface_finalize(SCM x)
 {
 }
 
