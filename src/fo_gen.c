@@ -270,14 +270,18 @@ main(int argc, char **argv)
     g_key_file_set_list_separator(key_file, ',');
     printf("Trying %s\n", argv[1]);
     if (!g_key_file_load_from_file(key_file, argv[1], G_KEY_FILE_NONE, &error)) {
-        if (!g_error_matches(error, G_FILE_ERROR, G_FILE_ERROR_NOENT)) {
-            g_warning("Error loading key file %s", error->message);
-            g_error_free(error);
-            error = NULL;
-            return 1;
-        }
+        g_warning("Error loading key file %s: %s", argv[1], error->message);
+        g_error_free(error);
+        error = NULL;
+        return 1;
     }
     names = g_key_file_get_string_list(key_file, "Foreign Objects", "Names", &n_names, &error);
+    if (!names) {
+        g_warning("Error parsing key file %s", error->message);
+        g_error_free(error);
+        error = NULL;
+        return 1;
+    }
     for (gsize n = 0; n < n_names; n++) {
         char *filename;
         char *filepath;
