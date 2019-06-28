@@ -150,6 +150,11 @@ GTK_ENTRY_TESTS = \
  gtk_entry/set_alignment.scm \
  gtk_entry/set_alignment_zero.scm
 
+GRILO_TESTS = \
+ grilo/audio_simple.scm \
+ grilo/audio_multiple_artists.scm \
+ grilo/init_commandline.scm
+
 TESTS = \
  $(TYPELIB_TESTS) \
  $(VERSION_INFORMATION_TESTS) \
@@ -177,10 +182,13 @@ TESTS = \
  $(FUZZY_MATCH_TESTS) \
  $(PARAMSPEC_TESTS) \
  $(GTK_ENTRY_TESTS) \
+ $(GRILO_TESTS) \
  misc/softerror_create.scm \
  misc/use-typelibs.scm
 
 XFAIL_TESTS = \
+ grilo/init_commandline.scm \
+ grilo/audio_multiple_artists.scm \
  misc/atomic_int_set.scm \
  string/strjoinv.scm
 
