@@ -38,7 +38,7 @@ typedef struct _GirFunction
 
 gchar *gir_function_make_name(const char *parent, GIFunctionInfo *info);
 SCM gir_function_invoke(char *name, GICallableInfo *info, GObject *object, SCM args,
-                        GError ** error);
+                        GError **error);
 void gir_function_define_gsubr(const char *parent, GIFunctionInfo *info);
 void gir_init_function(void);
 #endif

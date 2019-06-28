@@ -54,10 +54,12 @@
 -T gint
 -T gssize
 -T GClosure
+-T GError
 -T GObject
 -T GObjectClass
 -T GParamSpec
 -T GPtrArray
+-T GString
 -T GTypeInstance
 -T GValue
 

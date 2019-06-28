@@ -213,7 +213,7 @@ scm_call_method(SCM s_object, SCM s_method_name, SCM s_list_of_args)
 }
 
 void
-gir_method_document(GString ** export, const char *namespace_,
+gir_method_document(GString **export, const char *namespace_,
                     const char *parent, GICallableInfo *info)
 {
 #if 0

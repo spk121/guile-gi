@@ -180,7 +180,7 @@ gir_function_make_name(const char *parent, GIFunctionInfo *info)
 }
 
 SCM
-gir_function_invoke(char *name, GIFunctionInfo *info, GObject *object, SCM args, GError ** error)
+gir_function_invoke(char *name, GIFunctionInfo *info, GObject *object, SCM args, GError **error)
 {
     int n_input_args, n_input_args0, n_output_args;
     GIArgument *in_args, *in_args0, *out_args, *out_boxes, return_arg;

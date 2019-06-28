@@ -19,9 +19,12 @@
 #include <girepository.h>
 
 void gir_method_table_insert(GType type, GIFunctionInfo *info);
-void gir_method_document(GString ** export, const char *namespace_,
-                         const char *parent, GICallableInfo *info);
-gchar *gir_method_public_name(GICallableInfo *info);
+void gir_method_document(GString **export, const char *namespace_, const char *parent,
+                         GICallableInfo *info);
 void gir_init_method(void);
+
+// *INDENT-OFF*
+gchar * gir_method_public_name(GICallableInfo *info) G_GNUC_MALLOC;
+// *INDENT_ON*
 
 #endif

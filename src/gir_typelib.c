@@ -26,11 +26,11 @@
 #include "gir_flag.h"
 #include "gi_util.h"
 
-static void gir_typelib_document_callback_info(GString ** export, const char *namespace_,
+static void gir_typelib_document_callback_info(GString **export, const char *namespace_,
                                                const char *parent, GICallableInfo *info);
-static void gir_typelib_document_function_info(GString ** export, const char *parent,
+static void gir_typelib_document_function_info(GString **export, const char *parent,
                                                GIFunctionInfo *info, gboolean method);
-static void gir_typelib_document_type(GString ** export, char *parent, GITypeInfo *info);
+static void gir_typelib_document_type(GString **export, char *parent, GITypeInfo *info);
 static void scm_i_typelib_load(const char *subr, const char *namespace, const char *version);
 static void scm_i_typelib_load_check_args(const char *subr, SCM s_lib, SCM s_version, char **lib,
                                           char **version);
@@ -465,7 +465,7 @@ static GPtrArray *gi_arg_infos = NULL;
 #endif
 
 static void
-gir_typelib_document_callable_arguments(GString ** export, GICallableInfo *info)
+gir_typelib_document_callable_arguments(GString **export, GICallableInfo *info)
 {
     gint n_args;
     GIArgInfo *arg;
@@ -556,7 +556,7 @@ callback_public_name(const char *namespace_, const char *parent, GICallableInfo 
 }
 
 static void
-gir_typelib_document_callback_info(GString ** export, const char *namespace_, const char *parent,
+gir_typelib_document_callback_info(GString **export, const char *namespace_, const char *parent,
                                    GICallableInfo *info)
 {
     char *lookup_name;
@@ -582,7 +582,7 @@ gir_typelib_document_callback_info(GString ** export, const char *namespace_, co
 }
 
 static void
-gir_typelib_document_function_info(GString ** export,
+gir_typelib_document_function_info(GString **export,
                                    const char *parent, GIFunctionInfo *info, gboolean method)
 {
     gint n_args;
@@ -637,7 +637,7 @@ gir_typelib_document_function_info(GString ** export,
 }
 
 static void
-gir_typelib_document_type(GString ** export, char *parent, GITypeInfo *info)
+gir_typelib_document_type(GString **export, char *parent, GITypeInfo *info)
 {
     GType gtype = g_registered_type_info_get_g_type(info);
     gchar *doc = gir_type_document_type_from_gtype(gtype);
@@ -648,7 +648,7 @@ gir_typelib_document_type(GString ** export, char *parent, GITypeInfo *info)
 /* FIXME: this is a very sigmal way to export signal info */
 #if 0
 static void
-export_signal_info(GString ** export, char *parent, GISignalInfo *info)
+export_signal_info(GString **export, char *parent, GISignalInfo *info)
 {
     gint n_args;
     GIArgInfo *arg;
