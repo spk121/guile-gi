@@ -2157,122 +2157,12 @@ object_from_c_garray_arg(struct array_info *ai, GIArgument *arg)
     return obj;
 }
 
-static SCM
-list_data_to_object(gpointer list, GITypeTag list_type, GITypeTag item_type,
-                    GITypeTag referenced_base_type, gboolean item_is_ptr, GITransfer transfer)
-{
-    GList *_list;
-    GSList *_slist;
-    gpointer data;
-
-    switch (list_type) {
-    case GI_TYPE_TAG_GLIST:
-        _list = list;
-        data = &_list->data;
-        break;
-    case GI_TYPE_TAG_GSLIST:
-        _slist = list;
-        data = &_slist->data;
-        break;
-    default:
-        g_assert_not_reached();
-    }
-
-    if (!item_is_ptr) {
-        switch (item_type) {
-        case GI_TYPE_TAG_INT8:
-            return scm_from_int8(*(gint8 *) data);
-        case GI_TYPE_TAG_INT16:
-            return scm_from_int16(*(gint16 *) data);
-        case GI_TYPE_TAG_INT32:
-            return scm_from_int32(*(gint32 *) data);
-        case GI_TYPE_TAG_INT64:
-            return scm_from_int64(*(gint64 *) data);
-        case GI_TYPE_TAG_UINT8:
-            return scm_from_uint8(*(guint8 *) data);
-        case GI_TYPE_TAG_UINT16:
-            return scm_from_uint16(*(guint16 *) data);
-        case GI_TYPE_TAG_UINT32:
-            return scm_from_uint32(*(guint32 *) data);
-        case GI_TYPE_TAG_UINT64:
-            return scm_from_uint64(*(guint64 *) data);
-        case GI_TYPE_TAG_FLOAT:
-            return scm_from_double(*(float *)data);
-        case GI_TYPE_TAG_DOUBLE:
-            return scm_from_double(*(double *)data);
-        case GI_TYPE_TAG_UNICHAR:
-            return SCM_MAKE_CHAR(*(guint32 *) data);
-        case GI_TYPE_TAG_GTYPE:
-            gir_type_register(*(size_t *)data);
-            return scm_from_size_t(*(size_t *)data);
-        default:
-            g_critical("Unhandled item type in %s:%d", __FILE__, __LINE__);
-            return SCM_UNDEFINED;
-        }
-    }
-    else {
-        switch (item_type) {
-        case GI_TYPE_TAG_INTERFACE:
-            switch (referenced_base_type) {
-            case GI_INFO_TYPE_STRUCT:
-            case GI_INFO_TYPE_UNION:
-            case GI_INFO_TYPE_OBJECT:
-            default:
-                g_critical("Unhandled item type in %s:%d", __FILE__, __LINE__);
-                return SCM_UNDEFINED;
-            }
-            g_assert_not_reached();
-        case GI_TYPE_TAG_UTF8:
-        case GI_TYPE_TAG_FILENAME:
-        {
-            char **str = data;
-            SCM obj;
-
-            if (!*str)
-                return scm_c_make_string(0, SCM_MAKE_CHAR(0));
-            else {
-                if (item_type == GI_TYPE_TAG_UTF8)
-                    obj = scm_from_utf8_string(*str);
-                else
-                    obj = scm_from_locale_string(*str);
-
-                if (transfer == GI_TRANSFER_EVERYTHING) {
-                    g_free(*str);
-                    *str = NULL;
-                }
-            }
-
-            return obj;
-        }
-        default:
-            g_critical("Unhandled item type in %s:%d", __FILE__, __LINE__);
-            return SCM_UNDEFINED;
-        }
-    }
-}
-
-static gpointer
-list_next(gpointer list, GITypeTag list_type)
-{
-    GList *_list;
-    GSList *_slist;
-
-    switch (list_type) {
-    case GI_TYPE_TAG_GLIST:
-        _list = list;
-        return _list->next;
-    case GI_TYPE_TAG_GSLIST:
-        _slist = list;
-        return _slist->next;
-    default:
-        g_assert_not_reached();
-    }
-}
-
 static void
 convert_list_arg_to_object(GIArgument *arg, GITypeInfo *list_type_info,
                            GITransfer list_transfer, SCM *obj)
 {
+    // Dissect layers as in `fill_array_info`, except that less information
+    // is needed.
     GITypeTag list_type_tag = g_type_info_get_tag(list_type_info);
     GITypeInfo *item_type_info = g_type_info_get_param_type(list_type_info, 0);
     GITypeTag item_type_tag = g_type_info_get_tag(item_type_info);
@@ -2338,13 +2228,132 @@ convert_list_arg_to_object(GIArgument *arg, GITypeInfo *list_type_info,
         g_assert_not_reached();
     }
 
-    SCM s_list = SCM_EOL;
+    g_base_info_unref(item_type_info);
 
-    for (gpointer list = arg->v_pointer; list != NULL; list = list_next(list, list_type_tag))
-        s_list = scm_cons(list_data_to_object(list, list_type_tag, item_type_tag,
-                                              referenced_base_type, item_is_ptr, item_transfer),
-                          s_list);
-    *obj = scm_reverse_x(s_list, SCM_EOL);
+    // Actual conversion
+    gpointer list = arg->v_pointer, data;
+    GList *_list;
+    GSList *_slist;
+    gsize length;
+
+    // Step 1: allocate
+    switch (list_type_tag) {
+    case GI_TYPE_TAG_GLIST:
+        _list = list;
+        length = g_list_length(_list);
+        break;
+    case GI_TYPE_TAG_GSLIST:
+        _slist = list;
+        length = g_slist_length(_slist);
+        break;
+    default:
+        g_assert_not_reached();
+    }
+
+    *obj = scm_make_list(scm_from_size_t(length), SCM_UNDEFINED);
+
+    SCM out_iter = *obj;
+
+    // Step 2: iterate
+    while (list != NULL) {
+        switch (list_type_tag) {
+        case GI_TYPE_TAG_GLIST:
+            data = &_list->data;
+            list = _list = _list->next;
+            break;
+        case GI_TYPE_TAG_GSLIST:
+            data = &_slist->data;
+            list = _slist = _slist->next;
+            break;
+        default:
+            g_assert_not_reached();
+        }
+
+        if (!item_is_ptr) {
+            switch (item_type_tag) {
+            case GI_TYPE_TAG_INT8:
+                scm_set_car_x(out_iter, scm_from_int8(*(gint8 *) data));
+                break;
+            case GI_TYPE_TAG_INT16:
+                scm_set_car_x(out_iter, scm_from_int16(*(gint16 *) data));
+                break;
+            case GI_TYPE_TAG_INT32:
+                scm_set_car_x(out_iter, scm_from_int32(*(gint32 *) data));
+                break;
+            case GI_TYPE_TAG_INT64:
+                scm_set_car_x(out_iter, scm_from_int64(*(gint64 *) data));
+                break;
+            case GI_TYPE_TAG_UINT8:
+                scm_set_car_x(out_iter, scm_from_uint8(*(guint8 *) data));
+                break;
+            case GI_TYPE_TAG_UINT16:
+                scm_set_car_x(out_iter, scm_from_uint16(*(guint16 *) data));
+                break;
+            case GI_TYPE_TAG_UINT32:
+                scm_set_car_x(out_iter, scm_from_uint32(*(guint32 *) data));
+                break;
+            case GI_TYPE_TAG_UINT64:
+                scm_set_car_x(out_iter, scm_from_uint64(*(guint64 *) data));
+                break;
+            case GI_TYPE_TAG_FLOAT:
+                scm_set_car_x(out_iter, scm_from_double(*(float *)data));
+                break;
+            case GI_TYPE_TAG_DOUBLE:
+                scm_set_car_x(out_iter, scm_from_double(*(double *)data));
+                break;
+            case GI_TYPE_TAG_UNICHAR:
+                scm_set_car_x(out_iter, SCM_MAKE_CHAR(*(guint32 *) data));
+                break;
+            case GI_TYPE_TAG_GTYPE:
+                gir_type_register(*(size_t *)data);
+                scm_set_car_x(out_iter, scm_from_size_t(*(size_t *)data));
+                break;
+            default:
+                g_critical("Unhandled item type in %s:%d", __FILE__, __LINE__);
+                list = NULL;
+            }
+        }
+        else {
+            switch (item_type_tag) {
+            case GI_TYPE_TAG_INTERFACE:
+                switch (referenced_base_type) {
+                case GI_INFO_TYPE_STRUCT:
+                case GI_INFO_TYPE_UNION:
+                case GI_INFO_TYPE_OBJECT:
+                default:
+                    g_critical("Unhandled item type in %s:%d", __FILE__, __LINE__);
+                    list = NULL;
+                    break;
+                }
+                g_assert_not_reached();
+            case GI_TYPE_TAG_UTF8:
+            case GI_TYPE_TAG_FILENAME:
+            {
+                char **str = data;
+
+                if (!*str)
+                    scm_set_car_x(out_iter, scm_c_make_string(0, SCM_MAKE_CHAR(0)));
+                else {
+                    if (item_type_tag == GI_TYPE_TAG_UTF8)
+                        scm_set_car_x(out_iter, scm_from_utf8_string(*str));
+                    else
+                        scm_set_car_x(out_iter, scm_from_locale_string(*str));
+
+                    if (item_transfer == GI_TRANSFER_EVERYTHING) {
+                        g_free(*str);
+                        *str = NULL;
+                    }
+                }
+                break;
+            }
+            default:
+                g_critical("Unhandled item type in %s:%d", __FILE__, __LINE__);
+                list = NULL;
+            }
+        }
+
+        out_iter = scm_cdr(out_iter);
+    }
 }
 
 static void
