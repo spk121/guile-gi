@@ -465,7 +465,7 @@ static GPtrArray *gi_arg_infos = NULL;
 #endif
 
 static void
-gir_typelib_document_callable_arguments(GString ** export, GICallableInfo *info, gboolean style)
+gir_typelib_document_callable_arguments(GString ** export, GICallableInfo *info)
 {
     gint n_args;
     GIArgInfo *arg;
@@ -475,10 +475,7 @@ gir_typelib_document_callable_arguments(GString ** export, GICallableInfo *info,
 
     n_args = g_callable_info_get_n_args(info);
 
-    if (style)
-        g_string_append(*export, ";; ARGS: \n");
-    else
-        g_string_append(*export, "   ARGS: \n");
+    g_string_append(*export, "   ARGS: \n");
 
     for (int i = 0; i < n_args; i++) {
         arg = g_callable_info_get_arg(info, i);
@@ -486,10 +483,7 @@ gir_typelib_document_callable_arguments(GString ** export, GICallableInfo *info,
         type_info = g_arg_info_get_type(arg);
         if (!(dir == GI_DIRECTION_OUT)
             || (dir == GI_DIRECTION_OUT && g_arg_info_is_caller_allocates(arg))) {
-            if (style)
-                g_string_append(*export, ";;   ");
-            else
-                g_string_append(*export, "     ");
+            g_string_append(*export, "     ");
 
             name = gname_to_scm_name(g_base_info_get_name(arg));
             g_string_append(*export, name);
@@ -512,14 +506,9 @@ gir_typelib_document_callable_arguments(GString ** export, GICallableInfo *info,
     }
 
     type_info = g_callable_info_get_return_type(info);
-    if (style)
-        g_string_append_printf(*export, ";; RETURN: %s%s\n",
-                               g_type_tag_to_string(g_type_info_get_tag(type_info)),
-                               g_type_info_is_pointer(type_info) ? "*" : "");
-    else
-        g_string_append_printf(*export, "   RETURN: %s%s\n",
-                               g_type_tag_to_string(g_type_info_get_tag(type_info)),
-                               g_type_info_is_pointer(type_info) ? "*" : "");
+    g_string_append_printf(*export, "   RETURN: %s%s\n",
+                           g_type_tag_to_string(g_type_info_get_tag(type_info)),
+                           g_type_info_is_pointer(type_info) ? "*" : "");
     g_base_info_unref(type_info);
 
     for (int i = 0; i < n_args; i++) {
@@ -527,10 +516,7 @@ gir_typelib_document_callable_arguments(GString ** export, GICallableInfo *info,
         dir = g_arg_info_get_direction(arg);
         type_info = g_arg_info_get_type(arg);
         if (dir == GI_DIRECTION_OUT && !g_arg_info_is_caller_allocates(arg)) {
-            if (style)
-                g_string_append(*export, ";;   ");
-            else
-                g_string_append(*export, "     ");
+            g_string_append(*export, "     ");
 
             name = gname_to_scm_name(g_base_info_get_name(arg));
             g_string_append(*export, name);
@@ -547,10 +533,7 @@ gir_typelib_document_callable_arguments(GString ** export, GICallableInfo *info,
         g_base_info_unref(type_info);
         g_base_info_unref(arg);
     }
-
-    if (!style)
-        g_string_append(*export, "\n");
-
+    g_string_append(*export, "\n");
 }
 
 static gchar *
@@ -592,7 +575,7 @@ gir_typelib_document_callback_info(GString ** export, const char *namespace_, co
     g_assert(return_type);
     g_base_info_unref(return_type);
 
-    gir_typelib_document_callable_arguments(export, info, FALSE);
+    gir_typelib_document_callable_arguments(export, info);
     g_free(lookup_name);
     g_free(public_name);
     g_string_append_printf(*export, "\n");
@@ -645,7 +628,7 @@ gir_typelib_document_function_info(GString ** export,
 
     g_string_append_c(*export, '\n');
 
-    gir_typelib_document_callable_arguments(export, info, FALSE);
+    gir_typelib_document_callable_arguments(export, info);
 
     g_string_append(*export, "\n\n");
 
