@@ -188,7 +188,6 @@ TESTS = \
 
 XFAIL_TESTS = \
  grilo/init_commandline.scm \
- grilo/audio_multiple_artists.scm \
  misc/atomic_int_set.scm \
  string/strjoinv.scm
 
