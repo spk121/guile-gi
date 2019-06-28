@@ -639,8 +639,10 @@ gir_typelib_document_function_info(GString ** export,
 static void
 gir_typelib_document_type(GString ** export, char *parent, GITypeInfo *info)
 {
-    g_string_append_printf(*export, "TYPE <%s> with PREDICATE '%s?'\n\n",
-                           g_base_info_get_name(info), g_base_info_get_name(info));
+    GType gtype = g_registered_type_info_get_g_type(info);
+    gchar *doc = gir_type_document_type_from_gtype(gtype);
+    g_string_append(*export, doc);
+    g_free(doc);
 }
 
 /* FIXME: this is a very sigmal way to export signal info */

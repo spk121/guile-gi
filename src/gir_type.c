@@ -102,10 +102,39 @@ typedef struct _GirPredicate
     SCM fo_type;
 } GirPredicate;
 
-
+// *INDENT-OFF*
+static gchar *gir_type_class_name_from_gtype(GType gtype) G_GNUC_MALLOC;
+static gchar *gir_type_predicate_name_from_gtype(GType gtype) G_GNUC_MALLOC;
+// *INDENT-ON*
 static SCM gir_type_make_fo_type_from_name(const gchar *type_class_name);
 static void *gir_type_create_predicate(const char *name, SCM fo_type);
 static void gir_type_predicate_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data);
+
+static gchar *
+gir_type_class_name_from_gtype(GType gtype)
+{
+    return g_strdup_printf("<%s>", g_type_name(gtype));
+}
+
+static gchar *
+gir_type_predicate_name_from_gtype(GType gtype)
+{
+    gchar *type_name = gname_to_scm_name(g_type_name(gtype));
+    gchar *predicate_name = g_strdup_printf("%s?", type_name);
+    g_free(type_name);
+    return predicate_name;
+}
+
+gchar *
+gir_type_document_type_from_gtype(GType gtype)
+{
+    gchar *class_name = gir_type_class_name_from_gtype(gtype);
+    gchar *predicate_name = gir_type_predicate_name_from_gtype(gtype);
+    gchar *str = g_strdup_printf("TYPE %s with PREDICATE %s\n\n", class_name, predicate_name);
+    g_free(class_name);
+    g_free(predicate_name);
+    return str;
+}
 
 // Given a GType integer but no introspection information, this stores
 // that GType in our hash table of known types without creating an
@@ -146,7 +175,7 @@ gir_type_define(GType gtype)
         if (parent != 0)
             gir_type_register(parent);
 
-        gchar *type_class_name = g_strdup_printf("<%s>", g_type_name(gtype));
+        gchar *type_class_name = gir_type_class_name_from_gtype(gtype);
         SCM fo_type = gir_type_make_fo_type_from_name(type_class_name);
         scm_permanent_object(scm_c_define(type_class_name, fo_type));
         scm_c_export(type_class_name, NULL);
@@ -171,13 +200,11 @@ gir_type_define(GType gtype)
         g_debug("Hash table size %d", g_hash_table_size(gir_type_gtype_hash));
 #endif
 
-        gchar *type_name = gname_to_scm_name(g_type_name(gtype));
-        gchar *predicate_name = g_strdup_printf("%s?", type_name);
+        gchar *predicate_name = gir_type_predicate_name_from_gtype(gtype);
         gpointer func = gir_type_create_predicate(predicate_name, fo_type);
         scm_c_define_gsubr(predicate_name, 1, 0, 0, func);
         scm_c_export(predicate_name, NULL);
 
-        g_free(type_name);
         g_free(predicate_name);
     }
     else
@@ -234,7 +261,7 @@ gir_type_make_fo_type_from_name(const gchar *type_class_name)
 
 // Given a Guile foreign object type, this creates a Guile type predicate
 // function for that type. e.g. if fo_type is <MyArray>, this creates
-// the procedure 'MyArray?'
+// the procedure 'my-array?'
 static void *
 gir_type_create_predicate(const char *name, SCM fo_type)
 {
@@ -277,8 +304,9 @@ gir_type_create_predicate(const char *name, SCM fo_type)
     // STEP 3
     // Initialize the closure
     ffi_status closure_ok;
-    closure_ok = ffi_prep_closure_loc(gp->closure, &(gp->cif), gir_type_predicate_binding, gp,  // The 'user-data' passed to the function
-                                      gp->function_ptr);
+    closure_ok =
+        ffi_prep_closure_loc(gp->closure, &(gp->cif), gir_type_predicate_binding, gp,
+                             gp->function_ptr);
 
     if (closure_ok != FFI_OK)
         scm_misc_error("gir-type-create-predicate",
