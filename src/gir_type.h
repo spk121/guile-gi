@@ -28,10 +28,8 @@
 #define WEAKREFLIST_SLOT 6
 #define FLAGS_SLOT 7
 
-// *INDENT-OFF*
-char *gir_type_class_name_from_gtype(GType gtype) G_GNUC_MALLOC;
-gchar *gir_type_document_type_from_gtype(GType gtype) G_GNUC_MALLOC;
-// *INDENT-ON*
+G_GNUC_MALLOC gchar *gir_type_document_type_from_gtype(GType gtype);
+G_GNUC_MALLOC char *gir_type_class_name_from_gtype(GType gtype);
 void gir_type_register(GType gtype);
 void gir_type_define(GType gtype);
 GType scm_to_gtype(SCM x);
