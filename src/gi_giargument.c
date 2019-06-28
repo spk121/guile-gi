@@ -1251,12 +1251,9 @@ object_to_c_ptr_array_arg(char *subr, int argpos, SCM object, struct array_info 
 #undef FUNC_NAME
 }
 
-/* *INDENT-OFF* */
-__attribute__((unused)) static void
+static void
 object_to_c_native_direct_struct_array_arg(char *subr, int argpos, SCM object,
                                            struct array_info *ai, GIArgument *arg)
-/* *INDENT-ON* */
-
 {
     // This is the uncommon case of the argument containing
     // an array of structs themselves, rather than an array
@@ -1275,12 +1272,9 @@ object_to_c_native_direct_struct_array_arg(char *subr, int argpos, SCM object,
         ai->must_free = GIR_FREE_SIMPLE;
 }
 
-/* *INDENT-OFF* */
-__attribute__((unused)) static void
+static void
 object_to_c_native_indirect_object_array_arg(char *subr, int argpos, SCM object,
                                              struct array_info *ai, GIArgument *arg)
-/* *INDENT-ON* */
-
 {
     // Arrays of pointers to OBJECTS.  The only example I could find
     // is g_socket_send_message.

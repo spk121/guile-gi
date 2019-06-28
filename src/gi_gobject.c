@@ -115,11 +115,8 @@ gugobject_data_free(GuGObjectData *data)
     g_free(data);
 }
 
-/* *INDENT-OFF* */
-__attribute__((malloc)) static inline GuGObjectData *
+static inline GuGObjectData *
 gugobject_data_new(void)
-/* *INDENT-ON* */
-
 {
     GuGObjectData *data;
     data = g_new0(GuGObjectData, 1);

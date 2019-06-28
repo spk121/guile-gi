@@ -4,10 +4,8 @@
 
 FILE *fp;
 
-/* *INDENT-OFF* */
-__attribute__ ((malloc)) static char *
+static char *
 getter(const char *self, const char *type, int n)
-/* *INDENT-ON* */
 {
     if ((strlen(type) > 2 && type[strlen(type) - 1] == '*')
         || (!strcmp(type, "gpointer")))
@@ -29,11 +27,8 @@ getter(const char *self, const char *type, int n)
     }
 }
 
-/* *INDENT-OFF* */
-__attribute__ ((malloc)) static char *
+static char *
 setter(const char *self, const char *var, const char *type, int n)
-/* *INDENT-ON* */
-
 {
     if ((strlen(type) > 2 && type[strlen(type) - 1] == '*')
         || (!strcmp(type, "gpointer")))
