@@ -29,6 +29,9 @@ TEST_EXTENSIONS = .scm
 
 noinst_DATA = lib.scm automake-test-lib.scm
 
+TYPELIB_TESTS = \
+ typelib/document.scm
+
 VERSION_INFORMATION_TESTS = \
  version_info/MAJOR_VERSION.scm \
  version_info/MINOR_VERSION.scm \
@@ -148,6 +151,7 @@ GTK_ENTRY_TESTS = \
  gtk_entry/set_alignment_zero.scm
 
 TESTS = \
+ $(TYPELIB_TESTS) \
  $(VERSION_INFORMATION_TESTS) \
  $(BASIC_TYPE_TESTS) \
  $(STANDARD_MACROS_TESTS) \

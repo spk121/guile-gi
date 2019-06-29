@@ -27,10 +27,11 @@
 #include "gi_util.h"
 
 static void gir_typelib_document_callback_info(GString **export, const char *namespace_,
-                                               const char *parent, GICallableInfo *info);
+                                               GICallableInfo *info);
+static void gir_typelib_document_method_info(GString **export, GType gtype, GIFunctionInfo *info);
 static void gir_typelib_document_function_info(GString **export, const char *parent,
-                                               GIFunctionInfo *info, gboolean method);
-static void gir_typelib_document_type(GString **export, char *parent, GITypeInfo *info);
+                                               GIFunctionInfo *info);
+static void gir_typelib_document_type(GString **export, GITypeInfo *info);
 static void scm_i_typelib_load(const char *subr, const char *namespace, const char *version);
 static void scm_i_typelib_load_check_args(const char *subr, SCM s_lib, SCM s_version, char **lib,
                                           char **version);
@@ -324,10 +325,10 @@ scm_typelib_document(SCM s_namespace, SCM s_version)
         type = g_base_info_get_type(info);
         switch (type) {
         case GI_INFO_TYPE_CALLBACK:
-            gir_typelib_document_callback_info(&export, namespace_, NULL, info);
+            gir_typelib_document_callback_info(&export, namespace_, info);
             break;
         case GI_INFO_TYPE_FUNCTION:
-            gir_typelib_document_function_info(&export, NULL, info, 0);
+            gir_typelib_document_function_info(&export, NULL, info);
             break;
         case GI_INFO_TYPE_STRUCT:
         {
@@ -339,17 +340,16 @@ scm_typelib_document(SCM s_namespace, SCM s_version)
                 break;
             }
             g_base_info_ref(info);
-            gir_typelib_document_type(&export, NULL, info);
+            gir_typelib_document_type(&export, info);
             gint n_methods = g_struct_info_get_n_methods(info);
             for (gint m = 0; m < n_methods; m++) {
                 GIFunctionInfo *func_info = g_struct_info_get_method(info, m);
                 if (g_function_info_get_flags(func_info)
                     & GI_FUNCTION_IS_METHOD)
-                    gir_typelib_document_function_info(&export,
-                                                       g_base_info_get_name(info), func_info, 1);
+                    gir_typelib_document_method_info(&export, gtype, func_info);
                 else
                     gir_typelib_document_function_info(&export,
-                                                       g_base_info_get_name(info), func_info, 0);
+                                                       g_base_info_get_name(info), func_info);
             }
         }
             break;
@@ -366,16 +366,15 @@ scm_typelib_document(SCM s_namespace, SCM s_version)
                 g_base_info_unref(info);
                 break;
             }
-            gir_typelib_document_type(&export, NULL, info);
+            gir_typelib_document_type(&export, info);
             gint n_methods = g_object_info_get_n_methods(info);
             for (gint m = 0; m < n_methods; m++) {
                 GIFunctionInfo *func_info = g_object_info_get_method(info, m);
                 if (g_function_info_get_flags(func_info) & GI_FUNCTION_IS_METHOD)
-                    gir_typelib_document_function_info(&export,
-                                                       g_base_info_get_name(info), func_info, 1);
+                    gir_typelib_document_method_info(&export, gtype, func_info);
                 else
                     gir_typelib_document_function_info(&export,
-                                                       g_base_info_get_name(info), func_info, 0);
+                                                       g_base_info_get_name(info), func_info);
             }
 #if 0
             gint n_signals = g_object_info_get_n_signals(info);
@@ -407,16 +406,15 @@ scm_typelib_document(SCM s_namespace, SCM s_version)
                 g_base_info_unref(info);
                 break;
             }
-            gir_typelib_document_type(&export, NULL, info);
+            gir_typelib_document_type(&export, info);
             gint n_methods = g_union_info_get_n_methods(info);
             for (gint m = 0; m < n_methods; m++) {
                 GIFunctionInfo *func_info = g_union_info_get_method(info, m);
                 if (g_function_info_get_flags(func_info) & GI_FUNCTION_IS_METHOD)
-                    gir_typelib_document_function_info(&export,
-                                                       g_base_info_get_name(info), func_info, 1);
+                    gir_typelib_document_method_info(&export, gtype, func_info);
                 else
                     gir_typelib_document_function_info(&export,
-                                                       g_base_info_get_name(info), func_info, 0);
+                                                       g_base_info_get_name(info), func_info);
             }
         }
             break;
@@ -468,6 +466,8 @@ static void
 gir_typelib_document_callable_arguments(GString **export, GICallableInfo *info)
 {
     gint n_args;
+    gboolean first = TRUE;
+    gboolean returns = FALSE;
     GIArgInfo *arg;
     GIDirection dir;
     GITypeInfo *type_info;
@@ -475,20 +475,22 @@ gir_typelib_document_callable_arguments(GString **export, GICallableInfo *info)
 
     n_args = g_callable_info_get_n_args(info);
 
-    g_string_append(*export, "   ARGS: \n");
-
     for (int i = 0; i < n_args; i++) {
         arg = g_callable_info_get_arg(info, i);
         dir = g_arg_info_get_direction(arg);
         type_info = g_arg_info_get_type(arg);
         if (!(dir == GI_DIRECTION_OUT)
             || (dir == GI_DIRECTION_OUT && g_arg_info_is_caller_allocates(arg))) {
+            if (first) {
+                g_string_append(*export, "   ARGS: \n");
+                first = FALSE;
+            }
             g_string_append(*export, "     ");
 
             name = gname_to_scm_name(g_base_info_get_name(arg));
             g_string_append(*export, name);
             g_string_append_c(*export, ' ');
-            char *desc = gi_giargument_describe_arg_in(arg);
+            char *desc = gi_giargument_describe_arg(arg);
             g_string_append_printf(*export, " - %s", desc);
             g_free(desc);
             if (dir == GI_DIRECTION_INOUT)
@@ -506,9 +508,19 @@ gir_typelib_document_callable_arguments(GString **export, GICallableInfo *info)
     }
 
     type_info = g_callable_info_get_return_type(info);
-    g_string_append_printf(*export, "   RETURN: %s%s\n",
-                           g_type_tag_to_string(g_type_info_get_tag(type_info)),
-                           g_type_info_is_pointer(type_info) ? "*" : "");
+    g_assert(type_info != NULL);
+    GITypeInfo *return_typeinfo = g_callable_info_get_return_type(info);
+    char *ret_desc = gi_giargument_describe_return(type_info,
+                                                   g_callable_info_get_caller_owns(info),
+                                                   g_callable_info_may_return_null(info),
+                                                   g_callable_info_skip_return(info));
+
+    if (strcmp(ret_desc, "unspecified") != 0) {
+        g_string_append(*export, "   RETURNS:\n");
+        g_string_append_printf(*export, "     %s\n", ret_desc);
+        returns = TRUE;
+    }
+    g_free(ret_desc);
     g_base_info_unref(type_info);
 
     for (int i = 0; i < n_args; i++) {
@@ -516,12 +528,16 @@ gir_typelib_document_callable_arguments(GString **export, GICallableInfo *info)
         dir = g_arg_info_get_direction(arg);
         type_info = g_arg_info_get_type(arg);
         if (dir == GI_DIRECTION_OUT && !g_arg_info_is_caller_allocates(arg)) {
+            if (returns == FALSE) {
+                g_string_append(*export, "   RETURNS:\n");
+                returns = TRUE;
+            }
             g_string_append(*export, "     ");
 
             name = gname_to_scm_name(g_base_info_get_name(arg));
             g_string_append(*export, name);
             g_string_append_c(*export, ' ');
-            char *desc = gi_giargument_describe_arg_in(arg);
+            char *desc = gi_giargument_describe_arg(arg);
             g_string_append_printf(*export, " - %s", desc);
             g_free(desc);
             free(name);
@@ -533,41 +549,29 @@ gir_typelib_document_callable_arguments(GString **export, GICallableInfo *info)
         g_base_info_unref(type_info);
         g_base_info_unref(arg);
     }
-    g_string_append(*export, "\n");
 }
 
 static gchar *
-callback_public_name(const char *namespace_, const char *parent, GICallableInfo *info)
+callback_public_name(const char *namespace_, GICallableInfo *info)
 {
     char *public_name;
     char *tmp_str;
 
-    if (parent) {
-        tmp_str = g_strdup_printf("%s-%s", parent, g_base_info_get_name(info));
-        public_name = gname_to_scm_name(tmp_str);
-        g_free(tmp_str);
-    }
-    else {
-        tmp_str = g_strdup_printf("%s", g_base_info_get_name(info));
-        public_name = gname_to_scm_name(tmp_str);
-        g_free(tmp_str);
-    }
+    tmp_str = g_strdup_printf("%s", g_base_info_get_name(info));
+    public_name = gname_to_scm_name(tmp_str);
+    g_free(tmp_str);
     return public_name;
 }
 
 static void
-gir_typelib_document_callback_info(GString **export, const char *namespace_, const char *parent,
-                                   GICallableInfo *info)
+gir_typelib_document_callback_info(GString **export, const char *namespace_, GICallableInfo *info)
 {
     char *lookup_name;
     char *public_name;
 
-    if (parent)
-        lookup_name = g_strdup_printf("%s-%s-%s", namespace_, parent, g_base_info_get_name(info));
-    else
-        lookup_name = g_strdup_printf("%s-%s", namespace_, g_base_info_get_name(info));
+    lookup_name = g_strdup_printf("%s-%s", namespace_, g_base_info_get_name(info));
 
-    public_name = callback_public_name(namespace_, parent, info);
+    public_name = callback_public_name(namespace_, info);
 
     g_string_append_printf(*export, "CALLBACK %s\n", public_name);
 
@@ -582,62 +586,30 @@ gir_typelib_document_callback_info(GString **export, const char *namespace_, con
 }
 
 static void
-gir_typelib_document_function_info(GString **export,
-                                   const char *parent, GIFunctionInfo *info, gboolean method)
+gir_typelib_document_method_info(GString **export, GType gtype, GIFunctionInfo *info)
 {
-    gint n_args;
-    GIArgInfo *arg;
-    char *public_name;
-    GITypeInfo *return_type;
-
-    n_args = g_callable_info_get_n_args(info);
-    return_type = g_callable_info_get_return_type(info);
-    g_assert(return_type);
-
-    if (method)
-        public_name = gir_method_public_name(info);
-    else
-        public_name = gir_function_make_name(parent, info);
-    if (method)
-        g_string_append_printf(*export, "%s's METHOD %s", parent, public_name);
-    else
-        g_string_append_printf(*export, "PROCEDURE %s", public_name);
-
-    for (int i = 0; i < n_args; i++) {
-        arg = g_callable_info_get_arg(info, i);
-        GIDirection dir = g_arg_info_get_direction(arg);
-        if (dir == GI_DIRECTION_IN || dir == GI_DIRECTION_INOUT
-            || (dir == GI_DIRECTION_OUT && g_arg_info_is_caller_allocates(arg))) {
-            char *arg_name;
-            g_string_append_c(*export, ' ');
-            arg_name = gname_to_scm_name(g_base_info_get_name(arg));
-            if (dir == GI_DIRECTION_OUT)
-                g_string_append(*export, "out-");
-            g_string_append(*export, arg_name);
-            free(arg_name);
-        }
-#ifdef FIGURE_OUT_ALL_ARG_TYPES
-        struct _arg_info_func_name *aifn = g_new(struct _arg_info_func_name, 1);
-        aifn->ai = arg;
-        aifn->name = g_strdup(c_function_name);
-        g_ptr_array_add(gi_arg_infos, aifn);
-#else
-        g_base_info_unref(arg);
-#endif
-    }
-
-    g_string_append_c(*export, '\n');
-
-    gir_typelib_document_callable_arguments(export, info);
-
-    g_string_append(*export, "\n\n");
-
-    g_base_info_unref(return_type);
+    gchar *class_name = gir_type_class_name_from_gtype(gtype);
+    gchar *public_name = gir_method_public_name(info);
+    g_string_append_printf(*export, "%s's METHOD %s\n", class_name, public_name);
     g_free(public_name);
+    g_free(class_name);
+    gir_typelib_document_callable_arguments(export, info);
+    g_string_append(*export, "\n\n");
 }
 
 static void
-gir_typelib_document_type(GString **export, char *parent, GITypeInfo *info)
+gir_typelib_document_function_info(GString **export, const char *parent, GIFunctionInfo *info)
+{
+    gchar *public_name = gir_function_make_name(parent, info);
+    g_string_append_printf(*export, "PROCEDURE %s\n", public_name);
+    g_free(public_name);
+    gir_typelib_document_callable_arguments(export, info);
+    g_string_append(*export, "\n\n");
+}
+
+
+static void
+gir_typelib_document_type(GString **export, GITypeInfo *info)
 {
     GType gtype = g_registered_type_info_get_g_type(info);
     gchar *doc = gir_type_document_type_from_gtype(gtype);
