@@ -1,6 +1,6 @@
 (use-modules (test grilo base))
 
-(automake-test
+(grilo-test
  (let ((data (media:audio-new))
        (title "START:DASH!!"))
    (send data (set-title

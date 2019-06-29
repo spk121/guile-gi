@@ -3,13 +3,15 @@
   #:use-module (test automake-test-lib)
   #:re-export (send
                EXIT_SUCCESS
-               EXIT_FAILURE
-               automake-test))
+               EXIT_FAILURE)
+  #:export (grilo-test))
 
-(eval-when (expand load eval)
- (unless (false-if-exception
-         (begin
-           (typelib-load "Grl" "0.3")
-           (init 0 #f)
-           #t))
-  (exit EXIT_SKIPPED)))
+(define-syntax-rule (grilo-test x)
+  (automake-test
+   (if (not (false-if-exception
+             (begin
+               (typelib-load "Grl" "0.3")
+               (init 0 #f)
+               #t)))
+       'skipped
+       x)))
