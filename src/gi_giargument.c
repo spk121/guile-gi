@@ -2197,6 +2197,10 @@ convert_list_arg_to_object(GIArgument *arg, GITypeInfo *list_type_info,
         referenced_base_type = g_base_info_get_type(referenced_base_info);
 
         switch (referenced_base_type) {
+        case GI_INFO_TYPE_ENUM:
+        case GI_INFO_TYPE_FLAGS:
+            break;
+
         case GI_INFO_TYPE_STRUCT:
         case GI_INFO_TYPE_UNION:
         case GI_INFO_TYPE_OBJECT:
@@ -2317,6 +2321,11 @@ convert_list_arg_to_object(GIArgument *arg, GITypeInfo *list_type_info,
             switch (item_type_tag) {
             case GI_TYPE_TAG_INTERFACE:
                 switch (referenced_base_type) {
+                case GI_INFO_TYPE_ENUM:
+                case GI_INFO_TYPE_FLAGS:
+                    scm_set_car_x(out_iter, scm_from_int32(*(gint32 *) data));
+                    break;
+
                 case GI_INFO_TYPE_STRUCT:
                 case GI_INFO_TYPE_UNION:
                 case GI_INFO_TYPE_OBJECT:
