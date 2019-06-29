@@ -27,7 +27,9 @@ AM_TESTS_ENVIRONMENT = \
 AM_CFLAGS = $(GUILE_CFLAGS) $(GOBJECT_INTROSPECTION_CFLAGS)
 TEST_EXTENSIONS = .scm
 
-noinst_DATA = lib.scm automake-test-lib.scm
+noinst_DATA = lib.scm \
+  automake-test-lib.scm \
+  grilo/base.scm
 
 TYPELIB_TESTS = \
  typelib/document.scm
@@ -201,6 +203,7 @@ AM_SCM_LOG_FLAGS = --no-auto-compile -L $(abs_top_srcdir)/src -L $(abs_top_srcdi
 EXTRA_DIST = \
   $(TESTS) \
   lib.scm \
-  automake-test-lib.scm
+  automake-test-lib.scm \
+  grilo/base.scm
 
 CLEANFILES = tmp.txt
