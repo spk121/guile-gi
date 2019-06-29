@@ -102,9 +102,7 @@ typedef struct _GirPredicate
     SCM fo_type;
 } GirPredicate;
 
-// *INDENT-OFF*
-static gchar *gir_type_predicate_name_from_gtype(GType gtype) G_GNUC_MALLOC;
-// *INDENT-ON*
+G_GNUC_MALLOC static gchar *gir_type_predicate_name_from_gtype(GType gtype);
 static SCM gir_type_make_fo_type_from_name(const gchar *type_class_name);
 static void *gir_type_create_predicate(const char *name, SCM fo_type);
 static void gir_type_predicate_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data);
