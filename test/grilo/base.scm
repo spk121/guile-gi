@@ -6,9 +6,10 @@
                EXIT_FAILURE
                automake-test))
 
-(unless (false-if-exception
+(eval-when (expand load eval)
+ (unless (false-if-exception
          (begin
            (typelib-load "Grl" "0.3")
            (init 0 #f)
            #t))
-  (exit EXIT_SKIPPED))
+  (exit EXIT_SKIPPED)))
