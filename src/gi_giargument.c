@@ -545,7 +545,8 @@ describe_non_pointer_type(GString *desc, GITypeInfo *type_info)
     case GI_TYPE_TAG_GSLIST:
     case GI_TYPE_TAG_ERROR:
         //g_assert_not_reached();
-        g_string_append_printf(desc, "Unhandled argument type tag %d", type_tag);
+        g_string_append_printf(desc, "Unhandled argument type tag %d in %s:%d", type_tag, __FILE__,
+                               __LINE__);
         break;
 
     case GI_TYPE_TAG_INTERFACE:
@@ -561,8 +562,18 @@ describe_non_pointer_type(GString *desc, GITypeInfo *type_info)
         else if (referenced_base_type == GI_INFO_TYPE_CALLBACK)
             g_string_printf(desc, "procedure of type %s",
                             g_base_info_get_name(referenced_base_info));
+        else if (referenced_base_type == GI_INFO_TYPE_INTERFACE
+                 || referenced_base_type == GI_INFO_TYPE_OBJECT
+                 || referenced_base_type == GI_INFO_TYPE_STRUCT
+                 || referenced_base_type == GI_INFO_TYPE_UNION) {
+            GType type = g_registered_type_info_get_g_type(referenced_base_info);
+            char *class_name = gir_type_class_name_from_gtype(type);
+            g_string_append(desc, class_name);
+            g_free(class_name);
+        }
         else
-            g_string_append_printf(desc, "Unhandled argument type tag %d", type_tag);
+            g_string_append_printf(desc, "Unhandled argument type tag %d in %s:%d", type_tag,
+                                   __FILE__, __LINE__);
         g_base_info_unref(referenced_base_info);
         break;
     }
@@ -590,7 +601,9 @@ gi_giargument_describe_arg(GIArgInfo *arg_info)
         switch (type_tag) {
         case GI_TYPE_TAG_BOOLEAN:
         case GI_TYPE_TAG_UNICHAR:
-            g_string_append_printf(desc, "Unhandled argument type tag %d", type_tag);
+            g_string_append_printf(desc, "Unhandled argument type tag %d in %s:%d", type_tag,
+                                   __FILE__, __LINE__);
+
             break;
         case GI_TYPE_TAG_DOUBLE:
         case GI_TYPE_TAG_FLOAT:
@@ -640,14 +653,16 @@ gi_giargument_describe_arg(GIArgInfo *arg_info)
                                 g_base_info_get_name(referenced_base_info));
             else if (referenced_base_type == GI_INFO_TYPE_STRUCT
                      || referenced_base_type == GI_INFO_TYPE_UNION
-                     || referenced_base_type == GI_INFO_TYPE_OBJECT) {
+                     || referenced_base_type == GI_INFO_TYPE_OBJECT
+                     || referenced_base_type == GI_INFO_TYPE_INTERFACE) {
                 GType type = g_registered_type_info_get_g_type(referenced_base_info);
                 char *class_name = gir_type_class_name_from_gtype(type);
                 g_string_append(desc, class_name);
                 g_free(class_name);
             }
             else
-                g_string_append_printf(desc, "Unhandled argument type tag %d", type_tag);
+                g_string_append_printf(desc, "Unhandled argument type tag %d in %s:%d", type_tag,
+                                       __FILE__, __LINE__);
             g_base_info_unref(referenced_base_info);
             break;
         }
