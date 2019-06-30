@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script
 
-#    Copyright (C) 2018 Michael L. Gran
+#    Copyright (C) 2018, 2019 Michael L. Gran
 
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -200,7 +200,7 @@ AC_ARG_ENABLE([coverage],
               [case "${enableval}" in
                  yes) cov=true ;;
                  no)  cov=false ;;
-                 *) AC_MSG_ERROR([bad value ${enableval} for --enable-debug]) ;;
+                 *) AC_MSG_ERROR([bad value ${enableval} for --enable-coverage]) ;;
                esac],
               [cov=false])
 AM_CONDITIONAL([COVERAGE], [test x$cov = xtrue])
