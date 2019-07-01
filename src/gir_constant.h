@@ -19,7 +19,7 @@
 
 void gir_constant_define(GIConstantInfo *info);
 static inline void
-gir_constant_document(GString ** str, const char *namespace_, const char *parent,
+gir_constant_document(GString **str, const char *namespace_, const char *parent,
                       GIConstantInfo *info)
 {
 }

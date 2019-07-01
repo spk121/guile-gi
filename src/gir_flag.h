@@ -19,7 +19,7 @@
 
 void gir_flag_define(GIEnumInfo *info);
 static inline void
-gir_flag_document(GString ** str, GIEnumInfo *info)
+gir_flag_document(GString **str, GIEnumInfo *info)
 {
 }
 
