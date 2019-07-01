@@ -242,16 +242,14 @@ static size_t
 array_length(struct array_info *ai, GIArgument *arg)
 {
     size_t array_length = array_length_1(ai, arg);
-    if (ai->array_length != -1 &&
-        ai->array_length != array_length)
-        g_warning ("mismatching array lengths: expected %zd, but got %zd",
-                   ai->array_length, array_length);
-    if (ai->array_fixed_size != -1 &&
-        ai->array_fixed_size != array_length)
-        g_warning ("mismatching array lengths: expected %zd, but got %zd",
-                   ai->array_fixed_size, array_length);
+    if (ai->array_length != -1 && ai->array_length != array_length)
+        g_warning("mismatching array lengths: expected %zd, but got %zd",
+                  ai->array_length, array_length);
+    if (ai->array_fixed_size != -1 && ai->array_fixed_size != array_length)
+        g_warning("mismatching array lengths: expected %zd, but got %zd",
+                  ai->array_fixed_size, array_length);
     if (array_length == 0)
-        g_debug ("array has length 0, are you sure about that?");
+        g_debug("array has length 0, are you sure about that?");
     return array_length;
 }
 
@@ -1413,25 +1411,25 @@ object_to_c_native_string_array_arg(char *subr, int argpos,
         SCM iter = object;
 
         for (size_t i = 0; i < len; i++) {
-            SCM entry = scm_car (iter);
+            SCM entry = scm_car(iter);
             if (ai->item_type_tag == GI_TYPE_TAG_FILENAME)
                 strv[i] = scm_to_locale_string(entry);
             else
                 strv[i] = scm_to_utf8_string(entry);
-            iter = scm_cdr (iter);
+            iter = scm_cdr(iter);
         }
         strv[len] = NULL;
         arg->v_pointer = strv;
         if (ai->item_transfer == GI_TRANSFER_NOTHING)
             ai->must_free = GIR_FREE_STRV;
     }
-    else if (scm_is_vector (object)) {
+    else if (scm_is_vector(object)) {
         scm_t_array_handle handle;
         gsize len;
         gssize inc;
         const SCM *elt;
 
-        elt = scm_vector_elements (object, &handle, &len, &inc);
+        elt = scm_vector_elements(object, &handle, &len, &inc);
         gchar **strv = g_new0(gchar *, len + 1);
 
         for (size_t i = 0; i < len; i++, elt += inc) {
@@ -1446,7 +1444,7 @@ object_to_c_native_string_array_arg(char *subr, int argpos,
         if (ai->item_transfer == GI_TRANSFER_NOTHING)
             ai->must_free = GIR_FREE_STRV;
 
-        scm_array_handle_release (&handle);
+        scm_array_handle_release(&handle);
     }
     else
         scm_wrong_type_arg_msg(subr, argpos, object, "list or vector of strings");
