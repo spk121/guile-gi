@@ -1392,20 +1392,46 @@ object_to_c_native_string_array_arg(char *subr, int argpos,
     if (scm_is_true(scm_list_p(object))) {
         size_t len = scm_to_size_t(scm_length(object));
         gchar **strv = g_new0(gchar *, len + 1);
+        SCM iter = object;
+
         for (size_t i = 0; i < len; i++) {
-            SCM entry = scm_list_ref(object, scm_from_size_t(i));
+            SCM entry = scm_car (iter);
             if (ai->item_type_tag == GI_TYPE_TAG_FILENAME)
                 strv[i] = scm_to_locale_string(entry);
             else
                 strv[i] = scm_to_utf8_string(entry);
+            iter = scm_cdr (iter);
         }
         strv[len] = NULL;
         arg->v_pointer = strv;
         if (ai->item_transfer == GI_TRANSFER_NOTHING)
             ai->must_free = GIR_FREE_STRV;
     }
+    else if (scm_is_vector (object)) {
+        scm_t_array_handle handle;
+        gsize len;
+        gssize inc;
+        const SCM *elt;
+
+        elt = scm_vector_elements (object, &handle, &len, &inc);
+        gchar **strv = g_new0(gchar *, len + 1);
+
+        for (size_t i = 0; i < len; i++, elt += inc) {
+            if (ai->item_type_tag == GI_TYPE_TAG_FILENAME)
+                strv[i] = scm_to_locale_string(*elt);
+            else
+                strv[i] = scm_to_utf8_string(*elt);
+        }
+        strv[len] = NULL;
+        arg->v_pointer = strv;
+
+        if (ai->item_transfer == GI_TRANSFER_NOTHING)
+            ai->must_free = GIR_FREE_STRV;
+
+        scm_array_handle_release (&handle);
+    }
     else
-        scm_wrong_type_arg_msg(subr, argpos, object, "list of strings");
+        scm_wrong_type_arg_msg(subr, argpos, object, "list or vector of strings");
 }
 
 
@@ -2050,6 +2076,8 @@ static SCM
 object_from_c_native_array_arg(struct array_info *ai, GIArgument *arg)
 {
     SCM obj = SCM_UNDEFINED;
+    size_t length = array_length(ai, arg);
+    g_assert_cmpint(length, !=, -1);
 
     switch (ai->item_type_tag) {
     case GI_TYPE_TAG_INT8:
@@ -2093,23 +2121,25 @@ object_from_c_native_array_arg(struct array_info *ai, GIArgument *arg)
     case GI_TYPE_TAG_UTF8:
     case GI_TYPE_TAG_FILENAME:
     {
-        size_t len = array_length(ai, arg);
-        SCM out_iter;
+        obj = scm_c_make_vector(length, SCM_BOOL_F);
+        scm_t_array_handle handle;
+        gsize len;
+        gssize inc;
+        SCM *elt;
 
-        obj = scm_make_list(scm_from_size_t(len), SCM_BOOL_F);
-        out_iter = obj;
-        for (int i = 0; i < len; i++) {
-            char *p = ((char **)arg->v_pointer)[i];
-            if (p) {
-                SCM entry;
+        elt = scm_vector_writable_elements(obj, &handle, &len, &inc);
+        g_assert(len == length);
+
+        for (gsize i = 0; i < length; i++, elt += inc) {
+            char *str = ((char **)arg->v_pointer)[i];
+            if (str) {
                 if (ai->item_type_tag == GI_TYPE_TAG_UTF8)
-                    entry = scm_from_utf8_string(((char **)arg->v_pointer)[i]);
+                    *elt = scm_from_utf8_string(str);
                 else
-                    entry = scm_from_locale_string(((char **)arg->v_pointer)[i]);
-                scm_set_car_x(out_iter, entry);
+                    *elt = scm_from_locale_string(str);
             }
-            out_iter = scm_cdr(out_iter);
         }
+        scm_array_handle_release(&handle);
         break;
     }
     default:
@@ -2118,12 +2148,10 @@ object_from_c_native_array_arg(struct array_info *ai, GIArgument *arg)
     }
 
     if (SCM_UNBNDP(obj) && ai->item_size) {
-        size_t _array_length = array_length(ai, arg);
-        g_assert_cmpint(_array_length, !=, -1);
-        size_t len = _array_length * ai->item_size;
+        size_t size = length * ai->item_size;
         // FIXME: maybe return a typed vector or list
-        obj = scm_c_make_bytevector(len);
-        memcpy(SCM_BYTEVECTOR_CONTENTS(obj), arg->v_pointer, len);
+        obj = scm_c_make_bytevector(size);
+        memcpy(SCM_BYTEVECTOR_CONTENTS(obj), arg->v_pointer, size);
     }
 
     return obj;
@@ -2157,7 +2185,8 @@ object_from_c_garray_arg(struct array_info *ai, GIArgument *arg)
     obj = scm_c_make_vector(array->len, SCM_UNDEFINED);
 
     scm_t_array_handle handle;
-    gsize len, inc, item_size = ai->item_size;
+    gsize len, item_size = ai->item_size;
+    gssize inc;
     SCM *elt;
 
     elt = scm_vector_writable_elements(obj, &handle, &len, &inc);
