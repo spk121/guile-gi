@@ -168,13 +168,9 @@ fill_array_info(struct array_info *ai, GITypeInfo *array_type_info, GITransfer a
 }
 
 static size_t
-array_length(struct array_info *ai, GIArgument *arg)
+array_length_1(struct array_info *ai, GIArgument *arg)
 {
-    if (ai->array_length != -1)
-        return ai->array_length;
-    else if (ai->array_fixed_size != -1)
-        return ai->array_fixed_size;
-    else if (ai->array_is_zero_terminated) {
+    if (ai->array_is_zero_terminated) {
         gpointer array = arg->v_pointer;
         if (array == NULL)
             return 0;
@@ -234,7 +230,29 @@ array_length(struct array_info *ai, GIArgument *arg)
         }
         }
     }
+    else if (ai->array_length != -1)
+        return ai->array_length;
+    else if (ai->array_fixed_size != -1)
+        return ai->array_fixed_size;
+
     g_assert_not_reached();
+}
+
+static size_t
+array_length(struct array_info *ai, GIArgument *arg)
+{
+    size_t array_length = array_length_1(ai, arg);
+    if (ai->array_length != -1 &&
+        ai->array_length != array_length)
+        g_warning ("mismatching array lengths: expected %zd, but got %zd",
+                   ai->array_length, array_length);
+    if (ai->array_fixed_size != -1 &&
+        ai->array_fixed_size != array_length)
+        g_warning ("mismatching array lengths: expected %zd, but got %zd",
+                   ai->array_fixed_size, array_length);
+    if (array_length == 0)
+        g_debug ("array has length 0, are you sure about that?");
+    return array_length;
 }
 
 /*
