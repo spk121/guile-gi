@@ -2181,8 +2181,6 @@ convert_list_arg_to_object(GIArgument *arg, GITypeInfo *list_type_info,
     GITypeTag list_type_tag = g_type_info_get_tag(list_type_info);
     GITypeInfo *item_type_info = g_type_info_get_param_type(list_type_info, 0);
     GITypeTag item_type_tag = g_type_info_get_tag(item_type_info);
-    GITypeTag referenced_base_type = g_type_info_get_tag(item_type_info);
-    GType referenced_object_type = G_TYPE_INVALID;
     gboolean item_is_ptr = g_type_info_is_pointer(item_type_info);
 
     GITransfer item_transfer;
@@ -2190,64 +2188,6 @@ convert_list_arg_to_object(GIArgument *arg, GITypeInfo *list_type_info,
         item_transfer = GI_TRANSFER_EVERYTHING;
     else
         item_transfer = GI_TRANSFER_NOTHING;
-
-    switch (item_type_tag) {
-    case GI_TYPE_TAG_INT8:
-    case GI_TYPE_TAG_UINT8:
-    case GI_TYPE_TAG_INT16:
-    case GI_TYPE_TAG_UINT16:
-    case GI_TYPE_TAG_INT32:
-    case GI_TYPE_TAG_UINT32:
-    case GI_TYPE_TAG_UNICHAR:
-    case GI_TYPE_TAG_INT64:
-    case GI_TYPE_TAG_UINT64:
-    case GI_TYPE_TAG_FLOAT:
-    case GI_TYPE_TAG_DOUBLE:
-    case GI_TYPE_TAG_GTYPE:
-    case GI_TYPE_TAG_BOOLEAN:
-        break;
-    case GI_TYPE_TAG_INTERFACE:
-    {
-        GIBaseInfo *referenced_base_info = g_type_info_get_interface(item_type_info);
-        referenced_base_type = g_base_info_get_type(referenced_base_info);
-
-        switch (referenced_base_type) {
-        case GI_INFO_TYPE_ENUM:
-        case GI_INFO_TYPE_FLAGS:
-            break;
-
-        case GI_INFO_TYPE_STRUCT:
-        case GI_INFO_TYPE_UNION:
-        case GI_INFO_TYPE_OBJECT:
-            referenced_object_type = g_registered_type_info_get_g_type(referenced_base_info);
-            break;
-
-        default:
-            g_critical("Unhandled item type in %s:%d", __FILE__, __LINE__);
-            g_assert_not_reached();
-
-        }
-        g_base_info_unref(referenced_base_info);
-        break;
-    }
-    case GI_TYPE_TAG_UTF8:
-    case GI_TYPE_TAG_FILENAME:
-        break;
-
-    case GI_TYPE_TAG_ARRAY:
-    case GI_TYPE_TAG_GLIST:
-    case GI_TYPE_TAG_GSLIST:
-    case GI_TYPE_TAG_GHASH:
-        g_critical("do you seriously want to nest containers in such a manner?");
-        g_assert_not_reached();
-        break;
-
-    default:
-        g_critical("Unhandled item type in %s:%d", __FILE__, __LINE__);
-        g_assert_not_reached();
-    }
-
-    g_base_info_unref(item_type_info);
 
     // Actual conversion
     gpointer list = arg->v_pointer, data;
@@ -2333,51 +2273,18 @@ convert_list_arg_to_object(GIArgument *arg, GITypeInfo *list_type_info,
             }
         }
         else {
-            switch (item_type_tag) {
-            case GI_TYPE_TAG_INTERFACE:
-                switch (referenced_base_type) {
-                case GI_INFO_TYPE_ENUM:
-                case GI_INFO_TYPE_FLAGS:
-                    scm_set_car_x(out_iter, scm_from_int32(*(gint32 *) data));
-                    break;
-
-                case GI_INFO_TYPE_STRUCT:
-                case GI_INFO_TYPE_UNION:
-                case GI_INFO_TYPE_OBJECT:
-                default:
-                    g_critical("Unhandled item type in %s:%d", __FILE__, __LINE__);
-                    list = NULL;
-                    break;
-                }
-                g_assert_not_reached();
-            case GI_TYPE_TAG_UTF8:
-            case GI_TYPE_TAG_FILENAME:
-            {
-                char **str = data;
-
-                if (!*str)
-                    scm_set_car_x(out_iter, scm_c_make_string(0, SCM_MAKE_CHAR(0)));
-                else {
-                    if (item_type_tag == GI_TYPE_TAG_UTF8)
-                        scm_set_car_x(out_iter, scm_from_utf8_string(*str));
-                    else
-                        scm_set_car_x(out_iter, scm_from_locale_string(*str));
-
-                    if (item_transfer == GI_TRANSFER_EVERYTHING) {
-                        g_free(*str);
-                        *str = NULL;
-                    }
-                }
-                break;
-            }
-            default:
-                g_critical("Unhandled item type in %s:%d", __FILE__, __LINE__);
-                list = NULL;
-            }
+            GIArgument arg;
+            SCM elt;
+            arg.v_pointer = *(void **)data;
+            elt = gi_giargument_convert_return_val_to_object(&arg, item_type_info, item_transfer,
+                                                             TRUE, FALSE);
+            scm_set_car_x(out_iter, elt);
         }
 
         out_iter = scm_cdr(out_iter);
     }
+    g_base_info_unref(item_type_info);
+
 }
 
 static void
