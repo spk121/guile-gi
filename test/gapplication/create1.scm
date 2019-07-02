@@ -7,7 +7,7 @@
    (let ((app (make-gobject (get-gtype <GApplication>)
                             '(("application-id" . "gi.guile.Example")))))
      (modify-signals app
-       (add-before activate
+       (connect activate
          (lambda (app)
            (display "Hello, world")
            (newline)

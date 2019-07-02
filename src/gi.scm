@@ -48,14 +48,14 @@
             (current-module))
     (syntax-case stx ()
       ((_ self (signal handler))
-       #'(car (modify-signals self (add-before signal handler))))
+       #'(car (modify-signals self (connect signal handler))))
       ((_ self (signal handler extra-arg ...))
        (begin
          (format
           (current-error-port)
           "WARNING: ~s: dropping extra arguments, this will likely cause failure~%"
           (current-module))
-         #'(car (modify-signals self (add-before signal handler))))))))
+         #'(car (modify-signals self (connect signal handler))))))))
 
 (define-syntax create
   (lambda (stx)
@@ -95,12 +95,12 @@
        #`((@@ (guile) list)
           #,@(map
               (lambda (signal)
-                (syntax-case signal ()
-                  ((add-before signal handler)
+                (syntax-case signal (connect connect-after remove block unblock)
+                  ((connect signal handler)
                    (identifier? #'signal)
                    (with-syntax ((name (%syntax->string #'signal)))
                      #'(signal-connect self name handler #f)))
-                  ((add-after signal handler)
+                  ((connect-after signal handler)
                    (identifier? #'signal)
                    (with-syntax ((name (%syntax->string #'signal)))
                      #'(signal-connect self name handler #t)))

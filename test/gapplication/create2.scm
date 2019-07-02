@@ -10,7 +10,7 @@
                      "gi.guile.Example")
        (error "oops, something happened to our memory"))
      (modify-signals app
-       (add-before activate
+       (connect activate
          (lambda (app)
            (display "Hello, world")
            (newline)

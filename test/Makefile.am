@@ -137,6 +137,7 @@ BYTE_ARRAY_TESTS = \
  byte_array/bytes_new_null_contents.scm
 
 GAPPLICATION_TESTS = \
+ gapplication/activate_order.scm \
  gapplication/command-line.scm \
  gapplication/command-line-options.scm \
  gapplication/create1.scm \

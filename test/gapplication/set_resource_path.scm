@@ -8,12 +8,12 @@
                             '(("application-id" . "gi.guile.Example"))))
          (result #f))
      (modify-signals app
-       (add-before activate
+       (connect activate
          (lambda (app)
-           (gobject-set-property! app "resource_base_path"
+           (gobject-set-property! app "resource-base-path"
                                   "/gi/guile/resource/base_path")
            (set! result
-                 (equal? (gobject-get-property app "resource_base_path")
+                 (equal? (gobject-get-property app "resource-base-path")
                          "/gi/guile/resource/base_path"))
            (with-object app (quit)))))
      (with-object app (run (length (command-line)) (command-line)))
