@@ -15,6 +15,7 @@
 (define-module (gi)
   #:export (send
             connect
+            modify-signals
             use-typelibs))
 
 (eval-when (expand load eval)
@@ -35,12 +36,43 @@
 
 (define-syntax connect
   (lambda (stx)
+    (format (current-error-port)
+            "WARNING: ~s: connect is deprecated, use modify-signals instead~%"
+            (current-module))
     (syntax-case stx ()
       ((_ self (signal handler))
-       (identifier? #'signal)
-       (with-syntax ((signal-str (symbol->string
-                                  (syntax->datum #'signal))))
-         #'(signal-connect self signal-str handler))))))
+       #'(car (modify-signals self (add-before signal handler))))
+      ((_ self (signal handler extra-arg ...))
+       (begin
+         (format
+          (current-error-port)
+          "WARNING: ~s: dropping extra arguments, this will likely cause failure~%"
+          (current-module))
+         #'(car (modify-signals self (add-before signal handler))))))))
+
+(define-syntax modify-signals
+  (lambda (stx)
+    (syntax-case stx ()
+      ((_ self signal ...)
+       #`((@@ (guile) list)
+          #,@(map
+              (lambda (signal)
+                (syntax-case signal ()
+                  ((add-before s handler)
+                   (identifier? #'s)
+                   (with-syntax ((name (symbol->string (syntax->datum #'s))))
+                     #'(signal-connect self name handler #f)))
+                  ((add-after s handler)
+                   (identifier? #'s)
+                   (with-syntax ((name (symbol->string (syntax->datum #'s))))
+                     #'(signal-connect self name handler #t)))
+                  ((remove handler)
+                   #'(gobject-disconnect-by-func self handler))
+                  ((block handler)
+                   #'(gobject-handler-block-by-func self handler))
+                  ((unblock handler)
+                   #'(gobject-handler-unblock-by-func self handler))))
+              #'(signal ...)))))))
 
 (define (%gi->module-use x lib version params)
   (cond
