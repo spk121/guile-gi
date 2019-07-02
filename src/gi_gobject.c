@@ -295,43 +295,45 @@ gugobject_clear(SCM self)
 }
 
 static SCM
-connect_helper(SCM self, gchar *name, SCM callback, SCM extra_args, SCM object, gboolean after)
+scm_signal_connect(SCM self, SCM s_name, SCM callback, SCM s_after)
 {
-    guint sigid;
-    GQuark detail = 0;
-    GClosure *closure = NULL;
+
+    GObject *obj;
+    GType gtype;
+    char *name;
+    gboolean after;
+
+    GClosure *closure;
     gulong handlerid;
     GSignalQuery query_info;
+    guint sigid;
+    GQuark detail;
 
-    GObject *obj = scm_foreign_object_ref(self, OBJ_SLOT);
-    GType gtype = G_OBJECT_TYPE(obj);
+    SCM_ASSERT_TYPE(SCM_INSTANCEP(self), self, SCM_ARG1, "signal-connect", "GObject");
+    gtype = gir_type_get_gtype_from_obj(self);
+    SCM_ASSERT_TYPE(gtype > G_TYPE_INVALID, self, SCM_ARG1, "signal-connect", "GObject");
 
-    if (!g_signal_parse_name(name, gtype, &sigid, &detail, TRUE)) {
-        scm_misc_error("connect_helper",
-                       "~A: unknown signal name ~A", scm_list_2(self, scm_from_utf8_string(name)));
-    }
+    obj = scm_foreign_object_ref(self, OBJ_SLOT);
+    g_assert_cmpint(gtype, ==, G_OBJECT_TYPE(obj));
+
+    scm_dynwind_begin(0);
+    name = scm_dynwind_or_bust("signal-connect",
+                               scm_to_utf8_string(s_name));
+
+    if (!g_signal_parse_name(name, gtype, &sigid, &detail, TRUE))
+        scm_misc_error("signal-connect",
+                       "~A: unknown signal name ~A", scm_list_2(self, s_name));
+
+    after = !SCM_UNBNDP(s_after) && scm_to_bool(s_after);
 
     g_signal_query(sigid, &query_info);
-    closure = gi_signal_closure_new(self, query_info.itype,
-                                    query_info.signal_name, callback);
+    closure = gi_signal_closure_new(self, query_info.itype, query_info.signal_name, callback);
 
     gugobject_watch_closure(self, closure);
     handlerid = g_signal_connect_closure_by_id(obj, sigid, detail, closure, after);
+    scm_dynwind_end();
 
     return scm_from_ulong(handlerid);
-}
-
-static SCM
-scm_signal_connect(SCM self, SCM s_name, SCM proc, SCM rest)
-{
-    if (gir_type_get_gtype_from_obj(self) <= G_TYPE_INVALID)
-        scm_error(scm_arg_type_key, "signal-connect",
-                  "Wrong type in position 1: ~S", scm_list_1(self), scm_list_1(self));
-
-    char *name = scm_to_utf8_string(s_name);
-    SCM ret = connect_helper(self, name, proc, rest, SCM_BOOL_F, FALSE);
-    free(name);
-    return ret;
 }
 
 /* re pygobject-object.c:2064 pygobject_disconnect_by_func */
@@ -1063,7 +1065,7 @@ gi_init_gobject(void)
     scm_c_define_gsubr("gobject-handler-unblock-by-func", 2, 0, 0,
                        scm_gobject_handler_unblock_by_func);
     scm_c_define_gsubr("gobject-printer", 2, 0, 0, scm_gobject_printer);
-    scm_c_define_gsubr("signal-connect", 3, 0, 1, scm_signal_connect);
+    scm_c_define_gsubr("signal-connect", 3, 1, 0, scm_signal_connect);
     scm_c_export("register-type",
                  "make-gobject",
                  "gobject-is-object?",
