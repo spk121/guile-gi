@@ -13,9 +13,7 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https:;;www.gnu.org/licenses/>.
 (define-module (gi)
-  #:export (send
-            connect
-            create
+  #:export (create
             with-object
             modify-signals
             use-typelibs))
@@ -28,34 +26,6 @@
 ;; https:;;lists.gnu.org/archive/html/guile-user/2018-12/msg00037.html
 
 (define %syntax->string (compose symbol->string syntax->datum))
-
-(define-syntax send
-  (lambda (stx)
-    (format (current-error-port)
-            "WARNING: ~s: send is deprecated, use modify-signals instead~%"
-            (current-module))
-    (syntax-case stx ()
-      ((_ self (method arg ...))
-       (identifier? #'method)
-       (with-syntax ((method-str (symbol->string
-                                  (syntax->datum #'method))))
-         #'(call-method self method-str arg ...))))))
-
-(define-syntax connect
-  (lambda (stx)
-    (format (current-error-port)
-            "WARNING: ~s: connect is deprecated, use modify-signals instead~%"
-            (current-module))
-    (syntax-case stx ()
-      ((_ self (signal handler))
-       #'(car (modify-signals self (connect signal handler))))
-      ((_ self (signal handler extra-arg ...))
-       (begin
-         (format
-          (current-error-port)
-          "WARNING: ~s: dropping extra arguments, this will likely cause failure~%"
-          (current-module))
-         #'(car (modify-signals self (connect signal handler))))))))
 
 (define-syntax create
   (lambda (stx)
