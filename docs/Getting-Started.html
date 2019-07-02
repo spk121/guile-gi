@@ -192,14 +192,14 @@ and <code>gtk_button_set_label</code> to a method of that class.
 </li><li> scheme: <code>(send button (set-label &quot;foo&quot;))</code>
 </li></ol>
 </blockquote>
-<p>However, using <code>send</code> and <code>connect</code> in such a manner shadows Guile procedures
-for the use with sockets.
-An easy workaround would be to rename either as the user, but this eliminates the benefit
-of having these definitions in the first place.
-On top of that, it is a somewhat pointless typing exercise, so we instead offer
-the strictly better <code>with-object</code> (which allows multiple methods to be invoked
-instead of just one) and the somewhat more verbose <code>modify-signals</code>, which wraps
-<code>connect</code> and other signal-related procedures in a safe environment.
+<p>Shadowing Guile procedures is certainly not ideal.
+A workaround would have been to rename these procedures as user, but this does away
+with the supposed benefits of their names, on top of being a somewhat pointless typing exercise.
+If we already have to break either specification, we want to do it in a way, that makes sense.
+Hence we replace <code>send</code> by the strictly better (except in the case of the length of its name)
+<code>with-object</code>, which allows multiple methods to be invoked instead of just one.
+In a similar manner <code>connect</code> is replaced by the slightly more verbose <code>modify-signals</code>,
+which also handles removal and blocking.
 </p>
 <p>See <a href="GObject-Signals.html#GObject-Signals">GObject Signals</a> for more information on
 <code>modify-signals</code>. See <a href="GObject-Methods.html#GObject-Methods">GObject Methods</a> for information on the
