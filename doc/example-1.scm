@@ -2,28 +2,29 @@
              (gi gio-2)
              (gi gtk-3)
              (gi glib-2))
-(define (print-hello widget data)
+
+(define (print-hello widget)
   (display "Hello World\n"))
 
-(define (activate-callback app user-data)
-  (let ((window (cast (ApplicationWindow-new app) <GtkApplicationWindow>))
-        (button-box (cast (ButtonBox-new 0) <GtkButtonBox>))
-        (button (Button-new-with-label "Hello World")))
-    (send window (set-title "Window"))
-    (send window (set-default-size 200 200))
-    (send window (show-all))
-    (send window (add button-box))
+(define (activate-callback app)
+  (let* ((window (create <GtkApplicationWindow>
+                   (application app)
+                   (default-height 200)
+                   (default-width 200)
+                   (title "Window")))
+         (button-box (create <GtkButtonBox> (parent window)))
+         (button (create <GtkButton>
+                   (parent button-box)
+                   (label "Hello world"))))
+    (modify-signals button
+      (connect clicked print-hello)
+      (connect clicked (lambda _ (with-object window (destroy)))))
 
-    (connect button (clicked print-hello #f))
-    (connect button (clicked (lambda x
-                               (send window (destroy)))
-                             #f))
-    (send button-box (add button))
-    (send window (show-all))))
+    (with-object window (show-all))))
 
 (define (main)
-  (let ((app (Application-new "org.gtk.example" 0)))
-    (connect app (activate activate-callback #f))
-    (send app (run (length (command-line)) (command-line)))))
+  (let ((app (create <GtkApplication> (application-id "org.gtk.example"))))
+    (modify-signals app (connect activate activate-callback))
+    (with-object app (run (length (command-line)) (command-line)))))
 
 (main)

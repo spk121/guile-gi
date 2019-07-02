@@ -91,6 +91,17 @@ take the following form.
 <p>Note that Guile-GI provides export libraries for the most common
 GObject libraries.  It includes <code>(gi gtk-3)</code>, <code>(gi gio-2)</code>, and <code>(gi glib-2)</code>, for example.
 </p>
+<p>Alternatively, you can instruct Guile-GI to create these modules for you, as
+shown in the following.
+</p>
+<div class="example">
+<pre class="example">(use-modules (gi))
+(use-typelibs (&quot;GLib&quot; &quot;2.0&quot;) (&quot;Gtk&quot; &quot;3.0&quot;))
+</pre></div>
+
+<p>Here, Guile-GI creates the (hopefully unique) modules <code>(%gi GLib-2.0)</code> and <code>(%gi Gtk-3.0)</code>
+and imports them into the current module using <code>(use-modules)</code>.
+</p>
 <p>For these auto-generated libraries, you are going to need some
 documentation. The procedure <code>typelib-document</code> creates some
 rough documentation for a <code>typelib</code>: it gives the procedure names
@@ -112,29 +123,30 @@ guile -L . -c '(use-modules (gi)) (display (typelib-document &quot;Gio&quot; &qu
              (gi gio-2)
              (gi gtk-3)
              (gi glib-2))
-(define (print-hello widget data)
+
+(define (print-hello widget)
   (display &quot;Hello World\n&quot;))
 
-(define (activate-callback app user-data)
-  (let ((window (cast (ApplicationWindow-new app) &lt;GtkApplicationWindow&gt;))
-        (button-box (cast (ButtonBox-new 0) &lt;GtkButtonBox&gt;))
-        (button (Button-new-with-label &quot;Hello World&quot;)))
-    (send window (set-title &quot;Window&quot;))
-    (send window (set-default-size 200 200))
-    (send window (show-all))
-    (send window (add button-box))
+(define (activate-callback app)
+  (let* ((window (create &lt;GtkApplicationWindow&gt;
+                   (application app)
+                   (default-height 200)
+                   (default-width 200)
+                   (title &quot;Window&quot;)))
+         (button-box (create &lt;GtkButtonBox&gt; (parent window)))
+         (button (create &lt;GtkButton&gt;
+                   (parent button-box)
+                   (label &quot;Hello world&quot;))))
+    (modify-signals button
+      (connect clicked print-hello)
+      (connect clicked (lambda _ (with-object window (destroy)))))
 
-    (connect button (clicked print-hello #f))
-    (connect button (clicked (lambda x
-                               (send window (destroy)))
-                             #f))
-    (send button-box (add button))
-    (send window (show-all))))
+    (with-object window (show-all))))
 
 (define (main)
-  (let ((app (Application-new &quot;org.gtk.example&quot; 0)))
-    (connect app (activate activate-callback #f))
-    (send app (run (length (command-line)) (command-line)))))
+  (let ((app (create &lt;GtkApplication&gt; (application-id &quot;org.gtk.example&quot;))))
+    (modify-signals app (connect activate activate-callback))
+    (with-object app (run (length (command-line)) (command-line)))))
 
 (main)
 </pre></div>
@@ -143,38 +155,57 @@ guile -L . -c '(use-modules (gi)) (display (typelib-document &quot;Gio&quot; &qu
 impressed?
 </p>
 <p>Let&rsquo;s walk through this example.  First off, you may notice three important
-pieces of syntax <code>cast</code>, <code>send</code>, <code>connect</code>.  These three
-macros allow one to interact with GObject&rsquo;s very odd class system.
+pieces of syntax <code>create</code>, <code>with-object</code>, <code>modify-signals</code>.
+These three macros allow one to interact with GObject&rsquo;s very odd class system.
 </p>
-<p>For GObject-derived libraries, there is a class hierarchy based on
-single inheritance.  For example a GtkApplicationWindow, is a type of a
-GtkWindow which is a type of a GtkWidget, and so on. <code>cast</code> can be
-used to coerce one GObject type into another.  This is necessary because
-some Gtk widget constructors do not return the type you would expect.
-For example, <code>ApplicationWindow-new</code> returns a <code>&lt;GtkWidget&gt;</code>
-instead of a <code>&lt;GtkApplicationWindow&gt;</code>.  This seems odd to me, but,
-that&rsquo;s what the C headers say, and that&rsquo;s what the introspection
-information says, too.  Since this project generates its bindings
-automatically from the provided introspection information, it is what it
-is.
+
+<p>First is <code>create</code>, which &ndash; as the name implies &ndash; creates an object.
+The first argument is a type, which can either be a &ldquo;proper&rdquo; type, such
+as <code>&lt;GtkApplication&gt;</code> or a number (it will most likely be the former).
+This will be the type of the resulting object.
+The rest of the arguments are tuples <code>(key value)</code>, where key is the
+name of a field and value is a value to store therein. These pairs are passed
+to the object at creation time as strings and GValues respectively.
+Thus it is possible to set CREATE_ONLY properties with it.
 </p>
-<p>Next is the <code>send</code> syntax.  It will attempt to find a GObject
-method for a given object, searching the object&rsquo;s class and its parent
-classes.
+<p>Next is the <code>with-object</code> syntax. Within its scope function calls will
+be translated to method calls of the given object.
+Hence <code>with-object window (show-all)</code> translates roughly to
+<code>gtk_widget_show_all(window)</code>. As can be seen in this example, it matters
+little if a method is defined in the object&rsquo;s class or one of its parent &ndash; it is
+resolved either way.
 </p>
-<p>And lastly is the <code>connect</code> syntax.  It hooks a procedure to a
-GObject <em>signal</em>.  GObject signals are its native way of advising
-objects of the occurrence of events.
+<p>And lastly is the <code>modify-signals</code> syntax.
+It hooks procedures to GObject <em>signals</em>.
+Signals are its native way of advising objects of the occurrence of events.
 </p>
-<p>Note that <code>send</code> and <code>connect</code> are Guile procedures for
-sockets, and including <code>(gi)</code> shadows those socket procedures,
-which is perhaps confusing.  However, <code>send</code> and <code>connect</code> are
-GObject official recommendations for how Lispy bindings should work, so
-we&rsquo;re rolling with it.
+<p>Previously, we&rsquo;ve used <code>send</code> to invoke functions and <code>connect</code>
+to hook signals, which shadowed Guile procedures for the use with sockets.
+This was done to conform to the official
+<a href="https://gi.readthedocs.io/en/latest/writingbindings/guidelines.html">GObject Introspection Guidelines</a>,
+which are as follows.
+</p><blockquote>
+<p>Try to stay close to the C language semantics, for instance GObject should be mapped to a class
+and <code>gtk_button_set_label</code> to a method of that class.
+</p><ol>
+<li> ...
+</li><li> scheme: <code>(send button (set-label &quot;foo&quot;))</code>
+</li></ol>
+</blockquote>
+<p>However, using <code>send</code> and <code>connect</code> in such a manner shadows Guile procedures
+for the use with sockets.
+An easy workaround would be to rename either as the user, but this eliminates the benefit
+of having these definitions in the first place.
+On top of that, it is a somewhat pointless typing exercise, so we instead offer
+the strictly better <code>with-object</code> (which allows multiple methods to be invoked
+instead of just one) and the somewhat more verbose <code>modify-signals</code>, which wraps
+<code>connect</code> and other signal-related procedures in a safe environment.
 </p>
 <p>See <a href="GObject-Signals.html#GObject-Signals">GObject Signals</a> for more information on
-<code>connect</code>. See <a href="GObject-Methods.html#GObject-Methods">GObject Methods</a> for information on the
-<code>send</code> syntax.
+<code>modify-signals</code>. See <a href="GObject-Methods.html#GObject-Methods">GObject Methods</a> for information on the
+<code>with-object</code> syntax.
+</p>
+<p>In future versions, <code>with-object</code> may be improved to also handle properties and signals.
 </p>
 <table class="menu" border="0" cellspacing="0">
 <tr><td align="left" valign="top">&bull; <a href="Installation.html#Installation" accesskey="1">Installation</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">

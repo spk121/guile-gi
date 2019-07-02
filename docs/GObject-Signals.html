@@ -63,14 +63,13 @@ have nothing to do with Unix signals like <code>SIGTERM</code>.
 <code>signal-connect</code> procedure. Consider the following example.
 </p>
 <div class="example">
-<pre class="example">(define (activate app user-data)
+<pre class="example">(define (activate app)
    ...
    )
 
 (signal-connect app         ; A GObject
                 &quot;activate&quot;  ; The name of a signal it might emit
-                activate    ; A procedure to call when emitted
-                #f)         ; A user-supplied argument
+                activate)   ; A procedure to call when emitted
 </pre></div>
 
 <p>In that example, the caller is attaching a procedure named
@@ -80,42 +79,45 @@ the gobject object calls all the callback procedures attached to its
 </p>
 <p>When a callback procedure is called it may receives some arguments
 from the caller and some from user data.  In the example, <code>activate</code>
-is supposed to take two arguments.  The first argument <code>app</code> is
-supplied by the caller.  The second argument <code>user-data</code> is
-defined when the callback is registered.  In the above example the <code>#f</code>
-in the <code>signal-connect</code> call will be passed to <code>activate</code>
-as its <code>user-data</code> parameter.
+is supposed to take a single argument.
+This argument &ndash; <code>app</code> &ndash; is supplied by the caller, as are all
+arguments to signals.
 </p>
-<blockquote>
-<p><b>Warning:</b> User data parameters may only be pointers or <code>#f</code>, which makes
-them tricky to use.  It is best to avoid them.  Scheme procedures and
-lambdas are versatile enough that these user-data parameters are never
-necessary.
-</p></blockquote>
+<p>Previous versions added a second (in the general case last) argument analogous
+to the <code>user-data</code> argument used excessively within GObject.
+Such user data parameters have been removed as they are unnecessary when using
+(anonymous) procedures in Scheme.
+</p>
+<p>When you are connecting many signals of one object, you may wish to save some typing
+by doing the following:
+</p>
+<div class="example">
+<pre class="example">(modify-signals object
+  (connect signal-a handler-a)
+  (connect signal-b handler-b)
+  ...
+  (connect signal-z handler-z))
+</pre></div>
 
-<p>If you have decided to ignore the above warning and for some
-unimaginable reason want to use the user data parameter of a callback
-procedure, you can pass a pointer.  And if the parameter that you wish
-to pass is not a bytevector or other type that inherently can be
-converted to a pointer, the following kludge is provided.
+<p>This syntax roughly expands to
 </p>
-<dl>
-<dt id="index-label">box: <strong>label</strong> <em>val</em></dt>
-<dd><p>This procedure takes a scheme object <var>val</var> and stores it in a
-preallocated location in memory, and returns that location as a
-pointer.  The <var>label</var>, which must be a one-letter symbol from
-<code>A</code> to <code>Z</code>, indicates which location into which it is to be
-stored.
-</p>
-<p>When callback procedures are called, Guile-GI will check to see if any
-user-data parameters are one of these twenty-six special memory
-locations, and, if so, will return the value stored there.  Thus,
-there is no unbox procedure needed.
-</p>
-<p>Since these boxes can be set at any time by any thread, it is up to
-the caller to manage the contents of the boxes.
-</p></dd></dl>
+<div class="example">
+<pre class="example">(begin
+  (signal-connect object ``signal-a'' handler-a)
+  (signal-connect object ``signal-b'' handler-b)
+  ...
+  (signal-connect object ``signal-z'' handler-z)))
+</pre></div>
 
+<p>except that object is temporarily bound to an unique identifier if is not already one.
+You could for instance fetch your object from a (tree of) the resulting object would
+be active for the scope of the signal modifications and the reference to it discarded
+afterwards.
+</p>
+<p>Signals can also be connected <em>after</em> the main handler. To do so,
+supply <code>#t</code> as the optional fourth argument to <code>signal-connect</code>
+or use <code>connect-after</code> in <code>modify-signals</code>.
+</p>
 <hr>
 <div class="header">
 <p>

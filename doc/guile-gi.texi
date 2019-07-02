@@ -127,6 +127,17 @@ take the following form.
 Note that Guile-GI provides export libraries for the most common
 GObject libraries.  It includes @code{(gi gtk-3)}, @code{(gi gio-2)}, and @code{(gi glib-2)}, for example.
 
+Alternatively, you can instruct Guile-GI to create these modules for you, as
+shown in the following.
+
+@example
+(use-modules (gi))
+(use-typelibs ("GLib" "2.0") ("Gtk" "3.0"))
+@end example
+
+Here, Guile-GI creates the (hopefully unique) modules @code{(%gi GLib-2.0)} and @code{(%gi Gtk-3.0)}
+and imports them into the current module using @code{(use-modules)}.
+
 For these auto-generated libraries, you are going to need some
 documentation. The procedure @code{typelib-document} creates some
 rough documentation for a @code{typelib}: it gives the procedure names
@@ -151,38 +162,70 @@ When it is run, it will create an empty window with a title.  Are you
 impressed?
 
 Let's walk through this example.  First off, you may notice three important
-pieces of syntax @code{cast}, @code{send}, @code{connect}.  These three
-macros allow one to interact with GObject's very odd class system.
+pieces of syntax @code{create}, @code{with-object}, @code{modify-signals}.
+These three macros allow one to interact with GObject's very odd class system.
 
-For GObject-derived libraries, there is a class hierarchy based on
-single inheritance.  For example a GtkApplicationWindow, is a type of a
-GtkWindow which is a type of a GtkWidget, and so on. @code{cast} can be
-used to coerce one GObject type into another.  This is necessary because
-some Gtk widget constructors do not return the type you would expect.
-For example, @code{ApplicationWindow-new} returns a @code{<GtkWidget>}
-instead of a @code{<GtkApplicationWindow>}.  This seems odd to me, but,
-that's what the C headers say, and that's what the introspection
-information says, too.  Since this project generates its bindings
-automatically from the provided introspection information, it is what it
-is.
+@c For GObject-derived libraries, there is a class hierarchy based on
+@c single inheritance.  For example a GtkApplicationWindow, is a type of a
+@c GtkWindow which is a type of a GtkWidget, and so on. @code{cast} can be
+@c used to coerce one GObject type into another.  This is necessary because
+@c some Gtk widget constructors do not return the type you would expect.
+@c For example, @code{ApplicationWindow-new} returns a @code{<GtkWidget>}
+@c instead of a @code{<GtkApplicationWindow>}.  This seems odd to me, but,
+@c that's what the C headers say, and that's what the introspection
+@c information says, too.  Since this project generates its bindings
+@c automatically from the provided introspection information, it is what it
+@c is.
 
-Next is the @code{send} syntax.  It will attempt to find a GObject
-method for a given object, searching the object's class and its parent
-classes.
+First is @code{create}, which -- as the name implies -- creates an object.
+The first argument is a type, which can either be a ``proper'' type, such
+as @code{<GtkApplication>} or a number (it will most likely be the former).
+This will be the type of the resulting object.
+The rest of the arguments are tuples @code{(key value)}, where key is the
+name of a field and value is a value to store therein. These pairs are passed
+to the object at creation time as strings and GValues respectively.
+Thus it is possible to set CREATE_ONLY properties with it.
 
-And lastly is the @code{connect} syntax.  It hooks a procedure to a
-GObject @emph{signal}.  GObject signals are its native way of advising
-objects of the occurrence of events.
+Next is the @code{with-object} syntax. Within its scope function calls will
+be translated to method calls of the given object.
+Hence @code{with-object window (show-all)} translates roughly to
+@code{gtk_widget_show_all(window)}. As can be seen in this example, it matters
+little if a method is defined in the object's class or one of its parent -- it is
+resolved either way.
 
-Note that @code{send} and @code{connect} are Guile procedures for
-sockets, and including @code{(gi)} shadows those socket procedures,
-which is perhaps confusing.  However, @code{send} and @code{connect} are
-GObject official recommendations for how Lispy bindings should work, so
-we're rolling with it.
+And lastly is the @code{modify-signals} syntax.
+It hooks procedures to GObject @emph{signals}.
+Signals are its native way of advising objects of the occurrence of events.
+
+Previously, we've used @code{send} to invoke functions and @code{connect}
+to hook signals, which shadowed Guile procedures for the use with sockets.
+This was done to conform to the official
+@uref{https://gi.readthedocs.io/en/latest/writingbindings/guidelines.html, GObject Introspection Guidelines},
+which are as follows.
+@quotation
+Try to stay close to the C language semantics, for instance GObject should be mapped to a class
+and @code{gtk_button_set_label} to a method of that class.
+@enumerate
+@item
+...
+@item
+scheme: @code{(send button (set-label "foo"))}
+@end enumerate
+@end quotation
+However, using @code{send} and @code{connect} in such a manner shadows Guile procedures
+for the use with sockets.
+An easy workaround would be to rename either as the user, but this eliminates the benefit
+of having these definitions in the first place.
+On top of that, it is a somewhat pointless typing exercise, so we instead offer
+the strictly better @code{with-object} (which allows multiple methods to be invoked
+instead of just one) and the somewhat more verbose @code{modify-signals}, which wraps
+@code{connect} and other signal-related procedures in a safe environment.
 
 @xref{GObject Signals} for more information on
-@code{connect}. @xref{GObject Methods} for information on the
-@code{send} syntax.
+@code{modify-signals}. @xref{GObject Methods} for information on the
+@code{with-object} syntax.
+
+In future versions, @code{with-object} may be improved to also handle properties and signals.
 
 @menu
 * Installation::
@@ -500,28 +543,28 @@ Returns @code{#t} of @var{object} is an instance of a @var{type}.
 
 The GObject system has its own functionality for methods.  It can
 have methods for GObject-based structs, unions, and objects.  To call
-a GObject method, use the @code{send} syntax or the @code{method-call}
+a GObject method, use the @code{with-object} syntax or the @code{method-call}
 procedure.
 
 As an example, the following two calls are equivalent.
 
 @example
-(send window (set-title "MAIN WINDOW"))
+(with-object window (set-title "MAIN WINDOW"))
 (call-method window "set-title" '("MAIN WINDOW"))
 @end example
 
-@deffn Syntax send object method
+@deffn Syntax with-object object method ...
 Given a GObject @var{object}, this syntax attempts to find a match
-between the object and the given method.  If the object's type or
-any of its parent types have the specified method, it will be called.
-If the method doesn't exist, an error will be thrown.
+between the object and the given method(s).  If the object's type or
+any of its parent types have the specified method(s), they will be called.
+If some method does not exist, an error will be thrown.
 
-@var{method} is list where the first element is a symbol that names
-the method to be called.  The remaining elements of the list are
-the arguments to the method call.
+Each individual @var{method} is a list with the first element being a symbol,
+which names the method to be called and the remaining arguments being the
+arguments to the call.
 @end deffn
 
-The @code{send} syntax is built using the @code{call-method} procedure.
+The @code{with-object} syntax is built using the @code{call-method} procedure.
 
 @deffn Procedure call-method object method-name list-of-args
 Given a GObject @var{object} and a string @var{method-name}, this
@@ -546,14 +589,13 @@ To hook a callback procedure to an object's signal, use the
 @code{signal-connect} procedure. Consider the following example.
 
 @example
-(define (activate app user-data)
+(define (activate app)
    ...
    )
 
 (signal-connect app         ; A GObject
                 "activate"  ; The name of a signal it might emit
-                activate    ; A procedure to call when emitted
-                #f)         ; A user-supplied argument
+                activate)   ; A procedure to call when emitted
 @end example
 
 In that example, the caller is attaching a procedure named
@@ -563,40 +605,44 @@ the gobject object calls all the callback procedures attached to its
 
 When a callback procedure is called it may receives some arguments
 from the caller and some from user data.  In the example, @code{activate}
-is supposed to take two arguments.  The first argument @code{app} is
-supplied by the caller.  The second argument @code{user-data} is
-defined when the callback is registered.  In the above example the @code{#f}
-in the @code{signal-connect} call will be passed to @code{activate}
-as its @code{user-data} parameter.
+is supposed to take a single argument.
+This argument -- @code{app} -- is supplied by the caller, as are all
+arguments to signals.
 
-@quotation Warning
-User data parameters may only be pointers or @code{#f}, which makes
-them tricky to use.  It is best to avoid them.  Scheme procedures and
-lambdas are versatile enough that these user-data parameters are never
-necessary.
-@end quotation
+Previous versions added a second (in the general case last) argument analogous
+to the @code{user-data} argument used excessively within GObject.
+Such user data parameters have been removed as they are unnecessary when using
+(anonymous) procedures in Scheme.
 
-If you have decided to ignore the above warning and for some
-unimaginable reason want to use the user data parameter of a callback
-procedure, you can pass a pointer.  And if the parameter that you wish
-to pass is not a bytevector or other type that inherently can be
-converted to a pointer, the following kludge is provided.
+When you are connecting many signals of one object, you may wish to save some typing
+by doing the following:
 
-@deffn box label val
-This procedure takes a scheme object @var{val} and stores it in a
-preallocated location in memory, and returns that location as a
-pointer.  The @var{label}, which must be a one-letter symbol from
-@code{A} to @code{Z}, indicates which location into which it is to be
-stored.
+@example
+(modify-signals object
+  (connect signal-a handler-a)
+  (connect signal-b handler-b)
+  ...
+  (connect signal-z handler-z))
+@end example
 
-When callback procedures are called, Guile-GI will check to see if any
-user-data parameters are one of these twenty-six special memory
-locations, and, if so, will return the value stored there.  Thus,
-there is no unbox procedure needed.
+This syntax roughly expands to
 
-Since these boxes can be set at any time by any thread, it is up to
-the caller to manage the contents of the boxes.
-@end deffn
+@example
+(begin
+  (signal-connect object ``signal-a'' handler-a)
+  (signal-connect object ``signal-b'' handler-b)
+  ...
+  (signal-connect object ``signal-z'' handler-z)))
+@end example
+
+except that object is temporarily bound to an unique identifier if is not already one.
+You could for instance fetch your object from a (tree of) the resulting object would
+be active for the scope of the signal modifications and the reference to it discarded
+afterwards.
+
+Signals can also be connected @emph{after} the main handler. To do so,
+supply @code{#t} as the optional fourth argument to @code{signal-connect}
+or use @code{connect-after} in @code{modify-signals}.
 
 @c -----------------------------------------------------------------
 @node GObject Properties, Custom GObjects, GObject Signals, Reference Guide
