@@ -29,18 +29,20 @@
   (resources-register (find-resource "test"))
 
   (let* ((builder (gtk::builder:new-from-resource "/test/builder.ui"))
-         (window (send builder (get-object "window")))
-         (button1 (send builder (get-object "button1")))
-         (button2 (send builder (get-object "button2")))
-         (button3 (send builder (get-object "quit"))))
-    (connect window (destroy
-                       (lambda (object)
-                         (gtk::main-quit))))
-    (connect button1 (clicked print-hello))
-    (connect button2 (clicked print-hello))
-    (connect button3 (clicked
-                      (lambda (button)
-                        (gtk::main-quit)))))
+         (window (with-object builder (get-object "window")))
+         (button1 (with-object builder (get-object "button1")))
+         (button2 (with-object builder (get-object "button2")))
+         (button3 (with-object builder (get-object "quit"))))
+    (modify-signals window
+      (connect destroy
+        (lambda (object)
+          (gtk::main-quit))))
+    (modify-signals button1 (connect clicked print-hello))
+    (modify-signals button2 (connect clicked print-hello))
+    (modify-signals button3
+      (connect clicked
+        (lambda (button)
+          (gtk::main-quit)))))
 
   (gtk::main)
   *unspecified*)

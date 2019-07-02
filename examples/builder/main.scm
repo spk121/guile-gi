@@ -27,18 +27,20 @@
   (let ((builder (builder:new-from-file (find-file "builder.ui"))))
 
     ;; Connect the widgets to their signals and callbacks.
-    (let ((window (send builder (get-object "window")))
-          (button1 (send builder (get-object "button1")))
-          (button2 (send builder (get-object "button2")))
-          (button3 (send builder (get-object "quit"))))
-      (connect window (destroy
-                       (lambda (object)
-                         (main-quit))))
-      (connect button1 (clicked print-hello))
-      (connect button2 (clicked print-hello))
-      (connect button3 (clicked
-                        (lambda (button)
-                          (main-quit))))))
+    (let ((window (with-object builder (get-object "window")))
+          (button1 (with-object builder (get-object "button1")))
+          (button2 (with-object builder (get-object "button2")))
+          (button3 (with-object builder (get-object "quit"))))
+      (modify-signals window
+        (connect destroy
+          (lambda (object)
+            (main-quit))))
+      (modify-signals button1 (connect clicked print-hello))
+      (modify-signals button2 (connect clicked print-hello))
+      (modify-signals button3
+        (connect clicked
+          (lambda (button)
+            (main-quit))))))
 
   ;; Let's demonstrate that the signals and callback survive
   ;; garbage collection.

@@ -29,23 +29,23 @@
         (browser (cast (web-view:new) <WebKitWebView>))
         (button-box (cast (button-box:new 0) <GtkButtonBox>))
         (button (button:new-with-label "Hello World")))
-    (send window (set-title "Window"))
-    (send window (set-default-size 200 200))
-    (send window (show-all))
-    (send window (add vbox))
-    (send vbox (add browser))
-    (send vbox (add button-box))
+    (with-object button-box (add button))
+    (with-object vbox (add browser) (add button-box))
+    (with-object window
+      (set-title "Window")
+      (set-default-size 200 200)
+      (add vbox)
+      (show-all))
 
-    (connect button (clicked print-hello))
-    (connect button (clicked (lambda x
-                               (send window (destroy)))))
-    (send browser (load-uri "http://gnu.org/s/mes"))
-    (send button-box (add button))
-    (send window (show-all))))
+    (modify-signals button
+      (connect clicked print-hello)
+      (connect clicked (lambda x
+                               (with-object window (destroy)))))
+    (with-object browser (load-uri "http://gnu.org/s/mes"))))
 
 (define (main)
   (let ((app (application:new "org.gtk.example" 0)))
-    (connect app (activate activate))
-    (send app (run (length (command-line)) (command-line)))))
+    (modify-signals app (connect activate activate))
+    (with-object app (run (length (command-line)) (command-line)))))
 
 (main)

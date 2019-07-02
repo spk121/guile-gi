@@ -4,6 +4,6 @@
 
 (define (main)
   (let ((app (empty-app-new)))
-    (send app (run (length (command-line)) (command-line)))))
+    (with-object app (run (length (command-line)) (command-line)))))
 
 (main)
