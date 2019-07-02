@@ -309,12 +309,14 @@ scm_signal_connect(SCM self, SCM s_name, SCM callback, SCM s_after)
     guint sigid;
     GQuark detail;
 
+    // make sure we're dealing with an introspectable object
     SCM_ASSERT_TYPE(SCM_INSTANCEP(self), self, SCM_ARG1, "signal-connect", "GObject");
     gtype = gir_type_get_gtype_from_obj(self);
     SCM_ASSERT_TYPE(gtype > G_TYPE_INVALID, self, SCM_ARG1, "signal-connect", "GObject");
 
+    // fetch the actual object type
     obj = scm_foreign_object_ref(self, OBJ_SLOT);
-    g_assert_cmpint(gtype, ==, G_OBJECT_TYPE(obj));
+    gtype = G_OBJECT_TYPE(obj);
 
     scm_dynwind_begin(0);
     name = scm_dynwind_or_bust("signal-connect",
