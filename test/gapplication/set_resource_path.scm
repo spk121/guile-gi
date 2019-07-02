@@ -8,11 +8,11 @@
                             '(("application-id" . "gi.guile.Example"))))
          (result #f))
      (connect app (activate
-                   (lambda (app user-data)
-                     (gobject-set-property! app "resource-base-path"
+                   (lambda (app)
+                     (gobject-set-property! app "resource_base_path"
                                             "/gi/guile/resource/base_path")
                      (set! result
-                           (equal? (gobject-get-property app "resource-base-path")
+                           (equal? (gobject-get-property app "resource_base_path")
                                    "/gi/guile/resource/base_path"))
                      (send app (quit)))))
      (send app (run (length (command-line)) (command-line)))

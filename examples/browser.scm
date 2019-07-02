@@ -20,10 +20,10 @@
 (typelib-load "GLib" "2.0")
 (typelib-load "WebKit2" "4.0")
 
-(define (print-hello widget data)
+(define (print-hello widget)
   (display "Hello World\n"))
 
-(define (activate app user-data)
+(define (activate app)
   (let ((window (cast (application-window:new app) <GtkApplicationWindow>))
         (vbox (cast (vbox:new 0 0) <GtkVBox>))
         (browser (cast (web-view:new) <WebKitWebView>))
@@ -36,17 +36,16 @@
     (send vbox (add browser))
     (send vbox (add button-box))
 
-    (connect button (clicked print-hello #f))
+    (connect button (clicked print-hello))
     (connect button (clicked (lambda x
-                               (send window (destroy)))
-                             #f))
+                               (send window (destroy)))))
     (send browser (load-uri "http://gnu.org/s/mes"))
     (send button-box (add button))
     (send window (show-all))))
 
 (define (main)
   (let ((app (application:new "org.gtk.example" 0)))
-    (connect app (activate activate #f))
+    (connect app (activate activate))
     (send app (run (length (command-line)) (command-line)))))
 
 (main)

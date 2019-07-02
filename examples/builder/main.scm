@@ -3,7 +3,7 @@
              (gi)
              (gi gtk-3))
 
-(define (print-hello button data)
+(define (print-hello button)
   (display "Hello World")
   (newline))
 
@@ -32,12 +32,12 @@
           (button2 (send builder (get-object "button2")))
           (button3 (send builder (get-object "quit"))))
       (connect window (destroy
-                       (lambda (object data)
+                       (lambda (object)
                          (main-quit))))
       (connect button1 (clicked print-hello))
       (connect button2 (clicked print-hello))
       (connect button3 (clicked
-                        (lambda (button data)
+                        (lambda (button)
                           (main-quit))))))
 
   ;; Let's demonstrate that the signals and callback survive

@@ -27,16 +27,16 @@
 (define (text-iter:new)
   (make-gstruct <GtkTextIter>))
 
-(define (print-goodbye widget data)
+(define (print-goodbye widget)
   (display "Goodbye World\n"))
 
-(define (key-press widget event xtra)
+(define (key-press widget event)
   (receive (ok keyval)
       (send event (get-keyval?))
       (format #t "key: ~s\n" keyval)
       #f))
 
-(define (activate app user-data)
+(define (activate app)
   (let ((window (cast (application-window:new app) <GtkApplicationWindow>))
         (vbox (cast (vbox:new 0 0) <GtkVBox>))
         (editor (cast (text-view:new) <GtkTextView>))
@@ -50,11 +50,10 @@
     (send window (add vbox))
     (send vbox (add editor))
     (send vbox (add button-box))
-    (connect button (clicked print-goodbye #f))
+    (connect button (clicked print-goodbye))
     (connect button (clicked (lambda x
-                               (send window (destroy)))
-                             #f))
-    (connect editor (key-press-event key-press #f))
+                               (send window (destroy)))))
+    (connect editor (key-press-event key-press))
 
     ;; When the 'hello' button is clicked, write the current contents
     ;; of the editor to the console, and replace the buffer contents
@@ -66,9 +65,8 @@
                                   (send buffer (get-bounds iter1 iter2))
                                   (let ((txt (send buffer (get-text iter1 iter2 #t))))
                                     (write txt) (newline))
-                                  (send buffer (set-text "Hello, world" 12))))
-                              #f))
-                                      
+                                  (send buffer (set-text "Hello, world" 12))))))
+
     (send editor (grab-focus))
     (send button-box (add button2))
     (send button-box (add button))
@@ -76,7 +74,7 @@
 
 (define (main)
   (let ((app (application:new "org.gtk.example" 0)))
-    (connect app (activate activate #f))
+    (connect app (activate activate))
     (send app (run (length (command-line)) (command-line)))))
 
 (main)

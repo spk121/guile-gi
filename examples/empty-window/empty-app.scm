@@ -16,7 +16,7 @@
 (define (empty-app-init app)
   #f)
 
-(define (empty-app-activate app dummy)
+(define (empty-app-activate app)
   (let ((win (empty-app-window-new app)))
     (send win (present))))
 

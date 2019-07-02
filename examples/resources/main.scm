@@ -4,7 +4,7 @@
 (use-typelibs ("Gio" "2.0")
               (("Gtk" "3.0") #:prefix gtk::))
 
-(define (print-hello button data)
+(define (print-hello button)
   (display "Hello World")
   (newline))
 
@@ -34,12 +34,12 @@
          (button2 (send builder (get-object "button2")))
          (button3 (send builder (get-object "quit"))))
     (connect window (destroy
-                       (lambda (object data)
+                       (lambda (object)
                          (gtk::main-quit))))
     (connect button1 (clicked print-hello))
     (connect button2 (clicked print-hello))
     (connect button3 (clicked
-                      (lambda (button data)
+                      (lambda (button)
                         (gtk::main-quit)))))
 
   (gtk::main)

@@ -312,20 +312,8 @@ connect_helper(SCM self, gchar *name, SCM callback, SCM extra_args, SCM object, 
     }
 
     g_signal_query(sigid, &query_info);
-    if (g_type_get_qdata(gtype, gi_gobject_custom_key) == NULL) {
-        /* The signal is implemented by a non-Scheme class. */
-        closure = gi_signal_closure_new(self, query_info.itype,
-                                        query_info.signal_name, callback, extra_args);
-    }
-
-    if (!closure) {
-        /* The signal is implemented at the Scheme level, probably */
-        // closure = gug_closure_new (callback, extra_args, object);
-        closure = gi_signal_closure_new(self, query_info.itype,
-                                        query_info.signal_name, callback, extra_args);
-        //g_critical ("unimplemented");
-        //g_abort();
-    }
+    closure = gi_signal_closure_new(self, query_info.itype,
+                                    query_info.signal_name, callback);
 
     gugobject_watch_closure(self, closure);
     handlerid = g_signal_connect_closure_by_id(obj, sigid, detail, closure, after);

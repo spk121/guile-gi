@@ -7,7 +7,7 @@
    (let ((app (make-gobject (get-gtype <GApplication>)
                             '(("application-id" . "gi.guile.Example")))))
      (connect app (activate
-                   (lambda (app user-data)
+                   (lambda (app)
                      (display "Hello, world")
                      (newline)
                      (send app (quit)))))

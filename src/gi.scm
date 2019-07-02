@@ -36,11 +36,11 @@
 (define-syntax connect
   (lambda (stx)
     (syntax-case stx ()
-      ((_ self (method arg ...))
-       (identifier? #'method)
-       (with-syntax ((method-str (symbol->string
-                                  (syntax->datum #'method))))
-         #'(signal-connect self method-str arg ...))))))
+      ((_ self (signal handler))
+       (identifier? #'signal)
+       (with-syntax ((signal-str (symbol->string
+                                  (syntax->datum #'signal))))
+         #'(signal-connect self signal-str handler))))))
 
 (define (%gi->module-use x lib version params)
   (cond

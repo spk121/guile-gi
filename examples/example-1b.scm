@@ -18,10 +18,10 @@
 (typelib-load "Gtk" "3.0")
 (typelib-load "GLib" "2.0")
 
-(define (print-hello widget data)
+(define (print-hello widget)
   (display "Hello World\n"))
 
-(define (activate app user-data)
+(define (activate app)
   (let ((window (make-gobject <GtkApplicationWindow> `(("application" . ,app)
                                                        ("default-height" . 200)
                                                        ("default-width" . 200)
@@ -30,17 +30,16 @@
         (button (make-gobject <GtkButton> '(("label" . "Hello World")))))
     (send window (add button-box))
 
-    (connect button (clicked print-hello #f))
+    (connect button (clicked print-hello))
     (connect button (clicked (lambda x
-                               (send window (destroy)))
-                             #f))
+                               (send window (destroy)))))
     (send button-box (add button))
     (send window (show-all))))
 
 (define (main)
   (let ((app
          (make-gobject <GtkApplication> '(("application-id" . "org.gtk.example")))))
-    (connect app (activate activate #f))
+    (connect app (activate activate))
     (send app (run (length (command-line)) (command-line)))))
 
 (main)

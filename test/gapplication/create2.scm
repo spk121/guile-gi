@@ -10,7 +10,7 @@
                      "gi.guile.Example")
        (error "oops, something happened to our memory"))
      (connect app (activate
-                   (lambda (app user-data)
+                   (lambda (app)
                      (display "Hello, world")
                      (newline)
                      (send app (quit)))))

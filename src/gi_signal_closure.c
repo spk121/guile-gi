@@ -44,7 +44,6 @@ signal_closure_invalidate(gpointer data, GClosure *closure)
     GuGClosure *pc = (GuGClosure *) closure;
 
     pc->callback = SCM_BOOL_F;
-    pc->extra_args = SCM_BOOL_F;
     pc->swap_data = SCM_BOOL_F;
 
     g_base_info_unref(pc->signal_info);
@@ -86,160 +85,28 @@ gi_signal_closure_marshal(GClosure *closure,
     // FIXME: handle swap
     /* gboolean swap = G_CCLOSURE_SWAP_DATA(closure); */
     for (i = 0; i < n_param_values; i++) {
-        if (TRUE /*i == 0 */ ) {
-            /* We know that the first argument is always some sort of
-             * 'self' or 'this'. */
-            SCM item = gi_gvalue_as_scm(&param_values[i], FALSE);
-
-            if (scm_is_false(item)) {
+        SCM item = gi_gvalue_as_scm(&param_values[i], FALSE);
+        if (scm_is_false(item)) {
+            if (i == 0) // self or this
                 goto out;
-            }
-            params = scm_append(scm_list_2(params, scm_list_1(item)));
         }
-        else if (i < (guint) sig_info_highest_arg) {
-            /* The rest of the parameters could be anything, so we query
-             * the arginfo for more information */
-
-            GIArgInfo arg_info;
-            GITypeInfo type_info;
-            GITypeTag type_tag;
-            GIArgument arg = { 0, };
-            SCM item = SCM_BOOL_F;
-#if 0
-            gboolean free_array = FALSE;
-            gboolean pass_struct_by_ref = FALSE;
-#endif
-
-            g_callable_info_load_arg(signal_info, i - 1, &arg_info);
-            g_arg_info_load_type(&arg_info, &type_info);
-
-            arg = gi_giargument_from_g_value(&param_values[i], &type_info);
-
-            type_tag = g_type_info_get_tag(&type_info);
-            if (type_tag == GI_TYPE_TAG_ARRAY) {
-                g_assert_not_reached();
-#if 0
-                /* Skip the self argument of param_values */
-                arg.v_pointer = _pygi_argument_to_array(&arg,
-                                                        gi_giargument_array_length_marshal,
-                                                        (void *)(param_values + 1),
-                                                        signal_info, &type_info, &free_array);
-#endif
-            }
-
-            /* Hack to ensure struct arguments are passed-by-reference allowing
-             * callback implementors to modify the struct values. This is needed
-             * for keeping backwards compatibility and should be removed in future
-             * versions which support signal output arguments as return values.
-             * See: https://bugzilla.gnome.org/show_bug.cgi?id=735486
-             *
-             * Note the logic here must match the logic path taken in _pygi_argument_to_object.
-             */
-            else if (type_tag == GI_TYPE_TAG_INTERFACE) {
-                g_assert_not_reached();
-#if 0
-                GIBaseInfo *info = g_type_info_get_interface(&type_info);
-                GIInfoType info_type = g_base_info_get_type(info);
-
-                if (info_type == GI_INFO_TYPE_STRUCT ||
-                    info_type == GI_INFO_TYPE_BOXED || info_type == GI_INFO_TYPE_UNION) {
-
-                    GType gtype = g_registered_type_info_get_g_type((GIRegisteredTypeInfo *) info);
-                    gboolean is_foreign = (info_type == GI_INFO_TYPE_STRUCT) &&
-                        (g_struct_info_is_foreign((GIStructInfo *) info));
-
-                    if (!is_foreign && !g_type_is_a(gtype, G_TYPE_VALUE) &&
-                        g_type_is_a(gtype, G_TYPE_BOXED)) {
-                        pass_struct_by_ref = TRUE;
-                    }
-                }
-
-                g_base_info_unref(info);
-#endif
-            }
-#if 0
-            if (pass_struct_by_ref) {
-                /* transfer everything will ensure the struct is not copied when wrapped. */
-                item = _pygi_argument_to_object(&arg, &type_info, GI_TRANSFER_EVERYTHING);
-                if (item && PyObject_IsInstance(item, (PyObject *) & PyGIBoxed_Type)) {
-                    ((PyGBoxed *) item)->free_on_dealloc = FALSE;
-                    pass_by_ref_structs = g_slist_prepend(pass_by_ref_structs, item);
-                }
-
-            }
-            else {
-                item = _pygi_argument_to_object(&arg, &type_info, GI_TRANSFER_NOTHING);
-            }
-
-            if (free_array) {
-                g_array_free(arg.v_pointer, FALSE);
-            }
-
-            if (item == NULL) {
-                PyErr_Print();
-                goto out;
-            }
-#endif
-            else {
-                item = gi_gvalue_as_scm(&param_values[i], FALSE);
-            }
-            params = scm_append(scm_list_2(params, scm_list_1(item)));
-        }
+        params = scm_cons(item, params);
     }
-    /* params passed to function may have extra arguments */
-    if (scm_is_true(pc->extra_args)) {
-        params = scm_append(scm_list_2(params, scm_list_1(pc->extra_args)));
-    }
-    /* Now we actuall do the call! */
+    params = scm_reverse_x(params, SCM_EOL);
+    g_debug("invoking callback with %d arguments", scm_to_int (scm_length (params)));
     ret = scm_apply_0(pc->callback, params);
-#if 0
-    if (ret == NULL) {
-        if (pc->exception_handler)
-            pc->exception_handler(return_value, n_param_values, param_values);
-        else
-            PyErr_Print();
-        goto out;
-    }
-#endif
 
     if (G_IS_VALUE(return_value) && gi_gvalue_from_scm(return_value, ret) != 0) {
         scm_misc_error("callback", "can't convert return value to desired type", SCM_EOL);
-#if 0
-        if (pc->exception_handler)
-            pc->exception_handler(return_value, n_param_values, param_values);
-        else
-            PyErr_Print();
-#endif
     }
-    // Py_DECREF(ret);
-
-    /* Run through the list of structs which have been passed by reference and
-     * check if they are being held longer than the duration of the callback
-     * execution. This is determined if the ref count is greater than 1.
-     * A single ref is held by the argument list and any more would mean the callback
-     * stored a ref somewhere else. In this case we make an internal copy of
-     * the boxed struct so Python can own the memory to it.
-     */
-#if 0
-    list_item = pass_by_ref_structs;
-    while (list_item) {
-        PyObject *item = list_item->data;
-        if (Py_REFCNT(item) > 1) {
-            pygi_boxed_copy_in_place((PyGIBoxed *) item);
-        }
-        list_item = g_slist_next(list_item);
-    }
-#endif
 
   out:
     g_slist_free(pass_by_ref_structs);
-    // Py_DECREF(params);
-    // PyGILState_Release(state);
 }
 
 GClosure *
 gi_signal_closure_new(SCM instance,
-                      GType g_type, const gchar *signal_name, SCM callback, SCM extra_args)
+                      GType g_type, const gchar *signal_name, SCM callback)
 {
     GClosure *closure = NULL;
     GuGClosure *gugi_closure = NULL;
@@ -259,10 +126,6 @@ gi_signal_closure_new(SCM instance,
 
     gugi_closure->signal_info = signal_info;
     gugi_closure->callback = callback;
-
-    if (scm_is_true(scm_list_p((extra_args)))) {
-        gugi_closure->extra_args = extra_args;
-    }
 
     return closure;
 }

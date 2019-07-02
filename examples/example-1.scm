@@ -17,10 +17,10 @@
              (gi gtk-3)
              (gi glib-2))
 
-(define (print-hello widget data)
+(define (print-hello widget)
   (display "Hello World\n"))
 
-(define (activate app user-data)
+(define (activate app)
   (let ((window (cast (application-window:new app) <GtkApplicationWindow>))
         (button-box (cast (button-box:new 0) <GtkButtonBox>))
         (button (button:new-with-label "Hello World")))
@@ -29,16 +29,15 @@
     (send window (show-all))
     (send window (add button-box))
 
-    (connect button (clicked print-hello #f))
+    (connect button (clicked print-hello))
     (connect button (clicked (lambda x
-                               (send window (destroy)))
-                             #f))
+                               (send window (destroy)))))
     (send button-box (add button))
     (send window (show-all))))
 
 (define (main)
   (let ((app (application:new "org.gtk.example" 0)))
-    (connect app (activate activate #f))
+    (connect app (activate activate))
     (send app (run (length (command-line)) (command-line)))))
 
 (main)
