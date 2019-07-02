@@ -15,6 +15,7 @@
 (define-module (gi)
   #:export (send
             connect
+            create
             with-object
             modify-signals
             use-typelibs))
@@ -25,6 +26,8 @@
 
 ;; This macro derives from
 ;; https:;;lists.gnu.org/archive/html/guile-user/2018-12/msg00037.html
+
+(define %syntax->string (compose symbol->string syntax->datum))
 
 (define-syntax send
   (lambda (stx)
@@ -54,6 +57,19 @@
           (current-module))
          #'(car (modify-signals self (add-before signal handler))))))))
 
+(define-syntax create
+  (lambda (stx)
+    (syntax-case stx ()
+      ((_ type field ...)
+       #`(make-gobject type
+                       `#,(map (lambda (field)
+                                 (syntax-case field ()
+                                   ((key val)
+                                    (identifier? #'key)
+                                    (with-syntax ((key-str (%syntax->string #'key)))
+                                      #'(key-str . ,val)))))
+                              #'(field ...)))))))
+
 (define-syntax with-object
   (lambda (stx)
     (syntax-case stx ()
@@ -65,7 +81,7 @@
                  (syntax-case method ()
                    ((id arg ...)
                     (identifier? #'id)
-                    (with-syntax ((method (symbol->string (syntax->datum #'id))))
+                    (with-syntax ((method (%syntax->string #'id)))
                       #'(call-method self method arg ...)))))
                #'(method ...))))
       ((_ self method ...)
@@ -80,13 +96,13 @@
           #,@(map
               (lambda (signal)
                 (syntax-case signal ()
-                  ((add-before s handler)
-                   (identifier? #'s)
-                   (with-syntax ((name (symbol->string (syntax->datum #'s))))
+                  ((add-before signal handler)
+                   (identifier? #'signal)
+                   (with-syntax ((name (%syntax->string #'signal)))
                      #'(signal-connect self name handler #f)))
-                  ((add-after s handler)
-                   (identifier? #'s)
-                   (with-syntax ((name (symbol->string (syntax->datum #'s))))
+                  ((add-after signal handler)
+                   (identifier? #'signal)
+                   (with-syntax ((name (%syntax->string #'signal)))
                      #'(signal-connect self name handler #t)))
                   ((remove handler)
                    #'(gobject-disconnect-by-func self handler))
