@@ -14,8 +14,8 @@
  (begin
    ;; Let's make a channel that writes to a file.
    (let ((channel (iochannel:new-file "tmp.txt" "w")))
-     (let ((result (send channel (write-chars (string->utf8 "foobar") 6))))
-       (send channel (shutdown #t))))
+     (let ((result (with-object channel (write-chars (string->utf8 "foobar") 6))))
+       (with-object channel (shutdown #t))))
 
    ;; Now, make a channel that reads from that file.
    (let ((channel (iochannel:new-file "tmp.txt" "r"))
@@ -23,7 +23,7 @@
 
      ;; Read as much as we can.
      (receive (status nbytes)
-         (send channel (read-chars buf SIZ))
+         (with-object channel (read-chars buf SIZ))
        (let ((bv (subbytevector buf 0 nbytes)))
            (format #t "Output bytevector contents: ~S~%" bv)
            (format #t "Output bytevector as UTF8: ~S~%" (utf8->string bv))

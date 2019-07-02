@@ -3,11 +3,11 @@
 
 (automake-test
  (let* ([date (date:new-dmy 25 12 1990)]
-        [day (send date (get-day))]
-        [month (send date (get-month))]
-        [date2 (send date (copy))]
-        [day2 (send date2 (get-day))]
-        [month2 (send date2 (get-month))])
+        [day (with-object date (get-day))]
+        [month (with-object date (get-month))]
+        [date2 (with-object date (copy))]
+        [day2 (with-object date2 (get-day))]
+        [month2 (with-object date2 (get-month))])
    (write date) (newline)
    (write day) (newline)
    (write month) (newline)

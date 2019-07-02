@@ -3,4 +3,4 @@
 
 (automake-test
  (let ((mainloop (main-loop:new #f #t)))
-   (send mainloop (is-running?))))
+   (with-object mainloop (is-running?))))

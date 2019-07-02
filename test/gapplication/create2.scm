@@ -9,9 +9,10 @@
      (unless (equal? (gobject-get-property app "application-id")
                      "gi.guile.Example")
        (error "oops, something happened to our memory"))
-     (connect app (activate
-                   (lambda (app)
-                     (display "Hello, world")
-                     (newline)
-                     (send app (quit)))))
-     (send app (run (length (command-line)) (command-line))))))
+     (modify-signals app
+       (add-before activate
+         (lambda (app)
+           (display "Hello, world")
+           (newline)
+           (with-object app (quit)))))
+     (with-object app (run (length (command-line)) (command-line))))))

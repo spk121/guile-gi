@@ -3,5 +3,5 @@
 
 (automake-test
  (let ((mainloop (main-loop:new #f #t)))
-   (let ((ctx (send mainloop (get-context))))
+   (let ((ctx (with-object mainloop (get-context))))
      (gmain-context? ctx))))

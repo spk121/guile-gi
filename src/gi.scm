@@ -15,6 +15,7 @@
 (define-module (gi)
   #:export (send
             connect
+            with-object
             modify-signals
             use-typelibs))
 
@@ -27,6 +28,9 @@
 
 (define-syntax send
   (lambda (stx)
+    (format (current-error-port)
+            "WARNING: ~s: send is deprecated, use modify-signals instead~%"
+            (current-module))
     (syntax-case stx ()
       ((_ self (method arg ...))
        (identifier? #'method)
@@ -50,10 +54,28 @@
           (current-module))
          #'(car (modify-signals self (add-before signal handler))))))))
 
+(define-syntax with-object
+  (lambda (stx)
+    (syntax-case stx ()
+      ((_ self method ...)
+       (identifier? #'self)
+       #`(begin
+           #,@(map
+               (lambda (method)
+                 (syntax-case method ()
+                   ((id arg ...)
+                    (identifier? #'id)
+                    (with-syntax ((method (symbol->string (syntax->datum #'id))))
+                      #'(call-method self method arg ...)))))
+               #'(method ...))))
+      ((_ self method ...)
+       #'(let ((this self)) (with-object this method ...))))))
+
 (define-syntax modify-signals
   (lambda (stx)
     (syntax-case stx ()
       ((_ self signal ...)
+       (identifier? #'self)
        #`((@@ (guile) list)
           #,@(map
               (lambda (signal)
@@ -72,7 +94,9 @@
                    #'(gobject-handler-block-by-func self handler))
                   ((unblock handler)
                    #'(gobject-handler-unblock-by-func self handler))))
-              #'(signal ...)))))))
+              #'(signal ...))))
+      ((_ self signal ...)
+       #'(let ((this self)) (modify-signals this signal ...))))))
 
 (define (%gi->module-use x lib version params)
   (cond

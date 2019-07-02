@@ -18,14 +18,15 @@
  (begin
    ;; Let's make a channel that writes to a file.
    (let ((channel (iochannel:new-file "tmp.txt" "w")))
-     (send channel (write-unichar #\α))
-     (send channel (write-unichar #\β))
-     (send channel (shutdown #t)))
+     (with-object channel
+       (write-unichar #\α)
+       (write-unichar #\β)
+       (shutdown #t)))
 
    ;; Now, make a channel that reads from that file.
    (let* ((channel (iochannel:new-file "tmp.txt" "r"))
-          (alpha (second-value (send channel (read-unichar))))
-          (beta  (second-value (send channel (read-unichar)))))
+          (alpha (second-value (with-object channel (read-unichar))))
+          (beta  (second-value (with-object channel (read-unichar)))))
      (write alpha) (newline)
      (write beta) (newline)
      (and

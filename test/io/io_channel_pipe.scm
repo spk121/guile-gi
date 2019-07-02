@@ -33,7 +33,7 @@
 
        ;;
        (receive (status nbytes-read)
-           (send channel (read-chars buf SIZ))
+           (with-object channel (read-chars buf SIZ))
          (write (utf8->string buf)) (newline)
            (write (list status nbytes-read)) (newline)
            (and (string=?
