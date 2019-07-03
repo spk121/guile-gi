@@ -1,0 +1,2 @@
+*.scm linguist-language=Scheme
+*.sh.in linguist-language=Shell
