@@ -1,5 +1,5 @@
 # Makefile.am - top level
-# Copyright (C) 2018 Michael L. Gran
+# Copyright (C) 2018, 2019 Michael L. Gran
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,11 +19,14 @@ AM_DISTCHECK_CONFIGURE_FLAGS = --with-gnu-filesystem-hierarchy
 SUBDIRS = src doc docs m4 build-aux tools test examples
 
 # Build ChangeLog from GIT history
-dist: ChangeLog
-.PHONY: ChangeLog
+EXTRA_DIST = README.md
+dist: ChangeLog README
 ChangeLog:
 	$(AM_V_GEN) if test -d $(top_srcdir)/.git; then \
 		GIT_DIR="$(top_srcdir)/.git" git log --stat > $@; \
 	fi
 
-CLEANFILES = ChangeLog
+README: README.md
+	$(LN_S) $< $@
+
+CLEANFILES = ChangeLog README

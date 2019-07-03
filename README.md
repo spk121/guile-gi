@@ -11,17 +11,21 @@ functions and procedures in the library.
 
 This is pre-alpha code.  It barely works.  The API is in flux.
 
-Guile GI has two primary components
-- (gi) aka gi.scm: a guile module that provides functions to parse
+Guile GI has two primary components.
+
+* `(gi)` aka `gi.scm`: a guile module that provides functions to parse
   GObject typelib files
-- libguile-gi.so or libguile-gi.dll: a compiled module that contains
-  glue code to interface with GObject
 
-Note that it doesn't come with bindings to GTK3 or GLib out of the
-box, but, you can use this library to generate those bindings
-automatically.
+* `libguile-gi.so` or `libguile-gi.dll`: a compiled module that
+  contains glue code to interface with GObject
 
-For the moment, the docs are at https://spk121.github.io/guile-gi/
+You use the provided `use-typelibs` syntax or `typelib-load` procedure
+to introspect the GObject libraries to create a Guile binding.  Also,
+this project comes with some scheme libraries that bind common GObject
+libraries.  For example, `(gi gtk-3)` and `(gi glib-2)` are provided.
+
+For the moment, the docs are at
+[spk121.github.io/guile-gi](https://spk121.github.io/guile-gi/)
 
 Try:
 
