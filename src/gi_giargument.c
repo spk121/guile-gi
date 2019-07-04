@@ -168,13 +168,9 @@ fill_array_info(struct array_info *ai, GITypeInfo *array_type_info, GITransfer a
 }
 
 static size_t
-array_length(struct array_info *ai, GIArgument *arg)
+array_length_1(struct array_info *ai, GIArgument *arg)
 {
-    if (ai->array_length != -1)
-        return ai->array_length;
-    else if (ai->array_fixed_size != -1)
-        return ai->array_fixed_size;
-    else if (ai->array_is_zero_terminated) {
+    if (ai->array_is_zero_terminated) {
         gpointer array = arg->v_pointer;
         if (array == NULL)
             return 0;
@@ -234,7 +230,27 @@ array_length(struct array_info *ai, GIArgument *arg)
         }
         }
     }
+    else if (ai->array_length != -1)
+        return ai->array_length;
+    else if (ai->array_fixed_size != -1)
+        return ai->array_fixed_size;
+
     g_assert_not_reached();
+}
+
+static size_t
+array_length(struct array_info *ai, GIArgument *arg)
+{
+    size_t array_length = array_length_1(ai, arg);
+    if (ai->array_length != -1 && ai->array_length != array_length)
+        g_warning("mismatching array lengths: expected %zd, but got %zd",
+                  ai->array_length, array_length);
+    if (ai->array_fixed_size != -1 && ai->array_fixed_size != array_length)
+        g_warning("mismatching array lengths: expected %zd, but got %zd",
+                  ai->array_fixed_size, array_length);
+    if (array_length == 0)
+        g_debug("array has length 0, are you sure about that?");
+    return array_length;
 }
 
 /*
@@ -1392,20 +1408,46 @@ object_to_c_native_string_array_arg(char *subr, int argpos,
     if (scm_is_true(scm_list_p(object))) {
         size_t len = scm_to_size_t(scm_length(object));
         gchar **strv = g_new0(gchar *, len + 1);
+        SCM iter = object;
+
         for (size_t i = 0; i < len; i++) {
-            SCM entry = scm_list_ref(object, scm_from_size_t(i));
+            SCM entry = scm_car(iter);
             if (ai->item_type_tag == GI_TYPE_TAG_FILENAME)
                 strv[i] = scm_to_locale_string(entry);
             else
                 strv[i] = scm_to_utf8_string(entry);
+            iter = scm_cdr(iter);
         }
         strv[len] = NULL;
         arg->v_pointer = strv;
         if (ai->item_transfer == GI_TRANSFER_NOTHING)
             ai->must_free = GIR_FREE_STRV;
     }
+    else if (scm_is_vector(object)) {
+        scm_t_array_handle handle;
+        gsize len;
+        gssize inc;
+        const SCM *elt;
+
+        elt = scm_vector_elements(object, &handle, &len, &inc);
+        gchar **strv = g_new0(gchar *, len + 1);
+
+        for (size_t i = 0; i < len; i++, elt += inc) {
+            if (ai->item_type_tag == GI_TYPE_TAG_FILENAME)
+                strv[i] = scm_to_locale_string(*elt);
+            else
+                strv[i] = scm_to_utf8_string(*elt);
+        }
+        strv[len] = NULL;
+        arg->v_pointer = strv;
+
+        if (ai->item_transfer == GI_TRANSFER_NOTHING)
+            ai->must_free = GIR_FREE_STRV;
+
+        scm_array_handle_release(&handle);
+    }
     else
-        scm_wrong_type_arg_msg(subr, argpos, object, "list of strings");
+        scm_wrong_type_arg_msg(subr, argpos, object, "list or vector of strings");
 }
 
 
@@ -2050,6 +2092,8 @@ static SCM
 object_from_c_native_array_arg(struct array_info *ai, GIArgument *arg)
 {
     SCM obj = SCM_UNDEFINED;
+    size_t length = array_length(ai, arg);
+    g_assert_cmpint(length, !=, -1);
 
     switch (ai->item_type_tag) {
     case GI_TYPE_TAG_INT8:
@@ -2093,23 +2137,25 @@ object_from_c_native_array_arg(struct array_info *ai, GIArgument *arg)
     case GI_TYPE_TAG_UTF8:
     case GI_TYPE_TAG_FILENAME:
     {
-        size_t len = array_length(ai, arg);
-        SCM out_iter;
+        obj = scm_c_make_vector(length, SCM_BOOL_F);
+        scm_t_array_handle handle;
+        gsize len;
+        gssize inc;
+        SCM *elt;
 
-        obj = scm_make_list(scm_from_size_t(len), SCM_BOOL_F);
-        out_iter = obj;
-        for (int i = 0; i < len; i++) {
-            char *p = ((char **)arg->v_pointer)[i];
-            if (p) {
-                SCM entry;
+        elt = scm_vector_writable_elements(obj, &handle, &len, &inc);
+        g_assert(len == length);
+
+        for (gsize i = 0; i < length; i++, elt += inc) {
+            char *str = ((char **)arg->v_pointer)[i];
+            if (str) {
                 if (ai->item_type_tag == GI_TYPE_TAG_UTF8)
-                    entry = scm_from_utf8_string(((char **)arg->v_pointer)[i]);
+                    *elt = scm_from_utf8_string(str);
                 else
-                    entry = scm_from_locale_string(((char **)arg->v_pointer)[i]);
-                scm_set_car_x(out_iter, entry);
+                    *elt = scm_from_locale_string(str);
             }
-            out_iter = scm_cdr(out_iter);
         }
+        scm_array_handle_release(&handle);
         break;
     }
     default:
@@ -2118,12 +2164,10 @@ object_from_c_native_array_arg(struct array_info *ai, GIArgument *arg)
     }
 
     if (SCM_UNBNDP(obj) && ai->item_size) {
-        size_t _array_length = array_length(ai, arg);
-        g_assert_cmpint(_array_length, !=, -1);
-        size_t len = _array_length * ai->item_size;
+        size_t size = length * ai->item_size;
         // FIXME: maybe return a typed vector or list
-        obj = scm_c_make_bytevector(len);
-        memcpy(SCM_BYTEVECTOR_CONTENTS(obj), arg->v_pointer, len);
+        obj = scm_c_make_bytevector(size);
+        memcpy(SCM_BYTEVECTOR_CONTENTS(obj), arg->v_pointer, size);
     }
 
     return obj;
@@ -2157,7 +2201,8 @@ object_from_c_garray_arg(struct array_info *ai, GIArgument *arg)
     obj = scm_c_make_vector(array->len, SCM_UNDEFINED);
 
     scm_t_array_handle handle;
-    gsize len, inc, item_size = ai->item_size;
+    gsize len, item_size = ai->item_size;
+    gssize inc;
     SCM *elt;
 
     elt = scm_vector_writable_elements(obj, &handle, &len, &inc);
@@ -2181,8 +2226,6 @@ convert_list_arg_to_object(GIArgument *arg, GITypeInfo *list_type_info,
     GITypeTag list_type_tag = g_type_info_get_tag(list_type_info);
     GITypeInfo *item_type_info = g_type_info_get_param_type(list_type_info, 0);
     GITypeTag item_type_tag = g_type_info_get_tag(item_type_info);
-    GITypeTag referenced_base_type = g_type_info_get_tag(item_type_info);
-    GType referenced_object_type = G_TYPE_INVALID;
     gboolean item_is_ptr = g_type_info_is_pointer(item_type_info);
 
     GITransfer item_transfer;
@@ -2190,64 +2233,6 @@ convert_list_arg_to_object(GIArgument *arg, GITypeInfo *list_type_info,
         item_transfer = GI_TRANSFER_EVERYTHING;
     else
         item_transfer = GI_TRANSFER_NOTHING;
-
-    switch (item_type_tag) {
-    case GI_TYPE_TAG_INT8:
-    case GI_TYPE_TAG_UINT8:
-    case GI_TYPE_TAG_INT16:
-    case GI_TYPE_TAG_UINT16:
-    case GI_TYPE_TAG_INT32:
-    case GI_TYPE_TAG_UINT32:
-    case GI_TYPE_TAG_UNICHAR:
-    case GI_TYPE_TAG_INT64:
-    case GI_TYPE_TAG_UINT64:
-    case GI_TYPE_TAG_FLOAT:
-    case GI_TYPE_TAG_DOUBLE:
-    case GI_TYPE_TAG_GTYPE:
-    case GI_TYPE_TAG_BOOLEAN:
-        break;
-    case GI_TYPE_TAG_INTERFACE:
-    {
-        GIBaseInfo *referenced_base_info = g_type_info_get_interface(item_type_info);
-        referenced_base_type = g_base_info_get_type(referenced_base_info);
-
-        switch (referenced_base_type) {
-        case GI_INFO_TYPE_ENUM:
-        case GI_INFO_TYPE_FLAGS:
-            break;
-
-        case GI_INFO_TYPE_STRUCT:
-        case GI_INFO_TYPE_UNION:
-        case GI_INFO_TYPE_OBJECT:
-            referenced_object_type = g_registered_type_info_get_g_type(referenced_base_info);
-            break;
-
-        default:
-            g_critical("Unhandled item type in %s:%d", __FILE__, __LINE__);
-            g_assert_not_reached();
-
-        }
-        g_base_info_unref(referenced_base_info);
-        break;
-    }
-    case GI_TYPE_TAG_UTF8:
-    case GI_TYPE_TAG_FILENAME:
-        break;
-
-    case GI_TYPE_TAG_ARRAY:
-    case GI_TYPE_TAG_GLIST:
-    case GI_TYPE_TAG_GSLIST:
-    case GI_TYPE_TAG_GHASH:
-        g_critical("do you seriously want to nest containers in such a manner?");
-        g_assert_not_reached();
-        break;
-
-    default:
-        g_critical("Unhandled item type in %s:%d", __FILE__, __LINE__);
-        g_assert_not_reached();
-    }
-
-    g_base_info_unref(item_type_info);
 
     // Actual conversion
     gpointer list = arg->v_pointer, data;
@@ -2333,51 +2318,18 @@ convert_list_arg_to_object(GIArgument *arg, GITypeInfo *list_type_info,
             }
         }
         else {
-            switch (item_type_tag) {
-            case GI_TYPE_TAG_INTERFACE:
-                switch (referenced_base_type) {
-                case GI_INFO_TYPE_ENUM:
-                case GI_INFO_TYPE_FLAGS:
-                    scm_set_car_x(out_iter, scm_from_int32(*(gint32 *) data));
-                    break;
-
-                case GI_INFO_TYPE_STRUCT:
-                case GI_INFO_TYPE_UNION:
-                case GI_INFO_TYPE_OBJECT:
-                default:
-                    g_critical("Unhandled item type in %s:%d", __FILE__, __LINE__);
-                    list = NULL;
-                    break;
-                }
-                g_assert_not_reached();
-            case GI_TYPE_TAG_UTF8:
-            case GI_TYPE_TAG_FILENAME:
-            {
-                char **str = data;
-
-                if (!*str)
-                    scm_set_car_x(out_iter, scm_c_make_string(0, SCM_MAKE_CHAR(0)));
-                else {
-                    if (item_type_tag == GI_TYPE_TAG_UTF8)
-                        scm_set_car_x(out_iter, scm_from_utf8_string(*str));
-                    else
-                        scm_set_car_x(out_iter, scm_from_locale_string(*str));
-
-                    if (item_transfer == GI_TRANSFER_EVERYTHING) {
-                        g_free(*str);
-                        *str = NULL;
-                    }
-                }
-                break;
-            }
-            default:
-                g_critical("Unhandled item type in %s:%d", __FILE__, __LINE__);
-                list = NULL;
-            }
+            GIArgument arg;
+            SCM elt;
+            arg.v_pointer = *(void **)data;
+            elt = gi_giargument_convert_return_val_to_object(&arg, item_type_info, item_transfer,
+                                                             TRUE, FALSE);
+            scm_set_car_x(out_iter, elt);
         }
 
         out_iter = scm_cdr(out_iter);
     }
+    g_base_info_unref(item_type_info);
+
 }
 
 static void

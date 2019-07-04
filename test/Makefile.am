@@ -137,6 +137,8 @@ BYTE_ARRAY_TESTS = \
  byte_array/bytes_new_null_contents.scm
 
 GAPPLICATION_TESTS = \
+ gapplication/command-line.scm \
+ gapplication/command-line-options.scm \
  gapplication/create1.scm \
  gapplication/create2.scm \
  gapplication/set_resource_path.scm
@@ -189,6 +191,7 @@ TESTS = \
  misc/use-typelibs.scm
 
 XFAIL_TESTS = \
+ gapplication/command-line.scm \
  grilo/init_commandline.scm \
  misc/atomic_int_set.scm \
  string/strjoinv.scm
