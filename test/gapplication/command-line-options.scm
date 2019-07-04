@@ -12,8 +12,8 @@
      (with-object app (add-main-option "hello" (char->integer #\h) 0
                                        OPTION_ARG_STRING_ARRAY "" #f))
 
-     (modify-signals app
-       (connect command-line
+     (with-object app
+       (connect! command-line
          (lambda (app command-line)
            (let* ((dict (with-object command-line (get-options-dict)))
                   (hello (with-object dict (lookup-value "hello" #f)))

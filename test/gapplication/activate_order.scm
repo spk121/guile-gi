@@ -9,15 +9,15 @@
             (fire-signal (lambda (arg)
                            (lambda _
                              (set! fired-signals (cons arg fired-signals))))))
-     (modify-signals app
-       (connect activate
+     (with-object app
+       (connect! activate
          (fire-signal 1))
-       (connect-after activate
+       (connect-after! activate
          (fire-signal 2))
-       (connect activate
+       (connect! activate
          (fire-signal 3))
-       (connect shutdown
-         (lambda _ (set! fired-signals (reverse fired-signals)))))
+       (connect! shutdown
+         (lambda _ (set! fired-signals (reverse fired-signals))))
 
-     (with-object app (run 0 '()))
+       (run 0 '()))
      (equal? fired-signals '(1 3 2)))))

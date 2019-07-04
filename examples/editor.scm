@@ -43,7 +43,9 @@
         (button-box (cast (button-box:new 0) <GtkButtonBox>))
         (button (button:new-with-label "Quit"))
         (button2 (button:new-with-label "Hello")))
-    (with-object editor (add-events EVENT_MASK_KEY_PRESS_MASK))
+    (with-object editor
+      (add-events EVENT_MASK_KEY_PRESS_MASK)
+      (connect! key-press-event key-press))
     (with-object button-box (add button2) (add button))
     (with-object vbox (add editor) (add button-box))
     (with-object window
@@ -51,18 +53,16 @@
       (set-default-size 200 200)
       (add vbox))
 
-    (modify-signals button
-      (connect clicked print-goodbye)
-      (connect clicked (lambda x
+    (with-object button
+      (connect! clicked print-goodbye)
+      (connect! clicked (lambda x
                          (with-object window (destroy)))))
-
-    (modify-signals editor (connect key-press-event key-press))
 
     ;; When the 'hello' button is clicked, write the current contents
     ;; of the editor to the console, and replace the buffer contents
     ;; with 'Hello, world'.
-    (modify-signals button2
-      (connect clicked (lambda x
+    (with-object button2
+      (connect! clicked (lambda x
                          (let ((buffer (with-object editor (get-buffer)))
                                (iter1 (text-iter:new))
                                (iter2 (text-iter:new)))
@@ -75,8 +75,8 @@
     (with-object window (show-all))))
 
 (define (main)
-  (let ((app (application:new "org.gtk.example" 0)))
-    (modify-signals app (connect activate activate))
-    (with-object app (run (length (command-line)) (command-line)))))
+  (with-object (application:new "org.gtk.example" 0)
+    (connect! activate activate)
+    (run (length (command-line)) (command-line))))
 
 (main)

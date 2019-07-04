@@ -31,14 +31,14 @@
           (button1 (with-object builder (get-object "button1")))
           (button2 (with-object builder (get-object "button2")))
           (button3 (with-object builder (get-object "quit"))))
-      (modify-signals window
-        (connect destroy
+      (with-object window
+        (connect! destroy
           (lambda (object)
             (main-quit))))
-      (modify-signals button1 (connect clicked print-hello))
-      (modify-signals button2 (connect clicked print-hello))
-      (modify-signals button3
-        (connect clicked
+      (with-object button1 (connect! clicked print-hello))
+      (with-object button2 (connect! clicked print-hello))
+      (with-object button3
+        (connect! clicked
           (lambda (button)
             (main-quit))))))
 

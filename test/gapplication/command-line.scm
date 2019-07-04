@@ -9,8 +9,8 @@
                             `(("application-id" . "gi.guile.Example")
                               ("flags" . ,APPLICATION_HANDLES_COMMAND_LINE))))
          (success #f))
-     (modify-signals app
-       (connect command-line
+     (with-object app
+       (connect! command-line
          (lambda (app command-line)
            (let ((args (with-object command-line (get-arguments))))
              (vector-for-each (lambda (world)
@@ -18,6 +18,6 @@
                               args)
              (with-object app (quit))
              (set! success (vector= string=? args #("world" "darkness, my old friend")))
-             0))))
-     (with-object app (run 3 #("hello" "world" "darkness, my old friend")))
+             0)))
+       (run 3 #("hello" "world" "darkness, my old friend")))
      success)))

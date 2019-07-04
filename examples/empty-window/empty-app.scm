@@ -26,5 +26,5 @@
           ;; Alist of properties
           '(("application-id" . "org.gtk.exampleapp")
             ("flags" . 4)))))
-    (modify-signals app (connect activate empty-app-activate))
+    (with-object app (connect! activate empty-app-activate))
     app))

@@ -37,15 +37,15 @@
       (add vbox)
       (show-all))
 
-    (modify-signals button
-      (connect clicked print-hello)
-      (connect clicked (lambda x
-                               (with-object window (destroy)))))
+    (with-object button
+      (connect! clicked print-hello)
+      (connect! clicked (lambda x
+                          (with-object window (destroy)))))
     (with-object browser (load-uri "http://gnu.org/s/mes"))))
 
 (define (main)
-  (let ((app (application:new "org.gtk.example" 0)))
-    (modify-signals app (connect activate activate))
-    (with-object app (run (length (command-line)) (command-line)))))
+  (with-object (application:new "org.gtk.example" 0)
+    (connect! activate activate)
+    (run (length (command-line)) (command-line))))
 
 (main)

@@ -4,12 +4,11 @@
 (automake-test
  (begin
    (typelib-load "Gio" "2.0")
-   (let ((app (create <GApplication>
-                (application-id "gi.guile.Example"))))
-     (modify-signals app
-       (connect activate
-         (lambda (app)
-           (display "Hello, world")
-           (newline)
-           (with-object app (quit)))))
-     (with-object app (run (length (command-line)) (command-line))))))
+   (with-object (create <GApplication>
+                  (application-id "gi.guile.Example"))
+     (connect! activate
+       (lambda (app)
+         (display "Hello, world")
+         (newline)
+         (with-object app (quit))))
+     (run (length (command-line)) (command-line)))))
