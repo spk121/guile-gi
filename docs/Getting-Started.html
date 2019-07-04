@@ -174,10 +174,6 @@ Hence <code>with-object window (show-all)</code> translates roughly to
 little if a method is defined in the object&rsquo;s class or one of its parent &ndash; it is
 resolved either way.
 </p>
-<p>And lastly is the <code>modify-signals</code> syntax.
-It hooks procedures to GObject <em>signals</em>.
-Signals are its native way of advising objects of the occurrence of events.
-</p>
 <p>Previously, we&rsquo;ve used <code>send</code> to invoke functions and <code>connect</code>
 to hook signals, which shadowed Guile procedures for the use with sockets.
 This was done to conform to the official
@@ -198,9 +194,10 @@ If we already have to break either specification, we want to do it in a way, tha
 Hence we introduce <code>with-object</code>, which acts as a safe barrier (both visually and effectively)
 around GObject methods, that would otherwise cause such confusion.
 </p>
-<p>See <a href="GObject-Signals.html#GObject-Signals">GObject Signals</a> for more information on
-<code>modify-signals</code>. See <a href="with_002dobject-syntax.html#with_002dobject-syntax">with-object syntax</a> for information on the
-<code>with-object</code> syntax.
+<p>See <a href="with_002dobject-syntax.html#with_002dobject-syntax">with-object syntax</a> for information on the <code>with-object</code> syntax,
+<a href="GObject-Methods.html#GObject-Methods">GObject Methods</a> for the primitives it uses to interface with methods,
+<a href="GObject-Signals.html#GObject-Signals">GObject Signals</a> for the primitives it uses to interface with signals,
+<a href="GObject-Properties.html#GObject-Properties">GObject Properties</a> for the primitives it uses to interface with properties.
 </p>
 <table class="menu" border="0" cellspacing="0">
 <tr><td align="left" valign="top">&bull; <a href="Installation.html#Installation" accesskey="1">Installation</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
