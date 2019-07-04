@@ -16,15 +16,15 @@
          (button (create <GtkButton>
                    (parent button-box)
                    (label "Hello world"))))
-    (modify-signals button
-      (connect clicked print-hello)
-      (connect clicked (lambda _ (with-object window (destroy)))))
+    (with-object button
+      (connect! clicked print-hello)
+      (connect! clicked (lambda _ (with-object window (destroy)))))
 
     (with-object window (show-all))))
 
 (define (main)
-  (let ((app (create <GtkApplication> (application-id "org.gtk.example"))))
-    (modify-signals app (connect activate activate-callback))
-    (with-object app (run (length (command-line)) (command-line)))))
+  (with-object (create <GtkApplication> (application-id "org.gtk.example"))
+    (connect! activate activate-callback)
+    (run (length (command-line)) (command-line))))
 
 (main)

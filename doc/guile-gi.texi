@@ -68,6 +68,7 @@ Reference Guide
 * GObject Methods::
 * GObject Signals::
 * GObject Properties::
+* with-object syntax::
 * Custom GObjects::
 * More Stuff::
 
@@ -161,25 +162,14 @@ A minimal GTK application looks like this
 When it is run, it will create an empty window with a title.  Are you
 impressed?
 
-Let's walk through this example.  First off, you may notice three important
-pieces of syntax @code{create}, @code{with-object}, @code{modify-signals}.
+Let's walk through this example.  First off, you may notice two important
+pieces of syntax: @code{create} and @code{with-object}.
 These three macros allow one to interact with GObject's very odd class system.
-
-@c For GObject-derived libraries, there is a class hierarchy based on
-@c single inheritance.  For example a GtkApplicationWindow, is a type of a
-@c GtkWindow which is a type of a GtkWidget, and so on. @code{cast} can be
-@c used to coerce one GObject type into another.  This is necessary because
-@c some Gtk widget constructors do not return the type you would expect.
-@c For example, @code{ApplicationWindow-new} returns a @code{<GtkWidget>}
-@c instead of a @code{<GtkApplicationWindow>}.  This seems odd to me, but,
-@c that's what the C headers say, and that's what the introspection
-@c information says, too.  Since this project generates its bindings
-@c automatically from the provided introspection information, it is what it
-@c is.
 
 First is @code{create}, which -- as the name implies -- creates an object.
 The first argument is a type, which can either be a ``proper'' type, such
-as @code{<GtkApplication>} or a number (it will most likely be the former).
+as @code{<GtkApplication>} or a number@footnote{It will most likely be the former,
+but the latter is supported, as some types are exported as constant, e.g. @code{G_TYPE_OBJECT}.}.
 This will be the type of the resulting object.
 The rest of the arguments are tuples @code{(key value)}, where key is the
 name of a field and value is a value to store therein. These pairs are passed
@@ -216,16 +206,12 @@ Shadowing Guile procedures is certainly not ideal.
 A workaround would have been to rename these procedures as user, but this does away
 with the supposed benefits of their names, on top of being a somewhat pointless typing exercise.
 If we already have to break either specification, we want to do it in a way, that makes sense.
-Hence we replace @code{send} by the strictly better (except in the case of the length of its name)
-@code{with-object}, which allows multiple methods to be invoked instead of just one.
-In a similar manner @code{connect} is replaced by the slightly more verbose @code{modify-signals},
-which also handles removal and blocking.
+Hence we introduce @code{with-object}, which acts as a safe barrier (both visually and effectively)
+around GObject methods, that would otherwise cause such confusion.
 
 @xref{GObject Signals} for more information on
-@code{modify-signals}. @xref{GObject Methods} for information on the
+@code{modify-signals}. @xref{with-object syntax} for information on the
 @code{with-object} syntax.
-
-In future versions, @code{with-object} may be improved to also handle properties and signals.
 
 @menu
 * Installation::
@@ -388,6 +374,7 @@ their @file{.typelib} files.
 * GObject Methods::
 * GObject Signals::
 * GObject Properties::
+* with-object syntax::
 * Custom GObjects::
 * More Stuff::
 @end menu
@@ -442,11 +429,6 @@ The procedure may throw an error if a typelib file corresponding to
 @var{namespace} and @var{version} cannot be found.
 @end deffn
 
-@c @deffn Procedure load-typelib-full namespace version
-@c Like @code{typelib-load}, but it also loads any typelibs tagged as
-@c dependencies to the specified library.
-@c @end deffn
-
 @c -----------------------------------------------------------------
 @node GObject Types, GType, Typelib Introspection, Reference Guide
 @section GObject Types
@@ -480,15 +462,6 @@ single-inheritance class structure.  A @code{RadioButton} is a type of
 @code{Button} is a type of @code{Widget}, for example.  If you wish to
 introspect a GObject's type, use @code{get-gtype} and then use the GType
 procedures. @xref{GType}.
-
-@c @deffn Procedure gobject-get-pointer object
-@c @deffnx Procedure gobject-peek-pointer object
-@c Give @var{object}, a GObject struct, union or object, this procedure
-@c returns a pointer to the underlying C struct, union, or object.
-@c @code{gobject-get-pointer} will attempt to prevent the garbage
-@c collection of the information to which pointer
-@c points. @code{gobject-peek-pointer} makes no such attempt
-@c @end deffn
 
 @c -----------------------------------------------------------------
 @node GType, GObject Methods, GObject Types, Reference Guide
@@ -543,30 +516,9 @@ Returns @code{#t} of @var{object} is an instance of a @var{type}.
 
 The GObject system has its own functionality for methods.  It can
 have methods for GObject-based structs, unions, and objects.  To call
-a GObject method, use the @code{with-object} syntax or the @code{method-call}
-procedure.
+a GObject method, use the @code{call-method} procedure.
 
-As an example, the following two calls are equivalent.
-
-@example
-(with-object window (set-title "MAIN WINDOW"))
-(call-method window "set-title" '("MAIN WINDOW"))
-@end example
-
-@deffn Syntax with-object object method ...
-Given a GObject @var{object}, this syntax attempts to find a match
-between the object and the given method(s).  If the object's type or
-any of its parent types have the specified method(s), they will be called.
-If some method does not exist, an error will be thrown.
-
-Each individual @var{method} is a list with the first element being a symbol,
-which names the method to be called and the remaining arguments being the
-arguments to the call.
-@end deffn
-
-The @code{with-object} syntax is built using the @code{call-method} procedure.
-
-@deffn Procedure call-method object method-name list-of-args
+@deffn Procedure call-method object method-name arg@dots{}
 Given a GObject @var{object} and a string @var{method-name}, this
 procedure searches for a method of the given name associated with this
 object's type, or, failing that, with any of this object's parents'
@@ -576,6 +528,10 @@ list of arguments.
 If no associated method is found, or if the list of arguments doesn't
 match the expected argument types or count, an error is thrown.
 @end deffn
+
+If you are calling many methods of a single object or mixing calls
+with other operations on said object, you may wish to use @code{with-object}
+instead. @xref{with-object syntax}.
 
 @c -----------------------------------------------------------------
 @node GObject Signals, GObject Properties, GObject Methods, Reference Guide
@@ -614,38 +570,11 @@ to the @code{user-data} argument used excessively within GObject.
 Such user data parameters have been removed as they are unnecessary when using
 (anonymous) procedures in Scheme.
 
-When you are connecting many signals of one object, you may wish to save some typing
-by doing the following:
-
-@example
-(modify-signals object
-  (connect signal-a handler-a)
-  (connect signal-b handler-b)
-  ...
-  (connect signal-z handler-z))
-@end example
-
-This syntax roughly expands to
-
-@example
-(begin
-  (signal-connect object ``signal-a'' handler-a)
-  (signal-connect object ``signal-b'' handler-b)
-  ...
-  (signal-connect object ``signal-z'' handler-z)))
-@end example
-
-except that object is temporarily bound to an unique identifier if is not already one.
-You could for instance fetch your object from a (tree of) the resulting object would
-be active for the scope of the signal modifications and the reference to it discarded
-afterwards.
-
 Signals can also be connected @emph{after} the main handler. To do so,
-supply @code{#t} as the optional fourth argument to @code{signal-connect}
-or use @code{connect-after} in @code{modify-signals}.
+supply @code{#t} as the optional fourth argument to @code{signal-connect}.
 
 @c -----------------------------------------------------------------
-@node GObject Properties, Custom GObjects, GObject Signals, Reference Guide
+@node GObject Properties, with-object syntax, GObject Signals, Reference Guide
 @section GObject Properties
 
 GObject objects may have one or more properties, which are variables
@@ -668,8 +597,47 @@ It will throw an error if the property does not exist, or if the
 setting value has the wrong type.
 @end deffn
 
+@node with-object syntax, Custom GObjects, GObject Properties, Reference Guide
+@section with-object syntax
+When working a lot with objects, it may be handy to save some typing, both on the names of
+the methods and the arguments to it, specifically using identifiers instead of strings since
+they more closely reflect the ``identifying'' aspects of these strings.
+
+This is what the @code{with-object} syntax is meant to address.
+@deffn Syntax with-object self block @dots{}
+Temporarily binds @code{self} to a symbol if it is not already bound and performs
+the transformations listed below.
+@deffn {with-object block} property
+@deffnx {with-object block} set! property value
+@quotation Note
+The former is written as @code{property} instead of @code{(property)}.
+@end quotation
+Expands roughly to @code{(gobject-get-property self "property")}
+and @code{(gobject-set-property! self "property" value)} respectively.
+@end deffn
+@deffn {with-object block} connect! signal handler
+@deffnx {with-object block} connect-after! signal handler
+Expands roughly to @code{(signal-connect self "signal" handler after)},
+with @code{after} being @code{#t} for @code{connect-after!} and
+@code{#f} for @code{connect!}.
+@end deffn
+@deffn {with-object block} remove! handler
+@deffnx {with-object block} block! handler
+@deffnx {with-object block} unblock! handler
+Removes, blocks or unblocks all occurences of handler (a function) connected by
+@code{self}.
+@end deffn
+@deffn {with-object block} method arg @dots{}
+Expands roughly to @code{(call-method self "method" ...)}.
+@end deffn
+These expansions are not recursive, e.g. a handler that makes references to
+@code{self} must use @code{with-object} again.
+Any element, that appears once as an identifier and then as a string literal above
+is taken in code as an identifier and transformed to a string literal.
+@end deffn
+
 @c ----------------------------------------------------------------
-@node Custom GObjects, More Stuff, GObject Properties, Reference Guide
+@node Custom GObjects, More Stuff, with-object syntax, Reference Guide
 @section Defining new GObject classes
 
 Usually any GObjects you use will be created by procedures such as

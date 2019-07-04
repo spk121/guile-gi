@@ -137,16 +137,16 @@ guile -L . -c '(use-modules (gi)) (display (typelib-document &quot;Gio&quot; &qu
          (button (create &lt;GtkButton&gt;
                    (parent button-box)
                    (label &quot;Hello world&quot;))))
-    (modify-signals button
-      (connect clicked print-hello)
-      (connect clicked (lambda _ (with-object window (destroy)))))
+    (with-object button
+      (connect! clicked print-hello)
+      (connect! clicked (lambda _ (with-object window (destroy)))))
 
     (with-object window (show-all))))
 
 (define (main)
-  (let ((app (create &lt;GtkApplication&gt; (application-id &quot;org.gtk.example&quot;))))
-    (modify-signals app (connect activate activate-callback))
-    (with-object app (run (length (command-line)) (command-line)))))
+  (with-object (create &lt;GtkApplication&gt; (application-id &quot;org.gtk.example&quot;))
+    (connect! activate activate-callback)
+    (run (length (command-line)) (command-line))))
 
 (main)
 </pre></div>
@@ -154,14 +154,13 @@ guile -L . -c '(use-modules (gi)) (display (typelib-document &quot;Gio&quot; &qu
 <p>When it is run, it will create an empty window with a title.  Are you
 impressed?
 </p>
-<p>Let&rsquo;s walk through this example.  First off, you may notice three important
-pieces of syntax <code>create</code>, <code>with-object</code>, <code>modify-signals</code>.
+<p>Let&rsquo;s walk through this example.  First off, you may notice two important
+pieces of syntax: <code>create</code> and <code>with-object</code>.
 These three macros allow one to interact with GObject&rsquo;s very odd class system.
 </p>
-
 <p>First is <code>create</code>, which &ndash; as the name implies &ndash; creates an object.
 The first argument is a type, which can either be a &ldquo;proper&rdquo; type, such
-as <code>&lt;GtkApplication&gt;</code> or a number (it will most likely be the former).
+as <code>&lt;GtkApplication&gt;</code> or a number<a id="DOCF1" href="#FOOT1"><sup>1</sup></a>.
 This will be the type of the resulting object.
 The rest of the arguments are tuples <code>(key value)</code>, where key is the
 name of a field and value is a value to store therein. These pairs are passed
@@ -196,16 +195,12 @@ and <code>gtk_button_set_label</code> to a method of that class.
 A workaround would have been to rename these procedures as user, but this does away
 with the supposed benefits of their names, on top of being a somewhat pointless typing exercise.
 If we already have to break either specification, we want to do it in a way, that makes sense.
-Hence we replace <code>send</code> by the strictly better (except in the case of the length of its name)
-<code>with-object</code>, which allows multiple methods to be invoked instead of just one.
-In a similar manner <code>connect</code> is replaced by the slightly more verbose <code>modify-signals</code>,
-which also handles removal and blocking.
+Hence we introduce <code>with-object</code>, which acts as a safe barrier (both visually and effectively)
+around GObject methods, that would otherwise cause such confusion.
 </p>
 <p>See <a href="GObject-Signals.html#GObject-Signals">GObject Signals</a> for more information on
-<code>modify-signals</code>. See <a href="GObject-Methods.html#GObject-Methods">GObject Methods</a> for information on the
+<code>modify-signals</code>. See <a href="with_002dobject-syntax.html#with_002dobject-syntax">with-object syntax</a> for information on the
 <code>with-object</code> syntax.
-</p>
-<p>In future versions, <code>with-object</code> may be improved to also handle properties and signals.
 </p>
 <table class="menu" border="0" cellspacing="0">
 <tr><td align="left" valign="top">&bull; <a href="Installation.html#Installation" accesskey="1">Installation</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
@@ -214,6 +209,14 @@ which also handles removal and blocking.
 </td></tr>
 </table>
 
+<div class="footnote">
+<hr>
+<h4 class="footnotes-heading">Footnotes</h4>
+
+<h3><a id="FOOT1" href="#DOCF1">(1)</a></h3>
+<p>It will most likely be the former,
+but the latter is supported, as some types are exported as constant, e.g. <code>G_TYPE_OBJECT</code>.</p>
+</div>
 <hr>
 <div class="header">
 <p>

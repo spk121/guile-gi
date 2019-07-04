@@ -57,32 +57,10 @@ Next: <a href="GObject-Signals.html#GObject-Signals" accesskey="n" rel="next">GO
 
 <p>The GObject system has its own functionality for methods.  It can
 have methods for GObject-based structs, unions, and objects.  To call
-a GObject method, use the <code>with-object</code> syntax or the <code>method-call</code>
-procedure.
-</p>
-<p>As an example, the following two calls are equivalent.
-</p>
-<div class="example">
-<pre class="example">(with-object window (set-title &quot;MAIN WINDOW&quot;))
-(call-method window &quot;set-title&quot; '(&quot;MAIN WINDOW&quot;))
-</pre></div>
-
-<dl>
-<dt id="index-with_002dobject">Syntax: <strong>with-object</strong> <em>object method ...</em></dt>
-<dd><p>Given a GObject <var>object</var>, this syntax attempts to find a match
-between the object and the given method(s).  If the object&rsquo;s type or
-any of its parent types have the specified method(s), they will be called.
-If some method does not exist, an error will be thrown.
-</p>
-<p>Each individual <var>method</var> is a list with the first element being a symbol,
-which names the method to be called and the remaining arguments being the
-arguments to the call.
-</p></dd></dl>
-
-<p>The <code>with-object</code> syntax is built using the <code>call-method</code> procedure.
+a GObject method, use the <code>call-method</code> procedure.
 </p>
 <dl>
-<dt id="index-call_002dmethod">Procedure: <strong>call-method</strong> <em>object method-name list-of-args</em></dt>
+<dt id="index-call_002dmethod">Procedure: <strong>call-method</strong> <em>object method-name arg&hellip;</em></dt>
 <dd><p>Given a GObject <var>object</var> and a string <var>method-name</var>, this
 procedure searches for a method of the given name associated with this
 object&rsquo;s type, or, failing that, with any of this object&rsquo;s parents&rsquo;
@@ -93,6 +71,10 @@ list of arguments.
 match the expected argument types or count, an error is thrown.
 </p></dd></dl>
 
+<p>If you are calling many methods of a single object or mixing calls
+with other operations on said object, you may wish to use <code>with-object</code>
+instead. See <a href="with_002dobject-syntax.html#with_002dobject-syntax">with-object syntax</a>.
+</p>
 
 
 

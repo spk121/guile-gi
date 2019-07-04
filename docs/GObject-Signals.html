@@ -88,41 +88,9 @@ to the <code>user-data</code> argument used excessively within GObject.
 Such user data parameters have been removed as they are unnecessary when using
 (anonymous) procedures in Scheme.
 </p>
-<p>When you are connecting many signals of one object, you may wish to save some typing
-by doing the following:
-</p>
-<div class="example">
-<pre class="example">(modify-signals object
-  (connect signal-a handler-a)
-  (connect signal-b handler-b)
-  ...
-  (connect signal-z handler-z))
-</pre></div>
-
-<p>This syntax roughly expands to
-</p>
-<div class="example">
-<pre class="example">(begin
-  (signal-connect object ``signal-a'' handler-a)
-  (signal-connect object ``signal-b'' handler-b)
-  ...
-  (signal-connect object ``signal-z'' handler-z)))
-</pre></div>
-
-<p>except that object is temporarily bound to an unique identifier if is not already one.
-You could for instance fetch your object from a (tree of) the resulting object would
-be active for the scope of the signal modifications and the reference to it discarded
-afterwards.
-</p>
 <p>Signals can also be connected <em>after</em> the main handler. To do so,
-supply <code>#t</code> as the optional fourth argument to <code>signal-connect</code>
-or use <code>connect-after</code> in <code>modify-signals</code>.
+supply <code>#t</code> as the optional fourth argument to <code>signal-connect</code>.
 </p>
-<hr>
-<div class="header">
-<p>
-Next: <a href="GObject-Properties.html#GObject-Properties" accesskey="n" rel="next">GObject Properties</a>, Previous: <a href="GObject-Methods.html#GObject-Methods" accesskey="p" rel="prev">GObject Methods</a>, Up: <a href="Reference-Guide.html#Reference-Guide" accesskey="u" rel="up">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="_005findex.html#g_t_005findex" title="Index" rel="index">Index</a>]</p>
-</div>
 
 
 
