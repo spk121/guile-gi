@@ -151,6 +151,7 @@ FUZZY_MATCH_TESTS = \
 
 PARAMSPEC_TESTS = \
  paramspec/getset.scm \
+ paramspec/getset-syntax.scm \
  paramspec/default.scm
 
 GTK_ENTRY_TESTS = \

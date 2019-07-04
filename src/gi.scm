@@ -43,14 +43,24 @@
 (define-syntax with-object
   (lambda (stx)
     (syntax-case stx ()
-      ((_ self method ...)
+      ((_ self block ...)
        (identifier? #'self)
        #`(begin
            #,@(map
-               (lambda (method)
-                 (syntax-case method (set! ; not yet handled
-                                      connect! connect-after!
-                                      remove! block! unblock!)
+               (lambda (block)
+                 (syntax-case block (set!
+                                     connect! connect-after!
+                                     remove! block! unblock!)
+                   ;; properties
+                   (prop
+                    (identifier? #'prop)
+                    (with-syntax ((prop-str (%syntax->string #'prop)))
+                      #'(gobject-get-property self prop-str)))
+                   ((set! prop val)
+                    (identifier? #'prop)
+                    (with-syntax ((prop-str (%syntax->string #'prop)))
+                      #'(gobject-set-property! self prop-str val)))
+                   ;; signals
                    ((connect! signal handler)
                     (identifier? #'signal)
                     (with-syntax ((name (%syntax->string #'signal)))
@@ -65,11 +75,12 @@
                     #'(gobject-handler-block-by-func self handler))
                    ((unblock! handler)
                     #'(gobject-handler-block-by-func self handler))
-                   ((id arg ...)
+                   ;; methods
+                   ((method arg ...)
                     (identifier? #'id)
-                    (with-syntax ((method (%syntax->string #'id)))
-                      #'(call-method self method arg ...)))))
-               #'(method ...))))
+                    (with-syntax ((method-str (%syntax->string #'method)))
+                      #'(call-method self method-str arg ...)))))
+               #'(block ...))))
       ((_ self method ...)
        #'(let ((this self)) (with-object this method ...))))))
 
