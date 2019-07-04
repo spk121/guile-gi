@@ -81,8 +81,8 @@
                     (with-syntax ((method-str (%syntax->string #'method)))
                       #'(call-method self method-str arg ...)))))
                #'(block ...))))
-      ((_ self method ...)
-       #'(let ((this self)) (with-object this method ...))))))
+      ((_ self block ...)
+       #'(let ((this self)) (with-object this block ...))))))
 
 (define-syntax modify-signals
   (lambda (stx)
