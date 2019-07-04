@@ -13,10 +13,10 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https:;;www.gnu.org/licenses/>.
 (define-module (gi)
-  #:export (create
+  #:export (use-typelibs
+            create
             with-object
-            modify-signals
-            use-typelibs))
+            (with-object . using)))
 
 (eval-when (expand load eval)
   ;; required for %typelib-module-name, which is used at expand time
@@ -83,26 +83,6 @@
                #'(block ...))))
       ((_ self block ...)
        #'(let ((this self)) (with-object this block ...))))))
-
-(define-syntax modify-signals
-  (lambda (stx)
-    (syntax-case stx ()
-      ((_ self signal ...)
-       #`(with-object self
-          #,@(map
-              (lambda (signal)
-                (syntax-case signal (connect connect-after remove block unblock)
-                  ((connect signal handler)
-                   #'(connect! signal handler))
-                  ((connect-after signal handler)
-                   #'(connect-after! signal handler))
-                  ((remove handler)
-                   #'(remove! handler))
-                  ((block handler)
-                   #'(block! handler))
-                  ((unblock handler)
-                   #'(unblock! handler))))
-              #'(signal ...)))))))
 
 (define (%gi->module-use x lib version params)
   (cond
