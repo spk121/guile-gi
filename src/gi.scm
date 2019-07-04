@@ -84,26 +84,30 @@
       ((_ self block ...)
        #'(let ((this self)) (with-object this block ...))))))
 
-(define (%gi->module-use x lib version params)
+(define (%gi->module-use form subform lib version params)
   (cond
    ((not (string? (syntax->datum lib)))
-    #`(syntax-error "expected string but got " lib))
+    (syntax-violation #f "unexpected library (not a string)"
+                      form subform))
    ((not (string? (syntax->datum version)))
-    #`(syntax-error "expected string but got " version))
+    (syntax-violation #f "unexpected version (not a string)"
+                      form subform))
    (else
-    (let ((module (datum->syntax x (%typelib-module-name (syntax->datum lib)
-                                                         (syntax->datum version)))))
+    (let ((module (datum->syntax form (%typelib-module-name (syntax->datum lib)
+                                                            (syntax->datum version)))))
       #`(#,module #,@params)))))
 
-(define (%gi->module-def x lib version)
+(define (%gi->module-def form subform lib version)
   (cond
    ((not (string? (syntax->datum lib)))
-    #`(syntax-error "expected string but got" lib))
+    (syntax-violation #f "unexpected library (not a string)"
+                      form subform))
    ((not (string? (syntax->datum version)))
-    #`(syntax-error "expected string but got" version))
+    (syntax-violation #f "unexpected version (not a string)"
+                      form subform))
    (else
-    (let ((module (datum->syntax x (%typelib-module-name (syntax->datum lib)
-                                                         (syntax->datum version)))))
+    (let ((module (datum->syntax form (%typelib-module-name (syntax->datum lib)
+                                                            (syntax->datum version)))))
 
       #`(unless (resolve-module '#,module #:ensure #f)
           (%typelib-define-module #,lib #,version))))))
@@ -117,18 +121,18 @@
                (lambda (lib)
                  (syntax-case lib ()
                    ((typelib version)
-                    (%gi->module-def x #'typelib #'version))
+                    (%gi->module-def x lib #'typelib #'version))
                    (((typelib version) _ ...)
-                    (%gi->module-def x #'typelib #'version))))
+                    (%gi->module-def x lib #'typelib #'version))))
                #'(lib ...)))
              (module-uses
               (map
                (lambda (lib)
                  (syntax-case lib ()
                    ((typelib version)
-                    (%gi->module-use x #'typelib #'version '()))
+                    (%gi->module-use x lib #'typelib #'version '()))
                    (((typelib version) param ...)
-                    (%gi->module-use x #'typelib #'version #'(param ...)))))
+                    (%gi->module-use x lib #'typelib #'version #'(param ...)))))
                #'(lib ...))))
          #`(eval-when (expand load eval)
              #,@module-defs
