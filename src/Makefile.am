@@ -165,3 +165,6 @@ check-syntax:
 	$(CC) -std=c11 $(GUILE_CFLAGS) $(GLIB_CFLAGS) $(GOBJECT_CFLAGS) \
 	 $(GOBJECT_INTROSPECTION_CFLAGS) $(FFI_CFLAGS) \
 	 -DG_LOG_DOMAIN=\"GuileGI\" $(CFLAGS) -fsyntax-only $(CHK_SOURCES)
+
+indent:
+	VERSION_CONTROL=none indent $(libguile_gi_la_SOURCES)

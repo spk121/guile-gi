@@ -553,7 +553,7 @@ gi_gvalue_to_scm_structured_type(const GValue *value, GType fundamental, gboolea
             return gi_gvalue_as_scm(n_value, copy_boxed);
         }
         else if (G_VALUE_HOLDS(value, G_TYPE_GSTRING)) {
-            GString *string = (GString *) g_value_get_boxed(value);
+            GString *string = (GString *)g_value_get_boxed(value);
             return scm_from_utf8_stringn(string->str, string->len);
         }
         else {

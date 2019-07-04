@@ -2,7 +2,7 @@
              (rnrs bytevectors)
              (test automake-test-lib)
              (ice-9 receive)
-             (srfi srfi-1))
+             (srfi srfi-43))
 
 ;; FIXME: the ascii-alternates output parameter
 ;; is from a gchar*** output parameter.  This is
@@ -19,4 +19,4 @@
    (write tokens) (newline)
      (write ascii-alternates) (newline)
      ;; take case-folding into account
-     (every string-ci=? (list "Les" "pâtes") tokens)))
+     (vector= string-ci=? #("Les" "pâtes") tokens)))
