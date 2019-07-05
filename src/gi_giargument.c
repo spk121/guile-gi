@@ -2318,10 +2318,10 @@ convert_list_arg_to_object(GIArgument *arg, GITypeInfo *list_type_info,
             }
         }
         else {
-            GIArgument arg;
+            GIArgument entry;
             SCM elt;
-            arg.v_pointer = *(void **)data;
-            elt = gi_giargument_convert_return_val_to_object(&arg, item_type_info, item_transfer,
+            entry.v_pointer = *(void **)data;
+            elt = gi_giargument_convert_return_val_to_object(&entry, item_type_info, item_transfer,
                                                              TRUE, FALSE);
             scm_set_car_x(out_iter, elt);
         }
