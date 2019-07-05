@@ -20,33 +20,32 @@
 (typelib-load "GLib" "2.0")
 (typelib-load "WebKit2" "4.0")
 
-(define (print-hello widget data)
+(define (print-hello widget)
   (display "Hello World\n"))
 
-(define (activate app user-data)
+(define (activate app)
   (let ((window (cast (application-window:new app) <GtkApplicationWindow>))
         (vbox (cast (vbox:new 0 0) <GtkVBox>))
         (browser (cast (web-view:new) <WebKitWebView>))
         (button-box (cast (button-box:new 0) <GtkButtonBox>))
         (button (button:new-with-label "Hello World")))
-    (send window (set-title "Window"))
-    (send window (set-default-size 200 200))
-    (send window (show-all))
-    (send window (add vbox))
-    (send vbox (add browser))
-    (send vbox (add button-box))
+    (with-object button-box (add button))
+    (with-object vbox (add browser) (add button-box))
+    (with-object window
+      (set-title "Window")
+      (set-default-size 200 200)
+      (add vbox)
+      (show-all))
 
-    (connect button (clicked print-hello #f))
-    (connect button (clicked (lambda x
-                               (send window (destroy)))
-                             #f))
-    (send browser (load-uri "http://gnu.org/s/mes"))
-    (send button-box (add button))
-    (send window (show-all))))
+    (with-object button
+      (connect! clicked print-hello)
+      (connect! clicked (lambda x
+                          (with-object window (destroy)))))
+    (with-object browser (load-uri "http://gnu.org/s/mes"))))
 
 (define (main)
-  (let ((app (application:new "org.gtk.example" 0)))
-    (connect app (activate activate #f))
-    (send app (run (length (command-line)) (command-line)))))
+  (with-object (application:new "org.gtk.example" 0)
+    (connect! activate activate)
+    (run (length (command-line)) (command-line))))
 
 (main)

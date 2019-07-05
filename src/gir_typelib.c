@@ -589,7 +589,7 @@ static void
 gir_typelib_document_method_info(GString **export, GType gtype, GIFunctionInfo *info)
 {
     gchar *class_name = gir_type_class_name_from_gtype(gtype);
-    gchar *public_name = gir_method_public_name(info);
+    gchar *public_name = gir_function_make_name(NULL, info);
     g_string_append_printf(*export, "%s's METHOD %s\n", class_name, public_name);
     g_free(public_name);
     g_free(class_name);

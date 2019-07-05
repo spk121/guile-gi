@@ -5,7 +5,7 @@
 (automake-test
  (let* ([str "The quick brown fox jumps over the lazy dog"]
         [hmac (compute-hmac-for-string
-               CHECKSUM_TYPE_MD5
+               CHECKSUM_MD5
                (string->utf8 "key") 3
                str -1)])
    (write str) (newline)

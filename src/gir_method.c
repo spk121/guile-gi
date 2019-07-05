@@ -33,25 +33,6 @@ GHashTable *gir_method_hash_table = NULL;
 
 static void gir_fini_method(void);
 
-gchar *
-gir_method_public_name(GICallableInfo *info)
-{
-    char *public_name, *tmp_str;
-    GITypeInfo *return_type;
-
-    return_type = g_callable_info_get_return_type(info);
-    g_assert(return_type);
-    tmp_str = gname_to_scm_name(g_base_info_get_name(info));
-    if (g_type_info_get_tag(return_type) == GI_TYPE_TAG_BOOLEAN
-        && !g_type_info_is_pointer(return_type))
-        public_name = g_strdup_printf("%s?", tmp_str);
-    else
-        public_name = g_strdup(tmp_str);
-
-    g_base_info_unref(return_type);
-    g_free(tmp_str);
-    return public_name;
-}
 
 // In the method table its VALUE is itself a hashtable mapping a GTYPE
 // to a FUNC_INFO.  This is because many methods have the same name
@@ -62,7 +43,7 @@ gir_method_table_insert(GType type, GIFunctionInfo *info)
     g_assert(type != 0);
     g_assert(info != NULL);
 
-    gchar *public_name = gir_method_public_name(info);
+    gchar *public_name = gir_function_make_name(NULL, info);
 
     GHashTable *subhash = g_hash_table_lookup(gir_method_hash_table,
                                               public_name);

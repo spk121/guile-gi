@@ -11,7 +11,7 @@
         [bytes-key (bytes:new-take key key-len)]
         [bytes (bytes:new-take bv bv-len)]
         [hmac (compute-hmac-for-bytes
-               CHECKSUM_TYPE_MD5
+               CHECKSUM_MD5
                bytes-key
                bytes)])
    (write key) (newline)

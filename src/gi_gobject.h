@@ -13,7 +13,6 @@ typedef struct _GuGClosure
 {
     GClosure closure;
     SCM callback;
-    SCM extra_args;             /* tuple of extra args to pass to callback */
     SCM swap_data;              /* other object for gtk_signal_connect__object */
     GuClosureExceptionHandler exception_handler;
     GISignalInfo *signal_info;

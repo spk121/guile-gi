@@ -6,7 +6,7 @@
  (let* ([bv (string->utf8 "The quick brown fox jumps over the lazy dog")]
         [len (bytevector-length bv)]
         [hmac (compute-hmac-for-data
-               CHECKSUM_TYPE_MD5
+               CHECKSUM_MD5
                (string->utf8 "key") 3
                bv len)])
    (write bv) (newline)

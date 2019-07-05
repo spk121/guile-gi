@@ -27,56 +27,56 @@
 (define (text-iter:new)
   (make-gstruct <GtkTextIter>))
 
-(define (print-goodbye widget data)
+(define (print-goodbye widget)
   (display "Goodbye World\n"))
 
-(define (key-press widget event xtra)
+(define (key-press widget event)
   (receive (ok keyval)
-      (send event (get-keyval?))
+      (with-object event (get-keyval?))
       (format #t "key: ~s\n" keyval)
       #f))
 
-(define (activate app user-data)
+(define (activate app)
   (let ((window (cast (application-window:new app) <GtkApplicationWindow>))
         (vbox (cast (vbox:new 0 0) <GtkVBox>))
         (editor (cast (text-view:new) <GtkTextView>))
         (button-box (cast (button-box:new 0) <GtkButtonBox>))
         (button (button:new-with-label "Quit"))
         (button2 (button:new-with-label "Hello")))
-    (send editor (add-events EVENT_MASK_KEY_PRESS_MASK))
-    (send window (set-title "Window"))
-    (send window (set-default-size 200 200))
-    (send window (show-all))
-    (send window (add vbox))
-    (send vbox (add editor))
-    (send vbox (add button-box))
-    (connect button (clicked print-goodbye #f))
-    (connect button (clicked (lambda x
-                               (send window (destroy)))
-                             #f))
-    (connect editor (key-press-event key-press #f))
+    (with-object editor
+      (add-events EVENT_MASK_KEY_PRESS_MASK)
+      (connect! key-press-event key-press))
+    (with-object button-box (add button2) (add button))
+    (with-object vbox (add editor) (add button-box))
+    (with-object window
+      (set-title "Window")
+      (set-default-size 200 200)
+      (add vbox))
+
+    (with-object button
+      (connect! clicked print-goodbye)
+      (connect! clicked (lambda x
+                         (with-object window (destroy)))))
 
     ;; When the 'hello' button is clicked, write the current contents
     ;; of the editor to the console, and replace the buffer contents
     ;; with 'Hello, world'.
-    (connect button2 (clicked (lambda x
-                                (let ((buffer (send editor (get-buffer)))
-                                      (iter1 (text-iter:new))
-                                      (iter2 (text-iter:new)))
-                                  (send buffer (get-bounds iter1 iter2))
-                                  (let ((txt (send buffer (get-text iter1 iter2 #t))))
-                                    (write txt) (newline))
-                                  (send buffer (set-text "Hello, world" 12))))
-                              #f))
-                                      
-    (send editor (grab-focus))
-    (send button-box (add button2))
-    (send button-box (add button))
-    (send window (show-all))))
+    (with-object button2
+      (connect! clicked (lambda x
+                         (let ((buffer (with-object editor (get-buffer)))
+                               (iter1 (text-iter:new))
+                               (iter2 (text-iter:new)))
+                           (with-object buffer (get-bounds iter1 iter2))
+                           (let ((txt (with-object buffer (get-text iter1 iter2 #t))))
+                             (write txt) (newline))
+                           (with-object buffer (set-text "Hello, world" 12))))))
+
+    (with-object editor (grab-focus))
+    (with-object window (show-all))))
 
 (define (main)
-  (let ((app (application:new "org.gtk.example" 0)))
-    (connect app (activate activate #f))
-    (send app (run (length (command-line)) (command-line)))))
+  (with-object (application:new "org.gtk.example" 0)
+    (connect! activate activate)
+    (run (length (command-line)) (command-line))))
 
 (main)

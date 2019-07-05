@@ -13,9 +13,10 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https:;;www.gnu.org/licenses/>.
 (define-module (gi)
-  #:export (send
-            connect
-            use-typelibs))
+  #:export (use-typelibs
+            create
+            with-object
+            (with-object . using)))
 
 (eval-when (expand load eval)
   ;; required for %typelib-module-name, which is used at expand time
@@ -24,44 +25,89 @@
 ;; This macro derives from
 ;; https:;;lists.gnu.org/archive/html/guile-user/2018-12/msg00037.html
 
-(define-syntax send
+(define %syntax->string (compose symbol->string syntax->datum))
+
+(define-syntax create
   (lambda (stx)
     (syntax-case stx ()
-      ((_ self (method arg ...))
-       (identifier? #'method)
-       (with-syntax ((method-str (symbol->string
-                                  (syntax->datum #'method))))
-         #'(call-method self method-str arg ...))))))
+      ((_ type field ...)
+       #`(make-gobject type
+                       `#,(map (lambda (field)
+                                 (syntax-case field ()
+                                   ((key val)
+                                    (identifier? #'key)
+                                    (with-syntax ((key-str (%syntax->string #'key)))
+                                      #'(key-str . ,val)))))
+                              #'(field ...)))))))
 
-(define-syntax connect
+(define-syntax with-object
   (lambda (stx)
     (syntax-case stx ()
-      ((_ self (method arg ...))
-       (identifier? #'method)
-       (with-syntax ((method-str (symbol->string
-                                  (syntax->datum #'method))))
-         #'(signal-connect self method-str arg ...))))))
+      ((_ self block ...)
+       (identifier? #'self)
+       #`(begin
+           #,@(map
+               (lambda (block)
+                 (syntax-case block (set!
+                                     connect! connect-after!
+                                     remove! block! unblock!)
+                   ;; properties
+                   (prop
+                    (identifier? #'prop)
+                    (with-syntax ((prop-str (%syntax->string #'prop)))
+                      #'(gobject-get-property self prop-str)))
+                   ((set! prop val)
+                    (identifier? #'prop)
+                    (with-syntax ((prop-str (%syntax->string #'prop)))
+                      #'(gobject-set-property! self prop-str val)))
+                   ;; signals
+                   ((connect! signal handler)
+                    (identifier? #'signal)
+                    (with-syntax ((name (%syntax->string #'signal)))
+                      #'(signal-connect self name handler #f)))
+                   ((connect-after! signal handler)
+                    (identifier? #'signal)
+                    (with-syntax ((name (%syntax->string #'signal)))
+                      #'(signal-connect self name handler #t)))
+                   ((remove! handler)
+                    #'(gobject-disconnect-by-func self handler))
+                   ((block! handler)
+                    #'(gobject-handler-block-by-func self handler))
+                   ((unblock! handler)
+                    #'(gobject-handler-block-by-func self handler))
+                   ;; methods
+                   ((method arg ...)
+                    (identifier? #'id)
+                    (with-syntax ((method-str (%syntax->string #'method)))
+                      #'(call-method self method-str arg ...)))))
+               #'(block ...))))
+      ((_ self block ...)
+       #'(let ((this self)) (with-object this block ...))))))
 
-(define (%gi->module-use x lib version params)
+(define (%gi->module-use form subform lib version params)
   (cond
    ((not (string? (syntax->datum lib)))
-    #`(syntax-error "expected string but got " lib))
+    (syntax-violation #f "unexpected library (not a string)"
+                      form subform))
    ((not (string? (syntax->datum version)))
-    #`(syntax-error "expected string but got " version))
+    (syntax-violation #f "unexpected version (not a string)"
+                      form subform))
    (else
-    (let ((module (datum->syntax x (%typelib-module-name (syntax->datum lib)
-                                                         (syntax->datum version)))))
+    (let ((module (datum->syntax form (%typelib-module-name (syntax->datum lib)
+                                                            (syntax->datum version)))))
       #`(#,module #,@params)))))
 
-(define (%gi->module-def x lib version)
+(define (%gi->module-def form subform lib version)
   (cond
    ((not (string? (syntax->datum lib)))
-    #`(syntax-error "expected string but got" lib))
+    (syntax-violation #f "unexpected library (not a string)"
+                      form subform))
    ((not (string? (syntax->datum version)))
-    #`(syntax-error "expected string but got" version))
+    (syntax-violation #f "unexpected version (not a string)"
+                      form subform))
    (else
-    (let ((module (datum->syntax x (%typelib-module-name (syntax->datum lib)
-                                                         (syntax->datum version)))))
+    (let ((module (datum->syntax form (%typelib-module-name (syntax->datum lib)
+                                                            (syntax->datum version)))))
 
       #`(unless (resolve-module '#,module #:ensure #f)
           (%typelib-define-module #,lib #,version))))))
@@ -75,18 +121,18 @@
                (lambda (lib)
                  (syntax-case lib ()
                    ((typelib version)
-                    (%gi->module-def x #'typelib #'version))
+                    (%gi->module-def x lib #'typelib #'version))
                    (((typelib version) _ ...)
-                    (%gi->module-def x #'typelib #'version))))
+                    (%gi->module-def x lib #'typelib #'version))))
                #'(lib ...)))
              (module-uses
               (map
                (lambda (lib)
                  (syntax-case lib ()
                    ((typelib version)
-                    (%gi->module-use x #'typelib #'version '()))
+                    (%gi->module-use x lib #'typelib #'version '()))
                    (((typelib version) param ...)
-                    (%gi->module-use x #'typelib #'version #'(param ...)))))
+                    (%gi->module-use x lib #'typelib #'version #'(param ...)))))
                #'(lib ...))))
          #`(eval-when (expand load eval)
              #,@module-defs

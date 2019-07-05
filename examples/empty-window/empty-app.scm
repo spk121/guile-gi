@@ -16,9 +16,8 @@
 (define (empty-app-init app)
   #f)
 
-(define (empty-app-activate app dummy)
-  (let ((win (empty-app-window-new app)))
-    (send win (present))))
+(define (empty-app-activate app)
+  (with-object (empty-app-window-new app) (present)))
 
 (define (empty-app-new)
   (let ((app
@@ -27,5 +26,5 @@
           ;; Alist of properties
           '(("application-id" . "org.gtk.exampleapp")
             ("flags" . 4)))))
-    (connect app (activate empty-app-activate))
+    (with-object app (connect! activate empty-app-activate))
     app))

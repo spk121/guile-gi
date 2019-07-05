@@ -6,9 +6,10 @@
    (typelib-load "Gio" "2.0")
    (let ((app (make-gobject (get-gtype <GApplication>)
                             '(("application-id" . "gi.guile.Example")))))
-     (connect app (activate
-                   (lambda (app user-data)
-                     (display "Hello, world")
-                     (newline)
-                     (send app (quit)))))
-     (send app (run (length (command-line)) (command-line))))))
+     (with-object app
+       (connect! activate
+         (lambda (app)
+           (display "Hello, world")
+           (newline)
+           (with-object app (quit))))
+       (run (length (command-line)) (command-line))))))

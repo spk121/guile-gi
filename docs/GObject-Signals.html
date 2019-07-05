@@ -63,14 +63,13 @@ have nothing to do with Unix signals like <code>SIGTERM</code>.
 <code>signal-connect</code> procedure. Consider the following example.
 </p>
 <div class="example">
-<pre class="example">(define (activate app user-data)
+<pre class="example">(define (activate app)
    ...
    )
 
 (signal-connect app         ; A GObject
                 &quot;activate&quot;  ; The name of a signal it might emit
-                activate    ; A procedure to call when emitted
-                #f)         ; A user-supplied argument
+                activate)   ; A procedure to call when emitted
 </pre></div>
 
 <p>In that example, the caller is attaching a procedure named
@@ -80,47 +79,18 @@ the gobject object calls all the callback procedures attached to its
 </p>
 <p>When a callback procedure is called it may receives some arguments
 from the caller and some from user data.  In the example, <code>activate</code>
-is supposed to take two arguments.  The first argument <code>app</code> is
-supplied by the caller.  The second argument <code>user-data</code> is
-defined when the callback is registered.  In the above example the <code>#f</code>
-in the <code>signal-connect</code> call will be passed to <code>activate</code>
-as its <code>user-data</code> parameter.
+is supposed to take a single argument.
+This argument &ndash; <code>app</code> &ndash; is supplied by the caller, as are all
+arguments to signals.
 </p>
-<blockquote>
-<p><b>Warning:</b> User data parameters may only be pointers or <code>#f</code>, which makes
-them tricky to use.  It is best to avoid them.  Scheme procedures and
-lambdas are versatile enough that these user-data parameters are never
-necessary.
-</p></blockquote>
-
-<p>If you have decided to ignore the above warning and for some
-unimaginable reason want to use the user data parameter of a callback
-procedure, you can pass a pointer.  And if the parameter that you wish
-to pass is not a bytevector or other type that inherently can be
-converted to a pointer, the following kludge is provided.
+<p>Previous versions added a second (in the general case last) argument analogous
+to the <code>user-data</code> argument used excessively within GObject.
+Such user data parameters have been removed as they are unnecessary when using
+(anonymous) procedures in Scheme.
 </p>
-<dl>
-<dt id="index-label">box: <strong>label</strong> <em>val</em></dt>
-<dd><p>This procedure takes a scheme object <var>val</var> and stores it in a
-preallocated location in memory, and returns that location as a
-pointer.  The <var>label</var>, which must be a one-letter symbol from
-<code>A</code> to <code>Z</code>, indicates which location into which it is to be
-stored.
+<p>Signals can also be connected <em>after</em> the main handler. To do so,
+supply <code>#t</code> as the optional fourth argument to <code>signal-connect</code>.
 </p>
-<p>When callback procedures are called, Guile-GI will check to see if any
-user-data parameters are one of these twenty-six special memory
-locations, and, if so, will return the value stored there.  Thus,
-there is no unbox procedure needed.
-</p>
-<p>Since these boxes can be set at any time by any thread, it is up to
-the caller to manage the contents of the boxes.
-</p></dd></dl>
-
-<hr>
-<div class="header">
-<p>
-Next: <a href="GObject-Properties.html#GObject-Properties" accesskey="n" rel="next">GObject Properties</a>, Previous: <a href="GObject-Methods.html#GObject-Methods" accesskey="p" rel="prev">GObject Methods</a>, Up: <a href="Reference-Guide.html#Reference-Guide" accesskey="u" rel="up">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="_005findex.html#g_t_005findex" title="Index" rel="index">Index</a>]</p>
-</div>
 
 
 

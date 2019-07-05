@@ -137,10 +137,13 @@ BYTE_ARRAY_TESTS = \
  byte_array/bytes_new_null_contents.scm
 
 GAPPLICATION_TESTS = \
+ gapplication/activate_order.scm \
  gapplication/command-line.scm \
  gapplication/command-line-options.scm \
  gapplication/create1.scm \
  gapplication/create2.scm \
+ gapplication/create3.scm \
+ gapplication/create_iile.scm \
  gapplication/set_resource_path.scm
 
 FUZZY_MATCH_TESTS = \
@@ -148,11 +151,17 @@ FUZZY_MATCH_TESTS = \
 
 PARAMSPEC_TESTS = \
  paramspec/getset.scm \
+ paramspec/getset-syntax.scm \
  paramspec/default.scm
 
 GTK_ENTRY_TESTS = \
  gtk_entry/set_alignment.scm \
- gtk_entry/set_alignment_zero.scm
+ gtk_entry/set_alignment_zero.scm \
+ gtk_entry/zero_alignment_wrapped.scm \
+ gtk_entry/one_alignment_wrapped.scm
+
+GTK_LAYOUT_TESTS = \
+ gtk_layout/create_box.scm
 
 GRILO_TESTS = \
  grilo/audio_simple.scm \
@@ -186,6 +195,7 @@ TESTS = \
  $(FUZZY_MATCH_TESTS) \
  $(PARAMSPEC_TESTS) \
  $(GTK_ENTRY_TESTS) \
+ $(GTK_LAYOUT_TESTS) \
  $(GRILO_TESTS) \
  misc/softerror_create.scm \
  misc/use-typelibs.scm

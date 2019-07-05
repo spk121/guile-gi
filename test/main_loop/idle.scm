@@ -12,7 +12,7 @@
                                    (format #t "Iteration ~a~%" n)
                                    (if (= n 5)
                                        ;; FALSE deletes this callback.
-                                       #f 
+                                       #f
                                        ;; else
                                        (begin
                                          (set! n (1+ n))
@@ -26,8 +26,8 @@
                                  (lambda (x)
                                    (display "Complete")
                                    (newline)
-                                   (send mainloop (quit))
+                                   (with-object mainloop (quit))
                                    #f))))
-     (send mainloop (run))
+     (with-object mainloop (run))
      (format #t "Callback ran ~a times~%" n)
      (= n 5))))

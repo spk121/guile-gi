@@ -10,7 +10,7 @@
      (begin
        (init 0 #f)
        (let ([entry (cast (entry:new) <GtkEntry>)])
-         (send entry (set-alignment 0))
+         (with-object entry (set-alignment 0))
          (format #t "entry: ~S~%" entry)
-         (format #t "entry alignment: ~S~%" (send entry (get-alignment)))
-         (= 0 (send entry (get-alignment)))))))
+         (format #t "entry alignment: ~S~%" (with-object entry (get-alignment)))
+         (= 0 (with-object entry (get-alignment)))))))
