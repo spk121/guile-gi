@@ -60,9 +60,19 @@ gir_flag_gname_to_scm_constant_name(const char *gname)
 static gchar *
 gir_flag_public_name(const char *parent, GIBaseInfo *info)
 {
-    char *tmp_str, *public_name;
-    tmp_str = g_strdup_printf("%s-%s", parent, g_base_info_get_name(info));
+    char *short_parent, *tmp_str, *public_name;
+
+    // Many flag collection names end in 'Type', which isn't informative.
+    if (g_str_has_suffix(parent, "Type")) {
+        size_t len = strlen(parent);
+        short_parent = g_strndup(parent, len - 4);
+    }
+    else
+        short_parent = g_strdup(parent);
+
+    tmp_str = g_strdup_printf("%s-%s", short_parent, g_base_info_get_name(info));
     public_name = gir_flag_gname_to_scm_constant_name(tmp_str);
+    g_free(short_parent);
     g_free(tmp_str);
     return public_name;
 }
