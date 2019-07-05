@@ -2,9 +2,10 @@
              (test automake-test-lib)
              (srfi srfi-43))
 
+(typelib-require ("GLib" "2.0") ("Gio" "2.0"))
+
 (automake-test
  (begin
-   (use-typelibs ("GLib" "2.0") ("Gio" "2.0"))
    (let ((app (make-gobject (get-gtype <GApplication>)
                             `(("application-id" . "gi.guile.Example")
                               ("flags" . ,APPLICATION_HANDLES_COMMAND_LINE))))

@@ -25,7 +25,8 @@
 	    automake-test
 	    maybe-sleep
 	    with-latin1-locale*
-	    with-utf8-locale*))
+	    with-utf8-locale*
+        typelib-require))
 
 (define EXIT_SUCCESS 0)
 (define EXIT_FAILURE 1)
@@ -130,3 +131,10 @@
             (with-locale* (car locales) thunk))
           (lambda (key . args)
             (loop (cdr locales)))))))
+
+(define-syntax typelib-require
+  (lambda (stx)
+    (syntax-case stx ()
+      ((_ lib ...)
+       #'(unless (false-if-exception ((@ (gi) use-typelibs) lib ...))
+           (exit EXIT_SKIPPED))))))

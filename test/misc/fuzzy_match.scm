@@ -1,11 +1,9 @@
-(use-modules (gi) (gi glib-2)
+(use-modules (gi)
              (rnrs bytevectors)
              (system foreign)
              (test automake-test-lib))
 
-(catch #t
-  (lambda () (typelib-load "Dazzle" "1.0"))
-  (lambda args (exit EXIT_SKIPPED)))
+(typelib-require ("GLib" "2.0") ("Dazzle" "1.0"))
 
 (define new-data
   (let ((idx -1))

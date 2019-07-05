@@ -1,9 +1,10 @@
 (use-modules (gi)
              (test automake-test-lib))
 
+(typelib-require ("Gio" "2.0"))
+
 (automake-test
  (begin
-   (typelib-load "Gio" "2.0")
    (letrec ((app (create <GApplication>))
             (fired-signals '())
             (fire-signal (lambda (arg)

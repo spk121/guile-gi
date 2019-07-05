@@ -1,6 +1,8 @@
 (use-modules (gi)
              (test automake-test-lib))
 
+(typelib-require ("Gio" "2.0"))
+
 (save-module-excursion
  (lambda ()
    (eval

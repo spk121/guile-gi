@@ -1,9 +1,10 @@
 (use-modules (gi)
              (test automake-test-lib))
 
+(typelib-require ("Gio" "2.0"))
+
 (automake-test
  (begin
-   (typelib-load "Gio" "2.0")
    (let ((app (make-gobject (get-gtype <GApplication>)
                             '(("application-id" . "gi.guile.Example"))))
          (result #f))

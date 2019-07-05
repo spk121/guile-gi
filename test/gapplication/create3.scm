@@ -1,9 +1,10 @@
 (use-modules (gi)
              (test automake-test-lib))
 
+(typelib-require ("Gio" "2.0"))
+
 (automake-test
  (begin
-   (typelib-load "Gio" "2.0")
    (with-object (create <GApplication>
                   (application-id "gi.guile.Example"))
      (connect! activate

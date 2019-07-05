@@ -1,8 +1,7 @@
 (use-modules (gi)
              (test automake-test-lib))
 
-(unless (false-if-exception (typelib-load "Grl" "0.3"))
-  (exit EXIT_SKIPPED))
+(typelib-require ("Grl" "0.3"))
 
 (define (args-for-init args)
   (values (length args) args))

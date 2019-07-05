@@ -8,10 +8,7 @@
 
 (define-syntax-rule (grilo-test x)
   (automake-test
-   (if (not (false-if-exception
-             (begin
-               (typelib-load "Grl" "0.3")
-               (init 0 #f)
-               #t)))
-       'skipped
-       x)))
+   (begin
+     (typelib-require ("Grl" "0.3"))
+     (init 0 #f)
+     x)))
