@@ -160,6 +160,9 @@ GTK_ENTRY_TESTS = \
  gtk_entry/zero_alignment_wrapped.scm \
  gtk_entry/one_alignment_wrapped.scm
 
+GTK_LAYOUT_TESTS = \
+ gtk_layout/create_box.scm
+
 GRILO_TESTS = \
  grilo/audio_simple.scm \
  grilo/audio_multiple_artists.scm \
@@ -192,6 +195,7 @@ TESTS = \
  $(FUZZY_MATCH_TESTS) \
  $(PARAMSPEC_TESTS) \
  $(GTK_ENTRY_TESTS) \
+ $(GTK_LAYOUT_TESTS) \
  $(GRILO_TESTS) \
  misc/softerror_create.scm \
  misc/use-typelibs.scm

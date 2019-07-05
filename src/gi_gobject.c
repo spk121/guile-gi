@@ -319,12 +319,10 @@ scm_signal_connect(SCM self, SCM s_name, SCM callback, SCM s_after)
     gtype = G_OBJECT_TYPE(obj);
 
     scm_dynwind_begin(0);
-    name = scm_dynwind_or_bust("signal-connect",
-                               scm_to_utf8_string(s_name));
+    name = scm_dynwind_or_bust("signal-connect", scm_to_utf8_string(s_name));
 
     if (!g_signal_parse_name(name, gtype, &sigid, &detail, TRUE))
-        scm_misc_error("signal-connect",
-                       "~A: unknown signal name ~A", scm_list_2(self, s_name));
+        scm_misc_error("signal-connect", "~A: unknown signal name ~A", scm_list_2(self, s_name));
 
     after = !SCM_UNBNDP(s_after) && scm_to_bool(s_after);
 
@@ -782,8 +780,8 @@ scm_make_gobject(SCM s_gtype, SCM s_prop_alist)
                     g_value_set_double(value, scm_to_double(scm_cdr(entry)));
                 }
                 else if (G_IS_PARAM_SPEC_ENUM(pspec)) {
-                    g_value_init(value, G_TYPE_ENUM);
-                    g_value_set_enum(value, scm_to_ulong(scm_cdr(entry)));
+                    g_value_init(value, G_PARAM_SPEC_VALUE_TYPE(pspec));
+                    g_value_set_enum(value, scm_to_uint64(scm_cdr(entry)));
                 }
                 else if (G_IS_PARAM_SPEC_FLAGS(pspec)) {
                     g_value_init(value, G_PARAM_SPEC_VALUE_TYPE(pspec));
