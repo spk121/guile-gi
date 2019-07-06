@@ -2,7 +2,29 @@
 #include "gi_util.h"
 #include "gir_function.h"
 
-static gboolean gi_function_info_is_predicate(GIFunctionInfo *info);
+
+static gboolean is_predicate(GIFunctionInfo *info);
+
+// Returns TRUE if this function returns a single boolean.
+static gboolean
+is_predicate(GIFunctionInfo *info)
+{
+    gboolean predicate = FALSE;
+    GITypeInfo *return_type;
+
+    return_type = g_callable_info_get_return_type(info);
+
+    if (g_type_info_get_tag(return_type) == GI_TYPE_TAG_BOOLEAN
+        && !g_type_info_is_pointer(return_type)) {
+        int in, out;
+
+        gi_function_info_count_args(info, &in, &out);
+        if (out == 0)
+            predicate = TRUE;
+    }
+    g_base_info_unref(return_type);
+    return predicate;
+}
 
 // This procedure counts the number of arguments that the
 // GObject Introspection FFI call is expecting.
@@ -33,27 +55,6 @@ gi_function_info_count_args(GIFunctionInfo *info, int *in, int *out)
     *out = n_output_args;
 }
 
-// Returns TRUE if this function returns a single boolean.
-static gboolean
-gi_function_info_is_predicate(GIFunctionInfo *info)
-{
-    gboolean predicate = FALSE;
-    GITypeInfo *return_type;
-
-    return_type = g_callable_info_get_return_type(info);
-
-    if (g_type_info_get_tag(return_type) == GI_TYPE_TAG_BOOLEAN
-        && !g_type_info_is_pointer(return_type)) {
-        int in, out;
-
-        gi_function_info_count_args(info, &in, &out);
-        if (out == 0)
-            predicate = TRUE;
-    }
-    g_base_info_unref(return_type);
-    return predicate;
-}
-
 // For function and method names, we want a lowercase string of the
 // form 'func-name-with-hyphens'
 gchar *
@@ -62,7 +63,7 @@ gi_function_info_make_name(GIFunctionInfo *info, const gchar *prefix)
     char *name, *str1 = NULL, *str2 = NULL;
     gboolean predicate;
 
-    predicate = gi_function_info_is_predicate(info);
+    predicate = is_predicate(info);
     if (prefix)
         str1 = gname_to_scm_name(prefix);
     str2 = gname_to_scm_name(g_base_info_get_name(info));
