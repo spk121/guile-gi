@@ -15,12 +15,13 @@
 
 #include <glib.h>
 #include <libguile.h>
-#include "gir_method.h"
-#include "gir_function.h"
-#include "gi_gobject.h"
+#include "gi_function_info.h"
 #include "gi_giargument.h"
-#include "gir_type.h"
+#include "gi_gobject.h"
 #include "gi_util.h"
+#include "gir_function.h"
+#include "gir_method.h"
+#include "gir_type.h"
 
 // This structure is a hash table tree.
 // On the first level we have
@@ -43,7 +44,7 @@ gir_method_table_insert(GType type, GIFunctionInfo *info)
     g_assert(type != 0);
     g_assert(info != NULL);
 
-    gchar *public_name = gir_function_make_name(NULL, info);
+    gchar *public_name = gi_function_info_make_name(info, NULL);
 
     GHashTable *subhash = g_hash_table_lookup(gir_method_hash_table,
                                               public_name);

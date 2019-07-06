@@ -16,15 +16,16 @@
 
 #include <libguile.h>
 #include <girepository.h>
+#include "gi_function_info.h"
 #include "gi_giargument.h"
-#include "gir_type.h"
-#include "gir_typelib.h"
-#include "gir_function.h"
 #include "gi_gobject.h"
-#include "gir_method.h"
+#include "gi_util.h"
 #include "gir_constant.h"
 #include "gir_flag.h"
-#include "gi_util.h"
+#include "gir_function.h"
+#include "gir_method.h"
+#include "gir_type.h"
+#include "gir_typelib.h"
 
 static void gir_typelib_document_callback_info(GString **export, const char *namespace_,
                                                GICallableInfo *info);
@@ -589,7 +590,7 @@ static void
 gir_typelib_document_method_info(GString **export, GType gtype, GIFunctionInfo *info)
 {
     gchar *class_name = gir_type_class_name_from_gtype(gtype);
-    gchar *public_name = gir_function_make_name(NULL, info);
+    gchar *public_name = gi_function_info_make_name(info, NULL);
     g_string_append_printf(*export, "%s's METHOD %s\n", class_name, public_name);
     g_free(public_name);
     g_free(class_name);
@@ -600,7 +601,7 @@ gir_typelib_document_method_info(GString **export, GType gtype, GIFunctionInfo *
 static void
 gir_typelib_document_function_info(GString **export, const char *parent, GIFunctionInfo *info)
 {
-    gchar *public_name = gir_function_make_name(parent, info);
+    gchar *public_name = gi_function_info_make_name(info, parent);
     g_string_append_printf(*export, "PROCEDURE %s\n", public_name);
     g_free(public_name);
     gir_typelib_document_callable_arguments(export, info);

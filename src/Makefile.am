@@ -64,6 +64,8 @@ nodist_libguile_gi_la_SOURCES = \
  __gi_ginterface.h
 
 libguile_gi_la_SOURCES = \
+ gi_function_info.c \
+ gi_function_info.h \
  gi_giargument.c \
  gi_giargument.h \
  gi_gobject.c \

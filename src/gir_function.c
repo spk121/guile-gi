@@ -16,14 +16,15 @@
 #include "gir_function.h"
 #include "gi_giargument.h"
 #include "gi_util.h"
+#include "gi_function_info.h"
 
 GSList *function_list = NULL;
 
 static gir_gsubr_t *gir_function_create_gsubr(GIFunctionInfo *function_info, const char *name,
                                               int *n_required, int *n_optional);
 static void gir_function_info_count_args(GIFunctionInfo *info, int *in, int *out);
-static void gir_function_count_input_args(GIFunctionInfo *info, int *required, int *optional);
-static gboolean gir_function_info_is_predicate(GIFunctionInfo *info);
+static void gir_function_count_gsubr_input_args(GIFunctionInfo *info, int *required,
+                                                int *optional);
 static void gir_function_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data);
 
 static SCM gir_function_info_convert_output_args(const char *func_name,
@@ -45,7 +46,7 @@ gir_function_define_gsubr(const char *parent, GIFunctionInfo *info)
     char *name;
     int n_required, n_optional;
 
-    name = gir_function_make_name(parent, info);
+    name = gi_function_info_make_name(info, parent);
     func_gsubr = gir_function_create_gsubr(info, name, &n_required, &n_optional);
     scm_c_define_gsubr(name, n_required, n_optional, 0, func_gsubr);
     scm_c_export(name, NULL);
@@ -141,42 +142,6 @@ gir_function_create_gsubr(GIFunctionInfo *function_info,
     function_list = g_slist_prepend(function_list, gfn);
 
     return gfn->function_ptr;
-}
-
-
-gchar *
-gir_function_make_name(const char *parent, GIFunctionInfo *info)
-{
-    char *public_name, *tmp_str, *tmp_str2;
-    gboolean predicate;
-
-    // For the callable names, we want a lowercase string of the form
-    // 'func-name-with-hyphens'
-    predicate = gir_function_info_is_predicate(info);
-
-    if (parent) {
-        // For the method names, we want a lowercase type with hyphens
-        // followed by a lowercase string with hyphens such as
-        // 'type-name:method-name'
-        tmp_str = gname_to_scm_name(parent);
-        tmp_str2 = gname_to_scm_name(g_base_info_get_name(info));
-        if (predicate)
-            public_name = g_strdup_printf("%s:%s?", tmp_str, tmp_str2);
-        else
-            public_name = g_strdup_printf("%s:%s", tmp_str, tmp_str2);
-        g_free(tmp_str);
-        g_free(tmp_str2);
-    }
-    else {
-        if (predicate)
-            tmp_str = g_strdup_printf("%s?", g_base_info_get_name(info));
-        else
-            tmp_str = g_strdup_printf("%s", g_base_info_get_name(info));
-        public_name = gname_to_scm_name(tmp_str);
-        g_free(tmp_str);
-    }
-
-    return public_name;
 }
 
 SCM
