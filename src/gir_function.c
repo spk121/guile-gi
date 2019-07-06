@@ -22,9 +22,7 @@ GSList *function_list = NULL;
 
 static gir_gsubr_t *gir_function_create_gsubr(GIFunctionInfo *function_info, const char *name,
                                               int *n_required, int *n_optional);
-static void gir_function_info_count_args(GIFunctionInfo *info, int *in, int *out);
-static void gir_function_count_gsubr_input_args(GIFunctionInfo *info, int *required,
-                                                int *optional);
+static void gir_function_count_input_args(GIFunctionInfo *info, int *required, int *optional);
 static void gir_function_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data);
 
 static SCM gir_function_info_convert_output_args(const char *func_name,
@@ -152,7 +150,7 @@ gir_function_invoke(char *name, GIFunctionInfo *info, GObject *object, SCM args,
     unsigned *in_args_free, *in_args_free0;
 
     // Count the number of required input arguments, and allocate arg infos.
-    gir_function_info_count_args(info, &n_input_args0, &n_output_args);
+    gi_function_info_count_args(info, &n_input_args0, &n_output_args);
     if (object)
         n_input_args = n_input_args0 + 1;
     else
@@ -335,58 +333,7 @@ gir_function_count_input_args(GIFunctionInfo *info, int *required, int *optional
     }
 }
 
-// This procedure counts the number of arguments that the
-// GObject Introspection FFI call is expecting.
-static void
-gir_function_info_count_args(GIFunctionInfo *info, int *in, int *out)
-{
-    /* Count the number of required input arguments, and store
-     * the arg info in a newly allocate array. */
-    int n_args = g_callable_info_get_n_args((GICallableInfo *)info);
-    int n_input_args = 0;
-    int n_output_args = 0;
 
-    for (int i = 0; i < n_args; i++) {
-        GIArgInfo *ai = g_callable_info_get_arg((GICallableInfo *)info, i);
-        g_assert(ai != NULL);
-
-        GIDirection dir = g_arg_info_get_direction(ai);
-        g_base_info_unref(ai);
-
-        if (dir == GI_DIRECTION_IN)
-            n_input_args++;
-        else if (dir == GI_DIRECTION_OUT)
-            n_output_args++;
-        else if (dir == GI_DIRECTION_INOUT) {
-            n_input_args++;
-            n_output_args++;
-        }
-    }
-    // if (g_function_info_get_flags (info) & GI_FUNCTION_IS_METHOD)
-    //  n_input_args ++;
-    *in = n_input_args;
-    *out = n_output_args;
-}
-
-static gboolean
-gir_function_info_is_predicate(GIFunctionInfo *info)
-{
-    gboolean predicate = FALSE;
-    GITypeInfo *return_type;
-
-    return_type = g_callable_info_get_return_type(info);
-
-    if (g_type_info_get_tag(return_type) == GI_TYPE_TAG_BOOLEAN
-        && !g_type_info_is_pointer(return_type)) {
-        int in, out;
-
-        gir_function_info_count_args(info, &in, &out);
-        if (out == 0)
-            predicate = TRUE;
-    }
-    g_base_info_unref(return_type);
-    return predicate;
-}
 
 static void
 gir_function_object_list_to_c_args(char *subr, SCM s_args,

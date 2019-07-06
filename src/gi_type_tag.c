@@ -1,6 +1,7 @@
 #include "gi_type_tag.h"
 
-gboolean gi_type_tag_is_integer(GITypeTag x)
+gboolean
+gi_type_tag_is_integer(GITypeTag x)
 {
     if ((x == GI_TYPE_TAG_INT8)
         || (x == GI_TYPE_TAG_UINT8)
@@ -14,7 +15,8 @@ gboolean gi_type_tag_is_integer(GITypeTag x)
     return FALSE;
 }
 
-gboolean gi_type_tag_is_integer_least32(GITypeTag x)
+gboolean
+gi_type_tag_is_integer_least32(GITypeTag x)
 {
     if ((x == GI_TYPE_TAG_INT32)
         || (x == GI_TYPE_TAG_UINT32)
@@ -24,7 +26,8 @@ gboolean gi_type_tag_is_integer_least32(GITypeTag x)
     return FALSE;
 }
 
-gboolean gi_type_tag_is_signed_integer(GITypeTag x)
+gboolean
+gi_type_tag_is_signed_integer(GITypeTag x)
 {
     if ((x == GI_TYPE_TAG_INT8)
         || (x == GI_TYPE_TAG_INT16)
@@ -34,19 +37,22 @@ gboolean gi_type_tag_is_signed_integer(GITypeTag x)
     return FALSE;
 }
 
-gboolean gi_type_tag_is_real_number(GITypeTag x)
+gboolean
+gi_type_tag_is_real_number(GITypeTag x)
 {
     if ((x == GI_TYPE_TAG_FLOAT) || (x == GI_TYPE_TAG_DOUBLE))
         return TRUE;
     return FALSE;
 }
 
-gboolean gi_type_tag_is_number(GITypeTag x)
+gboolean
+gi_type_tag_is_number(GITypeTag x)
 {
     return gi_type_tag_is_real_number(x) || gi_type_tag_is_integer(x);
 }
 
-gboolean gi_type_tag_is_string(GITypeTag x)
+gboolean
+gi_type_tag_is_string(GITypeTag x)
 {
     if ((x == GI_TYPE_TAG_UTF8)
         || (x == GI_TYPE_TAG_FILENAME))
@@ -54,10 +60,11 @@ gboolean gi_type_tag_is_string(GITypeTag x)
     return FALSE;
 }
 
-gsize gi_type_tag_item_size(GITypeTag x)
+gsize
+gi_type_tag_item_size(GITypeTag x)
 {
     gsize sz;
-    switch(x) {
+    switch (x) {
     case GI_TYPE_TAG_INT8:
     case GI_TYPE_TAG_UINT8:
         sz = 1;
@@ -87,7 +94,7 @@ gsize gi_type_tag_item_size(GITypeTag x)
     case GI_TYPE_TAG_BOOLEAN:
         sz = sizeof(gboolean);
         break;
-   default:
+    default:
         sz = -1;
         break;
     }
