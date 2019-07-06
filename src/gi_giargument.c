@@ -14,17 +14,18 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include <stdint.h>
-#include <glib.h>
 #include <girepository.h>
+#include <glib.h>
 #include <libguile.h>
-#include "gi_gobject.h"
 #include <math.h>
-#include "gi_gvalue.h"
-#include "gir_typelib.h"
-#include "gir_type.h"
+#include <stdint.h>
 #include "gi_giargument.h"
+#include "gi_gobject.h"
+#include "gi_gvalue.h"
+#include "gi_type_tag.h"
 #include "gir_callback.h"
+#include "gir_type.h"
+#include "gir_typelib.h"
 
 #ifndef FLT_MAX
 #define FLT_MAX 3.402823466e+38F
@@ -179,7 +180,7 @@ array_length_1(struct array_info *ai, GIArgument *arg)
 
         size_t length = 0;
 
-        if (ai->item_type_tag == GI_TYPE_TAG_UTF8 || ai->item_type_tag == GI_TYPE_TAG_FILENAME) {
+        if (gi_type_tag_is_string(ai->item_type_tag)) {
             char **ptr = array;
             while (ptr[length] != NULL)
                 length++;
@@ -253,40 +254,6 @@ array_length(struct array_info *ai, GIArgument *arg)
     if (array_length == 0)
         g_debug("array has length 0, are you sure about that?");
     return array_length;
-}
-
-static gboolean
-TYPE_TAG_IS_EXACT_INTEGER(GITypeTag x)
-{
-    if ((x == GI_TYPE_TAG_INT8)
-        || (x == GI_TYPE_TAG_UINT8)
-        || (x == GI_TYPE_TAG_INT16)
-        || (x == GI_TYPE_TAG_UINT16)
-        || (x == GI_TYPE_TAG_INT32)
-        || (x == GI_TYPE_TAG_UINT32)
-        || (x == GI_TYPE_TAG_INT64)
-        || (x == GI_TYPE_TAG_UINT64))
-        return TRUE;
-    return FALSE;
-}
-
-static gboolean
-TYPE_TAG_IS_SIGNED_INTEGER(GITypeTag x)
-{
-    if ((x == GI_TYPE_TAG_INT8)
-        || (x == GI_TYPE_TAG_INT16)
-        || (x == GI_TYPE_TAG_INT32)
-        || (x == GI_TYPE_TAG_INT64))
-        return TRUE;
-    return FALSE;
-}
-
-static gboolean
-TYPE_TAG_IS_REAL_NUMBER(GITypeTag x)
-{
-    if ((x == GI_TYPE_TAG_FLOAT) || (x == GI_TYPE_TAG_DOUBLE))
-        return TRUE;
-    return FALSE;
 }
 
 static void object_to_c_immediate_arg(char *subr, int argpos,
@@ -704,8 +671,7 @@ gi_giargument_describe_arg(GIArgInfo *arg_info)
                     g_string_append_printf(desc,
                                            "A bytevector containing %d-byte floating-point numbers",
                                            (int)sizeof(double));
-                else if ((item_type_tag == GI_TYPE_TAG_UTF8)
-                         || (item_type_tag == GI_TYPE_TAG_FILENAME))
+                else if (gi_type_tag_is_string(item_type_tag))
                     g_string_append_printf(desc, "A list of strings");
                 else if (item_type_tag == GI_TYPE_TAG_GTYPE)
                     g_string_append_printf(desc, "A list of <GType>");
@@ -1144,11 +1110,10 @@ static void
 object_to_c_native_array_arg(char *subr, int argpos, SCM object,
                              struct array_info *ai, GIArgument *arg)
 {
-    if (TYPE_TAG_IS_EXACT_INTEGER(ai->item_type_tag)
-        || TYPE_TAG_IS_REAL_NUMBER(ai->item_type_tag))
+    if (gi_type_tag_is_integer(ai->item_type_tag)
+        || gi_type_tag_is_real_number(ai->item_type_tag))
         object_to_c_native_immediate_array_arg(subr, argpos, object, ai, arg);
-    else if ((ai->item_type_tag == GI_TYPE_TAG_UTF8)
-             || (ai->item_type_tag == GI_TYPE_TAG_FILENAME))
+    else if (gi_type_tag_is_string(ai->item_type_tag))
         object_to_c_native_string_array_arg(subr, argpos, object, ai, arg);
     else if (ai->item_type_tag == GI_TYPE_TAG_INTERFACE) {
         object_to_c_native_interface_array_arg(subr, argpos, object, ai, arg);
