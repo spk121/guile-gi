@@ -18,26 +18,10 @@
 
 #include <glib.h>
 #include <girepository.h>
-#include <ffi.h>
 #include <libguile.h>
 
-extern SCM gir_function_type;
-typedef SCM (*gir_gsubr_t)(void);
-
-typedef struct _GirFunction
-{
-    GIFunctionInfo *function_info;
-    ffi_closure *closure;
-    ffi_cif cif;
-    void *function_ptr;
-    int n_required;
-    int n_optional;
-    char *name;
-    ffi_type **atypes;
-} GirFunction;
-
-SCM gir_function_invoke(char *name, GICallableInfo *info, GObject *object, SCM args,
+void gir_function_define_gsubr(GIFunctionInfo *info, const char *prefix);
+SCM gir_function_invoke(GIFunctionInfo *info, const char *name, GObject *object, SCM args,
                         GError **error);
-void gir_function_define_gsubr(const char *parent, GIFunctionInfo *info);
 void gir_init_function(void);
 #endif

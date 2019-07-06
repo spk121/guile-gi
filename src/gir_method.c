@@ -171,7 +171,7 @@ scm_call_method(SCM s_object, SCM s_method_name, SCM s_list_of_args)
     GObject *object = scm_foreign_object_ref(s_object, OBJ_SLOT);
 
     GError *err = NULL;
-    SCM output = gir_function_invoke(method_name, info, object, s_list_of_args, &err);
+    SCM output = gir_function_invoke(info, method_name, object, s_list_of_args, &err);
 
     /* If there is a GError, write an error, free, and exit. */
     if (err) {

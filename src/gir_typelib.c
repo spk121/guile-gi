@@ -142,7 +142,7 @@ scm_i_typelib_load(const char *subr, const char *namespace_, const char *version
             g_debug("Unsupported irepository type 'CALLBACK'");
             break;
         case GI_INFO_TYPE_FUNCTION:
-            gir_function_define_gsubr(NULL, info);
+            gir_function_define_gsubr(info, NULL);
             break;
         case GI_INFO_TYPE_STRUCT:
         {
@@ -165,7 +165,7 @@ scm_i_typelib_load(const char *subr, const char *namespace_, const char *version
                 if (g_function_info_get_flags(func_info) & GI_FUNCTION_IS_METHOD)
                     gir_method_table_insert(gtype, func_info);
                 else
-                    gir_function_define_gsubr(g_base_info_get_name(info), func_info);
+                    gir_function_define_gsubr(func_info, g_base_info_get_name(info));
             }
         }
             break;
@@ -189,7 +189,7 @@ scm_i_typelib_load(const char *subr, const char *namespace_, const char *version
                 if (g_function_info_get_flags(func_info) & GI_FUNCTION_IS_METHOD)
                     gir_method_table_insert(gtype, func_info);
                 else
-                    gir_function_define_gsubr(g_base_info_get_name(info), func_info);
+                    gir_function_define_gsubr(func_info, g_base_info_get_name(info));
             }
 #if 0
             gint n_signals = g_object_info_get_n_signals(info);
@@ -222,7 +222,7 @@ scm_i_typelib_load(const char *subr, const char *namespace_, const char *version
                 if (g_function_info_get_flags(func_info) & GI_FUNCTION_IS_METHOD)
                     gir_method_table_insert(gtype, func_info);
                 else
-                    gir_function_define_gsubr(g_base_info_get_name(info), func_info);
+                    gir_function_define_gsubr(func_info, g_base_info_get_name(info));
             }
         }
             break;
@@ -249,7 +249,7 @@ scm_i_typelib_load(const char *subr, const char *namespace_, const char *version
                 if (g_function_info_get_flags(func_info) & GI_FUNCTION_IS_METHOD)
                     gir_method_table_insert(gtype, func_info);
                 else
-                    gir_function_define_gsubr(g_base_info_get_name(info), func_info);
+                    gir_function_define_gsubr(func_info, g_base_info_get_name(info));
             }
         }
             break;

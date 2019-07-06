@@ -13,53 +13,69 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#include <ffi.h>
 #include "gir_function.h"
 #include "gi_giargument.h"
 #include "gi_util.h"
 #include "gi_function_info.h"
 
+typedef SCM (*gir_gsubr_t)(void);
+typedef struct _GirFunction
+{
+    GIFunctionInfo *function_info;
+    ffi_closure *closure;
+    ffi_cif cif;
+    void *function_ptr;
+    int n_required;
+    int n_optional;
+    char *name;
+    ffi_type **atypes;
+} GirFunction;
+
 GSList *function_list = NULL;
 
-static gir_gsubr_t *gir_function_create_gsubr(GIFunctionInfo *function_info, const char *name,
-                                              int *n_required, int *n_optional);
-static void gir_function_count_input_args(GIFunctionInfo *info, int *required, int *optional);
-static void gir_function_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data);
+static gir_gsubr_t *check_gsubr_cache(GIFunctionInfo *function_info,
+                                      int *n_required, int *n_optional);
+static gir_gsubr_t *create_gsubr(GIFunctionInfo *function_info,
+                                 const char *name, int *n_required, int *n_optional);
+static void count_gsubr_args(GIFunctionInfo *info, int *required, int *optional);
+static void function_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data);
 
-static SCM gir_function_info_convert_output_args(const char *func_name,
-                                                 const GIFunctionInfo *func_info,
-                                                 int n_output_args, GIArgument *out_args);
-static void gir_function_object_list_to_c_args(char *subr, SCM s_args, GIFunctionInfo *func_info,
-                                               int n_input_args, GIArgument *in_args,
-                                               unsigned *in_args_free, int n_output_args,
-                                               GIArgument *out_args);
-static void gir_fini_function(void);
+static SCM convert_output_args(GIFunctionInfo *func_info, const char *name,
+                               int n_output_args, GIArgument *out_args);
+static void object_list_to_c_args(GIFunctionInfo *func_info, const char *subr, SCM s_args,
+                                  int n_input_args, GIArgument *in_args,
+                                  unsigned *in_args_free, int n_output_args, GIArgument *out_args);
+static void fini(void);
+
 
 // Given some function introspection information from a typelib file,
 // this procedure creates a SCM wrapper for that procedure in the
 // current module.
 void
-gir_function_define_gsubr(const char *parent, GIFunctionInfo *info)
+gir_function_define_gsubr(GIFunctionInfo *info, const char *prefix)
 {
     gir_gsubr_t *func_gsubr;
     char *name;
     int n_required, n_optional;
 
-    name = gi_function_info_make_name(info, parent);
-    func_gsubr = gir_function_create_gsubr(info, name, &n_required, &n_optional);
+    name = gi_function_info_make_name(info, prefix);
+    func_gsubr = check_gsubr_cache(info, &n_required, &n_optional);
+    if (!func_gsubr) {
+        func_gsubr = create_gsubr(info, name, &n_required, &n_optional);
+        g_debug("dynamically bound %s to %s with %d required and %d optional arguments",
+                name, g_base_info_get_name(info), n_required, n_optional);
+    }
     scm_c_define_gsubr(name, n_required, n_optional, 0, func_gsubr);
     scm_c_export(name, NULL);
 
-    g_debug("dynamically bound %s to %s with %d required and %d optional arguments",
-            name, g_base_info_get_name(info), n_required, n_optional);
     g_free(name);
 }
 
 static gir_gsubr_t *
-gir_function_create_gsubr(GIFunctionInfo *function_info,
-                          const char *name, int *n_required, int *n_optional)
+check_gsubr_cache(GIFunctionInfo *function_info, int *n_required, int *n_optional)
 {
-    // Check the cache to see if this function has already been
-    // created.
+    // Check the cache to see if this function has already been created.
     GSList *x = function_list;
     GirFunction *gfn;
 
@@ -68,20 +84,22 @@ gir_function_create_gsubr(GIFunctionInfo *function_info,
         if (gfn->function_info == function_info) {
             *n_required = gfn->n_required;
             *n_optional = gfn->n_optional;
-            g_base_info_unref(function_info);
             return gfn->function_ptr;
         }
         x = x->next;
     }
+    return NULL;
+}
 
-    // Note that the scheme binding argument count doesn't include any
-    // output arguments that don't require pre-allocation.
-    gir_function_count_input_args(function_info, n_required, n_optional);
-
-    gfn = g_new0(GirFunction, 1);
+static gir_gsubr_t *
+create_gsubr(GIFunctionInfo *function_info, const char *name, int *n_required, int *n_optional)
+{
+    GirFunction *gfn;
     ffi_type **ffi_args = NULL;
     ffi_type *ffi_ret_type;
 
+    gfn = g_new0(GirFunction, 1);
+    count_gsubr_args(function_info, n_required, n_optional);
     gfn->n_required = *n_required;
     gfn->n_optional = *n_optional;
     gfn->function_info = function_info;
@@ -127,7 +145,7 @@ gir_function_create_gsubr(GIFunctionInfo *function_info,
     // STEP 3
     // Initialize the closure
     ffi_status closure_ok;
-    closure_ok = ffi_prep_closure_loc(gfn->closure, &(gfn->cif), gir_function_binding, gfn,     // The 'user-data' passed to the function
+    closure_ok = ffi_prep_closure_loc(gfn->closure, &(gfn->cif), function_binding, gfn,
                                       gfn->function_ptr);
 
     if (closure_ok != FFI_OK)
@@ -142,8 +160,10 @@ gir_function_create_gsubr(GIFunctionInfo *function_info,
     return gfn->function_ptr;
 }
 
+
 SCM
-gir_function_invoke(char *name, GIFunctionInfo *info, GObject *object, SCM args, GError **error)
+gir_function_invoke(GIFunctionInfo *info, const char *name, GObject *object, SCM args,
+                    GError **error)
 {
     int n_input_args, n_input_args0, n_output_args;
     GIArgument *in_args, *in_args0, *out_args, *out_boxes, return_arg;
@@ -173,8 +193,8 @@ gir_function_invoke(char *name, GIFunctionInfo *info, GObject *object, SCM args,
     }
 
     // Convert arguments
-    gir_function_object_list_to_c_args(name, args, info, n_input_args0, in_args0,
-                                       in_args_free0, n_output_args, out_args);
+    object_list_to_c_args(info, name, args, n_input_args0, in_args0,
+                          in_args_free0, n_output_args, out_args);
 
     // Since, in the Guile binding, we're allocating the output
     // parameters is most cases, here's where we make space for
@@ -230,7 +250,7 @@ gir_function_invoke(char *name, GIFunctionInfo *info, GObject *object, SCM args,
     else
         output = scm_list_1(s_return);
 
-    SCM output2 = gir_function_info_convert_output_args(name, info, n_output_args, out_args);
+    SCM output2 = convert_output_args(info, name, n_output_args, out_args);
     output = scm_append(scm_list_2(output, output2));
     g_free(out_args);
 
@@ -254,7 +274,7 @@ gir_function_invoke(char *name, GIFunctionInfo *info, GObject *object, SCM args,
 // and returns the results as an SCM packed into an FFI argument.
 // Also, it converts GErrors into SCM misc-errors.
 static void
-gir_function_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
+function_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
 {
     GirFunction *gfn = user_data;
     SCM s_args = SCM_EOL;
@@ -286,7 +306,7 @@ gir_function_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
 
     // Then invoke the actual function
     GError *err = NULL;
-    SCM output = gir_function_invoke(gfn->name, gfn->function_info, NULL, s_args, &err);
+    SCM output = gir_function_invoke(gfn->function_info, gfn->name, NULL, s_args, &err);
 
     // If there is a GError, write an error and exit.
     if (err) {
@@ -305,7 +325,7 @@ gir_function_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
 // This procedure counts the number of input arguments
 // that the SCM binding is expecting
 static void
-gir_function_count_input_args(GIFunctionInfo *info, int *required, int *optional)
+count_gsubr_args(GIFunctionInfo *info, int *required, int *optional)
 {
     /* Count the number of required input arguments, and store
      * the arg info in a newly allocate array. */
@@ -333,14 +353,12 @@ gir_function_count_input_args(GIFunctionInfo *info, int *required, int *optional
     }
 }
 
-
-
 static void
-gir_function_object_list_to_c_args(char *subr, SCM s_args,
-                                   GIFunctionInfo *func_info,
-                                   int n_input_args,
-                                   GIArgument *in_args,
-                                   unsigned *in_args_free, int n_output_args, GIArgument *out_args)
+object_list_to_c_args(GIFunctionInfo *func_info,
+                      const char *subr, SCM s_args,
+                      int n_input_args,
+                      GIArgument *in_args,
+                      unsigned *in_args_free, int n_output_args, GIArgument *out_args)
 {
 #define FUNC_NAME "object-list->c-args"
     int n_args_received;
@@ -460,9 +478,8 @@ gir_function_object_list_to_c_args(char *subr, SCM s_args,
 }
 
 static SCM
-gir_function_info_convert_output_args(const char *func_name,
-                                      const GIFunctionInfo *func_info,
-                                      int n_output_args, GIArgument *out_args)
+convert_output_args(GIFunctionInfo *func_info, const char *func_name,
+                    int n_output_args, GIArgument *out_args)
 {
     SCM output = SCM_EOL;
     int n_args = g_callable_info_get_n_args((GICallableInfo *)func_info);
@@ -495,11 +512,11 @@ gir_function_info_convert_output_args(const char *func_name,
 void
 gir_init_function(void)
 {
-    atexit(gir_fini_function);
+    atexit(fini);
 }
 
 static void
-gir_fini_function(void)
+fini(void)
 {
     GSList *x = function_list;
 
