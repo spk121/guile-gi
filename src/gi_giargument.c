@@ -255,28 +255,6 @@ array_length(struct array_info *ai, GIArgument *arg)
     return array_length;
 }
 
-static const intmax_t intmin[GI_TYPE_TAG_N_TYPES] = {
-    [GI_TYPE_TAG_INT8] = INT8_MIN,
-    [GI_TYPE_TAG_INT16] = INT16_MIN,
-    [GI_TYPE_TAG_INT32] = INT32_MIN,
-    [GI_TYPE_TAG_INT64] = INT64_MIN
-};
-
-static const intmax_t intmax[GI_TYPE_TAG_N_TYPES] = {
-    [GI_TYPE_TAG_INT8] = INT8_MAX,
-    [GI_TYPE_TAG_INT16] = INT16_MAX,
-    [GI_TYPE_TAG_INT32] = INT32_MAX,
-    [GI_TYPE_TAG_INT64] = INT64_MAX
-};
-
-static const uintmax_t uintmax[GI_TYPE_TAG_N_TYPES] = {
-    [GI_TYPE_TAG_UINT8] = UINT8_MAX,
-    [GI_TYPE_TAG_UINT16] = UINT16_MAX,
-    [GI_TYPE_TAG_UINT32] = UINT32_MAX,
-    [GI_TYPE_TAG_UINT64] = UINT64_MAX,
-    [GI_TYPE_TAG_UNICHAR] = 0x10FFFF
-};
-
 static gboolean
 TYPE_TAG_IS_EXACT_INTEGER(GITypeTag x)
 {
@@ -2315,108 +2293,6 @@ static void
 convert_const_void_pointer_arg_to_object(GIArgument *arg, SCM *obj)
 {
     *obj = scm_from_pointer(arg->v_pointer, NULL);
-}
-
-gboolean
-gi_giargument_check_scm_type(SCM obj, GIArgInfo *ai, char **errstr)
-{
-    GITypeInfo *ti = g_arg_info_get_type(ai);
-    // GITransfer transfer = g_arg_info_get_ownership_transfer(ai);
-    GIDirection dir = g_arg_info_get_direction(ai);
-    GITypeTag type_tag = g_type_info_get_tag(ti);
-    gboolean is_ptr = g_type_info_is_pointer(ti);
-    gboolean ok;
-
-    g_assert(dir == GI_DIRECTION_IN || dir == GI_DIRECTION_INOUT);
-
-    if (!is_ptr) {
-        if (TYPE_TAG_IS_EXACT_INTEGER(type_tag)) {
-            if (!scm_is_exact_integer(obj)) {
-                *errstr = g_strdup_printf("expected exact integer");
-                ok = FALSE;
-            }
-            else {
-                if (TYPE_TAG_IS_SIGNED_INTEGER(type_tag)) {
-                    intmax_t val = scm_to_intmax(obj);
-                    if (val < intmin[type_tag] || val > intmax[type_tag]) {
-                        *errstr = g_strdup_printf("integer out of range");
-                        ok = FALSE;
-                    }
-                    else
-                        ok = TRUE;
-                }
-                else {
-                    uintmax_t val = scm_to_uintmax(obj);
-                    if (val > uintmax[type_tag]) {
-                        *errstr = g_strdup_printf("unsigned integer out of range");
-                        ok = FALSE;
-                    }
-                    else
-                        ok = TRUE;
-                }
-            }
-        }
-        else if (TYPE_TAG_IS_REAL_NUMBER(type_tag)) {
-            if (!scm_is_real(obj)) {
-                *errstr = g_strdup_printf("expected real number");
-                ok = FALSE;
-            }
-            else {
-                // FIXME, if you really wanted to, you could make a
-                // scheme integer bigger than DBL_MAX, so this would
-                // throw.
-                double val = scm_to_double(obj);
-                if (type_tag == GI_TYPE_TAG_FLOAT) {
-                    if (val < -G_MAXFLOAT || val > G_MAXFLOAT) {
-                        *errstr = g_strdup_printf("real number out of range");
-                        ok = FALSE;
-                    }
-                    else
-                        ok = TRUE;
-                }
-                else
-                    ok = TRUE;
-            }
-        }
-        else if (type_tag == GI_TYPE_TAG_BOOLEAN) {
-            if (!scm_is_eq(obj, SCM_BOOL_F) && !scm_is_eq(obj, SCM_BOOL_T)) {
-                *errstr = g_strdup_printf("expected boolean");
-                ok = FALSE;
-            }
-            else
-                ok = TRUE;
-        }
-        else {
-            *errstr = g_strdup_printf("unhandled type %u", type_tag);
-            ok = FALSE;
-        }
-    }
-    else {                      /* is_ptr */
-
-        if (TYPE_TAG_IS_EXACT_INTEGER(type_tag)
-            || TYPE_TAG_IS_REAL_NUMBER(type_tag)
-            || (type_tag == GI_TYPE_TAG_UTF8)
-            || (type_tag == GI_TYPE_TAG_FILENAME)
-            || (type_tag == GI_TYPE_TAG_VOID)) {
-            if (!scm_is_bytevector(obj) && !scm_is_string(obj)) {
-                *errstr = g_strdup_printf("expected bytevector or string");
-                ok = FALSE;
-            }
-            else
-                ok = TRUE;
-        }
-        else if (type_tag == GI_TYPE_TAG_INTERFACE) {
-            ok = TRUE;
-        }
-        else if (type_tag == GI_TYPE_TAG_ARRAY) {
-            ok = TRUE;
-        }
-        else {
-            *errstr = g_strdup_printf("unhandled pointer type %u", type_tag);
-            ok = FALSE;
-        }
-    }
-    return ok;
 }
 
 gboolean
