@@ -256,44 +256,44 @@ array_length(struct array_info *ai, GIArgument *arg)
     return array_length;
 }
 
-static void object_to_c_immediate_arg(char *subr, int argpos,
+static void object_to_c_immediate_arg(const char *subr, int argpos,
                                       SCM obj, GITypeTag type_tag, GIArgument *arg);
-static void object_to_c_interface_arg(char *subr, int argpos,
+static void object_to_c_interface_arg(const char *subr, int argpos,
                                       SCM obj, GITypeInfo *arg_info, GIArgument *arg);
-static void object_to_c_immediate_pointer_arg(char *subr, int argpos,
+static void object_to_c_immediate_pointer_arg(const char *subr, int argpos,
                                               SCM obj,
                                               GIArgInfo *arg_info,
                                               unsigned *must_free, GIArgument *arg);
-static void object_to_c_string_arg(char *subr, int argpos,
+static void object_to_c_string_arg(const char *subr, int argpos,
                                    SCM obj,
                                    GIArgInfo *arg_info, unsigned *must_free, GIArgument *arg);
-static void object_to_c_void_pointer_arg(char *subr, int argpos, SCM obj, GIArgument *arg);
-static void object_to_c_interface_pointer_arg(char *subr, int argpos, SCM object,
+static void object_to_c_void_pointer_arg(const char *subr, int argpos, SCM obj, GIArgument *arg);
+static void object_to_c_interface_pointer_arg(const char *subr, int argpos, SCM object,
                                               GIArgInfo *arg_info,
                                               unsigned *must_free, GIArgument *arg);
-static void object_to_c_array_arg(char *subr, int argpos, SCM object,
+static void object_to_c_array_arg(const char *subr, int argpos, SCM object,
                                   GITypeInfo *array_type_info,
                                   GITransfer array_transfer, unsigned *must_free, GIArgument *arg);
 static void
-object_to_c_native_array_arg(char *subr, int argpos, SCM object,
+object_to_c_native_array_arg(const char *subr, int argpos, SCM object,
                              struct array_info *ai, GIArgument *arg);
 static void
-object_to_c_native_immediate_array_arg(char *subr, int argpos, SCM object,
+object_to_c_native_immediate_array_arg(const char *subr, int argpos, SCM object,
                                        struct array_info *ai, GIArgument *arg);
 static void
-object_to_c_native_string_array_arg(char *subr, int argpos, SCM object,
+object_to_c_native_string_array_arg(const char *subr, int argpos, SCM object,
                                     struct array_info *ai, GIArgument *arg);
 static void
-object_to_c_native_interface_array_arg(char *subr, int argpos, SCM object,
+object_to_c_native_interface_array_arg(const char *subr, int argpos, SCM object,
                                        struct array_info *ai, GIArgument *arg);
 static void
-object_to_c_ptr_array_arg(char *subr, int argpos, SCM object,
+object_to_c_ptr_array_arg(const char *subr, int argpos, SCM object,
                           struct array_info *ai, GIArgument *arg);
 static void
-object_to_c_garray_array_arg(char *subr, int argpos, SCM object,
+object_to_c_garray_array_arg(const char *subr, int argpos, SCM object,
                              struct array_info *ai, GIArgument *arg);
 static void
-object_to_c_byte_array_arg(char *subr, int argpos, SCM object,
+object_to_c_byte_array_arg(const char *subr, int argpos, SCM object,
                            struct array_info *ai, GIArgument *arg);
 static SCM object_from_c_native_array_arg(struct array_info *ai, GIArgument *arg);
 
@@ -318,7 +318,7 @@ static void convert_list_arg_to_object(GIArgument *arg, GITypeInfo *list_type_in
 // This is the main entry point of the conversion of SCM objects to
 // GIArguments.
 void
-gi_giargument_object_to_c_arg(char *subr, int argpos,
+gi_giargument_object_to_c_arg(const char *subr, int argpos,
                               SCM obj, GIArgInfo *arg_info, unsigned *must_free, GIArgument *arg)
 {
     // SCM #f means either NULL or FALSE.  Here we handle NULL.
@@ -824,7 +824,7 @@ gi_giargument_convert_return_type_object_to_arg(SCM obj,
 }
 
 static void
-object_to_c_immediate_arg(char *subr, int argpos, SCM object, GITypeTag type_tag, GIArgument *arg)
+object_to_c_immediate_arg(const char *subr, int argpos, SCM object, GITypeTag type_tag, GIArgument *arg)
 {
     switch (type_tag) {
     case GI_TYPE_TAG_INT8:
@@ -907,7 +907,7 @@ object_to_c_immediate_arg(char *subr, int argpos, SCM object, GITypeTag type_tag
 // Handle SCM conversion to non-pointer objects that aren't simple C
 // types.
 static void
-object_to_c_interface_arg(char *subr, int argpos, SCM obj, GITypeInfo *type_info, GIArgument *arg)
+object_to_c_interface_arg(const char *subr, int argpos, SCM obj, GITypeInfo *type_info, GIArgument *arg)
 {
     GITypeTag type_tag = g_type_info_get_tag(type_info);
     g_assert(type_tag == GI_TYPE_TAG_INTERFACE);
@@ -949,7 +949,7 @@ object_to_c_interface_arg(char *subr, int argpos, SCM obj, GITypeInfo *type_info
 }
 
 static void
-object_to_c_immediate_pointer_arg(char *subr, int argpos,
+object_to_c_immediate_pointer_arg(const char *subr, int argpos,
                                   SCM obj,
                                   GIArgInfo *arg_info, unsigned *must_free, GIArgument *arg)
 {
@@ -979,7 +979,7 @@ object_to_c_immediate_pointer_arg(char *subr, int argpos,
 }
 
 static void
-object_to_c_string_arg(char *subr, int argpos,
+object_to_c_string_arg(const char *subr, int argpos,
                        SCM obj, GIArgInfo *arg_info, unsigned *must_free, GIArgument *arg)
 {
     // Here we convert an input string into an argument.  The input
@@ -1028,7 +1028,7 @@ object_to_c_string_arg(char *subr, int argpos,
 }
 
 static void
-object_to_c_void_pointer_arg(char *subr, int argpos, SCM obj, GIArgument *arg)
+object_to_c_void_pointer_arg(const char *subr, int argpos, SCM obj, GIArgument *arg)
 {
     // The interpretation of void pointer objects is tricky, because
     // in C they can be anything.
@@ -1039,7 +1039,7 @@ object_to_c_void_pointer_arg(char *subr, int argpos, SCM obj, GIArgument *arg)
 }
 
 static void
-object_to_c_interface_pointer_arg(char *subr, int argpos, SCM obj,
+object_to_c_interface_pointer_arg(const char *subr, int argpos, SCM obj,
                                   GIArgInfo *arg_info, unsigned *must_free, GIArgument *arg)
 {
     // Usually STRUCT, UNION, INTERFACE, OBJECT.  Handle NULL_OK
@@ -1080,7 +1080,7 @@ object_to_c_interface_pointer_arg(char *subr, int argpos, SCM obj,
 
 
 static void
-object_to_c_array_arg(char *subr, int argpos, SCM object,
+object_to_c_array_arg(const char *subr, int argpos, SCM object,
                       GITypeInfo *array_type_info,
                       GITransfer array_transfer, unsigned *must_free, GIArgument *arg)
 {
@@ -1107,7 +1107,7 @@ object_to_c_array_arg(char *subr, int argpos, SCM object,
 }
 
 static void
-object_to_c_native_array_arg(char *subr, int argpos, SCM object,
+object_to_c_native_array_arg(const char *subr, int argpos, SCM object,
                              struct array_info *ai, GIArgument *arg)
 {
     if (gi_type_tag_is_integer(ai->item_type_tag)
@@ -1124,7 +1124,7 @@ object_to_c_native_array_arg(char *subr, int argpos, SCM object,
 }
 
 static void
-object_to_c_native_immediate_array_arg(char *subr, int argpos,
+object_to_c_native_immediate_array_arg(const char *subr, int argpos,
                                        SCM object, struct array_info *ai, GIArgument *arg)
 {
 #define FUNC_NAME "%object->c-native-immediate-array-arg"
@@ -1171,7 +1171,7 @@ object_to_c_native_immediate_array_arg(char *subr, int argpos,
 }
 
 static void
-object_to_c_byte_array_arg(char *subr, int argpos, SCM object,
+object_to_c_byte_array_arg(const char *subr, int argpos, SCM object,
                            struct array_info *ai, GIArgument *arg)
 {
     if (scm_is_bytevector(object)) {
@@ -1187,7 +1187,7 @@ object_to_c_byte_array_arg(char *subr, int argpos, SCM object,
 }
 
 static void
-object_to_c_garray_array_arg(char *subr, int argpos, SCM object, struct array_info *ai,
+object_to_c_garray_array_arg(const char *subr, int argpos, SCM object, struct array_info *ai,
                              GIArgument *arg)
 {
 #define FUNC_NAME "%object->c-garray-array-arg"
@@ -1198,7 +1198,7 @@ object_to_c_garray_array_arg(char *subr, int argpos, SCM object, struct array_in
 }
 
 static void
-object_to_c_ptr_array_arg(char *subr, int argpos, SCM object, struct array_info *ai,
+object_to_c_ptr_array_arg(const char *subr, int argpos, SCM object, struct array_info *ai,
                           GIArgument *arg)
 {
 #define FUNC_NAME "%object->c-ptr-array-arg"
@@ -1209,7 +1209,7 @@ object_to_c_ptr_array_arg(char *subr, int argpos, SCM object, struct array_info 
 }
 
 static void
-object_to_c_native_direct_struct_array_arg(char *subr, int argpos, SCM object,
+object_to_c_native_direct_struct_array_arg(const char *subr, int argpos, SCM object,
                                            struct array_info *ai, GIArgument *arg)
 {
     // This is the uncommon case of the argument containing
@@ -1230,7 +1230,7 @@ object_to_c_native_direct_struct_array_arg(char *subr, int argpos, SCM object,
 }
 
 static void
-object_to_c_native_indirect_object_array_arg(char *subr, int argpos, SCM object,
+object_to_c_native_indirect_object_array_arg(const char *subr, int argpos, SCM object,
                                              struct array_info *ai, GIArgument *arg)
 {
     // Arrays of pointers to OBJECTS.  The only example I could find
@@ -1263,7 +1263,7 @@ object_to_c_native_indirect_object_array_arg(char *subr, int argpos, SCM object,
 }
 
 static void
-object_to_c_native_interface_array_arg(char *subr,
+object_to_c_native_interface_array_arg(const char *subr,
                                        int argpos,
                                        SCM object, struct array_info *ai, GIArgument *arg)
 {
@@ -1311,7 +1311,7 @@ object_to_c_native_interface_array_arg(char *subr,
 }
 
 static void
-object_to_c_native_string_array_arg(char *subr, int argpos,
+object_to_c_native_string_array_arg(const char *subr, int argpos,
                                     SCM object, struct array_info *ai, GIArgument *arg)
 {
     // UTF8 or FILENAME pointers.  It seems that arrays of type UTF8

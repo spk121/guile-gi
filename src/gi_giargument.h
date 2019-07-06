@@ -10,7 +10,7 @@
 #define GIR_FREE_PTR_ARRAY 0x40000
 #define GIR_FREE_PTR_COUNT(x) ((x)&GIR_FREE_PTR_ARRAY ? (x)&0xFFFF : 0)
 
-void gi_giargument_object_to_c_arg(char *subr, int argnum, SCM obj, GIArgInfo *arg_info,
+void gi_giargument_object_to_c_arg(const char *subr, int argnum, SCM obj, GIArgInfo *arg_info,
                                    unsigned *must_free, GIArgument *arg);
 char *gi_giargument_describe_arg(GIArgInfo *arg_info);
 char *gi_giargument_describe_return(GITypeInfo *type_info, GITransfer transfer, gboolean null_ok,
