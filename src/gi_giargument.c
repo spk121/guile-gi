@@ -330,8 +330,6 @@ TYPE_TAG_IS_REAL_NUMBER(GITypeTag x)
     return FALSE;
 }
 
-static SCM boxes[26];
-
 static void object_to_c_immediate_arg(char *subr, int argpos,
                                       SCM obj, GITypeTag type_tag, GIArgument *arg);
 static void object_to_c_interface_arg(char *subr, int argpos,
@@ -2335,15 +2333,6 @@ convert_list_arg_to_object(GIArgument *arg, GITypeInfo *list_type_info,
 static void
 convert_const_void_pointer_arg_to_object(GIArgument *arg, SCM *obj)
 {
-    // There are some boxes
-    int i = 0;
-    while (i < 26) {
-        if (arg->v_pointer == &(boxes[i])) {
-            *obj = boxes[i];
-            return;
-        }
-        i++;
-    }
     *obj = scm_from_pointer(arg->v_pointer, NULL);
 }
 
@@ -2668,27 +2657,9 @@ gi_giargument_release(GIArgument *arg,
 
 #define SCONSTX(NAME) scm_permanent_object(scm_c_define(#NAME, scm_from_int(NAME)))
 
-static SCM
-scm_box(SCM sym, SCM val)
-{
-    SCM_ASSERT(scm_is_symbol(sym), sym, SCM_ARG1, "box");
-    char *label = scm_to_utf8_string(scm_symbol_to_string(sym));
-    if (strlen(label) != 1 || label[0] < 'A' || label[0] > 'Z') {
-        free(label);
-        scm_misc_error("box", "unknown box label ~s", scm_list_1(sym));
-        g_return_val_if_reached(SCM_UNSPECIFIED);
-    }
-    boxes[label[0] - 'A'] = val;
-    return scm_from_pointer(&(boxes[label[0] - 'A']), NULL);
-}
-
-
 void
 gi_init_giargument(void)
 {
-    for (int i = 0; i < 26; i++)
-        boxes[i] = SCM_UNSPECIFIED;
-
     SCONSTX(GI_TYPE_TAG_VOID);
     SCONSTX(GI_TYPE_TAG_BOOLEAN);
     SCONSTX(GI_TYPE_TAG_INT8);
@@ -2714,8 +2685,4 @@ gi_init_giargument(void)
     SCONSTX(GI_TRANSFER_NOTHING);
     SCONSTX(GI_TRANSFER_CONTAINER);
     SCONSTX(GI_TRANSFER_EVERYTHING);
-
-    scm_c_define_gsubr("box", 2, 0, 0, scm_box);
-
-    scm_c_export("box", NULL);
 }
