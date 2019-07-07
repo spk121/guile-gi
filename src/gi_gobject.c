@@ -1001,50 +1001,6 @@ scm_gobject_printer(SCM self, SCM port)
     return SCM_UNSPECIFIED;
 }
 
-SCM
-gi_arg_gobject_to_scm(GIArgument *arg, GITransfer transfer)
-{
-    SCM s_obj;
-
-    if (arg->v_pointer == NULL) {
-        s_obj = SCM_BOOL_F;
-    }
-    else if (G_IS_PARAM_SPEC(arg->v_pointer)) {
-        // s_obj = gi_gparam_spec_new (arg->v_pointer);
-        g_assert_not_reached();
-        if (transfer == GI_TRANSFER_EVERYTHING)
-            //g_param_spec_unref (arg->v_pointer);
-            g_assert_not_reached();
-    }
-    else {
-        g_assert_not_reached();
-#if 0
-        s_obj = gi_gobject_new_full(arg->v_pointer, transfer == GI_TRANSFER_EVERYTHING, /* steal */
-                                    NULL);      /* type */
-#endif
-    }
-    return s_obj;
-}
-
-SCM
-gi_arg_gobject_to_scm_called_from_c(GIArgument *arg, GITransfer transfer)
-{
-    SCM object;
-    /* IN pygobject, they say this is a hack to work around GTK+
-     * sending signals with floating widgets in them.  Not sure if
-     * that applies to us. */
-    if (arg->v_pointer != NULL
-        && transfer == GI_TRANSFER_NOTHING && !G_IS_PARAM_SPEC(arg->v_pointer)) {
-        g_object_ref(arg->v_pointer);
-        object = gi_arg_gobject_to_scm(arg, GI_TRANSFER_EVERYTHING);
-        g_object_force_floating(arg->v_pointer);
-    }
-    else {
-        object = gi_arg_gobject_to_scm(arg, transfer);
-    }
-    return object;
-}
-
 void
 gi_init_gobject(void)
 {

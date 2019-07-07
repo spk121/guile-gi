@@ -47,8 +47,6 @@ void gi_init_gobject(void);
 GClosure *gclosure_from_scm_func(SCM object, SCM func);
 SCM gi_gobject_lookup_class(GType);
 SCM gi_gobject_new(GIObjectInfo *info, GObject *obj);
-SCM gi_arg_gobject_to_scm(GIArgument *arg, GITransfer transfer);
-SCM gi_arg_gobject_to_scm_called_from_c(GIArgument *arg, GITransfer transfer);
 SCM scm_gobject_printer(SCM self, SCM port);
 
 G_END_DECLS
