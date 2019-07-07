@@ -167,7 +167,7 @@ scm_call_method(SCM s_object, SCM s_method_name, SCM s_list_of_args)
             method_name, args_str, g_type_name(gir_type_get_gtype_from_obj(s_object)));
     free(args_str);
 
-    GObject *object = scm_foreign_object_ref(s_object, OBJ_SLOT);
+    GObject *object = scm_foreign_object_ref(s_object, GIR_TYPE_SLOT_OBJ);
 
     GError *err = NULL;
     SCM output = gir_function_invoke(method_name, info, object, s_list_of_args, &err);

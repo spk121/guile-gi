@@ -663,7 +663,7 @@ scm_type_dump_type_table(void)
 static SCM
 scm_type_cast(SCM s_obj, SCM s_fo_type)
 {
-    gpointer obj = scm_foreign_object_ref(s_obj, OBJ_SLOT);
+    gpointer obj = scm_foreign_object_ref(s_obj, GIR_TYPE_SLOT_OBJ);
     GType type = gir_type_get_gtype_from_obj(s_fo_type);
     return gir_type_make_object(type, obj, 0);
 }

@@ -1017,7 +1017,7 @@ object_to_c_interface_arg(char *subr, int argpos, SCM obj, GITypeInfo *type_info
         // This is uncommon case where a struct is used directly,
         // and not as a pointer, such as in gtk_text_buffer_get_bounds.
 
-        arg->v_pointer = scm_foreign_object_ref(obj, OBJ_SLOT);
+        arg->v_pointer = scm_foreign_object_ref(obj, GIR_TYPE_SLOT_OBJ);
     }
     else
         g_assert_not_reached();
@@ -1137,7 +1137,7 @@ object_to_c_interface_pointer_arg(char *subr, int argpos, SCM obj,
     else if ((referenced_base_type == GI_INFO_TYPE_STRUCT)
              || (referenced_base_type == GI_INFO_TYPE_UNION)
              || (referenced_base_type == GI_INFO_TYPE_OBJECT)) {
-        arg->v_pointer = scm_foreign_object_ref(obj, OBJ_SLOT);
+        arg->v_pointer = scm_foreign_object_ref(obj, GIR_TYPE_SLOT_OBJ);
         *must_free = GIR_FREE_NONE;
     }
     else if (referenced_base_type == GI_INFO_TYPE_CALLBACK) {

@@ -182,7 +182,7 @@ gi_gobject_new_full(GIObjectInfo *info, GObject *obj, gboolean steal, gpointer g
         self = gir_type_make_object(G_OBJECT_TYPE(obj), obj, 0);
 
         if (g_object_is_floating(obj))
-            scm_foreign_object_unsigned_set_x(self, FLAGS_SLOT, GI_GOBJECT_GOBJECT_WAS_FLOATING);
+            scm_foreign_object_unsigned_set_x(self, GIR_TYPE_SLOT_FLAGS, GI_GOBJECT_GOBJECT_WAS_FLOATING);
         if (!steal || (gi_gobject_get_flags(self) & GI_GOBJECT_GOBJECT_WAS_FLOATING))
             g_object_ref_sink(obj);
     }
@@ -315,7 +315,7 @@ scm_signal_connect(SCM self, SCM s_name, SCM callback, SCM s_after)
     SCM_ASSERT_TYPE(gtype > G_TYPE_INVALID, self, SCM_ARG1, "signal-connect", "GObject");
 
     // fetch the actual object type
-    obj = scm_foreign_object_ref(self, OBJ_SLOT);
+    obj = scm_foreign_object_ref(self, GIR_TYPE_SLOT_OBJ);
     gtype = G_OBJECT_TYPE(obj);
 
     scm_dynwind_begin(0);
@@ -377,7 +377,7 @@ scm_gobject_handler_block_by_func(SCM self, SCM func)
         scm_misc_error("gobject-handler-block-by-func",
                        "nothing connected to ~S", scm_list_1(func));
 
-    obj = scm_foreign_object_ref(self, OBJ_SLOT);
+    obj = scm_foreign_object_ref(self, GIR_TYPE_SLOT_OBJ);
     retval = g_signal_handlers_block_matched(obj,
                                              G_SIGNAL_MATCH_CLOSURE, 0, 0, closure, NULL, NULL);
     return scm_from_uint(retval);
@@ -401,7 +401,7 @@ scm_gobject_handler_unblock_by_func(SCM self, SCM func)
         scm_misc_error("gobject-handler-unblock-by-func",
                        "nothing connected to ~S", scm_list_1(func));
 
-    obj = scm_foreign_object_ref(self, OBJ_SLOT);
+    obj = scm_foreign_object_ref(self, GIR_TYPE_SLOT_OBJ);
     retval = g_signal_handlers_unblock_matched(obj,
                                                G_SIGNAL_MATCH_CLOSURE, 0, 0, closure, NULL, NULL);
     return scm_from_uint(retval);
@@ -476,7 +476,7 @@ init_instance(GTypeInstance *instance, gpointer class_ptr)
      * the location in memory where the properties are stored. */
     obj = gir_type_make_object(type, instance, 0);
     inst_dict = scm_make_hash_table(scm_from_int(10));
-    scm_foreign_object_set_x(obj, INST_DICT_SLOT, SCM_UNPACK_POINTER(inst_dict));
+    scm_foreign_object_set_x(obj, GIR_TYPE_SLOT_INST_DICT, SCM_UNPACK_POINTER(inst_dict));
 
     /* We're using a hash table as the property variable store for
      * this object. */
@@ -520,11 +520,11 @@ get_guile_specified_property(GObject *object, guint property_id, GValue *value, 
 
     obj = SCM_PACK_POINTER(ptr);
 
-    g_assert(scm_foreign_object_ref(obj, OBJ_SLOT) == object);
+    g_assert(scm_foreign_object_ref(obj, GIR_TYPE_SLOT_OBJ) == object);
 
     /* We're using a hash table as the property variable store for
      * this object. */
-    inst_dict = SCM_PACK_POINTER(scm_foreign_object_ref(obj, INST_DICT_SLOT));
+    inst_dict = SCM_PACK_POINTER(scm_foreign_object_ref(obj, GIR_TYPE_SLOT_INST_DICT));
     svalue = scm_hash_ref(inst_dict,
                           scm_from_utf8_string(g_param_spec_get_name(pspec)), SCM_BOOL_F);
     gi_gvalue_from_scm(value, svalue);
@@ -548,11 +548,11 @@ set_guile_specified_property(GObject *object, guint property_id,
 
     obj = SCM_PACK_POINTER(ptr);
 
-    g_assert(scm_foreign_object_ref(obj, OBJ_SLOT) == object);
+    g_assert(scm_foreign_object_ref(obj, GIR_TYPE_SLOT_OBJ) == object);
 
     /* We're using a hash table as the property variable store for
      * this object. */
-    inst_dict = SCM_PACK_POINTER(scm_foreign_object_ref(obj, INST_DICT_SLOT));
+    inst_dict = SCM_PACK_POINTER(scm_foreign_object_ref(obj, GIR_TYPE_SLOT_INST_DICT));
     svalue = gi_gvalue_as_scm(value, TRUE);
     scm_hash_set_x(inst_dict, scm_from_utf8_string(g_param_spec_get_name(pspec)), svalue);
 }
@@ -799,7 +799,7 @@ scm_make_gobject(SCM s_gtype, SCM s_prop_alist)
                     GType dest_type = G_PARAM_SPEC_VALUE_TYPE(pspec);
                     if (g_type_is_a(src_type, dest_type)) {
                         g_value_init(value, dest_type);
-                        g_value_set_object(value, scm_foreign_object_ref(src, OBJ_SLOT));
+                        g_value_set_object(value, scm_foreign_object_ref(src, GIR_TYPE_SLOT_OBJ));
                     }
                     else
                         scm_misc_error("make-gobject",
@@ -834,62 +834,8 @@ scm_make_gobject(SCM s_gtype, SCM s_prop_alist)
         g_object_set_qdata(G_OBJECT(obj), gi_gobject_wrapper_key, SCM_UNPACK_POINTER(sobj));
     }
 
-    g_assert(scm_foreign_object_ref(sobj, OBJ_SLOT) == obj);
+    g_assert(scm_foreign_object_ref(sobj, GIR_TYPE_SLOT_OBJ) == obj);
     return sobj;
-}
-
-static SCM
-scm_gobject_is_object_p(SCM self)
-{
-    GObject *obj;
-    gboolean ret;
-
-
-    scm_assert_foreign_object_type(gi_gobject_type, self);
-    obj = gi_gobject_get_obj(self);
-    ret = G_IS_OBJECT(obj);
-    return scm_from_bool(ret);
-}
-
-static SCM
-scm_gobject_type(SCM self)
-{
-    GType type;
-    GObject *obj;
-
-    scm_assert_foreign_object_type(gi_gobject_type, self);
-
-    obj = gi_gobject_get_obj(self);
-    type = G_OBJECT_TYPE(obj);
-
-    return scm_from_size_t(type);
-    //return gi_gtype_c2g (type);
-}
-
-static SCM
-scm_gobject_type_name(SCM self)
-{
-    const char *name;
-    GObject *obj;
-
-    scm_assert_foreign_object_type(gi_gobject_type, self);
-
-    obj = gi_gobject_get_obj(self);
-    name = G_OBJECT_TYPE_NAME(obj);
-
-    return scm_from_utf8_string(name);
-}
-
-static SCM
-scm_gobject_is_floating_p(SCM self)
-{
-    GObject *obj;
-    gboolean ret;
-
-    scm_assert_foreign_object_type(gi_gobject_type, self);
-    obj = gi_gobject_get_obj(self);
-    ret = g_object_is_floating(obj);
-    return scm_from_bool(ret);
 }
 
 /* re pygobject_set_property */
@@ -988,33 +934,15 @@ scm_gobject_get_property(SCM self, SCM sname)
 }
 
 
-/* A procedure suitable as a record-type printer. */
-SCM
-scm_gobject_printer(SCM self, SCM port)
-{
-    scm_assert_foreign_object_type(gi_gobject_type, self);
-    scm_simple_format(port,
-                      scm_from_utf8_string("~s [~s] <~s>"),
-                      scm_list_3(scm_from_utf8_string(g_type_name(gi_gobject_get_ob_type(self))),
-                                 scm_from_int(gi_gobject_get_ob_type(self)),
-                                 scm_from_uintmax((uintmax_t) gi_gobject_get_obj(self))));
-    return SCM_UNSPECIFIED;
-}
-
 void
 gi_init_gobject(void)
 {
-    gi_init_gobject_type();
     gi_gobject_wrapper_key = g_quark_from_static_string("GuGObject::wrapper");
     gi_gobject_custom_key = g_quark_from_static_string("GuGObject::custom");
     gi_gobject_instance_data_key = g_quark_from_static_string("GuGObject::instance-data");
 
     scm_c_define_gsubr("register-type", 2, 3, 0, scm_register_guile_specified_gobject_type);
     scm_c_define_gsubr("make-gobject", 1, 1, 0, scm_make_gobject);
-    scm_c_define_gsubr("gobject-is-object?", 1, 0, 0, scm_gobject_is_object_p);
-    scm_c_define_gsubr("gobject-type", 1, 0, 0, scm_gobject_type);
-    scm_c_define_gsubr("gobject-type-name", 1, 0, 0, scm_gobject_type_name);
-    scm_c_define_gsubr("gobject-is-floating?", 1, 0, 0, scm_gobject_is_floating_p);
     scm_c_define_gsubr("gobject-set-property!", 3, 0, 0, scm_gobject_set_property_x);
     scm_c_define_gsubr("gobject-get-property", 2, 0, 0, scm_gobject_get_property);
     scm_c_define_gsubr("gobject-disconnect-by-func", 2, 0, 0, scm_gobject_disconnect_by_func);
@@ -1022,17 +950,15 @@ gi_init_gobject(void)
                        scm_gobject_handler_block_by_func);
     scm_c_define_gsubr("gobject-handler-unblock-by-func", 2, 0, 0,
                        scm_gobject_handler_unblock_by_func);
-    scm_c_define_gsubr("gobject-printer", 2, 0, 0, scm_gobject_printer);
     scm_c_define_gsubr("signal-connect", 3, 1, 0, scm_signal_connect);
     scm_c_export("register-type",
                  "make-gobject",
-                 "gobject-is-object?",
-                 "gobject-type",
-                 "gobject-type-name",
-                 "gobject-is-floating?",
                  "gobject-set-property!",
                  "gobject-get-property",
                  "gobject-disconnect-by-func",
                  "gobject-handler-block-by-func",
-                 "gobject-handler-unblock-by-func", "gobject-printer", "signal-connect", NULL);
+                 "gobject-handler-unblock-by-func",
+                 "gobject-printer",
+                 "signal-connect",
+                 NULL);
 }
