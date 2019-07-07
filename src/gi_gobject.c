@@ -668,10 +668,12 @@ scm_register_guile_specified_gobject_type(SCM s_type_name,
 
     if (scm_is_list(s_properties)) {
         n_properties = scm_to_size_t(scm_length(s_properties));
+        SCM iter = s_properties;
         for (size_t i = 0; i < n_properties; i++) {
             GParamSpec *pspec;
-            pspec = gi_gparamspec_from_scm(scm_list_ref(s_properties, scm_from_size_t(i)));
+            pspec = gi_gparamspec_from_scm(scm_car(iter));
             g_ptr_array_add(properties, pspec);
+            iter = scm_cdr(iter);
         }
     }
 

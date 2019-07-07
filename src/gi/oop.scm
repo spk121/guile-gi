@@ -15,10 +15,21 @@
 
 (define-module (gi oop)
   #:use-module (oop goops)
-  #:export (<property>))
+  #:export (<property>
+            <number-property>
+
+            G_PARAM_READABLE
+            G_PARAM_WRITABLE
+            G_PARAM_READWRITE
+            G_PARAM_CONSTRUCT
+            G_PARAM_CONSTRUCT_ONLY))
+
+(eval-when (expand load eval)
+  ;; required for %typelib-module-name, which is used at expand time
+  (load-extension "libguile-gi" "gi_init_gparamspec_private"))
 
 (define-class <property> (<applicable-struct-with-setter>)
-  nick)
+  name type nick blurb flags default)
 
 (define-method (initialize (property <property>) initargs)
   ;; TODO: find a way to pass procedure and setter up
@@ -27,12 +38,25 @@
              (lambda (obj)
                ((@ (gi) gobject-get-property)
                 obj
-                (slot-ref property 'nick))))
+                (slot-ref property 'name))))
   (slot-set! property 'setter
              (lambda (obj val)
                ((@ (gi) gobject-set-property!)
                 obj
-                (slot-ref property 'nick)
+                (slot-ref property 'name)
                 val)))
-  (slot-set! property 'nick
-             (get-keyword #:nick initargs #f)))
+  (slot-set! property 'name (get-keyword #:name initargs #f))
+  (slot-set! property 'type (get-keyword #:type initargs 0)) ; should be G_TYPE_INVALID
+  (slot-set! property 'nick (get-keyword #:nick initargs (slot-ref property 'name)))
+  (slot-set! property 'blurb (get-keyword #:blurb initargs #f))
+  (slot-set! property 'flags (get-keyword #:flags initargs G_PARAM_READWRITE))
+  (slot-set! property 'default (get-keyword #:default initargs #f)))
+
+(define-class <number-property> (<property>)
+  min max)
+
+(define-method (initialize (property <number-property>) initargs)
+  (next-method)
+  (slot-set! property 'min (get-keyword #:min initargs #f))
+  (slot-set! property 'max (get-keyword #:max initargs #f))
+  (slot-set! property 'default (get-keyword #:default initargs 0)))

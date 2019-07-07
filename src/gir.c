@@ -102,7 +102,6 @@ gir_init(void)
     gi_init_struct();
     gi_init_gvalue();
     gi_init_gsignal();
-    gi_init_gparamspec();
 
     gi_init_giargument();
     gi_init_gobject();

@@ -5,7 +5,7 @@
 
 (typelib-require ("Gio" "2.0"))
 
-(define application-id (make <property> #:nick "application-id"))
+(define application-id (make <property> #:name "application-id"))
 
 (automake-test
  (begin

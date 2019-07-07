@@ -4,46 +4,71 @@
 #include "gi_gparamspec.h"
 #include "gi_util.h"
 
-static GParamSpec *gi_gparamspec_from_list(SCM x);
+static SCM guile_property;
+static SCM guile_number_property;
+
+typedef enum
+{
+    PROPERTY_SLOT_NAME,
+    PROPERTY_SLOT_TYPE,
+    PROPERTY_SLOT_NICK,
+    PROPERTY_SLOT_BLURB,
+    PROPERTY_SLOT_FLAGS,
+    PROPERTY_SLOT_DEFAULT,
+    PROPERTY_SLOT_MIN,
+    PROPERTY_SLOT_MAX,
+    PROPERTY_SLOT_COUNT
+} PropertySlot;
+
+static SCM property_slot_syms[PROPERTY_SLOT_COUNT];
+
+static SCM
+property_ref(SCM property, PropertySlot slot)
+{
+    return scm_slot_ref(property, property_slot_syms[slot]);
+}
+
+static gpointer
+init_guile_property_type(gpointer data)
+{
+    guile_property = scm_c_public_ref("gi oop", "<property>");
+    guile_number_property = scm_c_public_ref("gi oop", "<number-property>");
+
+    return NULL;
+}
 
 GParamSpec *
 gi_gparamspec_from_scm(SCM x)
 {
-    SCM_ASSERT_TYPE(scm_is_list(x) ||
-                    scm_is_true(gi_gparamspec_p(x)),
-                    x, SCM_ARG1, "%scm->gparamspec", "list or param spec object");
+    static GOnce _init = G_ONCE_INIT;
 
-    if (scm_is_list(x))
-        return gi_gparamspec_from_list(x);
-    else
-        return gi_gparamspec_get_spec(x);
-}
+    g_once (&_init, init_guile_property_type, NULL);
 
-static GParamSpec *
-gi_gparamspec_from_list(SCM x)
-{
+    SCM_ASSERT_TYPE(SCM_IS_A_P(x, guile_property),
+                    x, SCM_ARG1, "%scm->gparamspec", "property");
+
     char *prop_name;
     GType prop_type;
     char *nick;
     char *blurb;
     GParamFlags flags;
     GParamSpec *pspec;
-    size_t i;
 
-    prop_name = scm_to_utf8_string(scm_c_list_ref(x, 0));
-    prop_type = scm_to_gtype(scm_c_list_ref(x, 1));
-    nick = scm_to_utf8_string(scm_c_list_ref(x, 2));
-    blurb = scm_to_utf8_string(scm_c_list_ref(x, 3));
-    i = 4;
+    prop_name = scm_to_utf8_string(property_ref(x, PROPERTY_SLOT_NAME));
+    prop_type = scm_to_gtype(property_ref(x, PROPERTY_SLOT_TYPE));
+    nick = scm_to_utf8_string(property_ref(x, PROPERTY_SLOT_NICK));
+    blurb = scm_to_utf8_string(property_ref(x, PROPERTY_SLOT_BLURB));
+    flags = scm_to_ulong(property_ref(x, PROPERTY_SLOT_FLAGS));
 
 #define NUMBER_TYPE(ftype,ctype,gtype,scmtype)                          \
     case G_TYPE_ ## ftype:                                              \
     {                                                                   \
         ctype _min, _max, _default;                                     \
-        _min = scm_to_ ## scmtype (scm_c_list_ref (x, i++));            \
-        _max = scm_to_ ## scmtype (scm_c_list_ref (x, i++));            \
-        _default = scm_to_ ## scmtype (scm_c_list_ref (x, i++));        \
-        flags = scm_to_ulong (scm_c_list_ref (x, i++));                 \
+        SCM_ASSERT_TYPE(SCM_IS_A_P(x, guile_number_property),           \
+                        x, SCM_ARGn, "%scm->gparamspec", "property");   \
+        _min = scm_to_ ## scmtype (property_ref (x, PROPERTY_SLOT_MIN)); \
+        _max = scm_to_ ## scmtype (property_ref (x, PROPERTY_SLOT_MAX)); \
+        _default = scm_to_ ## scmtype (property_ref (x, PROPERTY_SLOT_DEFAULT)); \
         pspec = g_param_spec_ ## gtype (prop_name, nick, blurb, _min,   \
                                         _max, _default, flags);         \
     }                                                                   \
@@ -63,178 +88,47 @@ gi_gparamspec_from_list(SCM x)
     case G_TYPE_BOOLEAN:
     {
         gboolean _default;
-        _default = scm_to_bool(scm_c_list_ref(x, i++));
-        flags = scm_to_ulong(scm_c_list_ref(x, i++));
+        _default = scm_to_bool(property_ref(x, PROPERTY_SLOT_DEFAULT));
         pspec = g_param_spec_boolean(prop_name, nick, blurb, _default, flags);
     }
-        break;
+    break;
     case G_TYPE_ENUM:
     {
         gint _default;
-        _default = scm_to_uint(scm_c_list_ref(x, i++));
-        flags = scm_to_ulong(scm_c_list_ref(x, i++));
+        _default = scm_to_uint(property_ref(x, PROPERTY_SLOT_DEFAULT));
         pspec = g_param_spec_enum(prop_name, nick, blurb, prop_type, _default, flags);
     }
-        break;
+    break;
     case G_TYPE_FLAGS:
     {
         guint _default;
-        _default = scm_to_uint(scm_c_list_ref(x, i++));
-        flags = scm_to_ulong(scm_c_list_ref(x, i++));
+        _default = scm_to_uint(property_ref(x, PROPERTY_SLOT_DEFAULT));
         pspec = g_param_spec_flags(prop_name, nick, blurb, prop_type, _default, flags);
     }
-        break;
+    break;
     case G_TYPE_STRING:
     {
         char *_default;
-        _default = scm_to_utf8_string(scm_c_list_ref(x, i++));
-        flags = scm_to_ulong(scm_c_list_ref(x, i++));
+        _default = scm_to_utf8_string(property_ref(x, PROPERTY_SLOT_DEFAULT));
         pspec = g_param_spec_string(prop_name, nick, blurb, _default, flags);
         free(_default);
     }
-        break;
     default:
         return NULL;
     }
-    return pspec;
-}
-
-static SCM
-scm_list_to_gparamspec(SCM x)
-{
-    SCM obj;
-    SCM_ASSERT_TYPE(scm_is_list(x), x, SCM_ARG1, "list->gparamspec", "list");
-    GParamSpec *spec = gi_gparamspec_from_list(x);
-
-    if (spec) {
-        obj = scm_make_foreign_object_0(gi_gparamspec_type);
-        gi_gparamspec_set_spec(obj, spec);
-        return obj;
-    }
-    return SCM_BOOL_F;
-}
-
-static SCM
-scm_gparam_value_is_valid_p(SCM self, SCM gval)
-{
-    GParamSpec *spec;
-    GValue *val;
-    gboolean ret;
-
-    scm_assert_foreign_object_type(gi_gparamspec_type, self);
-    scm_assert_foreign_object_type(gi_gvalue_type, gval);
-
-    spec = gi_gparamspec_get_spec(self);
-    val = gi_gvalue_get_value(gval);
-    if (spec && val) {
-        ret = g_param_value_validate(spec, val);
-        return scm_from_bool(ret);
-    }
-    return SCM_BOOL_F;
-}
-
-static SCM
-scm_gparamspec_get_default_value(SCM self)
-{
-    GParamSpec *spec;
-    const GValue *val;
-    GValue *val2;
-    GType type;
-
-    scm_assert_foreign_object_type(gi_gparamspec_type, self);
-    spec = gi_gparamspec_get_spec(self);
-    if (spec) {
-        val = g_param_spec_get_default_value(spec);
-        type = G_VALUE_TYPE(val);
-        val2 = g_new0(GValue, 1);
-        g_value_init(val2, type);
-        g_value_copy(val, val2);
-        return gi_gvalue_c2g(val2);
-    }
-    return SCM_BOOL_F;
-}
-
-static SCM
-scm_gparamspec_unref(SCM self)
-{
-    GParamSpec *spec;
-
-    scm_assert_foreign_object_type(gi_gparamspec_type, self);
-    spec = gi_gparamspec_get_spec(self);
-    if (spec)
-        g_param_spec_unref(spec);
-    return SCM_UNSPECIFIED;
-}
-
-static SCM
-scm_gparamspec_ref(SCM self)
-{
-    GParamSpec *spec;
-
-    scm_assert_foreign_object_type(gi_gparamspec_type, self);
-    spec = gi_gparamspec_get_spec(self);
-    if (spec)
-        g_param_spec_ref(spec);
-    return SCM_UNSPECIFIED;
-}
-
-static SCM
-scm_gparamspec_value_type(SCM self)
-{
-    GParamSpec *spec;
-
-    scm_assert_foreign_object_type(gi_gparamspec_type, self);
-    spec = gi_gparamspec_get_spec(self);
-    if (spec) {
-        gir_type_register(G_PARAM_SPEC_VALUE_TYPE(spec));
-        return scm_from_size_t(G_PARAM_SPEC_VALUE_TYPE(spec));
-    }
-
-    return SCM_BOOL_F;
-}
-
-static SCM
-scm_gparamspec_type(SCM self)
-{
-    GParamSpec *spec;
-
-    scm_assert_foreign_object_type(gi_gparamspec_type, self);
-    spec = gi_gparamspec_get_spec(self);
-    if (spec) {
-        gir_type_register(G_PARAM_SPEC_TYPE(spec));
-        return scm_from_size_t(G_PARAM_SPEC_TYPE(spec));
-    }
-    return SCM_BOOL_F;
-}
-
-static SCM
-scm_gparamspec_type_name(SCM self)
-{
-    GParamSpec *spec;
-
-    scm_assert_foreign_object_type(gi_gparamspec_type, self);
-    spec = gi_gparamspec_get_spec(self);
-    if (spec)
-        return scm_from_utf8_string(G_PARAM_SPEC_TYPE_NAME(spec));
-    return SCM_BOOL_F;
 }
 
 void
-gi_gparamspec_finalizer(SCM self)
+gi_init_gparamspec_private(void)
 {
-    GParamSpec *spec;
-
-    spec = gi_gparamspec_get_spec(self);
-    if (spec)
-        g_param_spec_unref(spec);
-    g_free(spec);
-    gi_gparamspec_set_spec(self, NULL);
-}
-
-void
-gi_init_gparamspec(void)
-{
-    gi_init_gparamspec_type();
+    property_slot_syms[PROPERTY_SLOT_NAME] = scm_from_utf8_symbol("name");
+    property_slot_syms[PROPERTY_SLOT_TYPE] = scm_from_utf8_symbol("type");
+    property_slot_syms[PROPERTY_SLOT_NICK] = scm_from_utf8_symbol("nick");
+    property_slot_syms[PROPERTY_SLOT_BLURB] = scm_from_utf8_symbol("blurb");
+    property_slot_syms[PROPERTY_SLOT_FLAGS] = scm_from_utf8_symbol("flags");
+    property_slot_syms[PROPERTY_SLOT_DEFAULT] = scm_from_utf8_symbol("default");
+    property_slot_syms[PROPERTY_SLOT_MIN] = scm_from_utf8_symbol("min");
+    property_slot_syms[PROPERTY_SLOT_MAX] = scm_from_utf8_symbol("max");
 
 #define D(x) scm_permanent_object(scm_c_define(#x, scm_from_ulong(x)))
     D(G_PARAM_READABLE);
@@ -243,24 +137,4 @@ gi_init_gparamspec(void)
     D(G_PARAM_CONSTRUCT);
     D(G_PARAM_CONSTRUCT_ONLY);
 #undef D
-
-    scm_c_define_gsubr("list->gparamspec", 1, 0, 0, scm_list_to_gparamspec);
-    scm_c_define_gsubr("gparam-value-is-valid?", 2, 0, 0, scm_gparam_value_is_valid_p);
-    scm_c_define_gsubr("gparamspec-get-default-value", 1, 0, 0, scm_gparamspec_get_default_value);
-    scm_c_define_gsubr("gparamspec-ref", 1, 0, 0, scm_gparamspec_ref);
-    scm_c_define_gsubr("gparamspec-unref", 1, 0, 0, scm_gparamspec_unref);
-    scm_c_define_gsubr("gparamspec-value-type", 1, 0, 0, scm_gparamspec_value_type);
-    scm_c_define_gsubr("gparamspec-type", 1, 0, 0, scm_gparamspec_type);
-    scm_c_define_gsubr("gparamspec-type-name", 1, 0, 0, scm_gparamspec_type_name);
-    scm_c_export("G_PARAM_READABLE",
-                 "G_PARAM_WRITABLE",
-                 "G_PARAM_READWRITE",
-                 "G_PARAM_CONSTRUCT",
-                 "G_PARAM_CONSTRUCT_ONLY",
-                 "list->gparamspec",
-                 "gparam-value-is-valid?",
-                 "gparamspec-get-default-value",
-                 "gparamspec-ref",
-                 "gparamspec-unref",
-                 "gparamspec-value-type", "gparamspec-type", "gparamspec-type-name", NULL);
 }
