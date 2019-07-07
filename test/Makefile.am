@@ -168,6 +168,9 @@ GRILO_TESTS = \
  grilo/audio_multiple_artists.scm \
  grilo/init_commandline.scm
 
+OOP_TESTS = \
+ oop/property-basics.scm
+
 TESTS = \
  $(TYPELIB_TESTS) \
  $(VERSION_INFORMATION_TESTS) \
@@ -197,6 +200,7 @@ TESTS = \
  $(GTK_ENTRY_TESTS) \
  $(GTK_LAYOUT_TESTS) \
  $(GRILO_TESTS) \
+ $(OOP_TESTS) \
  misc/softerror_create.scm \
  misc/use-typelibs.scm
 
