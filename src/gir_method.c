@@ -190,7 +190,7 @@ scm_call_method(SCM s_object, SCM s_method_name, SCM s_list_of_args)
     }
 
     g_debug("Invoked method %s", method_name);
-
+    g_free(method_name);
     return output;
 }
 

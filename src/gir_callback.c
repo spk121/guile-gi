@@ -3,12 +3,25 @@
 #include "gir_callback.h"
 #include "gi_giargument.h"
 
-static SCM gir_callback_call_proc(void *user_data);
-static SCM gir_callback_handler_proc(void *user_data, SCM key, SCM params);
+typedef struct _GirCallback GirCallback;
+struct _GirCallback
+{
+    GICallbackInfo *callback_info;
+    ffi_closure *closure;
+    ffi_cif cif;
+    SCM s_func;
+    char *name;
+    void *callback_ptr;
+    ffi_type **atypes;
+};
 
 GSList *callback_list = NULL;
 
+static SCM gir_callback_call_proc(void *user_data);
+static SCM gir_callback_handler_proc(void *user_data, SCM key, SCM params);
 static ffi_type *type_info_to_ffi_type(GITypeInfo *type_info);
+static void gir_callback_free(GirCallback * gcb);
+static void gir_fini_callback(void);
 
 // This is the core of a dynamically generated callback funcion.
 // It converts FFI arguments to SCM arguments, calls a SCM function
@@ -130,15 +143,14 @@ gir_callback_new(GICallbackInfo *callback_info, SCM s_func)
     ffi_type *ffi_ret_type;
     gint n_args = g_callable_info_get_n_args(callback_info);
 
-    {
-        SCM s_name = scm_procedure_name(s_func);
-        if (scm_is_string(s_name)) {
-            char *name = scm_to_utf8_string(scm_symbol_to_string(s_name));
-            g_debug("Constructing C Callback for %s", name);
-            free(name);
-        }
-        else
-            g_debug("Construction a C Callback for an anonymous procedure");
+    SCM s_name = scm_procedure_name(s_func);
+    if (scm_is_string(s_name)) {
+        gcb->name = scm_to_utf8_string(scm_symbol_to_string(s_name));
+        g_debug("Constructing C callback for %s", gcb->name);
+    }
+    else {
+        gcb->name = g_strdup("(anonymous)");
+        g_debug("Construction a C Callback for an anonymous procedure");
     }
 
     gcb->s_func = s_func;
@@ -157,8 +169,11 @@ gir_callback_new(GICallbackInfo *callback_info, SCM s_func)
     // Next, we begin to construct an FFI_CIF to describe the function call.
 
     // Initialize the argument info vectors.
-    if (n_args > 0)
+    if (n_args > 0) {
         ffi_args = g_new0(ffi_type *, n_args);
+        gcb->atypes = ffi_args;
+    }
+
     for (int i = 0; i < n_args; i++) {
         GIArgInfo *cb_arg_info = g_callable_info_get_arg(callback_info, i);
         GITypeInfo *cb_type_info = g_arg_info_get_type(cb_arg_info);
@@ -183,19 +198,13 @@ gir_callback_new(GICallbackInfo *callback_info, SCM s_func)
     // STEP 3
     // Initialize the closure
     ffi_status closure_ok;
-    closure_ok = ffi_prep_closure_loc(gcb->closure, &(gcb->cif), callback_binding, gcb, // The 'user-data' passed to the function
+    closure_ok = ffi_prep_closure_loc(gcb->closure, &(gcb->cif), callback_binding, gcb,
                                       gcb->callback_ptr);
 
     if (closure_ok != FFI_OK)
         scm_misc_error("gir-callback-new",
                        "closure location preparation error #~A",
                        scm_list_1(scm_from_int(closure_ok)));
-
-#ifdef DEBUG_CALLBACKS
-    gcb->callback_info_ptr_as_uint = GPOINTER_TO_UINT(gcb->callback_ptr);
-    gcb->closure_ptr_as_uint = GPOINTER_TO_UINT(gcb->closure);
-    gcb->callback_ptr_as_uint = GPOINTER_TO_UINT(gcb->closure);
-#endif
 
     return gcb;
 }
@@ -372,7 +381,33 @@ scm_get_registered_callback_closure_pointer(SCM s_proc)
 void
 gir_init_callback(void)
 {
+    atexit(gir_fini_callback);
+
     scm_c_define_gsubr("is-registered-callback?", 1, 0, 0, scm_is_registered_callback_p);
     scm_c_define_gsubr("get-registered-callback-closure-pointer", 1, 0, 0,
                        scm_get_registered_callback_closure_pointer);
+}
+
+static void
+gir_callback_free(GirCallback * gcb)
+{
+    g_free(gcb->name);
+    gcb->name = NULL;
+
+    ffi_closure_free(gcb->closure);
+    gcb->closure = NULL;
+
+    g_base_info_unref(gcb->callback_info);
+    g_free(gcb->atypes);
+    gcb->atypes = NULL;
+
+    g_free(gcb);
+}
+
+static void
+gir_fini_callback(void)
+{
+    g_debug("Freeing callbacks");
+    g_slist_free_full(callback_list, (GDestroyNotify) gir_callback_free);
+    callback_list = NULL;
 }

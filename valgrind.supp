@@ -26,7 +26,6 @@
    fun:GC_mark_local
 }
 
-
 {
    Leak/scm_init_numbers
    Memcheck:Leak
@@ -34,6 +33,21 @@
    ...
    fun:scm_init_numbers
 }
+
+{
+   Leak/allocate_stack
+   Memcheck:Leak
+   ...
+   fun:allocate_stack
+}
+
+{
+   Cond/GC_try_to_collect_inner
+   Memcheck:Cond
+   ...
+   fun:GC_try_to_collect_inner
+}
+
 
 
 

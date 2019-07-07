@@ -100,6 +100,7 @@ typedef struct _GirPredicate
     ffi_cif cif;
     void *function_ptr;
     SCM fo_type;
+    ffi_type **atypes;
 } GirPredicate;
 
 G_GNUC_MALLOC static gchar *gir_type_predicate_name_from_gtype(GType gtype);
@@ -283,7 +284,7 @@ gir_type_create_predicate(const char *name, SCM fo_type)
 
     // Initialize the argument info vectors.
     ffi_args = g_new0(ffi_type *, 1);
-
+    gp->atypes = ffi_args;
     // Our argument will be SCM, so we use pointer storage.
     ffi_args[0] = &ffi_type_pointer;
     // The return type is also SCM, for which we use a pointer.
@@ -396,25 +397,24 @@ gir_type_get_gtype_from_obj(SCM x)
     return G_TYPE_INVALID;
 }
 
-#ifdef GIR_FREE_MEMORY
-// Note that since there is not such thing as undefining
-// a gsubr (no scm_c_undefine_gsubr), we don't normally want
-// to free any of our ffi predicates, except under Valgrind.
 static void
 gir_type_predicate_free(GirPredicate *gp)
 {
     ffi_closure_free(gp->closure);
+    gp->closure = NULL;
+
+    g_free(gp->atypes);
+    gp->atypes = NULL;
+
     g_free(gp);
 }
 
-void
+static void
 gir_type_free_predicates(void)
 {
     g_debug("Freeing type predicates");
     g_slist_free_full(gir_type_predicates_list, gir_type_predicate_free);
 }
-
-#endif
 
 static void
 gir_type_free_types(void)
@@ -677,9 +677,7 @@ gir_init_types(void)
     gir_type_scm_hash = g_hash_table_new(g_direct_hash, g_direct_equal);
 #endif
 
-#ifdef GIR_FREE_MEMORY
     atexit(gir_type_free_predicates);
-#endif
     atexit(gir_type_free_types);
 
 #define D(x)                                                            \

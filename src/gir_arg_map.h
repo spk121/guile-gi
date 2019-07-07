@@ -19,7 +19,9 @@
 #include <glib.h>
 #include <girepository.h>
 
+// *INDENT-OFF*
 G_BEGIN_DECLS
+// *INDENT-ON*
 
 // This module gathers information to help convert between 3 paradigms
 //  - arguments as they appear in GIArgInfo lists

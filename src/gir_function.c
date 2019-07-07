@@ -46,7 +46,8 @@ static SCM convert_output_args(GIFunctionInfo *func_info, const char *name,
 static void object_list_to_c_args(GIFunctionInfo *func_info, const char *subr, SCM s_args,
                                   int n_input_args, GIArgument *in_args,
                                   unsigned *in_args_free, int n_output_args, GIArgument *out_args);
-static void fini(void);
+static void gir_function_free(GirFunction * fn);
+static void gir_fini_function(void);
 
 
 // Given some function introspection information from a typelib file,
@@ -284,8 +285,7 @@ function_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
     g_assert(ffi_args != NULL);
     g_assert(user_data != NULL);
 
-    g_debug("in gir function binding for %s as %s", g_base_info_get_name(gfn->function_info),
-            gfn->name);
+    g_debug("Binding C function %s as %s", g_base_info_get_name(gfn->function_info), gfn->name);
     unsigned int n_args = cif->nargs;
 
     g_assert(n_args >= 0);
@@ -512,23 +512,29 @@ convert_output_args(GIFunctionInfo *func_info, const char *func_name,
 void
 gir_init_function(void)
 {
-    atexit(fini);
+    atexit(gir_fini_function);
 }
 
 static void
-fini(void)
+gir_function_free(GirFunction * gfn)
 {
-    GSList *x = function_list;
+    g_free(gfn->name);
+    gfn->name = NULL;
 
-    while (x != NULL) {
-        GirFunction *gfn = x->data;
-        g_free(gfn->name);
-        g_base_info_unref(gfn->function_info);
-        g_free(gfn->atypes);
-        g_free(x->data);
-        x = x->next;
-    }
-    g_slist_free(function_list);
+    ffi_closure_free(gfn->closure);
+    gfn->closure = NULL;
+
+    g_base_info_unref(gfn->function_info);
+    g_free(gfn->atypes);
+    gfn->atypes = NULL;
+
+    g_free(gfn);
+}
+
+static void
+gir_fini_function(void)
+{
+    g_debug("Freeing functions");
+    g_slist_free_full(function_list, (GDestroyNotify) gir_function_free);
     function_list = NULL;
-    g_debug("Freed function list");
 }
