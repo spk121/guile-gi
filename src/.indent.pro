@@ -79,3 +79,6 @@
 -T GirPredicate
 -T GuGObjectData
 -T SignalSpec
+
+-T GirArgMapEntry
+-T GirArgMap
