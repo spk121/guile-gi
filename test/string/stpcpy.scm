@@ -1,6 +1,8 @@
-(use-modules (gi) (gi glib-2)
+(use-modules (gi)
              (rnrs bytevectors)
              (test automake-test-lib))
+
+(typelib-require ("GLib" "2.0"))
 
 ;; stpcpy is unlikely to work.
 
@@ -14,4 +16,3 @@
 (automake-test
  (begin
    'skipped))
-

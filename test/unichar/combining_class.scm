@@ -1,8 +1,10 @@
-(use-modules (gi) (gi glib-2)
+(use-modules (gi)
              (test automake-test-lib))
 
+(typelib-require ("GLib" "2.0"))
+
 (automake-test
- (begin 
+ (begin
    (format #t "The combining class of ~s is ~s~%"
            #\と (unichar-combining-class #\と))
    (format #t "The combining class of ~s is ~s~%"

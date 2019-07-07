@@ -1,8 +1,10 @@
-(use-modules (gi) (gi glib-2)
+(use-modules (gi)
              (rnrs bytevectors)
              (srfi srfi-1)
              (ice-9 receive)
              (test automake-test-lib))
+
+(typelib-require ("GLib" "2.0"))
 
 ;; Convert a bytevector containing a Latin-1 string into
 ;; a bytevector containg a UTF8 string.

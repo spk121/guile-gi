@@ -1,7 +1,9 @@
-(use-modules (gi) (gi glib-2)
+(use-modules (gi)
              (rnrs bytevectors)
              (system foreign)
              (test automake-test-lib))
+
+(typelib-require ("GLib" "2.0"))
 
 ;; This is very clunky. There ought to be a better way to handle
 ;; output unichar.

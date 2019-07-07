@@ -1,8 +1,10 @@
-(use-modules (gi) (gi glib-2)
+(use-modules (gi)
              (rnrs bytevectors)
              (test automake-test-lib)
              (ice-9 receive)
              (srfi srfi-43))
+
+(typelib-require ("GLib" "2.0"))
 
 ;; FIXME: the ascii-alternates output parameter
 ;; is from a gchar*** output parameter.  This is

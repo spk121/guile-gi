@@ -16,9 +16,10 @@
 
 ;; Adapted somewhat from GLib's internal array-test.c test case
 
-(use-modules (gi glib-2)
-	     (rnrs bytevectors)
+(use-modules (rnrs bytevectors)
              (test automake-test-lib))
+
+(typelib-require ("GLib" "2.0"))
 
 (setlocale LC_ALL "")
 (automake-test

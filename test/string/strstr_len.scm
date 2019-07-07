@@ -1,6 +1,8 @@
-(use-modules (gi) (gi glib-2)
+(use-modules (gi)
              (rnrs bytevectors)
              (test automake-test-lib))
+
+(typelib-require ("GLib" "2.0"))
 
 ;; This won't work.  It violates our general understanding
 ;; that C char * return values marked as TRANSFER_EVERYTHING
@@ -16,4 +18,3 @@
  ;;                       "l")))
  ;;  (write out) (newline)
    'skipped))
-
