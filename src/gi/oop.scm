@@ -19,7 +19,7 @@
             <number-property>
             <signal>
 
-            connect connect-after
+            connect-after
 
             G_PARAM_READABLE
             G_PARAM_WRITABLE
@@ -35,7 +35,8 @@
             G_SIGNAL_ACTION
             G_SIGNAL_NO_HOOKS
             G_SIGNAL_MUST_COLLECT
-            G_SIGNAL_DEPRECATED))
+            G_SIGNAL_DEPRECATED)
+  #:replace (connect))
 
 (eval-when (expand load eval)
   ;; required for %typelib-module-name, which is used at expand time
@@ -92,6 +93,9 @@
   (slot-set! signal 'accumulator (get-keyword #:accumulator initargs #f))
   (slot-set! signal 'return-type (get-keyword #:return-type initargs 0))
   (slot-set! signal 'param-types (get-keyword #:param-types initargs '())))
+
+(define-method (connect (socket <input-output-port>) . args)
+  (apply (@ (guile) connect) socket args))
 
 (define-method (connect obj (signal <signal>) (handler <procedure>))
   ((@ (gi) signal-connect) obj (slot-ref signal 'name) handler))
