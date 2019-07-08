@@ -859,7 +859,7 @@ scm_signal_emit(SCM self, SCM s_name, SCM s_detail, SCM args)
 {
     GObject *obj;
     GType gtype;
-    char *name, *_detail;
+    char *name;
     gboolean after;
 
     GValue *values, retval = G_VALUE_INIT;
@@ -888,8 +888,9 @@ scm_signal_emit(SCM self, SCM s_name, SCM s_detail, SCM args)
     g_signal_query(sigid, &query_info);
 
     if (query_info.signal_flags & G_SIGNAL_DETAILED) {
-        if (scm_is_string(s_name)) {
-            _detail = scm_dynwind_or_bust("signal-emit", scm_to_utf8_string(s_detail));
+        if (scm_is_symbol(s_detail)) {
+            SCM detail_str = scm_symbol_to_string(s_detail);
+            char *_detail = scm_dynwind_or_bust("signal-emit", scm_to_utf8_string(detail_str));
             detail = g_quark_from_string(_detail);
         }
         else

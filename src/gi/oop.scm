@@ -100,18 +100,18 @@
 (define-method (connect obj (signal <signal>) (handler <procedure>))
   ((@ (gi) signal-connect) obj (slot-ref signal 'name) handler))
 
-(define-method (connect obj (signal <signal>) (detail <string>) (handler <procedure>))
+(define-method (connect obj (signal <signal>) (detail <symbol>) (handler <procedure>))
   ((@ (gi) signal-connect)
    obj
-   (string-append (slot-ref signal 'name) "::" detail)
+   (string-append (slot-ref signal 'name) "::" (symbol->string detail))
    handler))
 
 (define-method (connect-after obj (signal <signal>) (handler <procedure>))
   ((@ (gi) signal-connect) obj (slot-ref signal 'name) handler #t))
 
-(define-method (connect-after obj (signal <signal>) (detail <string>) (handler <procedure>))
+(define-method (connect-after obj (signal <signal>) (detail <symbol>) (handler <procedure>))
   ((@ (gi) signal-connect)
    obj
-   (string-append (slot-ref signal 'name) "::" detail)
+   (string-append (slot-ref signal 'name) "::" (symbol->string detail))
    handler
    #t))
