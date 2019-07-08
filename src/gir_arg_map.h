@@ -57,20 +57,20 @@ struct _GirArgMapEntry
 {
     GIArgInfo *arg_info;
 
-    GirArgDirection dir;
+    GirArgDirection direction;
     GirArgType type;
     // If this arg is optional in the Scheme GSubr.
     GirArgPresence presence;
     // This arg's index in g_callable_info_get_arg()
-    int index;
+    int arg_info_index;
     // This arg's position in input args of g_function_info_invoke
-    int invoke_in;
+    int cinvoke_input_index;
     // This arg's position in the output args of g_function_info_invoke
-    int invoke_out;
+    int cinvoke_output_index;
     // This arg's position int the Scheme GSubr
-    int in;
+    int gsubr_input_index;
     // This arg's position in the return values list
-    int out;
+    int gsubr_output_index;
     // When non-NULL, this is the entry of the array length argument
     // for this array argument.
     GirArgMapEntry *child;
@@ -80,15 +80,15 @@ typedef struct _GirArgMap GirArgMap;
 struct _GirArgMap
 {
     // SCM arguments.
-    int required_inputs_count;
-    int optional_inputs_count;
+    int gsubr_required_input_count;
+    int gsubr_optional_input_count;
 
     // SCM return values
-    int outputs_count;
+    int gsubr_output_count;
 
-    // g_function_invoke arg count
-    int invoked_inputs_count;
-    int invoked_outputs_count;
+    // For g_function_invoke call
+    int cinvoke_input_count;
+    int cinvoke_output_count;
 
     // An array of arg_map_entry
     GirArgMapEntry **pdata;
@@ -99,13 +99,20 @@ GirArgMap *gir_arg_map_new(GIFunctionInfo *function_info);
 void gir_arg_map_free(GirArgMap *am);
 void gir_arg_map_dump(const GirArgMap *am);
 
-void gir_arg_map_get_args_count(const GirArgMap *am, int *required, int *optional);
-GIArgInfo *gir_arg_map_get_arg_info(GirArgMap *am, int input);
-void gir_arg_map_get_invoke_args_count(const GirArgMap *am, int *input, int *output);
-gboolean gir_arg_map_get_invoke_indices(const GirArgMap *am, int input, int *invoked_in,
-                                        int *invoked_out);
-gboolean gir_arg_map_get_invoke_array_length_indices(const GirArgMap *am, int input,
-                                                     int *invoked_in, int *invoked_out);
-
+void gir_arg_map_get_gsubr_args_count(const GirArgMap *am, int *gsubr_required_input_count,
+                                      int *gsubr_optional_input_count);
+GIArgInfo *gir_arg_map_get_arg_info(GirArgMap *am, int gsubr_input_index);
+GIArgInfo *gir_arg_map_get_output_arg_info(GirArgMap *am, int cinvoke_output_index);
+gboolean gir_arg_map_has_output_array_size_index(GirArgMap *am, int cinvoke_output_index,
+                                                 int *cinvoke_output_array_size_index);
+void gir_arg_map_get_cinvoke_args_count(const GirArgMap *am, int *cinvoke_input_count,
+                                        int *cinvoke_output_count);
+gboolean gir_arg_map_get_cinvoke_indices(const GirArgMap *am, int gsubr_input_index,
+                                         int *cinvoke_input_index, int *cinvoke_output_index);
+gboolean gir_arg_map_get_cinvoke_array_length_indices(const GirArgMap *am, int gsubr_input_index,
+                                                      int *cinvoke_input_index,
+                                                      int *cinvoke_output_index);
+gboolean gir_arg_map_has_gsubr_output_index(const GirArgMap *am, int cinvoke_output_index,
+                                            int *gsubr_output_index);
 G_END_DECLS
 #endif
