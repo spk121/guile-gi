@@ -17,5 +17,5 @@
                  (equal? (gobject-get-property app "resource-base-path")
                          "/gi/guile/resource/base_path"))
            (with-object app (quit))))
-       (run (length (command-line)) (command-line)))
+       (run (command-line)))
      result)))

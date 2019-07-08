@@ -10,5 +10,5 @@
   (automake-test
    (begin
      (typelib-require ("Grl" "0.3"))
-     (init 0 #f)
+     (init)
      x)))

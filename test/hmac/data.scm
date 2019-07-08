@@ -7,8 +7,8 @@
         [len (bytevector-length bv)]
         [hmac (compute-hmac-for-data
                CHECKSUM_MD5
-               (string->utf8 "key") 3
-               bv len)])
+               (string->utf8 "key")
+               bv)])
    (write bv) (newline)
    (write hmac) (newline)
    (string=? hmac "80070713463e7749b90c2dc24911e275")))

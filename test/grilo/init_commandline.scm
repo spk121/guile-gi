@@ -3,9 +3,9 @@
 
 (typelib-require ("Grl" "0.3"))
 
-(define (args-for-init args)
-  (values (length args) args))
-
 (automake-test
- ((compose init args-for-init)
-  (command-line)))
+ (let ((cmdline (command-line)))
+   (format #t "Command line: ~S~%" cmdline)
+   (let ((init-status (init cmdline)))
+     (format #t "Init status: ~S~%" init-status)
+     init-status)))

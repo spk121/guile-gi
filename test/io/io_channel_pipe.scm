@@ -33,10 +33,11 @@
 
        ;;
        (receive (status nbytes-read)
-           (with-object channel (read-chars buf SIZ))
+           (with-object channel (read-chars buf))
          (write (utf8->string buf)) (newline)
            (write (list status nbytes-read)) (newline)
-           (and (string=?
+           (and (= status IOSTATUS_NORMAL)
+                (string=?
                  (utf8->string (subbytevector buf 0 5))
                  "hello")
                 (equal? 5               ; the number of bytes in 'hello'

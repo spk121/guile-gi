@@ -12,4 +12,4 @@
          (display "Hello, world")
          (newline)
          (with-object app (quit))))
-     (run (length (command-line)) (command-line)))))
+     (run (command-line)))))

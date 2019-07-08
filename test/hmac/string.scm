@@ -6,7 +6,7 @@
  (let* ([str "The quick brown fox jumps over the lazy dog"]
         [hmac (compute-hmac-for-string
                CHECKSUM_MD5
-               (string->utf8 "key") 3
+               (string->utf8 "key")
                str -1)])
    (write str) (newline)
    (write hmac) (newline)

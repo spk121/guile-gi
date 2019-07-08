@@ -6,7 +6,7 @@
 ;; This test exercises float32 argument conversions and return types.
 (automake-test
  (begin
-   (init 0 #f)
+   (init)
    (let ([entry (cast (entry:new) <GtkEntry>)])
      (with-object entry (set-alignment 0))
      (format #t "entry: ~S~%" entry)
