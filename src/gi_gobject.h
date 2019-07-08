@@ -5,9 +5,11 @@
 #include <girepository.h>
 #include "__gi_gobject.h"
 
+// *INDENT-OFF*
 G_BEGIN_DECLS
-    typedef void (*GuClosureExceptionHandler)(GValue *ret, guint n_param_values,
-                                              const GValue *params);
+// *INDENT-ON*
+
+typedef void (*GuClosureExceptionHandler)(GValue *ret, guint n_param_values, const GValue *params);
 
 typedef struct _GuGClosure
 {

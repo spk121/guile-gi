@@ -19,9 +19,16 @@
 #include <glib.h>
 #include <girepository.h>
 #include <libguile.h>
+#include "gir_arg_map.h"
+
+// *INDENT-OFF*
+G_BEGIN_DECLS
+// *INDENT-ON*
 
 void gir_function_define_gsubr(GIFunctionInfo *info, const char *prefix);
-SCM gir_function_invoke(GIFunctionInfo *info, const char *name, GObject *object, SCM args,
-                        GError **error);
+SCM gir_function_invoke(GIFunctionInfo *info, GirArgMap *amap, const char *name, GObject *object,
+                        SCM args, GError **error);
 void gir_init_function(void);
+
+G_END_DECLS
 #endif

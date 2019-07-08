@@ -171,7 +171,10 @@ scm_call_method(SCM s_object, SCM s_method_name, SCM s_list_of_args)
     GObject *object = scm_foreign_object_ref(s_object, OBJ_SLOT);
 
     GError *err = NULL;
-    SCM output = gir_function_invoke(info, method_name, object, s_list_of_args, &err);
+    // FIXME: cache this argmap
+    GirArgMap *amap = gir_arg_map_new(info);
+    SCM output = gir_function_invoke(info, amap, method_name, object, s_list_of_args, &err);
+    gir_arg_map_free(amap);
 
     /* If there is a GError, write an error, free, and exit. */
     if (err) {
