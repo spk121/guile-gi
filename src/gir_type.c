@@ -139,8 +139,6 @@ gir_type_document_type_from_gtype(GType gtype)
 void
 gir_type_register(GType gtype)
 {
-    g_assert(gtype != G_TYPE_NONE);
-
     GType parent = g_type_parent(gtype);
     if (parent != 0)
         gir_type_register(parent);
@@ -690,7 +688,7 @@ gir_init_types(void)
         scm_c_export(#x, NULL);                                         \
     } while (0)
 
-    // D(G_TYPE_NONE);
+    D(G_TYPE_NONE);
     D(G_TYPE_INTERFACE);
     D(G_TYPE_CHAR);
     D(G_TYPE_UCHAR);

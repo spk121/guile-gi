@@ -54,10 +54,8 @@ libguile_gi_la_SOURCES = \
  gi_giargument.h \
  gi_gobject.c \
  gi_gobject.h \
- gi_gparamspec.c \
- gi_gparamspec.h \
- gi_gsignal.c \
- gi_gsignal.h \
+ gi_gobject_private.c \
+ gi_gobject_private.h \
  gi_gvalue.c \
  gi_gvalue.h \
  gi_signal_closure.c \

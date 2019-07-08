@@ -21,8 +21,6 @@
 #include <libguile.h>
 #include "gi_gobject.h"
 #include "gi_gvalue.h"
-#include "gi_gsignal.h"
-#include "gi_gparamspec.h"
 #include "gi_signal_closure.h"
 #include "gi_giargument.h"
 #include "gir_typelib.h"
@@ -101,7 +99,6 @@ gir_init(void)
 
     gi_init_struct();
     gi_init_gvalue();
-    gi_init_gsignal();
 
     gi_init_giargument();
     gi_init_gobject();

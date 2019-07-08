@@ -17,16 +17,29 @@
   #:use-module (oop goops)
   #:export (<property>
             <number-property>
+            <signal>
+
+            connect connect-after
 
             G_PARAM_READABLE
             G_PARAM_WRITABLE
             G_PARAM_READWRITE
             G_PARAM_CONSTRUCT
-            G_PARAM_CONSTRUCT_ONLY))
+            G_PARAM_CONSTRUCT_ONLY
+
+            G_SIGNAL_RUN_FIRST
+            G_SIGNAL_RUN_LAST
+            G_SIGNAL_RUN_CLEANUP
+            G_SIGNAL_NO_RECURSE
+            G_SIGNAL_DETAILED
+            G_SIGNAL_ACTION
+            G_SIGNAL_NO_HOOKS
+            G_SIGNAL_MUST_COLLECT
+            G_SIGNAL_DEPRECATED))
 
 (eval-when (expand load eval)
   ;; required for %typelib-module-name, which is used at expand time
-  (load-extension "libguile-gi" "gi_init_gparamspec_private"))
+  (load-extension "libguile-gi" "gi_init_gobject_private"))
 
 (define-class <property> (<applicable-struct-with-setter>)
   name type nick blurb flags default)
@@ -60,3 +73,41 @@
   (slot-set! property 'min (get-keyword #:min initargs #f))
   (slot-set! property 'max (get-keyword #:max initargs #f))
   (slot-set! property 'default (get-keyword #:default initargs 0)))
+
+(define-class <signal> (<applicable-struct>)
+  name flags accumulator return-type param-types)
+
+(define-method (initialize (signal <signal>) initargs)
+  (next-method)
+  (slot-set! signal 'procedure
+             (lambda (obj . args)
+               (apply
+                (@ (gi) signal-emit)
+                obj
+                (slot-ref signal 'name)
+                args)))
+
+  (slot-set! signal 'name (get-keyword #:name initargs #f))
+  (slot-set! signal 'flags (get-keyword #:flags initargs 0))
+  (slot-set! signal 'accumulator (get-keyword #:accumulator initargs #f))
+  (slot-set! signal 'return-type (get-keyword #:return-type initargs 0))
+  (slot-set! signal 'param-types (get-keyword #:param-types initargs '())))
+
+(define-method (connect obj (signal <signal>) (handler <procedure>))
+  ((@ (gi) signal-connect) obj (slot-ref signal 'name) handler))
+
+(define-method (connect obj (signal <signal>) (detail <string>) (handler <procedure>))
+  ((@ (gi) signal-connect)
+   obj
+   (string-append (slot-ref signal 'name) "::" detail)
+   handler))
+
+(define-method (connect-after obj (signal <signal>) (handler <procedure>))
+  ((@ (gi) signal-connect) obj (slot-ref signal 'name) handler #t))
+
+(define-method (connect-after obj (signal <signal>) (detail <string>) (handler <procedure>))
+  ((@ (gi) signal-connect)
+   obj
+   (string-append (slot-ref signal 'name) "::" detail)
+   handler
+   #t))

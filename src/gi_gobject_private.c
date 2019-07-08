@@ -1,10 +1,11 @@
 /* -*- Mode: C; c-basic-offset: 4 -*- */
 #include "gi_gvalue.h"
 #include "gir_type.h"
-#include "gi_gparamspec.h"
+#include "gi_gobject_private.h"
 #include "gi_util.h"
 
 static SCM guile_property;
+static SCM guile_signal;
 static SCM guile_number_property;
 
 typedef enum
@@ -20,7 +21,18 @@ typedef enum
     PROPERTY_SLOT_COUNT
 } PropertySlot;
 
+typedef enum
+{
+    SIGNAL_SLOT_NAME,
+    SIGNAL_SLOT_FLAGS,
+    SIGNAL_SLOT_ACCUMULATOR,
+    SIGNAL_SLOT_RETURN_TYPE,
+    SIGNAL_SLOT_PARAM_TYPES,
+    SIGNAL_SLOT_COUNT
+} SignalSlot;
+
 static SCM property_slot_syms[PROPERTY_SLOT_COUNT];
+static SCM signal_slot_syms[SIGNAL_SLOT_COUNT];
 
 static SCM
 property_ref(SCM property, PropertySlot slot)
@@ -28,21 +40,32 @@ property_ref(SCM property, PropertySlot slot)
     return scm_slot_ref(property, property_slot_syms[slot]);
 }
 
+static SCM
+signal_ref(SCM property, PropertySlot slot)
+{
+    return scm_slot_ref(property, signal_slot_syms[slot]);
+}
+
 static gpointer
-init_guile_property_type(gpointer data)
+init_gi_oop_once(gpointer data)
 {
     guile_property = scm_c_public_ref("gi oop", "<property>");
     guile_number_property = scm_c_public_ref("gi oop", "<number-property>");
-
+    guile_signal = scm_c_public_ref("gi oop", "<signal>");
     return NULL;
+}
+
+void
+init_gi_oop()
+{
+    static GOnce _init = G_ONCE_INIT;
+    g_once (&_init, init_gi_oop_once, NULL);
 }
 
 GParamSpec *
 gi_gparamspec_from_scm(SCM x)
 {
-    static GOnce _init = G_ONCE_INIT;
-
-    g_once (&_init, init_guile_property_type, NULL);
+    init_gi_oop();
 
     SCM_ASSERT_TYPE(SCM_IS_A_P(x, guile_property),
                     x, SCM_ARG1, "%scm->gparamspec", "property");
@@ -118,8 +141,61 @@ gi_gparamspec_from_scm(SCM x)
     }
 }
 
+/* static gboolean */
+/* scm_signal_accu() */
+
+SignalSpec *
+gi_signalspec_from_obj(SCM obj)
+{
+    init_gi_oop();
+
+    char *name;
+    GType return_type;
+    guint n_params;
+    GType *params;
+    SCM sparams, saccu;
+    GSignalFlags flags;
+    SignalSpec *spec = NULL;
+
+    SCM_ASSERT_TYPE(SCM_IS_A_P(obj, guile_signal), obj, SCM_ARG1, "%scm->signalspec", "signal");
+
+    name = scm_to_utf8_string(signal_ref(obj, SIGNAL_SLOT_NAME));
+    return_type = scm_to_gtype(signal_ref(obj, SIGNAL_SLOT_RETURN_TYPE));
+    sparams = signal_ref(obj, SIGNAL_SLOT_PARAM_TYPES);
+    saccu = signal_ref(obj, SIGNAL_SLOT_ACCUMULATOR);
+    n_params = scm_to_uint(scm_length(sparams));
+    params = g_new0(GType, n_params);
+
+    for (guint i = 0; i < n_params; i++, sparams = scm_cdr(sparams))
+        params[i] = scm_to_gtype(scm_car(sparams));
+
+    flags = scm_to_uint(signal_ref(obj, SIGNAL_SLOT_FLAGS));
+
+    spec = g_new0(SignalSpec, 1);
+    spec->signal_name = name;
+    spec->signal_flags = flags;
+    spec->accumulator = NULL;
+    spec->accu_data = NULL;
+    spec->return_type = return_type;
+    spec->n_params = n_params;
+    spec->param_types = params;
+    return spec;
+}
+
 void
-gi_init_gparamspec_private(void)
+gi_free_signalspec(SignalSpec *spec)
+{
+    if (spec) {
+        if (spec->param_types) {
+            g_free(spec->param_types);
+            spec->param_types = NULL;
+        }
+        g_free(spec);
+    }
+}
+
+void
+gi_init_gobject_private(void)
 {
     property_slot_syms[PROPERTY_SLOT_NAME] = scm_from_utf8_symbol("name");
     property_slot_syms[PROPERTY_SLOT_TYPE] = scm_from_utf8_symbol("type");
@@ -130,11 +206,28 @@ gi_init_gparamspec_private(void)
     property_slot_syms[PROPERTY_SLOT_MIN] = scm_from_utf8_symbol("min");
     property_slot_syms[PROPERTY_SLOT_MAX] = scm_from_utf8_symbol("max");
 
+    signal_slot_syms[SIGNAL_SLOT_NAME] = scm_from_utf8_symbol("name");
+    signal_slot_syms[SIGNAL_SLOT_FLAGS] = scm_from_utf8_symbol("flags");
+    signal_slot_syms[SIGNAL_SLOT_ACCUMULATOR] = scm_from_utf8_symbol("accumulator");
+    signal_slot_syms[SIGNAL_SLOT_RETURN_TYPE] = scm_from_utf8_symbol("return-type");
+    signal_slot_syms[SIGNAL_SLOT_PARAM_TYPES] = scm_from_utf8_symbol("param-types");
+
+
 #define D(x) scm_permanent_object(scm_c_define(#x, scm_from_ulong(x)))
     D(G_PARAM_READABLE);
     D(G_PARAM_WRITABLE);
     D(G_PARAM_READWRITE);
     D(G_PARAM_CONSTRUCT);
     D(G_PARAM_CONSTRUCT_ONLY);
+
+    D(G_SIGNAL_RUN_FIRST);
+    D(G_SIGNAL_RUN_LAST);
+    D(G_SIGNAL_RUN_CLEANUP);
+    D(G_SIGNAL_NO_RECURSE);
+    D(G_SIGNAL_DETAILED);
+    D(G_SIGNAL_ACTION);
+    D(G_SIGNAL_NO_HOOKS);
+    D(G_SIGNAL_MUST_COLLECT);
+    D(G_SIGNAL_DEPRECATED);
 #undef D
 }

@@ -165,7 +165,9 @@ GRILO_TESTS = \
 
 OOP_TESTS = \
  oop/property-basics.scm \
- oop/guile-types.scm
+ oop/guile-types.scm \
+ oop/signal-simple.scm \
+ oop/signal-detailed.scm
 
 TESTS = \
  $(TYPELIB_TESTS) \

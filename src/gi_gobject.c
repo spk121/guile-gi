@@ -14,8 +14,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "gi_gobject.h"
 #include "gi_gvalue.h"
-#include "gi_gsignal.h"
-#include "gi_gparamspec.h"
+#include "gi_gobject_private.h"
 #include "gi_signal_closure.h"
 #include "gi_util.h"
 #include "gir_typelib.h"
@@ -224,75 +223,8 @@ gugobject_watch_closure(SCM self, GClosure *closure)
     g_closure_add_invalidate_notifier(closure, data, gugobject_unwatch_closure);
 }
 
-static void
-gug_toggle_notify(gpointer data, GObject *object, gboolean is_last_ref)
-{
-    /* Avoid thread safety problems by using qdata for wrapper retrieval
-     * instead of the user data argument.
-     * See: https://bugzilla.gnome.org/show_bug.cgi?id=709223
-     */
-
-    // SCM self = SCM_PACK_POINTER (g_object_get_qdata (object, gi_gobject_wrapper_key));
-    /* if (self) { */
-    /*     if (is_last_ref) */
-    /*         Py_DECREF(self); */
-    /*     else */
-    /*         Py_INCREF(self); */
-    /* } */
-}
-
-static inline gboolean
-gugobject_toggle_ref_is_required(SCM self)
-{
-    SCM dict = gi_gobject_get_inst_dict(self);
-    // FIXME - maybe check if hash table is not empty
-    return scm_is_true(dict);
-}
-
-static inline gboolean
-gugobject_toggle_ref_is_active(SCM self)
-{
-    unsigned flags = gi_gobject_get_flags(self);
-    return flags & GI_GOBJECT_USING_TOGGLE_REF;
-}
-
-
-
 /****************************************************************/
 /* SCM GObject behavior                                         */
-
-/* Compare with pygobject-object.c:1115 pygobject_dealloc */
-void
-gi_gobject_finalizer(SCM self)
-{
-    /* Clear out the weak reference vector, if it exists. */
-    gi_gobject_set_weakreflist(self, SCM_BOOL_F);
-
-    /* MLG - PyGObject says this is here because finalization might
-     * cause a new type to be created?  Does that matter to use? */
-    gugobject_get_inst_data(self);
-    gugobject_clear(self);
-}
-
-static inline int
-gugobject_clear(SCM self)
-{
-    GObject *obj = gi_gobject_get_obj(self);
-    if (obj) {
-        g_object_set_qdata_full(obj, gi_gobject_wrapper_key, NULL, NULL);
-        if (gugobject_toggle_ref_is_active(self)) {
-            g_object_remove_toggle_ref(obj, gug_toggle_notify, NULL);
-            unsigned flags = gi_gobject_get_flags(self);
-            gi_gobject_set_flags(self, flags & ~GI_GOBJECT_USING_TOGGLE_REF);
-        }
-        else {
-            g_object_unref(obj);
-        }
-        gi_gobject_set_obj(self, NULL);
-    }
-    gi_gobject_set_inst_dict(self, SCM_BOOL_F);
-    return 0;
-}
 
 static SCM
 scm_signal_connect(SCM self, SCM s_name, SCM callback, SCM s_after)
@@ -684,7 +616,6 @@ scm_register_guile_specified_gobject_type(SCM s_type_name,
             sspec = gi_signalspec_from_obj(scm_list_ref(s_signals, scm_from_size_t(i)));
             g_ptr_array_add(signals, sspec);
         }
-
     }
 
     new_type = register_guile_specified_gobject_type(type_name,
@@ -933,6 +864,74 @@ scm_gobject_get_property(SCM self, SCM sname)
     return ret;
 }
 
+static SCM
+scm_signal_emit(SCM self, SCM s_name, SCM s_detail, SCM args)
+{
+    GObject *obj;
+    GType gtype;
+    char *name, *_detail;
+    gboolean after;
+
+    GValue *values, retval = G_VALUE_INIT;
+    GSignalQuery query_info;
+    guint sigid;
+    GQuark detail = 0;
+
+    if (SCM_UNBNDP(args)) args = SCM_EOL;
+
+    // make sure we're dealing with an introspectable object
+    SCM_ASSERT_TYPE(SCM_INSTANCEP(self), self, SCM_ARG1, "signal-emit", "GObject");
+    gtype = gir_type_get_gtype_from_obj(self);
+    SCM_ASSERT_TYPE(gtype > G_TYPE_INVALID, self, SCM_ARG1, "signal-emit", "GObject");
+
+    // fetch the actual object type
+    obj = scm_foreign_object_ref(self, GIR_TYPE_SLOT_OBJ);
+    gtype = G_OBJECT_TYPE(obj);
+
+    scm_dynwind_begin(0);
+    name = scm_dynwind_or_bust("signal-emit", scm_to_utf8_string(s_name));
+
+    sigid = g_signal_lookup(name, gtype);
+    if (!sigid)
+        scm_misc_error("signal-emit", "~A: unknown signal name ~A", scm_list_2(self, s_name));
+
+    g_signal_query(sigid, &query_info);
+
+    if (query_info.signal_flags & G_SIGNAL_DETAILED) {
+        if (scm_is_string(s_name)) {
+            _detail = scm_dynwind_or_bust("signal-emit", scm_to_utf8_string(s_detail));
+            detail = g_quark_from_string(_detail);
+        }
+        else
+            detail = scm_to_uint32(s_detail);
+    }
+    else if (!SCM_UNBNDP(s_detail))
+        args = scm_cons(s_detail, args);
+    scm_dynwind_end();
+
+    if (scm_to_uint(scm_length(args)) != query_info.n_params)
+        scm_misc_error("signal-emit", "~A: signal ~A has ~d params, but ~d were supplied",
+                       scm_list_4(self, s_name, scm_from_uint32(query_info.n_params),
+                                  scm_length(args)));
+
+    values = g_new0(GValue, query_info.n_params + 1);
+    g_value_init(values, gtype);
+    gi_gvalue_from_scm_with_error("signal-emit", values, self, SCM_ARG1);
+    SCM iter = args;
+    for(guint i = 0; i < query_info.n_params; i++, iter = scm_cdr(iter)) {
+        g_value_init(values + i + 1, query_info.param_types[i]);
+        gi_gvalue_from_scm_with_error("signal-emit", values + i + 1, iter, SCM_ARGn);
+    }
+
+    if (query_info.return_type != G_TYPE_NONE)
+        g_value_init(&retval, query_info.return_type);
+    g_signal_emitv(values, sigid, detail, &retval);
+
+    if (query_info.return_type != G_TYPE_NONE)
+        return gi_gvalue_as_scm(&retval, FALSE);
+    else
+        return SCM_UNSPECIFIED;
+}
 
 void
 gi_init_gobject(void)
@@ -951,6 +950,7 @@ gi_init_gobject(void)
     scm_c_define_gsubr("gobject-handler-unblock-by-func", 2, 0, 0,
                        scm_gobject_handler_unblock_by_func);
     scm_c_define_gsubr("signal-connect", 3, 1, 0, scm_signal_connect);
+    scm_c_define_gsubr("signal-emit", 2, 1, 1, scm_signal_emit);
     scm_c_export("register-type",
                  "make-gobject",
                  "gobject-set-property!",
@@ -960,5 +960,6 @@ gi_init_gobject(void)
                  "gobject-handler-unblock-by-func",
                  "gobject-printer",
                  "signal-connect",
+                 "signal-emit",
                  NULL);
 }

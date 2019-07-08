@@ -227,6 +227,7 @@ gi_gvalue_from_scm(GValue *value, SCM obj)
     }
 
     case G_TYPE_INTERFACE:
+    case G_TYPE_OBJECT:
         /* we only handle interface types that have a GObject prereq */
         if (g_type_is_a(value_type, G_TYPE_OBJECT)) {
             if (scm_is_false(obj)) {

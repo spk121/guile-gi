@@ -1,8 +1,10 @@
-#ifndef _GI_GSIGNAL_H_
-#define _GI_GSIGNAL_H_
+#ifndef _GI_GOBJECT_PRIVATE_H_
+#define _GI_GOBJECT_PRIVATE_H_
 #include <libguile.h>
 #include <glib.h>
 #include <glib-object.h>
+
+GParamSpec *gi_gparamspec_from_scm(SCM x);
 
 typedef struct _SignalSpec
 {
@@ -17,6 +19,5 @@ typedef struct _SignalSpec
 
 SignalSpec *gi_signalspec_from_obj(SCM obj);
 void gi_free_signalspec(SignalSpec *spec);
-void gi_init_gsignal(void);
 
 #endif
