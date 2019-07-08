@@ -339,16 +339,6 @@ scm_gobject_handler_unblock_by_func(SCM self, SCM func)
     return scm_from_uint(retval);
 }
 
-
-static void
-marshal_signals(GClosure *closure,
-                GValue *return_value,
-                guint n_param_values,
-                const GValue *param_values, gpointer invocation_hint, gpointer marshal_data)
-{
-
-}
-
 static void
 make_new_signal(SignalSpec *signal_spec, gpointer user_data)
 {
@@ -356,7 +346,7 @@ make_new_signal(SignalSpec *signal_spec, gpointer user_data)
     g_signal_newv(signal_spec->signal_name, instance_type, signal_spec->signal_flags, NULL,     /* closure */
                   signal_spec->accumulator,
                   signal_spec->accu_data,
-                  marshal_signals,
+                  NULL,
                   signal_spec->return_type, signal_spec->n_params, signal_spec->param_types);
 }
 
