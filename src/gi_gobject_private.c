@@ -46,6 +46,9 @@ signal_ref(SCM property, PropertySlot slot)
     return scm_slot_ref(property, signal_slot_syms[slot]);
 }
 
+static SCM signal_accu_first_wins;
+static SCM signal_accu_true_handled;
+
 static gpointer
 init_gi_oop_once(gpointer data)
 {
@@ -141,8 +144,35 @@ gi_gparamspec_from_scm(SCM x)
     }
 }
 
-/* static gboolean */
-/* scm_signal_accu() */
+static gboolean
+scm_signal_accu(GSignalInvocationHint *ihint,
+                GValue *seed,
+                const GValue *element,
+                gpointer procedure)
+{
+    SCM _seed, _element, result;
+    _seed = gi_gvalue_as_scm(seed, FALSE);
+    _element = gi_gvalue_as_scm(element, FALSE);
+
+    result = scm_call_2(SCM_PACK_POINTER(procedure), _seed, _element);
+    switch (scm_c_nvalues(result))
+    {
+    case 0:
+        return TRUE;
+    case 1:
+        g_return_val_if_fail(!gi_gvalue_from_scm(seed, result), FALSE);
+        return TRUE;
+    case 2:
+    {
+        gboolean ret = scm_is_true(result);
+        SCM next_seed = scm_c_value_ref(result, 2);
+        g_return_val_if_fail(!gi_gvalue_from_scm(seed, next_seed), FALSE);
+        return ret;
+    }
+    default:
+        g_return_val_if_reached(FALSE);
+    }
+}
 
 SignalSpec *
 gi_signalspec_from_obj(SCM obj)
@@ -174,8 +204,22 @@ gi_signalspec_from_obj(SCM obj)
     spec = g_new0(SignalSpec, 1);
     spec->signal_name = name;
     spec->signal_flags = flags;
-    spec->accumulator = NULL;
-    spec->accu_data = NULL;
+    if (SCM_UNBNDP(saccu) || scm_is_false(saccu)) {
+        spec->accumulator = NULL;
+        spec->accu_data = NULL;
+    }
+    else if (scm_is_eq(saccu, signal_accu_first_wins)) {
+        spec->accumulator = g_signal_accumulator_first_wins;
+        spec->accu_data = NULL;
+    }
+    else if (scm_is_eq(saccu, signal_accu_true_handled)) {
+        spec->accumulator = g_signal_accumulator_true_handled;
+        spec->accu_data = NULL;
+    }
+    else if (scm_is_true(scm_procedure_p(saccu))) {
+        spec->accumulator = scm_signal_accu;
+        spec->accu_data = SCM_UNPACK_POINTER(saccu);
+    }
     spec->return_type = return_type;
     spec->n_params = n_params;
     spec->param_types = params;
@@ -212,6 +256,8 @@ gi_init_gobject_private(void)
     signal_slot_syms[SIGNAL_SLOT_RETURN_TYPE] = scm_from_utf8_symbol("return-type");
     signal_slot_syms[SIGNAL_SLOT_PARAM_TYPES] = scm_from_utf8_symbol("param-types");
 
+    signal_accu_first_wins = scm_from_utf8_symbol("first-wins");
+    signal_accu_true_handled = scm_from_utf8_symbol("true-handled");
 
 #define D(x) scm_permanent_object(scm_c_define(#x, scm_from_ulong(x)))
     D(G_PARAM_READABLE);

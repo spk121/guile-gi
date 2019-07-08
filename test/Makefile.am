@@ -167,7 +167,8 @@ OOP_TESTS = \
  oop/property-basics.scm \
  oop/guile-types.scm \
  oop/signal-simple.scm \
- oop/signal-detailed.scm
+ oop/signal-detailed.scm \
+ oop/signal-accumulator.scm
 
 TESTS = \
  $(TYPELIB_TESTS) \
