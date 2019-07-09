@@ -3,7 +3,7 @@
 #include <libguile.h>
 #include <glib-object.h>
 #include <girepository.h>
-#include "__gi_gobject.h"
+#include "gir_type.h"
 
 G_BEGIN_DECLS
     typedef void (*GuClosureExceptionHandler)(GValue *ret, guint n_param_values,
@@ -47,9 +47,16 @@ void gi_init_gobject(void);
 GClosure *gclosure_from_scm_func(SCM object, SCM func);
 SCM gi_gobject_lookup_class(GType);
 SCM gi_gobject_new(GIObjectInfo *info, GObject *obj);
-SCM gi_arg_gobject_to_scm(GIArgument *arg, GITransfer transfer);
-SCM gi_arg_gobject_to_scm_called_from_c(GIArgument *arg, GITransfer transfer);
 SCM scm_gobject_printer(SCM self, SCM port);
+
+#define gi_gobject_get_obj(obj) scm_foreign_object_ref(obj, GIR_TYPE_SLOT_OBJ)
+#define gi_gobject_set_obj(obj, val) scm_foreign_object_set_x(obj, GIR_TYPE_SLOT_OBJ, val)
+#define gi_gobject_get_flags(obj) GPOINTER_TO_INT(scm_foreign_object_ref(obj, GIR_TYPE_SLOT_FLAGS))
+#define gi_gobject_set_flags(obj, val) (scm_foreign_object_set_x(obj, GIR_TYPE_SLOT_FLAGS, GINT_TO_POINTER(val)))
+#define gi_gobject_get_inst_dict(obj) scm_foreign_object_ref(obj, GIR_TYPE_SLOT_INST_DICT)
+#define gi_gobject_set_inst_dict(obj, val) scm_foreign_object_set_x(obj, GIR_TYPE_SLOT_INST_DICT, val)
+#define gi_gobject_get_weakreflist(obj) scm_foreign_object_get(obj, GIR_TYPE_SLOT_WEAKREFLIST)
+#define gi_gobject_set_weakreflist(obj, val) scm_foreign_object_set_x(obj, GIR_TYPE_SLOT_WEAKREFLIST, val)
 
 G_END_DECLS
 #endif

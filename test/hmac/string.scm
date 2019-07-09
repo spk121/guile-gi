@@ -1,6 +1,8 @@
-(use-modules (gi) (gi glib-2)
+(use-modules (gi)
              (rnrs bytevectors)
              (test automake-test-lib))
+
+(typelib-require ("GLib" "2.0"))
 
 (automake-test
  (let* ([str "The quick brown fox jumps over the lazy dog"]

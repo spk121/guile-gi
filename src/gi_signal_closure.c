@@ -73,12 +73,14 @@ gi_signal_closure_marshal(GClosure *closure,
     // Scheme function stored in *closure.
 
     signal_info = pc->signal_info;
-    n_sig_info_args = g_callable_info_get_n_args(signal_info);
-    g_assert_cmpint(n_sig_info_args, >=, 0);
-    /* the first argument to a signal callback is instance,
-     * but instance is not counted in the introspection data */
-    sig_info_highest_arg = n_sig_info_args + 1;
-    g_assert_cmpint(sig_info_highest_arg, ==, n_param_values);
+    if (signal_info) {
+        n_sig_info_args = g_callable_info_get_n_args(signal_info);
+        g_assert_cmpint(n_sig_info_args, >=, 0);
+        /* the first argument to a signal callback is instance,
+         * but instance is not counted in the introspection data */
+        sig_info_highest_arg = n_sig_info_args + 1;
+        g_assert_cmpint(sig_info_highest_arg, ==, n_param_values);
+    }
 
     /* construct a scheme list for the parameter values */
     params = SCM_EOL;
@@ -115,8 +117,6 @@ gi_signal_closure_new(SCM instance,
     g_return_val_if_fail(scm_is_true(instance), NULL);
 
     signal_info = lookup_signal_from_g_type(g_type, signal_name);
-    if (signal_info == NULL)
-        return NULL;
 
     closure = g_closure_new_simple(sizeof(GuGClosure), NULL);
     g_closure_add_invalidate_notifier(closure, NULL, signal_closure_invalidate);

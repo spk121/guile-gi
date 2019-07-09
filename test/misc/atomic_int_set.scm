@@ -1,6 +1,8 @@
-(use-modules (gi) (gi glib-2)
+(use-modules (gi)
              (rnrs bytevectors)
              (test automake-test-lib))
+
+(typelib-require ("GLib" "2.0"))
 
 ;; At the moment this test fails on 64-bit platforms because the
 ;; bytevector is supposed to be being passed as a pointer, but, it is
@@ -14,4 +16,3 @@
    ;; Why does atomic-int-set received 'bv' as a 32-bit pointer?
    (atomic-int-set bv 1)
    (equal? (bytevector-s32-native-ref bv 0) 1)))
-

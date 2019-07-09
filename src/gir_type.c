@@ -139,8 +139,6 @@ gir_type_document_type_from_gtype(GType gtype)
 void
 gir_type_register(GType gtype)
 {
-    g_assert(gtype != G_TYPE_NONE);
-
     GType parent = g_type_parent(gtype);
     if (parent != 0)
         gir_type_register(parent);
@@ -663,7 +661,7 @@ scm_type_dump_type_table(void)
 static SCM
 scm_type_cast(SCM s_obj, SCM s_fo_type)
 {
-    gpointer obj = scm_foreign_object_ref(s_obj, OBJ_SLOT);
+    gpointer obj = scm_foreign_object_ref(s_obj, GIR_TYPE_SLOT_OBJ);
     GType type = gir_type_get_gtype_from_obj(s_fo_type);
     return gir_type_make_object(type, obj, 0);
 }
@@ -690,7 +688,7 @@ gir_init_types(void)
         scm_c_export(#x, NULL);                                         \
     } while (0)
 
-    // D(G_TYPE_NONE);
+    D(G_TYPE_NONE);
     D(G_TYPE_INTERFACE);
     D(G_TYPE_CHAR);
     D(G_TYPE_UCHAR);

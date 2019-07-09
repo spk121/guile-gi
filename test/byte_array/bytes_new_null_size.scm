@@ -15,8 +15,9 @@
 ;;  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 (use-modules (gi)
-             (gi glib-2)
              (test automake-test-lib))
+
+(typelib-require ("GLib" "2.0"))
 
 (setlocale LC_ALL "C")
 (automake-test

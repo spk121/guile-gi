@@ -1,7 +1,9 @@
-(use-modules (gi) (gi glib-2)
+(use-modules (gi)
              (rnrs bytevectors)
              (srfi srfi-1)
              (test automake-test-lib))
+
+(typelib-require ("GLib" "2.0"))
 
 (define SIZ 10)
 

@@ -15,9 +15,10 @@
 ;;  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 (use-modules (gi)
-             (gi glib-2)
              (ice-9 receive)
              (test automake-test-lib))
+
+(typelib-require ("GLib" "2.0"))
 
 (setlocale LC_ALL "C")
 (automake-test

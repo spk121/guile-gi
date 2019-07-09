@@ -221,20 +221,19 @@ gi_gvalue_from_scm(GValue *value, SCM obj)
         else if (scm_is_true(scm_bytevector_p(obj)))
             g_value_set_pointer(value, SCM_BYTEVECTOR_CONTENTS(obj));
         else if (gir_type_get_gtype_from_obj(obj) > G_TYPE_INVALID)
-            g_value_set_object(value, scm_foreign_object_ref(obj, OBJ_SLOT));
+            g_value_set_object(value, gi_gobject_get_obj(obj));
         else
             return GI_GVALUE_WRONG_TYPE;
     }
 
     case G_TYPE_INTERFACE:
+    case G_TYPE_OBJECT:
         /* we only handle interface types that have a GObject prereq */
         if (g_type_is_a(value_type, G_TYPE_OBJECT)) {
             if (scm_is_false(obj)) {
                 g_value_set_object(value, NULL);
                 return 0;
             }
-            else if (!SCM_IS_A_P(obj, gi_gobject_type))
-                return GI_GVALUE_WRONG_TYPE;
             else if (!G_TYPE_CHECK_INSTANCE_TYPE(gi_gobject_get_obj(obj), value_type))
                 return GI_GVALUE_WRONG_TYPE;
             else {

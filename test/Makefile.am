@@ -149,11 +149,6 @@ GAPPLICATION_TESTS = \
 FUZZY_MATCH_TESTS = \
  misc/fuzzy_match.scm
 
-PARAMSPEC_TESTS = \
- paramspec/getset.scm \
- paramspec/getset-syntax.scm \
- paramspec/default.scm
-
 GTK_ENTRY_TESTS = \
  gtk_entry/set_alignment.scm \
  gtk_entry/set_alignment_zero.scm \
@@ -167,6 +162,13 @@ GRILO_TESTS = \
  grilo/audio_simple.scm \
  grilo/audio_multiple_artists.scm \
  grilo/init_commandline.scm
+
+OOP_TESTS = \
+ oop/property-basics.scm \
+ oop/guile-types.scm \
+ oop/signal-simple.scm \
+ oop/signal-detailed.scm \
+ oop/signal-accumulator.scm
 
 TESTS = \
  $(TYPELIB_TESTS) \
@@ -193,10 +195,10 @@ TESTS = \
  $(BYTE_ARRAY_TESTS) \
  $(GAPPLICATION_TESTS) \
  $(FUZZY_MATCH_TESTS) \
- $(PARAMSPEC_TESTS) \
  $(GTK_ENTRY_TESTS) \
  $(GTK_LAYOUT_TESTS) \
  $(GRILO_TESTS) \
+ $(OOP_TESTS) \
  misc/softerror_create.scm \
  misc/use-typelibs.scm
 

@@ -1,8 +1,10 @@
-(use-modules (gi) (gi glib-2)
+(use-modules (gi)
              (ice-9 hash-table)
              (system foreign)
              (rnrs bytevectors)
              (test automake-test-lib))
+
+(typelib-require ("GLib" "2.0"))
 
 ;; FIXME: What the test is intended to do is set up a log handler, and
 ;; then write to the log.  But the only introspected log writing

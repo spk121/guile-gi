@@ -1,7 +1,9 @@
-(use-modules (gi) (gi glib-2)
+(use-modules (gi)
              (system foreign)
              (rnrs bytevectors)
              (test automake-test-lib))
+
+(typelib-require ("GLib" "2.0"))
 
 ;; Allocate way too much memory
 (define SIZ MAXINT64)

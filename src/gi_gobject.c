@@ -14,8 +14,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "gi_gobject.h"
 #include "gi_gvalue.h"
-#include "gi_gsignal.h"
-#include "gi_gparamspec.h"
+#include "gi_gobject_private.h"
 #include "gi_signal_closure.h"
 #include "gi_util.h"
 #include "gir_typelib.h"
@@ -182,7 +181,7 @@ gi_gobject_new_full(GIObjectInfo *info, GObject *obj, gboolean steal, gpointer g
         self = gir_type_make_object(G_OBJECT_TYPE(obj), obj, 0);
 
         if (g_object_is_floating(obj))
-            scm_foreign_object_unsigned_set_x(self, FLAGS_SLOT, GI_GOBJECT_GOBJECT_WAS_FLOATING);
+            scm_foreign_object_unsigned_set_x(self, GIR_TYPE_SLOT_FLAGS, GI_GOBJECT_GOBJECT_WAS_FLOATING);
         if (!steal || (gi_gobject_get_flags(self) & GI_GOBJECT_GOBJECT_WAS_FLOATING))
             g_object_ref_sink(obj);
     }
@@ -224,75 +223,8 @@ gugobject_watch_closure(SCM self, GClosure *closure)
     g_closure_add_invalidate_notifier(closure, data, gugobject_unwatch_closure);
 }
 
-static void
-gug_toggle_notify(gpointer data, GObject *object, gboolean is_last_ref)
-{
-    /* Avoid thread safety problems by using qdata for wrapper retrieval
-     * instead of the user data argument.
-     * See: https://bugzilla.gnome.org/show_bug.cgi?id=709223
-     */
-
-    // SCM self = SCM_PACK_POINTER (g_object_get_qdata (object, gi_gobject_wrapper_key));
-    /* if (self) { */
-    /*     if (is_last_ref) */
-    /*         Py_DECREF(self); */
-    /*     else */
-    /*         Py_INCREF(self); */
-    /* } */
-}
-
-static inline gboolean
-gugobject_toggle_ref_is_required(SCM self)
-{
-    SCM dict = gi_gobject_get_inst_dict(self);
-    // FIXME - maybe check if hash table is not empty
-    return scm_is_true(dict);
-}
-
-static inline gboolean
-gugobject_toggle_ref_is_active(SCM self)
-{
-    unsigned flags = gi_gobject_get_flags(self);
-    return flags & GI_GOBJECT_USING_TOGGLE_REF;
-}
-
-
-
 /****************************************************************/
 /* SCM GObject behavior                                         */
-
-/* Compare with pygobject-object.c:1115 pygobject_dealloc */
-void
-gi_gobject_finalizer(SCM self)
-{
-    /* Clear out the weak reference vector, if it exists. */
-    gi_gobject_set_weakreflist(self, SCM_BOOL_F);
-
-    /* MLG - PyGObject says this is here because finalization might
-     * cause a new type to be created?  Does that matter to use? */
-    gugobject_get_inst_data(self);
-    gugobject_clear(self);
-}
-
-static inline int
-gugobject_clear(SCM self)
-{
-    GObject *obj = gi_gobject_get_obj(self);
-    if (obj) {
-        g_object_set_qdata_full(obj, gi_gobject_wrapper_key, NULL, NULL);
-        if (gugobject_toggle_ref_is_active(self)) {
-            g_object_remove_toggle_ref(obj, gug_toggle_notify, NULL);
-            unsigned flags = gi_gobject_get_flags(self);
-            gi_gobject_set_flags(self, flags & ~GI_GOBJECT_USING_TOGGLE_REF);
-        }
-        else {
-            g_object_unref(obj);
-        }
-        gi_gobject_set_obj(self, NULL);
-    }
-    gi_gobject_set_inst_dict(self, SCM_BOOL_F);
-    return 0;
-}
 
 static SCM
 scm_signal_connect(SCM self, SCM s_name, SCM callback, SCM s_after)
@@ -315,7 +247,7 @@ scm_signal_connect(SCM self, SCM s_name, SCM callback, SCM s_after)
     SCM_ASSERT_TYPE(gtype > G_TYPE_INVALID, self, SCM_ARG1, "signal-connect", "GObject");
 
     // fetch the actual object type
-    obj = scm_foreign_object_ref(self, OBJ_SLOT);
+    obj = scm_foreign_object_ref(self, GIR_TYPE_SLOT_OBJ);
     gtype = G_OBJECT_TYPE(obj);
 
     scm_dynwind_begin(0);
@@ -377,7 +309,7 @@ scm_gobject_handler_block_by_func(SCM self, SCM func)
         scm_misc_error("gobject-handler-block-by-func",
                        "nothing connected to ~S", scm_list_1(func));
 
-    obj = scm_foreign_object_ref(self, OBJ_SLOT);
+    obj = scm_foreign_object_ref(self, GIR_TYPE_SLOT_OBJ);
     retval = g_signal_handlers_block_matched(obj,
                                              G_SIGNAL_MATCH_CLOSURE, 0, 0, closure, NULL, NULL);
     return scm_from_uint(retval);
@@ -401,20 +333,10 @@ scm_gobject_handler_unblock_by_func(SCM self, SCM func)
         scm_misc_error("gobject-handler-unblock-by-func",
                        "nothing connected to ~S", scm_list_1(func));
 
-    obj = scm_foreign_object_ref(self, OBJ_SLOT);
+    obj = scm_foreign_object_ref(self, GIR_TYPE_SLOT_OBJ);
     retval = g_signal_handlers_unblock_matched(obj,
                                                G_SIGNAL_MATCH_CLOSURE, 0, 0, closure, NULL, NULL);
     return scm_from_uint(retval);
-}
-
-
-static void
-marshal_signals(GClosure *closure,
-                GValue *return_value,
-                guint n_param_values,
-                const GValue *param_values, gpointer invocation_hint, gpointer marshal_data)
-{
-
 }
 
 static void
@@ -424,7 +346,7 @@ make_new_signal(SignalSpec *signal_spec, gpointer user_data)
     g_signal_newv(signal_spec->signal_name, instance_type, signal_spec->signal_flags, NULL,     /* closure */
                   signal_spec->accumulator,
                   signal_spec->accu_data,
-                  marshal_signals,
+                  NULL,
                   signal_spec->return_type, signal_spec->n_params, signal_spec->param_types);
 }
 
@@ -476,7 +398,7 @@ init_instance(GTypeInstance *instance, gpointer class_ptr)
      * the location in memory where the properties are stored. */
     obj = gir_type_make_object(type, instance, 0);
     inst_dict = scm_make_hash_table(scm_from_int(10));
-    scm_foreign_object_set_x(obj, INST_DICT_SLOT, SCM_UNPACK_POINTER(inst_dict));
+    scm_foreign_object_set_x(obj, GIR_TYPE_SLOT_INST_DICT, SCM_UNPACK_POINTER(inst_dict));
 
     /* We're using a hash table as the property variable store for
      * this object. */
@@ -520,11 +442,11 @@ get_guile_specified_property(GObject *object, guint property_id, GValue *value, 
 
     obj = SCM_PACK_POINTER(ptr);
 
-    g_assert(scm_foreign_object_ref(obj, OBJ_SLOT) == object);
+    g_assert(scm_foreign_object_ref(obj, GIR_TYPE_SLOT_OBJ) == object);
 
     /* We're using a hash table as the property variable store for
      * this object. */
-    inst_dict = SCM_PACK_POINTER(scm_foreign_object_ref(obj, INST_DICT_SLOT));
+    inst_dict = SCM_PACK_POINTER(scm_foreign_object_ref(obj, GIR_TYPE_SLOT_INST_DICT));
     svalue = scm_hash_ref(inst_dict,
                           scm_from_utf8_string(g_param_spec_get_name(pspec)), SCM_BOOL_F);
     gi_gvalue_from_scm(value, svalue);
@@ -548,11 +470,11 @@ set_guile_specified_property(GObject *object, guint property_id,
 
     obj = SCM_PACK_POINTER(ptr);
 
-    g_assert(scm_foreign_object_ref(obj, OBJ_SLOT) == object);
+    g_assert(scm_foreign_object_ref(obj, GIR_TYPE_SLOT_OBJ) == object);
 
     /* We're using a hash table as the property variable store for
      * this object. */
-    inst_dict = SCM_PACK_POINTER(scm_foreign_object_ref(obj, INST_DICT_SLOT));
+    inst_dict = SCM_PACK_POINTER(scm_foreign_object_ref(obj, GIR_TYPE_SLOT_INST_DICT));
     svalue = gi_gvalue_as_scm(value, TRUE);
     scm_hash_set_x(inst_dict, scm_from_utf8_string(g_param_spec_get_name(pspec)), svalue);
 }
@@ -668,10 +590,12 @@ scm_register_guile_specified_gobject_type(SCM s_type_name,
 
     if (scm_is_list(s_properties)) {
         n_properties = scm_to_size_t(scm_length(s_properties));
+        SCM iter = s_properties;
         for (size_t i = 0; i < n_properties; i++) {
             GParamSpec *pspec;
-            pspec = gi_gparamspec_from_scm(scm_list_ref(s_properties, scm_from_size_t(i)));
+            pspec = gi_gparamspec_from_scm(scm_car(iter));
             g_ptr_array_add(properties, pspec);
+            iter = scm_cdr(iter);
         }
     }
 
@@ -682,7 +606,6 @@ scm_register_guile_specified_gobject_type(SCM s_type_name,
             sspec = gi_signalspec_from_obj(scm_list_ref(s_signals, scm_from_size_t(i)));
             g_ptr_array_add(signals, sspec);
         }
-
     }
 
     new_type = register_guile_specified_gobject_type(type_name,
@@ -797,7 +720,7 @@ scm_make_gobject(SCM s_gtype, SCM s_prop_alist)
                     GType dest_type = G_PARAM_SPEC_VALUE_TYPE(pspec);
                     if (g_type_is_a(src_type, dest_type)) {
                         g_value_init(value, dest_type);
-                        g_value_set_object(value, scm_foreign_object_ref(src, OBJ_SLOT));
+                        g_value_set_object(value, scm_foreign_object_ref(src, GIR_TYPE_SLOT_OBJ));
                     }
                     else
                         scm_misc_error("make-gobject",
@@ -832,62 +755,8 @@ scm_make_gobject(SCM s_gtype, SCM s_prop_alist)
         g_object_set_qdata(G_OBJECT(obj), gi_gobject_wrapper_key, SCM_UNPACK_POINTER(sobj));
     }
 
-    g_assert(scm_foreign_object_ref(sobj, OBJ_SLOT) == obj);
+    g_assert(scm_foreign_object_ref(sobj, GIR_TYPE_SLOT_OBJ) == obj);
     return sobj;
-}
-
-static SCM
-scm_gobject_is_object_p(SCM self)
-{
-    GObject *obj;
-    gboolean ret;
-
-
-    scm_assert_foreign_object_type(gi_gobject_type, self);
-    obj = gi_gobject_get_obj(self);
-    ret = G_IS_OBJECT(obj);
-    return scm_from_bool(ret);
-}
-
-static SCM
-scm_gobject_type(SCM self)
-{
-    GType type;
-    GObject *obj;
-
-    scm_assert_foreign_object_type(gi_gobject_type, self);
-
-    obj = gi_gobject_get_obj(self);
-    type = G_OBJECT_TYPE(obj);
-
-    return scm_from_size_t(type);
-    //return gi_gtype_c2g (type);
-}
-
-static SCM
-scm_gobject_type_name(SCM self)
-{
-    const char *name;
-    GObject *obj;
-
-    scm_assert_foreign_object_type(gi_gobject_type, self);
-
-    obj = gi_gobject_get_obj(self);
-    name = G_OBJECT_TYPE_NAME(obj);
-
-    return scm_from_utf8_string(name);
-}
-
-static SCM
-scm_gobject_is_floating_p(SCM self)
-{
-    GObject *obj;
-    gboolean ret;
-
-    scm_assert_foreign_object_type(gi_gobject_type, self);
-    obj = gi_gobject_get_obj(self);
-    ret = g_object_is_floating(obj);
-    return scm_from_bool(ret);
 }
 
 /* re pygobject_set_property */
@@ -985,78 +854,85 @@ scm_gobject_get_property(SCM self, SCM sname)
     return ret;
 }
 
-
-/* A procedure suitable as a record-type printer. */
-SCM
-scm_gobject_printer(SCM self, SCM port)
+static SCM
+scm_signal_emit(SCM self, SCM s_name, SCM s_detail, SCM args)
 {
-    scm_assert_foreign_object_type(gi_gobject_type, self);
-    scm_simple_format(port,
-                      scm_from_utf8_string("~s [~s] <~s>"),
-                      scm_list_3(scm_from_utf8_string(g_type_name(gi_gobject_get_ob_type(self))),
-                                 scm_from_int(gi_gobject_get_ob_type(self)),
-                                 scm_from_uintmax((uintmax_t) gi_gobject_get_obj(self))));
-    return SCM_UNSPECIFIED;
-}
+    GObject *obj;
+    GType gtype;
+    char *name;
+    gboolean after;
 
-SCM
-gi_arg_gobject_to_scm(GIArgument *arg, GITransfer transfer)
-{
-    SCM s_obj;
+    GValue *values, retval = G_VALUE_INIT;
+    GSignalQuery query_info;
+    guint sigid;
+    GQuark detail = 0;
 
-    if (arg->v_pointer == NULL) {
-        s_obj = SCM_BOOL_F;
-    }
-    else if (G_IS_PARAM_SPEC(arg->v_pointer)) {
-        // s_obj = gi_gparam_spec_new (arg->v_pointer);
-        g_assert_not_reached();
-        if (transfer == GI_TRANSFER_EVERYTHING)
-            //g_param_spec_unref (arg->v_pointer);
-            g_assert_not_reached();
-    }
-    else {
-        g_assert_not_reached();
-#if 0
-        s_obj = gi_gobject_new_full(arg->v_pointer, transfer == GI_TRANSFER_EVERYTHING, /* steal */
-                                    NULL);      /* type */
-#endif
-    }
-    return s_obj;
-}
+    if (SCM_UNBNDP(args)) args = SCM_EOL;
 
-SCM
-gi_arg_gobject_to_scm_called_from_c(GIArgument *arg, GITransfer transfer)
-{
-    SCM object;
-    /* IN pygobject, they say this is a hack to work around GTK+
-     * sending signals with floating widgets in them.  Not sure if
-     * that applies to us. */
-    if (arg->v_pointer != NULL
-        && transfer == GI_TRANSFER_NOTHING && !G_IS_PARAM_SPEC(arg->v_pointer)) {
-        g_object_ref(arg->v_pointer);
-        object = gi_arg_gobject_to_scm(arg, GI_TRANSFER_EVERYTHING);
-        g_object_force_floating(arg->v_pointer);
+    // make sure we're dealing with an introspectable object
+    SCM_ASSERT_TYPE(SCM_INSTANCEP(self), self, SCM_ARG1, "signal-emit", "GObject");
+    gtype = gir_type_get_gtype_from_obj(self);
+    SCM_ASSERT_TYPE(gtype > G_TYPE_INVALID, self, SCM_ARG1, "signal-emit", "GObject");
+
+    // fetch the actual object type
+    obj = scm_foreign_object_ref(self, GIR_TYPE_SLOT_OBJ);
+    gtype = G_OBJECT_TYPE(obj);
+
+    scm_dynwind_begin(0);
+    name = scm_dynwind_or_bust("signal-emit", scm_to_utf8_string(s_name));
+
+    sigid = g_signal_lookup(name, gtype);
+    if (!sigid)
+        scm_misc_error("signal-emit", "~A: unknown signal name ~A", scm_list_2(self, s_name));
+
+    g_signal_query(sigid, &query_info);
+
+    if (query_info.signal_flags & G_SIGNAL_DETAILED) {
+        if (scm_is_symbol(s_detail)) {
+            SCM detail_str = scm_symbol_to_string(s_detail);
+            char *_detail = scm_dynwind_or_bust("signal-emit", scm_to_utf8_string(detail_str));
+            detail = g_quark_from_string(_detail);
+        }
+        else
+            detail = scm_to_uint32(s_detail);
     }
-    else {
-        object = gi_arg_gobject_to_scm(arg, transfer);
+    else if (!SCM_UNBNDP(s_detail))
+        args = scm_cons(s_detail, args);
+    scm_dynwind_end();
+
+    if (scm_to_uint(scm_length(args)) != query_info.n_params)
+        scm_misc_error("signal-emit", "~A: signal ~A has ~d params, but ~d were supplied",
+                       scm_list_4(self, s_name, scm_from_uint32(query_info.n_params),
+                                  scm_length(args)));
+
+    values = g_new0(GValue, query_info.n_params + 1);
+    g_value_init(values, gtype);
+    gi_gvalue_from_scm_with_error("signal-emit", values, self, SCM_ARG1);
+    SCM iter = args;
+    for(guint i = 0; i < query_info.n_params; i++, iter = scm_cdr(iter)) {
+        g_value_init(values + i + 1, query_info.param_types[i]);
+        gi_gvalue_from_scm_with_error("signal-emit", values + i + 1, iter, SCM_ARGn);
     }
-    return object;
+
+    if (query_info.return_type != G_TYPE_NONE)
+        g_value_init(&retval, query_info.return_type);
+    g_signal_emitv(values, sigid, detail, &retval);
+
+    if (query_info.return_type != G_TYPE_NONE)
+        return gi_gvalue_as_scm(&retval, FALSE);
+    else
+        return SCM_UNSPECIFIED;
 }
 
 void
 gi_init_gobject(void)
 {
-    gi_init_gobject_type();
     gi_gobject_wrapper_key = g_quark_from_static_string("GuGObject::wrapper");
     gi_gobject_custom_key = g_quark_from_static_string("GuGObject::custom");
     gi_gobject_instance_data_key = g_quark_from_static_string("GuGObject::instance-data");
 
     scm_c_define_gsubr("register-type", 2, 3, 0, scm_register_guile_specified_gobject_type);
     scm_c_define_gsubr("make-gobject", 1, 1, 0, scm_make_gobject);
-    scm_c_define_gsubr("gobject-is-object?", 1, 0, 0, scm_gobject_is_object_p);
-    scm_c_define_gsubr("gobject-type", 1, 0, 0, scm_gobject_type);
-    scm_c_define_gsubr("gobject-type-name", 1, 0, 0, scm_gobject_type_name);
-    scm_c_define_gsubr("gobject-is-floating?", 1, 0, 0, scm_gobject_is_floating_p);
     scm_c_define_gsubr("gobject-set-property!", 3, 0, 0, scm_gobject_set_property_x);
     scm_c_define_gsubr("gobject-get-property", 2, 0, 0, scm_gobject_get_property);
     scm_c_define_gsubr("gobject-disconnect-by-func", 2, 0, 0, scm_gobject_disconnect_by_func);
@@ -1064,17 +940,17 @@ gi_init_gobject(void)
                        scm_gobject_handler_block_by_func);
     scm_c_define_gsubr("gobject-handler-unblock-by-func", 2, 0, 0,
                        scm_gobject_handler_unblock_by_func);
-    scm_c_define_gsubr("gobject-printer", 2, 0, 0, scm_gobject_printer);
     scm_c_define_gsubr("signal-connect", 3, 1, 0, scm_signal_connect);
+    scm_c_define_gsubr("signal-emit", 2, 1, 1, scm_signal_emit);
     scm_c_export("register-type",
                  "make-gobject",
-                 "gobject-is-object?",
-                 "gobject-type",
-                 "gobject-type-name",
-                 "gobject-is-floating?",
                  "gobject-set-property!",
                  "gobject-get-property",
                  "gobject-disconnect-by-func",
                  "gobject-handler-block-by-func",
-                 "gobject-handler-unblock-by-func", "gobject-printer", "signal-connect", NULL);
+                 "gobject-handler-unblock-by-func",
+                 "gobject-printer",
+                 "signal-connect",
+                 "signal-emit",
+                 NULL);
 }

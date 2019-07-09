@@ -1,7 +1,9 @@
-(use-modules (gi) (gi glib-2)
+(use-modules (gi)
              (rnrs bytevectors)
              (system foreign)
              (test automake-test-lib))
+
+(typelib-require ("GLib" "2.0"))
 
 (automake-test
  (let* ([key (string->utf8 "key")]

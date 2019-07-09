@@ -1,5 +1,7 @@
-(use-modules (gi) (gi glib-2)
+(use-modules (gi)
              (test automake-test-lib))
+
+(typelib-require ("GLib" "2.0"))
 
 (format #t "Will try to run timed callback 5 times...\n")
 

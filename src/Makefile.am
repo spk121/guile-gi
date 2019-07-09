@@ -31,22 +31,12 @@ fo_gen_LDADD = $(GUILE_LIBS) $(GLIB_LIBS)
 EXTRA_DIST = foreign-object-types.ini
 
 BUILT_SOURCES = \
- __gi_gobject.h __gi_gobject.c \
  __gi_gvalue.h __gi_gvalue.c \
- __gi_gparamspec.h __gi_gparamspec.c \
  __gi_ginterface.h __gi_ginterface.c
 
-__gi_gobject.h: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
-	$(builddir)/fo_gen$(EXEEXT) $(srcdir)/foreign-object-types.ini .
-__gi_gobject.c: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
-	$(builddir)/fo_gen$(EXEEXT) $(srcdir)/foreign-object-types.ini .
 __gi_gvalue.h: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
 	$(builddir)/fo_gen$(EXEEXT) $(srcdir)/foreign-object-types.ini .
 __gi_gvalue.c: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
-	$(builddir)/fo_gen$(EXEEXT) $(srcdir)/foreign-object-types.ini .
-__gi_gparamspec.h: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
-	$(builddir)/fo_gen$(EXEEXT) $(srcdir)/foreign-object-types.ini .
-__gi_gparamspec.c: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
 	$(builddir)/fo_gen$(EXEEXT) $(srcdir)/foreign-object-types.ini .
 __gi_ginterface.h: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
 	$(builddir)/fo_gen$(EXEEXT) $(srcdir)/foreign-object-types.ini .
@@ -54,10 +44,6 @@ __gi_ginterface.c: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
 	$(builddir)/fo_gen$(EXEEXT) $(srcdir)/foreign-object-types.ini .
 
 nodist_libguile_gi_la_SOURCES = \
- __gi_gobject.c \
- __gi_gobject.h \
- __gi_gparamspec.c \
- __gi_gparamspec.h \
  __gi_gvalue.c \
  __gi_gvalue.h \
  __gi_ginterface.c \
@@ -68,10 +54,8 @@ libguile_gi_la_SOURCES = \
  gi_giargument.h \
  gi_gobject.c \
  gi_gobject.h \
- gi_gparamspec.c \
- gi_gparamspec.h \
- gi_gsignal.c \
- gi_gsignal.h \
+ gi_gobject_private.c \
+ gi_gobject_private.h \
  gi_gvalue.c \
  gi_gvalue.h \
  gi_signal_closure.c \
@@ -141,7 +125,7 @@ pkgguileobjectdir=$(guileobjectdir)/gi
 dist_guilesite_DATA = \
   gi.scm
 
-dist_pkgguilesite_DATA = gi/glib-2.scm gi/gtk-3.scm gi/gio-2.scm gi/webkit2-4.scm
+dist_pkgguilesite_DATA = gi/oop.scm
 
 pkgguileobject_DATA = $(dist_guilesite_DATA:%.scm=%.go) $(dist_pkgguilesite_DATA:%.scm=%.go)
 

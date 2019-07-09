@@ -1,6 +1,8 @@
-(use-modules (gi) (gi glib-2)
+(use-modules (gi)
              (rnrs bytevectors)
              (test automake-test-lib))
+
+(typelib-require ("GLib" "2.0"))
 
 ;; Another curious case.  The first argument is supposed to be a
 ;; zero-terminated UTF32 string that is modified in place.  The

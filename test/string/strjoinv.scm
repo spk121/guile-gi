@@ -1,5 +1,7 @@
-(use-modules (gi) (gi glib-2)
+(use-modules (gi)
              (test automake-test-lib))
+
+(typelib-require ("GLib" "2.0"))
 
 ;;; Hmmm. The procedure should obviously take a list of strings, but,
 ;;; the introspection looks like it wants just a single string.
