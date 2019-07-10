@@ -1,7 +1,8 @@
 (use-modules (gi)
+             (oop goops)
              (test automake-test-lib))
 
 (typelib-require ("GLib" "2.0"))
 
 (automake-test
- (gmain-loop? (main-loop:new #f #t)))
+ (is-a? (main-loop:new #f #t) <GMainLoop>))

@@ -1,4 +1,5 @@
 (use-modules (gi)
+             (oop goops)
              (test automake-test-lib))
 
 (typelib-require ("GLib" "2.0"))
@@ -9,5 +10,5 @@
           (siz (with-object self (get-size))))
      (format #t "New Byte Array: ~S~%" self)
      (format #t "Size: ~S~%" siz)
-     (and (gbytes? self)
+     (and (is-a? self <GBytes>)
           (equal? 0 siz)))))

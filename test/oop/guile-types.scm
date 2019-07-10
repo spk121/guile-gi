@@ -6,12 +6,12 @@
 (typelib-require ("GObject" "2.0"))
 
 (define my-param
-  (make <number-property>
-    #:name "my-param"
-    #:blurb "This is a test parameter"
-    #:type G_TYPE_INT
-    #:min -200
-    #:max 200))
+  (param-spec-int
+   "my-param"
+   "my-param"
+   "This is a test parameter"
+   -200 200 0
+   PARAM_READWRITE))
 
 (define <TestParam>
   (register-type

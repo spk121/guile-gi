@@ -6,6 +6,7 @@
 (automake-test
  (let ((app-id "gi.guile.Example"))
    (equal?
+    app-id
     (with-object (create <GApplication>
                    (application-id ((lambda () app-id))))
       (get-application-id)))))

@@ -104,3 +104,22 @@ scm_dynwind_or_bust(const char *subr, void *mem)
     }
     return mem;
 }
+
+static SCM class_ref_proc = SCM_UNDEFINED;
+static SCM class_set_proc = SCM_UNDEFINED;
+
+SCM
+scm_class_ref(SCM cls, SCM slot)
+{
+    if (SCM_UNBNDP(class_ref_proc))
+        class_ref_proc = scm_c_public_ref("oop goops", "class-slot-ref");
+
+    return scm_call_2(class_ref_proc, cls, slot);
+}
+SCM
+scm_class_set_x(SCM cls, SCM slot, SCM val)
+{
+    if (SCM_UNBNDP(class_set_proc))
+        class_set_proc = scm_c_public_ref("oop goops", "class-slot-set!");
+    return scm_call_3(class_set_proc, cls, slot, val);
+}

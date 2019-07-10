@@ -17,11 +17,12 @@
 #include <libguile.h>
 #include "gi_function_info.h"
 #include "gi_giargument.h"
-#include "gi_gobject.h"
+#include "gig_object.h"
 #include "gi_util.h"
 #include "gir_function.h"
 #include "gir_method.h"
 #include "gir_type.h"
+#include "gi_util.h"
 
 // This structure is a hash table tree.
 // On the first level we have
@@ -168,7 +169,13 @@ scm_call_method(SCM s_object, SCM s_method_name, SCM s_list_of_args)
             method_name, args_str, g_type_name(gir_type_get_gtype_from_obj(s_object)));
     free(args_str);
 
-    GObject *object = scm_foreign_object_ref(s_object, GIR_TYPE_SLOT_OBJ);
+    GObject *object;
+    if (SCM_IS_A_P(s_object, gig_object_type))
+        object = gig_object_peek(s_object);
+    else {
+        g_warning("call-method used on a non-object type");
+        object = gir_type_peek_object(s_object);
+    }
 
     GError *err = NULL;
     // FIXME: cache this argmap

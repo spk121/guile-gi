@@ -2,7 +2,7 @@
              (test automake-test-lib)
              (srfi srfi-43))
 
-(typelib-require ("GLib" "2.0") ("Gio" "2.0"))
+(typelib-require ("GLib" "2.0") ("GObject" "2.0") ("Gio" "2.0"))
 
 (automake-test
  (begin

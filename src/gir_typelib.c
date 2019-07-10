@@ -18,7 +18,10 @@
 #include <girepository.h>
 #include "gi_function_info.h"
 #include "gi_giargument.h"
-#include "gi_gobject.h"
+#include "gir_type.h"
+#include "gir_typelib.h"
+#include "gir_function.h"
+#include "gig_object.h"
 #include "gi_util.h"
 #include "gir_constant.h"
 #include "gir_flag.h"

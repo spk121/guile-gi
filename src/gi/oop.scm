@@ -15,9 +15,13 @@
 
 (define-module (gi oop)
   #:use-module (oop goops)
-  #:export (<property>
-            <number-property>
+  #:use-module (srfi srfi-26)
+  #:use-module (system foreign)
+  #:export (<GObject>
+            <GBoxed>
+            <GParamSpec>
             <signal>
+            register-type
 
             connect-after
 
@@ -39,55 +43,62 @@
   #:replace (connect))
 
 (eval-when (expand load eval)
-  ;; required for %typelib-module-name, which is used at expand time
-  (load-extension "libguile-gi" "gi_init_gobject_private"))
+  (load-extension "libguile-gi" "gig_init_object"))
 
-(define-class <property> (<applicable-struct-with-setter>)
-  name type nick blurb flags default)
+(define-class <GObject> ()
+  (object #:class <scm-slot>
+          #:init-keyword #:object
+          #:init-value %null-pointer))
 
-(define-method (initialize (property <property>) initargs)
-  ;; TODO: find a way to pass procedure and setter up
+(define-class <GInterface> ()
+  (object #:class <scm-slot>
+          #:init-keyword #:object
+          #:init-value %null-pointer))
+
+(define-class <GBoxed> ()
+  (value #:class <scm-slot>
+         #:init-keyword #:value
+         #:init-value %null-pointer))
+
+(define-class <GCompact> ()
+  (ptr #:class <scm-slot>
+       #:init-keyword #:ptr
+       #:init-value %null-pointer)
+  (ref #:class <foreign-slot>
+       #:allocation #:each-subclass
+       #:init-value %null-pointer)
+  (unref #:class <foreign-slot>
+         #:allocation #:each-subclass
+         #:init-value %null-pointer))
+
+(define-class <GParamSpec> (<applicable-struct-with-setter>)
+  (pspec #:class <scm-slot>
+         #:init-keyword #:pspec
+         #:init-value %null-pointer))
+
+(define (%make-gobject type object)
+  (make type #:object object))
+
+(define (%make-boxed type value)
+  (make type #:value value))
+
+(define (%make-paramspec type pspec)
+  (make type #:pspec pspec))
+
+(define (%make-compact type ptr)
+  (make type #:ptr ptr))
+
+(define-method (initialize (pspec <GParamSpec>) initargs)
   (next-method)
-  (slot-set! property 'procedure
-             (lambda (obj)
-               ((@ (gi) gobject-get-property)
-                obj
-                (slot-ref property 'name))))
-  (slot-set! property 'setter
-             (lambda (obj val)
-               ((@ (gi) gobject-set-property!)
-                obj
-                (slot-ref property 'name)
-                val)))
-  (slot-set! property 'name (get-keyword #:name initargs #f))
-  (slot-set! property 'type (get-keyword #:type initargs 0)) ; should be G_TYPE_INVALID
-  (slot-set! property 'nick (get-keyword #:nick initargs (slot-ref property 'name)))
-  (slot-set! property 'blurb (get-keyword #:blurb initargs #f))
-  (slot-set! property 'flags (get-keyword #:flags initargs G_PARAM_READWRITE))
-  (slot-set! property 'default (get-keyword #:default initargs #f)))
-
-(define-class <number-property> (<property>)
-  min max)
-
-(define-method (initialize (property <number-property>) initargs)
-  (next-method)
-  (slot-set! property 'min (get-keyword #:min initargs #f))
-  (slot-set! property 'max (get-keyword #:max initargs #f))
-  (slot-set! property 'default (get-keyword #:default initargs 0)))
+  (slot-set! pspec 'procedure (cut %get-property <> pspec))
+  (slot-set! pspec 'setter (cut %set-property! <> pspec <>)))
 
 (define-class <signal> (<applicable-struct>)
   name flags accumulator return-type param-types)
 
 (define-method (initialize (signal <signal>) initargs)
   (next-method)
-  (slot-set! signal 'procedure
-             (lambda (obj . args)
-               (apply
-                (@ (gi) signal-emit)
-                obj
-                (slot-ref signal 'name)
-                args)))
-
+  (slot-set! signal 'procedure (cut %emit <> signal <...>))
   (slot-set! signal 'name (get-keyword #:name initargs #f))
   (slot-set! signal 'flags (get-keyword #:flags initargs 0))
   (slot-set! signal 'accumulator (get-keyword #:accumulator initargs #f))
@@ -98,20 +109,20 @@
   (apply (@ (guile) connect) socket args))
 
 (define-method (connect obj (signal <signal>) (handler <procedure>))
-  ((@ (gi) signal-connect) obj (slot-ref signal 'name) handler))
+  (%connect obj signal #f handler))
 
 (define-method (connect obj (signal <signal>) (detail <symbol>) (handler <procedure>))
-  ((@ (gi) signal-connect)
-   obj
-   (string-append (slot-ref signal 'name) "::" (symbol->string detail))
-   handler))
+  (%connect obj signal detail handler))
 
 (define-method (connect-after obj (signal <signal>) (handler <procedure>))
-  ((@ (gi) signal-connect) obj (slot-ref signal 'name) handler #t))
+  (%connect obj signal #f handler #t))
 
 (define-method (connect-after obj (signal <signal>) (detail <symbol>) (handler <procedure>))
-  ((@ (gi) signal-connect)
-   obj
-   (string-append (slot-ref signal 'name) "::" (symbol->string detail))
-   handler
-   #t))
+  (%connect obj signal detail handler #t))
+
+(define (register-type name parent . rest)
+  (cond
+   ((memq <GObject> (class-precedence-list parent))
+    (apply %define-object-type name parent rest))
+   (else
+    (error "cannot define class with parent ~A" parent))))

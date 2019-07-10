@@ -7,7 +7,7 @@
 (automake-test
  (begin
    (init)
-   (let ([entry (cast (entry:new) <GtkEntry>)])
+   (let ([entry (entry:new)])
      (with-object entry (set-alignment 0))
      (format #t "entry: ~S~%" entry)
      (format #t "entry alignment: ~S~%" (with-object entry (get-alignment)))

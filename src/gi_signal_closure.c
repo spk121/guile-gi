@@ -13,9 +13,22 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "gi_signal_closure.h"
-#include "gi_gobject.h"
+#include "gig_object.h"
 #include "gi_gvalue.h"
 #include "gi_giargument.h"
+
+typedef void (*GigClosureExceptionHandler)(GValue *ret, guint n_param_values,
+                                           const GValue *params);
+
+
+typedef struct _GigClosure
+{
+    GClosure closure;
+    SCM callback;
+    SCM swap_data;              /* other object for gtk_signal_connect__object */
+    GigClosureExceptionHandler exception_handler;
+    GISignalInfo *signal_info;
+} GigClosure;
 
 static GISignalInfo *
 lookup_signal_from_g_type(GType g_type, const gchar *signal_name)
@@ -41,7 +54,7 @@ lookup_signal_from_g_type(GType g_type, const gchar *signal_name)
 static void
 signal_closure_invalidate(gpointer data, GClosure *closure)
 {
-    GuGClosure *pc = (GuGClosure *) closure;
+    GigClosure *pc = (GigClosure *) closure;
 
     pc->callback = SCM_BOOL_F;
     pc->swap_data = SCM_BOOL_F;
@@ -57,7 +70,7 @@ gi_signal_closure_marshal(GClosure *closure,
                           const GValue *param_values,
                           gpointer invocation_hint, gpointer marshal_data)
 {
-    GuGClosure *pc = (GuGClosure *) closure;
+    GigClosure *pc = (GigClosure *) closure;
     SCM params, ret = SCM_BOOL_F;
     guint i;
     GISignalInfo *signal_info;
@@ -110,21 +123,21 @@ GClosure *
 gi_signal_closure_new(SCM instance, GType g_type, const gchar *signal_name, SCM callback)
 {
     GClosure *closure = NULL;
-    GuGClosure *gugi_closure = NULL;
+    GigClosure *gig_closure = NULL;
     GISignalInfo *signal_info = NULL;
 
     g_return_val_if_fail(scm_is_true(instance), NULL);
 
     signal_info = lookup_signal_from_g_type(g_type, signal_name);
 
-    closure = g_closure_new_simple(sizeof(GuGClosure), NULL);
+    closure = g_closure_new_simple(sizeof(GigClosure), NULL);
     g_closure_add_invalidate_notifier(closure, NULL, signal_closure_invalidate);
     g_closure_set_marshal(closure, gi_signal_closure_marshal);
 
-    gugi_closure = (GuGClosure *) closure;
+    gig_closure = (GigClosure *) closure;
 
-    gugi_closure->signal_info = signal_info;
-    gugi_closure->callback = callback;
+    gig_closure->signal_info = signal_info;
+    gig_closure->callback = callback;
 
     return closure;
 }

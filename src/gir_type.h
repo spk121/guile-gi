@@ -18,17 +18,11 @@
 
 #include <girepository.h>
 
-typedef enum {
-    GIR_TYPE_SLOT_TYPE,
-    GIR_TYPE_SLOT_REFCNT,
-    GIR_TYPE_SLOT_OBJ,
-    GIR_TYPE_SLOT_DEALLOC,
-    GIR_TYPE_SLOT_FREE,
-    GIR_TYPE_SLOT_INST_DICT,
-    GIR_TYPE_SLOT_WEAKREFLIST,
-    GIR_TYPE_SLOT_FLAGS,
-    GIR_TYPE_SLOT_COUNT
-} GirTypeSlot;
+SCM gig_object_type;
+SCM gig_boxed_type;
+SCM gig_compact_type;
+SCM gig_interface_type;
+SCM gig_paramspec_type;
 
 G_GNUC_MALLOC gchar *gir_type_document_type_from_gtype(GType gtype);
 G_GNUC_MALLOC char *gir_type_class_name_from_gtype(GType gtype);
@@ -37,7 +31,8 @@ void gir_type_define(GType gtype);
 GType scm_to_gtype(SCM x);
 GType gir_type_get_gtype_from_obj(SCM x);
 SCM gir_type_get_scheme_type(GType gtype);
-SCM gir_type_make_object(GType gtype, gpointer obj, GITransfer transfer);
+SCM gir_type_transfer_object(GType gtype, gpointer obj, GITransfer transfer);
+gpointer gir_type_peek_object(SCM obj);
 void gir_init_types(void);
 
 #endif

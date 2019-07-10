@@ -54,10 +54,14 @@ libguile_gi_la_SOURCES = \
  gi_function_info.h \
  gi_giargument.c \
  gi_giargument.h \
- gi_gobject.c \
- gi_gobject.h \
- gi_gobject_private.c \
- gi_gobject_private.h \
+ gig_object.c \
+ gig_object.h \
+ gig_object_private.c \
+ gig_object_private.h \
+ gig_boxed.c \
+ gig_boxed.h \
+ gig_paramspec.c \
+ gig_paramspec.h \
  gi_gvalue.c \
  gi_gvalue.h \
  gi_signal_closure.c \
@@ -108,7 +112,7 @@ libguile_gi_la_CFLAGS = \
 libguile_gi_la_LDFLAGS = \
  -no-undefined \
  -version-info $(LIBGUILE_GI_INTERFACE) \
- -export-symbols-regex '^gir?_' \
+ -export-symbols-regex '^gi[rg]?_' \
  $(GUILE_LDFLAGS)
 
 if !DLL_VERSION_INFO

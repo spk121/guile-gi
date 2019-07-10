@@ -19,7 +19,7 @@
 #include <glib.h>
 #include <girepository.h>
 #include <libguile.h>
-#include "gi_gobject.h"
+#include "gig_object.h"
 #include "gi_gvalue.h"
 #include "gi_signal_closure.h"
 #include "gi_giargument.h"
@@ -108,7 +108,7 @@ gir_init(void)
     gi_init_gvalue();
 
     gi_init_giargument();
-    gi_init_gobject();
+    /* gig_init_object(); */
     gir_init_callback();
     gir_init_function();
     gir_init_method();

@@ -9,6 +9,8 @@ char *gname_to_scm_name(const char *gname);
 SCM scm_c_list_ref(SCM list, size_t k);
 int scm_is_list(SCM obj);
 void *scm_dynwind_or_bust(const char *subr, void *mem);
+SCM scm_class_ref(SCM cls, SCM slot);
+SCM scm_class_set_x(SCM cls, SCM slot, SCM val);
 
 #define SCM_UNBND_TO_BOOL_F(obj) \
     do {                         \

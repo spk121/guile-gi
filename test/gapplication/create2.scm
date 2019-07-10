@@ -1,7 +1,7 @@
 (use-modules (gi)
              (test automake-test-lib))
 
-(typelib-require ("Gio" "2.0"))
+(typelib-require ("GObject" "2.0") ("Gio" "2.0"))
 
 (automake-test
  (begin

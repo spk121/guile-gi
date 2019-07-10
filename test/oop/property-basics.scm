@@ -3,14 +3,13 @@
              (oop goops)
              (test automake-test-lib))
 
-(typelib-require ("Gio" "2.0"))
-
-(define application-id (make <property> #:name "application-id"))
+(typelib-require ("GObject" "2.0") ("Gio" "2.0"))
 
 (automake-test
  (begin
-   (let ((app (create <GApplication>
-                (application-id "gi.guile.Example"))))
+   (let* ((app (create <GApplication>
+                 (application-id "gi.guile.Example")))
+          (application-id ((@@ (gi oop) %object-get-pspec) app "application-id")))
      (and (equal? (application-id app) "gi.guile.Example")
           (begin
             (set! (application-id app) "gi.guile.NewExample")

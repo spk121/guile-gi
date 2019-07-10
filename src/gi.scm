@@ -13,8 +13,12 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https:;;www.gnu.org/licenses/>.
 (define-module (gi)
+  #:use-module (gi oop)
+  #:use-module (oop goops)
+  #:re-export (register-type)
   #:export (use-typelibs
             create
+            (%create . make-gobject)
             with-object
             (with-object . using)))
 
@@ -22,23 +26,28 @@
   ;; required for %typelib-module-name, which is used at expand time
   (load-extension "libguile-gi" "gir_init_typelib_private"))
 
-;; This macro derives from
-;; https:;;lists.gnu.org/archive/html/guile-user/2018-12/msg00037.html
-
+(define %create (@@ (gi oop) %create))
 (define %syntax->string (compose symbol->string syntax->datum))
 
 (define-syntax create
   (lambda (stx)
     (syntax-case stx ()
       ((_ type field ...)
-       #`(make-gobject type
-                       `#,(map (lambda (field)
-                                 (syntax-case field ()
-                                   ((key val)
-                                    (identifier? #'key)
-                                    (with-syntax ((key-str (%syntax->string #'key)))
-                                      #'(key-str . ,val)))))
-                              #'(field ...)))))))
+       #`(%create type
+                  `#,(map (lambda (field)
+                            (syntax-case field ()
+                              ((key val)
+                               (identifier? #'key)
+                               (with-syntax ((key-str (%syntax->string #'key)))
+                                 #'(key-str . ,val)))))
+                          #'(field ...)))))))
+
+;; temporaries while property objects are not yet everywhere
+(define-public (gobject-get-property obj prop)
+  (((@@ (gi oop) %object-get-pspec) obj prop) obj))
+
+(define-public (gobject-set-property! obj prop val)
+  (set! (((@@ (gi oop) %object-get-pspec) obj prop) obj) val))
 
 (define-syntax with-object
   (lambda (stx)
@@ -64,17 +73,20 @@
                    ((connect! signal handler)
                     (identifier? #'signal)
                     (with-syntax ((name (%syntax->string #'signal)))
-                      #'(signal-connect self name handler #f)))
+                      #'(connect self (make <signal> #:name name) handler)))
                    ((connect-after! signal handler)
                     (identifier? #'signal)
                     (with-syntax ((name (%syntax->string #'signal)))
-                      #'(signal-connect self name handler #t)))
+                      #'(connect-after self (make <signal> #:name name) handler)))
                    ((remove! handler)
-                    #'(gobject-disconnect-by-func self handler))
+                    (syntax-violation #f "remove! is no longer supported"
+                                      with-object block))
                    ((block! handler)
-                    #'(gobject-handler-block-by-func self handler))
+                    (syntax-violation #f "block! is no longer supported"
+                                      with-object block))
                    ((unblock! handler)
-                    #'(gobject-handler-block-by-func self handler))
+                    (syntax-violation #f "unblock! is no longer supported"
+                                      with-object block))
                    ;; methods
                    ((method arg ...)
                     (identifier? #'id)

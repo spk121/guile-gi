@@ -15,7 +15,7 @@
 #include <girepository.h>
 #include "gi_gvalue.h"
 #include "gir_type.h"
-#include "gi_gobject.h"
+#include "gig_object.h"
 #include "gir_type.h"
 
 #ifndef FLT_MAX
@@ -221,7 +221,7 @@ gi_gvalue_from_scm(GValue *value, SCM obj)
         else if (scm_is_true(scm_bytevector_p(obj)))
             g_value_set_pointer(value, SCM_BYTEVECTOR_CONTENTS(obj));
         else if (gir_type_get_gtype_from_obj(obj) > G_TYPE_INVALID)
-            g_value_set_object(value, gi_gobject_get_obj(obj));
+            g_value_set_object(value, gig_object_peek(obj));
         else
             return GI_GVALUE_WRONG_TYPE;
     }
@@ -234,10 +234,10 @@ gi_gvalue_from_scm(GValue *value, SCM obj)
                 g_value_set_object(value, NULL);
                 return 0;
             }
-            else if (!G_TYPE_CHECK_INSTANCE_TYPE(gi_gobject_get_obj(obj), value_type))
+            else if (!G_TYPE_CHECK_INSTANCE_TYPE(gig_object_peek(obj), value_type))
                 return GI_GVALUE_WRONG_TYPE;
             else {
-                g_value_set_object(value, gi_gobject_get_obj(obj));
+                g_value_set_object(value, gig_object_peek(obj));
                 return 0;
             }
         }
@@ -528,7 +528,7 @@ gi_gvalue_to_scm_structured_type(const GValue *value, GType fundamental, gboolea
         if (!obj)
             return SCM_BOOL_F;
         else if (g_type_is_a(G_VALUE_TYPE(value), G_TYPE_OBJECT))
-            return gir_type_make_object(G_VALUE_TYPE(value), obj, 0);
+            return gig_object_ref(obj);
         else
             break;
     }
@@ -540,7 +540,7 @@ gi_gvalue_to_scm_structured_type(const GValue *value, GType fundamental, gboolea
     {
         GParamSpec *pspec = g_value_get_param(value);
         if (pspec)
-            return gir_type_make_object(G_VALUE_TYPE(value), pspec, 0);
+            return gig_object_ref(pspec);
         else
             return SCM_BOOL_F;
     }
@@ -556,7 +556,10 @@ gi_gvalue_to_scm_structured_type(const GValue *value, GType fundamental, gboolea
             return scm_from_utf8_stringn(string->str, string->len);
         }
         else {
-            return gir_type_make_object(G_VALUE_TYPE(value), g_value_get_boxed(value), copy_boxed);
+            if (copy_boxed)
+                return gig_object_ref(g_value_get_boxed(value));
+            else
+                return gig_object_take(g_value_get_boxed(value));
         }
     }
 
@@ -564,7 +567,7 @@ gi_gvalue_to_scm_structured_type(const GValue *value, GType fundamental, gboolea
     {
         gpointer obj = g_value_get_object(value);
         if (obj)
-            return gir_type_make_object(G_VALUE_TYPE(value), obj, 0);
+            return gig_object_ref(obj);
         else
             return SCM_BOOL_F;
     }

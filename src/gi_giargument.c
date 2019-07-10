@@ -20,7 +20,7 @@
 #include <math.h>
 #include <stdint.h>
 #include "gi_giargument.h"
-#include "gi_gobject.h"
+#include "gig_object.h"
 #include "gi_gvalue.h"
 #include "gi_type_tag.h"
 #include "gir_callback.h"
@@ -932,7 +932,7 @@ object_to_c_interface_arg(const char *subr, int argpos, SCM obj, GITypeInfo *typ
         // This is uncommon case where a struct is used directly,
         // and not as a pointer, such as in gtk_text_buffer_get_bounds.
 
-        arg->v_pointer = scm_foreign_object_ref(obj, GIR_TYPE_SLOT_OBJ);
+        arg->v_pointer = gir_type_peek_object(obj);
     }
     else
         g_assert_not_reached();
@@ -1052,7 +1052,7 @@ object_to_c_interface_pointer_arg(const char *subr, int argpos, SCM obj,
     else if ((referenced_base_type == GI_INFO_TYPE_STRUCT)
              || (referenced_base_type == GI_INFO_TYPE_UNION)
              || (referenced_base_type == GI_INFO_TYPE_OBJECT)) {
-        arg->v_pointer = scm_foreign_object_ref(obj, GIR_TYPE_SLOT_OBJ);
+        arg->v_pointer = gir_type_peek_object(obj);
         *must_free = GIR_FREE_NONE;
     }
     else if (referenced_base_type == GI_INFO_TYPE_CALLBACK) {
@@ -1217,7 +1217,7 @@ object_to_c_native_direct_struct_array_arg(const char *subr, int argpos, SCM obj
         ptr = g_malloc0_n(ai->item_size, len + 1);
     else
         ptr = g_malloc0_n(ai->item_size, len);
-    gpointer entry_ptr = gi_gobject_get_obj(object);
+    gpointer entry_ptr = gir_type_peek_object(object);
     for (size_t i = 0; i < len; i++)
         memcpy((char *)ptr + i * ai->item_size, entry_ptr, ai->item_size);
     if (ai->item_transfer == GI_TRANSFER_NOTHING)
@@ -1246,7 +1246,7 @@ object_to_c_native_indirect_object_array_arg(const char *subr, int argpos, SCM o
             // Entry should be a GObject.  I guess we're not
             // increasing refcnt?  At least that is the case for
             // g_socket_send_message.
-            ptr[i] = gi_gobject_get_obj(entry);
+            ptr[i] = gir_type_peek_object(entry);
         }
         if (ai->item_transfer == GI_TRANSFER_NOTHING) {
             if (ai->array_is_zero_terminated)
@@ -1758,8 +1758,8 @@ gi_giargument_convert_return_val_to_object(GIArgument *arg,
             if (referenced_base_type == GI_INFO_TYPE_STRUCT ||
                 referenced_base_type == GI_INFO_TYPE_UNION ||
                 referenced_base_type == GI_INFO_TYPE_OBJECT) {
-                return gir_type_make_object(referenced_base_gtype, arg->v_pointer,
-                                            transfer == GI_TRANSFER_EVERYTHING);
+                return gir_type_transfer_object(referenced_base_gtype, arg->v_pointer,
+                                                transfer);
             }
             else
                 g_critical("Unhandled return argument type %s %d", __FILE__, __LINE__);

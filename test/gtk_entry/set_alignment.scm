@@ -8,8 +8,8 @@
 (automake-test
  (begin
    (init)
-   (let ([entry1 (cast (entry:new) <GtkEntry>)]
-         [entry2 (cast (entry:new) <GtkEntry>)])
+   (let ([entry1 (entry:new)]
+         [entry2 (entry:new)])
      (with-object entry1 (set-alignment 1.0))
      (with-object entry2 (set-alignment 0.5))
      (format #t "entry 1: ~S~%" entry1)

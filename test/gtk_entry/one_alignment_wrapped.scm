@@ -8,6 +8,6 @@
  (begin
    (init)
    (= 1
-      (with-object (cast (entry:new) <GtkEntry>)
+      (with-object (entry:new)
         (set-alignment 1)
         (get-alignment)))))
