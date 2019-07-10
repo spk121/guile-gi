@@ -16,15 +16,16 @@
 
 #include <libguile.h>
 #include <girepository.h>
+#include "gi_function_info.h"
 #include "gi_giargument.h"
-#include "gir_type.h"
-#include "gir_typelib.h"
-#include "gir_function.h"
 #include "gi_gobject.h"
-#include "gir_method.h"
+#include "gi_util.h"
 #include "gir_constant.h"
 #include "gir_flag.h"
-#include "gi_util.h"
+#include "gir_function.h"
+#include "gir_method.h"
+#include "gir_type.h"
+#include "gir_typelib.h"
 
 static void gir_typelib_document_callback_info(GString **export, const char *namespace_,
                                                GICallableInfo *info);
@@ -141,7 +142,7 @@ scm_i_typelib_load(const char *subr, const char *namespace_, const char *version
             g_debug("Unsupported irepository type 'CALLBACK'");
             break;
         case GI_INFO_TYPE_FUNCTION:
-            gir_function_define_gsubr(NULL, info);
+            gir_function_define_gsubr(info, NULL);
             break;
         case GI_INFO_TYPE_STRUCT:
         {
@@ -164,7 +165,7 @@ scm_i_typelib_load(const char *subr, const char *namespace_, const char *version
                 if (g_function_info_get_flags(func_info) & GI_FUNCTION_IS_METHOD)
                     gir_method_table_insert(gtype, func_info);
                 else
-                    gir_function_define_gsubr(g_base_info_get_name(info), func_info);
+                    gir_function_define_gsubr(func_info, g_base_info_get_name(info));
             }
         }
             break;
@@ -188,7 +189,7 @@ scm_i_typelib_load(const char *subr, const char *namespace_, const char *version
                 if (g_function_info_get_flags(func_info) & GI_FUNCTION_IS_METHOD)
                     gir_method_table_insert(gtype, func_info);
                 else
-                    gir_function_define_gsubr(g_base_info_get_name(info), func_info);
+                    gir_function_define_gsubr(func_info, g_base_info_get_name(info));
             }
 #if 0
             gint n_signals = g_object_info_get_n_signals(info);
@@ -221,7 +222,7 @@ scm_i_typelib_load(const char *subr, const char *namespace_, const char *version
                 if (g_function_info_get_flags(func_info) & GI_FUNCTION_IS_METHOD)
                     gir_method_table_insert(gtype, func_info);
                 else
-                    gir_function_define_gsubr(g_base_info_get_name(info), func_info);
+                    gir_function_define_gsubr(func_info, g_base_info_get_name(info));
             }
         }
             break;
@@ -248,7 +249,7 @@ scm_i_typelib_load(const char *subr, const char *namespace_, const char *version
                 if (g_function_info_get_flags(func_info) & GI_FUNCTION_IS_METHOD)
                     gir_method_table_insert(gtype, func_info);
                 else
-                    gir_function_define_gsubr(g_base_info_get_name(info), func_info);
+                    gir_function_define_gsubr(func_info, g_base_info_get_name(info));
             }
         }
             break;
@@ -589,7 +590,7 @@ static void
 gir_typelib_document_method_info(GString **export, GType gtype, GIFunctionInfo *info)
 {
     gchar *class_name = gir_type_class_name_from_gtype(gtype);
-    gchar *public_name = gir_function_make_name(NULL, info);
+    gchar *public_name = gi_function_info_make_name(info, NULL);
     g_string_append_printf(*export, "%s's METHOD %s\n", class_name, public_name);
     g_free(public_name);
     g_free(class_name);
@@ -600,7 +601,7 @@ gir_typelib_document_method_info(GString **export, GType gtype, GIFunctionInfo *
 static void
 gir_typelib_document_function_info(GString **export, const char *parent, GIFunctionInfo *info)
 {
-    gchar *public_name = gir_function_make_name(parent, info);
+    gchar *public_name = gi_function_info_make_name(info, parent);
     g_string_append_printf(*export, "PROCEDURE %s\n", public_name);
     g_free(public_name);
     gir_typelib_document_callable_arguments(export, info);

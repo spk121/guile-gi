@@ -2,6 +2,7 @@
 #define _GIR_UTIL_H_
 
 #include <glib.h>
+#include <libguile.h>
 
 const gchar *gi_constant_strip_prefix(const gchar *name, const gchar *strip_prefix);
 char *gname_to_scm_name(const char *gname);

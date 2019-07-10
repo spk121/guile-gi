@@ -89,13 +89,13 @@ gi_signal_closure_marshal(GClosure *closure,
     for (i = 0; i < n_param_values; i++) {
         SCM item = gi_gvalue_as_scm(&param_values[i], FALSE);
         if (scm_is_false(item)) {
-            if (i == 0) // self or this
+            if (i == 0)         // self or this
                 goto out;
         }
         params = scm_cons(item, params);
     }
     params = scm_reverse_x(params, SCM_EOL);
-    g_debug("invoking callback with %d arguments", scm_to_int (scm_length (params)));
+    g_debug("invoking callback with %d arguments", scm_to_int(scm_length(params)));
     ret = scm_apply_0(pc->callback, params);
 
     if (G_IS_VALUE(return_value) && gi_gvalue_from_scm(return_value, ret) != 0) {
@@ -107,8 +107,7 @@ gi_signal_closure_marshal(GClosure *closure,
 }
 
 GClosure *
-gi_signal_closure_new(SCM instance,
-                      GType g_type, const gchar *signal_name, SCM callback)
+gi_signal_closure_new(SCM instance, GType g_type, const gchar *signal_name, SCM callback)
 {
     GClosure *closure = NULL;
     GuGClosure *gugi_closure = NULL;

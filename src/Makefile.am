@@ -50,6 +50,8 @@ nodist_libguile_gi_la_SOURCES = \
  __gi_ginterface.h
 
 libguile_gi_la_SOURCES = \
+ gi_function_info.c \
+ gi_function_info.h \
  gi_giargument.c \
  gi_giargument.h \
  gi_gobject.c \
@@ -62,7 +64,11 @@ libguile_gi_la_SOURCES = \
  gi_signal_closure.h \
  gi_struct.c \
  gi_struct.h \
+ gi_type_tag.c \
+ gi_type_tag.h \
  gir.c \
+ gir_arg_map.c \
+ gir_arg_map.h \
  gir_callback.c \
  gir_callback.h \
  gir_function.c \
