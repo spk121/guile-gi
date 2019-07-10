@@ -20,6 +20,7 @@ typedef struct _SignalSpec
 SCM guile_signal;
 
 SCM private_make_gobject_proc;
+extern SCM gig_paramspec_type;
 
 SignalSpec *gig_signalspec_from_obj(SCM obj);
 void gig_free_signalspec(SignalSpec *spec);
@@ -46,6 +47,7 @@ typedef enum
 SCM signal_ref(SCM signal, SignalSlot slot);
 
 void gig_init_object_private(void);
+GParamSpec *gig_paramspec_peek(SCM obj);
 
 
 #endif

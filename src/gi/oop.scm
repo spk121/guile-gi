@@ -17,65 +17,31 @@
   #:use-module (oop goops)
   #:use-module (srfi srfi-26)
   #:use-module (system foreign)
-  #:export (<GObject>
-            <GBoxed>
-            <GParamSpec>
-            <signal>
-            register-type
-
+  #:export (<signal>
             connect-after)
   #:replace (connect))
 
 (eval-when (expand load eval)
   (load-extension "libguile-gi" "gig_init_object"))
 
-(define-class <GObject> ()
-  (object #:class <scm-slot>
-          #:init-keyword #:object
-          #:init-value %null-pointer))
-
-(define-class <GInterface> ()
-  (object #:class <scm-slot>
-          #:init-keyword #:object
-          #:init-value %null-pointer))
-
-(define-class <GBoxed> ()
-  (value #:class <scm-slot>
-         #:init-keyword #:value
-         #:init-value %null-pointer))
-
-(define-class <GCompact> ()
+(define-class <GFundamental> ()
   (ptr #:class <scm-slot>
        #:init-keyword #:ptr
-       #:init-value %null-pointer)
-  (ref #:class <foreign-slot>
-       #:allocation #:each-subclass
-       #:init-value %null-pointer)
-  (unref #:class <foreign-slot>
-         #:allocation #:each-subclass
-         #:init-value %null-pointer))
+       #:init-value %null-pointer))
 
-(define-class <GParamSpec> (<applicable-struct-with-setter>)
-  (pspec #:class <scm-slot>
-         #:init-keyword #:pspec
-         #:init-value %null-pointer))
+(define (%make-fundamental-class type dsupers ref unref)
+  (make-class (cons <GFundamental> dsupers)
+              `((ref #:allocation #:class
+                     #:init-value ,ref)
+                (unref #:allocation #:class
+                       #:init-value ,unref))
+              #:name type))
 
 (define (%make-gobject type object)
-  (make type #:object object))
+  (make type #:ptr object))
 
-(define (%make-boxed type value)
-  (make type #:value value))
-
-(define (%make-paramspec type pspec)
-  (make type #:pspec pspec))
-
-(define (%make-compact type ptr)
-  (make type #:ptr ptr))
-
-(define-method (initialize (pspec <GParamSpec>) initargs)
-  (next-method)
-  (slot-set! pspec 'procedure (cut %get-property <> pspec))
-  (slot-set! pspec 'setter (cut %set-property! <> pspec <>)))
+(define (%make-paramspec type spec)
+  (make type #:ptr spec))
 
 (define-class <signal> (<applicable-struct>)
   (name #:init-keyword #:name)
@@ -106,10 +72,3 @@
 
 (define-method (connect-after obj (signal <signal>) (detail <symbol>) (handler <procedure>))
   (%connect obj signal detail handler #t))
-
-(define (register-type name parent . rest)
-  (cond
-   ((memq <GObject> (class-precedence-list parent))
-    (apply %define-object-type name parent rest))
-   (else
-    (error "cannot define class with parent ~A" parent))))

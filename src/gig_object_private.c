@@ -140,8 +140,15 @@ gig_init_object_private(void)
     signal_slot_syms[SIGNAL_SLOT_RETURN_TYPE] = scm_from_utf8_symbol("return-type");
     signal_slot_syms[SIGNAL_SLOT_PARAM_TYPES] = scm_from_utf8_symbol("param-types");
 
-    object_slot_syms[OBJECT_SLOT_OBJECT] = scm_from_utf8_symbol("object");
+    object_slot_syms[OBJECT_SLOT_OBJECT] = scm_from_utf8_symbol("ptr");
 
     signal_accu_first_wins = scm_from_utf8_symbol("first-wins");
     signal_accu_true_handled = scm_from_utf8_symbol("true-handled");
+}
+
+GParamSpec *
+gig_paramspec_peek(SCM obj)
+{
+    g_return_val_if_fail(SCM_IS_A_P(obj, gig_paramspec_type), NULL);
+    return gir_type_peek_object(obj);
 }

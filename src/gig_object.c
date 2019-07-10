@@ -1,6 +1,5 @@
 #include "gig_object.h"
 #include "gig_object_private.h"
-#include "gig_paramspec.h"
 #include "gir_type.h"
 #include "gi_util.h"
 #include "gi_gvalue.h"
@@ -32,14 +31,6 @@ gig_object_ref(gpointer object)
     return gig_object_take(g_object_ref_sink(object));
 }
 
-SCM
-gig_object_transfer(gpointer object, GITransfer transfer)
-{
-    switch (transfer) {
-    default:
-        return gig_object_ref(object);
-    }
-}
 
 GObject *
 gig_object_peek(SCM object)
@@ -210,7 +201,7 @@ gig_i_scm_get_pspec(SCM self, SCM prop)
     }
     scm_dynwind_end();
 
-    return gig_paramspec_ref(pspec);
+    return gir_type_transfer_object(G_PARAM_SPEC_TYPE(pspec), pspec, GI_TRANSFER_NOTHING);
 }
 
 static SCM

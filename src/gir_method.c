@@ -170,12 +170,7 @@ scm_call_method(SCM s_object, SCM s_method_name, SCM s_list_of_args)
     free(args_str);
 
     GObject *object;
-    if (SCM_IS_A_P(s_object, gig_object_type))
-        object = gig_object_peek(s_object);
-    else {
-        g_warning("call-method used on a non-object type");
-        object = gir_type_peek_object(s_object);
-    }
+    object = gir_type_peek_object(s_object);
 
     GError *err = NULL;
     // FIXME: cache this argmap

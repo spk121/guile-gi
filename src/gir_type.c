@@ -19,8 +19,6 @@
 #include "gir_type.h"
 #include "gi_util.h"
 #include "gig_object.h"
-#include "gig_paramspec.h"
-#include "gig_boxed.h"
 #if HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -133,8 +131,10 @@ gir_type_register(GType gtype)
 }
 
 static SCM make_class_proc;
-static SCM make_compact_proc;
+static SCM make_instance_proc;
+static SCM make_fundamental_proc;
 static SCM kwd_name;
+static SCM kwd_ptr;
 static SCM sym_ptr;
 static SCM sym_ref;
 static SCM sym_unref;
@@ -145,67 +145,32 @@ typedef void (*GigTypeUnrefFunction)(gpointer);
 SCM
 gir_type_transfer_object(GType type, gpointer ptr, GITransfer transfer)
 {
-    switch (G_TYPE_FUNDAMENTAL(type))
+    if (G_TYPE_IS_CLASSED(type))
+        type = G_OBJECT_TYPE(ptr);
+
+    SCM scm_type = gir_type_get_scheme_type(type);
+    GigTypeRefFunction ref;
+    ref = (GigTypeRefFunction)scm_to_pointer(scm_class_ref(scm_type, sym_ref));
+    GigTypeUnrefFunction unref;
+    unref = (GigTypeUnrefFunction)scm_to_pointer(scm_class_ref(scm_type, sym_unref));
+
+    switch (transfer)
     {
-    case G_TYPE_OBJECT:
-        return gig_object_transfer(ptr, transfer);
-    case G_TYPE_PARAM:
-        return gig_paramspec_transfer((GParamSpec *)ptr, transfer);
-    case G_TYPE_BOXED:
-        return gig_boxed_transfer(type, ptr, transfer);
     default:
-    {
-        SCM scm_type = gir_type_get_scheme_type(type);
-        GigTypeRefFunction ref;
-        ref = (GigTypeRefFunction)scm_to_pointer(scm_class_ref(scm_type, sym_ref));
-        GigTypeUnrefFunction unref;
-        unref = (GigTypeUnrefFunction)scm_to_pointer(scm_class_ref(scm_type, sym_unref));
-        return scm_call_2(make_compact_proc,
+        return scm_call_3(make_instance_proc,
                           scm_type,
+                          kwd_ptr,
                           scm_from_pointer(ref(ptr), unref));
-    }
     }
 }
 
-static gpointer
-gig_compact_peek(SCM obj) {
-    return scm_to_pointer(scm_slot_ref(obj, sym_ptr));
-}
+static SCM gig_fundamental_type;
 
 gpointer
 gir_type_peek_object(SCM obj)
 {
-    if (SCM_IS_A_P(obj, gig_object_type))
-        return gig_object_peek(obj);
-    else if (SCM_IS_A_P(obj, gig_boxed_type))
-        return gig_boxed_peek(obj);
-    else if (SCM_IS_A_P(obj, gig_paramspec_type))
-        return gig_paramspec_peek(obj);
-    else if (SCM_IS_A_P(obj, gig_compact_type))
-        return gig_compact_peek(obj);
-    else
-        g_assert_not_reached();
-}
-
-SCM
-gir_type_define_compact(GType gtype,
-                        GigTypeRefFunction ref_function,
-                        GigTypeUnrefFunction unref_function)
-{
-    scm_dynwind_begin(0);
-    char *class_name = scm_dynwind_or_bust("%define-compact-type",
-                                           gir_type_class_name_from_gtype(gtype));
-    SCM new_type, dsupers = scm_list_1(gig_compact_type), slots = SCM_EOL;
-
-    new_type = scm_call_4(make_class_proc, dsupers, slots, kwd_name,
-                          scm_from_utf8_string(class_name));
-
-    // pray
-    scm_class_set_x(new_type, sym_ref, scm_from_pointer(ref_function, NULL));
-    scm_class_set_x(new_type, sym_unref, scm_from_pointer(unref_function, NULL));
-    scm_dynwind_end();
-
-    return new_type;
+    g_return_val_if_fail(SCM_IS_A_P(obj, gig_fundamental_type), NULL);
+    return scm_to_pointer(scm_slot_ref(obj, sym_ptr));
 }
 
 // Given introspection info from a typelib library for a given GType,
@@ -564,48 +529,73 @@ scm_type_dump_type_table(void)
 }
 
 void
+gir_type_define_fundamental(GType type, SCM extra_supers,
+                            GigTypeRefFunction ref,
+                            GigTypeUnrefFunction unref)
+{
+    scm_dynwind_begin(0);
+    char *class_name = scm_dynwind_or_bust("%define-compact-type",
+                                           gir_type_class_name_from_gtype(type));
+
+    SCM new_type = scm_call_4(make_fundamental_proc,
+                              scm_from_utf8_string(class_name),
+                              extra_supers,
+                              scm_from_pointer(ref, NULL),
+                              scm_from_pointer(unref, NULL));
+    g_hash_table_insert(gir_type_gtype_hash, GSIZE_TO_POINTER(type),
+                        SCM_PACK_POINTER(new_type));
+#if ENABLE_GIR_TYPE_SCM_HASH
+    g_hash_table_insert(gir_type_scm_hash, SCM_PACK_POINTER(new_type),
+                        GSIZE_TO_POINTER(type));
+#endif
+    scm_c_define(class_name, new_type);
+    scm_c_export(class_name, NULL);
+    scm_dynwind_end();
+}
+
+static SCM make_fundamental_proc;
+
+static gpointer
+identity(gpointer boxed)
+{
+    return boxed;
+}
+
+void
 gir_init_types(void)
 {
-    gig_object_type = scm_c_public_ref("gi oop", "<GObject>");
-    gig_interface_type = scm_c_private_ref("gi oop", "<GInterface>");
-    gig_boxed_type = scm_c_public_ref("gi oop", "<GBoxed>");
-    gig_paramspec_type = scm_c_public_ref("gi oop", "<GParamSpec>");
-    gig_compact_type = scm_c_private_ref("gi oop", "<GCompact>");
+    gig_fundamental_type = scm_c_private_ref("gi oop", "<GFundamental>");
     make_class_proc = scm_c_public_ref("oop goops", "make-class");
-    make_compact_proc = scm_c_private_ref("gi oop", "%make-compact");
+    make_instance_proc = scm_c_public_ref("oop goops", "make");
+    make_fundamental_proc = scm_c_private_ref("gi oop", "%make-fundamental-class");
     kwd_name = scm_from_utf8_keyword("name");
+    kwd_ptr = scm_from_utf8_keyword("ptr");
     sym_ptr = scm_from_utf8_symbol("ptr");
     sym_ref = scm_from_utf8_symbol("ref");
     sym_unref = scm_from_utf8_symbol("unref");
 
-    SCM variant_type = gir_type_define_compact(G_TYPE_VARIANT,
-                                               (GigTypeRefFunction)g_variant_ref_sink,
-                                               (GigTypeUnrefFunction)g_variant_unref);
-
     gir_type_gtype_hash = g_hash_table_new(g_direct_hash, g_direct_equal);
-    g_hash_table_insert(gir_type_gtype_hash, GSIZE_TO_POINTER(G_TYPE_OBJECT),
-                        SCM_PACK_POINTER(gig_object_type));
-    g_hash_table_insert(gir_type_gtype_hash, GSIZE_TO_POINTER(G_TYPE_BOXED),
-                        SCM_PACK_POINTER(gig_boxed_type));
-    g_hash_table_insert(gir_type_gtype_hash, GSIZE_TO_POINTER(G_TYPE_INTERFACE),
-                        SCM_PACK_POINTER(gig_interface_type));
-    g_hash_table_insert(gir_type_gtype_hash, GSIZE_TO_POINTER(G_TYPE_PARAM),
-                        SCM_PACK_POINTER(gig_paramspec_type));
-    g_hash_table_insert(gir_type_gtype_hash, GSIZE_TO_POINTER(G_TYPE_VARIANT),
-                        SCM_PACK_POINTER(variant_type));
 #if ENABLE_GIR_TYPE_SCM_HASH
     gir_type_scm_hash = g_hash_table_new(g_direct_hash, g_direct_equal);
-    g_hash_table_insert(gir_type_scm_hash, SCM_PACK_POINTER(gig_object_type),
-                        GSIZE_TO_POINTER(G_TYPE_OBJECT));
-    g_hash_table_insert(gir_type_scm_hash, SCM_PACK_POINTER(gig_boxed_type),
-                        GSIZE_TO_POINTER(G_TYPE_BOXED));
-    g_hash_table_insert(gir_type_scm_hash, SCM_PACK_POINTER(gig_interface_type),
-                        GSIZE_TO_POINTER(G_TYPE_INTERFACE));
-    g_hash_table_insert(gir_type_scm_hash, SCM_PACK_POINTER(gig_paramspec_type),
-                        GSIZE_TO_POINTER(G_TYPE_PARAM));
-    g_hash_table_insert(gir_type_scm_hash, SCM_PACK_POINTER(variant_type),
-                        GSIZE_TO_POINTER(G_TYPE_VARIANT));
 #endif
+
+    gir_type_define_fundamental(G_TYPE_OBJECT, SCM_EOL,
+                                (GigTypeRefFunction)g_object_ref_sink,
+                                (GigTypeUnrefFunction)g_object_unref);
+    gir_type_define_fundamental(G_TYPE_INTERFACE, SCM_EOL, NULL, NULL);
+    // TODO: better handling of boxed type
+    gir_type_define_fundamental(G_TYPE_BOXED, SCM_EOL, identity, NULL);
+    gir_type_define_fundamental(G_TYPE_PARAM,
+                                scm_list_1(scm_c_public_ref("oop goops",
+                                                            "<applicable-struct-with-setter>")),
+                                (GigTypeRefFunction)g_param_spec_ref_sink,
+                                (GigTypeUnrefFunction)g_param_spec_unref);
+    gir_type_define_fundamental(G_TYPE_VARIANT, SCM_EOL,
+                                (GigTypeRefFunction)g_variant_ref_sink,
+                                (GigTypeUnrefFunction)g_variant_unref);
+
+    gig_object_type = gir_type_get_scheme_type(G_TYPE_OBJECT);
+    gig_paramspec_type = gir_type_get_scheme_type(G_TYPE_PARAM);
 
     atexit(gir_type_free_types);
 

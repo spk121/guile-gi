@@ -15,12 +15,16 @@
 (define-module (gi)
   #:use-module (gi oop)
   #:use-module (oop goops)
-  #:re-export (register-type)
+  #:use-module (srfi srfi-26)
+  #:re-export (<signal>
+               connect
+               connect-after)
   #:export (use-typelibs
             create
             (%create . make-gobject)
             with-object
-            (with-object . using)))
+            (with-object . using)
+            register-type))
 
 (eval-when (expand load eval)
   ;; required for %typelib-module-name, which is used at expand time
@@ -151,6 +155,18 @@
              (use-modules #,@module-uses)))))))
 
 (load-extension "libguile-gi" "gir_init")
+
+(define-method (initialize (pspec <GParam>) initargs)
+  (next-method)
+  (slot-set! pspec 'procedure (cut (@@ (gi oop) %get-property) <> pspec))
+  (slot-set! pspec 'setter (cut (@@ (gi oop) %set-property!) <> pspec <>)))
+
+(define (register-type name parent . rest)
+  (cond
+   ((memq <GObject> (class-precedence-list parent))
+    (apply (@@ (gi oop) %define-object-type) name parent rest))
+   (else
+    (error "cannot define class with parent ~A" parent))))
 
 (when (defined? 'gcov-reset)
   (export gcov-reset))

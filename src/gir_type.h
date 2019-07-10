@@ -19,8 +19,6 @@
 #include <girepository.h>
 
 SCM gig_object_type;
-SCM gig_boxed_type;
-SCM gig_compact_type;
 SCM gig_interface_type;
 SCM gig_paramspec_type;
 

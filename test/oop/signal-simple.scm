@@ -1,5 +1,4 @@
 (use-modules (gi)
-             (gi oop)
              (oop goops)
              (test automake-test-lib))
 

@@ -58,10 +58,6 @@ libguile_gi_la_SOURCES = \
  gig_object.h \
  gig_object_private.c \
  gig_object_private.h \
- gig_boxed.c \
- gig_boxed.h \
- gig_paramspec.c \
- gig_paramspec.h \
  gi_gvalue.c \
  gi_gvalue.h \
  gi_signal_closure.c \
