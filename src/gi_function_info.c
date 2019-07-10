@@ -4,6 +4,7 @@
 
 
 static gboolean is_predicate(GIFunctionInfo *info);
+static void count_args(GIFunctionInfo *info, int *in, int *out);
 
 // Returns TRUE if this function returns a single boolean.
 static gboolean
@@ -18,7 +19,7 @@ is_predicate(GIFunctionInfo *info)
         && !g_type_info_is_pointer(return_type)) {
         int in, out;
 
-        gi_function_info_count_args(info, &in, &out);
+        count_args(info, &in, &out);
         if (out == 0)
             predicate = TRUE;
     }
@@ -28,8 +29,8 @@ is_predicate(GIFunctionInfo *info)
 
 // This procedure counts the number of arguments that the
 // GObject Introspection FFI call is expecting.
-void
-gi_function_info_count_args(GIFunctionInfo *info, int *in, int *out)
+static void
+count_args(GIFunctionInfo *info, int *in, int *out)
 {
     // Count the number of required input arguments, and store
     // the arg info in a newly allocate array.

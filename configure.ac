@@ -205,6 +205,18 @@ AC_ARG_ENABLE([coverage],
               [cov=false])
 AM_CONDITIONAL([COVERAGE], [test x$cov = xtrue])
 
+AC_ARG_ENABLE([mtrace],
+              [AS_HELP_STRING([--enable-mtrace],
+                              [compile with gcc's memory tracing support])],
+              [case "${enableval}" in
+                 yes) mtrace=true ;;
+                 no)  mtrace=false ;;
+                 *) AC_MSG_ERROR([bad value ${enableval} for --enable-mtrace]) ;;
+               esac],
+              [mtrace=false])
+AM_CONDITIONAL([MTRACE], [test x$mtrace = xtrue])
+
+
 ################
 # Check for C library functions
 

@@ -93,6 +93,9 @@ endif
 if COVERAGE
 libguile_gi_la_CPPFLAGS += -DENABLE_GCOV --coverage
 endif
+if MTRACE
+libguile_gi_la_CPPFLAGS += -DMTRACE
+endif
 
 libguile_gi_la_CFLAGS = \
   -std=c11 \

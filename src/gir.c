@@ -43,6 +43,10 @@ void __gcov_reset(void);
 void __gcov_dump(void);
 #endif
 
+#ifdef MTRACE
+#include <mcheck.h>
+#endif
+
 void
 gir_log_handler(const gchar *log_domain,
                 GLogLevelFlags log_level, const gchar *message, gpointer user_data)
@@ -85,6 +89,9 @@ scm_gcov_dump(void)
 void
 gir_init(void)
 {
+#ifdef MTRACE
+    mtrace();
+#endif
 #if 0
     g_log_set_handler(G_LOG_DOMAIN, G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL
                       | G_LOG_FLAG_RECURSION, gir_log_handler, NULL);
