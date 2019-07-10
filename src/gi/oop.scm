@@ -23,23 +23,7 @@
             <signal>
             register-type
 
-            connect-after
-
-            G_PARAM_READABLE
-            G_PARAM_WRITABLE
-            G_PARAM_READWRITE
-            G_PARAM_CONSTRUCT
-            G_PARAM_CONSTRUCT_ONLY
-
-            G_SIGNAL_RUN_FIRST
-            G_SIGNAL_RUN_LAST
-            G_SIGNAL_RUN_CLEANUP
-            G_SIGNAL_NO_RECURSE
-            G_SIGNAL_DETAILED
-            G_SIGNAL_ACTION
-            G_SIGNAL_NO_HOOKS
-            G_SIGNAL_MUST_COLLECT
-            G_SIGNAL_DEPRECATED)
+            connect-after)
   #:replace (connect))
 
 (eval-when (expand load eval)
@@ -94,16 +78,19 @@
   (slot-set! pspec 'setter (cut %set-property! <> pspec <>)))
 
 (define-class <signal> (<applicable-struct>)
-  name flags accumulator return-type param-types)
+  (name #:init-keyword #:name)
+  (flags #:init-keyword #:flags
+         #:init-value 0)
+  (accumulator #:init-keyword #:accumulator
+               #:init-value #f)
+  (return-type #:init-keyword #:return-type
+               #:init-value 0)
+  (param-types #:init-keyword #:param-types
+               #:init-value '()))
 
 (define-method (initialize (signal <signal>) initargs)
   (next-method)
-  (slot-set! signal 'procedure (cut %emit <> signal <...>))
-  (slot-set! signal 'name (get-keyword #:name initargs #f))
-  (slot-set! signal 'flags (get-keyword #:flags initargs 0))
-  (slot-set! signal 'accumulator (get-keyword #:accumulator initargs #f))
-  (slot-set! signal 'return-type (get-keyword #:return-type initargs 0))
-  (slot-set! signal 'param-types (get-keyword #:param-types initargs '())))
+  (slot-set! signal 'procedure (cut %emit <> signal <...>)))
 
 (define-method (connect (socket <input-output-port>) . args)
   (apply (@ (guile) connect) socket args))

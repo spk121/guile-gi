@@ -8,7 +8,7 @@
 (define my-signal
   (make <signal>
     #:name "my-signal"
-    #:flags G_SIGNAL_DETAILED
+    #:flags SIGNAL_DETAILED
     #:return-type G_TYPE_NONE))
 
 (define <TestParam>

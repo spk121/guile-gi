@@ -108,7 +108,6 @@ gir_init(void)
     gi_init_gvalue();
 
     gi_init_giargument();
-    /* gig_init_object(); */
     gir_init_callback();
     gir_init_function();
     gir_init_method();

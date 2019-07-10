@@ -17,7 +17,6 @@ typedef struct _SignalSpec
     GType *param_types;
 } SignalSpec;
 
-SCM guile_property;
 SCM guile_signal;
 
 SCM private_make_gobject_proc;

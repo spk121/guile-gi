@@ -144,22 +144,4 @@ gig_init_object_private(void)
 
     signal_accu_first_wins = scm_from_utf8_symbol("first-wins");
     signal_accu_true_handled = scm_from_utf8_symbol("true-handled");
-
-#define D(x) scm_permanent_object(scm_c_define(#x, scm_from_ulong(x)))
-    /* D(G_PARAM_READABLE); */
-    /* D(G_PARAM_WRITABLE); */
-    /* D(G_PARAM_READWRITE); */
-    /* D(G_PARAM_CONSTRUCT); */
-    /* D(G_PARAM_CONSTRUCT_ONLY); */
-
-    D(G_SIGNAL_RUN_FIRST);
-    D(G_SIGNAL_RUN_LAST);
-    D(G_SIGNAL_RUN_CLEANUP);
-    D(G_SIGNAL_NO_RECURSE);
-    D(G_SIGNAL_DETAILED);
-    D(G_SIGNAL_ACTION);
-    D(G_SIGNAL_NO_HOOKS);
-    D(G_SIGNAL_MUST_COLLECT);
-    D(G_SIGNAL_DEPRECATED);
-#undef D
 }
