@@ -1,14 +1,13 @@
 (use-modules (gi)
-             (oop goops)
              (test automake-test-lib))
 
 (typelib-require ("GObject" "2.0"))
 
 (define sum
-  (make <signal>
-    #:name "sum"
-    #:return-type G_TYPE_INT
-    #:accumulator +))
+  (make-signal
+   #:name "sum"
+   #:return-type G_TYPE_INT
+   #:accumulator +))
 
 (define <TestParam>
   (register-type

@@ -17,8 +17,12 @@
   #:use-module (oop goops)
   #:use-module (srfi srfi-26)
   #:re-export (<signal>
+               make-signal
                connect
-               connect-after)
+               connect-after
+               ;; re-export some GOOPS stuff, so that we don't have to import all of it
+               is-a?
+               define-method)
   #:export (use-typelibs
             create
             (%create . make-gobject)

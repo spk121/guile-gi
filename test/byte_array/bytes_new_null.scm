@@ -2,6 +2,7 @@
              (rnrs bytevectors)
              (test automake-test-lib))
 
+(setlocale LC_ALL "")
 (automake-test
  (begin
    (import-typelib "GLib" "2.0")

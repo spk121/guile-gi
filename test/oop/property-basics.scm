@@ -1,5 +1,4 @@
 (use-modules (gi)
-             (oop goops)
              (test automake-test-lib))
 
 (typelib-require ("GObject" "2.0") ("Gio" "2.0"))

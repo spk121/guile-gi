@@ -1,5 +1,4 @@
 (use-modules (gi)
-             (oop goops)
              (rnrs bytevectors)
              (test automake-test-lib))
 

@@ -1,14 +1,13 @@
 (use-modules (gi)
-             (oop goops)
              (test automake-test-lib))
 
 (typelib-require ("GObject" "2.0"))
 
 (define my-signal
-  (make <signal>
-    #:name "my-signal"
-    #:flags SIGNAL_DETAILED
-    #:return-type G_TYPE_NONE))
+  (make-signal
+   #:name "my-signal"
+   #:flags SIGNAL_DETAILED
+   #:return-type G_TYPE_NONE))
 
 (define <TestParam>
   (register-type

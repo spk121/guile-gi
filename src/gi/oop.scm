@@ -18,6 +18,7 @@
   #:use-module (srfi srfi-26)
   #:use-module (system foreign)
   #:export (<signal>
+            make-signal
             connect-after)
   #:replace (connect))
 
@@ -53,6 +54,8 @@
                #:init-value 0)
   (param-types #:init-keyword #:param-types
                #:init-value '()))
+
+(define make-signal (cute make <signal> <...>))
 
 (define-method (initialize (signal <signal>) initargs)
   (next-method)
