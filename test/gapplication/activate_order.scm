@@ -20,5 +20,5 @@
        (connect! shutdown
          (lambda _ (set! fired-signals (reverse fired-signals))))
 
-       (run 0 '()))
+       (run '()))
      (equal? fired-signals '(1 3 2)))))

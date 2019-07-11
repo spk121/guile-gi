@@ -6,7 +6,7 @@
 
 (automake-test
  (begin
-   (init 0 #f)
+   (init)
    (let* ([box1 (cast (box:new ORIENTATION_VERTICAL 1) <GtkBox>)]
           [box2 (create <GtkBox>
                   (orientation ORIENTATION_VERTICAL)

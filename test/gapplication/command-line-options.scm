@@ -24,5 +24,6 @@
              (set! success (vector= string=? args #("world" "darkness, my old friend"))))
            (send app (quit))
            0)))
-     (with-object app (run 5 #("command-line" "-h" "world" "-h" "darkness, my old friend")))
+     (with-object app
+       (run #("command-line" "-h" "world" "-h" "darkness, my old friend")))
      success)))

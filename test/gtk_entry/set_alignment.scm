@@ -7,7 +7,7 @@
 
 (automake-test
  (begin
-   (init 0 #f)
+   (init)
    (let ([entry1 (cast (entry:new) <GtkEntry>)]
          [entry2 (cast (entry:new) <GtkEntry>)])
      (with-object entry1 (set-alignment 1.0))

@@ -7,19 +7,15 @@
 
 (automake-test
  (let* ([key (string->utf8 "key")]
-        [key-len (bytevector-length key)]
         [bv (string->utf8 "The quick brown fox jumps over the lazy dog")]
-        [bv-len (bytevector-length bv)]
-        [bytes-key (bytes:new-take key key-len)]
-        [bytes (bytes:new-take bv bv-len)]
+        [bytes-key (bytes:new-take key)]
+        [bytes (bytes:new-take bv)]
         [hmac (compute-hmac-for-bytes
                CHECKSUM_MD5
                bytes-key
                bytes)])
    (write key) (newline)
-   (write key-len) (newline)
    (write bv) (newline)
-   (write bv-len) (newline)
    (write bytes-key) (newline)
    (write bytes) (newline)
    (write hmac) (newline)

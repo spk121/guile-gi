@@ -25,7 +25,7 @@
 
      ;; Read as much as we can.
      (receive (status nbytes)
-         (with-object channel (read-chars buf SIZ))
+         (with-object channel (read-chars buf))
        (let ((bv (subbytevector buf 0 nbytes)))
            (format #t "Output bytevector contents: ~S~%" bv)
            (format #t "Output bytevector as UTF8: ~S~%" (utf8->string bv))
