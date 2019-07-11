@@ -36,8 +36,8 @@ struct array_info
     // The array itself
     GITypeTag array_type_tag;
     gboolean array_is_ptr;
-    gsize array_fixed_size;
-    gssize array_length;
+    gint array_fixed_size;
+    gint array_length_index;
     gboolean array_is_zero_terminated;
     GIArrayType array_type;
     GITransfer array_transfer;
@@ -46,7 +46,7 @@ struct array_info
     GITransfer item_transfer;
     GITypeTag item_type_tag;
     gboolean item_is_ptr;
-    gsize item_size;
+    size_t item_size;
 
     // The objects held by elements of the array
     GIInfoType referenced_base_type;
@@ -54,6 +54,59 @@ struct array_info
 
     unsigned must_free;
 };
+
+static void object_to_c_immediate_arg(const char *subr, int argpos,
+                                      SCM obj, GITypeTag type_tag, GIArgument *arg);
+static void object_to_c_interface_arg(const char *subr, int argpos,
+                                      SCM obj, GITypeInfo *arg_info, GIArgument *arg);
+static void object_to_c_immediate_pointer_arg(const char *subr, int argpos,
+                                              SCM obj,
+                                              GIArgInfo *arg_info,
+                                              unsigned *must_free, GIArgument *arg);
+static void object_to_c_string_arg(const char *subr, int argpos,
+                                   SCM obj,
+                                   GIArgInfo *arg_info, unsigned *must_free, GIArgument *arg);
+static void object_to_c_void_pointer_arg(const char *subr, int argpos, SCM obj, GIArgument *arg);
+static void object_to_c_interface_pointer_arg(const char *subr, int argpos, SCM object,
+                                              GIArgInfo *arg_info,
+                                              unsigned *must_free, GIArgument *arg);
+static void object_to_c_array_arg(const char *subr, int argpos, SCM object,
+                                  GITypeInfo *array_type_info,
+                                  GITransfer array_transfer, unsigned *must_free, GIArgument *arg,
+                                  size_t *size);
+static void object_to_c_native_array_arg(const char *subr, int argpos, SCM object,
+                                         struct array_info *ai, GIArgument *arg, size_t *size);
+static void object_to_c_native_immediate_array_arg(const char *subr, int argpos, SCM object,
+                                                   struct array_info *ai, GIArgument *arg,
+                                                   size_t *size);
+static void object_to_c_native_string_array_arg(const char *subr, int argpos, SCM object,
+                                                struct array_info *ai, GIArgument *arg,
+                                                size_t *size);
+static void object_to_c_native_interface_array_arg(const char *subr, int argpos, SCM object,
+                                                   struct array_info *ai, GIArgument *arg,
+                                                   size_t *size);
+static void object_to_c_ptr_array_arg(const char *subr, int argpos, SCM object,
+                                      struct array_info *ai, GIArgument *arg, size_t *size);
+static void object_to_c_garray_array_arg(const char *subr, int argpos, SCM object,
+                                         struct array_info *ai, GIArgument *arg, size_t *size);
+static void object_to_c_byte_array_arg(const char *subr, int argpos, SCM object,
+                                       struct array_info *ai, GIArgument *arg, size_t *size);
+static SCM object_from_c_native_array_arg(struct array_info *ai, GIArgument *arg);
+
+static SCM object_from_c_byte_array_arg(struct array_info *ai, GIArgument *arg);
+
+static SCM object_from_c_garray_arg(struct array_info *ai, GIArgument *arg);
+
+static void convert_immediate_arg_to_object(GIArgument *arg, GITypeTag type_tag, SCM *obj);
+static void convert_interface_arg_to_object(GIArgument *arg, GITypeInfo *type_info, SCM *obj);
+static void convert_string_pointer_arg_to_object(GIArgument *arg, GITypeTag type_tag,
+                                                 GITransfer transfer, SCM *obj, size_t size);
+static void convert_const_void_pointer_arg_to_object(GIArgument *arg, SCM *obj, size_t size);
+static void convert_array_pointer_arg_to_object(GIArgument *arg, GITypeInfo *array_type_info,
+                                                GITransfer array_transfer, SCM *obj, size_t size);
+static void convert_list_arg_to_object(GIArgument *arg, GITypeInfo *list_type_info,
+                                       GITransfer list_transfer, SCM *obj);
+
 
 static void
 fill_array_info(struct array_info *ai, GITypeInfo *array_type_info, GITransfer array_transfer)
@@ -63,7 +116,7 @@ fill_array_info(struct array_info *ai, GITypeInfo *array_type_info, GITransfer a
     // us we're an array.
     ai->array_type_tag = g_type_info_get_tag(array_type_info);
     ai->array_is_ptr = g_type_info_is_pointer(array_type_info);
-    ai->array_length = g_type_info_get_array_length(array_type_info);
+    ai->array_length_index = g_type_info_get_array_length(array_type_info);
     ai->array_fixed_size = g_type_info_get_array_fixed_size(array_type_info);
     ai->array_is_zero_terminated = g_type_info_is_zero_terminated(array_type_info);
     ai->array_type = g_type_info_get_array_type(array_type_info);
@@ -171,7 +224,7 @@ fill_array_info(struct array_info *ai, GITypeInfo *array_type_info, GITransfer a
 }
 
 static size_t
-array_length_1(struct array_info *ai, GIArgument *arg)
+array_length(struct array_info *ai, GIArgument *arg)
 {
     if (ai->array_is_zero_terminated) {
         gpointer array = arg->v_pointer;
@@ -234,76 +287,10 @@ array_length_1(struct array_info *ai, GIArgument *arg)
         }
     }
     else if (ai->array_fixed_size != -1)
-        return ai->array_fixed_size;
+        return (size_t)(ai->array_fixed_size);
 
-    return -1;
+    return GIG_ARRAY_SIZE_UNKNOWN;
 }
-
-static ssize_t
-array_length(struct array_info *ai, GIArgument *arg)
-{
-    ssize_t array_length = array_length_1(ai, arg);
-    if (ai->array_length != -1 && ai->array_length != array_length)
-        g_warning("mismatching array lengths: expected %zd, but got %zd",
-                  ai->array_length, array_length);
-    if (ai->array_fixed_size != -1 && ai->array_fixed_size != array_length)
-        g_warning("mismatching array lengths: expected %zd, but got %zd",
-                  ai->array_fixed_size, array_length);
-    if (array_length == 0)
-        g_debug("array has length 0, are you sure about that?");
-    return array_length;
-}
-
-static void object_to_c_immediate_arg(const char *subr, int argpos,
-                                      SCM obj, GITypeTag type_tag, GIArgument *arg);
-static void object_to_c_interface_arg(const char *subr, int argpos,
-                                      SCM obj, GITypeInfo *arg_info, GIArgument *arg);
-static void object_to_c_immediate_pointer_arg(const char *subr, int argpos,
-                                              SCM obj,
-                                              GIArgInfo *arg_info,
-                                              unsigned *must_free, GIArgument *arg);
-static void object_to_c_string_arg(const char *subr, int argpos,
-                                   SCM obj,
-                                   GIArgInfo *arg_info, unsigned *must_free, GIArgument *arg);
-static void object_to_c_void_pointer_arg(const char *subr, int argpos, SCM obj, GIArgument *arg);
-static void object_to_c_interface_pointer_arg(const char *subr, int argpos, SCM object,
-                                              GIArgInfo *arg_info,
-                                              unsigned *must_free, GIArgument *arg);
-static void object_to_c_array_arg(const char *subr, int argpos, SCM object,
-                                  GITypeInfo *array_type_info,
-                                  GITransfer array_transfer, unsigned *must_free, GIArgument *arg,
-                                  int *size);
-static void object_to_c_native_array_arg(const char *subr, int argpos, SCM object,
-                                         struct array_info *ai, GIArgument *arg, int *size);
-static void object_to_c_native_immediate_array_arg(const char *subr, int argpos, SCM object,
-                                                   struct array_info *ai, GIArgument *arg,
-                                                   int *size);
-static void object_to_c_native_string_array_arg(const char *subr, int argpos, SCM object,
-                                                struct array_info *ai, GIArgument *arg, int *size);
-static void object_to_c_native_interface_array_arg(const char *subr, int argpos, SCM object,
-                                                   struct array_info *ai, GIArgument *arg,
-                                                   int *size);
-static void object_to_c_ptr_array_arg(const char *subr, int argpos, SCM object,
-                                      struct array_info *ai, GIArgument *arg, int *size);
-static void object_to_c_garray_array_arg(const char *subr, int argpos, SCM object,
-                                         struct array_info *ai, GIArgument *arg, int *size);
-static void object_to_c_byte_array_arg(const char *subr, int argpos, SCM object,
-                                       struct array_info *ai, GIArgument *arg, int *size);
-static SCM object_from_c_native_array_arg(struct array_info *ai, GIArgument *arg);
-
-static SCM object_from_c_byte_array_arg(struct array_info *ai, GIArgument *arg);
-
-static SCM object_from_c_garray_arg(struct array_info *ai, GIArgument *arg);
-
-static void convert_immediate_arg_to_object(GIArgument *arg, GITypeTag type_tag, SCM *obj);
-static void convert_interface_arg_to_object(GIArgument *arg, GITypeInfo *type_info, SCM *obj);
-static void convert_string_pointer_arg_to_object(GIArgument *arg, GITypeTag type_tag,
-                                                 GITransfer transfer, SCM *obj, int size);
-static void convert_const_void_pointer_arg_to_object(GIArgument *arg, SCM *obj, int size);
-static void convert_array_pointer_arg_to_object(GIArgument *arg, GITypeInfo *array_type_info,
-                                                GITransfer array_transfer, SCM *obj, gssize size);
-static void convert_list_arg_to_object(GIArgument *arg, GITypeInfo *list_type_info,
-                                       GITransfer list_transfer, SCM *obj);
 
 //////////////////////////////////////////////////////////
 // CONVERTING SCM OBJECTS TO GIARGUMENTS
@@ -314,7 +301,7 @@ static void convert_list_arg_to_object(GIArgument *arg, GITypeInfo *list_type_in
 void
 gi_giargument_object_to_c_arg(const char *subr, int argpos,
                               SCM obj, GIArgInfo *arg_info, unsigned *must_free, GIArgument *arg,
-                              int *size)
+                              size_t *size)
 {
     if (size)
         *size = 0;
@@ -444,7 +431,7 @@ gi_giargument_object_to_c_arg(const char *subr, int argpos,
     g_base_info_unref(type_info);
 }
 
-static const void
+static void
 describe_non_pointer_type(GString *desc, GITypeInfo *type_info)
 {
     GITypeTag type_tag = g_type_info_get_tag(type_info);
@@ -703,7 +690,7 @@ gi_giargument_convert_return_type_object_to_arg(SCM obj,
     gboolean is_ptr = g_type_info_is_pointer(type_info);
     GITypeTag type_tag = g_type_info_get_tag(type_info);
     unsigned must_free;
-    int size;
+    size_t size;
 
     if (skip) {
         arg->v_pointer = NULL;
@@ -997,12 +984,12 @@ object_to_c_string_arg(const char *subr, int argpos,
             // But when we're using bytevectors as a possibly writable
             // location, they do need to be null terminated.
             gboolean terminated = FALSE;
-            for (int i = 0; i < SCM_BYTEVECTOR_LENGTH(obj); i++)
+            for (size_t i = 0; i < SCM_BYTEVECTOR_LENGTH(obj); i++)
                 if (SCM_BYTEVECTOR_CONTENTS(obj)[i] == 0)
                     terminated = TRUE;
             if (!terminated)
                 scm_wrong_type_arg_msg(subr, argpos, obj, "null-terminated bytevector");
-            arg->v_string = (gchar *)SCM_BYTEVECTOR_CONTENTS(obj);
+            arg->v_string = (char *)SCM_BYTEVECTOR_CONTENTS(obj);
         }
         else
             // But when we're copying the contents of the string, the
@@ -1085,7 +1072,8 @@ object_to_c_interface_pointer_arg(const char *subr, int argpos, SCM obj,
 static void
 object_to_c_array_arg(const char *subr, int argpos, SCM object,
                       GITypeInfo *array_type_info,
-                      GITransfer array_transfer, unsigned *must_free, GIArgument *arg, int *size)
+                      GITransfer array_transfer, unsigned *must_free, GIArgument *arg,
+                      size_t *size)
 {
     struct array_info ai = { 0 };
     fill_array_info(&ai, array_type_info, array_transfer);
@@ -1102,6 +1090,7 @@ object_to_c_array_arg(const char *subr, int argpos, SCM object,
         break;
     case GI_ARRAY_TYPE_PTR_ARRAY:
         object_to_c_ptr_array_arg(subr, argpos, object, &ai, arg, size);
+        break;
     default:
         g_assert_not_reached();
         break;
@@ -1111,7 +1100,7 @@ object_to_c_array_arg(const char *subr, int argpos, SCM object,
 
 static void
 object_to_c_native_array_arg(const char *subr, int argpos, SCM object,
-                             struct array_info *ai, GIArgument *arg, int *size)
+                             struct array_info *ai, GIArgument *arg, size_t *size)
 {
     if (gi_type_tag_is_integer(ai->item_type_tag)
         || gi_type_tag_is_real_number(ai->item_type_tag))
@@ -1129,7 +1118,7 @@ object_to_c_native_array_arg(const char *subr, int argpos, SCM object,
 static void
 object_to_c_native_immediate_array_arg(const char *subr, int argpos,
                                        SCM object, struct array_info *ai, GIArgument *arg,
-                                       int *size)
+                                       size_t *size)
 {
 #define FUNC_NAME "%object->c-native-immediate-array-arg"
     // IMMEDIATE TYPES.  It seems only boolean, double, and 8 and
@@ -1177,7 +1166,7 @@ object_to_c_native_immediate_array_arg(const char *subr, int argpos,
 
 static void
 object_to_c_byte_array_arg(const char *subr, int argpos, SCM object,
-                           struct array_info *ai, GIArgument *arg, int *size)
+                           struct array_info *ai, GIArgument *arg, size_t *size)
 {
     if (scm_is_bytevector(object)) {
         void *contents = SCM_BYTEVECTOR_CONTENTS(object);
@@ -1194,7 +1183,7 @@ object_to_c_byte_array_arg(const char *subr, int argpos, SCM object,
 
 static void
 object_to_c_garray_array_arg(const char *subr, int argpos, SCM object, struct array_info *ai,
-                             GIArgument *arg, int *size)
+                             GIArgument *arg, size_t *size)
 {
 #define FUNC_NAME "%object->c-garray-array-arg"
     scm_misc_error(FUNC_NAME,
@@ -1205,7 +1194,7 @@ object_to_c_garray_array_arg(const char *subr, int argpos, SCM object, struct ar
 
 static void
 object_to_c_ptr_array_arg(const char *subr, int argpos, SCM object, struct array_info *ai,
-                          GIArgument *arg, int *size)
+                          GIArgument *arg, size_t *size)
 {
 #define FUNC_NAME "%object->c-ptr-array-arg"
     scm_misc_error(FUNC_NAME,
@@ -1229,7 +1218,7 @@ object_to_c_native_direct_struct_array_arg(const char *subr, int argpos, SCM obj
     else
         ptr = g_malloc0_n(ai->item_size, len);
     gpointer entry_ptr = gi_gobject_get_obj(object);
-    for (gsize i = 0; i < len; i++)
+    for (size_t i = 0; i < len; i++)
         memcpy((char *)ptr + i * ai->item_size, entry_ptr, ai->item_size);
     if (ai->item_transfer == GI_TRANSFER_NOTHING)
         ai->must_free = GIR_FREE_SIMPLE;
@@ -1252,7 +1241,7 @@ object_to_c_native_indirect_object_array_arg(const char *subr, int argpos, SCM o
             ptr = g_malloc0_n(sizeof(gpointer), len + 1);
         else
             ptr = g_malloc0_n(sizeof(gpointer), len);
-        for (gsize i = 0; i < len; i++) {
+        for (size_t i = 0; i < len; i++) {
             SCM entry = scm_list_ref(object, scm_from_size_t(i));
             // Entry should be a GObject.  I guess we're not
             // increasing refcnt?  At least that is the case for
@@ -1272,7 +1261,7 @@ static void
 object_to_c_native_interface_array_arg(const char *subr,
                                        int argpos,
                                        SCM object, struct array_info *ai, GIArgument *arg,
-                                       int *size)
+                                       size_t *size)
 {
 #define FUNC_NAME "%object->c-native-interface-array-arg"
     if ((ai->referenced_base_type == GI_INFO_TYPE_ENUM)
@@ -1319,7 +1308,8 @@ object_to_c_native_interface_array_arg(const char *subr,
 
 static void
 object_to_c_native_string_array_arg(const char *subr, int argpos,
-                                    SCM object, struct array_info *ai, GIArgument *arg, int *size)
+                                    SCM object, struct array_info *ai, GIArgument *arg,
+                                    size_t *size)
 {
     // UTF8 or FILENAME pointers.  It seems that arrays of type UTF8
     // can mean two things.
@@ -1355,7 +1345,7 @@ object_to_c_native_string_array_arg(const char *subr, int argpos,
     }
     else if (scm_is_vector(object)) {
         scm_t_array_handle handle;
-        gsize len;
+        size_t len;
         gssize inc;
         const SCM *elt;
 
@@ -1465,7 +1455,7 @@ gi_giargument_preallocate_output_arg_and_object(GIArgInfo *arg_info, GIArgument 
                 // right type.  If it isn't set, we allocate a new
                 // box.
                 if (!scm_is_eq(*obj, SCM_BOOL_F)) {
-                    gsize item_size = g_struct_info_get_size(referenced_base_info);
+                    size_t item_size = g_struct_info_get_size(referenced_base_info);
                     arg->v_pointer = g_malloc0(item_size);
                     g_critical("unhandled allocation");
                     g_assert_not_reached();
@@ -1544,7 +1534,7 @@ gi_giargument_preallocate_output_arg_and_object(GIArgInfo *arg_info, GIArgument 
 }
 
 void
-gi_giargument_convert_arg_to_object(GIArgument *arg, GIArgInfo *arg_info, SCM *obj, int size)
+gi_giargument_convert_arg_to_object(GIArgument *arg, GIArgInfo *arg_info, SCM *obj, size_t size)
 {
     GITypeInfo *type_info = g_arg_info_get_type(arg_info);
     GITypeTag type_tag = g_type_info_get_tag(type_info);
@@ -1666,7 +1656,7 @@ gi_giargument_convert_return_val_to_object(GIArgument *arg,
                                            GITransfer transfer, gboolean null_ok, gboolean skip)
 {
     SCM obj = SCM_BOOL_F;
-    int size = -1;
+    size_t size = GIG_ARRAY_SIZE_UNKNOWN;
 
     if (skip)
         return SCM_UNSPECIFIED;
@@ -1788,7 +1778,8 @@ gi_giargument_convert_return_val_to_object(GIArgument *arg,
             break;
 
         case GI_TYPE_TAG_ARRAY:
-            convert_array_pointer_arg_to_object(arg, type_info, GI_TRANSFER_EVERYTHING, &obj, -1);
+            convert_array_pointer_arg_to_object(arg, type_info, GI_TRANSFER_EVERYTHING, &obj,
+                                                GIG_ARRAY_SIZE_UNKNOWN);
             break;
 
         default:
@@ -1965,7 +1956,7 @@ convert_interface_arg_to_object(GIArgument *arg, GITypeInfo *type_info, SCM *obj
 
 static void
 convert_string_pointer_arg_to_object(GIArgument *arg, GITypeTag type_tag, GITransfer transfer,
-                                     SCM *obj, int size)
+                                     SCM *obj, size_t size)
 {
     // We can't transfer strings directly, since GObject and Guile use
     // different internal encodings.  So for GI_TRANSFER_EVERYTHGING,
@@ -1977,13 +1968,13 @@ convert_string_pointer_arg_to_object(GIArgument *arg, GITypeTag type_tag, GITran
             *obj = scm_c_make_string(0, SCM_MAKE_CHAR(0));
         else {
             if (type_tag == GI_TYPE_TAG_UTF8) {
-                if (size >= 0)
+                if (size != GIG_ARRAY_SIZE_UNKNOWN)
                     *obj = scm_from_utf8_stringn(arg->v_string, size);
                 else
                     *obj = scm_from_utf8_string(arg->v_string);
             }
             else {
-                if (size >= 0)
+                if (size != GIG_ARRAY_SIZE_UNKNOWN)
                     *obj = scm_from_locale_stringn(arg->v_string, size);
                 else
                     *obj = scm_from_locale_string(arg->v_string);
@@ -2002,15 +1993,15 @@ convert_string_pointer_arg_to_object(GIArgument *arg, GITypeTag type_tag, GITran
 static void
 convert_array_pointer_arg_to_object(GIArgument *arg,
                                     GITypeInfo *array_type_info,
-                                    GITransfer array_transfer, SCM *obj, gssize size)
+                                    GITransfer array_transfer, SCM *obj, size_t size)
 {
     struct array_info ai = { 0 };
     fill_array_info(&ai, array_type_info, array_transfer);
 
     // Array length is a misnomer. A positive array length indicates that
     // we are supposed to use an array length passed in as an argument.
-    if (ai.array_length >= 0)
-        ai.array_length = size;
+    if (ai.array_length_index >= 0)
+        ai.array_fixed_size = size;
 
     switch (ai.array_type) {
     case GI_ARRAY_TYPE_BYTE_ARRAY:
@@ -2035,10 +2026,10 @@ static SCM
 object_from_c_native_array_arg(struct array_info *ai, GIArgument *arg)
 {
     SCM obj = SCM_UNDEFINED;
-    gssize length = array_length(ai, arg);
+    size_t length = array_length(ai, arg);
 
-    if (length < 0) {
-        convert_const_void_pointer_arg_to_object(arg, &obj, -1);
+    if (length == GIG_ARRAY_SIZE_UNKNOWN) {
+        convert_const_void_pointer_arg_to_object(arg, &obj, GIG_ARRAY_SIZE_UNKNOWN);
         return obj;
     }
 
@@ -2080,20 +2071,20 @@ object_from_c_native_array_arg(struct array_info *ai, GIArgument *arg)
             g_assert_not_reached();
             break;
         }
-
+        break;
     case GI_TYPE_TAG_UTF8:
     case GI_TYPE_TAG_FILENAME:
     {
         obj = scm_c_make_vector(length, SCM_BOOL_F);
         scm_t_array_handle handle;
-        gsize len;
-        gssize inc;
+        size_t len;
+        ssize_t inc;
         SCM *elt;
 
         elt = scm_vector_writable_elements(obj, &handle, &len, &inc);
         g_assert(len == length);
 
-        for (gsize i = 0; i < length; i++, elt += inc) {
+        for (size_t i = 0; i < length; i++, elt += inc) {
             char *str = ((char **)arg->v_pointer)[i];
             if (str) {
                 if (ai->item_type_tag == GI_TYPE_TAG_UTF8)
@@ -2148,14 +2139,14 @@ object_from_c_garray_arg(struct array_info *ai, GIArgument *arg)
     obj = scm_c_make_vector(array->len, SCM_UNDEFINED);
 
     scm_t_array_handle handle;
-    gsize len, item_size = ai->item_size;
+    size_t len, item_size = ai->item_size;
     gssize inc;
     SCM *elt;
 
     elt = scm_vector_writable_elements(obj, &handle, &len, &inc);
     g_assert(len == array->len);
 
-    for (gsize i = 0; i < len; i++, elt += inc, data += item_size) {
+    for (size_t i = 0; i < len; i++, elt += inc, data += item_size) {
         *elt = scm_c_make_bytevector(item_size);
         memcpy(SCM_BYTEVECTOR_CONTENTS(*elt), data, item_size);
     }
@@ -2185,7 +2176,7 @@ convert_list_arg_to_object(GIArgument *arg, GITypeInfo *list_type_info,
     gpointer list = arg->v_pointer, data;
     GList *_list;
     GSList *_slist;
-    gsize length;
+    size_t length;
 
     // Step 1: allocate
     switch (list_type_tag) {
@@ -2280,9 +2271,9 @@ convert_list_arg_to_object(GIArgument *arg, GITypeInfo *list_type_info,
 }
 
 static void
-convert_const_void_pointer_arg_to_object(GIArgument *arg, SCM *obj, int size)
+convert_const_void_pointer_arg_to_object(GIArgument *arg, SCM *obj, size_t size)
 {
-    if (size >= 0) {
+    if (size != GIG_ARRAY_SIZE_UNKNOWN) {
         SCM bv = scm_c_make_bytevector(size);
         memcpy(SCM_BYTEVECTOR_CONTENTS(bv), arg->v_pointer, size);
         *obj = bv;
@@ -2443,15 +2434,15 @@ arg_to_hash_pointer(const GIArgument *arg, GITypeInfo *type_info)
  *
  * Generic marshalling policy for array length arguments in callables.
  *
- * Returns: The length of the array or -1 on failure.
+ * Returns: The length of the array or GIG_ARRAY_SIZE_UNKNOWN on failure.
  */
 gssize
-gi_argument_array_length_marshal(gsize length_arg_index, void *user_data1, void *user_data2)
+gi_argument_array_length_marshal(size_t length_arg_index, void *user_data1, void *user_data2)
 {
     GIArgInfo length_arg_info;
     GITypeInfo length_type_info;
     GIArgument length_arg;
-    gssize array_len = -1;
+    size_t array_len = GIG_ARRAY_SIZE_UNKNOWN;
     GValue *values = (GValue *)user_data1;
     GICallableInfo *callable_info = (GICallableInfo *)user_data2;
 
@@ -2462,7 +2453,7 @@ gi_argument_array_length_marshal(gsize length_arg_index, void *user_data1, void 
     if (!gi_giargument_to_gssize(NULL,
                                  &length_arg,
                                  g_type_info_get_tag(&length_type_info), &array_len)) {
-        return -1;
+        return GIG_ARRAY_SIZE_UNKNOWN;
     }
 
     return array_len;

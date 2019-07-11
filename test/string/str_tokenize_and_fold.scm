@@ -16,9 +16,13 @@
 ;;                         gchar ***ascii_alternates);
 
 (automake-test
- (receive (tokens ascii-alternates)
-     (str-tokenize-and-fold "Les pâtes" "fr_FR")
-   (write tokens) (newline)
-     (write ascii-alternates) (newline)
+ (let ((str "Les pâtes")
+       (locale "fr_FR"))
+   (receive (tokens ascii-alternates)
+       (str-tokenize-and-fold str locale)
+     (format #t "String: ~S~%" str)
+     (format #t "Locale: ~S~%" locale)
+     (format #t "Tokens: ~S~%" tokens)
+     (format #t "ASCII alternates: ~S~%" ascii-alternates)
      ;; take case-folding into account
-     (vector= string-ci=? #("Les" "pâtes") tokens)))
+     (vector= string-ci=? #("Les" "pâtes") tokens))))

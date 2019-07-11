@@ -4,6 +4,10 @@
 
 (typelib-require ("Gio" "2.0"))
 
+;; g_application_command_line_get_arguments returns a pointer to an
+;; array whose length is one of the returned arguments.  Array
+;; unpacking is not yet handled for this case.
+
 (automake-test
  (begin
    (let ((app (make-gobject (get-gtype <GApplication>)
