@@ -20,6 +20,8 @@
  (begin
    ;; Let's make a channel that writes to a file.
    (let ((channel (iochannel:new-file "tmp.txt" "w")))
+     (format #t "write-only iochannel for tmp.txt: ~S~%" channel)
+     (format #t "writing to 'αβ' iochannel~%")
      (with-object channel
        (write-unichar #\α)
        (write-unichar #\β)
@@ -29,8 +31,8 @@
    (let* ((channel (iochannel:new-file "tmp.txt" "r"))
           (alpha (second-value (with-object channel (read-unichar))))
           (beta  (second-value (with-object channel (read-unichar)))))
-     (write alpha) (newline)
-     (write beta) (newline)
+     (format #t "read-only iochannel for tmp.txt: ~S~%" channel)
+     (format #t "read ~S~S from iochannel~%" alpha beta)
      (and
       (equal? alpha #\α)
       (equal? beta #\β)))))
