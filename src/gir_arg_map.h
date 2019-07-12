@@ -38,11 +38,11 @@ typedef enum
 
 typedef enum
 {
-    GIR_ARG_TYPE_STANDALONE,
-    GIR_ARG_TYPE_ARRAY,
-    GIR_ARG_TYPE_ARRAY_SIZE,
-    GIR_ARG_TYPE_COUNT
-} GirArgType;
+    GIR_ARG_TUPLE_SINGLETON,
+    GIR_ARG_TUPLE_ARRAY,
+    GIR_ARG_TUPLE_ARRAY_SIZE,
+    GIR_ARG_TUPLE_COUNT
+} GirArgTuple;
 
 typedef enum
 {
@@ -52,25 +52,70 @@ typedef enum
     GIR_ARG_PRESENCE_COUNT
 } GirArgPresence;
 
+// This structure contains the information necessary for choosing how
+// to convert between scheme and C arguments of a function or method
+// call.
 typedef struct _GirArgMapEntry GirArgMapEntry;
 struct _GirArgMapEntry
 {
-    GIArgInfo *arg_info;
+    gchar *name;
 
-    GirArgDirection direction;
-    GirArgType type;
+    ////////////////////////////////////////////////////////////////
+    // This block is similar to GIArgInfo, except it is generic for
+    // both arguments and return types
+    GITypeInfo *type_info;
+    GITypeTag type_tag;
+    gboolean is_ptr;
+    // The direction of the C argument, which may differ from the SCM
+    GIDirection c_direction;
+    // Nothing, container, or everything
+    GITransfer transfer;
+    // For C 'in' values, whether NULL is a valid value.  For 'out'
+    // values, whether NULL may be returned.
+    gboolean may_be_null;
+    // For C 'out' values, whether this argument is allocated by the
+    // caller.
+    gboolean is_caller_allocates;
+
+    ////////////////////////////////////////////////////////////////
+    // This block is additional data that is valid only for arrays
+
+    // The array itself
+    GIArrayType array_type;
+    gsize array_fixed_size;
+    gint array_length_index;
+    gboolean array_is_zero_terminated;
+
+    // The elements of the array
+    GITransfer item_transfer;
+    GITypeTag item_type_tag;
+    gboolean item_is_ptr;
+    gsize item_size;
+
+    // The objects held by elements of the array
+    GIInfoType referenced_base_type;
+    GType referenced_object_type;
+
+    ////////////////////////////////////////////////////////////////
+    // This block is derived information about how to map
+    // Scheme to C and back again
+
+    GirArgDirection s_direction;
+    // If this argument can be mapped standalone, or requires another
+    // argument's information to map between C and Scheme
+    GirArgTuple tuple;
     // If this arg is optional in the Scheme GSubr.
     GirArgPresence presence;
     // This arg's index in g_callable_info_get_arg()
-    int arg_info_index;
+    gint arg_info_index;
     // This arg's position in input args of g_function_info_invoke
-    int cinvoke_input_index;
+    gint cinvoke_input_index;
     // This arg's position in the output args of g_function_info_invoke
-    int cinvoke_output_index;
+    gint cinvoke_output_index;
     // This arg's position int the Scheme GSubr
-    int gsubr_input_index;
+    gint gsubr_input_index;
     // This arg's position in the return values list
-    int gsubr_output_index;
+    gint gsubr_output_index;
     // When non-NULL, this is the entry of the array length argument
     // for this array argument.
     GirArgMapEntry *child;
@@ -80,19 +125,21 @@ typedef struct _GirArgMap GirArgMap;
 struct _GirArgMap
 {
     // SCM arguments.
-    int gsubr_required_input_count;
-    int gsubr_optional_input_count;
+    gint gsubr_required_input_count;
+    gint gsubr_optional_input_count;
 
     // SCM return values
-    int gsubr_output_count;
+    gint gsubr_output_count;
 
     // For g_function_invoke call
-    int cinvoke_input_count;
-    int cinvoke_output_count;
+    gint cinvoke_input_count;
+    gint cinvoke_output_count;
 
     // An array of arg_map_entry
     GirArgMapEntry **pdata;
-    int len;
+    gint len;
+
+    GirArgMapEntry *return_val;
 };
 
 GirArgMap *gir_arg_map_new(GIFunctionInfo *function_info);
@@ -101,8 +148,8 @@ void gir_arg_map_dump(const GirArgMap *am);
 
 void gir_arg_map_get_gsubr_args_count(const GirArgMap *am, int *gsubr_required_input_count,
                                       int *gsubr_optional_input_count);
-GIArgInfo *gir_arg_map_get_arg_info(GirArgMap *am, int gsubr_input_index);
-GIArgInfo *gir_arg_map_get_output_arg_info(GirArgMap *am, int cinvoke_output_index);
+GirArgMapEntry *gig_arg_map_get_entry(GirArgMap *am, gint gsubr_input_index);
+GirArgMapEntry *gig_arg_map_get_output_entry(GirArgMap *am, gint cinvoke_output_index);
 gboolean gir_arg_map_has_output_array_size_index(GirArgMap *am, int cinvoke_output_index,
                                                  int *cinvoke_output_array_size_index);
 void gir_arg_map_get_cinvoke_args_count(const GirArgMap *am, int *cinvoke_input_count,
