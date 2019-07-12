@@ -61,8 +61,7 @@
   (next-method)
   (slot-set! signal 'procedure (cut %emit <> signal <...>)))
 
-(define-method (connect (socket <input-output-port>) . args)
-  (apply (@ (guile) connect) socket args))
+(define connect (ensure-generic (@ (guile) connect) 'connect))
 
 (define-method (connect obj (signal <signal>) (handler <procedure>))
   (%connect obj signal #f handler))
