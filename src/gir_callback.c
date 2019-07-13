@@ -41,12 +41,14 @@ callback_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
     g_debug("in callback C->SCM binding");
     unsigned int n_args = cif->nargs;
 
-    g_assert(n_args >= 0);
+    g_assert(n_args < 20);
+
+    // FIXME: cache this
+    GirArgMap *amap = gir_arg_map_new(gcb->callback_info);
 
     for (unsigned int i = 0; i < n_args; i++) {
         SCM s_entry = SCM_BOOL_F;
         GIArgument giarg;
-        GIArgInfo *arg_info;
 
         // Did I need this block? Or can I just
         // do giarg.v_pointer = ffi_args[i] for all cases?
@@ -88,10 +90,8 @@ callback_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
             giarg.v_pointer = ffi_args[i];
         }
 
-        arg_info = g_callable_info_get_arg(gcb->callback_info, i);
-        gi_giargument_convert_arg_to_object(&giarg, arg_info, &s_entry, -1);
+        gig_argument_c_to_scm("callback", i, amap->pdata[i], &giarg, NULL, &s_entry, -1);
         s_args = scm_append(scm_list_2(s_args, scm_list_1(s_entry)));
-        g_base_info_unref(arg_info);
     }
 
     s_ret = scm_c_catch(SCM_BOOL_T,
@@ -101,22 +101,14 @@ callback_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
         *(ffi_arg *) ret = FALSE;
     else {
         GIArgument giarg;
-        GITypeInfo *ret_type_info = g_callable_info_get_return_type(gcb->callback_info);
-
-        gi_giargument_convert_return_type_object_to_arg(s_ret,
-                                                        ret_type_info,
-                                                        g_callable_info_get_caller_owns
-                                                        (gcb->callback_info),
-                                                        g_callable_info_may_return_null
-                                                        (gcb->callback_info),
-                                                        g_callable_info_skip_return
-                                                        (gcb->callback_info), &giarg);
-        g_base_info_unref(ret_type_info);
-
+        gsize size;
+        unsigned must_free;
+        gig_argument_scm_to_c("callback", 0, amap->return_val, s_ret, &must_free, &giarg, &size);
         // I'm pretty sure I don't need a big type case/switch block here.
         // I'll try brutally coercing the data, and see what happens.
         *(ffi_arg *) ret = giarg.v_uint64;
     }
+    gir_arg_map_free(amap);
 }
 
 static SCM

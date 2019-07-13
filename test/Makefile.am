@@ -203,7 +203,6 @@ TESTS = \
  misc/use-typelibs.scm
 
 XFAIL_TESTS = \
- gapplication/command-line.scm \
  grilo/init_commandline.scm \
  misc/atomic_int_set.scm \
  string/strjoinv.scm

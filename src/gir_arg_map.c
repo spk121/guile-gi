@@ -23,10 +23,10 @@ const char dir_strings[GIR_ARG_DIRECTION_COUNT][9] = {
     [GIR_ARG_DIRECTION_OUTPUT] = "OUTPUT"
 };
 
-const char type_strings[GIR_ARG_TYPE_COUNT][11] = {
-    [GIR_ARG_TYPE_STANDALONE] = "STANDALONE",
-    [GIR_ARG_TYPE_ARRAY] = "ARRAY",
-    [GIR_ARG_TYPE_ARRAY_SIZE] = "ARRAY_SIZE"
+const char tuple_strings[GIR_ARG_TUPLE_COUNT][11] = {
+    [GIR_ARG_TUPLE_SINGLETON] = "SINGLETON",
+    [GIR_ARG_TUPLE_ARRAY] = "ARRAY",
+    [GIR_ARG_TUPLE_ARRAY_SIZE] = "ARRAY_SIZE"
 };
 
 const char presence_strings[GIR_ARG_PRESENCE_COUNT][9] = {
@@ -49,26 +49,176 @@ arg_map_entry_new()
 static void
 arg_map_entry_initialize(GirArgMapEntry *entry)
 {
-    entry->arg_info = NULL;
-    entry->direction = GIR_ARG_DIRECTION_INPUT;
-    entry->type = GIR_ARG_TYPE_STANDALONE;
-    entry->presence = GIR_ARG_PRESENCE_REQUIRED;
+    memset(entry, 0, sizeof(GirArgMapEntry));
     entry->arg_info_index = -1;
+    entry->array_length_index = -1;
     entry->cinvoke_input_index = -1;
     entry->cinvoke_output_index = -1;
     entry->gsubr_input_index = -1;
     entry->gsubr_output_index = -1;
-    entry->child = NULL;
+}
+
+static gboolean
+fill_array_info(GirArgMapEntry *entry)
+{
+    g_assert_cmpint(entry->type_tag, ==, GI_TYPE_TAG_ARRAY);
+    g_assert_true(entry->is_ptr);
+
+    gboolean ret = TRUE;
+
+    // So there are layers to all this ArgInfo stuff
+    // LAYER 1: Let's start on layer 1, where this GIArgInfo tells
+    // us we're an array.
+    entry->array_type = g_type_info_get_array_type(entry->type_info);
+    entry->array_is_zero_terminated = g_type_info_is_zero_terminated(entry->type_info);
+    entry->array_length_index = g_type_info_get_array_length(entry->type_info);
+    entry->array_fixed_size = g_type_info_get_array_fixed_size(entry->type_info);
+
+    if ((entry->transfer == GI_TRANSFER_CONTAINER)
+        || entry->transfer == GI_TRANSFER_NOTHING)
+        entry->transfer = GI_TRANSFER_NOTHING;
+    else
+        entry->transfer = GI_TRANSFER_EVERYTHING;
+
+    // LAYER 2 is where we figure out what the element type of the array is.
+    GITypeInfo *item_type_info = g_type_info_get_param_type(entry->type_info, 0);
+    entry->item_type_tag = g_type_info_get_tag(item_type_info);
+    entry->item_is_ptr = g_type_info_is_pointer(item_type_info);
+
+    if (entry->item_is_ptr)
+        entry->item_size = sizeof(void *);
+
+    switch (entry->item_type_tag) {
+    case GI_TYPE_TAG_INT8:
+    case GI_TYPE_TAG_UINT8:
+        entry->item_size = 1;
+        break;
+    case GI_TYPE_TAG_INT16:
+    case GI_TYPE_TAG_UINT16:
+        entry->item_size = 2;
+        break;
+    case GI_TYPE_TAG_INT32:
+    case GI_TYPE_TAG_UINT32:
+    case GI_TYPE_TAG_UNICHAR:
+        entry->item_size = 4;
+        break;
+    case GI_TYPE_TAG_INT64:
+    case GI_TYPE_TAG_UINT64:
+        entry->item_size = 8;
+        break;
+    case GI_TYPE_TAG_FLOAT:
+        entry->item_size = sizeof(float);
+        break;
+    case GI_TYPE_TAG_DOUBLE:
+        entry->item_size = sizeof(double);
+        break;
+    case GI_TYPE_TAG_GTYPE:
+        entry->item_size = sizeof(GType);
+        break;
+    case GI_TYPE_TAG_BOOLEAN:
+        entry->item_size = sizeof(gboolean);
+        break;
+    case GI_TYPE_TAG_INTERFACE:
+    {
+        GIBaseInfo *referenced_base_info = g_type_info_get_interface(item_type_info);
+        entry->referenced_base_type = g_base_info_get_type(referenced_base_info);
+
+        switch (entry->referenced_base_type) {
+        case GI_INFO_TYPE_ENUM:
+        case GI_INFO_TYPE_FLAGS:
+
+            g_assert_false(entry->item_is_ptr);
+            entry->item_size = sizeof(int);
+            break;
+        case GI_INFO_TYPE_STRUCT:
+            entry->referenced_object_type = g_registered_type_info_get_g_type(referenced_base_info);
+            if (!entry->item_is_ptr)
+                entry->item_size = g_struct_info_get_size(referenced_base_info);
+            break;
+        case GI_INFO_TYPE_UNION:
+            entry->referenced_object_type = g_registered_type_info_get_g_type(referenced_base_info);
+            if (!entry->item_is_ptr)
+                entry->item_size = g_union_info_get_size(referenced_base_info);
+            break;
+        case GI_INFO_TYPE_OBJECT:
+            entry->referenced_object_type = g_registered_type_info_get_g_type(referenced_base_info);
+            if (!entry->item_is_ptr)
+                entry->item_size = sizeof(void *);
+            break;
+        default:
+            g_critical("Unhandled item type in %s:%d", __FILE__, __LINE__);
+            ret = FALSE;
+        }
+        g_base_info_unref(referenced_base_info);
+        break;
+    }
+    case GI_TYPE_TAG_UTF8:
+    case GI_TYPE_TAG_FILENAME:
+        break;
+
+    case GI_TYPE_TAG_ARRAY:
+    case GI_TYPE_TAG_GLIST:
+    case GI_TYPE_TAG_GSLIST:
+    case GI_TYPE_TAG_GHASH:
+        g_critical("nested array objects are unhandled in %s:%d", __FILE__, __LINE__);
+        ret = FALSE;
+        break;
+
+    default:
+        g_critical("Unhandled item type in %s:%d", __FILE__, __LINE__);
+        ret = FALSE;
+    }
+
+    if (ret == FALSE) {
+        // Set the unhandled array type to be a simple null pointer.
+        entry->type_tag = GI_TYPE_TAG_VOID;
+    }
+
+    g_base_info_unref(item_type_info);
+    return ret;
+}
+
+static void
+gig_arg_map_entry_apply_arg_info(GirArgMapEntry *e, GIArgInfo *ai)
+{
+    g_assert_nonnull(e);
+    g_assert_nonnull(ai);
+
+    e->name = g_strdup(g_base_info_get_name(ai));
+    e->type_info = g_arg_info_get_type(ai);
+    e->type_tag = g_type_info_get_tag(e->type_info);
+    e->is_ptr = g_type_info_is_pointer(e->type_info);
+    e->c_direction = g_arg_info_get_direction(ai);
+    e->transfer = g_arg_info_get_ownership_transfer(ai);
+    e->may_be_null = g_arg_info_may_be_null(ai);
+    e->is_caller_allocates = g_arg_info_is_caller_allocates(ai);
+}
+
+static void
+gig_arg_map_entry_apply_callable_info(GirArgMapEntry *e, GICallableInfo *ci)
+{
+    g_assert_nonnull(e);
+    g_assert_nonnull(ci);
+
+    e->name = g_strdup("(return)");
+    e->type_info = g_callable_info_get_return_type(ci);
+    e->type_tag = g_type_info_get_tag(e->type_info);
+    e->is_ptr = g_type_info_is_pointer(e->type_info);
+    e->c_direction = GI_DIRECTION_OUT;
+    e->transfer = g_callable_info_get_caller_owns(ci);
+    e->may_be_null = g_callable_info_may_return_null(ci);
+    e->is_caller_allocates = FALSE;
 }
 
 GirArgMap *
 gir_arg_map_new(GIFunctionInfo *function_info)
 {
-    size_t arg_info_count = g_callable_info_get_n_args(function_info);
+    gsize arg_info_count = g_callable_info_get_n_args(function_info);
     GirArgMap *amap = g_new0(GirArgMap, 1);
     GPtrArray *entry_array = g_ptr_array_new();
-    for (int arg_info_index = 0; arg_info_index < arg_info_count; arg_info_index++)
+    for (gsize arg_info_index = 0; arg_info_index < arg_info_count; arg_info_index++)
         g_ptr_array_add(entry_array, arg_map_entry_new());
+    amap->return_val = arg_map_entry_new();
 
     // may-be-null parameters at the end of the C call can be made
     // optional parameters in the gsubr call.
@@ -76,15 +226,16 @@ gir_arg_map_new(GIFunctionInfo *function_info)
     for (int arg_info_index = arg_info_count - 1; arg_info_index >= 0; arg_info_index--) {
         g_assert_cmpint(arg_info_index, <, entry_array->len);
         GIArgInfo *arg_info = g_callable_info_get_arg(function_info, arg_info_index);
-        GIDirection dir = g_arg_info_get_direction(arg_info);
         GirArgMapEntry *entry = g_ptr_array_index(entry_array, arg_info_index);
-        entry->arg_info = arg_info;
-        g_base_info_ref(entry->arg_info);
+        gig_arg_map_entry_apply_arg_info(entry, arg_info);
+        g_base_info_unref(arg_info);
+
         entry->arg_info_index = arg_info_index;
+        GIDirection dir = entry->c_direction;
         if (dir == GI_DIRECTION_IN
             || dir == GI_DIRECTION_INOUT
-            || (dir == GI_DIRECTION_OUT && g_arg_info_is_caller_allocates(arg_info))) {
-            if (opt_flag && g_arg_info_may_be_null(arg_info))
+            || (dir == GI_DIRECTION_OUT && entry->is_caller_allocates)) {
+            if (opt_flag && entry->may_be_null)
                 entry->presence = GIR_ARG_PRESENCE_OPTIONAL;
             else {
                 entry->presence = GIR_ARG_PRESENCE_REQUIRED;
@@ -94,30 +245,33 @@ gir_arg_map_new(GIFunctionInfo *function_info)
         else {
             entry->presence = GIR_ARG_PRESENCE_IMPLICIT;
         }
-        g_base_info_unref(arg_info);
     }
 
     int cinvoke_input_index = 0;
     int cinvoke_output_index = 0;
     int gsubr_input_index = 0;
     int gsubr_output_index = 0;
-    for (int arg_info_index = 0; arg_info_index < arg_info_count; arg_info_index++) {
+    for (gsize arg_info_index = 0; arg_info_index < arg_info_count; arg_info_index++) {
         g_assert_cmpint(arg_info_index, <, entry_array->len);
         GirArgMapEntry *entry = g_ptr_array_index(entry_array, arg_info_index);
-        GIArgInfo *arg_info = g_callable_info_get_arg(function_info, arg_info_index);
-        GIDirection dir = g_arg_info_get_direction(arg_info);
-        GITypeInfo *type_info = g_arg_info_get_type(arg_info);
-        GITypeTag type_tag = g_type_info_get_tag(type_info);
 
-        // Sometime a single SCM array or list will map to two
-        // arguments: a C array pointer and a C size parameter.
+        GIDirection dir = entry->c_direction;
+        GITypeInfo *type_info = entry->type_info;
+        GITypeTag type_tag = g_type_info_get_tag(type_info);
+        gboolean is_caller_allocates = entry->is_caller_allocates;
+
 
         if (type_tag == GI_TYPE_TAG_ARRAY) {
+            fill_array_info(entry);
+
             int array_length_arg_info_index = g_type_info_get_array_length(type_info);
+
+            // Sometime a single SCM array or list will map to two
+            // arguments: a C array pointer and a C size parameter.
             if (array_length_arg_info_index >= 0) {
-                entry->type = GIR_ARG_TYPE_ARRAY;
+                entry->tuple = GIR_ARG_TUPLE_ARRAY;
                 entry->child = g_ptr_array_index(entry_array, array_length_arg_info_index);
-                entry->child->type = GIR_ARG_TYPE_ARRAY_SIZE;
+                entry->child->tuple = GIR_ARG_TUPLE_ARRAY_SIZE;
                 entry->child->presence = GIR_ARG_PRESENCE_IMPLICIT;
             }
         }
@@ -127,35 +281,33 @@ gir_arg_map_new(GIFunctionInfo *function_info)
         // require a SCM container to be passed in to the SCM GSubr
         // call.
         if (dir == GI_DIRECTION_IN) {
-            entry->direction = GIR_ARG_DIRECTION_INPUT;
+            entry->s_direction = GIR_ARG_DIRECTION_INPUT;
             entry->cinvoke_input_index = cinvoke_input_index++;
         }
         else if (dir == GI_DIRECTION_INOUT) {
-            entry->direction = GIR_ARG_DIRECTION_INOUT;
+            entry->s_direction = GIR_ARG_DIRECTION_INOUT;
             entry->cinvoke_input_index = cinvoke_input_index++;
             entry->cinvoke_output_index = cinvoke_output_index++;
         }
-        else if (dir == GI_DIRECTION_OUT && g_arg_info_is_caller_allocates(arg_info)) {
-            entry->direction = GIR_ARG_DIRECTION_PREALLOCATED_OUTPUT;
+        else if (dir == GI_DIRECTION_OUT && is_caller_allocates) {
+            entry->s_direction = GIR_ARG_DIRECTION_PREALLOCATED_OUTPUT;
             entry->cinvoke_output_index = cinvoke_output_index++;
         }
         else {
-            entry->direction = GIR_ARG_DIRECTION_OUTPUT;
+            entry->s_direction = GIR_ARG_DIRECTION_OUTPUT;
             entry->cinvoke_output_index = cinvoke_output_index++;
         }
-        g_base_info_unref(type_info);
-        g_base_info_unref(arg_info);
     }
 
     // We now can decide where these arguments appear in the SCM GSubr
     // call.
-    for (int arg_info_index = 0; arg_info_index < arg_info_count; arg_info_index++) {
+    for (gsize arg_info_index = 0; arg_info_index < arg_info_count; arg_info_index++) {
         g_assert_cmpint(arg_info_index, <, entry_array->len);
         GirArgMapEntry *entry = g_ptr_array_index(entry_array, arg_info_index);
-        if (entry->direction == GIR_ARG_DIRECTION_INPUT ||
-            entry->direction == GIR_ARG_DIRECTION_INOUT ||
-            entry->direction == GIR_ARG_DIRECTION_PREALLOCATED_OUTPUT) {
-            if (entry->type == GIR_ARG_TYPE_STANDALONE || entry->type == GIR_ARG_TYPE_ARRAY) {
+        if (entry->s_direction == GIR_ARG_DIRECTION_INPUT ||
+            entry->s_direction == GIR_ARG_DIRECTION_INOUT ||
+            entry->s_direction == GIR_ARG_DIRECTION_PREALLOCATED_OUTPUT) {
+            if (entry->tuple == GIR_ARG_TUPLE_SINGLETON || entry->tuple == GIR_ARG_TUPLE_ARRAY) {
                 entry->gsubr_input_index = gsubr_input_index++;
                 if (entry->presence == GIR_ARG_PRESENCE_REQUIRED)
                     amap->gsubr_required_input_count++;
@@ -163,12 +315,27 @@ gir_arg_map_new(GIFunctionInfo *function_info)
                     amap->gsubr_optional_input_count++;
             }
         }
-        else if (entry->direction == GIR_ARG_DIRECTION_OUTPUT) {
+        else if (entry->s_direction == GIR_ARG_DIRECTION_OUTPUT) {
             entry->gsubr_output_index = gsubr_output_index++;
         }
         else
             g_assert_not_reached();
+
     }
+    amap->return_val = arg_map_entry_new();
+    gig_arg_map_entry_apply_callable_info(amap->return_val, function_info);
+    if (amap->return_val->type_tag == GI_TYPE_TAG_ARRAY) {
+        fill_array_info(amap->return_val);
+        if (amap->return_val->array_length_index >= 0) {
+            amap->return_val->tuple = GIR_ARG_TUPLE_ARRAY;
+            amap->return_val->child = g_ptr_array_index(entry_array, amap->return_val->array_length_index);
+            amap->return_val->child->tuple = GIR_ARG_TUPLE_ARRAY_SIZE;
+            amap->return_val->child->presence = GIR_ARG_PRESENCE_IMPLICIT;
+        }
+    }
+
+
+
     g_assert_cmpint(amap->gsubr_required_input_count + amap->gsubr_optional_input_count, ==,
                     gsubr_input_index);
     amap->gsubr_output_count = gsubr_output_index;
@@ -184,12 +351,14 @@ void
 gir_arg_map_free(GirArgMap *amap)
 {
     for (int i = 0; i < amap->len; i++) {
-        g_base_info_unref(amap->pdata[i]->arg_info);
+        g_base_info_unref(amap->pdata[i]->type_info);
         free(amap->pdata[i]);
         amap->pdata[i] = NULL;
     }
     free(amap->pdata);
     amap->pdata = NULL;
+    g_base_info_unref(amap->return_val->type_info);
+    free(amap->return_val);
     free(amap);
 }
 
@@ -203,11 +372,17 @@ gir_arg_map_dump(const GirArgMap *amap)
             amap->cinvoke_output_count);
     for (int i = 0; i < amap->len; i++) {
         GirArgMapEntry *entry = (GirArgMapEntry *)(amap->pdata[i]);
-        g_debug(" Arg %d: %13s %10s %10s %10s Index %d, SCM In %d, Out %d, C In %d, Out %d",
+        g_debug(" Arg %d: '%s'  %s%s%s %s",
                 i,
-                g_base_info_get_name(entry->arg_info),
-                dir_strings[entry->direction],
-                type_strings[entry->type],
+                entry->name,
+                entry->is_ptr ? "pointer to " : "",
+                entry->is_caller_allocates ? "caller allocated" : "",
+                g_type_tag_to_string(entry->type_tag),
+                entry->may_be_null ? "or NULL" : "");
+        g_debug(" Arg %d: %10s %10s %10s Index %d, SCM In %d, Out %d, C In %d, Out %d",
+                i,
+                dir_strings[entry->s_direction],
+                tuple_strings[entry->tuple],
                 presence_strings[entry->presence],
                 entry->arg_info_index, entry->gsubr_input_index, entry->gsubr_output_index,
                 entry->cinvoke_input_index, entry->cinvoke_output_index);
@@ -224,32 +399,29 @@ gir_arg_map_get_gsubr_args_count(const GirArgMap *amap, int *required, int *opti
     *optional = amap->gsubr_optional_input_count;
 }
 
-GIArgInfo *
-gir_arg_map_get_arg_info(GirArgMap *amap, int input)
+GirArgMapEntry *
+gig_arg_map_get_entry(GirArgMap *amap, gint input)
 {
     g_assert_nonnull(amap);
-
-    int i = 0;
+    gint i = 0;
     while (i < amap->len) {
         if (amap->pdata[i]->gsubr_input_index == input) {
-            g_base_info_ref(amap->pdata[i]->arg_info);
-            return amap->pdata[i]->arg_info;
+            return amap->pdata[i];
         }
         i++;
     }
-    g_assert_not_reached();;
+    g_assert_not_reached();
 }
 
-GIArgInfo *
-gir_arg_map_get_output_arg_info(GirArgMap *amap, int output)
+GirArgMapEntry *
+gig_arg_map_get_output_entry(GirArgMap *amap, gint output)
 {
     g_assert_nonnull(amap);
 
-    int i = 0;
+    gint i = 0;
     while (i < amap->len) {
         if (amap->pdata[i]->cinvoke_output_index == output) {
-            g_base_info_ref(amap->pdata[i]->arg_info);
-            return amap->pdata[i]->arg_info;
+            return amap->pdata[i];
         }
         i++;
     }

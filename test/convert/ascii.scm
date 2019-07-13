@@ -12,11 +12,10 @@
 ;; unchanged.
 
 (automake-test
- (receive (pointer bytes-read bytes-written)
+ (receive (converted bytes-read bytes-written)
      (convert #vu8(65 66 67 68 69) ; ASCII 'ABCDE'
               "UTF-8"
               "US-ASCII")
-   (let ((converted (pointer->bytevector pointer bytes-written)))
      (format #t "converted: ~S~%" converted)
      (format #t "bytes-read: ~S~%" bytes-read)
      (format #t "bytes-written: ~S~%" bytes-written)

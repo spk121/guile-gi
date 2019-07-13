@@ -12,6 +12,9 @@
      (with-object data (add-artist
                         (string-copy artist))))
    artists)
+  (format #t "Data: ~S~%" data)
+  (format #t "Title: ~S~%" (with-object data (get-title)))
+  (format #t "Meta: ~S~%" (with-object data (get-single-values-for-key-string METADATA_KEY_ARTIST)))
   (and (equal? (with-object data (get-title)) title)
        ;; list output is not yet implemented
        (equal? (with-object data (get-single-values-for-key-string METADATA_KEY_ARTIST))
