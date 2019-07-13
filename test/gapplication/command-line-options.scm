@@ -10,20 +10,18 @@
                             `(("application-id" . "gi.guile.Example")
                               ("flags" . ,APPLICATION_HANDLES_COMMAND_LINE))))
          (success #f))
-     (with-object app (add-main-option "hello" (char->integer #\h) 0
-                                       OPTION_ARG_STRING_ARRAY "" #f))
+     (add-main-option app "hello" (char->integer #\h) 0
+                      OPTION_ARG_STRING_ARRAY "" #f)
 
-     (with-object app
-       (connect! command-line
-         (lambda (app command-line)
-           (let* ((dict (with-object command-line (get-options-dict)))
-                  (hello (with-object dict (lookup-value "hello" #f)))
-                  (args (with-object hello (get-strv))))
-             (vector-for-each (lambda (i arg) (format #t "Hello, ~a~%" arg))
-                              args)
-             (set! success (vector= string=? args #("world" "darkness, my old friend"))))
-           (send app (quit))
-           0)))
-     (with-object app
-       (run #("command-line" "-h" "world" "-h" "darkness, my old friend")))
+     (connect app (make-signal #:name "command-line")
+              (lambda (app command-line)
+                (let* ((dict (get-options-dict command-line))
+                       (hello (lookup-value dict "hello" #f))
+                       (args (variant:get-strv hello)))
+                  (vector-for-each (lambda (i arg) (format #t "Hello, ~a~%" arg))
+                                   args)
+                  (set! success (vector= string=? args #("world" "darkness, my old friend"))))
+                (quit app)
+                0))
+     (application:run app #("command-line" "-h" "world" "-h" "darkness, my old friend"))
      success)))
