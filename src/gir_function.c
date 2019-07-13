@@ -19,8 +19,8 @@
 #include "gi_util.h"
 #include "gir_arg_map.h"
 #include "gir_function.h"
+#include "gir_type.h"
 
-typedef SCM (*gir_gsubr_t)(void);
 typedef struct _GirFunction
 {
     GIFunctionInfo *function_info;
@@ -64,7 +64,8 @@ gir_function_define_gsubr(GIFunctionInfo *info, const char *prefix)
     name = gi_function_info_make_name(info, prefix);
     func_gsubr = check_gsubr_cache(info, &required_input_count, &optional_input_count);
     if (!func_gsubr) {
-        func_gsubr = create_gsubr(info, name, &required_input_count, &optional_input_count);
+        func_gsubr = gir_function_create_gsubr(info, name, &required_input_count,
+                                               &optional_input_count, NULL, NULL);
         g_debug("dynamically bound %s to %s with %d required and %d optional arguments",
                 name, g_base_info_get_name(info), required_input_count, optional_input_count);
     }
@@ -94,12 +95,53 @@ check_gsubr_cache(GIFunctionInfo *function_info, int *required_input_count,
     return NULL;
 }
 
-static gir_gsubr_t *
-create_gsubr(GIFunctionInfo *function_info, const char *name, int *required_input_count,
-             int *optional_input_count)
+static void
+make_formals(GirFunction *fn,
+             int n_inputs,
+             SCM *formals, SCM *specializers)
+{
+    GirArgMap *amap = fn->amap;
+
+    SCM i_formal, i_specializer;
+
+    i_formal = *formals = scm_make_list(scm_from_int(n_inputs), SCM_BOOL_F);
+    i_specializer = *specializers = scm_make_list(scm_from_int(n_inputs), SCM_BOOL_F);
+
+    if (g_function_info_get_flags(fn->function_info) & GI_FUNCTION_IS_METHOD) {
+        i_formal = scm_cdr(i_formal);
+        i_specializer = scm_cdr(i_specializer);
+        n_inputs--;
+    }
+
+    for (int i = 0; i < n_inputs;
+         i++, i_formal = scm_cdr(i_formal), i_specializer = scm_cdr(i_specializer)) {
+        gchar *formal = g_strdup_printf("arg%d", i);
+        scm_set_car_x(i_formal, scm_from_utf8_symbol(formal));
+
+        GIArgInfo *info = gir_arg_map_get_arg_info(fn->amap, i);
+        GITypeInfo *type = g_arg_info_get_type(info);
+        if (g_type_info_get_tag(type) == GI_TYPE_TAG_INTERFACE) {
+            GIBaseInfo *iface = g_type_info_get_interface(type);
+            if(!GI_IS_REGISTERED_TYPE_INFO(iface))
+                continue;
+            GType type = g_registered_type_info_get_g_type((GIRegisteredTypeInfo *)iface);
+            SCM s_type = gir_type_get_scheme_type(type);
+            scm_set_car_x(i_specializer, s_type);
+        }
+
+    }
+
+}
+
+gir_gsubr_t *
+gir_function_create_gsubr(GIFunctionInfo *function_info, const char *name, int *required_input_count,
+                          int *optional_input_count, SCM *formals, SCM *specializers)
 {
     GirFunction *gfn;
+    GIFunctionInfoFlags flags;
     ffi_type *ffi_ret_type;
+
+    g_return_val_if_fail((specializers == NULL) == (formals == NULL), NULL);
 
     gfn = g_new0(GirFunction, 1);
     gfn->function_info = function_info;
@@ -108,6 +150,13 @@ create_gsubr(GIFunctionInfo *function_info, const char *name, int *required_inpu
     g_base_info_ref(function_info);
 
     gir_arg_map_get_gsubr_args_count(gfn->amap, required_input_count, optional_input_count);
+
+    if (g_function_info_get_flags(gfn->function_info) & GI_FUNCTION_IS_METHOD)
+        (*required_input_count)++;
+
+    if (formals != NULL)
+        make_formals(gfn, *required_input_count + *optional_input_count,
+                     formals, specializers);
 
     // STEP 1
     // Allocate the block of memory that FFI uses to hold a closure
@@ -180,6 +229,12 @@ gir_function_invoke(GIFunctionInfo *func_info, GirArgMap *amap, const char *name
 
     g_debug("After allocation g %s with %d input and %d output arguments",
             name, cinvoke_input_arg_array->len, cinvoke_output_arg_array->len);
+
+    if ((g_function_info_get_flags(func_info) & GI_FUNCTION_IS_METHOD)
+        && (self == NULL)) {
+        self = gir_type_peek_object(scm_car(args));
+        args = scm_cdr(args);
+    }
 
     // Convert the scheme arguments into C.
     object_list_to_c_args(func_info, amap, name, args, cinvoke_input_arg_array,
@@ -383,8 +438,8 @@ static void
 object_list_to_c_args(GIFunctionInfo *func_info,
                       GirArgMap *amap,
                       const char *subr, SCM s_args,
-                      GArray * cinvoke_input_arg_array,
-                      GArray * cinvoke_input_free_array, GArray * cinvoke_output_arg_array)
+                      GArray *cinvoke_input_arg_array,
+                      GArray *cinvoke_input_free_array, GArray *cinvoke_output_arg_array)
 {
     g_assert_nonnull(func_info);
     g_assert_nonnull(amap);

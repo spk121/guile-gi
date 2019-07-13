@@ -175,7 +175,8 @@ gig_i_scm_create(SCM s_gtype, SCM s_prop_alist)
 }
 
 static GParamSpec *
-get_paramspec(const GObject *self, const gchar* prop)
+get_paramspec(const GObject *self,
+              const gchar   *prop)
 {
     GObjectClass *oclass = G_OBJECT_GET_CLASS(self);
     return g_object_class_find_property(oclass, prop);

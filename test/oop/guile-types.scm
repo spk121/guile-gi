@@ -12,7 +12,7 @@
    PARAM_READWRITE))
 
 (define <TestParam>
-  (register-type
+  ((@ (gi) register-type)
    "TestParam"
    <GObject>
    (list my-param)))

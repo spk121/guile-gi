@@ -9,7 +9,7 @@
    #:return-type G_TYPE_NONE))
 
 (define <TestParam>
-  (register-type
+  ((@ (gi) register-type)
    "TestParam"
    <GObject>
    '()

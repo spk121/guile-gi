@@ -10,7 +10,7 @@
    #:accumulator +))
 
 (define <TestParam>
-  (register-type
+  ((@ (gi) register-type)
    "TestParam"
    <GObject>
    '()

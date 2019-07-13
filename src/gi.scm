@@ -98,8 +98,8 @@
                    ;; methods
                    ((method arg ...)
                     (identifier? #'id)
-                    (with-syntax ((method-str (%syntax->string #'method)))
-                      #'(call-method self method-str arg ...)))))
+                    ;; (with-syntax ((method-str (%syntax->string #'method)))
+                    #'(method self arg ...))))
                #'(block ...))))
       ((_ self block ...)
        #'(let ((this self)) (with-object this block ...))))))
