@@ -32,7 +32,7 @@ typedef struct _GirFunction
     GirArgMap *amap;
 } GirFunction;
 
-GSList *function_list = NULL;
+GHashTable *function_cache;
 
 static SCM generic_table;
 
@@ -158,26 +158,21 @@ check_gsubr_cache(GIFunctionInfo *function_info, int *required_input_count,
                   int *optional_input_count, SCM *formals, SCM *specializers)
 {
     // Check the cache to see if this function has already been created.
-    GSList *x = function_list;
-    GirFunction *gfn;
+    GirFunction *gfn = g_hash_table_lookup(function_cache, function_info);
 
-    while (x != NULL) {
-        gfn = x->data;
-        if (gfn->function_info == function_info) {
-            gir_arg_map_get_gsubr_args_count(gfn->amap, required_input_count,
-                                             optional_input_count);
+    if (gfn == NULL)
+        return NULL;
 
-            if (g_function_info_get_flags(gfn->function_info) & GI_FUNCTION_IS_METHOD)
-                (*required_input_count)++;
+    gir_arg_map_get_gsubr_args_count(gfn->amap, required_input_count,
+                                     optional_input_count);
 
-            make_formals(gfn, *required_input_count + *optional_input_count, formals,
-                         specializers);
+    if (g_function_info_get_flags(gfn->function_info) & GI_FUNCTION_IS_METHOD)
+        (*required_input_count)++;
 
-            return gfn->function_ptr;
-        }
-        x = x->next;
-    }
-    return NULL;
+    make_formals(gfn, *required_input_count + *optional_input_count, formals,
+                 specializers);
+
+    return gfn->function_ptr;
 }
 
 static void
@@ -289,9 +284,7 @@ create_gsubr(GIFunctionInfo *function_info, const char *name, int *required_inpu
                        "closure location preparation error #~A",
                        scm_list_1(scm_from_int(closure_ok)));
 
-    // We add the allocated structs to a list so we can deallocate
-    // nicely later.
-    function_list = g_slist_prepend(function_list, gfn);
+    g_hash_table_insert(function_cache, function_info, gfn);
 
     return gfn->function_ptr;
 }
@@ -591,6 +584,7 @@ void
 gir_init_function(void)
 {
     generic_table = scm_c_make_hash_table(127);
+    function_cache = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, gir_function_free);
 
     top_type = scm_c_public_ref("oop goops", "<top>");
     method_type = scm_c_public_ref("oop goops", "<method>");
@@ -627,6 +621,6 @@ static void
 gir_fini_function(void)
 {
     g_debug("Freeing functions");
-    g_slist_free_full(function_list, (GDestroyNotify) gir_function_free);
-    function_list = NULL;
+    g_hash_table_remove_all(function_cache);
+    function_cache = NULL;
 }
