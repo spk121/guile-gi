@@ -18,15 +18,15 @@
 
 (define-module (test automake-test-lib)
   #:use-module (srfi srfi-1)
-  #:export (EXIT_SUCCESS
-	    EXIT_FAILURE
-	    EXIT_SKIPPED
-	    EXIT_HARD_ERROR
-	    automake-test
-	    maybe-sleep
-	    with-latin1-locale*
-	    with-utf8-locale*
-        typelib-require))
+  #:replace (EXIT_SUCCESS
+             EXIT_FAILURE)
+  #:export (EXIT_SKIPPED
+            EXIT_HARD_ERROR
+            automake-test
+            maybe-sleep
+            with-latin1-locale*
+            with-utf8-locale*
+            typelib-require))
 
 (define EXIT_SUCCESS 0)
 (define EXIT_FAILURE 1)

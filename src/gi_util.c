@@ -108,6 +108,7 @@ scm_dynwind_or_bust(const char *subr, void *mem)
 static SCM class_ref_proc = SCM_UNDEFINED;
 static SCM class_set_proc = SCM_UNDEFINED;
 static SCM srfi1_drop_proc = SCM_UNDEFINED;
+static SCM module_reexport_proc = SCM_UNDEFINED;
 
 SCM
 scm_class_ref(SCM cls, SCM slot)
@@ -132,4 +133,25 @@ scm_drop_1(SCM lst)
     if (SCM_UNBNDP(srfi1_drop_proc))
         srfi1_drop_proc = scm_c_public_ref("srfi srfi-1", "drop");
     return scm_call_2(srfi1_drop_proc, lst, scm_from_int(1));
+}
+
+SCM
+scm_c_reexport(const char *name, ...)
+{
+    if (SCM_UNBNDP(module_reexport_proc))
+        module_reexport_proc = scm_c_public_ref("guile", "module-re-export!");
+
+
+    va_list args;
+    va_start(args, name);
+
+    SCM current_module = scm_current_module();
+    SCM syms = scm_list_1(scm_from_utf8_symbol(name));
+
+    while ((name = va_arg(args, char *)) != NULL)
+        syms = scm_cons(scm_from_utf8_symbol(name), syms);
+
+    scm_call_2(module_reexport_proc, current_module, syms);
+
+    va_end(args);
 }

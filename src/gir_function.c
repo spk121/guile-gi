@@ -76,6 +76,7 @@ default_definition(SCM name)
         if (scm_is_true(variable)) return scm_variable_ref(variable);   \
     } while (0)
 
+    LOOKUP_DEFINITION(scm_c_resolve_module("gi"));
     LOOKUP_DEFINITION(scm_c_resolve_module("guile"));
     LOOKUP_DEFINITION(scm_current_module());
     return SCM_BOOL_F;
@@ -92,6 +93,7 @@ gir_function_define_gsubr(GType type, GIFunctionInfo *info, const char *prefix)
     int required_input_count, optional_input_count;
     SCM formals, specializers, self_type;
     gboolean is_method = (g_function_info_get_flags(info) & GI_FUNCTION_IS_METHOD) != 0;
+    gboolean was_generic;
 
     if (is_method) {
         self_type = gir_type_get_scheme_type(type);
@@ -107,6 +109,10 @@ gir_function_define_gsubr(GType type, GIFunctionInfo *info, const char *prefix)
     SCM sym_public_name = scm_from_utf8_symbol(public_name);
     SCM generic = scm_hashq_ref(generic_table, sym_public_name, SCM_BOOL_F);
     if (!scm_is_generic(generic)) {
+        generic = default_definition(sym_public_name);
+        was_generic = scm_is_generic(generic);
+        if (!was_generic)
+            generic = scm_call_2(ensure_generic_proc, generic, sym_public_name);
         generic = scm_call_2(ensure_generic_proc,
                              default_definition(sym_public_name), sym_public_name);
         scm_hashq_set_x(generic_table, sym_public_name, generic);
@@ -147,8 +153,12 @@ gir_function_define_gsubr(GType type, GIFunctionInfo *info, const char *prefix)
     g_debug("dynamically bound %s to %s with %d required and %d optional arguments",
             public_name, g_base_info_get_name(info), required_input_count, optional_input_count);
 
-    scm_c_define(public_name, generic);
-    scm_c_export(public_name, NULL);
+    if (was_generic)
+        scm_c_reexport(public_name, NULL);
+    else {
+        scm_c_define(public_name, generic);
+        scm_c_export(public_name, NULL);
+    }
 
     scm_dynwind_end();
 }

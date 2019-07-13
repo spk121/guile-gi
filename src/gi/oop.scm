@@ -14,13 +14,14 @@
 ;; along with this program.  If not, see <https:;;www.gnu.org/licenses/>.
 
 (define-module (gi oop)
+  #:use-module ((gi core-generics) #:select (connect))
   #:use-module (oop goops)
   #:use-module (srfi srfi-26)
   #:use-module (system foreign)
   #:export (<signal>
             make-signal
             connect-after)
-  #:replace (connect))
+  #:re-export (connect))
 
 (eval-when (expand load eval)
   (load-extension "libguile-gi" "gig_init_object"))
@@ -60,8 +61,6 @@
 (define-method (initialize (signal <signal>) initargs)
   (next-method)
   (slot-set! signal 'procedure (cut %emit <> signal <...>)))
-
-(define connect (ensure-generic (@ (guile) connect) 'connect))
 
 (define-method (connect obj (signal <signal>) (handler <procedure>))
   (%connect obj signal #f handler))

@@ -13,6 +13,7 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https:;;www.gnu.org/licenses/>.
 (define-module (gi)
+  #:use-module (gi core-generics)
   #:use-module (gi oop)
   #:use-module (oop goops)
   #:use-module (srfi srfi-26)
@@ -22,7 +23,9 @@
                connect-after
                ;; re-export some GOOPS stuff, so that we don't have to import all of it
                is-a?
-               define-method)
+               define-method
+               ;; core-generics
+               format write equal? quit send)
   #:export (use-typelibs
             create
             (%create . make-gobject)

@@ -132,7 +132,7 @@ pkgguileobjectdir=$(guileobjectdir)/gi
 dist_guilesite_DATA = \
   gi.scm
 
-dist_pkgguilesite_DATA = gi/oop.scm
+dist_pkgguilesite_DATA = gi/oop.scm gi/core-generics.scm
 
 pkgguileobject_DATA = $(dist_guilesite_DATA:%.scm=%.go) $(dist_pkgguilesite_DATA:%.scm=%.go)
 

@@ -99,6 +99,7 @@ gir-log.txt
 # Crashes
 core*
 vgcore*
+!core-generics.scm
 
 # Temp docs
 *.info
