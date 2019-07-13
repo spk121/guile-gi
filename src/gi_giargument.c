@@ -1312,6 +1312,7 @@ c_native_array_to_scm(C2S_ARG_DECL)
         c_void_pointer_to_scm(C2S_ARGS);
         return;
     }
+    *obj = SCM_UNDEFINED;
 
     switch (entry->item_type_tag) {
     case GI_TYPE_TAG_INT8:

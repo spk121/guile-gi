@@ -18,11 +18,11 @@
        (connect! command-line
          (lambda (app command-line)
            (let ((args (with-object command-line (get-arguments))))
-             (vector-for-each (lambda (world)
+             (vector-for-each (lambda (i world)
                                 (format #t "Hello, ~a~%" world))
                               args)
              (with-object app (quit))
-             (set! success (vector= string=? args #("world" "darkness, my old friend")))
+             (set! success (vector= string=? args #("hello" "world" "darkness, my old friend")))
              0)))
        (run #("hello" "world" "darkness, my old friend")))
      success)))

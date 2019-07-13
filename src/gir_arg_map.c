@@ -51,6 +51,7 @@ arg_map_entry_initialize(GirArgMapEntry *entry)
 {
     memset(entry, 0, sizeof(GirArgMapEntry));
     entry->arg_info_index = -1;
+    entry->array_length_index = -1;
     entry->cinvoke_input_index = -1;
     entry->cinvoke_output_index = -1;
     entry->gsubr_input_index = -1;
@@ -130,20 +131,17 @@ fill_array_info(GirArgMapEntry *entry)
             entry->item_size = sizeof(int);
             break;
         case GI_INFO_TYPE_STRUCT:
-            entry->referenced_object_type =
-                g_registered_type_info_get_g_type(referenced_base_info);
+            entry->referenced_object_type = g_registered_type_info_get_g_type(referenced_base_info);
             if (!entry->item_is_ptr)
                 entry->item_size = g_struct_info_get_size(referenced_base_info);
             break;
         case GI_INFO_TYPE_UNION:
-            entry->referenced_object_type =
-                g_registered_type_info_get_g_type(referenced_base_info);
+            entry->referenced_object_type = g_registered_type_info_get_g_type(referenced_base_info);
             if (!entry->item_is_ptr)
                 entry->item_size = g_union_info_get_size(referenced_base_info);
             break;
         case GI_INFO_TYPE_OBJECT:
-            entry->referenced_object_type =
-                g_registered_type_info_get_g_type(referenced_base_info);
+            entry->referenced_object_type = g_registered_type_info_get_g_type(referenced_base_info);
             if (!entry->item_is_ptr)
                 entry->item_size = sizeof(void *);
             break;
@@ -210,15 +208,6 @@ gig_arg_map_entry_apply_callable_info(GirArgMapEntry *e, GICallableInfo *ci)
     e->transfer = g_callable_info_get_caller_owns(ci);
     e->may_be_null = g_callable_info_may_return_null(ci);
     e->is_caller_allocates = FALSE;
-
-    // FIXME: search the return attributes for if this is a singleton
-    // or tuple
-    GIAttributeIter iter = { 0, };
-    char *name;
-    char *value;
-    while (g_callable_info_iterate_return_attributes(ci, &iter, &name, &value)) {
-        g_debug("attribute name: %s value: %s", name, value);
-    }
 }
 
 GirArgMap *
@@ -335,8 +324,16 @@ gir_arg_map_new(GIFunctionInfo *function_info)
     }
     amap->return_val = arg_map_entry_new();
     gig_arg_map_entry_apply_callable_info(amap->return_val, function_info);
-    if (amap->return_val->type_tag == GI_TYPE_TAG_ARRAY)
+    if (amap->return_val->type_tag == GI_TYPE_TAG_ARRAY) {
         fill_array_info(amap->return_val);
+        if (amap->return_val->array_length_index >= 0) {
+            amap->return_val->tuple = GIR_ARG_TUPLE_ARRAY;
+            amap->return_val->child = g_ptr_array_index(entry_array, amap->return_val->array_length_index);
+            amap->return_val->child->tuple = GIR_ARG_TUPLE_ARRAY_SIZE;
+            amap->return_val->child->presence = GIR_ARG_PRESENCE_IMPLICIT;
+        }
+    }
+
 
 
     g_assert_cmpint(amap->gsubr_required_input_count + amap->gsubr_optional_input_count, ==,
@@ -380,7 +377,8 @@ gir_arg_map_dump(const GirArgMap *amap)
                 entry->name,
                 entry->is_ptr ? "pointer to " : "",
                 entry->is_caller_allocates ? "caller allocated" : "",
-                g_type_tag_to_string(entry->type_tag), entry->may_be_null ? "or NULL" : "");
+                g_type_tag_to_string(entry->type_tag),
+                entry->may_be_null ? "or NULL" : "");
         g_debug(" Arg %d: %10s %10s %10s Index %d, SCM In %d, Out %d, C In %d, Out %d",
                 i,
                 dir_strings[entry->s_direction],

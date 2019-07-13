@@ -232,8 +232,14 @@ gir_function_invoke(GIFunctionInfo *func_info, GirArgMap *amap, const char *name
 
     if (ok) {
         SCM s_return;
-        gig_argument_c_to_scm(name, -1, amap->return_val, &return_arg, NULL, &s_return, -1);
+        gsize sz = -1;
+        if (amap->return_val->array_length_index >= 0) {
+            g_assert_cmpint(amap->return_val->array_length_index, <, amap->len);
+            gsize idx = amap->pdata[amap->return_val->array_length_index]->cinvoke_output_index;
+            sz = ((GIArgument *)(cinvoke_output_arg_array->data))[idx].v_size;
+        }
 
+        gig_argument_c_to_scm(name, -1, amap->return_val, &return_arg, NULL, &s_return, sz);
         if (scm_is_eq(s_return, SCM_UNSPECIFIED))
             output = SCM_EOL;
         else
