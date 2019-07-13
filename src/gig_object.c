@@ -21,8 +21,7 @@ gig_object_take(gpointer object)
     SCM scm_type = gir_type_get_scheme_type(G_OBJECT_TYPE(object));
     g_return_val_if_fail(SCM_SUBCLASSP(scm_type, gig_object_type), SCM_UNDEFINED);
     return scm_call_2(private_make_gobject_proc,
-                      scm_type,
-                      scm_from_pointer(object, g_object_unref));
+                      scm_type, scm_from_pointer(object, g_object_unref));
 }
 
 SCM
@@ -155,8 +154,7 @@ gig_i_scm_create(SCM s_gtype, SCM s_prop_alist)
                                                   scm_from_utf8_string(g_type_name(dest_type))));
                 }
                 else
-                    scm_misc_error(FUNC,
-                                   "unable to convert parameter ~S", scm_list_1(entry));
+                    scm_misc_error(FUNC, "unable to convert parameter ~S", scm_list_1(entry));
             }
         }
     }
@@ -175,8 +173,7 @@ gig_i_scm_create(SCM s_gtype, SCM s_prop_alist)
 }
 
 static GParamSpec *
-get_paramspec(const GObject *self,
-              const gchar   *prop)
+get_paramspec(const GObject *self, const gchar *prop)
 {
     GObjectClass *oclass = G_OBJECT_GET_CLASS(self);
     return g_object_class_find_property(oclass, prop);
@@ -226,8 +223,7 @@ gig_i_scm_get_property(SCM self, SCM property)
                        scm_list_2(SCM_CLASS_OF(self), property));
     }
     if (!(pspec->flags & G_PARAM_READABLE)) {
-        scm_misc_error("%get-property", "property ~A is not readable",
-                       scm_list_1(property));
+        scm_misc_error("%get-property", "property ~A is not readable", scm_list_1(property));
     }
 
     g_value_init(&value, G_PARAM_SPEC_VALUE_TYPE(pspec));
@@ -259,8 +255,7 @@ gig_i_scm_set_property_x(SCM self, SCM property, SCM svalue)
                        scm_list_2(SCM_CLASS_OF(self), property));
     }
     if (!(pspec->flags & G_PARAM_WRITABLE)) {
-        scm_misc_error("%set-property!", "property ~A is not writable",
-                       scm_list_1(property));
+        scm_misc_error("%set-property!", "property ~A is not writable", scm_list_1(property));
     }
 
     g_value_init(&value, G_PARAM_SPEC_VALUE_TYPE(pspec));
@@ -277,13 +272,11 @@ make_new_signal(SignalSpec *signal_spec, gpointer user_data)
     g_signal_newv(signal_spec->signal_name, instance_type, signal_spec->signal_flags, NULL,     /* closure */
                   signal_spec->accumulator,
                   signal_spec->accu_data,
-                  NULL,
-                  signal_spec->return_type, signal_spec->n_params, signal_spec->param_types);
+                  NULL, signal_spec->return_type, signal_spec->n_params, signal_spec->param_types);
 }
 
 static void
-gig_user_object_get_property(GObject *object, guint property_id,
-                             GValue *value, GParamSpec *pspec)
+gig_user_object_get_property(GObject *object, guint property_id, GValue *value, GParamSpec *pspec)
 {
     GValue *properties = g_object_get_qdata(object, gig_user_object_properties);
     GValue *property = properties + property_id - 1;
@@ -375,8 +368,7 @@ gig_user_object_init(GTypeInstance *instance, gpointer class_ptr)
 
 static GType
 gig_user_object_define(const char *type_name,
-                       GType parent_type,
-                       GPtrArray *properties, GPtrArray *signals)
+                       GType parent_type, GPtrArray *properties, GPtrArray *signals)
 {
     GTypeInfo type_info;
     GigUserObjectInitInfo *class_init_info;
@@ -405,9 +397,7 @@ gig_user_object_define(const char *type_name,
 }
 
 static SCM
-gig_i_scm_define_type(SCM s_type_name,
-                      SCM s_parent_type,
-                      SCM s_properties, SCM s_signals)
+gig_i_scm_define_type(SCM s_type_name, SCM s_parent_type, SCM s_properties, SCM s_signals)
 {
     char *type_name;
     GType parent_type;
@@ -417,7 +407,8 @@ gig_i_scm_define_type(SCM s_type_name,
     GPtrArray *signals;
 
     SCM_ASSERT(scm_is_string(s_type_name), s_type_name, SCM_ARG1, "%define-type");
-    SCM_ASSERT(SCM_SUBCLASSP(s_parent_type, gig_object_type), s_parent_type, SCM_ARG2, "%define-type");
+    SCM_ASSERT(SCM_SUBCLASSP(s_parent_type, gig_object_type), s_parent_type, SCM_ARG2,
+               "%define-type");
 
     type_name = scm_to_utf8_string(s_type_name);
 
@@ -466,14 +457,12 @@ gig_i_scm_define_type(SCM s_type_name,
 }
 
 void
-signal_lookup(char* proc, GObject *self,
+signal_lookup(char *proc, GObject *self,
               SCM signal, SCM detail,
-              guint *c_signal,
-              GSignalQuery *query_info,
-              GQuark *c_detail)
+              guint * c_signal, GSignalQuery * query_info, GQuark * c_detail)
 {
     SCM s_name = signal_ref(signal, SIGNAL_SLOT_NAME);
-    char* name = scm_to_utf8_string(s_name);
+    char *name = scm_to_utf8_string(s_name);
 
     *c_signal = g_signal_lookup(name, G_OBJECT_TYPE(self));
     g_free(name);
@@ -484,8 +473,7 @@ signal_lookup(char* proc, GObject *self,
 
     g_signal_query(*c_signal, query_info);
 
-    if ((query_info->signal_flags & G_SIGNAL_DETAILED) &&
-        scm_is_symbol(detail)) {
+    if ((query_info->signal_flags & G_SIGNAL_DETAILED) && scm_is_symbol(detail)) {
         SCM detail_str = scm_symbol_to_string(detail);
         char *_detail = scm_to_utf8_string(detail_str);
         *c_detail = g_quark_from_string(_detail);
@@ -538,7 +526,8 @@ gig_i_scm_emit(SCM self, SCM signal, SCM s_detail, SCM args)
 
     signal_lookup("%emit", obj, signal, s_detail, &sigid, &query_info, &detail);
 
-    if (SCM_UNBNDP(args)) args = SCM_EOL;
+    if (SCM_UNBNDP(args))
+        args = SCM_EOL;
     if (!(query_info.signal_flags & G_SIGNAL_DETAILED || SCM_UNBNDP(s_detail)))
         args = scm_cons(s_detail, args);
 
@@ -551,7 +540,7 @@ gig_i_scm_emit(SCM self, SCM signal, SCM s_detail, SCM args)
     g_value_init(values, G_OBJECT_TYPE(obj));
     gi_gvalue_from_scm_with_error("%emit", values, self, SCM_ARG1);
     SCM iter = args;
-    for(guint i = 0; i < query_info.n_params; i++, iter = scm_cdr(iter)) {
+    for (guint i = 0; i < query_info.n_params; i++, iter = scm_cdr(iter)) {
         g_value_init(values + i + 1, query_info.param_types[i]);
         gi_gvalue_from_scm_with_error("%emit", values + i + 1, iter, SCM_ARGn);
     }

@@ -1758,8 +1758,7 @@ gi_giargument_convert_return_val_to_object(GIArgument *arg,
             if (referenced_base_type == GI_INFO_TYPE_STRUCT ||
                 referenced_base_type == GI_INFO_TYPE_UNION ||
                 referenced_base_type == GI_INFO_TYPE_OBJECT) {
-                return gir_type_transfer_object(referenced_base_gtype, arg->v_pointer,
-                                                transfer);
+                return gir_type_transfer_object(referenced_base_gtype, arg->v_pointer, transfer);
             }
             else
                 g_critical("Unhandled return argument type %s %d", __FILE__, __LINE__);

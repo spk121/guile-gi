@@ -558,8 +558,7 @@ gi_gvalue_to_scm_structured_type(const GValue *value, GType fundamental, gboolea
         else {
             // if (copy_boxed) ...
             return gir_type_transfer_object(G_VALUE_TYPE(value),
-                                            g_value_get_boxed(value),
-                                            GI_TRANSFER_EVERYTHING);
+                                            g_value_get_boxed(value), GI_TRANSFER_EVERYTHING);
         }
     }
 

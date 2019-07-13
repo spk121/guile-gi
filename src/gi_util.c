@@ -117,6 +117,7 @@ scm_class_ref(SCM cls, SCM slot)
 
     return scm_call_2(class_ref_proc, cls, slot);
 }
+
 SCM
 scm_class_set_x(SCM cls, SCM slot, SCM val)
 {

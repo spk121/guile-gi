@@ -34,22 +34,19 @@ void
 init_gi_oop()
 {
     static GOnce _init = G_ONCE_INIT;
-    g_once (&_init, init_gi_oop_once, NULL);
+    g_once(&_init, init_gi_oop_once, NULL);
 }
 
 static gboolean
-scm_signal_accu(GSignalInvocationHint *ihint,
-                GValue *seed,
-                const GValue *element,
-                gpointer procedure)
+scm_signal_accu(GSignalInvocationHint * ihint,
+                GValue *seed, const GValue *element, gpointer procedure)
 {
     SCM _seed, _element, result;
     _seed = gi_gvalue_as_scm(seed, FALSE);
     _element = gi_gvalue_as_scm(element, FALSE);
 
     result = scm_call_2(SCM_PACK_POINTER(procedure), _seed, _element);
-    switch (scm_c_nvalues(result))
-    {
+    switch (scm_c_nvalues(result)) {
     case 0:
         return TRUE;
     case 1:

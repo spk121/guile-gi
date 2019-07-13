@@ -139,7 +139,7 @@ static SCM sym_ptr;
 static SCM sym_ref;
 static SCM sym_unref;
 
-typedef gpointer (*GigTypeRefFunction)(gpointer);
+typedef gpointer(*GigTypeRefFunction) (gpointer);
 typedef void (*GigTypeUnrefFunction)(gpointer);
 
 SCM
@@ -150,17 +150,14 @@ gir_type_transfer_object(GType type, gpointer ptr, GITransfer transfer)
 
     SCM scm_type = gir_type_get_scheme_type(type);
     GigTypeRefFunction ref;
-    ref = (GigTypeRefFunction)scm_to_pointer(scm_class_ref(scm_type, sym_ref));
+    ref = (GigTypeRefFunction) scm_to_pointer(scm_class_ref(scm_type, sym_ref));
     GigTypeUnrefFunction unref;
-    unref = (GigTypeUnrefFunction)scm_to_pointer(scm_class_ref(scm_type, sym_unref));
+    unref = (GigTypeUnrefFunction) scm_to_pointer(scm_class_ref(scm_type, sym_unref));
 
-    switch (transfer)
-    {
+    switch (transfer) {
     default:
         return scm_call_3(make_instance_proc,
-                          scm_type,
-                          kwd_ptr,
-                          scm_from_pointer(ref(ptr), unref));
+                          scm_type, kwd_ptr, scm_from_pointer(ref(ptr), unref));
     }
 }
 
@@ -522,7 +519,8 @@ scm_type_dump_type_table(void)
             fo_type = SCM_PACK_POINTER(value);
         else
             fo_type = SCM_BOOL_F;
-        entry = scm_list_3(scm_from_size_t(skey), scm_from_utf8_string(g_type_name(skey)), fo_type);
+        entry =
+            scm_list_3(scm_from_size_t(skey), scm_from_utf8_string(g_type_name(skey)), fo_type);
         list = scm_append(scm_list_2(list, scm_list_1(entry)));
     }
     return list;
@@ -530,8 +528,7 @@ scm_type_dump_type_table(void)
 
 void
 gir_type_define_fundamental(GType type, SCM extra_supers,
-                            GigTypeRefFunction ref,
-                            GigTypeUnrefFunction unref)
+                            GigTypeRefFunction ref, GigTypeUnrefFunction unref)
 {
     scm_dynwind_begin(0);
     char *class_name = scm_dynwind_or_bust("%define-compact-type",
@@ -542,11 +539,9 @@ gir_type_define_fundamental(GType type, SCM extra_supers,
                               extra_supers,
                               scm_from_pointer(ref, NULL),
                               scm_from_pointer(unref, NULL));
-    g_hash_table_insert(gir_type_gtype_hash, GSIZE_TO_POINTER(type),
-                        SCM_PACK_POINTER(new_type));
+    g_hash_table_insert(gir_type_gtype_hash, GSIZE_TO_POINTER(type), SCM_PACK_POINTER(new_type));
 #if ENABLE_GIR_TYPE_SCM_HASH
-    g_hash_table_insert(gir_type_scm_hash, SCM_PACK_POINTER(new_type),
-                        GSIZE_TO_POINTER(type));
+    g_hash_table_insert(gir_type_scm_hash, SCM_PACK_POINTER(new_type), GSIZE_TO_POINTER(type));
 #endif
     scm_c_define(class_name, new_type);
     scm_c_export(class_name, NULL);
@@ -580,19 +575,19 @@ gir_init_types(void)
 #endif
 
     gir_type_define_fundamental(G_TYPE_OBJECT, SCM_EOL,
-                                (GigTypeRefFunction)g_object_ref_sink,
-                                (GigTypeUnrefFunction)g_object_unref);
+                                (GigTypeRefFunction) g_object_ref_sink,
+                                (GigTypeUnrefFunction) g_object_unref);
     gir_type_define_fundamental(G_TYPE_INTERFACE, SCM_EOL, NULL, NULL);
     // TODO: better handling of boxed type
     gir_type_define_fundamental(G_TYPE_BOXED, SCM_EOL, identity, NULL);
     gir_type_define_fundamental(G_TYPE_PARAM,
                                 scm_list_1(scm_c_public_ref("oop goops",
                                                             "<applicable-struct-with-setter>")),
-                                (GigTypeRefFunction)g_param_spec_ref_sink,
-                                (GigTypeUnrefFunction)g_param_spec_unref);
+                                (GigTypeRefFunction) g_param_spec_ref_sink,
+                                (GigTypeUnrefFunction) g_param_spec_unref);
     gir_type_define_fundamental(G_TYPE_VARIANT, SCM_EOL,
-                                (GigTypeRefFunction)g_variant_ref_sink,
-                                (GigTypeUnrefFunction)g_variant_unref);
+                                (GigTypeRefFunction) g_variant_ref_sink,
+                                (GigTypeUnrefFunction) g_variant_unref);
 
     gig_object_type = gir_type_get_scheme_type(G_TYPE_OBJECT);
     gig_paramspec_type = gir_type_get_scheme_type(G_TYPE_PARAM);
