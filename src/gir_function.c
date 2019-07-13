@@ -38,7 +38,6 @@ static SCM generic_table;
 
 static SCM ensure_generic_proc;
 static SCM make_proc;
-static SCM srfi1_drop_proc;
 static SCM add_method_proc;
 
 static SCM top_type;
@@ -93,7 +92,7 @@ gir_function_define_gsubr(GType type, GIFunctionInfo *info, const char *prefix)
     int required_input_count, optional_input_count;
     SCM formals, specializers, self_type;
     gboolean is_method = (g_function_info_get_flags(info) & GI_FUNCTION_IS_METHOD) != 0;
-    gboolean was_generic;
+    gboolean was_generic = FALSE;
 
     if (is_method) {
         self_type = gir_type_get_scheme_type(type);
@@ -188,8 +187,6 @@ check_gsubr_cache(GIFunctionInfo *function_info, int *required_input_count,
 static void
 make_formals(GirFunction *fn, int n_inputs, SCM *formals, SCM *specializers)
 {
-    GirArgMap *amap = fn->amap;
-
     SCM i_formal, i_specializer;
 
     i_formal = *formals = scm_make_list(scm_from_int(n_inputs), SCM_BOOL_F);
@@ -219,8 +216,8 @@ make_formals(GirFunction *fn, int n_inputs, SCM *formals, SCM *specializers)
             GIBaseInfo *iface = g_type_info_get_interface(type);
             if (!GI_IS_REGISTERED_TYPE_INFO(iface))
                 continue;
-            GType type = g_registered_type_info_get_g_type((GIRegisteredTypeInfo *) iface);
-            SCM s_type = gir_type_get_scheme_type(type);
+            GType gtype = g_registered_type_info_get_g_type((GIRegisteredTypeInfo *) iface);
+            SCM s_type = gir_type_get_scheme_type(gtype);
             if (scm_is_true(s_type))
                 scm_set_car_x(i_specializer, s_type);
         }
@@ -232,7 +229,6 @@ create_gsubr(GIFunctionInfo *function_info, const char *name, int *required_inpu
              int *optional_input_count, SCM *formals, SCM *specializers)
 {
     GirFunction *gfn;
-    GIFunctionInfoFlags flags;
     ffi_type *ffi_ret_type;
 
     gfn = g_new0(GirFunction, 1);
@@ -473,7 +469,7 @@ object_to_c_arg(GirArgMap *amap, int i, const char *name, SCM obj,
     GIArgInfo *arg_info;
     GIArgument arg;
     unsigned arg_free;
-    int size;
+    gsize size;
     int invoke_in, invoke_out;
     GIArgument *parg;
     unsigned *pfree;
@@ -594,8 +590,7 @@ void
 gir_init_function(void)
 {
     generic_table = scm_c_make_hash_table(127);
-    function_cache = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, gir_function_free);
-
+    function_cache = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, (GDestroyNotify)gir_function_free);
     top_type = scm_c_public_ref("oop goops", "<top>");
     method_type = scm_c_public_ref("oop goops", "<method>");
     ensure_generic_proc = scm_c_public_ref("oop goops", "ensure-generic");

@@ -96,15 +96,6 @@ gir_type_class_name_from_gtype(GType gtype)
     return g_strdup_printf("<%s>", g_type_name(gtype));
 }
 
-static gchar *
-gir_type_predicate_name_from_gtype(GType gtype)
-{
-    gchar *type_name = gname_to_scm_name(g_type_name(gtype));
-    gchar *predicate_name = g_strdup_printf("%s?", type_name);
-    g_free(type_name);
-    return predicate_name;
-}
-
 gchar *
 gir_type_document_type_from_gtype(GType gtype)
 {
@@ -539,7 +530,7 @@ gir_type_define_fundamental(GType type, SCM extra_supers,
                               extra_supers,
                               scm_from_pointer(ref, NULL),
                               scm_from_pointer(unref, NULL));
-    g_hash_table_insert(gir_type_gtype_hash, GSIZE_TO_POINTER(type), SCM_PACK_POINTER(new_type));
+    g_hash_table_insert(gir_type_gtype_hash, GSIZE_TO_POINTER(type), SCM_UNPACK_POINTER(new_type));
 #if ENABLE_GIR_TYPE_SCM_HASH
     g_hash_table_insert(gir_type_scm_hash, SCM_PACK_POINTER(new_type), GSIZE_TO_POINTER(type));
 #endif
