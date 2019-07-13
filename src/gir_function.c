@@ -50,10 +50,12 @@ static SCM kwd_procedure;
 
 
 static gir_gsubr_t *check_gsubr_cache(GIFunctionInfo *function_info,
-                                      int *required_input_count, int *optional_input_count);
+                                      int *required_input_count, int *optional_input_count,
+                                      SCM *formals, SCM *specializers);
 static gir_gsubr_t *create_gsubr(GIFunctionInfo *function_info, const char *name,
                                  int *required_input_count, int *optional_input_count,
                                  SCM *formals, SCM *specializers);
+static void make_formals(GirFunction *fn, int n_inputs, SCM *formals, SCM *specializers);
 static void function_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data);
 
 static SCM convert_output_args(GIFunctionInfo *func_info, GirArgMap *amap, const char *name,
@@ -62,7 +64,7 @@ static void object_list_to_c_args(GIFunctionInfo *func_info, GirArgMap *amap, co
                                   SCM s_args, GArray * in_args, GArray * cinvoke_input_free_array,
                                   GArray * out_args);
 
-static void gir_function_free(GirFunction * fn);
+static void gir_function_free(GirFunction *fn);
 static void gir_fini_function(void);
 
 static SCM
@@ -110,41 +112,41 @@ gir_function_define_gsubr(GType type, GIFunctionInfo *info, const char *prefix)
         scm_hashq_set_x(generic_table, sym_public_name, generic);
     }
 
-    func_gsubr = check_gsubr_cache(info, &required_input_count, &optional_input_count);
-    if (!func_gsubr) {
+    func_gsubr = check_gsubr_cache(info, &required_input_count, &optional_input_count,
+                                   &formals, &specializers);
+    if (!func_gsubr)
         func_gsubr = create_gsubr(info, public_name, &required_input_count,
                                   &optional_input_count, &formals, &specializers);
 
-        SCM proc = scm_c_make_gsubr(public_name, 0, 0, 1, func_gsubr);
+    SCM proc = scm_c_make_gsubr(public_name, 0, 0, 1, func_gsubr);
 
-        if (is_method) {
-            scm_set_car_x(formals, scm_from_utf8_symbol("self"));
-            scm_set_car_x(specializers, self_type);
-        }
-
-        SCM t_formals = formals, t_specializers = specializers;
-
-        int opt = optional_input_count;
-        do {
-            SCM mthd = scm_call_7(make_proc,
-                                  method_type,
-                                  kwd_specializers, t_specializers,
-                                  kwd_formals, t_formals,
-                                  kwd_procedure, proc);
-
-            scm_call_2(add_method_proc, generic, mthd);
-
-            if (scm_is_eq(t_formals, SCM_EOL))
-                break;
-
-            t_formals = scm_drop_1(t_formals);
-            t_specializers = scm_drop_1(t_specializers);
-        } while (opt-- > 0);
-
-        g_debug("dynamically bound %s to %s with %d required and %d optional arguments",
-                public_name, g_base_info_get_name(info), required_input_count,
-                optional_input_count);
+    if (is_method) {
+        scm_set_car_x(formals, scm_from_utf8_symbol("self"));
+        scm_set_car_x(specializers, self_type);
     }
+
+    SCM t_formals = formals, t_specializers = specializers;
+
+    int opt = optional_input_count;
+    do {
+        SCM mthd = scm_call_7(make_proc,
+                              method_type,
+                              kwd_specializers, t_specializers,
+                              kwd_formals, t_formals,
+                              kwd_procedure, proc);
+
+        scm_call_2(add_method_proc, generic, mthd);
+
+        if (scm_is_eq(t_formals, SCM_EOL))
+            break;
+
+        t_formals = scm_drop_1(t_formals);
+        t_specializers = scm_drop_1(t_specializers);
+    } while (opt-- > 0);
+
+    g_debug("dynamically bound %s to %s with %d required and %d optional arguments",
+            public_name, g_base_info_get_name(info), required_input_count, optional_input_count);
+
     scm_c_define(public_name, generic);
     scm_c_export(public_name, NULL);
 
@@ -153,7 +155,7 @@ gir_function_define_gsubr(GType type, GIFunctionInfo *info, const char *prefix)
 
 static gir_gsubr_t *
 check_gsubr_cache(GIFunctionInfo *function_info, int *required_input_count,
-                  int *optional_input_count)
+                  int *optional_input_count, SCM *formals, SCM *specializers)
 {
     // Check the cache to see if this function has already been created.
     GSList *x = function_list;
@@ -164,6 +166,13 @@ check_gsubr_cache(GIFunctionInfo *function_info, int *required_input_count,
         if (gfn->function_info == function_info) {
             gir_arg_map_get_gsubr_args_count(gfn->amap, required_input_count,
                                              optional_input_count);
+
+            if (g_function_info_get_flags(gfn->function_info) & GI_FUNCTION_IS_METHOD)
+                (*required_input_count)++;
+
+            make_formals(gfn, *required_input_count + *optional_input_count, formals,
+                         specializers);
+
             return gfn->function_ptr;
         }
         x = x->next;
@@ -172,7 +181,7 @@ check_gsubr_cache(GIFunctionInfo *function_info, int *required_input_count,
 }
 
 static void
-make_formals(GirFunction * fn, int n_inputs, SCM *formals, SCM *specializers)
+make_formals(GirFunction *fn, int n_inputs, SCM *formals, SCM *specializers)
 {
     GirArgMap *amap = fn->amap;
 
@@ -597,7 +606,7 @@ gir_init_function(void)
 }
 
 static void
-gir_function_free(GirFunction * gfn)
+gir_function_free(GirFunction *gfn)
 {
     g_free(gfn->name);
     gfn->name = NULL;

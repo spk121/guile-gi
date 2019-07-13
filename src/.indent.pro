@@ -77,7 +77,7 @@
 -T GITypeInfo
 
 -T GirPredicate
--T GuGObjectData
+-T GirFunction
 -T SignalSpec
 
 -T GirArgMapEntry

@@ -164,10 +164,9 @@ scm_i_typelib_load(const char *subr, const char *namespace_, const char *version
             gint n_methods = g_struct_info_get_n_methods(info);
             for (gint m = 0; m < n_methods; m++) {
                 GIFunctionInfo *func_info = g_struct_info_get_method(info, m);
+                gir_function_define_gsubr(gtype, func_info, g_base_info_get_name(info));
                 if (g_function_info_get_flags(func_info) & GI_FUNCTION_IS_METHOD)
                     gir_function_define_gsubr(gtype, func_info, NULL);
-                else
-                    gir_function_define_gsubr(gtype, func_info, g_base_info_get_name(info));
             }
         }
             break;
@@ -188,10 +187,9 @@ scm_i_typelib_load(const char *subr, const char *namespace_, const char *version
             gint n_methods = g_object_info_get_n_methods(info);
             for (gint m = 0; m < n_methods; m++) {
                 GIFunctionInfo *func_info = g_object_info_get_method(info, m);
+                gir_function_define_gsubr(gtype, func_info, g_base_info_get_name(info));
                 if (g_function_info_get_flags(func_info) & GI_FUNCTION_IS_METHOD)
                     gir_function_define_gsubr(gtype, func_info, NULL);
-                else
-                    gir_function_define_gsubr(gtype, func_info, g_base_info_get_name(info));
             }
 #if 0
             gint n_signals = g_object_info_get_n_signals(info);
@@ -221,10 +219,9 @@ scm_i_typelib_load(const char *subr, const char *namespace_, const char *version
             gint n_methods = g_interface_info_get_n_methods(info);
             for (gint m = 0; m < n_methods; m++) {
                 GIFunctionInfo *func_info = g_interface_info_get_method(info, m);
+                gir_function_define_gsubr(gtype, func_info, g_base_info_get_name(info));
                 if (g_function_info_get_flags(func_info) & GI_FUNCTION_IS_METHOD)
                     gir_function_define_gsubr(gtype, func_info, NULL);
-                else
-                    gir_function_define_gsubr(gtype, func_info, g_base_info_get_name(info));
             }
         }
             break;
@@ -248,10 +245,9 @@ scm_i_typelib_load(const char *subr, const char *namespace_, const char *version
             gint n_methods = g_union_info_get_n_methods(info);
             for (gint m = 0; m < n_methods; m++) {
                 GIFunctionInfo *func_info = g_union_info_get_method(info, m);
+                gir_function_define_gsubr(gtype, func_info, g_base_info_get_name(info));
                 if (g_function_info_get_flags(func_info) & GI_FUNCTION_IS_METHOD)
                     gir_function_define_gsubr(gtype, func_info, NULL);
-                else
-                    gir_function_define_gsubr(gtype, func_info, g_base_info_get_name(info));
             }
         }
             break;
