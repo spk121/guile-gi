@@ -5,7 +5,7 @@
 
 (automake-test
  (begin
-   (let ((app (make-gobject (get-gtype <GApplication>)
+   (let ((app (make-gobject <GApplication>
                             '(("application-id" . "gi.guile.Example"))))
          (result #f))
      (with-object app

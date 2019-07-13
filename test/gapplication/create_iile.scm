@@ -7,6 +7,6 @@
  (let ((app-id "gi.guile.Example"))
    (equal?
     app-id
-    (with-object (create <GApplication>
+    (with-object ((@ (gi) create) <GApplication>
                    (application-id ((lambda () app-id))))
       (get-application-id)))))

@@ -5,7 +5,7 @@
 
 (automake-test
  (begin
-   (with-object (create <GApplication>
+   (with-object ((@ (gi) create) <GApplication>
                   (application-id "gi.guile.Example"))
      (connect! activate
        (lambda (app)
