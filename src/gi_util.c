@@ -107,6 +107,7 @@ scm_dynwind_or_bust(const char *subr, void *mem)
 
 static SCM class_ref_proc = SCM_UNDEFINED;
 static SCM class_set_proc = SCM_UNDEFINED;
+static SCM srfi1_drop_proc = SCM_UNDEFINED;
 
 SCM
 scm_class_ref(SCM cls, SCM slot)
@@ -122,4 +123,12 @@ scm_class_set_x(SCM cls, SCM slot, SCM val)
     if (SCM_UNBNDP(class_set_proc))
         class_set_proc = scm_c_public_ref("oop goops", "class-slot-set!");
     return scm_call_3(class_set_proc, cls, slot, val);
+}
+
+SCM
+scm_drop_1(SCM lst)
+{
+    if (SCM_UNBNDP(srfi1_drop_proc))
+        srfi1_drop_proc = scm_c_public_ref("srfi srfi-1", "drop");
+    return scm_call_2(srfi1_drop_proc, lst, scm_from_int(1));
 }

@@ -11,6 +11,7 @@ int scm_is_list(SCM obj);
 void *scm_dynwind_or_bust(const char *subr, void *mem);
 SCM scm_class_ref(SCM cls, SCM slot);
 SCM scm_class_set_x(SCM cls, SCM slot, SCM val);
+SCM scm_drop_1(SCM lst);
 
 #define SCM_UNBND_TO_BOOL_F(obj) \
     do {                         \

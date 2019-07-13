@@ -27,10 +27,7 @@ G_BEGIN_DECLS
 
 typedef SCM (*gir_gsubr_t)(void);
 
-void gir_function_define_gsubr(GIFunctionInfo *info, const char *prefix);
-gir_gsubr_t *gir_function_create_gsubr(GIFunctionInfo *info, const char *name,
-                                       int *required_input_count, int *optional_input_count,
-                                       SCM *formals, SCM *specializers);
+void gir_function_define_gsubr(GType type, GIFunctionInfo *info, const char *name);
 SCM gir_function_invoke(GIFunctionInfo *info, GirArgMap *amap, const char *name, GObject *object,
                         SCM args, GError **error);
 void gir_init_function(void);
