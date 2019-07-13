@@ -149,9 +149,11 @@ scm_c_reexport(const char *name, ...)
     SCM syms = scm_list_1(scm_from_utf8_symbol(name));
 
     while ((name = va_arg(args, char *)) != NULL)
-        syms = scm_cons(scm_from_utf8_symbol(name), syms);
+          syms = scm_cons(scm_from_utf8_symbol(name), syms);
 
     scm_call_2(module_reexport_proc, current_module, syms);
 
     va_end(args);
+
+    return SCM_UNSPECIFIED;
 }

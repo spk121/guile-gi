@@ -1699,8 +1699,8 @@ c_list_to_scm(C2S_ARG_DECL)
 
     // Actual conversion
     gpointer list = arg->v_pointer, data;
-    GList *_list;
-    GSList *_slist;
+    GList *_list = NULL;
+    GSList *_slist = NULL;
     size_t length;
 
     // Step 1: allocate

@@ -172,14 +172,12 @@ check_gsubr_cache(GIFunctionInfo *function_info, int *required_input_count,
     if (gfn == NULL)
         return NULL;
 
-    gir_arg_map_get_gsubr_args_count(gfn->amap, required_input_count,
-                                     optional_input_count);
+    gir_arg_map_get_gsubr_args_count(gfn->amap, required_input_count, optional_input_count);
 
     if (g_function_info_get_flags(gfn->function_info) & GI_FUNCTION_IS_METHOD)
         (*required_input_count)++;
 
-    make_formals(gfn, *required_input_count + *optional_input_count, formals,
-                 specializers);
+    make_formals(gfn, *required_input_count + *optional_input_count, formals, specializers);
 
     return gfn->function_ptr;
 }
@@ -586,7 +584,9 @@ void
 gir_init_function(void)
 {
     generic_table = scm_c_make_hash_table(127);
-    function_cache = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, (GDestroyNotify)gir_function_free);
+    function_cache =
+        g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL,
+                              (GDestroyNotify) gir_function_free);
     top_type = scm_c_public_ref("oop goops", "<top>");
     method_type = scm_c_public_ref("oop goops", "<method>");
     ensure_generic_proc = scm_c_public_ref("oop goops", "ensure-generic");
