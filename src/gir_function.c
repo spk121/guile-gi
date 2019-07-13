@@ -154,6 +154,12 @@ gir_function_create_gsubr(GIFunctionInfo *function_info, const char *name, int *
     if (g_function_info_get_flags(gfn->function_info) & GI_FUNCTION_IS_METHOD)
         (*required_input_count)++;
 
+    if (*required_input_count + *optional_input_count > 10) {
+        g_base_info_unref(function_info);
+        gir_function_free(gfn);
+        g_return_val_if_reached(NULL);
+    }
+
     if (formals != NULL)
         make_formals(gfn, *required_input_count + *optional_input_count,
                      formals, specializers);
@@ -529,6 +535,8 @@ gir_function_free(GirFunction * gfn)
     g_base_info_unref(gfn->function_info);
     g_free(gfn->atypes);
     gfn->atypes = NULL;
+
+    // TODO: should we free gfn->amap?
 
     g_free(gfn);
 }

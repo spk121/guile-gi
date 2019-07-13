@@ -84,6 +84,9 @@ gir_method_table_insert(GType type, GIFunctionInfo *info)
 
     gir_gsubr_t *subr = gir_function_create_gsubr(info, public_name, &req, &opt,
                                                   &formals, &specializers);
+
+    g_return_if_fail(subr != NULL);
+
     SCM proc = scm_c_make_gsubr(public_name, req, opt, 0, subr);
 
     for (SCM special = specializers; scm_is_pair(special); special = scm_cdr(special))
