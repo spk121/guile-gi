@@ -46,8 +46,6 @@ gig_i_scm_create(SCM s_gtype, SCM s_prop_alist)
     GObject *obj;
     GObjectClass *class;
     guint n_prop;
-    SCM sobj;
-    gpointer ptr;
     const char **keys;
     GValue *values;
 
@@ -205,7 +203,6 @@ gig_i_scm_get_pspec(SCM self, SCM prop)
 static SCM
 gig_i_scm_get_property(SCM self, SCM property)
 {
-    char *param_name;
     SCM ret;
 
     GParamSpec *pspec;
@@ -237,8 +234,6 @@ gig_i_scm_get_property(SCM self, SCM property)
 static SCM
 gig_i_scm_set_property_x(SCM self, SCM property, SCM svalue)
 {
-    char *param_name;
-
     GParamSpec *pspec;
     GObject *obj;
 

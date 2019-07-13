@@ -532,7 +532,7 @@ gir_type_define_fundamental(GType type, SCM extra_supers,
                               scm_from_pointer(unref, NULL));
     g_hash_table_insert(gir_type_gtype_hash, GSIZE_TO_POINTER(type), SCM_UNPACK_POINTER(new_type));
 #if ENABLE_GIR_TYPE_SCM_HASH
-    g_hash_table_insert(gir_type_scm_hash, SCM_PACK_POINTER(new_type), GSIZE_TO_POINTER(type));
+    g_hash_table_insert(gir_type_scm_hash, SCM_UNPACK_POINTER(new_type), GSIZE_TO_POINTER(type));
 #endif
     scm_c_define(class_name, new_type);
     scm_c_export(class_name, NULL);

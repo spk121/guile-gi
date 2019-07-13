@@ -2173,8 +2173,8 @@ convert_list_arg_to_object(GIArgument *arg, GITypeInfo *list_type_info,
 
     // Actual conversion
     gpointer list = arg->v_pointer, data;
-    GList *_list;
-    GSList *_slist;
+    GList *_list = NULL;
+    GSList *_slist = NULL;
     size_t length;
 
     // Step 1: allocate
