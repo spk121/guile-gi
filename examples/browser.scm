@@ -13,39 +13,29 @@
 
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https:;;www.gnu.org/licenses/>.
-(use-modules (gi))
-
-(typelib-load "Gio" "2.0")
-(typelib-load "Gtk" "3.0")
-(typelib-load "GLib" "2.0")
-(typelib-load "WebKit2" "4.0")
-
-(define (print-hello widget)
-  (display "Hello World\n"))
+(use-modules (gi) (oop goops))
+(use-typelibs ("GLib" "2.0")
+              ("Gio" "2.0")
+              ("Gtk" "3.0")
+              ("WebKit2" "4.0"))
 
 (define (activate app)
-  (let ((window (cast (application-window:new app) <GtkApplicationWindow>))
-        (vbox (cast (vbox:new 0 0) <GtkVBox>))
-        (browser (cast (web-view:new) <WebKitWebView>))
-        (button-box (cast (button-box:new 0) <GtkButtonBox>))
-        (button (button:new-with-label "Hello World")))
-    (with-object button-box (add button))
-    (with-object vbox (add browser) (add button-box))
-    (with-object window
-      (set-title "Window")
-      (set-default-size 200 200)
-      (add vbox)
-      (show-all))
+  (let ((window (application-window:new app))
+        (vbox (vbox:new 0 0))
+        (browser (web-view:new)))
+    (set-title window "Browser")
+    (set-default-size window 600 400)
+    (add window browser)
 
-    (with-object button
-      (connect! clicked print-hello)
-      (connect! clicked (lambda x
-                          (with-object window (destroy)))))
-    (with-object browser (load-uri "http://gnu.org/s/mes"))))
+    (load-uri browser "http://gnu.org/s/mes")
+    (show-all window)))
+
+(define-method (connect obj (signal <symbol>) (handler <procedure>))
+  (connect obj (make-signal #:name (symbol->string signal)) handler))
 
 (define (main)
-  (with-object (application:new "org.gtk.example" 0)
-    (connect! activate activate)
-    (run (length (command-line)) (command-line))))
+  (let ((app (application:new "org.gtk.example" 0)))
+    (connect app 'activate activate)
+    (run app (command-line))))
 
 (main)
