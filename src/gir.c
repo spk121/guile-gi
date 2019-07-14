@@ -104,7 +104,6 @@ gir_init(void)
     gir_init_flag();
 
     gi_init_struct();
-    gi_init_gvalue();
 
     gi_init_giargument();
     gir_init_callback();
