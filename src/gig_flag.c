@@ -1,4 +1,4 @@
-// Copyright (C) 2018 Michael L. Gran
+// Copyright (C) 2018, 2019 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,18 +15,18 @@
 
 #include <inttypes.h>
 #include <libguile.h>
-#include "gir_flag.h"
+#include "gig_flag.h"
 
-static char *gir_flag_gname_to_scm_constant_name(const char *gname);
+static gchar *gname_to_scm_constant_name(const gchar *gname);
 
-static char *
-gir_flag_gname_to_scm_constant_name(const char *gname)
+static gchar *
+gname_to_scm_constant_name(const gchar *gname)
 {
-    size_t len = strlen(gname);
+    gsize len = strlen(gname);
     GString *str = g_string_new(NULL);
     gboolean was_lower = FALSE;
 
-    for (size_t i = 0; i < len; i++) {
+    for (gsize i = 0; i < len; i++) {
         if (g_ascii_islower(gname[i])) {
             g_string_append_c(str, g_ascii_toupper(gname[i]));
             was_lower = TRUE;
@@ -47,7 +47,7 @@ gir_flag_gname_to_scm_constant_name(const char *gname)
         }
     }
 
-    char *fptr = strstr(str->str, "_FLAGS");
+    gchar *fptr = strstr(str->str, "_FLAGS");
     if (fptr) {
         memcpy(fptr, fptr + 6, str->len - (fptr - str->str) - 6);
         memset(str->str + str->len - 6, 0, 6);
@@ -58,38 +58,38 @@ gir_flag_gname_to_scm_constant_name(const char *gname)
 }
 
 static gchar *
-gir_flag_public_name(const char *parent, GIBaseInfo *info)
+gig_flag_public_name(const gchar *parent, GIBaseInfo *info)
 {
-    char *short_parent, *tmp_str, *public_name;
+    gchar *short_parent, *tmp_str, *public_name;
 
     // Many flag collection names end in 'Type', which isn't informative.
     if (g_str_has_suffix(parent, "Type")) {
-        size_t len = strlen(parent);
+        gsize len = strlen(parent);
         short_parent = g_strndup(parent, len - 4);
     }
     else
         short_parent = g_strdup(parent);
 
     tmp_str = g_strdup_printf("%s-%s", short_parent, g_base_info_get_name(info));
-    public_name = gir_flag_gname_to_scm_constant_name(tmp_str);
+    public_name = gname_to_scm_constant_name(tmp_str);
     g_free(short_parent);
     g_free(tmp_str);
     return public_name;
 }
 
 void
-gir_flag_define(GIEnumInfo *info)
+gig_flag_define(GIEnumInfo *info)
 {
     g_assert(info != NULL);
 
     gint n_values = g_enum_info_get_n_values(info);
     gint i = 0;
     GIValueInfo *vi = NULL;
-    char *public_name;
+    gchar *public_name;
 
     while (i < n_values) {
         vi = g_enum_info_get_value(info, i);
-        public_name = gir_flag_public_name(g_base_info_get_name(info), vi);
+        public_name = gig_flag_public_name(g_base_info_get_name(info), vi);
         gint64 val = g_value_info_get_value(vi);
         SCM ret = scm_from_int64(val);
 
@@ -101,12 +101,10 @@ gir_flag_define(GIEnumInfo *info)
         free(public_name);
         i++;
     }
-
 }
 
-
 void
-gir_init_flag(void)
+gig_init_flag(void)
 {
 
 }

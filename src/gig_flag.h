@@ -1,4 +1,4 @@
-// Copyright (C) 2018 Michael L. Gran
+// Copyright (C) 2018, 2019 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -13,15 +13,21 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef _GIR_FLAG_H_
-#define _GIR_FLAG_H_
+#ifndef GIG_FLAG_H
+#define GIG_FLAG_H
+
 #include <girepository.h>
 
-void gir_flag_define(GIEnumInfo *info);
+// *INDENT-OFF*
+G_BEGIN_DECLS
+// *INDENT-ON*
+
+void gig_flag_define(GIEnumInfo *info);
 static inline void
-gir_flag_document(GString **str, GIEnumInfo *info)
+gig_flag_document(GString **str, GIEnumInfo *info)
 {
 }
+void gig_init_flag(void);
 
-void gir_init_flag(void);
+G_END_DECLS
 #endif

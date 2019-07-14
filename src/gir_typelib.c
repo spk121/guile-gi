@@ -24,7 +24,7 @@
 #include "gig_object.h"
 #include "gig_util.h"
 #include "gig_constant.h"
-#include "gir_flag.h"
+#include "gig_flag.h"
 #include "gir_function.h"
 #include "gir_type.h"
 #include "gir_typelib.h"
@@ -172,7 +172,7 @@ scm_i_typelib_load(const char *subr, const char *namespace_, const char *version
             break;
         case GI_INFO_TYPE_ENUM:
         case GI_INFO_TYPE_FLAGS:
-            gir_flag_define(info);
+            gig_flag_define(info);
             break;
         case GI_INFO_TYPE_OBJECT:
         {
@@ -354,7 +354,7 @@ scm_typelib_document(SCM s_namespace, SCM s_version)
             break;
         case GI_INFO_TYPE_ENUM:
         case GI_INFO_TYPE_FLAGS:
-            gir_flag_document(&export, info);
+            gig_flag_document(&export, info);
             break;
         case GI_INFO_TYPE_OBJECT:
         {

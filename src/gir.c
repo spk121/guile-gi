@@ -28,7 +28,7 @@
 #include "gir_callback.h"
 #include "gir_function.h"
 #include "gig_constant.h"
-#include "gir_flag.h"
+#include "gig_flag.h"
 
 #ifdef _WIN32
 static const int _win32 = TRUE;
@@ -100,7 +100,7 @@ gir_init(void)
     gir_init_types();
     gir_init_typelib();
     gig_init_constant();
-    gir_init_flag();
+    gig_init_flag();
 
     gig_init_argument();
     gir_init_callback();
