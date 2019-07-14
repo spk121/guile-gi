@@ -24,7 +24,7 @@
              (string-append resource ".gresource"))))
 
 (define (main)
-  (gtk::init 0 #f)
+  (gtk::init)
 
   (resources-register (find-resource "test"))
 

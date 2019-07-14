@@ -21,7 +21,7 @@
 
 (define (go)
   ;; Initialize GTK
-  (init 0 #f)
+  (init)
 
   ;; Construct a GtkBuilder instance and load our UI description.
   (let ((builder (builder:new-from-file (find-file "builder.ui"))))
