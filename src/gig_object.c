@@ -489,6 +489,8 @@ gig_i_scm_connect(SCM self, SCM signal, SCM sdetail, SCM callback, SCM s_after, 
     guint sigid;
     GQuark detail;
 
+    init_gi_oop(); // for guile_signal
+
     SCM_ASSERT(SCM_IS_A_P(self, gig_object_type), self, SCM_ARG1, "%connect");
     SCM_ASSERT(SCM_IS_A_P(signal, guile_signal), signal, SCM_ARG2, "%connect");
 
