@@ -22,7 +22,7 @@
 #include "gir_typelib.h"
 #include "gir_function.h"
 #include "gig_object.h"
-#include "gi_util.h"
+#include "gig_util.h"
 #include "gir_constant.h"
 #include "gir_flag.h"
 #include "gir_function.h"
@@ -486,7 +486,7 @@ gir_typelib_document_callable_arguments(GString **export, GICallableInfo *info)
             }
             g_string_append(*export, "     ");
 
-            name = gname_to_scm_name(g_base_info_get_name(arg));
+            name = gig_gname_to_scm_name(g_base_info_get_name(arg));
             g_string_append(*export, name);
             g_string_append_c(*export, ' ');
             char *desc = gi_giargument_describe_arg(arg);
@@ -533,7 +533,7 @@ gir_typelib_document_callable_arguments(GString **export, GICallableInfo *info)
             }
             g_string_append(*export, "     ");
 
-            name = gname_to_scm_name(g_base_info_get_name(arg));
+            name = gig_gname_to_scm_name(g_base_info_get_name(arg));
             g_string_append(*export, name);
             g_string_append_c(*export, ' ');
             char *desc = gi_giargument_describe_arg(arg);
@@ -557,7 +557,7 @@ callback_public_name(const char *namespace_, GICallableInfo *info)
     char *tmp_str;
 
     tmp_str = g_strdup_printf("%s", g_base_info_get_name(info));
-    public_name = gname_to_scm_name(tmp_str);
+    public_name = gig_gname_to_scm_name(tmp_str);
     g_free(tmp_str);
     return public_name;
 }
@@ -651,7 +651,7 @@ export_signal_info(GString **export, char *parent, GISignalInfo *info)
         GIDirection dir = g_arg_info_get_direction(arg);
         if (dir == GI_DIRECTION_IN || dir == GI_DIRECTION_INOUT) {
             g_string_append_c(*export, ' ');
-            name = gname_to_scm_name(g_base_info_get_name(arg));
+            name = gig_gname_to_scm_name(g_base_info_get_name(arg));
             g_string_append(*export, name);
             free(name);
         }
@@ -669,7 +669,7 @@ export_signal_info(GString **export, char *parent, GISignalInfo *info)
         GIDirection dir = g_arg_info_get_direction(arg);
         if (dir == GI_DIRECTION_IN || dir == GI_DIRECTION_INOUT) {
             g_string_append_c(*export, ' ');
-            name = gname_to_scm_name(g_base_info_get_name(arg));
+            name = gig_gname_to_scm_name(g_base_info_get_name(arg));
             g_string_append(*export, name);
             free(name);
         }

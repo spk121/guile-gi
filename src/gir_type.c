@@ -17,7 +17,7 @@
 #include <girepository.h>
 #include <ffi.h>
 #include "gir_type.h"
-#include "gi_util.h"
+#include "gig_util.h"
 #include "gig_object.h"
 #include "gig_type_private.h"
 #if HAVE_CONFIG_H

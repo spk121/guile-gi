@@ -16,7 +16,7 @@
 #include <ffi.h>
 #include "gi_function_info.h"
 #include "gi_giargument.h"
-#include "gi_util.h"
+#include "gig_util.h"
 #include "gig_arg_map.h"
 #include "gir_function.h"
 #include "gir_type.h"

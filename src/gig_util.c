@@ -2,10 +2,10 @@
 #include <glib.h>
 #include <glib-object.h>
 #include <errno.h>
-#include "gi_util.h"
+#include "gig_util.h"
 
 /**
- * gi_constant_strip_prefix:
+ * gig_constant_strip_prefix:
  * @name: the constant name.
  * @strip_prefix: the prefix to strip.
  *
@@ -18,9 +18,9 @@
  * Returns: the stripped constant name.
  */
 const gchar *
-gi_constant_strip_prefix(const gchar *name, const gchar *strip_prefix)
+gig_constant_strip_prefix(const gchar *name, const gchar *strip_prefix)
 {
-    size_t prefix_len, i;
+    gsize prefix_len, i;
 
     prefix_len = strlen(strip_prefix);
 
@@ -43,17 +43,17 @@ gi_constant_strip_prefix(const gchar *name, const gchar *strip_prefix)
     return name;
 }
 
-char *
-gname_to_scm_name(const char *gname)
+gchar *
+gig_gname_to_scm_name(const char *gname)
 {
     g_assert(gname != NULL);
     g_assert(strlen(gname) > 0);
 
-    size_t len = strlen(gname);
+    gsize len = strlen(gname);
     GString *str = g_string_new(NULL);
     gboolean was_lower = FALSE;
 
-    for (size_t i = 0; i < len; i++) {
+    for (gsize i = 0; i < len; i++) {
         if (g_ascii_islower(gname[i])) {
             g_string_append_c(str, gname[i]);
             was_lower = TRUE;
@@ -82,7 +82,7 @@ gname_to_scm_name(const char *gname)
 }
 
 SCM
-scm_c_list_ref(SCM list, size_t k)
+scm_c_list_ref(SCM list, gsize k)
 {
     return scm_list_ref(list, scm_from_size_t(k));
 }

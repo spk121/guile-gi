@@ -2,7 +2,7 @@
 #include "gi_gvalue.h"
 #include "gir_type.h"
 #include "gig_object_private.h"
-#include "gi_util.h"
+#include "gig_util.h"
 
 static SCM signal_slot_syms[SIGNAL_SLOT_COUNT];
 

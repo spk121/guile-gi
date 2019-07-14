@@ -48,8 +48,8 @@ libguile_gi_la_SOURCES = \
  gir_type.h \
  gig_type_private.c \
  gig_type_private.h \
- gi_util.c \
- gi_util.h
+ gig_util.c \
+ gig_util.h
 
 libguile_gi_la_CPPFLAGS = -DG_LOG_DOMAIN=\"GuileGI\"
 if BUILDING_DLL

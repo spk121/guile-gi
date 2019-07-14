@@ -1,5 +1,5 @@
 #include "gi_function_info.h"
-#include "gi_util.h"
+#include "gig_util.h"
 #include "gir_function.h"
 
 
@@ -65,8 +65,8 @@ gi_function_info_make_name(GIFunctionInfo *info, const gchar *prefix)
 
     predicate = is_predicate(info);
     if (prefix)
-        str1 = gname_to_scm_name(prefix);
-    str2 = gname_to_scm_name(g_base_info_get_name(info));
+        str1 = gig_gname_to_scm_name(prefix);
+    str2 = gig_gname_to_scm_name(g_base_info_get_name(info));
     if (!prefix && !predicate)
         return str2;
     else if (!prefix && predicate)

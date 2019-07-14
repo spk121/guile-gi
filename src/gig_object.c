@@ -1,7 +1,7 @@
 #include "gig_object.h"
 #include "gig_object_private.h"
 #include "gir_type.h"
-#include "gi_util.h"
+#include "gig_util.h"
 #include "gi_gvalue.h"
 #include "gi_signal_closure.h"
 

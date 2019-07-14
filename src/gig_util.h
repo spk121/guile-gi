@@ -1,14 +1,18 @@
-#ifndef _GIR_UTIL_H_
-#define _GIR_UTIL_H_
+#ifndef GIG_UTIL_H
+#define GIG_UTIL_H
 
 #include <glib.h>
 #include <libguile.h>
 
-const gchar *gi_constant_strip_prefix(const gchar *name, const gchar *strip_prefix);
-char *gname_to_scm_name(const char *gname);
-SCM scm_c_list_ref(SCM list, size_t k);
-int scm_is_list(SCM obj);
-void *scm_dynwind_or_bust(const char *subr, void *mem);
+// *INDENT-OFF*
+G_BEGIN_DECLS
+// *INDENT-ON*
+
+const gchar *gig_constant_strip_prefix(const gchar *name, const gchar *strip_prefix);
+char *gig_gname_to_scm_name(const char *gname);
+SCM scm_c_list_ref(SCM list, gsize k);
+gboolean scm_is_list(SCM obj);
+void *scm_dynwind_or_bust(const gchar *subr, gpointer mem);
 SCM scm_class_ref(SCM cls, SCM slot);
 SCM scm_class_set_x(SCM cls, SCM slot, SCM val);
 SCM scm_drop_1(SCM lst);
@@ -20,4 +24,5 @@ SCM scm_c_reexport(const char *name, ...);
             obj = SCM_BOOL_F;    \
     } while (0)                  \
 
+G_END_DECLS
 #endif
