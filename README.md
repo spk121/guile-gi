@@ -3,19 +3,23 @@
 This is a library for [GNU Guile](https://gnu.org/software/guile) to
 create language bindings via [GObject Introspection](https://gi.readthedocs.io).
 
+GNU Guile is an implementation of Scheme, which is a Lisp-like language.
+This library allows Guile to use GObject-based libraries -- such as GTK+3,
+GLib, and WebKit2 -- by generating a Scheme API from the GObject Introspection
+information provided by those libraries.
+
 This is pre-alpha code.  It barely works.  The API is in flux.
 
 Guile GI has two primary components.
 
-* `(gi)` aka `gi.scm`: a guile module that provides functions to parse
-  GObject typelib files
+* `(gi)` aka `gi.scm`: a guile module that provides functionality to
+  generate Scheme API from GObject typelib files
 
 * `libguile-gi.so` or `libguile-gi.dll`: a compiled module that
   contains glue code to interface with GObject
 
-To create bindings and import bindings, use the `use-typelibs` syntax
-or the `typelib-load` procedure. The former is preferred, as it does not
-affect the exports of the current module.
+To create bindings, use the `use-typelibs` syntax
+found in the `(gi)` library.
 
 For the moment, the docs are at
 [spk121.github.io/guile-gi](https://spk121.github.io/guile-gi/)
@@ -29,5 +33,7 @@ Or, create and run in a development environment
 
     guix environment -l guix.scm
     ./bootstrap && ./configure && make
-    tools/uninstalled-env tools/guile-gi test/browser.scm
-    tools/uninstalled-env tools/guile-gi test/editor.scm
+    tools/uninstalled-env tools/guile-gi examples/browser.scm
+
+
+[![Build Status](https://travis-ci.com/spk121/guile-gi.svg?branch=master)](https://travis-ci.com/spk121/guile-gi)
