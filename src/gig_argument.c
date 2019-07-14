@@ -23,7 +23,7 @@
 #include "gi_gvalue.h"
 #include "gi_type_tag.h"
 #include "gig_callback.h"
-#include "gir_type.h"
+#include "gig_type.h"
 #include "gir_typelib.h"
 
 #ifndef FLT_MAX
@@ -320,7 +320,7 @@ describe_non_pointer_type(GString *desc, GITypeInfo *type_info)
                  || referenced_base_type == GI_INFO_TYPE_STRUCT
                  || referenced_base_type == GI_INFO_TYPE_UNION) {
             GType type = g_registered_type_info_get_g_type(referenced_base_info);
-            char *class_name = gir_type_class_name_from_gtype(type);
+            char *class_name = gig_type_class_name_from_gtype(type);
             g_string_append(desc, class_name);
             g_free(class_name);
         }
@@ -409,7 +409,7 @@ gig_argument_describe_arg(GIArgInfo *arg_info)
                      || referenced_base_type == GI_INFO_TYPE_OBJECT
                      || referenced_base_type == GI_INFO_TYPE_INTERFACE) {
                 GType type = g_registered_type_info_get_g_type(referenced_base_info);
-                gchar *class_name = gir_type_class_name_from_gtype(type);
+                gchar *class_name = gig_type_class_name_from_gtype(type);
                 g_string_append(desc, class_name);
                 g_free(class_name);
             }
@@ -453,7 +453,7 @@ gig_argument_describe_arg(GIArgInfo *arg_info)
                              || referenced_base_type == GI_INFO_TYPE_UNION
                              || referenced_base_type == GI_INFO_TYPE_OBJECT) {
                         GType type = g_registered_type_info_get_g_type(referenced_base_info);
-                        char *class_name = gir_type_class_name_from_gtype(type);
+                        char *class_name = gig_type_class_name_from_gtype(type);
                         g_string_append_printf(desc, "A list of %s", class_name);
                         g_free(class_name);
                     }
@@ -626,7 +626,7 @@ scm_to_c_interface(S2C_ARG_DECL)
         // This is uncommon case where a struct is used directly,
         // and not as a pointer, such as in gtk_text_buffer_get_bounds.
 
-        arg->v_pointer = gir_type_peek_object(object);
+        arg->v_pointer = gig_type_peek_object(object);
     }
     else
         g_assert_not_reached();
@@ -715,7 +715,7 @@ scm_to_c_interface_pointer(S2C_ARG_DECL)
     GIBaseInfo *referenced_base_info = g_type_info_get_interface(entry->type_info);
     GIInfoType referenced_base_type = g_base_info_get_type(referenced_base_info);
 
-    GType obj_type = gir_type_get_gtype_from_obj(object);
+    GType obj_type = gig_type_get_gtype_from_obj(object);
     if (obj_type == G_TYPE_NONE || obj_type == G_TYPE_INVALID)
         scm_wrong_type_arg_msg(subr, argpos, object,
                                "a GObject struct, union, interface, or object");
@@ -729,7 +729,7 @@ scm_to_c_interface_pointer(S2C_ARG_DECL)
     else if ((referenced_base_type == GI_INFO_TYPE_STRUCT)
              || (referenced_base_type == GI_INFO_TYPE_UNION)
              || (referenced_base_type == GI_INFO_TYPE_OBJECT)) {
-        arg->v_pointer = gir_type_peek_object(object);
+        arg->v_pointer = gig_type_peek_object(object);
     }
     else if (referenced_base_type == GI_INFO_TYPE_CALLBACK) {
         scm_misc_error(subr,
@@ -879,7 +879,7 @@ scm_to_c_native_direct_struct_array(S2C_ARG_DECL)
         ptr = g_malloc0_n(entry->item_size, len + 1);
     else
         ptr = g_malloc0_n(entry->item_size, len);
-    gpointer entry_ptr = gir_type_peek_object(object);
+    gpointer entry_ptr = gig_type_peek_object(object);
     for (gsize i = 0; i < len; i++)
         memcpy((char *)ptr + i * entry->item_size, entry_ptr, entry->item_size);
     if (entry->item_transfer == GI_TRANSFER_NOTHING)
@@ -907,7 +907,7 @@ scm_to_c_native_indirect_object_array(S2C_ARG_DECL)
             // Entry should be a GObject.  I guess we're not
             // increasing refcnt?  At least that is the case for
             // g_socket_send_message.
-            ptr[i] = gir_type_peek_object(elt);
+            ptr[i] = gig_type_peek_object(elt);
         }
         if (entry->item_transfer == GI_TRANSFER_NOTHING) {
             if (entry->array_is_zero_terminated)
@@ -1363,7 +1363,7 @@ gig_argument_describe_return(GITypeInfo *type_info,
             if (referenced_base_type == GI_INFO_TYPE_STRUCT ||
                 referenced_base_type == GI_INFO_TYPE_UNION ||
                 referenced_base_type == GI_INFO_TYPE_OBJECT) {
-                char *class_name = gir_type_class_name_from_gtype(referenced_base_gtype);
+                char *class_name = gig_type_class_name_from_gtype(referenced_base_gtype);
                 g_string_append(desc, class_name);
                 g_free(class_name);
             }
@@ -1427,7 +1427,7 @@ c_immediate_to_scm(C2S_ARG_DECL)
         *object = scm_from_double(arg->v_double);
         break;
     case GI_TYPE_TAG_GTYPE:
-        gir_type_register(arg->v_size);
+        gig_type_register(arg->v_size);
         *object = scm_from_size_t(arg->v_size);
         break;
     case GI_TYPE_TAG_UNICHAR:
@@ -1468,7 +1468,7 @@ c_interface_pointer_to_scm(C2S_ARG_DECL)
              || referenced_info_type == GI_INFO_TYPE_OBJECT) {
         g_assert_nonnull(arg->v_pointer);
         GType referenced_base_gtype = g_registered_type_info_get_g_type(referenced_base_info);
-        *object = gir_type_transfer_object(referenced_base_gtype, arg->v_pointer, entry->transfer);
+        *object = gig_type_transfer_object(referenced_base_gtype, arg->v_pointer, entry->transfer);
     }
     g_base_info_unref(referenced_base_info);
 }
@@ -1778,7 +1778,7 @@ c_list_to_scm(C2S_ARG_DECL)
                 scm_set_car_x(out_iter, SCM_MAKE_CHAR(*(guint32 *) data));
                 break;
             case GI_TYPE_TAG_GTYPE:
-                gir_type_register(*(gsize *)data);
+                gig_type_register(*(gsize *)data);
                 scm_set_car_x(out_iter, scm_from_size_t(*(gsize *)data));
                 break;
             default:

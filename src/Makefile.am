@@ -44,8 +44,8 @@ libguile_gi_la_SOURCES = \
  gig_flag.h \
  gir_typelib.c \
  gir_typelib.h \
- gir_type.c \
- gir_type.h \
+ gig_type.c \
+ gig_type.h \
  gig_type_private.c \
  gig_type_private.h \
  gig_util.c \

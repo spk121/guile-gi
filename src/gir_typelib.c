@@ -18,7 +18,7 @@
 #include <girepository.h>
 #include "gi_function_info.h"
 #include "gig_argument.h"
-#include "gir_type.h"
+#include "gig_type.h"
 #include "gir_typelib.h"
 #include "gir_function.h"
 #include "gig_object.h"
@@ -26,7 +26,7 @@
 #include "gig_constant.h"
 #include "gig_flag.h"
 #include "gir_function.h"
-#include "gir_type.h"
+#include "gig_type.h"
 #include "gir_typelib.h"
 
 static void gir_typelib_document_callback_info(GString **export, const char *namespace_,
@@ -154,7 +154,7 @@ scm_i_typelib_load(const char *subr, const char *namespace_, const char *version
                         g_base_info_get_name(info));
                 break;
             }
-            gir_type_define(gtype);
+            gig_type_define(gtype);
             if (g_struct_info_get_size(info) > 0) {
                 GQuark size_quark = g_quark_from_string("size");
                 g_type_set_qdata(gtype, size_quark,
@@ -182,7 +182,7 @@ scm_i_typelib_load(const char *subr, const char *namespace_, const char *version
                         g_base_info_get_name(info));
                 break;
             }
-            gir_type_define(gtype);
+            gig_type_define(gtype);
 
             gint n_methods = g_object_info_get_n_methods(info);
             for (gint m = 0; m < n_methods; m++) {
@@ -214,7 +214,7 @@ scm_i_typelib_load(const char *subr, const char *namespace_, const char *version
                         g_base_info_get_name(info));
                 break;
             }
-            gir_type_define(gtype);
+            gig_type_define(gtype);
 
             gint n_methods = g_interface_info_get_n_methods(info);
             for (gint m = 0; m < n_methods; m++) {
@@ -236,7 +236,7 @@ scm_i_typelib_load(const char *subr, const char *namespace_, const char *version
                         g_base_info_get_name(info));
                 break;
             }
-            gir_type_define(gtype);
+            gig_type_define(gtype);
             if (g_union_info_get_size(info) > 0) {
                 GQuark size_quark = g_quark_from_string("size");
                 g_type_set_qdata(gtype, size_quark, GSIZE_TO_POINTER(g_union_info_get_size(info)));
@@ -587,7 +587,7 @@ gir_typelib_document_callback_info(GString **export, const char *namespace_, GIC
 static void
 gir_typelib_document_method_info(GString **export, GType gtype, GIFunctionInfo *info)
 {
-    gchar *class_name = gir_type_class_name_from_gtype(gtype);
+    gchar *class_name = gig_type_class_name_from_gtype(gtype);
     gchar *public_name = gi_function_info_make_name(info, NULL);
     g_string_append_printf(*export, "%s's METHOD %s\n", class_name, public_name);
     g_free(public_name);
@@ -611,7 +611,7 @@ static void
 gir_typelib_document_type(GString **export, GITypeInfo *info)
 {
     GType gtype = g_registered_type_info_get_g_type(info);
-    gchar *doc = gir_type_document_type_from_gtype(gtype);
+    gchar *doc = gig_type_document_type_from_gtype(gtype);
     g_string_append(*export, doc);
     g_free(doc);
 }

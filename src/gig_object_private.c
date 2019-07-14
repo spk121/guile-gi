@@ -1,6 +1,6 @@
 /* -*- Mode: C; c-basic-offset: 4 -*- */
 #include "gi_gvalue.h"
-#include "gir_type.h"
+#include "gig_type.h"
 #include "gig_object_private.h"
 #include "gig_util.h"
 
@@ -137,5 +137,5 @@ GParamSpec *
 gig_paramspec_peek(SCM obj)
 {
     g_return_val_if_fail(SCM_IS_A_P(obj, gig_paramspec_type), NULL);
-    return gir_type_peek_object(obj);
+    return gig_type_peek_object(obj);
 }

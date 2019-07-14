@@ -1,6 +1,6 @@
 #include "gig_object.h"
 #include "gig_object_private.h"
-#include "gir_type.h"
+#include "gig_type.h"
 #include "gig_util.h"
 #include "gi_gvalue.h"
 #include "gi_signal_closure.h"
@@ -17,20 +17,20 @@ typedef struct _GigUserObjectInitInfo
 SCM
 gig_object_take(GObject *object)
 {
-    return gir_type_transfer_object(G_OBJECT_TYPE(object), object, GI_TRANSFER_EVERYTHING);
+    return gig_type_transfer_object(G_OBJECT_TYPE(object), object, GI_TRANSFER_EVERYTHING);
 }
 
 
 SCM
 gig_object_ref(GObject *object)
 {
-    return gir_type_transfer_object(G_OBJECT_TYPE(object), object, GI_TRANSFER_NOTHING);
+    return gig_type_transfer_object(G_OBJECT_TYPE(object), object, GI_TRANSFER_NOTHING);
 }
 
 GObject *
 gig_object_peek(SCM object)
 {
-    return gir_type_peek_typed_object(object, gig_object_type);
+    return gig_type_peek_typed_object(object, gig_object_type);
 }
 
 static SCM
@@ -49,7 +49,7 @@ gig_i_scm_make_gobject(SCM s_gtype, SCM s_prop_keylist)
     SCM_ASSERT_TYPE(G_TYPE_IS_CLASSED(type), s_gtype, SCM_ARG1, FUNC,
                     "typeid derived from G_TYPE_OBJECT or scheme type derived from <GObject>");
 
-    if (scm_is_false(gir_type_get_scheme_type(type)))
+    if (scm_is_false(gig_type_get_scheme_type(type)))
         scm_misc_error(FUNC, "type ~S lacks introspection", scm_list_1(s_gtype));
 
     scm_dynwind_begin(0);
@@ -131,7 +131,7 @@ gig_i_scm_make_gobject(SCM s_gtype, SCM s_prop_keylist)
                     g_value_set_string(value, scm_to_utf8_string(s_value));
                 }
                 else if (G_IS_PARAM_SPEC_OBJECT(pspec)) {
-                    GType src_type = gir_type_get_gtype_from_obj(s_value);
+                    GType src_type = gig_type_get_gtype_from_obj(s_value);
                     GType dest_type = G_PARAM_SPEC_VALUE_TYPE(pspec);
                     if (g_type_is_a(src_type, dest_type)) {
                         g_value_init(value, dest_type);
@@ -191,7 +191,7 @@ gig_i_scm_get_pspec(SCM self, SCM prop)
     }
     scm_dynwind_end();
 
-    return gir_type_transfer_object(G_PARAM_SPEC_TYPE(pspec), pspec, GI_TRANSFER_NOTHING);
+    return gig_type_transfer_object(G_PARAM_SPEC_TYPE(pspec), pspec, GI_TRANSFER_NOTHING);
 }
 
 static SCM
@@ -403,7 +403,7 @@ gig_i_scm_define_type(SCM s_type_name, SCM s_parent_type, SCM s_properties, SCM 
 
     parent_type = scm_to_gtype(s_parent_type);
 
-    if (scm_is_false(gir_type_get_scheme_type(parent_type)))
+    if (scm_is_false(gig_type_get_scheme_type(parent_type)))
         scm_misc_error("%define-type", "type ~S is dupe", scm_list_1(s_parent_type));
 
     SCM_UNBND_TO_BOOL_F(s_properties);
@@ -441,8 +441,8 @@ gig_i_scm_define_type(SCM s_type_name, SCM s_parent_type, SCM s_properties, SCM 
 
     new_type = gig_user_object_define(type_name, parent_type, properties, signals);
 
-    gir_type_define(new_type);
-    return gir_type_get_scheme_type(new_type);
+    gig_type_define(new_type);
+    return gig_type_get_scheme_type(new_type);
 }
 
 void

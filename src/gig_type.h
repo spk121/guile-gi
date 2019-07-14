@@ -13,25 +13,34 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef GIR_TYPE_H
-#define GIR_TYPE_H
+#ifndef GIG_TYPE_H
+#define GIG_TYPE_H
 
 #include <girepository.h>
+
+// *INDENT-OFF*
+G_BEGIN_DECLS
+// *INDENT-ON*
 
 SCM gig_object_type;
 SCM gig_interface_type;
 SCM gig_paramspec_type;
 
-G_GNUC_MALLOC gchar *gir_type_document_type_from_gtype(GType gtype);
-G_GNUC_MALLOC char *gir_type_class_name_from_gtype(GType gtype);
-void gir_type_register(GType gtype);
-void gir_type_define(GType gtype);
+G_GNUC_MALLOC gchar *gig_type_document_type_from_gtype(GType gtype);
+G_GNUC_MALLOC gchar *gig_type_class_name_from_gtype(GType gtype);
+void gig_type_register(GType gtype);
+void gig_type_define(GType gtype);
+GType gig_type_get_gtype_from_obj(SCM x);
+SCM gig_type_get_scheme_type(GType gtype);
+SCM gig_type_transfer_object(GType gtype, gpointer obj, GITransfer transfer);
+gpointer gig_type_peek_object(SCM obj);
 GType scm_to_gtype(SCM x);
-GType gir_type_get_gtype_from_obj(SCM x);
-SCM gir_type_get_scheme_type(GType gtype);
-SCM gir_type_transfer_object(GType gtype, gpointer obj, GITransfer transfer);
-gpointer gir_type_peek_object(SCM obj);
-gpointer gir_type_peek_typed_object(SCM obj, SCM expected);
-void gir_init_types(void);
+GType gig_type_get_gtype_from_obj(SCM x);
+SCM gig_type_get_scheme_type(GType gtype);
+SCM gig_type_transfer_object(GType gtype, gpointer obj, GITransfer transfer);
+gpointer gig_type_peek_object(SCM obj);
+gpointer gig_type_peek_typed_object(SCM obj, SCM expected);
+void gig_init_types(void);
 
+G_END_DECLS
 #endif

@@ -14,9 +14,9 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <girepository.h>
 #include "gi_gvalue.h"
-#include "gir_type.h"
+#include "gig_type.h"
 #include "gig_object.h"
-#include "gir_type.h"
+#include "gig_type.h"
 
 #ifndef FLT_MAX
 #define FLT_MAX 3.402823466e+38F
@@ -199,8 +199,8 @@ gi_gvalue_from_scm(GValue *value, SCM obj)
             g_value_set_pointer(value, scm_to_pointer(obj));
         else if (scm_is_true(scm_bytevector_p(obj)))
             g_value_set_pointer(value, SCM_BYTEVECTOR_CONTENTS(obj));
-        else if (gir_type_get_gtype_from_obj(obj) > G_TYPE_INVALID)
-            g_value_set_object(value, gir_type_peek_object(obj));
+        else if (gig_type_get_gtype_from_obj(obj) > G_TYPE_INVALID)
+            g_value_set_object(value, gig_type_peek_object(obj));
         else
             return GI_GVALUE_WRONG_TYPE;
     }
@@ -213,10 +213,10 @@ gi_gvalue_from_scm(GValue *value, SCM obj)
                 g_value_set_object(value, NULL);
                 return 0;
             }
-            else if (!G_TYPE_CHECK_INSTANCE_TYPE(gir_type_peek_object(obj), value_type))
+            else if (!G_TYPE_CHECK_INSTANCE_TYPE(gig_type_peek_object(obj), value_type))
                 return GI_GVALUE_WRONG_TYPE;
             else {
-                g_value_set_object(value, gir_type_peek_object(obj));
+                g_value_set_object(value, gig_type_peek_object(obj));
                 return 0;
             }
         }
@@ -421,7 +421,7 @@ gi_gvalue_array_from_scm_list(GValue *value, SCM list)
         GType type;
         GValue item_value = { 0, };
 
-        type = gir_type_get_gtype_from_obj(item);
+        type = gig_type_get_gtype_from_obj(item);
 
         g_value_init(&item_value, type);
         gi_gvalue_from_scm(&item_value, item);
@@ -507,7 +507,7 @@ gi_gvalue_to_scm_structured_type(const GValue *value, GType fundamental, gboolea
         if (!obj)
             return SCM_BOOL_F;
         else if (g_type_is_a(G_VALUE_TYPE(value), G_TYPE_OBJECT))
-            return gir_type_transfer_object(G_OBJECT_TYPE(obj), obj, GI_TRANSFER_NOTHING);
+            return gig_type_transfer_object(G_OBJECT_TYPE(obj), obj, GI_TRANSFER_NOTHING);
         else
             break;
     }
@@ -519,7 +519,7 @@ gi_gvalue_to_scm_structured_type(const GValue *value, GType fundamental, gboolea
     {
         GParamSpec *pspec = g_value_get_param(value);
         if (pspec)
-            return gir_type_transfer_object(G_TYPE_PARAM, pspec, GI_TRANSFER_NOTHING);
+            return gig_type_transfer_object(G_TYPE_PARAM, pspec, GI_TRANSFER_NOTHING);
         else
             return SCM_BOOL_F;
     }
@@ -536,7 +536,7 @@ gi_gvalue_to_scm_structured_type(const GValue *value, GType fundamental, gboolea
         }
         else {
             // if (copy_boxed) ...
-            return gir_type_transfer_object(G_VALUE_TYPE(value),
+            return gig_type_transfer_object(G_VALUE_TYPE(value),
                                             g_value_get_boxed(value), GI_TRANSFER_EVERYTHING);
         }
     }
@@ -545,7 +545,7 @@ gi_gvalue_to_scm_structured_type(const GValue *value, GType fundamental, gboolea
     {
         gpointer obj = g_value_get_object(value);
         if (obj)
-            return gir_type_transfer_object(G_OBJECT_TYPE(obj), obj, GI_TRANSFER_NOTHING);
+            return gig_type_transfer_object(G_OBJECT_TYPE(obj), obj, GI_TRANSFER_NOTHING);
         else
             return SCM_BOOL_F;
     }

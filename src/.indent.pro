@@ -84,3 +84,5 @@
 -T GigArgMapEntry
 -T GigArgMap
 -T GigCallback
+-T GigTypeRefFunction
+-T GigTypeUnrefFunction

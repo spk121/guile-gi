@@ -19,7 +19,7 @@
 #include "gig_util.h"
 #include "gig_arg_map.h"
 #include "gir_function.h"
-#include "gir_type.h"
+#include "gig_type.h"
 
 typedef struct _GirFunction
 {
@@ -95,7 +95,7 @@ gir_function_define_gsubr(GType type, GIFunctionInfo *info, const char *prefix)
     gboolean was_generic = FALSE;
 
     if (is_method) {
-        self_type = gir_type_get_scheme_type(type);
+        self_type = gig_type_get_scheme_type(type);
         g_return_if_fail(scm_is_true(self_type));
     }
 
@@ -214,7 +214,7 @@ make_formals(GirFunction *fn, int n_inputs, SCM *formals, SCM *specializers)
             if (!GI_IS_REGISTERED_TYPE_INFO(iface))
                 continue;
             GType gtype = g_registered_type_info_get_g_type((GIRegisteredTypeInfo *) iface);
-            SCM s_type = gir_type_get_scheme_type(gtype);
+            SCM s_type = gig_type_get_scheme_type(gtype);
             if (scm_is_true(s_type))
                 scm_set_car_x(i_specializer, s_type);
         }
@@ -430,7 +430,7 @@ function_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
         s_args = SCM_EOL;
 
     if (g_function_info_get_flags(gfn->function_info) & GI_FUNCTION_IS_METHOD) {
-        self = gir_type_peek_object(scm_car(s_args));
+        self = gig_type_peek_object(scm_car(s_args));
         s_args = scm_cdr(s_args);
     }
 
