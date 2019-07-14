@@ -10,14 +10,13 @@
    "EmptyApp"                           ; type name
    <GtkApplication>                     ; parent_type
    #f                                   ; No additional properties
-   #f                                   ; No new signals
-   #f))                                 ; No disposer func
+   #f))                                 ; No new signals
 
 (define (empty-app-init app)
   #f)
 
 (define (empty-app-activate app)
-  (with-object (empty-app-window-new app) (present)))
+  (present (empty-app-window-new app)))
 
 (define (empty-app-new)
   (let ((app
@@ -26,5 +25,5 @@
           ;; Alist of properties
           '(("application-id" . "org.gtk.exampleapp")
             ("flags" . 4)))))
-    (with-object app (connect! activate empty-app-activate))
+    (connect app (make-signal #:name "activate") empty-app-activate)
     app))

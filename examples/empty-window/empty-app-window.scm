@@ -8,8 +8,7 @@
    "EmptyAppWindow"                     ; type name
    <GtkApplicationWindow>               ; parent_type
    #f                                   ; No additional properties
-   #f                                   ; No new signals
-   #f))                                 ; No disposer func
+   #f))                                 ; No new signals
 
 (define (empty-app-window-new app)
   (make-gobject
