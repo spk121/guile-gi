@@ -29,8 +29,6 @@ libguile_gi_la_SOURCES = \
  gi_gvalue.h \
  gi_signal_closure.c \
  gi_signal_closure.h \
- gi_struct.c \
- gi_struct.h \
  gi_type_tag.c \
  gi_type_tag.h \
  gir.c \

@@ -29,7 +29,6 @@
 #include "gir_function.h"
 #include "gir_constant.h"
 #include "gir_flag.h"
-#include "gi_struct.h"
 
 #ifdef _WIN32
 static const int _win32 = TRUE;
@@ -102,8 +101,6 @@ gir_init(void)
     gir_init_typelib();
     gir_init_constant();
     gir_init_flag();
-
-    gi_init_struct();
 
     gi_init_giargument();
     gir_init_callback();
