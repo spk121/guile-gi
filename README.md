@@ -1,5 +1,7 @@
 # Guile GI
 
+[![Build Status](https://travis-ci.com/spk121/guile-gi.svg?branch=master)](https://travis-ci.com/spk121/guile-gi)
+
 This is a library for [GNU Guile](https://gnu.org/software/guile) to
 create language bindings via [GObject Introspection](https://gi.readthedocs.io).
 
@@ -34,6 +36,3 @@ Or, create and run in a development environment
     guix environment -l guix.scm
     ./bootstrap && ./configure && make
     tools/uninstalled-env tools/guile-gi examples/browser.scm
-
-
-[![Build Status](https://travis-ci.com/spk121/guile-gi.svg?branch=master)](https://travis-ci.com/spk121/guile-gi)
