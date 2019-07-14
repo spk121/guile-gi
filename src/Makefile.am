@@ -38,8 +38,8 @@ libguile_gi_la_SOURCES = \
  gir_callback.h \
  gir_function.c \
  gir_function.h \
- gir_constant.c \
- gir_constant.h \
+ gig_constant.c \
+ gig_constant.h \
  gir_flag.c \
  gir_flag.h \
  gir_typelib.c \

@@ -23,7 +23,7 @@
 #include "gir_function.h"
 #include "gig_object.h"
 #include "gig_util.h"
-#include "gir_constant.h"
+#include "gig_constant.h"
 #include "gir_flag.h"
 #include "gir_function.h"
 #include "gir_type.h"
@@ -226,7 +226,7 @@ scm_i_typelib_load(const char *subr, const char *namespace_, const char *version
         }
             break;
         case GI_INFO_TYPE_CONSTANT:
-            gir_constant_define(info);
+            gig_constant_define(info);
             break;
         case GI_INFO_TYPE_UNION:
         {

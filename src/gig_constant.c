@@ -1,5 +1,4 @@
-// gir_constant.c
-// Copyright (C) 2018 Michael L. Gran
+// Copyright (C) 2018, 2019 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,12 +15,12 @@
 
 #include <libguile.h>
 #include <inttypes.h>
-#include "gir_constant.h"
+#include "gig_constant.h"
 
 void
-gir_constant_define(GIConstantInfo *info)
+gig_constant_define(GIConstantInfo *info)
 {
-    const char *public_name = g_base_info_get_name(info);
+    const gchar *public_name = g_base_info_get_name(info);
 
     GITypeInfo *typeinfo;
     typeinfo = g_constant_info_get_type(info);
@@ -90,7 +89,7 @@ gir_constant_define(GIConstantInfo *info)
 }
 
 void
-gir_init_constant(void)
+gig_init_constant(void)
 {
 
 }

@@ -13,16 +13,21 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef _GIR_CONSTANT_H_
-#define _GIR_CONSTANT_H_
+#ifndef GIG_CONSTANT_H
+#define GIG_CONSTANT_H
+
 #include <girepository.h>
 
-void gir_constant_define(GIConstantInfo *info);
+// *INDENT-OFF*
+G_BEGIN_DECLS
+// *INDENT-ON*
+
+void gig_constant_define(GIConstantInfo *info);
 static inline void
-gir_constant_document(GString **str, const char *namespace_, const char *parent,
+gir_constant_document(GString **str, const gchar *namespace_, const gchar *parent,
                       GIConstantInfo *info)
 {
 }
 
-void gir_init_constant(void);
+void gig_init_constant(void);
 #endif

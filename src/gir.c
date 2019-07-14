@@ -27,7 +27,7 @@
 #include "gir_type.h"
 #include "gir_callback.h"
 #include "gir_function.h"
-#include "gir_constant.h"
+#include "gig_constant.h"
 #include "gir_flag.h"
 
 #ifdef _WIN32
@@ -99,7 +99,7 @@ gir_init(void)
     g_debug("Begin libguile-gir initialization");
     gir_init_types();
     gir_init_typelib();
-    gir_init_constant();
+    gig_init_constant();
     gir_init_flag();
 
     gig_init_argument();
