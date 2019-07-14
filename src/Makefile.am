@@ -32,8 +32,8 @@ libguile_gi_la_SOURCES = \
  gi_type_tag.c \
  gi_type_tag.h \
  gir.c \
- gir_arg_map.c \
- gir_arg_map.h \
+ gig_arg_map.c \
+ gig_arg_map.h \
  gir_callback.c \
  gir_callback.h \
  gir_function.c \

@@ -13,8 +13,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef GIR_ARG_MAP_H
-#define GIR_ARG_MAP_H
+#ifndef GIG_ARG_MAP_H
+#define GIG_ARG_MAP_H
 
 #include <glib.h>
 #include <girepository.h>
@@ -29,34 +29,34 @@ G_BEGIN_DECLS
 //  - arguments as they appear in g_function_info_invoke calls
 typedef enum
 {
-    GIR_ARG_DIRECTION_INPUT,
-    GIR_ARG_DIRECTION_INOUT,
-    GIR_ARG_DIRECTION_PREALLOCATED_OUTPUT,
-    GIR_ARG_DIRECTION_OUTPUT,
-    GIR_ARG_DIRECTION_COUNT
-} GirArgDirection;
+    GIG_ARG_DIRECTION_INPUT,
+    GIG_ARG_DIRECTION_INOUT,
+    GIG_ARG_DIRECTION_PREALLOCATED_OUTPUT,
+    GIG_ARG_DIRECTION_OUTPUT,
+    GIG_ARG_DIRECTION_COUNT
+} GigArgDirection;
 
 typedef enum
 {
-    GIR_ARG_TUPLE_SINGLETON,
-    GIR_ARG_TUPLE_ARRAY,
-    GIR_ARG_TUPLE_ARRAY_SIZE,
-    GIR_ARG_TUPLE_COUNT
-} GirArgTuple;
+    GIG_ARG_TUPLE_SINGLETON,
+    GIG_ARG_TUPLE_ARRAY,
+    GIG_ARG_TUPLE_ARRAY_SIZE,
+    GIG_ARG_TUPLE_COUNT
+} GigArgTuple;
 
 typedef enum
 {
-    GIR_ARG_PRESENCE_REQUIRED,
-    GIR_ARG_PRESENCE_OPTIONAL,
-    GIR_ARG_PRESENCE_IMPLICIT,
-    GIR_ARG_PRESENCE_COUNT
-} GirArgPresence;
+    GIG_ARG_PRESENCE_REQUIRED,
+    GIG_ARG_PRESENCE_OPTIONAL,
+    GIG_ARG_PRESENCE_IMPLICIT,
+    GIG_ARG_PRESENCE_COUNT
+} GigArgPresence;
 
 // This structure contains the information necessary for choosing how
 // to convert between scheme and C arguments of a function or method
 // call.
-typedef struct _GirArgMapEntry GirArgMapEntry;
-struct _GirArgMapEntry
+typedef struct _GigArgMapEntry GigArgMapEntry;
+struct _GigArgMapEntry
 {
     gchar *name;
 
@@ -100,12 +100,12 @@ struct _GirArgMapEntry
     // This block is derived information about how to map
     // Scheme to C and back again
 
-    GirArgDirection s_direction;
+    GigArgDirection s_direction;
     // If this argument can be mapped standalone, or requires another
     // argument's information to map between C and Scheme
-    GirArgTuple tuple;
+    GigArgTuple tuple;
     // If this arg is optional in the Scheme GSubr.
-    GirArgPresence presence;
+    GigArgPresence presence;
     // This arg's index in g_callable_info_get_arg()
     gint arg_info_index;
     // This arg's position in input args of g_function_info_invoke
@@ -118,11 +118,11 @@ struct _GirArgMapEntry
     gint gsubr_output_index;
     // When non-NULL, this is the entry of the array length argument
     // for this array argument.
-    GirArgMapEntry *child;
+    GigArgMapEntry *child;
 };
 
-typedef struct _GirArgMap GirArgMap;
-struct _GirArgMap
+typedef struct _GigArgMap GigArgMap;
+struct _GigArgMap
 {
     // SCM arguments.
     gint gsubr_required_input_count;
@@ -136,30 +136,30 @@ struct _GirArgMap
     gint cinvoke_output_count;
 
     // An array of arg_map_entry
-    GirArgMapEntry **pdata;
+    GigArgMapEntry **pdata;
     gint len;
 
-    GirArgMapEntry *return_val;
+    GigArgMapEntry *return_val;
 };
 
-GirArgMap *gir_arg_map_new(GIFunctionInfo *function_info);
-void gir_arg_map_free(GirArgMap *am);
-void gir_arg_map_dump(const GirArgMap *am);
+GigArgMap *gig_arg_map_new(GIFunctionInfo *function_info);
+void gig_arg_map_free(GigArgMap *am);
+void gig_arg_map_dump(const GigArgMap *am);
 
-void gir_arg_map_get_gsubr_args_count(const GirArgMap *am, int *gsubr_required_input_count,
-                                      int *gsubr_optional_input_count);
-GirArgMapEntry *gig_arg_map_get_entry(GirArgMap *am, gint gsubr_input_index);
-GirArgMapEntry *gig_arg_map_get_output_entry(GirArgMap *am, gint cinvoke_output_index);
-gboolean gir_arg_map_has_output_array_size_index(GirArgMap *am, int cinvoke_output_index,
-                                                 int *cinvoke_output_array_size_index);
-void gir_arg_map_get_cinvoke_args_count(const GirArgMap *am, int *cinvoke_input_count,
-                                        int *cinvoke_output_count);
-gboolean gir_arg_map_get_cinvoke_indices(const GirArgMap *am, int gsubr_input_index,
-                                         int *cinvoke_input_index, int *cinvoke_output_index);
-gboolean gir_arg_map_get_cinvoke_array_length_indices(const GirArgMap *am, int gsubr_input_index,
-                                                      int *cinvoke_input_index,
-                                                      int *cinvoke_output_index);
-gboolean gir_arg_map_has_gsubr_output_index(const GirArgMap *am, int cinvoke_output_index,
-                                            int *gsubr_output_index);
+void gig_arg_map_get_gsubr_args_count(const GigArgMap *am, gint *gsubr_required_input_count,
+                                      gint *gsubr_optional_input_count);
+GigArgMapEntry *gig_arg_map_get_entry(GigArgMap *am, gint gsubr_input_index);
+GigArgMapEntry *gig_arg_map_get_output_entry(GigArgMap *am, gint cinvoke_output_index);
+gboolean gig_arg_map_has_output_array_size_index(GigArgMap *am, gint cinvoke_output_index,
+                                                 gint *cinvoke_output_array_size_index);
+void gig_arg_map_get_cinvoke_args_count(const GigArgMap *am, gint *cinvoke_input_count,
+                                        gint *cinvoke_output_count);
+gboolean gig_arg_map_get_cinvoke_indices(const GigArgMap *am, gint gsubr_input_index,
+                                         gint *cinvoke_input_index, gint *cinvoke_output_index);
+gboolean gig_arg_map_get_cinvoke_array_length_indices(const GigArgMap *am, gint gsubr_input_index,
+                                                      gint *cinvoke_input_index,
+                                                      gint *cinvoke_output_index);
+gboolean gig_arg_map_has_gsubr_output_index(const GigArgMap *am, gint cinvoke_output_index,
+                                            gint *gsubr_output_index);
 G_END_DECLS
 #endif

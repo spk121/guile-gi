@@ -44,7 +44,7 @@ callback_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
     g_assert(n_args < 20);
 
     // FIXME: cache this
-    GirArgMap *amap = gir_arg_map_new(gcb->callback_info);
+    GigArgMap *amap = gig_arg_map_new(gcb->callback_info);
 
     for (unsigned int i = 0; i < n_args; i++) {
         SCM s_entry = SCM_BOOL_F;
@@ -108,7 +108,7 @@ callback_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
         // I'll try brutally coercing the data, and see what happens.
         *(ffi_arg *) ret = giarg.v_uint64;
     }
-    gir_arg_map_free(amap);
+    gig_arg_map_free(amap);
 }
 
 static SCM

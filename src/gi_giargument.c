@@ -25,7 +25,6 @@
 #include "gir_callback.h"
 #include "gir_type.h"
 #include "gir_typelib.h"
-#include "gir_arg_map.h"
 
 #ifndef FLT_MAX
 #define FLT_MAX 3.402823466e+38F
@@ -60,7 +59,7 @@ static void c_list_to_scm(C2S_ARG_DECL);
 static void describe_non_pointer_type(GString *desc, GITypeInfo *type_info);
 
 static gsize
-array_length(GirArgMapEntry *entry, GIArgument *arg)
+array_length(GigArgMapEntry *entry, GIArgument *arg)
 {
     if (entry->array_is_zero_terminated) {
         gpointer array = arg->v_pointer;
@@ -216,13 +215,16 @@ gig_argument_scm_to_c(S2C_ARG_DECL)
             break;
 
         case GI_TYPE_TAG_GHASH:
-            scm_misc_error(subr, "marshalling to GHash is not implemented: ~S", scm_list_1(object));
+            scm_misc_error(subr, "marshalling to GHash is not implemented: ~S",
+                           scm_list_1(object));
             break;
         case GI_TYPE_TAG_GLIST:
-            scm_misc_error(subr, "marshalling to GList is not implemented: ~S", scm_list_1(object));
+            scm_misc_error(subr, "marshalling to GList is not implemented: ~S",
+                           scm_list_1(object));
             break;
         case GI_TYPE_TAG_GSLIST:
-            scm_misc_error(subr, "marshalling to GSList is not implemented: ~S", scm_list_1(object));
+            scm_misc_error(subr, "marshalling to GSList is not implemented: ~S",
+                           scm_list_1(object));
             break;
 
         case GI_TYPE_TAG_INTERFACE:
@@ -232,7 +234,8 @@ gig_argument_scm_to_c(S2C_ARG_DECL)
         case GI_TYPE_TAG_GTYPE:
             // No GType pointer inputs as far as I can tell.
             scm_misc_error(subr,
-                           "marshalling to GType pointer is not implemented: ~S", scm_list_1(object));
+                           "marshalling to GType pointer is not implemented: ~S",
+                           scm_list_1(object));
             break;
 
         case GI_TYPE_TAG_ERROR:
@@ -644,7 +647,8 @@ scm_to_c_immediate_pointer(S2C_ARG_DECL)
     else {
         // FIXME: add bytevector minimum length checks.
         if (entry->transfer == GI_TRANSFER_EVERYTHING)
-            arg->v_pointer = g_memdup(SCM_BYTEVECTOR_CONTENTS(object), SCM_BYTEVECTOR_LENGTH(object));
+            arg->v_pointer =
+                g_memdup(SCM_BYTEVECTOR_CONTENTS(object), SCM_BYTEVECTOR_LENGTH(object));
         else
             arg->v_pointer = SCM_BYTEVECTOR_CONTENTS(object);
     }
@@ -713,7 +717,8 @@ scm_to_c_interface_pointer(S2C_ARG_DECL)
 
     GType obj_type = gir_type_get_gtype_from_obj(object);
     if (obj_type == G_TYPE_NONE || obj_type == G_TYPE_INVALID)
-        scm_wrong_type_arg_msg(subr, argpos, object, "a GObject struct, union, interface, or object");
+        scm_wrong_type_arg_msg(subr, argpos, object,
+                               "a GObject struct, union, interface, or object");
 
     GType arg_type = g_registered_type_info_get_g_type(referenced_base_info);
     if (!g_type_is_a(obj_type, arg_type)) {
@@ -846,7 +851,8 @@ scm_to_c_garray(S2C_ARG_DECL)
 {
 #define FUNC_NAME "%object->c-garray-array-arg"
     scm_misc_error(FUNC_NAME,
-                   "Marshalling to C GArray pointer args is unimplemented: ~S", scm_list_1(object));
+                   "Marshalling to C GArray pointer args is unimplemented: ~S",
+                   scm_list_1(object));
 #undef FUNC_NAME
 }
 
@@ -1782,7 +1788,7 @@ c_list_to_scm(C2S_ARG_DECL)
         }
         else {
             GIArgument _arg;
-            GirArgMapEntry *ae = g_new0(GirArgMapEntry, 1);
+            GigArgMapEntry *ae = g_new0(GigArgMapEntry, 1);
             SCM elt;
             _arg.v_pointer = *(void **)data;
 

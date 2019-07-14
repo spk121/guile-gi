@@ -81,5 +81,5 @@
 -T GigBoxedFuncs
 -T SignalSpec
 
--T GirArgMapEntry
--T GirArgMap
+-T GigArgMapEntry
+-T GigArgMap

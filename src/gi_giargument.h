@@ -3,7 +3,7 @@
 
 #include <girepository.h>
 #include <libguile.h>
-#include "gir_arg_map.h"
+#include "gig_arg_map.h"
 
 // *INDENT-OFF*
 G_BEGIN_DECLS
@@ -19,12 +19,12 @@ G_BEGIN_DECLS
 #define GIG_ARG_RETURN_VAL (-1)
 
 #define S2C_ARG_DECL const gchar *subr, gint argpos,    \
-        GirArgMapEntry *entry, SCM object,               \
+        GigArgMapEntry *entry, SCM object,               \
         guint *must_free, GIArgument *arg, gsize *size
 #define S2C_ARGS subr, argpos, entry, object, must_free, arg, size
 
 #define C2S_ARG_DECL const gchar *subr, gint argpos,    \
-        GirArgMapEntry *entry, GIArgument *arg,       \
+        GigArgMapEntry *entry, GIArgument *arg,       \
         guint *must_free, SCM *object, gsize size
 #define C2S_ARGS subr, argpos, entry, arg, must_free, object, size
 

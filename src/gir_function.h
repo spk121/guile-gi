@@ -19,7 +19,7 @@
 #include <glib.h>
 #include <girepository.h>
 #include <libguile.h>
-#include "gir_arg_map.h"
+#include "gig_arg_map.h"
 
 // *INDENT-OFF*
 G_BEGIN_DECLS
@@ -28,7 +28,7 @@ G_BEGIN_DECLS
 typedef SCM (*gir_gsubr_t)(void);
 
 void gir_function_define_gsubr(GType type, GIFunctionInfo *info, const char *name);
-SCM gir_function_invoke(GIFunctionInfo *info, GirArgMap *amap, const char *name, GObject *object,
+SCM gir_function_invoke(GIFunctionInfo *info, GigArgMap *amap, const char *name, GObject *object,
                         SCM args, GError **error);
 void gir_init_function(void);
 
