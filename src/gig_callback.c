@@ -1,35 +1,35 @@
 #include <libguile.h>
 #include <ffi.h>
-#include "gir_callback.h"
 #include "gig_argument.h"
+#include "gig_callback.h"
 
-typedef struct _GirCallback GirCallback;
-struct _GirCallback
+typedef struct _GigCallback GigCallback;
+struct _GigCallback
 {
     GICallbackInfo *callback_info;
     ffi_closure *closure;
     ffi_cif cif;
     SCM s_func;
-    char *name;
-    void *callback_ptr;
+    gchar *name;
+    gpointer callback_ptr;
     ffi_type **atypes;
 };
 
 GSList *callback_list = NULL;
 
-static SCM gir_callback_call_proc(void *user_data);
-static SCM gir_callback_handler_proc(void *user_data, SCM key, SCM params);
+static SCM callback_call_proc(gpointer user_data);
+static SCM callback_handler_proc(gpointer user_data, SCM key, SCM params);
 static ffi_type *type_info_to_ffi_type(GITypeInfo *type_info);
-static void gir_callback_free(GirCallback * gcb);
-static void gir_fini_callback(void);
+static void callback_free(GigCallback * gcb);
+static void gig_fini_callback(void);
 
 // This is the core of a dynamically generated callback funcion.
 // It converts FFI arguments to SCM arguments, calls a SCM function
 // and then returns the result.
 void
-callback_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
+callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_data)
 {
-    GirCallback *gcb = user_data;
+    GigCallback *gcb = user_data;
     SCM s_args = SCM_EOL;
     SCM s_ret;
 
@@ -39,14 +39,14 @@ callback_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
     g_assert(user_data != NULL);
 
     g_debug("in callback C->SCM binding");
-    unsigned int n_args = cif->nargs;
+    guint n_args = cif->nargs;
 
     g_assert(n_args < 20);
 
     // FIXME: cache this
     GigArgMap *amap = gig_arg_map_new(gcb->callback_info);
 
-    for (unsigned int i = 0; i < n_args; i++) {
+    for (guint i = 0; i < n_args; i++) {
         SCM s_entry = SCM_BOOL_F;
         GIArgument giarg;
 
@@ -76,13 +76,13 @@ callback_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
         else if (cif->arg_types[i] == &ffi_type_uint64)
             giarg.v_uint64 = (guint64) ffi_args[i];
         else if (cif->arg_types[i] == &ffi_type_float) {
-            float val;
-            val = *(float *)ffi_args[i];
+            gfloat val;
+            val = *(gfloat *)ffi_args[i];
             giarg.v_float = val;
         }
         else if (cif->arg_types[i] == &ffi_type_double) {
-            float val;
-            val = *(double *)ffi_args[i];
+            gdouble val;
+            val = *(gdouble *)ffi_args[i];
             giarg.v_double = val;
         }
         else {
@@ -95,8 +95,8 @@ callback_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
     }
 
     s_ret = scm_c_catch(SCM_BOOL_T,
-                        gir_callback_call_proc, SCM_UNPACK_POINTER(scm_cons(gcb->s_func, s_args)),
-                        gir_callback_handler_proc, NULL, NULL, NULL);
+                        callback_call_proc, SCM_UNPACK_POINTER(scm_cons(gcb->s_func, s_args)),
+                        callback_handler_proc, NULL, NULL, NULL);
     if (scm_is_false(s_ret))
         *(ffi_arg *) ret = FALSE;
     else {
@@ -112,14 +112,14 @@ callback_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
 }
 
 static SCM
-gir_callback_call_proc(void *user_data)
+callback_call_proc(gpointer user_data)
 {
     SCM func_args_pair = SCM_PACK_POINTER(user_data);
     return scm_apply_0(scm_car(func_args_pair), scm_cdr(func_args_pair));
 }
 
 static SCM
-gir_callback_handler_proc(void *user_data, SCM key, SCM params)
+callback_handler_proc(gpointer user_data, SCM key, SCM params)
 {
     g_critical("scheme procedure threw error in C callback");
     return SCM_BOOL_F;
@@ -127,10 +127,10 @@ gir_callback_handler_proc(void *user_data, SCM key, SCM params)
 
 // This procedure uses CALLBACK_INFO to create a dynamic FFI C closure
 // to use as an entry point to the scheme procedure S_FUNC.
-GirCallback *
-gir_callback_new(GICallbackInfo *callback_info, SCM s_func)
+GigCallback *
+gig_callback_new(GICallbackInfo *callback_info, SCM s_func)
 {
-    GirCallback *gcb = g_new0(GirCallback, 1);
+    GigCallback *gcb = g_new0(GigCallback, 1);
     ffi_type **ffi_args = NULL;
     ffi_type *ffi_ret_type;
     gint n_args = g_callable_info_get_n_args(callback_info);
@@ -166,7 +166,7 @@ gir_callback_new(GICallbackInfo *callback_info, SCM s_func)
         gcb->atypes = ffi_args;
     }
 
-    for (int i = 0; i < n_args; i++) {
+    for (gint i = 0; i < n_args; i++) {
         GIArgInfo *cb_arg_info = g_callable_info_get_arg(callback_info, i);
         GITypeInfo *cb_type_info = g_arg_info_get_type(cb_arg_info);
         ffi_args[i] = type_info_to_ffi_type(cb_type_info);
@@ -183,7 +183,7 @@ gir_callback_new(GICallbackInfo *callback_info, SCM s_func)
     prep_ok = ffi_prep_cif(&(gcb->cif), FFI_DEFAULT_ABI, n_args, ffi_ret_type, ffi_args);
 
     if (prep_ok != FFI_OK)
-        scm_misc_error("gir-callback-new",
+        scm_misc_error("gig-callback-new",
                        "closure call interface preparation error #~A",
                        scm_list_1(scm_from_int(prep_ok)));
 
@@ -194,22 +194,22 @@ gir_callback_new(GICallbackInfo *callback_info, SCM s_func)
                                       gcb->callback_ptr);
 
     if (closure_ok != FFI_OK)
-        scm_misc_error("gir-callback-new",
+        scm_misc_error("gig-callback-new",
                        "closure location preparation error #~A",
                        scm_list_1(scm_from_int(closure_ok)));
 
     return gcb;
 }
 
-void *
-gir_callback_get_ptr(GICallbackInfo *cb_info, SCM s_func)
+gpointer
+gig_callback_get_ptr(GICallbackInfo *cb_info, SCM s_func)
 {
     g_assert(cb_info != NULL);
     g_assert(scm_is_true(scm_procedure_p(s_func)));
 
     // Lookup s_func in the callback cache.
     GSList *x = callback_list;
-    GirCallback *gcb;
+    GigCallback *gcb;
     GIInfoType cb_typeinfo = g_base_info_get_type(cb_info);
     GIInfoType gcb_typeinfo;
 
@@ -226,7 +226,7 @@ gir_callback_get_ptr(GICallbackInfo *cb_info, SCM s_func)
     }
 
     // Create a new entry if necessary.
-    gcb = gir_callback_new(cb_info, s_func);
+    gcb = gig_callback_new(cb_info, s_func);
     callback_list = g_slist_prepend(callback_list, gcb);
     return gcb->callback_ptr;
 }
@@ -337,7 +337,7 @@ scm_is_registered_callback_p(SCM s_proc)
 
     // Lookup s_func in the callback cache.
     GSList *x = callback_list;
-    GirCallback *gcb;
+    GigCallback *gcb;
 
     while (x != NULL) {
         gcb = x->data;
@@ -357,7 +357,7 @@ scm_get_registered_callback_closure_pointer(SCM s_proc)
 
     // Lookup s_func in the callback cache.
     GSList *x = callback_list;
-    GirCallback *gcb;
+    GigCallback *gcb;
 
     // If you use the same scheme procedure for different callbacks,
     // you're just going to get one closure pointer.
@@ -371,9 +371,9 @@ scm_get_registered_callback_closure_pointer(SCM s_proc)
 }
 
 void
-gir_init_callback(void)
+gig_init_callback(void)
 {
-    atexit(gir_fini_callback);
+    atexit(gig_fini_callback);
 
     scm_c_define_gsubr("is-registered-callback?", 1, 0, 0, scm_is_registered_callback_p);
     scm_c_define_gsubr("get-registered-callback-closure-pointer", 1, 0, 0,
@@ -381,7 +381,7 @@ gir_init_callback(void)
 }
 
 static void
-gir_callback_free(GirCallback * gcb)
+callback_free(GigCallback * gcb)
 {
     g_free(gcb->name);
     gcb->name = NULL;
@@ -397,9 +397,9 @@ gir_callback_free(GirCallback * gcb)
 }
 
 static void
-gir_fini_callback(void)
+gig_fini_callback(void)
 {
     g_debug("Freeing callbacks");
-    g_slist_free_full(callback_list, (GDestroyNotify) gir_callback_free);
+    g_slist_free_full(callback_list, (GDestroyNotify) callback_free);
     callback_list = NULL;
 }

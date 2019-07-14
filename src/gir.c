@@ -25,7 +25,7 @@
 #include "gig_argument.h"
 #include "gir_typelib.h"
 #include "gir_type.h"
-#include "gir_callback.h"
+#include "gig_callback.h"
 #include "gir_function.h"
 #include "gig_constant.h"
 #include "gig_flag.h"
@@ -103,7 +103,7 @@ gir_init(void)
     gig_init_flag();
 
     gig_init_argument();
-    gir_init_callback();
+    gig_init_callback();
     gir_init_function();
     g_debug("End libguile-gir initialization");
 

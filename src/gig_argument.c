@@ -22,7 +22,7 @@
 #include "gig_object.h"
 #include "gi_gvalue.h"
 #include "gi_type_tag.h"
-#include "gir_callback.h"
+#include "gig_callback.h"
 #include "gir_type.h"
 #include "gir_typelib.h"
 
@@ -609,7 +609,7 @@ scm_to_c_interface(S2C_ARG_DECL)
             gint arity = scm_to_int(scm_car(scm_procedure_minimum_arity(object)));
             gint n_args = g_callable_info_get_n_args(callback_info);
             if (arity == n_args) {
-                arg->v_pointer = gir_callback_get_ptr(callback_info, object);
+                arg->v_pointer = gig_callback_get_ptr(callback_info, object);
                 g_assert(arg->v_pointer != NULL);
             }
             else {

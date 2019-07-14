@@ -83,3 +83,4 @@
 
 -T GigArgMapEntry
 -T GigArgMap
+-T GigCallback
