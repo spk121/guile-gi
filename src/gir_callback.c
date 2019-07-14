@@ -1,7 +1,7 @@
 #include <libguile.h>
 #include <ffi.h>
 #include "gir_callback.h"
-#include "gi_giargument.h"
+#include "gig_argument.h"
 
 typedef struct _GirCallback GirCallback;
 struct _GirCallback

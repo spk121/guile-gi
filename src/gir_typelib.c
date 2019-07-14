@@ -17,7 +17,7 @@
 #include <libguile.h>
 #include <girepository.h>
 #include "gi_function_info.h"
-#include "gi_giargument.h"
+#include "gig_argument.h"
 #include "gir_type.h"
 #include "gir_typelib.h"
 #include "gir_function.h"
@@ -489,7 +489,7 @@ gir_typelib_document_callable_arguments(GString **export, GICallableInfo *info)
             name = gig_gname_to_scm_name(g_base_info_get_name(arg));
             g_string_append(*export, name);
             g_string_append_c(*export, ' ');
-            char *desc = gi_giargument_describe_arg(arg);
+            char *desc = gig_argument_describe_arg(arg);
             g_string_append_printf(*export, " - %s", desc);
             g_free(desc);
             if (dir == GI_DIRECTION_INOUT)
@@ -509,10 +509,10 @@ gir_typelib_document_callable_arguments(GString **export, GICallableInfo *info)
     type_info = g_callable_info_get_return_type(info);
     g_assert(type_info != NULL);
     GITypeInfo *return_typeinfo = g_callable_info_get_return_type(info);
-    char *ret_desc = gi_giargument_describe_return(type_info,
-                                                   g_callable_info_get_caller_owns(info),
-                                                   g_callable_info_may_return_null(info),
-                                                   g_callable_info_skip_return(info));
+    char *ret_desc = gig_argument_describe_return(type_info,
+                                                  g_callable_info_get_caller_owns(info),
+                                                  g_callable_info_may_return_null(info),
+                                                  g_callable_info_skip_return(info));
 
     if (strcmp(ret_desc, "unspecified") != 0) {
         g_string_append(*export, "   RETURNS:\n");
@@ -536,7 +536,7 @@ gir_typelib_document_callable_arguments(GString **export, GICallableInfo *info)
             name = gig_gname_to_scm_name(g_base_info_get_name(arg));
             g_string_append(*export, name);
             g_string_append_c(*export, ' ');
-            char *desc = gi_giargument_describe_arg(arg);
+            char *desc = gig_argument_describe_arg(arg);
             g_string_append_printf(*export, " - %s", desc);
             g_free(desc);
             free(name);

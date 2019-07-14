@@ -15,7 +15,7 @@
 #include "gi_signal_closure.h"
 #include "gig_object.h"
 #include "gi_gvalue.h"
-#include "gi_giargument.h"
+#include "gig_argument.h"
 
 typedef void (*GigClosureExceptionHandler)(GValue *ret, guint n_param_values,
                                            const GValue *params);

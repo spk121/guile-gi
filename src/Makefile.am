@@ -19,8 +19,8 @@ guileextension_LTLIBRARIES = libguile-gi.la
 libguile_gi_la_SOURCES = \
  gi_function_info.c \
  gi_function_info.h \
- gi_giargument.c \
- gi_giargument.h \
+ gig_argument.c \
+ gig_argument.h \
  gig_object.c \
  gig_object.h \
  gig_object_private.c \

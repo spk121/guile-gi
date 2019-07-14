@@ -15,7 +15,7 @@
 
 #include <ffi.h>
 #include "gi_function_info.h"
-#include "gi_giargument.h"
+#include "gig_argument.h"
 #include "gig_util.h"
 #include "gig_arg_map.h"
 #include "gir_function.h"
@@ -321,7 +321,7 @@ gir_function_invoke(GIFunctionInfo *func_info, GigArgMap *amap, const char *name
         GIArgument self_arg;
         unsigned self_free;
         self_arg.v_pointer = self;
-        self_free = GIR_FREE_NONE;
+        self_free = GIG_FREE_NONE;
         g_array_prepend_val(cinvoke_input_arg_array, self_arg);
         g_array_prepend_val(cinvoke_input_free_array, self_free);
     }
@@ -380,10 +380,9 @@ gir_function_invoke(GIFunctionInfo *func_info, GigArgMap *amap, const char *name
 
     // Sometimes input data transfers ownership to the C side,
     // so we can't free indiscriminately.
-    gi_giargument_free_args(cinvoke_input_arg_array->len,
-                            (unsigned *)(cinvoke_input_free_array->data),
-                            (GIArgument *)(cinvoke_input_arg_array->data));
-
+    gig_argument_free_args(cinvoke_input_arg_array->len,
+                           (unsigned *)(cinvoke_input_free_array->data),
+                           (GIArgument *)(cinvoke_input_arg_array->data));
     g_array_free(cinvoke_input_arg_array, TRUE);
     g_array_free(cinvoke_input_free_array, TRUE);
     g_array_free(cinvoke_output_arg_array, TRUE);
@@ -488,7 +487,7 @@ object_to_c_arg(GigArgMap *amap, gint i, const gchar *name, SCM obj,
     // array size as well.
     gig_arg_map_get_cinvoke_array_length_indices(amap, i, &invoke_in, &invoke_out);
     arg.v_size = size;
-    arg_free = GIR_FREE_NONE;
+    arg_free = GIG_FREE_NONE;
     if (invoke_in >= 0) {
         parg = &g_array_index(cinvoke_input_arg_array, GIArgument, invoke_in);
         memcpy(parg, &arg, sizeof(GIArgument));
