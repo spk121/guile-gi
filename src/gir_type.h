@@ -31,6 +31,7 @@ GType gir_type_get_gtype_from_obj(SCM x);
 SCM gir_type_get_scheme_type(GType gtype);
 SCM gir_type_transfer_object(GType gtype, gpointer obj, GITransfer transfer);
 gpointer gir_type_peek_object(SCM obj);
+gpointer gir_type_peek_typed_object(SCM obj, SCM expected);
 void gir_init_types(void);
 
 #endif

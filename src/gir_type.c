@@ -146,6 +146,8 @@ gir_type_transfer_object(GType type, gpointer ptr, GITransfer transfer)
 #endif
 
     SCM scm_type = gir_type_get_scheme_type(type);
+    g_return_val_if_fail(SCM_CLASSP(scm_type), SCM_BOOL_F);
+
     GigTypeRefFunction ref;
     ref = (GigTypeRefFunction) scm_to_pointer(scm_class_ref(scm_type, sym_ref));
     GigTypeUnrefFunction unref;
@@ -170,10 +172,16 @@ static SCM gig_fundamental_type;
 static SCM gig_boxed_type;
 
 gpointer
+gir_type_peek_typed_object(SCM obj, SCM expected_type)
+{
+    g_return_val_if_fail(SCM_IS_A_P(obj, expected_type), NULL);
+    return scm_to_pointer(scm_slot_ref(obj, sym_ptr));
+}
+
+gpointer
 gir_type_peek_object(SCM obj)
 {
-    g_return_val_if_fail(SCM_IS_A_P(obj, gig_fundamental_type), NULL);
-    return scm_to_pointer(scm_slot_ref(obj, sym_ptr));
+    return gir_type_peek_typed_object(obj, gig_fundamental_type);
 }
 
 // Given introspection info from a typelib library for a given GType,

@@ -5,7 +5,7 @@
 
 (automake-test
  (begin
-   (letrec ((app ((@ (gi) create) <GApplication>))
+   (letrec ((app (make <GApplication>))
             (fired-signals '())
             (fire-signal (lambda (arg)
                            (lambda _

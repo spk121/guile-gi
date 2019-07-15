@@ -6,9 +6,9 @@
 
 (automake-test
  (begin
-   (let ((app (make-gobject <GApplication>
-                            `(("application-id" . "gi.guile.Example")
-                              ("flags" . ,APPLICATION_HANDLES_COMMAND_LINE))))
+   (let ((app (make <GApplication>
+                #:application-id "gi.guile.Example"
+                #:flags APPLICATION_HANDLES_COMMAND_LINE))
          (success #f))
      (add-main-option app "hello" (char->integer #\h) 0
                       OPTION_ARG_STRING_ARRAY "" #f)

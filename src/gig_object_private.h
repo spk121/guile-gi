@@ -19,20 +19,11 @@ typedef struct _SignalSpec
 
 SCM guile_signal;
 
-SCM private_make_gobject_proc;
 extern SCM gig_paramspec_type;
 
 SignalSpec *gig_signalspec_from_obj(SCM obj);
 void gig_free_signalspec(SignalSpec *spec);
 void init_gi_oop();
-
-typedef enum
-{
-    OBJECT_SLOT_OBJECT,
-    OBJECT_SLOT_COUNT
-} ObjectSlot;
-
-SCM object_ref(SCM object, ObjectSlot slot);
 
 typedef enum
 {

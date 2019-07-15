@@ -140,10 +140,7 @@ GAPPLICATION_TESTS = \
  gapplication/activate_order.scm \
  gapplication/command-line.scm \
  gapplication/command-line-options.scm \
- gapplication/create1.scm \
- gapplication/create2.scm \
- gapplication/create3.scm \
- gapplication/create_iile.scm \
+ gapplication/make.scm \
  gapplication/set_resource_path.scm
 
 FUZZY_MATCH_TESTS = \

@@ -10,9 +10,9 @@
 
 (automake-test
  (begin
-   (let ((app (make-gobject <GApplication>
-                            `(("application-id" . "gi.guile.Example")
-                              ("flags" . ,APPLICATION_HANDLES_COMMAND_LINE))))
+   (let ((app (make <GApplication>
+                #:application-id "gi.guile.Example"
+                #:flags APPLICATION_HANDLES_COMMAND_LINE))
          (success #f))
      (with-object app
        (connect! command-line

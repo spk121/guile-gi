@@ -26,9 +26,8 @@
                define-method
                ;; core-generics
                format write equal? quit send)
-  #:export-syntax (create)
+  #:replace ((%new . make))
   #:export (use-typelibs
-            (%new . make-gobject)
             with-object
             (with-object . using)
             register-type))
@@ -41,19 +40,6 @@
   (memq type-b (class-precedence-list type-a)))
 
 (define %syntax->string (compose symbol->string syntax->datum))
-
-(define-syntax create
-  (lambda (stx)
-    (syntax-case stx ()
-      ((_ type field ...)
-       #`(%new type
-               `#,(map (lambda (field)
-                         (syntax-case field ()
-                           ((key val)
-                            (identifier? #'key)
-                            (with-syntax ((key-str (%syntax->string #'key)))
-                              #'(key-str . ,val)))))
-                       #'(field ...)))))))
 
 ;; temporaries while property objects are not yet everywhere
 (define-public (gobject-get-property obj prop)
@@ -168,7 +154,7 @@
 (define (%new type . rest)
   (cond
    ((subclass? type <GObject>)
-    (apply (@@ (gi oop) %create) type rest))
+    ((@@ (gi oop) %make-gobject) type rest))
    ((subclass? type <GBoxed>)
     (%allocate-boxed type))
    (else

@@ -47,12 +47,6 @@
                        #:init-value ,unref))
               #:name type))
 
-(define (%make-gobject type object)
-  (make type #:ptr object))
-
-(define (%make-paramspec type spec)
-  (make type #:ptr spec))
-
 (define-class <signal> (<applicable-struct>)
   (name #:init-keyword #:name)
   (flags #:init-keyword #:flags

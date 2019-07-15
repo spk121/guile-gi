@@ -16,7 +16,7 @@
    (list my-signal)))
 
 (automake-test
- (let ((object (make-gobject <TestParam>))
+ (let ((object (make <TestParam>))
        (success #f))
    (connect object my-signal (lambda (obj) (set! success #t)))
    (my-signal object)
