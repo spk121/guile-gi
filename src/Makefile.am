@@ -73,7 +73,7 @@ libguile_gi_la_CFLAGS = \
 libguile_gi_la_LDFLAGS = \
  -no-undefined \
  -version-info $(LIBGUILE_GI_INTERFACE) \
- -export-symbols-regex '^gi[rg]?_' \
+ -export-symbols-regex '^gig_' \
  $(GUILE_LDFLAGS)
 
 if !DLL_VERSION_INFO

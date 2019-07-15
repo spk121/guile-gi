@@ -189,7 +189,7 @@ AC_ARG_ENABLE([reverse-hash],
                             [have reverse type lookup hash])])
 case "x$enable_reverse_hash" in
      xyes)
-     AC_DEFINE([ENABLE_GIR_TYPE_SCM_HASH], [1],
+     AC_DEFINE([ENABLE_GIG_TYPE_SCM_HASH], [1],
                [Define if SCM to GType hash is enabled.])
      ;;
 esac

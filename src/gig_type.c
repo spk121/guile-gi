@@ -601,7 +601,7 @@ void
 gig_type_associate(GType gtype, SCM stype)
 {
     g_hash_table_insert(gig_type_gtype_hash, GSIZE_TO_POINTER(gtype), SCM_UNPACK_POINTER(stype));
-#if ENABLE_GIR_TYPE_SCM_HASH
+#if ENABLE_GIG_TYPE_SCM_HASH
     g_hash_table_insert(gig_type_scm_hash, SCM_UNPACK_POINTER(stype), GSIZE_TO_POINTER(gtype));
 #endif
     SCM module = scm_current_module();
