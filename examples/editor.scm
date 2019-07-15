@@ -22,12 +22,6 @@
               ("Gtk" "3.0")
               ("GLib" "2.0"))
 
-;; Oddly, the introspection information does not provide a constructor
-;; for GtkTextIter.
-(define (text-iter:new)
-  ;; make-gobject is somewhat of a misnomer, we will override GOOPS make later
-  (make-gobject <GtkTextIter>))
-
 (define (print-goodbye widget)
   (display "Goodbye World\n"))
 
@@ -38,7 +32,7 @@
     #f))
 
 (define-method (connect obj (signal <symbol>) (handler <procedure>))
-  (connect obj (make-gobject <signal> #:name (symbol->string signal)) handler))
+  (connect obj (make <signal> #:name (symbol->string signal)) handler))
 
 (define (activate app)
   (let ((window (application-window:new app))
@@ -70,8 +64,8 @@
                ;; with 'Hello, world'.
                (lambda x
                  (let ((buffer (get-buffer editor))
-                       (iter1 (text-iter:new))
-                       (iter2 (text-iter:new)))
+                       (iter1 (make <GtkTextIter>))
+                       (iter2 (make <GtkTextIter>)))
                    (get-bounds buffer iter1 iter2)
                    (write (get-text buffer iter1 iter2 #t))
                    (newline)
