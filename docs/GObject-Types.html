@@ -61,30 +61,42 @@ more complex.  GObject has three classes of custom types: structs,
 unions, and objects.
 </p>
 <p>GObject <em>unions</em> and <em>structs</em> are handled in Guile-GI by
-creating a foreign object type that wraps a C pointer.  Typically,
+creating a GOOPS type that wraps a C pointer.  Typically,
 instances can be created and by GObject functions and used as
 arguments, but, their contents aren&rsquo;t otherwise modifyiable.  GObject
-unions and structs may have GObject Methods, but, do not have signals
+unions and structs may have GObject Methods, but do not have signals
 or properties. See <a href="GObject-Methods.html#GObject-Methods">GObject Methods</a> for more information.
 </p>
-<p>GObject <em>objects</em> are also stored by creating a foreign object
+<p>GObject <em>objects</em> are also stored by creating a GOOPS
 type that wraps a C pointer.  Unlike GObject structs and unions, they
 have more interactivity available at the Guile layer.  They have
 properties that can be queried and Guile procedures can be hooked into
 the GObject callback layer, which GObject calls &ldquo;signals&rdquo;.
 </p>
 <p>For each custom GObject type, Guile-GI creates a variable that holds
-the foreign object type.  That variable has the form <code>&lt;TYPE&gt;</code>,
-where TYPE is the GObject type name.  It also creates a predicate to
-test if an object has that type.  The predicate has the form
-<code>TYPE?</code>
+the GOOPS type.  That variable has the form <code>&lt;TYPE&gt;</code>,
+where TYPE is the GObject type name. To check whether an object
+has a given type, use the <code>is-a?</code> procedure found in GOOPS, which
+Guile-GI re-exports.
 </p>
+<div class="example">
+<pre class="example">(use-modules (gi))
+(use-typelibs (&quot;GObject&quot; &quot;2.0&quot;) (&quot;Gio&quot; &quot;2.0&quot;))
+(is-a? (make &lt;GApplication&gt;) &lt;GObject&gt;)
+;; =&gt; #t
+</pre></div>
+
 <p>Each GObject struct, union, or object has a place in the GObject
 single-inheritance class structure.  A <code>RadioButton</code> is a type of
 <code>Button</code> is a type of <code>Widget</code>, for example.  If you wish to
 introspect a GObject&rsquo;s type, use <code>get-gtype</code> and then use the GType
 procedures. See <a href="GType.html#GType">GType</a>.
 </p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="GType.html#GType" accesskey="n" rel="next">GType</a>, Previous: <a href="Typelib-Introspection.html#Typelib-Introspection" accesskey="p" rel="prev">Typelib Introspection</a>, Up: <a href="Reference-Guide.html#Reference-Guide" accesskey="u" rel="up">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="_005findex.html#g_t_005findex" title="Index" rel="index">Index</a>]</p>
+</div>
 
 
 

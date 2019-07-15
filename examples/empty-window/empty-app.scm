@@ -20,10 +20,6 @@
 
 (define (empty-app-new)
   (let ((app
-         (make-gobject
-          <EmptyApp>
-          ;; Alist of properties
-          '(("application-id" . "org.gtk.exampleapp")
-            ("flags" . 4)))))
+         (make <EmptyApp> #:application-id "org.gtk.exampleapp" #:flags 4)))
     (connect app (make-signal #:name "activate") empty-app-activate)
     app))

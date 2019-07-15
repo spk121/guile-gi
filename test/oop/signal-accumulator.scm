@@ -17,7 +17,7 @@
    (list sum)))
 
 (automake-test
- (let ((object (make-gobject <TestParam>)))
+ (let ((object (make <TestParam>)))
    (connect object sum (const 1))
    (connect object sum (const 2))
    (connect object sum (const 3))

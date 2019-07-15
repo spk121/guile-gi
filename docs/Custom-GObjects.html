@@ -23,7 +23,7 @@ Free Documentation License". -->
 <link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
 <link href="Reference-Guide.html#Reference-Guide" rel="up" title="Reference Guide">
 <link href="More-Stuff.html#More-Stuff" rel="next" title="More Stuff">
-<link href="with_002dobject-syntax.html#with_002dobject-syntax" rel="prev" title="with-object syntax">
+<link href="GObject-Properties.html#GObject-Properties" rel="prev" title="GObject Properties">
 <style type="text/css">
 <!--
 a.summary-letter {text-decoration: none}
@@ -50,20 +50,21 @@ ul.no-bullet {list-style: none}
 <body lang="en">
 <span id="Custom-GObjects"></span><div class="header">
 <p>
-Next: <a href="More-Stuff.html#More-Stuff" accesskey="n" rel="next">More Stuff</a>, Previous: <a href="with_002dobject-syntax.html#with_002dobject-syntax" accesskey="p" rel="prev">with-object syntax</a>, Up: <a href="Reference-Guide.html#Reference-Guide" accesskey="u" rel="up">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="_005findex.html#g_t_005findex" title="Index" rel="index">Index</a>]</p>
+Next: <a href="More-Stuff.html#More-Stuff" accesskey="n" rel="next">More Stuff</a>, Previous: <a href="GObject-Properties.html#GObject-Properties" accesskey="p" rel="prev">GObject Properties</a>, Up: <a href="Reference-Guide.html#Reference-Guide" accesskey="u" rel="up">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="_005findex.html#g_t_005findex" title="Index" rel="index">Index</a>]</p>
 </div>
 <hr>
-<span id="Defining-new-GObject-classes"></span><h3 class="section">3.8 Defining new GObject classes</h3>
+<span id="Defining-new-GObject-classes"></span><h3 class="section">3.7 Defining new GObject classes</h3>
 
 <p>Usually any GObjects you use will be created by procedures such as
-<code>Window-new</code>, and those GObject types will have been predefined
+<code>window:new</code>, and those GObject types will have been predefined
 in the typelib. But, it is possible to make custom GObject object
 classes using the <code>register-type</code> procedure.
 </p>
-<p>Any GObject class will not have the same flexibility of a Guile
-structure or a Goops class, but, if they descend from the GObject base
-class, they can be hooked into the GObject &lsquo;signals&rsquo; callback
-methodology.
+<p>Bear in mind, that while Guile-GI internally uses GOOPS, GObjects implemented in it
+are not quite as flexible. For instance, you can not meaningfully redefine a
+GObject-based type, which you could if you just used GOOPS types.
+On the other hand, you can make use of the features of the GObject infrastructure,
+such as signals.
 </p>
 <p>Defining a new GObject class is rather complicated.
 </p>
@@ -72,72 +73,22 @@ methodology.
 <dd><p>This procedure creates and returns a new <code>&lt;GType&gt;</code> of a GObject
 object.
 </p>
-<p><var>type-name</var> is the string name of the new type.
+<p><var>type-name</var> is the string name of the new type. Note, that it will be
+turned into a symbol internally.
 </p>
 <p><var>parent-type</var> is the <code>&lt;GType&gt;</code> of the parent class to this
-class.  The parent class needs to be <code>&lt;Object&gt;</code> or a GObject
+class.  The parent class needs to be <code>&lt;GObject&gt;</code> or a GObject
 class that descends from it.
 </p>
 <p><var>list-of-properties</var> is a list of parameter specifications.
-Each parameter specification is itself a list of several elements.
-The first four elements are
-</p><ol>
-<li> Property name, a string
-</li><li> Property type, a <code>&lt;GType&gt;</code>
-</li><li> Blurb, a short string usually the same as the property name
-</li><li> A string description of the property
-</li></ol>
-
-<p>The remaining elements of the parameter specification depends on the
-property type.
+These parameter specifications can be created using the <code>param-spec-TYPE</code>
+methods found in the <code>GObject</code> typelib.
 </p>
-<p>Numerical types take four further parameters: min, max, default
-value, and param flags.
-</p>
-<p>Boolean types, enumerated types, flags, and strings each take two
-additonal parameters: default value and param flags.
-</p>
-<p>The param flags are a logical or of zero or more of <code>PARAM_READABLE</code>,
-<code>PARAM_WRITABLE</code>.
-</p>
-<p><var>list-of-signals</var> is a list of signal specifications.  Each signal
-specification is itself a list of four elements.
-</p><ol>
-<li> Signal name, a string
-</li><li> Return type, a <code>&lt;GType&gt;</code>
-</li><li> Signals parameters, a list of <code>&lt;GTypes&gt;</code> for the parameters for the
-callback
-</li><li> Flags
-</li></ol>
-
-<p>The flags value will be a logical or of one or more of
-<code>G_SIGNAL_RUN_FIRST</code>, <code>G_SIGNAL_RUN_LAST</code>,
-<code>G_SIGNAL_RUN_CLEANUP</code>, <code>G_SIGNAL_NO_RECURSE</code>, and maybe
-others.
-</p>
-<p>And finally the <var>disposer</var> procedure will be either <code>#f</code> or
-a procedure that that will be called when instances of this object
-are being garbage collected.  The procedure should take a single
-parameter which will be the object being garbage collected.
+<p><var>list-of-signals</var> is a list of signal specifications. See <a href="GObject-Signals.html#GObject-Signals">GObject Signals</a>.
 </p></dd></dl>
 
-<p>To then make instances of your custom GObject type, use <code>make-gobject</code>.
+<p>To then make instances of your custom GObject type, use <code>make</code>.
 </p>
-<dl>
-<dt id="index-make_002dgobject">Procedure: <strong>make-gobject</strong> <em>type properties-alist</em></dt>
-<dd><p>Given <var>type</var> &ndash; a <code>&lt;GType&gt;</code> of a GObject object class &ndash; and
-an association list of property names and their values, this returns
-an instance of that type.
-</p>
-<p>It will throw an error if the type is not a GObject object type, or
-if any of the specified properties cannot be set.
-</p></dd></dl>
-
-<hr>
-<div class="header">
-<p>
-Next: <a href="More-Stuff.html#More-Stuff" accesskey="n" rel="next">More Stuff</a>, Previous: <a href="with_002dobject-syntax.html#with_002dobject-syntax" accesskey="p" rel="prev">with-object syntax</a>, Up: <a href="Reference-Guide.html#Reference-Guide" accesskey="u" rel="up">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="_005findex.html#g_t_005findex" title="Index" rel="index">Index</a>]</p>
-</div>
 
 
 

@@ -31,6 +31,14 @@
        #:init-keyword #:ptr
        #:init-value %null-pointer))
 
+(define-class <GBoxed> (<GFundamental>)
+  (ref #:allocation #:each-subclass
+       #:init-value (const %null-pointer))
+  (unref #:allocation #:each-subclass
+         #:init-value (const %null-pointer))
+  (size #:allocation #:each-subclass
+        #:init-value 0))
+
 (define (%make-fundamental-class type dsupers ref unref)
   (make-class (cons <GFundamental> dsupers)
               `((ref #:allocation #:class
@@ -38,12 +46,6 @@
                 (unref #:allocation #:class
                        #:init-value ,unref))
               #:name type))
-
-(define (%make-gobject type object)
-  (make type #:ptr object))
-
-(define (%make-paramspec type spec)
-  (make type #:ptr spec))
 
 (define-class <signal> (<applicable-struct>)
   (name #:init-keyword #:name)

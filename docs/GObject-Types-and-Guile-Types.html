@@ -76,9 +76,7 @@ things named &lsquo;type&rsquo;:
 GtkWindow</code>
 </li><li> the C <code>GType</code>, a unique integer ID that GObject libraries provide
 for each C typedef&rsquo;d structure, union, or object
-</li><li> the Guile-GI <code>&lt;GType&gt;</code>, a Guile type that holds this unique
-integer ID
-</li><li> the Guile class created by Guile-GI for each GType to hold instances
+</li><li> the Guile class <code>&lt;GType&gt;</code> created by Guile-GI for each GType to hold instances
 of the associated C structure
 </li></ol>
 
@@ -90,9 +88,8 @@ functions from Guile, instances of <code>GDate *</code> are held by
 instances of the Guile class <code>&lt;Date&gt;</code>.
 </p>
 <p>Internally to Guile-GI, all of the Guile classes for GObject structs,
-objects and unions are <em>foreign object</em> types that handle
-managing the C pointer.  The C pointer is usually the first slot in
-the foreign object type.
+objects and unions are GOOPS types that handle managing the C pointer.
+The C pointer is &ldquo;hidden&rdquo; in the <code>ptr</code> slot of an object.
 </p>
 <hr>
 <div class="header">

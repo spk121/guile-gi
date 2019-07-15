@@ -16,39 +16,6 @@
 
 guileextension_LTLIBRARIES = libguile-gi.la
 
-noinst_PROGRAMS = fo_gen$(EXEEXT)
-
-fo_gen_SOURCES = \
- fo_gen.c
-
-fo_gen_CFLAGS = \
-  -std=c11 \
-  $(GUILE_CFLAGS) \
-  $(GLIB_CFLAGS)
-
-fo_gen_LDADD = $(GUILE_LIBS) $(GLIB_LIBS)
-
-EXTRA_DIST = foreign-object-types.ini
-
-BUILT_SOURCES = \
- __gi_gvalue.h __gi_gvalue.c \
- __gi_ginterface.h __gi_ginterface.c
-
-__gi_gvalue.h: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
-	$(builddir)/fo_gen$(EXEEXT) $(srcdir)/foreign-object-types.ini .
-__gi_gvalue.c: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
-	$(builddir)/fo_gen$(EXEEXT) $(srcdir)/foreign-object-types.ini .
-__gi_ginterface.h: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
-	$(builddir)/fo_gen$(EXEEXT) $(srcdir)/foreign-object-types.ini .
-__gi_ginterface.c: $(builddir)/fo_gen$(EXEEXT) foreign-object-types.ini Makefile
-	$(builddir)/fo_gen$(EXEEXT) $(srcdir)/foreign-object-types.ini .
-
-nodist_libguile_gi_la_SOURCES = \
- __gi_gvalue.c \
- __gi_gvalue.h \
- __gi_ginterface.c \
- __gi_ginterface.h
-
 libguile_gi_la_SOURCES = \
  gi_function_info.c \
  gi_function_info.h \
@@ -62,8 +29,6 @@ libguile_gi_la_SOURCES = \
  gi_gvalue.h \
  gi_signal_closure.c \
  gi_signal_closure.h \
- gi_struct.c \
- gi_struct.h \
  gi_type_tag.c \
  gi_type_tag.h \
  gir.c \
@@ -81,6 +46,8 @@ libguile_gi_la_SOURCES = \
  gir_typelib.h \
  gir_type.c \
  gir_type.h \
+ gig_type_private.c \
+ gig_type_private.h \
  gi_util.c \
  gi_util.h
 
@@ -132,7 +99,7 @@ pkgguileobjectdir=$(guileobjectdir)/gi
 dist_guilesite_DATA = \
   gi.scm
 
-dist_pkgguilesite_DATA = gi/oop.scm gi/core-generics.scm
+dist_pkgguilesite_DATA = gi/oop.scm gi/core-generics.scm gi/util.scm
 
 pkgguileobject_DATA = $(dist_guilesite_DATA:%.scm=%.go) $(dist_pkgguilesite_DATA:%.scm=%.go)
 

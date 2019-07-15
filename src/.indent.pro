@@ -78,6 +78,7 @@
 
 -T GirPredicate
 -T GirFunction
+-T GigBoxedFuncs
 -T SignalSpec
 
 -T GirArgMapEntry

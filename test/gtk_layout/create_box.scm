@@ -8,9 +8,9 @@
  (begin
    (init)
    (let* ([box1 (box:new ORIENTATION_VERTICAL 1)]
-          [box2 (create <GtkBox>
-                  (orientation ORIENTATION_VERTICAL)
-                  (spacing 2))])
+          [box2 (make <GtkBox>
+                  #:orientation ORIENTATION_VERTICAL
+                  #:spacing 2)])
      (format #t "box 1: ~S~%" box1)
      (format #t "box 1 spacing: ~S~%" (with-object box1 (get-spacing)))
      (format #t "box 2: ~S~%" box2)

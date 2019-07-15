@@ -15,37 +15,32 @@ typedef struct _GigUserObjectInitInfo
 } GigUserObjectInitInfo;
 
 SCM
-gig_object_take(gpointer object)
+gig_object_take(GObject *object)
 {
-    init_gi_oop();
-    SCM scm_type = gir_type_get_scheme_type(G_OBJECT_TYPE(object));
-    g_return_val_if_fail(SCM_SUBCLASSP(scm_type, gig_object_type), SCM_UNDEFINED);
-    return scm_call_2(private_make_gobject_proc,
-                      scm_type, scm_from_pointer(object, g_object_unref));
+    return gir_type_transfer_object(G_OBJECT_TYPE(object), object, GI_TRANSFER_EVERYTHING);
 }
+
 
 SCM
-gig_object_ref(gpointer object)
+gig_object_ref(GObject *object)
 {
-    return gig_object_take(g_object_ref_sink(object));
+    return gir_type_transfer_object(G_OBJECT_TYPE(object), object, GI_TRANSFER_NOTHING);
 }
-
 
 GObject *
 gig_object_peek(SCM object)
 {
-    g_return_val_if_fail(SCM_IS_A_P(object, gig_object_type), NULL);
-    return scm_to_pointer(object_ref(object, OBJECT_SLOT_OBJECT));
+    return gir_type_peek_typed_object(object, gig_object_type);
 }
 
 static SCM
-gig_i_scm_create(SCM s_gtype, SCM s_prop_alist)
+gig_i_scm_make_gobject(SCM s_gtype, SCM s_prop_keylist)
 {
-#define FUNC "%create"
+#define FUNC "%make-gobject"
     GType type;
     GObject *obj;
     GObjectClass *class;
-    guint n_prop;
+    gsize n_prop;
     const char **keys;
     GValue *values;
 
@@ -59,100 +54,98 @@ gig_i_scm_create(SCM s_gtype, SCM s_prop_alist)
 
     scm_dynwind_begin(0);
 
-    if (scm_is_true(scm_list_p(s_prop_alist))) {
+    if (scm_is_true(scm_list_p(s_prop_keylist))) {
         class = g_type_class_ref(type);
         scm_dynwind_unwind_handler(g_type_class_unref, class, SCM_F_WIND_EXPLICITLY);
 
-        n_prop = scm_to_int(scm_length(s_prop_alist));
+        n_prop = scm_to_size_t(scm_length(s_prop_keylist)) / 2;
         keys = scm_dynwind_or_bust(FUNC, calloc(n_prop, sizeof(char *)));
         values = scm_dynwind_or_bust(FUNC, calloc(n_prop, sizeof(GValue)));
 
-        SCM iter = s_prop_alist;
-        for (guint i = 0; i < n_prop; i++, iter = scm_cdr(iter)) {
-            SCM entry = scm_car(iter);
+        SCM iter = s_prop_keylist;
+        for (gsize i = 0; i < n_prop; i++, iter = scm_cddr(iter)) {
+            SCM key = scm_car(iter);
+            SCM s_value = scm_cadr(iter);
 
-            SCM_ASSERT_TYPE(scm_is_true(scm_pair_p(entry)),
-                            s_prop_alist, SCM_ARG2, FUNC, "alist of strings to objects");
+            SCM_ASSERT_TYPE(scm_is_true(scm_keyword_p(key)), key, SCM_ARGn, FUNC, "keyword");
 
-            SCM_ASSERT_TYPE(scm_is_string(scm_car(entry)),
-                            s_prop_alist, SCM_ARG2, FUNC, "alist of strings to objects");
+            key = scm_symbol_to_string(scm_keyword_to_symbol(key));
 
-            keys[i] = scm_dynwind_or_bust(FUNC, scm_to_utf8_string(scm_car(entry)));
+            keys[i] = scm_dynwind_or_bust(FUNC, scm_to_utf8_string(key));
             GParamSpec *pspec = g_object_class_find_property(class, keys[i]);
             if (!pspec) {
-                scm_misc_error(FUNC, "unknown object parameter ~S", scm_list_1(entry));
+                scm_misc_error(FUNC, "unknown object parameter ~S", scm_list_1(key));
             }
             else {
                 GValue *value = &values[i];
                 if (G_IS_PARAM_SPEC_CHAR(pspec)) {
                     g_value_init(value, G_TYPE_CHAR);
-                    g_value_set_schar(value, scm_to_int8(scm_cdr(entry)));
+                    g_value_set_schar(value, scm_to_int8(s_value));
                 }
                 else if (G_IS_PARAM_SPEC_UCHAR(pspec)) {
                     g_value_init(value, G_TYPE_UCHAR);
-                    g_value_set_uchar(value, scm_to_uint8(scm_cdr(entry)));
+                    g_value_set_uchar(value, scm_to_uint8(s_value));
                 }
                 else if (G_IS_PARAM_SPEC_INT(pspec)) {
                     g_value_init(value, G_TYPE_INT);
-                    g_value_set_int(value, scm_to_int(scm_cdr(entry)));
+                    g_value_set_int(value, scm_to_int(s_value));
                 }
                 else if (G_IS_PARAM_SPEC_UINT(pspec)) {
                     g_value_init(value, G_TYPE_UINT);
-                    g_value_set_uint(value, scm_to_uint(scm_cdr(entry)));
+                    g_value_set_uint(value, scm_to_uint(s_value));
                 }
                 else if (G_IS_PARAM_SPEC_LONG(pspec)) {
                     g_value_init(value, G_TYPE_LONG);
-                    g_value_set_uint(value, scm_to_long(scm_cdr(entry)));
+                    g_value_set_uint(value, scm_to_long(s_value));
                 }
                 else if (G_IS_PARAM_SPEC_ULONG(pspec)) {
                     g_value_init(value, G_TYPE_ULONG);
-                    g_value_set_ulong(value, scm_to_ulong(scm_cdr(entry)));
+                    g_value_set_ulong(value, scm_to_ulong(s_value));
                 }
                 else if (G_IS_PARAM_SPEC_INT64(pspec)) {
                     g_value_init(value, G_TYPE_INT64);
-                    g_value_set_int64(value, scm_to_int64(scm_cdr(entry)));
+                    g_value_set_int64(value, scm_to_int64(s_value));
                 }
                 else if (G_IS_PARAM_SPEC_UINT64(pspec)) {
                     g_value_init(value, G_TYPE_UINT64);
-                    g_value_set_uint64(value, scm_to_uint64(scm_cdr(entry)));
+                    g_value_set_uint64(value, scm_to_uint64(s_value));
                 }
                 else if (G_IS_PARAM_SPEC_FLOAT(pspec)) {
                     g_value_init(value, G_TYPE_FLOAT);
-                    g_value_set_float(value, scm_to_double(scm_cdr(entry)));
+                    g_value_set_float(value, scm_to_double(s_value));
                 }
                 else if (G_IS_PARAM_SPEC_DOUBLE(pspec)) {
                     g_value_init(value, G_TYPE_DOUBLE);
-                    g_value_set_double(value, scm_to_double(scm_cdr(entry)));
+                    g_value_set_double(value, scm_to_double(s_value));
                 }
                 else if (G_IS_PARAM_SPEC_ENUM(pspec)) {
                     g_value_init(value, G_PARAM_SPEC_VALUE_TYPE(pspec));
-                    g_value_set_enum(value, scm_to_uint64(scm_cdr(entry)));
+                    g_value_set_enum(value, scm_to_uint64(s_value));
                 }
                 else if (G_IS_PARAM_SPEC_FLAGS(pspec)) {
                     g_value_init(value, G_PARAM_SPEC_VALUE_TYPE(pspec));
-                    g_value_set_flags(value, scm_to_ulong(scm_cdr(entry)));
+                    g_value_set_flags(value, scm_to_ulong(s_value));
                 }
                 else if (G_IS_PARAM_SPEC_STRING(pspec)) {
                     g_value_init(value, G_TYPE_STRING);
-                    g_value_set_string(value, scm_to_utf8_string(scm_cdr(entry)));
+                    g_value_set_string(value, scm_to_utf8_string(s_value));
                 }
                 else if (G_IS_PARAM_SPEC_OBJECT(pspec)) {
-                    SCM src = scm_cdr(entry);
-                    GType src_type = gir_type_get_gtype_from_obj(src);
+                    GType src_type = gir_type_get_gtype_from_obj(s_value);
                     GType dest_type = G_PARAM_SPEC_VALUE_TYPE(pspec);
                     if (g_type_is_a(src_type, dest_type)) {
                         g_value_init(value, dest_type);
-                        g_value_set_object(value, gig_object_peek(src));
+                        g_value_set_object(value, gig_object_peek(s_value));
                     }
                     else
                         scm_misc_error(FUNC,
                                        "unable to convert parameter ~S of type ~S into a ~S",
-                                       scm_list_3(src,
+                                       scm_list_3(s_value,
                                                   scm_from_utf8_string(g_type_name(src_type)),
                                                   scm_from_utf8_string(g_type_name(dest_type))));
                 }
                 else
-                    scm_misc_error(FUNC, "unable to convert parameter ~S", scm_list_1(entry));
+                    scm_misc_error(FUNC, "unable to convert parameter ~S", scm_list_1(s_value));
             }
         }
     }
@@ -166,6 +159,7 @@ gig_i_scm_create(SCM s_gtype, SCM s_prop_alist)
     scm_dynwind_end();
 
     g_assert(obj);
+
     return gig_object_take(obj);
 #undef FUNC
 }
@@ -191,7 +185,7 @@ gig_i_scm_get_pspec(SCM self, SCM prop)
     name = scm_dynwind_or_bust("%get-pspec", scm_to_utf8_string(prop));
     pspec = get_paramspec(obj, name);
     if (!pspec) {
-        scm_misc_error("%get-property",
+        scm_misc_error("%get-pspec",
                        "object of type ~A does not have a property ~S",
                        scm_list_2(SCM_CLASS_OF(self), prop));
     }
@@ -558,7 +552,7 @@ gig_init_object()
     gig_user_object_properties = g_quark_from_static_string("GigObject::properties");
 
     gig_init_object_private();
-    scm_c_define_gsubr("%create", 1, 1, 0, gig_i_scm_create);
+    scm_c_define_gsubr("%make-gobject", 1, 1, 0, gig_i_scm_make_gobject);
     scm_c_define_gsubr("%object-get-pspec", 2, 0, 0, gig_i_scm_get_pspec);
     scm_c_define_gsubr("%get-property", 2, 0, 0, gig_i_scm_get_property);
     scm_c_define_gsubr("%set-property!", 3, 0, 0, gig_i_scm_set_property_x);

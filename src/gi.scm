@@ -26,9 +26,8 @@
                define-method
                ;; core-generics
                format write equal? quit send)
+  #:replace ((%new . make))
   #:export (use-typelibs
-            create
-            (%create . make-gobject)
             with-object
             (with-object . using)
             register-type))
@@ -37,21 +36,10 @@
   ;; required for %typelib-module-name, which is used at expand time
   (load-extension "libguile-gi" "gir_init_typelib_private"))
 
-(define %create (@@ (gi oop) %create))
-(define %syntax->string (compose symbol->string syntax->datum))
+(define (subclass? type-a type-b)
+  (memq type-b (class-precedence-list type-a)))
 
-(define-syntax create
-  (lambda (stx)
-    (syntax-case stx ()
-      ((_ type field ...)
-       #`(%create type
-                  `#,(map (lambda (field)
-                            (syntax-case field ()
-                              ((key val)
-                               (identifier? #'key)
-                               (with-syntax ((key-str (%syntax->string #'key)))
-                                 #'(key-str . ,val)))))
-                          #'(field ...)))))))
+(define %syntax->string (compose symbol->string syntax->datum))
 
 ;; temporaries while property objects are not yet everywhere
 (define-public (gobject-get-property obj prop)
@@ -163,6 +151,15 @@
 
 (load-extension "libguile-gi" "gir_init")
 
+(define (%new type . rest)
+  (cond
+   ((subclass? type <GObject>)
+    ((@@ (gi oop) %make-gobject) type rest))
+   ((subclass? type <GBoxed>)
+    (%allocate-boxed type))
+   (else
+    (apply make type rest))))
+
 (define-method (initialize (pspec <GParam>) initargs)
   (next-method)
   (slot-set! pspec 'procedure (cut (@@ (gi oop) %get-property) <> pspec))
@@ -170,7 +167,7 @@
 
 (define (register-type name parent . rest)
   (cond
-   ((memq <GObject> (class-precedence-list parent))
+   ((subclass? parent <GObject>)
     (apply (@@ (gi oop) %define-object-type) name parent rest))
    (else
     (error "cannot define class with parent ~A" parent))))

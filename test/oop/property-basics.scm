@@ -5,8 +5,8 @@
 
 (automake-test
  (begin
-   (let* ((app ((@ (gi) create) <GApplication>
-                 (application-id "gi.guile.Example")))
+   (let* ((app (make <GApplication>
+                 #:application-id "gi.guile.Example"))
           (application-id ((@@ (gi oop) %object-get-pspec) app "application-id")))
      (and (equal? (application-id app) "gi.guile.Example")
           (begin

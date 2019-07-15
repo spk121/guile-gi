@@ -1,30 +1,33 @@
-(use-modules (gi)
-             (gi gio-2)
-             (gi gtk-3)
-             (gi glib-2))
+(use-modules (gi) (oop goops))
+
+(use-typelibs ("GLib" "2.0")
+              ("GObject" "2.0")
+              ("Gio" "2.0")
+              ("Gtk" "3.0"))
 
 (define (print-hello widget)
   (display "Hello World\n"))
 
-(define (activate-callback app)
-  (let* ((window (create <GtkApplicationWindow>
-                   (application app)
-                   (default-height 200)
-                   (default-width 200)
-                   (title "Window")))
-         (button-box (create <GtkButtonBox> (parent window)))
-         (button (create <GtkButton>
-                   (parent button-box)
-                   (label "Hello world"))))
-    (with-object button
-      (connect! clicked print-hello)
-      (connect! clicked (lambda _ (with-object window (destroy)))))
+(define-method (connect obj (signal <symbol>) (handler <procedure>))
+  (connect obj (make <signal> #:name (symbol->string signal)) handler))
 
-    (with-object window (show-all))))
+(define (activate-callback app)
+  (let* ((window (make <GtkApplicationWindow>
+                   #:application app
+                   #:default-height 200
+                   #:default-width 200
+                   #:title "Window"))
+         (button-box (make <GtkButtonBox> #:parent window))
+         (button (make <GtkButton>
+                   #:parent button-box
+                   #:label "Hello world")))
+    (connect button 'clicked print-hello)
+    (connect button 'clicked (lambda _ (destroy window)))
+    (show-all window)))
 
 (define (main)
-  (with-object (create <GtkApplication> (application-id "org.gtk.example"))
-    (connect! activate activate-callback)
-    (run (length (command-line)) (command-line))))
+  (let ((app (make <GtkApplication> #:application-id "org.gtk.example")))
+    (connect app 'activate activate-callback)
+    (run app (command-line))))
 
 (main)

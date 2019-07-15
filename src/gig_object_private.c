@@ -5,18 +5,11 @@
 #include "gi_util.h"
 
 static SCM signal_slot_syms[SIGNAL_SLOT_COUNT];
-static SCM object_slot_syms[OBJECT_SLOT_COUNT];
 
 SCM
 signal_ref(SCM signal, SignalSlot slot)
 {
     return scm_slot_ref(signal, signal_slot_syms[slot]);
-}
-
-SCM
-object_ref(SCM object, ObjectSlot slot)
-{
-    return scm_slot_ref(object, object_slot_syms[slot]);
 }
 
 static SCM signal_accu_first_wins;
@@ -25,7 +18,6 @@ static SCM signal_accu_true_handled;
 static gpointer
 init_gi_oop_once(gpointer data)
 {
-    private_make_gobject_proc = scm_c_private_ref("gi oop", "%make-gobject");
     guile_signal = scm_c_public_ref("gi oop", "<signal>");
     return NULL;
 }
@@ -136,8 +128,6 @@ gig_init_object_private(void)
     signal_slot_syms[SIGNAL_SLOT_ACCUMULATOR] = scm_from_utf8_symbol("accumulator");
     signal_slot_syms[SIGNAL_SLOT_RETURN_TYPE] = scm_from_utf8_symbol("return-type");
     signal_slot_syms[SIGNAL_SLOT_PARAM_TYPES] = scm_from_utf8_symbol("param-types");
-
-    object_slot_syms[OBJECT_SLOT_OBJECT] = scm_from_utf8_symbol("ptr");
 
     signal_accu_first_wins = scm_from_utf8_symbol("first-wins");
     signal_accu_true_handled = scm_from_utf8_symbol("true-handled");

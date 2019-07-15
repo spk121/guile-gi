@@ -11,6 +11,4 @@
    #f))                                 ; No new signals
 
 (define (empty-app-window-new app)
-  (make-gobject
-   <EmptyAppWindow>
-   `(("application" . ,app))))
+  (make <EmptyAppWindow> #:application app))
