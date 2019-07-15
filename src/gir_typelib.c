@@ -20,12 +20,11 @@
 #include "gig_argument.h"
 #include "gig_type.h"
 #include "gir_typelib.h"
-#include "gir_function.h"
+#include "gig_function.h"
 #include "gig_object.h"
 #include "gig_util.h"
 #include "gig_constant.h"
 #include "gig_flag.h"
-#include "gir_function.h"
 #include "gig_type.h"
 #include "gir_typelib.h"
 
@@ -144,7 +143,7 @@ scm_i_typelib_load(const char *subr, const char *namespace_, const char *version
             g_debug("Unsupported irepository type 'CALLBACK'");
             break;
         case GI_INFO_TYPE_FUNCTION:
-            gir_function_define_gsubr(G_TYPE_INVALID, info, NULL);
+            gig_function_define_gsubr(G_TYPE_INVALID, info, NULL);
             break;
         case GI_INFO_TYPE_STRUCT:
         {
@@ -164,9 +163,9 @@ scm_i_typelib_load(const char *subr, const char *namespace_, const char *version
             gint n_methods = g_struct_info_get_n_methods(info);
             for (gint m = 0; m < n_methods; m++) {
                 GIFunctionInfo *func_info = g_struct_info_get_method(info, m);
-                gir_function_define_gsubr(gtype, func_info, g_base_info_get_name(info));
+                gig_function_define_gsubr(gtype, func_info, g_base_info_get_name(info));
                 if (g_function_info_get_flags(func_info) & GI_FUNCTION_IS_METHOD)
-                    gir_function_define_gsubr(gtype, func_info, NULL);
+                    gig_function_define_gsubr(gtype, func_info, NULL);
             }
         }
             break;
@@ -187,9 +186,9 @@ scm_i_typelib_load(const char *subr, const char *namespace_, const char *version
             gint n_methods = g_object_info_get_n_methods(info);
             for (gint m = 0; m < n_methods; m++) {
                 GIFunctionInfo *func_info = g_object_info_get_method(info, m);
-                gir_function_define_gsubr(gtype, func_info, g_base_info_get_name(info));
+                gig_function_define_gsubr(gtype, func_info, g_base_info_get_name(info));
                 if (g_function_info_get_flags(func_info) & GI_FUNCTION_IS_METHOD)
-                    gir_function_define_gsubr(gtype, func_info, NULL);
+                    gig_function_define_gsubr(gtype, func_info, NULL);
             }
 #if 0
             gint n_signals = g_object_info_get_n_signals(info);
@@ -219,9 +218,9 @@ scm_i_typelib_load(const char *subr, const char *namespace_, const char *version
             gint n_methods = g_interface_info_get_n_methods(info);
             for (gint m = 0; m < n_methods; m++) {
                 GIFunctionInfo *func_info = g_interface_info_get_method(info, m);
-                gir_function_define_gsubr(gtype, func_info, g_base_info_get_name(info));
+                gig_function_define_gsubr(gtype, func_info, g_base_info_get_name(info));
                 if (g_function_info_get_flags(func_info) & GI_FUNCTION_IS_METHOD)
-                    gir_function_define_gsubr(gtype, func_info, NULL);
+                    gig_function_define_gsubr(gtype, func_info, NULL);
             }
         }
             break;
@@ -245,9 +244,9 @@ scm_i_typelib_load(const char *subr, const char *namespace_, const char *version
             gint n_methods = g_union_info_get_n_methods(info);
             for (gint m = 0; m < n_methods; m++) {
                 GIFunctionInfo *func_info = g_union_info_get_method(info, m);
-                gir_function_define_gsubr(gtype, func_info, g_base_info_get_name(info));
+                gig_function_define_gsubr(gtype, func_info, g_base_info_get_name(info));
                 if (g_function_info_get_flags(func_info) & GI_FUNCTION_IS_METHOD)
-                    gir_function_define_gsubr(gtype, func_info, NULL);
+                    gig_function_define_gsubr(gtype, func_info, NULL);
             }
         }
             break;
@@ -626,7 +625,7 @@ export_signal_info(GString **export, char *parent, GISignalInfo *info)
 
     n_args = g_callable_info_get_n_args(info);
 
-    char *c_function_name;
+    gchar *c_function_name;
     if (parent)
         c_function_name = g_strdup_printf("%s-%s-signal", parent, g_base_info_get_name(info));
     else

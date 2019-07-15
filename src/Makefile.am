@@ -36,8 +36,8 @@ libguile_gi_la_SOURCES = \
  gig_arg_map.h \
  gig_callback.c \
  gig_callback.h \
- gir_function.c \
- gir_function.h \
+ gig_function.c \
+ gig_function.h \
  gig_constant.c \
  gig_constant.h \
  gig_flag.c \

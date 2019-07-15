@@ -26,7 +26,7 @@
 #include "gir_typelib.h"
 #include "gig_type.h"
 #include "gig_callback.h"
-#include "gir_function.h"
+#include "gig_function.h"
 #include "gig_constant.h"
 #include "gig_flag.h"
 
@@ -104,7 +104,7 @@ gir_init(void)
 
     gig_init_argument();
     gig_init_callback();
-    gir_init_function();
+    gig_init_function();
     g_debug("End libguile-gir initialization");
 
 #ifdef ENABLE_GCOV

@@ -13,8 +13,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef _GIR_FUNCTION_H_
-#define _GIR_FUNCTION_H_
+#ifndef GIG_FUNCTION_H
+#define GIG_FUNCTION_H
 
 #include <glib.h>
 #include <girepository.h>
@@ -25,12 +25,12 @@
 G_BEGIN_DECLS
 // *INDENT-ON*
 
-typedef SCM (*gir_gsubr_t)(void);
+typedef SCM (*GigGsubr)(void);
 
-void gir_function_define_gsubr(GType type, GIFunctionInfo *info, const char *name);
-SCM gir_function_invoke(GIFunctionInfo *info, GigArgMap *amap, const char *name, GObject *object,
+void gig_function_define_gsubr(GType type, GIFunctionInfo *info, const gchar *name);
+SCM gig_function_invoke(GIFunctionInfo *info, GigArgMap *amap, const gchar *name, GObject *object,
                         SCM args, GError **error);
-void gir_init_function(void);
+void gig_init_function(void);
 
 G_END_DECLS
 #endif

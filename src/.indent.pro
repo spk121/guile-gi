@@ -77,7 +77,6 @@
 -T GITypeInfo
 
 -T GirPredicate
--T GirFunction
 -T GigBoxedFuncs
 -T SignalSpec
 
@@ -86,3 +85,5 @@
 -T GigCallback
 -T GigTypeRefFunction
 -T GigTypeUnrefFunction
+-T GigFunction
+-T GigGsubr

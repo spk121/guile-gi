@@ -1,6 +1,6 @@
 #include "gi_function_info.h"
 #include "gig_util.h"
-#include "gir_function.h"
+#include "gig_function.h"
 
 
 static gboolean is_predicate(GIFunctionInfo *info);
