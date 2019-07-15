@@ -24,7 +24,7 @@
 #include "gi_type_tag.h"
 #include "gig_callback.h"
 #include "gig_type.h"
-#include "gir_typelib.h"
+#include "gig_typelib.h"
 
 #ifndef FLT_MAX
 #define FLT_MAX 3.402823466e+38F

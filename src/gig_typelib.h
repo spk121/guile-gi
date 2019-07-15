@@ -13,9 +13,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef _GIR_TYPELIB_H
-#define _GIR_TYPELIB_H
+#ifndef GIG_TYPELIB_H
+#define GIG_TYPELIB_H
 
-void gir_init_typelib(void);
+#include <glib.h>
 
+// *INDENT-OFF*
+G_BEGIN_DECLS
+// *INDENT-ON*
+
+void gig_init_typelib(void);
+
+G_END_DECLS
 #endif

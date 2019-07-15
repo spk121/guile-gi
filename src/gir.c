@@ -23,7 +23,7 @@
 #include "gi_gvalue.h"
 #include "gi_signal_closure.h"
 #include "gig_argument.h"
-#include "gir_typelib.h"
+#include "gig_typelib.h"
 #include "gig_type.h"
 #include "gig_callback.h"
 #include "gig_function.h"
@@ -98,7 +98,7 @@ gir_init(void)
 #endif
     g_debug("Begin libguile-gir initialization");
     gig_init_types();
-    gir_init_typelib();
+    gig_init_typelib();
     gig_init_constant();
     gig_init_flag();
 

@@ -34,7 +34,7 @@
 
 (eval-when (expand load eval)
   ;; required for %typelib-module-name, which is used at expand time
-  (load-extension "libguile-gi" "gir_init_typelib_private"))
+  (load-extension "libguile-gi" "gig_init_typelib_private"))
 
 (define (subclass? type-a type-b)
   (memq type-b (class-precedence-list type-a)))

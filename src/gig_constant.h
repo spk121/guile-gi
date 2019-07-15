@@ -24,7 +24,7 @@ G_BEGIN_DECLS
 
 void gig_constant_define(GIConstantInfo *info);
 static inline void
-gir_constant_document(GString **str, const gchar *namespace_, const gchar *parent,
+gig_constant_document(GString **str, const gchar *namespace_, const gchar *parent,
                       GIConstantInfo *info)
 {
 }
