@@ -222,7 +222,7 @@ gir_type_define(GType gtype)
         {
             dsupers = scm_list_1(SCM_PACK_POINTER(sparent));
             new_type = scm_call_4(make_class_proc, dsupers, slots, kwd_name,
-                                  scm_from_utf8_string(type_class_name));
+                                  scm_from_utf8_symbol(type_class_name));
 
             GigBoxedFuncs *funcs = _boxed_funcs_for_type(gtype);
 
@@ -248,7 +248,7 @@ gir_type_define(GType gtype)
             // TODO: add interfaces
             dsupers = scm_list_1(SCM_PACK_POINTER(sparent));
             new_type = scm_call_4(make_class_proc, dsupers, slots, kwd_name,
-                                  scm_from_utf8_string(type_class_name));
+                                  scm_from_utf8_symbol(type_class_name));
             break;
         default:
             g_error("unhandled type %s derived from %s",
