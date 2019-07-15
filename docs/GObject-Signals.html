@@ -60,16 +60,18 @@ procedures that it calls <em>signals</em>.  Note that these signals
 have nothing to do with Unix signals like <code>SIGTERM</code>.
 </p>
 <p>To hook a callback procedure to an object&rsquo;s signal, use the
-<code>signal-connect</code> procedure. Consider the following example.
+<code>connect</code> procedure. Consider the following example.
 </p>
 <div class="example">
 <pre class="example">(define (activate app)
    ...
    )
 
-(signal-connect app         ; A GObject
-                &quot;activate&quot;  ; The name of a signal it might emit
-                activate)   ; A procedure to call when emitted
+(define activate-signal (make &lt;signal&gt; #:name &quot;activate&quot;))
+
+(connect app              ; A GObject
+         activate-signal  ; A &lt;signal&gt; object
+         activate)        ; A procedure to call when emitted
 </pre></div>
 
 <p>In that example, the caller is attaching a procedure named
@@ -83,14 +85,76 @@ is supposed to take a single argument.
 This argument &ndash; <code>app</code> &ndash; is supplied by the caller, as are all
 arguments to signals.
 </p>
-<p>Previous versions added a second (in the general case last) argument analogous
-to the <code>user-data</code> argument used excessively within GObject.
-Such user data parameters have been removed as they are unnecessary when using
-(anonymous) procedures in Scheme.
+<dl>
+<dt id="index-connect">Procedure: <strong>connect</strong> <em>obj (signal &lt;signal&gt;) (handler &lt;procedure&gt;)</em></dt>
+<dt id="index-connect-1">Procedure: <strong>connect</strong> <em>obj (signal &lt;signal&gt;) (detail &lt;symbol&gt;) (handler &lt;procedure&gt;)</em></dt>
+<dt id="index-connect_002dafter">Procedure: <strong>connect-after</strong> <em>obj (signal &lt;signal&gt;) (handler &lt;procedure&gt;)</em></dt>
+<dt id="index-connect_002dafter-1">Procedure: <strong>connect-after</strong> <em>obj (signal &lt;signal&gt;) (detail &lt;symbol&gt;) (handler &lt;procedure&gt;)</em></dt>
+<dd><p>Hooks <var>handler</var> to emissions of <var>signal</var>.
+If <var>detail</var> is supplied, only emissions in which the detail matches it are considered.
 </p>
-<p>Signals can also be connected <em>after</em> the main handler. To do so,
-supply <code>#t</code> as the optional fourth argument to <code>signal-connect</code>.
+<p><code>connect-after</code> works like <code>connect</code>, except that the handler is run <em>after</em>
+the main handling code.
+</p></dd></dl>
+
+<p>Signal objects can also be used to emit signals. Note that you shouldn&rsquo;t normally do this when
+using objects of types, that you didn&rsquo;t define, and even when using objects of types,
+that you did define, you should only emit the signals that you defined for that object
+(and perhaps the &ldquo;notify&rdquo; signal when using explicit notification).
 </p>
+<dl>
+<dt id="index-signal">Special Form: <strong>signal</strong> <em>obj [detail] [args...]</em></dt>
+<dd><p>Emits the <var>signal</var> signal of <var>obj</var> with <var>detail</var> and <var>args</var>.
+Note, that the interpretation of <var>detail</var> depends on whether or not <var>signal</var> is detailed.
+If it is, <var>detail</var> needs to be a symbol, that will be translated to the detail of the emission.
+If it is not, it is considered the first argument and will be consed with <var>args</var> to form
+an argument list.
+</p></dd></dl>
+
+<p>Signals have several slots, that can be bound on creation time
+(and reassigned freely, since they are proper GOOPS objects).
+When connecting signals, only <var>name</var> needs to be supplied.
+When using them as proper signals, at least <var>return-type</var> needs to be given as well.
+</p>
+<dl>
+<dt id="index-name">Slot: <strong>name</strong></dt>
+<dd><p>The name of the signal.
+A string.
+</p></dd></dl>
+<dl>
+<dt id="index-return_002dtype">Slot: <strong>return-type</strong></dt>
+<dd><p>The return type of the signal.
+A <code>&lt;GType&gt;</code> or integer.
+</p></dd></dl>
+<dl>
+<dt id="index-param_002dtypes">Slot: <strong>param-types</strong></dt>
+<dd><p>The parameter types of the signal.
+A list of <code>&lt;GType&gt;</code>s or integers.
+</p></dd></dl>
+<dl>
+<dt id="index-accumulator">Slot: <strong>accumulator</strong></dt>
+<dd><p>A procedure, called with two arguments <var>seed</var> and <var>current</var> and
+produces up to two output values.
+If it produces no output value, <var>seed</var> is left unchanged and signal handling
+continues.
+If it produces one output value, <var>seed</var> is set to that value and signal handling continues.
+If it produces two output values, <var>seed</var> is set to the second output value and signal
+handling stops if the first is <code>#f</code>.
+If at any time <var>seed</var> would be set to an incorrect value or more than two values are returned
+signal handling is aborted.
+</p></dd></dl>
+<dl>
+<dt id="index-flags">Slot: <strong>flags</strong></dt>
+<dd><p>Signal flags, a logical or of  one or more of
+<code>SIGNAL_RUN_FIRST</code>, <code>SIGNAL_RUN_LAST</code>,
+<code>SIGNAL_RUN_CLEANUP</code>, <code>SIGNAL_NO_RECURSE</code>, etc.
+</p></dd></dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="GObject-Properties.html#GObject-Properties" accesskey="n" rel="next">GObject Properties</a>, Previous: <a href="GObject-Methods.html#GObject-Methods" accesskey="p" rel="prev">GObject Methods</a>, Up: <a href="Reference-Guide.html#Reference-Guide" accesskey="u" rel="up">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="_005findex.html#g_t_005findex" title="Index" rel="index">Index</a>]</p>
+</div>
 
 
 

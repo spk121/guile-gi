@@ -68,7 +68,6 @@ Reference Guide
 * GObject Methods::
 * GObject Signals::
 * GObject Properties::
-* with-object syntax::
 * Custom GObjects::
 * More Stuff::
 
@@ -91,8 +90,8 @@ the way to go.
 @chapter Getting Started
 
 @quotation Warning
-All documentation and code examples are of how I hope this will
-ultimately work.  Right now, most of this is not implemented.
+Guile-GI is still in its experimental phase and even so, this documentation
+describes features of vastly different age. Don't be too surprised if something breaks.
 @end quotation
 
 To get things started, we will try to run a very simple GTK+ based GUI
@@ -124,9 +123,6 @@ take the following form.
 
 (typelib-load "Gtk" "3.0")
 @end example
-
-Note that Guile-GI provides export libraries for the most common
-GObject libraries.  It includes @code{(gi gtk-3)}, @code{(gi gio-2)}, and @code{(gi glib-2)}, for example.
 
 Alternatively, you can instruct Guile-GI to create these modules for you, as
 shown in the following.
@@ -162,53 +158,30 @@ A minimal GTK application looks like this
 When it is run, it will create an empty window with a title.  Are you
 impressed?
 
-Let's walk through this example.  First off, you may notice two important
-pieces of syntax: @code{create} and @code{with-object}.
-These three macros allow one to interact with GObject's very odd class system.
+Let's walk through this example.  First off, you may notice two important procedures:
+@code{make} and @code{connect}, as well as a few types, most notably @code{<GtkApplication>}
+and @code{<signal>}.
 
-First is @code{create}, which -- as the name implies -- creates an object.
-The first argument is a type, which can either be a ``proper'' type, such
-as @code{<GtkApplication>} or a number@footnote{It will most likely be the former,
-but the latter is supported, as some types are exported as constant, e.g. @code{G_TYPE_OBJECT}.}.
-This will be the type of the resulting object.
-The rest of the arguments are tuples @code{(key value)}, where key is the
-name of a field and value is a value to store therein. These pairs are passed
-to the object at creation time as strings and GValues respectively.
-Thus it is possible to set CREATE_ONLY properties with it.
+These procedures and types allow you to interact with GObject's very odd class system.
 
-Next is the @code{with-object} syntax. Within its scope function calls will
-be translated to method calls of the given object.
-Hence @code{with-object window (show-all)} translates roughly to
-@code{gtk_widget_show_all(window)}. As can be seen in this example, it matters
-little if a method is defined in the object's class or one of its parent -- it is
-resolved either way.
+First is @code{make}, which wraps and extends the @code{make} procedure found in GOOPS.
+@xref{GOOPS,,,guile, The Guile reference manual} for infos about GOOPS.
+In short the arguments, that would normally be used for slot initialization are instead used
+to initialize properties.
+This is an important distinction, as objects are represented in Scheme as GOOPS objects, whose
+slots @strong{do not} map to properties.
+It also takes care of some types, which do not derive from GObject, such as boxed types.
 
-Previously, we've used @code{send} to invoke functions and @code{connect}
-to hook signals, which shadowed Guile procedures for the use with sockets.
-This was done to conform to the official
-@uref{https://gi.readthedocs.io/en/latest/writingbindings/guidelines.html, GObject Introspection Guidelines},
-which are as follows.
-@quotation
-Try to stay close to the C language semantics, for instance GObject should be mapped to a class
-and @code{gtk_button_set_label} to a method of that class.
-@enumerate
-@item
-...
-@item
-scheme: @code{(send button (set-label "foo"))}
-@end enumerate
-@end quotation
-Shadowing Guile procedures is certainly not ideal.
-A workaround would have been to rename these procedures as user, but this does away
-with the supposed benefits of their names, on top of being a somewhat pointless typing exercise.
-If we already have to break either specification, we want to do it in a way, that makes sense.
-Hence we introduce @code{with-object}, which acts as a safe barrier (both visually and effectively)
-around GObject methods, that would otherwise cause such confusion.
+Next is @code{connect}, which connects Guile procedures as handlers to GObject signals.
+Signals are roughly equal to hooks.
+Note, that @code{(gi)} only defines @code{connect} in terms of signal objects, while signals
+are not yet exported as objects from typelibs. Hence we define our own connect method, which translates
+symbols to signal objects. In future, this will no longer be necessary and
+@code{(connect object signal handler)} should work without quoting the signal.
 
-@xref{with-object syntax} for information on the @code{with-object} syntax,
-@ref{GObject Methods} for the primitives it uses to interface with methods,
-@ref{GObject Signals} for the primitives it uses to interface with signals,
-@ref{GObject Properties} for the primitives it uses to interface with properties.
+@xref{GObject Methods} on how to use methods,
+@ref{GObject Signals} on how to use signals,
+@ref{GObject Properties} on how to use properties.
 
 @menu
 * Installation::
@@ -283,10 +256,7 @@ GtkWindow}
 the C @code{GType}, a unique integer ID that GObject libraries provide
 for each C typedef'd structure, union, or object
 @item
-the Guile-GI @code{<GType>}, a Guile type that holds this unique
-integer ID
-@item
-the Guile class created by Guile-GI for each GType to hold instances
+the Guile class @code{<GType>} created by Guile-GI for each GType to hold instances
 of the associated C structure
 @end enumerate
 
@@ -298,9 +268,8 @@ functions from Guile, instances of @code{GDate *} are held by
 instances of the Guile class @code{<Date>}.
 
 Internally to Guile-GI, all of the Guile classes for GObject structs,
-objects and unions are @emph{foreign object} types that handle
-managing the C pointer.  The C pointer is usually the first slot in
-the foreign object type.
+objects and unions are GOOPS types that handle managing the C pointer.
+The C pointer is ``hidden'' in the @code{ptr} slot of an object.
 
 @node Threads and Concurrency, Debugging and Profiling, GObject Types and Guile Types, Tutorials
 @section Threads and Concurrency
@@ -371,7 +340,6 @@ their @file{.typelib} files.
 * GObject Methods::
 * GObject Signals::
 * GObject Properties::
-* with-object syntax::
 * Custom GObjects::
 * More Stuff::
 @end menu
@@ -436,23 +404,30 @@ more complex.  GObject has three classes of custom types: structs,
 unions, and objects.
 
 GObject @emph{unions} and @emph{structs} are handled in Guile-GI by
-creating a foreign object type that wraps a C pointer.  Typically,
+creating a GOOPS type that wraps a C pointer.  Typically,
 instances can be created and by GObject functions and used as
 arguments, but, their contents aren't otherwise modifyiable.  GObject
-unions and structs may have GObject Methods, but, do not have signals
+unions and structs may have GObject Methods, but do not have signals
 or properties. @xref{GObject Methods} for more information.
 
-GObject @emph{objects} are also stored by creating a foreign object
+GObject @emph{objects} are also stored by creating a GOOPS
 type that wraps a C pointer.  Unlike GObject structs and unions, they
 have more interactivity available at the Guile layer.  They have
 properties that can be queried and Guile procedures can be hooked into
 the GObject callback layer, which GObject calls ``signals''.
 
 For each custom GObject type, Guile-GI creates a variable that holds
-the foreign object type.  That variable has the form @code{<TYPE>},
-where TYPE is the GObject type name.  It also creates a predicate to
-test if an object has that type.  The predicate has the form
-@code{TYPE?}
+the GOOPS type.  That variable has the form @code{<TYPE>},
+where TYPE is the GObject type name. To check whether an object
+has a given type, use the @code{is-a?} procedure found in GOOPS, which
+Guile-GI re-exports.
+
+@example
+(use-modules (gi))
+(use-typelibs ("GObject" "2.0") ("Gio" "2.0"))
+(is-a? (make <GApplication>) <GObject>)
+;; => #t
+@end example
 
 Each GObject struct, union, or object has a place in the GObject
 single-inheritance class structure.  A @code{RadioButton} is a type of
@@ -464,9 +439,9 @@ procedures. @xref{GType}.
 @node GType, GObject Methods, GObject Types, Reference Guide
 @section GType
 
-A @code{<GType>} is a Guile type that wraps GObject @code{GType}.
-Basically it is an integer ID that GObject uses to identify a type.
-It is a type that holds a type that IDs a type.
+A @code{<GType>} is a Guile type, which corresponds to a @code{GType}.
+A @code{GType} is basically an integer ID (an @code{<integer>} in Scheme),
+that GObject uses to identify a type.
 
 GObject has its own custom class structure.  The following procedures
 provide information about how a @code{<GType>} forms part of that
@@ -474,24 +449,16 @@ class structure.
 
 @deffn Procedure get-gtype object
 Given @var{object}, a GObject struct, union, or object, this procedure
-returns its GObject type as a @code{<GType>}.
-
-If the input parameter is an integer, this procedure will return a
-@code{<GType>} if that integer is a GType ID, or @code{#f} if it is
-not.
-
-If the input parameter is a string, the procedure will return a
-@code{<GType>} if that string happens to be the name of a type, or
-@code{#f} if it is not.
+returns its GObject type as an @code{<integer>}, otherwise it returns @code{#f}.
 @end deffn
 
 @deffn Procedure gtype-get-scheme-type gtype
-Given @var{gtype} of type @code{<GType>}, this procedure will return
+Given @var{gtype} of type @code{<integer>}, this procedure will return
 the Scheme type that holds instances of that type.
 @end deffn
 
 @deffn Procedure gtype-get-name gtype
-Given @var{gtype} of type @code{<GType>}, this procedure returns
+Given @var{gtype} of type @code{<integer>}, this procedure returns
 a string with GObject's internal name for this type.  This may differ
 slightly from the name that Guile-GI gives to the type.
 @end deffn
@@ -499,7 +466,7 @@ slightly from the name that Guile-GI gives to the type.
 @deffn Procedure gtype-get-parent gtype
 @deffnx Procedure gtype-get-children gtype
 These procedures return the parent type and the child types of a
-specified @code{<GType>}.
+specified @code{<integer>}.
 @end deffn
 
 @deffn Procedure gtype-is-a? object type
@@ -511,24 +478,18 @@ Returns @code{#t} of @var{object} is an instance of a @var{type}.
 @node GObject Methods, GObject Signals, GType, Reference Guide
 @section GObject Methods
 
-The GObject system has its own functionality for methods.  It can
-have methods for GObject-based structs, unions, and objects.  To call
-a GObject method, use the @code{call-method} procedure.
+Guile-GI exports object methods as GOOPS methods in the formats
+@code{type:method} and @code{method}, where @var{type} is the
+type of an object sans namespace translated into @code{kebab-case} and
+@var{method} is the name of the method translated into
+@code{kebab-case}. For instance @code{gtk_widget_show}
+is bound to both @code{widget:show} and @code{show}.
 
-@deffn Procedure call-method object method-name arg@dots{}
-Given a GObject @var{object} and a string @var{method-name}, this
-procedure searches for a method of the given name associated with this
-object's type, or, failing that, with any of this object's parents'
-types.  If an associated method is found, it is called with the given
-list of arguments.
-
-If no associated method is found, or if the list of arguments doesn't
-match the expected argument types or count, an error is thrown.
-@end deffn
-
-If you are calling many methods of a single object or mixing calls
-with other operations on said object, you may wish to use @code{with-object}
-instead. @xref{with-object syntax}.
+Use whichever bindings you prefer or alternatively rename them using the
+@code{#:rename} argument to @code{use-modules} or
+@code{use-typelibs} respectively. Note that Guile currently warns if a binding
+is imported from multiple libraries (e.g. both GLib and Gtk), but this should
+not concern you in most cases, as both internally specialize the same generic method.
 
 @c -----------------------------------------------------------------
 @node GObject Signals, GObject Properties, GObject Methods, Reference Guide
@@ -539,16 +500,18 @@ procedures that it calls @emph{signals}.  Note that these signals
 have nothing to do with Unix signals like @code{SIGTERM}.
 
 To hook a callback procedure to an object's signal, use the
-@code{signal-connect} procedure. Consider the following example.
+@code{connect} procedure. Consider the following example.
 
 @example
 (define (activate app)
    ...
    )
 
-(signal-connect app         ; A GObject
-                "activate"  ; The name of a signal it might emit
-                activate)   ; A procedure to call when emitted
+(define activate-signal (make <signal> #:name "activate"))
+
+(connect app              ; A GObject
+         activate-signal  ; A <signal> object
+         activate)        ; A procedure to call when emitted
 @end example
 
 In that example, the caller is attaching a procedure named
@@ -562,16 +525,67 @@ is supposed to take a single argument.
 This argument -- @code{app} -- is supplied by the caller, as are all
 arguments to signals.
 
-Previous versions added a second (in the general case last) argument analogous
-to the @code{user-data} argument used excessively within GObject.
-Such user data parameters have been removed as they are unnecessary when using
-(anonymous) procedures in Scheme.
+@deffn Procedure connect obj (signal <signal>) (handler <procedure>)
+@deffnx Procedure connect obj (signal <signal>) (detail <symbol>) (handler <procedure>)
+@deffnx Procedure connect-after obj (signal <signal>) (handler <procedure>)
+@deffnx Procedure connect-after obj (signal <signal>) (detail <symbol>) (handler <procedure>)
+Hooks @var{handler} to emissions of @var{signal}.
+If @var{detail} is supplied, only emissions in which the detail matches it are considered.
 
-Signals can also be connected @emph{after} the main handler. To do so,
-supply @code{#t} as the optional fourth argument to @code{signal-connect}.
+@code{connect-after} works like @code{connect}, except that the handler is run @emph{after}
+the main handling code.
+@end deffn
+
+Signal objects can also be used to emit signals. Note that you shouldn't normally do this when
+using objects of types, that you didn't define, and even when using objects of types,
+that you did define, you should only emit the signals that you defined for that object
+(and perhaps the ``notify'' signal when using explicit notification).
+
+@defspec signal obj [detail] [args...]
+Emits the @var{signal} signal of @var{obj} with @var{detail} and @var{args}.
+Note, that the interpretation of @var{detail} depends on whether or not @var{signal} is detailed.
+If it is, @var{detail} needs to be a symbol, that will be translated to the detail of the emission.
+If it is not, it is considered the first argument and will be consed with @var{args} to form
+an argument list.
+@end defspec
+
+Signals have several slots, that can be bound on creation time
+(and reassigned freely, since they are proper GOOPS objects).
+When connecting signals, only @var{name} needs to be supplied.
+When using them as proper signals, at least @var{return-type} needs to be given as well.
+
+@defvr Slot name
+The name of the signal.
+A string.
+@end defvr
+@defvr Slot return-type
+The return type of the signal.
+A @code{<GType>} or integer.
+@end defvr
+@defvr Slot param-types
+The parameter types of the signal.
+A list of @code{<GType>}s or integers.
+@end defvr
+@defvr Slot accumulator
+A procedure, called with two arguments @var{seed} and @var{current} and
+produces up to two output values.
+If it produces no output value, @var{seed} is left unchanged and signal handling
+continues.
+If it produces one output value, @var{seed} is set to that value and signal handling continues.
+If it produces two output values, @var{seed} is set to the second output value and signal
+handling stops if the first is @code{#f}.
+If at any time @var{seed} would be set to an incorrect value or more than two values are returned
+signal handling is aborted.
+@end defvr
+@defvr Slot flags
+Signal flags, a logical or of  one or more of
+@code{SIGNAL_RUN_FIRST}, @code{SIGNAL_RUN_LAST},
+@code{SIGNAL_RUN_CLEANUP}, @code{SIGNAL_NO_RECURSE}, etc.
+@c TODO: refer to the GObject manual
+@end defvr
 
 @c -----------------------------------------------------------------
-@node GObject Properties, with-object syntax, GObject Signals, Reference Guide
+@node GObject Properties, Custom GObjects, GObject Signals, Reference Guide
 @section GObject Properties
 
 GObject objects may have one or more properties, which are variables
@@ -594,58 +608,26 @@ It will throw an error if the property does not exist, or if the
 setting value has the wrong type.
 @end deffn
 
-@node with-object syntax, Custom GObjects, GObject Properties, Reference Guide
-@section with-object syntax
-When working a lot with objects, it may be handy to save some typing, both on the names of
-the methods and the arguments to it, specifically using identifiers instead of strings since
-they more closely reflect the ``identifying'' aspects of these strings.
-
-This is what the @code{with-object} syntax is meant to address.
-@deffn Syntax with-object self block @dots{}
-Temporarily binds @code{self} to a symbol if it is not already bound and performs
-the transformations listed below.
-@deffn {with-object block} property
-@deffnx {with-object block} set! property value
-@quotation Note
-The former is written as @code{property} instead of @code{(property)}.
-@end quotation
-Expands roughly to @code{(gobject-get-property self "property")}
-and @code{(gobject-set-property! self "property" value)} respectively.
-@end deffn
-@deffn {with-object block} connect! signal handler
-@deffnx {with-object block} connect-after! signal handler
-Expands roughly to @code{(signal-connect self "signal" handler after)},
-with @code{after} being @code{#t} for @code{connect-after!} and
-@code{#f} for @code{connect!}.
-@end deffn
-@deffn {with-object block} remove! handler
-@deffnx {with-object block} block! handler
-@deffnx {with-object block} unblock! handler
-Removes, blocks or unblocks all occurences of handler (a function) connected by
-@code{self}.
-@end deffn
-@deffn {with-object block} method arg @dots{}
-Expands roughly to @code{(call-method self "method" ...)}.
-@end deffn
-These expansions are not recursive, e.g. a handler that makes references to
-@code{self} must use @code{with-object} again.
-Any element, that appears once as an identifier and then as a string literal above
-is taken in code as an identifier and transformed to a string literal.
-@end deffn
+Alternatively, you can also use parameter types,
+(i.e. ``objects'', that derive from G_TYPE_PARAM alias @code{<GParam>})
+as accessors. Assuming, that e.g. @code{prop} is bound to such an object,
+@code{(prop obj)} will fetch the corresponding property, whereas
+@code{(set! (prop obj) val)} will set it.
 
 @c ----------------------------------------------------------------
-@node Custom GObjects, More Stuff, with-object syntax, Reference Guide
+@node Custom GObjects, More Stuff, GObject Properties, Reference Guide
 @section Defining new GObject classes
 
 Usually any GObjects you use will be created by procedures such as
-@code{Window-new}, and those GObject types will have been predefined
+@code{window:new}, and those GObject types will have been predefined
 in the typelib. But, it is possible to make custom GObject object
 classes using the @code{register-type} procedure.
 
-Any GObject class will not have the same flexibility of a Guile
-structure or a Goops class, but, if they descend from the GObject base
-class, they can be hooked into the GObject `signals' callback
-methodology.
+Bear in mind, that while Guile-GI internally uses GOOPS, GObjects implemented in it
+are not quite as flexible. For instance, you can not meaningfully redefine a
+GObject-based type, which you could if you just used GOOPS types.
+On the other hand, you can make use of the features of the GObject infrastructure,
+such as signals.
 
 Defining a new GObject class is rather complicated.
 
@@ -653,73 +635,21 @@ Defining a new GObject class is rather complicated.
 This procedure creates and returns a new @code{<GType>} of a GObject
 object.
 
-@var{type-name} is the string name of the new type.
+@var{type-name} is the string name of the new type. Note, that it will be
+turned into a symbol internally.
 
 @var{parent-type} is the @code{<GType>} of the parent class to this
-class.  The parent class needs to be @code{<Object>} or a GObject
+class.  The parent class needs to be @code{<GObject>} or a GObject
 class that descends from it.
 
 @var{list-of-properties} is a list of parameter specifications.
-Each parameter specification is itself a list of several elements.
-The first four elements are
-@enumerate
-@item
-Property name, a string
-@item
-Property type, a @code{<GType>}
-@item
-Blurb, a short string usually the same as the property name
-@item
-A string description of the property
-@end enumerate
+These parameter specifications can be created using the @code{param-spec-TYPE}
+methods found in the @code{GObject} typelib.
 
-The remaining elements of the parameter specification depends on the
-property type.
-
-Numerical types take four further parameters: min, max, default
-value, and param flags.
-
-Boolean types, enumerated types, flags, and strings each take two
-additonal parameters: default value and param flags.
-
-The param flags are a logical or of zero or more of @code{PARAM_READABLE},
-@code{PARAM_WRITABLE}.
-
-@var{list-of-signals} is a list of signal specifications.  Each signal
-specification is itself a list of four elements.
-@enumerate
-@item
-Signal name, a string
-@item
-Return type, a @code{<GType>}
-@item
-Signals parameters, a list of @code{<GTypes>} for the parameters for the
-callback
-@item
-Flags
-@end enumerate
-
-The flags value will be a logical or of one or more of
-@code{G_SIGNAL_RUN_FIRST}, @code{G_SIGNAL_RUN_LAST},
-@code{G_SIGNAL_RUN_CLEANUP}, @code{G_SIGNAL_NO_RECURSE}, and maybe
-others.
-
-And finally the @var{disposer} procedure will be either @code{#f} or
-a procedure that that will be called when instances of this object
-are being garbage collected.  The procedure should take a single
-parameter which will be the object being garbage collected.
+@var{list-of-signals} is a list of signal specifications. @xref{GObject Signals}.
 @end deffn
 
-To then make instances of your custom GObject type, use @code{make-gobject}.
-
-@deffn Procedure make-gobject type properties-alist
-Given @var{type} -- a @code{<GType>} of a GObject object class -- and
-an association list of property names and their values, this returns
-an instance of that type.
-
-It will throw an error if the type is not a GObject object type, or
-if any of the specified properties cannot be set.
-@end deffn
+To then make instances of your custom GObject type, use @code{make}.
 
 @c ----------------------------------------------------------------
 @node More Stuff,  , Custom GObjects, Reference Guide

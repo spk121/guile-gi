@@ -56,8 +56,8 @@ Next: <a href="Tutorials.html#Tutorials" accesskey="n" rel="next">Tutorials</a>,
 <span id="Getting-Started-1"></span><h2 class="chapter">1 Getting Started</h2>
 
 <blockquote>
-<p><b>Warning:</b> All documentation and code examples are of how I hope this will
-ultimately work.  Right now, most of this is not implemented.
+<p><b>Warning:</b> Guile-GI is still in its experimental phase and even so, this documentation
+describes features of vastly different age. Don&rsquo;t be too surprised if something breaks.
 </p></blockquote>
 
 <p>To get things started, we will try to run a very simple GTK+ based GUI
@@ -88,9 +88,6 @@ take the following form.
 (typelib-load &quot;Gtk&quot; &quot;3.0&quot;)
 </pre></div>
 
-<p>Note that Guile-GI provides export libraries for the most common
-GObject libraries.  It includes <code>(gi gtk-3)</code>, <code>(gi gio-2)</code>, and <code>(gi glib-2)</code>, for example.
-</p>
 <p>Alternatively, you can instruct Guile-GI to create these modules for you, as
 shown in the following.
 </p>
@@ -119,34 +116,37 @@ guile -L . -c '(use-modules (gi)) (display (typelib-document &quot;Gio&quot; &qu
 <p>A minimal GTK application looks like this
 </p>
 <div class="example">
-<pre class="example">(use-modules (gi)
-             (gi gio-2)
-             (gi gtk-3)
-             (gi glib-2))
+<pre class="example">(use-modules (gi) (oop goops))
+
+(use-typelibs (&quot;GLib&quot; &quot;2.0&quot;)
+              (&quot;GObject&quot; &quot;2.0&quot;)
+              (&quot;Gio&quot; &quot;2.0&quot;)
+              (&quot;Gtk&quot; &quot;3.0&quot;))
 
 (define (print-hello widget)
   (display &quot;Hello World\n&quot;))
 
-(define (activate-callback app)
-  (let* ((window (create &lt;GtkApplicationWindow&gt;
-                   (application app)
-                   (default-height 200)
-                   (default-width 200)
-                   (title &quot;Window&quot;)))
-         (button-box (create &lt;GtkButtonBox&gt; (parent window)))
-         (button (create &lt;GtkButton&gt;
-                   (parent button-box)
-                   (label &quot;Hello world&quot;))))
-    (with-object button
-      (connect! clicked print-hello)
-      (connect! clicked (lambda _ (with-object window (destroy)))))
+(define-method (connect obj (signal &lt;symbol&gt;) (handler &lt;procedure&gt;))
+  (connect obj (make &lt;signal&gt; #:name (symbol-&gt;string signal)) handler))
 
-    (with-object window (show-all))))
+(define (activate-callback app)
+  (let* ((window (make &lt;GtkApplicationWindow&gt;
+                   #:application app
+                   #:default-height 200
+                   #:default-width 200
+                   #:title &quot;Window&quot;))
+         (button-box (make &lt;GtkButtonBox&gt; #:parent window))
+         (button (make &lt;GtkButton&gt;
+                   #:parent button-box
+                   #:label &quot;Hello world&quot;)))
+    (connect button 'clicked print-hello)
+    (connect button 'clicked (lambda _ (destroy window)))
+    (show-all window)))
 
 (define (main)
-  (with-object (create &lt;GtkApplication&gt; (application-id &quot;org.gtk.example&quot;))
-    (connect! activate activate-callback)
-    (run (length (command-line)) (command-line))))
+  (let ((app (make &lt;GtkApplication&gt; #:application-id &quot;org.gtk.example&quot;)))
+    (connect app 'activate activate-callback)
+    (run app (command-line))))
 
 (main)
 </pre></div>
@@ -154,50 +154,30 @@ guile -L . -c '(use-modules (gi)) (display (typelib-document &quot;Gio&quot; &qu
 <p>When it is run, it will create an empty window with a title.  Are you
 impressed?
 </p>
-<p>Let&rsquo;s walk through this example.  First off, you may notice two important
-pieces of syntax: <code>create</code> and <code>with-object</code>.
-These three macros allow one to interact with GObject&rsquo;s very odd class system.
+<p>Let&rsquo;s walk through this example.  First off, you may notice two important procedures:
+<code>make</code> and <code>connect</code>, as well as a few types, most notably <code>&lt;GtkApplication&gt;</code>
+and <code>&lt;signal&gt;</code>.
 </p>
-<p>First is <code>create</code>, which &ndash; as the name implies &ndash; creates an object.
-The first argument is a type, which can either be a &ldquo;proper&rdquo; type, such
-as <code>&lt;GtkApplication&gt;</code> or a number<a id="DOCF1" href="#FOOT1"><sup>1</sup></a>.
-This will be the type of the resulting object.
-The rest of the arguments are tuples <code>(key value)</code>, where key is the
-name of a field and value is a value to store therein. These pairs are passed
-to the object at creation time as strings and GValues respectively.
-Thus it is possible to set CREATE_ONLY properties with it.
+<p>These procedures and types allow you to interact with GObject&rsquo;s very odd class system.
 </p>
-<p>Next is the <code>with-object</code> syntax. Within its scope function calls will
-be translated to method calls of the given object.
-Hence <code>with-object window (show-all)</code> translates roughly to
-<code>gtk_widget_show_all(window)</code>. As can be seen in this example, it matters
-little if a method is defined in the object&rsquo;s class or one of its parent &ndash; it is
-resolved either way.
+<p>First is <code>make</code>, which wraps and extends the <code>make</code> procedure found in GOOPS.
+See <a href="https://www.gnu.org/software/guile/manual/html_node/GOOPS.html#GOOPS">GOOPS</a> in <cite>The Guile reference manual</cite> for infos about GOOPS.
+In short the arguments, that would normally be used for slot initialization are instead used
+to initialize properties.
+This is an important distinction, as objects are represented in Scheme as GOOPS objects, whose
+slots <strong>do not</strong> map to properties.
+It also takes care of some types, which do not derive from GObject, such as boxed types.
 </p>
-<p>Previously, we&rsquo;ve used <code>send</code> to invoke functions and <code>connect</code>
-to hook signals, which shadowed Guile procedures for the use with sockets.
-This was done to conform to the official
-<a href="https://gi.readthedocs.io/en/latest/writingbindings/guidelines.html">GObject Introspection Guidelines</a>,
-which are as follows.
-</p><blockquote>
-<p>Try to stay close to the C language semantics, for instance GObject should be mapped to a class
-and <code>gtk_button_set_label</code> to a method of that class.
-</p><ol>
-<li> ...
-</li><li> scheme: <code>(send button (set-label &quot;foo&quot;))</code>
-</li></ol>
-</blockquote>
-<p>Shadowing Guile procedures is certainly not ideal.
-A workaround would have been to rename these procedures as user, but this does away
-with the supposed benefits of their names, on top of being a somewhat pointless typing exercise.
-If we already have to break either specification, we want to do it in a way, that makes sense.
-Hence we introduce <code>with-object</code>, which acts as a safe barrier (both visually and effectively)
-around GObject methods, that would otherwise cause such confusion.
+<p>Next is <code>connect</code>, which connects Guile procedures as handlers to GObject signals.
+Signals are roughly equal to hooks.
+Note, that <code>(gi)</code> only defines <code>connect</code> in terms of signal objects, while signals
+are not yet exported as objects from typelibs. Hence we define our own connect method, which translates
+symbols to signal objects. In future, this will no longer be necessary and
+<code>(connect object signal handler)</code> should work without quoting the signal.
 </p>
-<p>See <a href="with_002dobject-syntax.html#with_002dobject-syntax">with-object syntax</a> for information on the <code>with-object</code> syntax,
-<a href="GObject-Methods.html#GObject-Methods">GObject Methods</a> for the primitives it uses to interface with methods,
-<a href="GObject-Signals.html#GObject-Signals">GObject Signals</a> for the primitives it uses to interface with signals,
-<a href="GObject-Properties.html#GObject-Properties">GObject Properties</a> for the primitives it uses to interface with properties.
+<p>See <a href="GObject-Methods.html#GObject-Methods">GObject Methods</a> on how to use methods,
+<a href="GObject-Signals.html#GObject-Signals">GObject Signals</a> on how to use signals,
+<a href="GObject-Properties.html#GObject-Properties">GObject Properties</a> on how to use properties.
 </p>
 <table class="menu" border="0" cellspacing="0">
 <tr><td align="left" valign="top">&bull; <a href="Installation.html#Installation" accesskey="1">Installation</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
@@ -206,14 +186,6 @@ around GObject methods, that would otherwise cause such confusion.
 </td></tr>
 </table>
 
-<div class="footnote">
-<hr>
-<h4 class="footnotes-heading">Footnotes</h4>
-
-<h3><a id="FOOT1" href="#DOCF1">(1)</a></h3>
-<p>It will most likely be the former,
-but the latter is supported, as some types are exported as constant, e.g. <code>G_TYPE_OBJECT</code>.</p>
-</div>
 <hr>
 <div class="header">
 <p>

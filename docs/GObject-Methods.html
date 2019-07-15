@@ -55,25 +55,18 @@ Next: <a href="GObject-Signals.html#GObject-Signals" accesskey="n" rel="next">GO
 <hr>
 <span id="GObject-Methods-1"></span><h3 class="section">3.4 GObject Methods</h3>
 
-<p>The GObject system has its own functionality for methods.  It can
-have methods for GObject-based structs, unions, and objects.  To call
-a GObject method, use the <code>call-method</code> procedure.
+<p>Guile-GI exports object methods as GOOPS methods in the formats
+<code>type:method</code> and <code>method</code>, where <var>type</var> is the
+type of an object sans namespace translated into <code>kebab-case</code> and
+<var>method</var> is the name of the method translated into
+<code>kebab-case</code>. For instance <code>gtk_widget_show</code>
+is bound to both <code>widget:show</code> and <code>show</code>.
 </p>
-<dl>
-<dt id="index-call_002dmethod">Procedure: <strong>call-method</strong> <em>object method-name arg&hellip;</em></dt>
-<dd><p>Given a GObject <var>object</var> and a string <var>method-name</var>, this
-procedure searches for a method of the given name associated with this
-object&rsquo;s type, or, failing that, with any of this object&rsquo;s parents&rsquo;
-types.  If an associated method is found, it is called with the given
-list of arguments.
-</p>
-<p>If no associated method is found, or if the list of arguments doesn&rsquo;t
-match the expected argument types or count, an error is thrown.
-</p></dd></dl>
-
-<p>If you are calling many methods of a single object or mixing calls
-with other operations on said object, you may wish to use <code>with-object</code>
-instead. See <a href="with_002dobject-syntax.html#with_002dobject-syntax">with-object syntax</a>.
+<p>Use whichever bindings you prefer or alternatively rename them using the
+<code>#:rename</code> argument to <code>use-modules</code> or
+<code>use-typelibs</code> respectively. Note that Guile currently warns if a binding
+is imported from multiple libraries (e.g. both GLib and Gtk), but this should
+not concern you in most cases, as both internally specialize the same generic method.
 </p>
 
 
