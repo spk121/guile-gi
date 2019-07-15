@@ -102,7 +102,7 @@ callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
     else {
         GIArgument giarg;
         gsize size;
-        unsigned must_free;
+        guint must_free;
         gig_argument_scm_to_c("callback", 0, amap->return_val, s_ret, &must_free, &giarg, &size);
         // I'm pretty sure I don't need a big type case/switch block here.
         // I'll try brutally coercing the data, and see what happens.

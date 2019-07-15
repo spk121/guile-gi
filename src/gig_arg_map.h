@@ -112,7 +112,7 @@ struct _GigArgMapEntry
     gint cinvoke_input_index;
     // This arg's position in the output args of g_function_info_invoke
     gint cinvoke_output_index;
-    // This arg's position int the Scheme GSubr
+    // This arg's position in the Scheme GSubr
     gint gsubr_input_index;
     // This arg's position in the return values list
     gint gsubr_output_index;

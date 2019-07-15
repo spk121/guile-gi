@@ -16,20 +16,20 @@
 #include <stdio.h>
 #include "gig_arg_map.h"
 
-const char dir_strings[GIG_ARG_DIRECTION_COUNT][9] = {
+const gchar dir_strings[GIG_ARG_DIRECTION_COUNT][9] = {
     [GIG_ARG_DIRECTION_INPUT] = "INPUT",
     [GIG_ARG_DIRECTION_INOUT] = "INOUT",
     [GIG_ARG_DIRECTION_PREALLOCATED_OUTPUT] = "PREALLOC",
     [GIG_ARG_DIRECTION_OUTPUT] = "OUTPUT"
 };
 
-const char tuple_strings[GIG_ARG_TUPLE_COUNT][11] = {
+const gchar tuple_strings[GIG_ARG_TUPLE_COUNT][11] = {
     [GIG_ARG_TUPLE_SINGLETON] = "SINGLETON",
     [GIG_ARG_TUPLE_ARRAY] = "ARRAY",
     [GIG_ARG_TUPLE_ARRAY_SIZE] = "ARRAY_SIZE"
 };
 
-const char presence_strings[GIG_ARG_PRESENCE_COUNT][9] = {
+const gchar presence_strings[GIG_ARG_PRESENCE_COUNT][9] = {
     [GIG_ARG_PRESENCE_REQUIRED] = "REQUIRED",
     [GIG_ARG_PRESENCE_OPTIONAL] = "OPTIONAL",
     [GIG_ARG_PRESENCE_IMPLICIT] = "IMPLICIT"
@@ -267,7 +267,7 @@ gig_arg_map_new(GIFunctionInfo *function_info)
         if (type_tag == GI_TYPE_TAG_ARRAY) {
             fill_array_info(entry);
 
-            int array_length_arg_info_index = g_type_info_get_array_length(type_info);
+            gint array_length_arg_info_index = g_type_info_get_array_length(type_info);
 
             // Sometime a single SCM array or list will map to two
             // arguments: a C array pointer and a C size parameter.
@@ -538,7 +538,7 @@ gig_arg_map_has_gsubr_output_index(const GigArgMap *amap, gint cinvoke_output_in
     gint i = 0;
     while (i < amap->len) {
         if (amap->pdata[i]->cinvoke_output_index == cinvoke_output_index) {
-            int j = amap->pdata[i]->gsubr_output_index;
+            gint j = amap->pdata[i]->gsubr_output_index;
             if (j >= 0) {
                 *gsubr_output_index = j;
                 return TRUE;

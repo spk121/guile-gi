@@ -1,5 +1,4 @@
-/* -*- Mode: C; c-basic-offset: 4 -*- */
-#include "gi_gvalue.h"
+#include "gig_value.h"
 #include "gig_type.h"
 #include "gig_object_private.h"
 #include "gig_util.h"
@@ -34,21 +33,21 @@ scm_signal_accu(GSignalInvocationHint * ihint,
                 GValue *seed, const GValue *element, gpointer procedure)
 {
     SCM _seed, _element, result;
-    _seed = gi_gvalue_as_scm(seed, FALSE);
-    _element = gi_gvalue_as_scm(element, FALSE);
+    _seed = gig_value_as_scm(seed, FALSE);
+    _element = gig_value_as_scm(element, FALSE);
 
     result = scm_call_2(SCM_PACK_POINTER(procedure), _seed, _element);
     switch (scm_c_nvalues(result)) {
     case 0:
         return TRUE;
     case 1:
-        g_return_val_if_fail(!gi_gvalue_from_scm(seed, result), FALSE);
+        g_return_val_if_fail(!gig_value_from_scm(seed, result), FALSE);
         return TRUE;
     case 2:
     {
         gboolean ret = scm_is_true(result);
         SCM next_seed = scm_c_value_ref(result, 2);
-        g_return_val_if_fail(!gi_gvalue_from_scm(seed, next_seed), FALSE);
+        g_return_val_if_fail(!gig_value_from_scm(seed, next_seed), FALSE);
         return ret;
     }
     default:
@@ -61,7 +60,7 @@ gig_signalspec_from_obj(SCM obj)
 {
     init_gi_oop();
 
-    char *name;
+    gchar *name;
     GType return_type;
     guint n_params;
     GType *params;

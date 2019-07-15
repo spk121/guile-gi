@@ -2,8 +2,8 @@
 #include "gig_object_private.h"
 #include "gig_type.h"
 #include "gig_util.h"
-#include "gi_gvalue.h"
-#include "gi_signal_closure.h"
+#include "gig_signal_closure.h"
+#include "gig_value.h"
 
 GQuark gig_user_object_properties;
 
@@ -41,7 +41,7 @@ gig_i_scm_make_gobject(SCM s_gtype, SCM s_prop_keylist)
     GObject *obj;
     GObjectClass *class;
     gsize n_prop;
-    const char **keys;
+    const gchar **keys;
     GValue *values;
 
     type = scm_to_gtype(s_gtype);
@@ -175,7 +175,7 @@ static SCM
 gig_i_scm_get_pspec(SCM self, SCM prop)
 {
     GObject *obj;
-    char *name;
+    gchar *name;
     GParamSpec *pspec;
 
     SCM_ASSERT(SCM_IS_A_P(self, gig_object_type), self, SCM_ARG1, "%get-pspec");
@@ -219,7 +219,7 @@ gig_i_scm_get_property(SCM self, SCM property)
 
     g_value_init(&value, G_PARAM_SPEC_VALUE_TYPE(pspec));
     g_object_get_property(obj, pspec->name, &value);
-    ret = gi_param_gvalue_as_scm(&value, TRUE, pspec);
+    ret = gig_value_param_as_scm(&value, TRUE, pspec);
     g_value_unset(&value);
 
     return ret;
@@ -248,7 +248,7 @@ gig_i_scm_set_property_x(SCM self, SCM property, SCM svalue)
     }
 
     g_value_init(&value, G_PARAM_SPEC_VALUE_TYPE(pspec));
-    gi_gvalue_from_scm_with_error("%set-property!", &value, svalue, SCM_ARG3);
+    gig_value_from_scm_with_error("%set-property!", &value, svalue, SCM_ARG3);
     g_object_set_property(obj, pspec->name, &value);
 
     return SCM_UNSPECIFIED;
@@ -315,7 +315,7 @@ gig_user_class_init(GObjectClass *class, gpointer class_info)
 {
     GType type = G_TYPE_FROM_CLASS(class);
     GigUserObjectInitInfo *init_info = class_info;
-    size_t n_properties = init_info->properties->len;
+    gsize n_properties = init_info->properties->len;
     GParamSpec **properties = (GParamSpec **)init_info->properties->pdata;
 
     class->set_property = gig_user_object_set_property;
@@ -328,7 +328,7 @@ gig_user_class_init(GObjectClass *class, gpointer class_info)
      * located. */
     g_ptr_array_foreach(init_info->signals, (GFunc) make_new_signal, GSIZE_TO_POINTER(type));
 
-    for (size_t i = 1; i <= n_properties; i++)
+    for (gsize i = 1; i <= n_properties; i++)
         g_object_class_install_property(class, i, properties[i - 1]);
 }
 
@@ -356,7 +356,7 @@ gig_user_object_init(GTypeInstance *instance, gpointer class_ptr)
 }
 
 static GType
-gig_user_object_define(const char *type_name,
+gig_user_object_define(const gchar *type_name,
                        GType parent_type, GPtrArray *properties, GPtrArray *signals)
 {
     GTypeInfo type_info;
@@ -388,10 +388,10 @@ gig_user_object_define(const char *type_name,
 static SCM
 gig_i_scm_define_type(SCM s_type_name, SCM s_parent_type, SCM s_properties, SCM s_signals)
 {
-    char *type_name;
+    gchar *type_name;
     GType parent_type;
     GType new_type;
-    size_t n_properties, n_signals;
+    gsize n_properties, n_signals;
     GPtrArray *properties;
     GPtrArray *signals;
 
@@ -423,7 +423,7 @@ gig_i_scm_define_type(SCM s_type_name, SCM s_parent_type, SCM s_properties, SCM 
     if (scm_is_list(s_properties)) {
         n_properties = scm_to_size_t(scm_length(s_properties));
         SCM iter = s_properties;
-        for (size_t i = 0; i < n_properties; i++) {
+        for (gsize i = 0; i < n_properties; i++) {
             GParamSpec *pspec = gig_paramspec_peek(scm_car(iter));
             g_ptr_array_add(properties, pspec);
             iter = scm_cdr(iter);
@@ -432,7 +432,7 @@ gig_i_scm_define_type(SCM s_type_name, SCM s_parent_type, SCM s_properties, SCM 
 
     if (scm_is_list(s_signals)) {
         n_signals = scm_to_size_t(scm_length(s_signals));
-        for (size_t i = 0; i < n_signals; i++) {
+        for (gsize i = 0; i < n_signals; i++) {
             SignalSpec *sspec;
             sspec = gig_signalspec_from_obj(scm_list_ref(s_signals, scm_from_size_t(i)));
             g_ptr_array_add(signals, sspec);
@@ -451,7 +451,7 @@ signal_lookup(char *proc, GObject *self,
               guint * c_signal, GSignalQuery * query_info, GQuark * c_detail)
 {
     SCM s_name = signal_ref(signal, SIGNAL_SLOT_NAME);
-    char *name = scm_to_utf8_string(s_name);
+    gchar *name = scm_to_utf8_string(s_name);
 
     *c_signal = g_signal_lookup(name, G_OBJECT_TYPE(self));
     g_free(name);
@@ -464,7 +464,7 @@ signal_lookup(char *proc, GObject *self,
 
     if ((query_info->signal_flags & G_SIGNAL_DETAILED) && scm_is_symbol(detail)) {
         SCM detail_str = scm_symbol_to_string(detail);
-        char *_detail = scm_to_utf8_string(detail_str);
+        gchar *_detail = scm_to_utf8_string(detail_str);
         *c_detail = g_quark_from_string(_detail);
         g_free(_detail);
     }
@@ -493,7 +493,7 @@ gig_i_scm_connect(SCM self, SCM signal, SCM sdetail, SCM callback, SCM s_after, 
     signal_lookup("%connect", obj, signal, sdetail, &sigid, &query_info, &detail);
 
     after = !SCM_UNBNDP(s_after) && scm_to_bool(s_after);
-    closure = gi_signal_closure_new(self, query_info.itype, query_info.signal_name, callback);
+    closure = gig_signal_closure_new(self, query_info.itype, query_info.signal_name, callback);
 
     // TODO: watch closure for disconnect/block
     handlerid = g_signal_connect_closure_by_id(obj, sigid, detail, closure, after);
@@ -529,11 +529,11 @@ gig_i_scm_emit(SCM self, SCM signal, SCM s_detail, SCM args)
 
     values = g_new0(GValue, query_info.n_params + 1);
     g_value_init(values, G_OBJECT_TYPE(obj));
-    gi_gvalue_from_scm_with_error("%emit", values, self, SCM_ARG1);
+    gig_value_from_scm_with_error("%emit", values, self, SCM_ARG1);
     SCM iter = args;
     for (guint i = 0; i < query_info.n_params; i++, iter = scm_cdr(iter)) {
         g_value_init(values + i + 1, query_info.param_types[i]);
-        gi_gvalue_from_scm_with_error("%emit", values + i + 1, iter, SCM_ARGn);
+        gig_value_from_scm_with_error("%emit", values + i + 1, iter, SCM_ARGn);
     }
 
     if (query_info.return_type != G_TYPE_NONE)
@@ -541,7 +541,7 @@ gig_i_scm_emit(SCM self, SCM signal, SCM s_detail, SCM args)
     g_signal_emitv(values, sigid, detail, &retval);
 
     if (query_info.return_type != G_TYPE_NONE)
-        return gi_gvalue_as_scm(&retval, FALSE);
+        return gig_value_as_scm(&retval, FALSE);
     else
         return SCM_UNSPECIFIED;
 }

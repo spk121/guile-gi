@@ -44,7 +44,7 @@ gig_constant_strip_prefix(const gchar *name, const gchar *strip_prefix)
 }
 
 gchar *
-gig_gname_to_scm_name(const char *gname)
+gig_gname_to_scm_name(const gchar *gname)
 {
     g_assert(gname != NULL);
     g_assert(strlen(gname) > 0);
@@ -93,8 +93,8 @@ scm_is_list(SCM obj)
     return scm_is_true(scm_list_p(obj));
 }
 
-void *
-scm_dynwind_or_bust(const char *subr, void *mem)
+gpointer
+scm_dynwind_or_bust(const gchar *subr, gpointer mem)
 {
     if (mem)
         scm_dynwind_free(mem);
@@ -136,7 +136,7 @@ scm_drop_1(SCM lst)
 }
 
 SCM
-scm_c_reexport(const char *name, ...)
+scm_c_reexport(const gchar *name, ...)
 {
     if (SCM_UNBNDP(module_reexport_proc))
         module_reexport_proc = scm_c_public_ref("guile", "module-re-export!");
@@ -148,7 +148,7 @@ scm_c_reexport(const char *name, ...)
     SCM current_module = scm_current_module();
     SCM syms = scm_list_1(scm_from_utf8_symbol(name));
 
-    while ((name = va_arg(args, char *)) != NULL)
+    while ((name = va_arg(args, gchar *)) != NULL)
           syms = scm_cons(scm_from_utf8_symbol(name), syms);
 
     scm_call_2(module_reexport_proc, current_module, syms);

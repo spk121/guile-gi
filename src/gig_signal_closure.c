@@ -1,4 +1,4 @@
-// Copyright (C), 2019 2018 Michael L. Gran
+// Copyright (C) 2018, 2019 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -12,9 +12,10 @@
 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-#include "gi_signal_closure.h"
+
+#include "gig_signal_closure.h"
 #include "gig_object.h"
-#include "gi_gvalue.h"
+#include "gig_value.h"
 #include "gig_argument.h"
 
 typedef void (*GigClosureExceptionHandler)(GValue *ret, guint n_param_values,
@@ -64,7 +65,7 @@ signal_closure_invalidate(gpointer data, GClosure *closure)
 }
 
 static void
-gi_signal_closure_marshal(GClosure *closure,
+signal_closure_marshal(GClosure *closure,
                           GValue *return_value,
                           guint n_param_values,
                           const GValue *param_values,
@@ -100,7 +101,7 @@ gi_signal_closure_marshal(GClosure *closure,
     // FIXME: handle swap
     /* gboolean swap = G_CCLOSURE_SWAP_DATA(closure); */
     for (i = 0; i < n_param_values; i++) {
-        SCM item = gi_gvalue_as_scm(&param_values[i], FALSE);
+        SCM item = gig_value_as_scm(&param_values[i], FALSE);
         if (scm_is_false(item)) {
             if (i == 0)         // self or this
                 goto out;
@@ -111,7 +112,7 @@ gi_signal_closure_marshal(GClosure *closure,
     g_debug("invoking callback with %d arguments", scm_to_int(scm_length(params)));
     ret = scm_apply_0(pc->callback, params);
 
-    if (G_IS_VALUE(return_value) && gi_gvalue_from_scm(return_value, ret) != 0) {
+    if (G_IS_VALUE(return_value) && gig_value_from_scm(return_value, ret) != 0) {
         scm_misc_error("callback", "can't convert return value to desired type", SCM_EOL);
     }
 
@@ -120,7 +121,7 @@ gi_signal_closure_marshal(GClosure *closure,
 }
 
 GClosure *
-gi_signal_closure_new(SCM instance, GType g_type, const gchar *signal_name, SCM callback)
+gig_signal_closure_new(SCM instance, GType g_type, const gchar *signal_name, SCM callback)
 {
     GClosure *closure = NULL;
     GigClosure *gig_closure = NULL;
@@ -132,7 +133,7 @@ gi_signal_closure_new(SCM instance, GType g_type, const gchar *signal_name, SCM 
 
     closure = g_closure_new_simple(sizeof(GigClosure), NULL);
     g_closure_add_invalidate_notifier(closure, NULL, signal_closure_invalidate);
-    g_closure_set_marshal(closure, gi_signal_closure_marshal);
+    g_closure_set_marshal(closure, signal_closure_marshal);
 
     gig_closure = (GigClosure *) closure;
 

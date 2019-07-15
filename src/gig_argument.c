@@ -20,7 +20,6 @@
 #include <stdint.h>
 #include "gig_argument.h"
 #include "gig_object.h"
-#include "gi_gvalue.h"
 #include "gi_type_tag.h"
 #include "gig_callback.h"
 #include "gig_type.h"
@@ -320,7 +319,7 @@ describe_non_pointer_type(GString *desc, GITypeInfo *type_info)
                  || referenced_base_type == GI_INFO_TYPE_STRUCT
                  || referenced_base_type == GI_INFO_TYPE_UNION) {
             GType type = g_registered_type_info_get_g_type(referenced_base_info);
-            char *class_name = gig_type_class_name_from_gtype(type);
+            gchar *class_name = gig_type_class_name_from_gtype(type);
             g_string_append(desc, class_name);
             g_free(class_name);
         }
@@ -453,7 +452,7 @@ gig_argument_describe_arg(GIArgInfo *arg_info)
                              || referenced_base_type == GI_INFO_TYPE_UNION
                              || referenced_base_type == GI_INFO_TYPE_OBJECT) {
                         GType type = g_registered_type_info_get_g_type(referenced_base_info);
-                        char *class_name = gig_type_class_name_from_gtype(type);
+                        gchar *class_name = gig_type_class_name_from_gtype(type);
                         g_string_append_printf(desc, "A list of %s", class_name);
                         g_free(class_name);
                     }
@@ -558,7 +557,7 @@ scm_to_c_immediate(S2C_ARG_DECL)
     case GI_TYPE_TAG_FLOAT:
         if (!scm_is_real(object))
             scm_wrong_type_arg_msg(subr, argpos, object, "float32");
-        double dtmp = scm_to_double(object);
+        gdouble dtmp = scm_to_double(object);
         if (dtmp > FLT_MAX || dtmp < -FLT_MAX)
             scm_out_of_range(subr, object);
         arg->v_float = (float)dtmp;
@@ -1033,7 +1032,7 @@ gig_argument_free_args(gint n, guint *must_free, GIArgument *args)
         if (must_free[i] == GIG_FREE_SIMPLE)
             g_free(args[i].v_pointer);
         else if (must_free[i] == GIG_FREE_STRV) {
-            int j = 0;
+            gint j = 0;
             while (((char **)(args[i].v_pointer))[j] != NULL) {
                 g_free(((char **)(args[i].v_pointer))[j]);
                 j++;
@@ -1114,7 +1113,7 @@ gig_argument_preallocate_output_arg_and_object(GIArgInfo *arg_info, GIArgument *
                     arg->v_pointer = g_malloc0(item_size);
                     g_critical("unhandled allocation");
                     g_assert_not_reached();
-                    //*obj = gir_new_struct_gbox(referenced_object_type, arg->v_pointer, TRUE);
+                    //*obj = gig_new_struct_gbox(referenced_object_type, arg->v_pointer, TRUE);
                 }
                 else
                     g_assert_not_reached();
@@ -1363,7 +1362,7 @@ gig_argument_describe_return(GITypeInfo *type_info,
             if (referenced_base_type == GI_INFO_TYPE_STRUCT ||
                 referenced_base_type == GI_INFO_TYPE_UNION ||
                 referenced_base_type == GI_INFO_TYPE_OBJECT) {
-                char *class_name = gig_type_class_name_from_gtype(referenced_base_gtype);
+                gchar *class_name = gig_type_class_name_from_gtype(referenced_base_gtype);
                 g_string_append(desc, class_name);
                 g_free(class_name);
             }
@@ -1614,14 +1613,14 @@ c_native_array_to_scm(C2S_ARG_DECL)
         *object = scm_c_make_vector(length, SCM_BOOL_F);
         scm_t_array_handle handle;
         gsize len;
-        ssize_t inc;
+        gssize inc;
         SCM *elt;
 
         elt = scm_vector_writable_elements(*object, &handle, &len, &inc);
         g_assert(len == length);
 
         for (gsize i = 0; i < length; i++, elt += inc) {
-            char *str = ((char **)arg->v_pointer)[i];
+            gchar *str = ((char **)arg->v_pointer)[i];
             if (str) {
                 if (entry->item_type_tag == GI_TYPE_TAG_UTF8)
                     *elt = scm_from_utf8_string(str);
@@ -1822,7 +1821,7 @@ c_void_pointer_to_scm(C2S_ARG_DECL)
 }
 
 gboolean
-gig_argument_to_gssize(const char *func,
+gig_argument_to_gssize(const gchar *func,
                        GIArgument *arg_in, GITypeTag type_tag, gssize *gssize_out)
 {
     const gchar *type_name = g_type_tag_to_string(type_tag);

@@ -55,7 +55,7 @@ static GigGsubr *create_gsubr(GIFunctionInfo *function_info, const gchar *name,
                               gint *required_input_count, gint *optional_input_count,
                               SCM *formals, SCM *specializers);
 static void make_formals(GigFunction *fn, gint n_inputs, SCM *formals, SCM *specializers);
-static void function_binding(ffi_cif *cif, gpointer ret, void **ffi_args, gpointer user_data);
+static void function_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_data);
 
 static SCM convert_output_args(GIFunctionInfo *func_info, GigArgMap *amap, const gchar *name,
                                GArray *out_args);
@@ -84,7 +84,7 @@ default_definition(SCM name)
 // this procedure creates a SCM wrapper for that procedure in the
 // current module.
 void
-gig_function_define_gsubr(GType type, GIFunctionInfo *info, const char *prefix)
+gig_function_define_gsubr(GType type, GIFunctionInfo *info, const gchar *prefix)
 {
     GigGsubr *func_gsubr;
     gchar *public_name;
@@ -131,7 +131,7 @@ gig_function_define_gsubr(GType type, GIFunctionInfo *info, const char *prefix)
 
     SCM t_formals = formals, t_specializers = specializers;
 
-    int opt = optional_input_count;
+    gint opt = optional_input_count;
     do {
         SCM mthd = scm_call_7(make_proc,
                               method_type,
@@ -254,7 +254,7 @@ create_gsubr(GIFunctionInfo *function_info, const gchar *name, gint *required_in
     // call.
 
     // Initialize the argument info vectors.
-    int have_args = 0;
+    gint have_args = 0;
     if (*required_input_count + *optional_input_count > 0) {
         gfn->atypes = g_new0(ffi_type *, 1);
         gfn->atypes[0] = &ffi_type_pointer;
@@ -304,7 +304,7 @@ gig_function_invoke(GIFunctionInfo *func_info, GigArgMap *amap, const gchar *nam
 
     cinvoke_input_arg_array = g_array_new(FALSE, TRUE, sizeof(GIArgument));
     cinvoke_output_arg_array = g_array_new(FALSE, TRUE, sizeof(GIArgument));
-    cinvoke_input_free_array = g_array_new(FALSE, TRUE, sizeof(unsigned));
+    cinvoke_input_free_array = g_array_new(FALSE, TRUE, sizeof(guint));
 
     g_debug("After allocating %s with %d input and %d output arguments",
             name, cinvoke_input_arg_array->len, cinvoke_output_arg_array->len);
@@ -318,7 +318,7 @@ gig_function_invoke(GIFunctionInfo *func_info, GigArgMap *amap, const gchar *nam
     // For methods calls, the object gets inserted as the 1st argument.
     if (self) {
         GIArgument self_arg;
-        unsigned self_free;
+        guint self_free;
         self_arg.v_pointer = self;
         self_free = GIG_FREE_NONE;
         g_array_prepend_val(cinvoke_input_arg_array, self_arg);
@@ -380,7 +380,7 @@ gig_function_invoke(GIFunctionInfo *func_info, GigArgMap *amap, const gchar *nam
     // Sometimes input data transfers ownership to the C side,
     // so we can't free indiscriminately.
     gig_argument_free_args(cinvoke_input_arg_array->len,
-                           (unsigned *)(cinvoke_input_free_array->data),
+                           (guint *)(cinvoke_input_free_array->data),
                            (GIArgument *)(cinvoke_input_arg_array->data));
     g_array_free(cinvoke_input_arg_array, TRUE);
     g_array_free(cinvoke_input_free_array, TRUE);
@@ -439,7 +439,7 @@ function_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
 
     // If there is a GError, write an error and exit.
     if (err) {
-        char str[256];
+        gchar str[256];
         memset(str, 0, 256);
         strncpy(str, err->message, 255);
         g_error_free(err);
@@ -490,7 +490,7 @@ object_to_c_arg(GigArgMap *amap, gint i, const gchar *name, SCM obj,
     if (invoke_in >= 0) {
         parg = &g_array_index(cinvoke_input_arg_array, GIArgument, invoke_in);
         memcpy(parg, &arg, sizeof(GIArgument));
-        pfree = &g_array_index(cinvoke_input_free_array, unsigned, invoke_in);
+        pfree = &g_array_index(cinvoke_input_free_array, guint, invoke_in);
         memcpy(pfree, &arg_free, sizeof(guint));
     }
     if (invoke_out >= 0) {

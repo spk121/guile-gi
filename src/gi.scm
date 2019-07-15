@@ -149,7 +149,7 @@
              #,@module-defs
              (use-modules #,@module-uses)))))))
 
-(load-extension "libguile-gi" "gir_init")
+(load-extension "libguile-gi" "gig_init")
 
 (define (%new type . rest)
   (cond

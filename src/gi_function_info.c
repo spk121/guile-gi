@@ -16,7 +16,7 @@ is_predicate(GIFunctionInfo *info)
 
     if (g_type_info_get_tag(return_type) == GI_TYPE_TAG_BOOLEAN
         && !g_type_info_is_pointer(return_type)) {
-        int in, out;
+        gint in, out;
 
         gi_function_info_count_args(info, &in, &out);
         if (out == 0)
@@ -29,13 +29,13 @@ is_predicate(GIFunctionInfo *info)
 // This procedure counts the number of arguments that the
 // GObject Introspection FFI call is expecting.
 void
-gi_function_info_count_args(GIFunctionInfo *info, int *in, int *out)
+gi_function_info_count_args(GIFunctionInfo *info, gint *in, gint *out)
 {
     // Count the number of required input arguments, and store
     // the arg info in a newly allocate array.
-    int n_args = g_callable_info_get_n_args((GICallableInfo *)info);
-    int n_input_args = 0;
-    int n_output_args = 0;
+    gint n_args = g_callable_info_get_n_args((GICallableInfo *)info);
+    gint n_input_args = 0;
+    gint n_output_args = 0;
 
     for (int i = 0; i < n_args; i++) {
         GIArgInfo *ai = g_callable_info_get_arg((GICallableInfo *)info, i);
@@ -60,7 +60,7 @@ gi_function_info_count_args(GIFunctionInfo *info, int *in, int *out)
 gchar *
 gi_function_info_make_name(GIFunctionInfo *info, const gchar *prefix)
 {
-    char *name, *str1 = NULL, *str2 = NULL;
+    gchar *name, *str1 = NULL, *str2 = NULL;
     gboolean predicate;
 
     predicate = is_predicate(info);

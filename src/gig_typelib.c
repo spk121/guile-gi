@@ -35,7 +35,7 @@ static void document_function_info(GString **export, const gchar *parent,
 static void document_type(GString **export, GITypeInfo *info);
 static void document_callable_arguments(GString **export, GICallableInfo *info);
 static void scm_i_typelib_load(const gchar *subr, const gchar *namespace, const gchar *version);
-static void scm_i_typelib_load_check_args(const char *subr, SCM s_lib, SCM s_version, gchar **lib,
+static void scm_i_typelib_load_check_args(const gchar *subr, SCM s_lib, SCM s_version, gchar **lib,
                                           gchar **version);
 
 #define MAX_GERROR_MSG 100
@@ -457,7 +457,7 @@ struct _arg_info_func_name
     gchar *name;
 };
 
-static GPtrArray *gi_arg_infos = NULL;
+static GPtrArray *gig_arg_infos = NULL;
 #endif
 
 static void
@@ -488,7 +488,7 @@ document_callable_arguments(GString **export, GICallableInfo *info)
             name = gig_gname_to_scm_name(g_base_info_get_name(arg));
             g_string_append(*export, name);
             g_string_append_c(*export, ' ');
-            char *desc = gig_argument_describe_arg(arg);
+            gchar *desc = gig_argument_describe_arg(arg);
             g_string_append_printf(*export, " - %s", desc);
             g_free(desc);
             if (dir == GI_DIRECTION_INOUT)
@@ -508,7 +508,7 @@ document_callable_arguments(GString **export, GICallableInfo *info)
     type_info = g_callable_info_get_return_type(info);
     g_assert(type_info != NULL);
     GITypeInfo *return_typeinfo = g_callable_info_get_return_type(info);
-    char *ret_desc = gig_argument_describe_return(type_info,
+    gchar *ret_desc = gig_argument_describe_return(type_info,
                                                   g_callable_info_get_caller_owns(info),
                                                   g_callable_info_may_return_null(info),
                                                   g_callable_info_skip_return(info));
@@ -618,7 +618,7 @@ document_type(GString **export, GITypeInfo *info)
 /* FIXME: this is a very sigmal way to export signal info */
 #if 0
 static void
-export_signal_info(GString **export, char *parent, GISignalInfo *info)
+export_signal_info(GString **export, gchar *parent, GISignalInfo *info)
 {
     gint n_args;
     GIArgInfo *arg;
@@ -631,7 +631,7 @@ export_signal_info(GString **export, char *parent, GISignalInfo *info)
     else
         c_function_name = g_strdup_printf("%s-signal", g_base_info_get_name(info));
 
-    char *name = gname_to_scm_constant_name(c_function_name);
+    gchar *name = gname_to_scm_constant_name(c_function_name);
 
     g_string_append_printf(*export, "(define (%s", name);
     free(name);
@@ -683,14 +683,14 @@ export_signal_info(GString **export, char *parent, GISignalInfo *info)
 static SCM
 scm_dump_all_arg_types(void)
 {
-    guint len = gi_arg_infos->len;
+    guint len = gig_arg_infos->len;
     if (len == 0)
         return SCM_UNSPECIFIED;
 
     FILE *fp = fopen("arg_infos.txt", "wt");
 
     for (guint i = 0; i < len; i++) {
-        struct _arg_info_func_name *aifn = gi_arg_infos->pdata[i];
+        struct _arg_info_func_name *aifn = gig_arg_infos->pdata[i];
         GIArgInfo *ai = aifn->ai;
         GIDirection dir = g_arg_info_get_direction(ai);
         GITypeInfo *ti = g_arg_info_get_type(ai);
@@ -899,7 +899,7 @@ void
 gig_init_typelib(void)
 {
 #ifdef FIGURE_OUT_ALL_ARG_TYPES
-    gi_arg_infos = g_ptr_array_new();
+    gig_arg_infos = g_ptr_array_new();
 #endif
     scm_c_define_gsubr("typelib-get-search-path", 0, 0, 0, scm_typelib_get_search_path);
     scm_c_define_gsubr("typelib-prepend-search-path", 1, 0, 0, scm_typelib_prepend_search_path);

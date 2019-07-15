@@ -142,7 +142,7 @@ gig_type_transfer_object(GType type, gpointer ptr, GITransfer transfer)
         type = G_OBJECT_TYPE(ptr);
 
 #if GIG_DEBUG_TRANSFERS
-    g_debug("gir_type_transfer_object(%s, %p, %d)", g_type_name(type), ptr, transfer);
+    g_debug("gig_type_transfer_object(%s, %p, %d)", g_type_name(type), ptr, transfer);
 #endif
 
     SCM scm_type = gig_type_get_scheme_type(type);
@@ -602,7 +602,7 @@ gig_type_associate(GType gtype, SCM stype)
 {
     g_hash_table_insert(gig_type_gtype_hash, GSIZE_TO_POINTER(gtype), SCM_UNPACK_POINTER(stype));
 #if ENABLE_GIR_TYPE_SCM_HASH
-    g_hash_table_insert(gir_type_scm_hash, SCM_UNPACK_POINTER(stype), GSIZE_TO_POINTER(gtype));
+    g_hash_table_insert(gig_type_scm_hash, SCM_UNPACK_POINTER(stype), GSIZE_TO_POINTER(gtype));
 #endif
     SCM module = scm_current_module();
     SCM name = scm_class_name(stype);
@@ -615,7 +615,7 @@ gig_type_define_fundamental(GType type, SCM extra_supers,
                             GigTypeRefFunction ref, GigTypeUnrefFunction unref)
 {
     scm_dynwind_begin(0);
-    char *class_name = scm_dynwind_or_bust("%define-compact-type",
+    gchar *class_name = scm_dynwind_or_bust("%define-compact-type",
                                            gig_type_class_name_from_gtype(type));
 
     SCM new_type = scm_call_4(make_fundamental_proc,
