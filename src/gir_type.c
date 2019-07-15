@@ -220,13 +220,13 @@ gir_type_define(GType gtype)
 
             GIRepository *repository;
             GIBaseInfo *info;
+            gsize size = 0;
 
             repository = g_irepository_get_default();
             info = g_irepository_find_by_gtype(repository, gtype);
-            g_assert(info != NULL);
-            g_assert(GI_IS_STRUCT_INFO(info));
-
-            gsize size = g_struct_info_get_size((GIStructInfo *) info);
+            if (info != NULL && GI_IS_STRUCT_INFO(info))
+                size = g_struct_info_get_size((GIStructInfo *) info);
+            g_base_info_unref(info);
 
             scm_class_set_x(new_type, sym_ref, scm_from_pointer(funcs->copy, NULL));
             scm_class_set_x(new_type, sym_unref, scm_from_pointer(funcs->free, NULL));
@@ -570,6 +570,26 @@ scm_type_dump_type_table(void)
     return list;
 }
 
+static SCM
+scm_allocate_boxed(SCM boxed_type)
+{
+    SCM_ASSERT_TYPE(SCM_SUBCLASSP(boxed_type, gig_boxed_type), boxed_type, SCM_ARG1,
+                    "%allocate-boxed", "boxed type");
+    SCM s_size = scm_class_ref(boxed_type, sym_size);
+
+    gsize size = scm_to_size_t(s_size);
+
+    if (size == 0)
+        scm_out_of_range("%allocate-boxed", s_size);
+
+    gpointer boxed = g_malloc0(size);
+    GigTypeUnrefFunction unref;
+    unref = (GigTypeUnrefFunction) scm_to_pointer(scm_class_ref(boxed_type, sym_unref));
+    SCM pointer = scm_from_pointer(boxed, unref);
+
+    return scm_call_3(make_instance_proc, boxed_type, kwd_ptr, pointer);
+}
+
 void
 gig_type_associate(GType gtype, SCM stype)
 {
@@ -577,6 +597,10 @@ gig_type_associate(GType gtype, SCM stype)
 #if ENABLE_GIR_TYPE_SCM_HASH
     g_hash_table_insert(gir_type_scm_hash, SCM_UNPACK_POINTER(stype), GSIZE_TO_POINTER(gtype));
 #endif
+    SCM module = scm_current_module();
+    SCM name = scm_class_name(stype);
+    scm_module_define(module, name, stype);
+    scm_module_export(module, scm_list_1(name));
 }
 
 void
@@ -588,14 +612,12 @@ gir_type_define_fundamental(GType type, SCM extra_supers,
                                            gir_type_class_name_from_gtype(type));
 
     SCM new_type = scm_call_4(make_fundamental_proc,
-                              scm_from_utf8_string(class_name),
+                              scm_from_utf8_symbol(class_name),
                               extra_supers,
                               scm_from_pointer(ref, NULL),
                               scm_from_pointer(unref, NULL));
 
     gig_type_associate(type, new_type);
-    scm_c_define(class_name, new_type);
-    scm_c_export(class_name, NULL);
     scm_dynwind_end();
 }
 
@@ -684,6 +706,7 @@ gir_init_types(void)
     scm_c_define_gsubr("gtype-is-derivable?", 1, 0, 0, scm_type_gtype_is_derivable_p);
     scm_c_define_gsubr("gtype-is-a?", 2, 0, 0, scm_type_gtype_is_a_p);
     scm_c_define_gsubr("%gtype-dump-table", 0, 0, 0, scm_type_dump_type_table);
+    scm_c_define_gsubr("%allocate-boxed", 1, 0, 0, scm_allocate_boxed);
     scm_c_export("get-gtype",
                  "gtype-get-scheme-type",
                  "gtype-get-name",

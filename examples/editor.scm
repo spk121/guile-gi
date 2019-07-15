@@ -13,70 +13,76 @@
 
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https:;;www.gnu.org/licenses/>.
-(use-modules (gi)
+(use-modules (gi) (gi util)
+             (oop goops)
              (ice-9 receive))
 
-(typelib-load "Gio" "2.0")
-(typelib-load "Gdk" "3.0")
-(typelib-load "Gtk" "3.0")
-(typelib-load "GLib" "2.0")
-(typelib-load "WebKit2" "4.0")
+(use-typelibs (("Gio" "2.0") #:renamer (protect 'receive))
+              ("Gdk" "3.0")
+              ("Gtk" "3.0")
+              ("GLib" "2.0"))
 
 ;; Oddly, the introspection information does not provide a constructor
 ;; for GtkTextIter.
 (define (text-iter:new)
-  (make-gstruct <GtkTextIter>))
+  ;; make-gobject is somewhat of a misnomer, we will override GOOPS make later
+  (make-gobject <GtkTextIter>))
 
 (define (print-goodbye widget)
   (display "Goodbye World\n"))
 
 (define (key-press widget event)
   (receive (ok keyval)
-      (with-object event (get-keyval?))
-      (format #t "key: ~s\n" keyval)
-      #f))
+      (get-keyval event)
+    (format #t "key: ~s\n" keyval)
+    #f))
+
+(define-method (connect obj (signal <symbol>) (handler <procedure>))
+  (connect obj (make-gobject <signal> #:name (symbol->string signal)) handler))
 
 (define (activate app)
-  (let ((window (cast (application-window:new app) <GtkApplicationWindow>))
-        (vbox (cast (vbox:new 0 0) <GtkVBox>))
-        (editor (cast (text-view:new) <GtkTextView>))
-        (button-box (cast (button-box:new 0) <GtkButtonBox>))
+  (let ((window (application-window:new app))
+        (vbox (vbox:new 0 0))
+        (editor (text-view:new))
+        (button-box (button-box:new 0))
         (button (button:new-with-label "Quit"))
         (button2 (button:new-with-label "Hello")))
-    (with-object editor
-      (add-events EVENT_MASK_KEY_PRESS_MASK)
-      (connect! key-press-event key-press))
-    (with-object button-box (add button2) (add button))
-    (with-object vbox (add editor) (add button-box))
-    (with-object window
-      (set-title "Window")
-      (set-default-size 200 200)
-      (add vbox))
+    (add-events editor EVENT_MASK_KEY_PRESS_MASK)
 
-    (with-object button
-      (connect! clicked print-goodbye)
-      (connect! clicked (lambda x
-                         (with-object window (destroy)))))
+    (map add
+         (list button-box button-box vbox vbox window)
+         (list button2 button editor button-box vbox))
 
-    ;; When the 'hello' button is clicked, write the current contents
-    ;; of the editor to the console, and replace the buffer contents
-    ;; with 'Hello, world'.
-    (with-object button2
-      (connect! clicked (lambda x
-                         (let ((buffer (with-object editor (get-buffer)))
-                               (iter1 (text-iter:new))
-                               (iter2 (text-iter:new)))
-                           (with-object buffer (get-bounds iter1 iter2))
-                           (let ((txt (with-object buffer (get-text iter1 iter2 #t))))
-                             (write txt) (newline))
-                           (with-object buffer (set-text "Hello, world" 12))))))
+    (set-title window "Window")
+    (set-default-size window 200 200)
 
-    (with-object editor (grab-focus))
-    (with-object window (show-all))))
+    (map connect
+         (list editor
+               button button
+               button2)
+         '(key-press-event
+           clicked clicked
+           clicked)
+         (list key-press
+               print-goodbye (lambda x (destroy window))
+               ;; When the 'hello' button is clicked, write the current contents
+               ;; of the editor to the console, and replace the buffer contents
+               ;; with 'Hello, world'.
+               (lambda x
+                 (let ((buffer (get-buffer editor))
+                       (iter1 (text-iter:new))
+                       (iter2 (text-iter:new)))
+                   (get-bounds buffer iter1 iter2)
+                   (write (get-text buffer iter1 iter2 #t))
+                   (newline)
+                   (set-text buffer "Hello, world" 12)))))
+
+    (grab-focus editor)
+    (show-all window)))
 
 (define (main)
-  (with-object (application:new "org.gtk.example" 0)
-    (connect! activate activate)
-    (run (length (command-line)) (command-line))))
+  (let ((app (application:new "org.gtk.example" 0)))
+    (connect app 'activate activate)
+    (run app (command-line))))
 
 (main)

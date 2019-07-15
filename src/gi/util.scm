@@ -16,8 +16,8 @@
 (define (symbol-empty? symbol) (equal? symbol epsilon))
 
 (define* (protect symbol #:optional (prefix epsilon) (suffix epsilon))
-  (unless (or (not (eq? prefix #{}#))
-              (not (eq? suffix #{}#)))
+  (when (and (symbol-empty? prefix)
+             (symbol-empty? suffix))
     (set! prefix '%))
 
   (lambda (sym)
