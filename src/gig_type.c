@@ -716,6 +716,7 @@ gig_init_types(void)
     /* D(G_TYPE_VARIANT); */
     /* D(G_TYPE_CHECKSUM); */
     /* D(G_TYPE_POINTER); */
+    D(G_TYPE_OBJECT);
 #undef D
 
     type_less_p_proc = scm_c_make_gsubr("type-<?", 2, 0, 0, type_less_p);
