@@ -495,7 +495,6 @@ gig_i_scm_connect(SCM self, SCM signal, SCM sdetail, SCM callback, SCM s_after, 
     after = !SCM_UNBNDP(s_after) && scm_to_bool(s_after);
     closure = gig_signal_closure_new(self, query_info.itype, query_info.signal_name, callback);
 
-    // TODO: watch closure for disconnect/block
     handlerid = g_signal_connect_closure_by_id(obj, sigid, detail, closure, after);
 
     return scm_from_ulong(handlerid);
