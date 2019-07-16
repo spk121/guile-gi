@@ -19,7 +19,7 @@ Free Documentation License". -->
 <meta name="distribution" content="global">
 <meta name="Generator" content="makeinfo">
 <link href="index.html#Top" rel="start" title="Top">
-<link href="_005findex.html#g_t_005findex" rel="index" title="_index">
+<link href="Index.html#Index" rel="index" title="Index">
 <link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
 <link href="Reference-Guide.html#Reference-Guide" rel="up" title="Reference Guide">
 <link href="More-Stuff.html#More-Stuff" rel="next" title="More Stuff">
@@ -50,7 +50,7 @@ ul.no-bullet {list-style: none}
 <body lang="en">
 <span id="Custom-GObjects"></span><div class="header">
 <p>
-Next: <a href="More-Stuff.html#More-Stuff" accesskey="n" rel="next">More Stuff</a>, Previous: <a href="GObject-Properties.html#GObject-Properties" accesskey="p" rel="prev">GObject Properties</a>, Up: <a href="Reference-Guide.html#Reference-Guide" accesskey="u" rel="up">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="_005findex.html#g_t_005findex" title="Index" rel="index">Index</a>]</p>
+Next: <a href="More-Stuff.html#More-Stuff" accesskey="n" rel="next">More Stuff</a>, Previous: <a href="GObject-Properties.html#GObject-Properties" accesskey="p" rel="prev">GObject Properties</a>, Up: <a href="Reference-Guide.html#Reference-Guide" accesskey="u" rel="up">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index.html#Index" title="Index" rel="index">Index</a>]</p>
 </div>
 <hr>
 <span id="Defining-new-GObject-classes"></span><h3 class="section">3.7 Defining new GObject classes</h3>
@@ -69,7 +69,7 @@ such as signals.
 <p>Defining a new GObject class is rather complicated.
 </p>
 <dl>
-<dt id="index-type_002dname">register-type: <strong>type-name</strong> <em>parent-type list-of-properties list-of-signals disposer</em></dt>
+<dt id="index-register_002dtype">Procedure: <strong>register-type</strong> <em>type-name parent-type list-of-properties list-of-signals disposer</em></dt>
 <dd><p>This procedure creates and returns a new <code>&lt;GType&gt;</code> of a GObject
 object.
 </p>
@@ -84,7 +84,7 @@ class that descends from it.
 These parameter specifications can be created using the <code>param-spec-TYPE</code>
 methods found in the <code>GObject</code> typelib.
 </p>
-<p><var>list-of-signals</var> is a list of signal specifications. See <a href="GObject-Signals.html#GObject-Signals">GObject Signals</a>.
+<p><var>list-of-signals</var> is a list of signal specifications.
 </p></dd></dl>
 
 <p>To then make instances of your custom GObject type, use <code>make</code>.

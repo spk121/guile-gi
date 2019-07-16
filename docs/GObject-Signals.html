@@ -19,7 +19,7 @@ Free Documentation License". -->
 <meta name="distribution" content="global">
 <meta name="Generator" content="makeinfo">
 <link href="index.html#Top" rel="start" title="Top">
-<link href="_005findex.html#g_t_005findex" rel="index" title="_index">
+<link href="Index.html#Index" rel="index" title="Index">
 <link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
 <link href="Reference-Guide.html#Reference-Guide" rel="up" title="Reference Guide">
 <link href="GObject-Properties.html#GObject-Properties" rel="next" title="GObject Properties">
@@ -50,7 +50,7 @@ ul.no-bullet {list-style: none}
 <body lang="en">
 <span id="GObject-Signals"></span><div class="header">
 <p>
-Next: <a href="GObject-Properties.html#GObject-Properties" accesskey="n" rel="next">GObject Properties</a>, Previous: <a href="GObject-Methods.html#GObject-Methods" accesskey="p" rel="prev">GObject Methods</a>, Up: <a href="Reference-Guide.html#Reference-Guide" accesskey="u" rel="up">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="_005findex.html#g_t_005findex" title="Index" rel="index">Index</a>]</p>
+Next: <a href="GObject-Properties.html#GObject-Properties" accesskey="n" rel="next">GObject Properties</a>, Previous: <a href="GObject-Methods.html#GObject-Methods" accesskey="p" rel="prev">GObject Methods</a>, Up: <a href="Reference-Guide.html#Reference-Guide" accesskey="u" rel="up">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index.html#Index" title="Index" rel="index">Index</a>]</p>
 </div>
 <hr>
 <span id="GObject-Signals-1"></span><h3 class="section">3.5 GObject Signals</h3>
@@ -121,16 +121,19 @@ When using them as proper signals, at least <var>return-type</var> needs to be g
 <dd><p>The name of the signal.
 A string.
 </p></dd></dl>
+
 <dl>
 <dt id="index-return_002dtype">Slot: <strong>return-type</strong></dt>
 <dd><p>The return type of the signal.
 A <code>&lt;GType&gt;</code> or integer.
 </p></dd></dl>
+
 <dl>
 <dt id="index-param_002dtypes">Slot: <strong>param-types</strong></dt>
 <dd><p>The parameter types of the signal.
-A list of <code>&lt;GType&gt;</code>s or integers.
+A list of <code>&lt;GType&gt;</code> classes or integers.
 </p></dd></dl>
+
 <dl>
 <dt id="index-accumulator">Slot: <strong>accumulator</strong></dt>
 <dd><p>A procedure, called with two arguments <var>seed</var> and <var>current</var> and
@@ -143,6 +146,7 @@ handling stops if the first is <code>#f</code>.
 If at any time <var>seed</var> would be set to an incorrect value or more than two values are returned
 signal handling is aborted.
 </p></dd></dl>
+
 <dl>
 <dt id="index-flags">Slot: <strong>flags</strong></dt>
 <dd><p>Signal flags, a logical or of  one or more of
@@ -153,7 +157,7 @@ signal handling is aborted.
 <hr>
 <div class="header">
 <p>
-Next: <a href="GObject-Properties.html#GObject-Properties" accesskey="n" rel="next">GObject Properties</a>, Previous: <a href="GObject-Methods.html#GObject-Methods" accesskey="p" rel="prev">GObject Methods</a>, Up: <a href="Reference-Guide.html#Reference-Guide" accesskey="u" rel="up">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="_005findex.html#g_t_005findex" title="Index" rel="index">Index</a>]</p>
+Next: <a href="GObject-Properties.html#GObject-Properties" accesskey="n" rel="next">GObject Properties</a>, Previous: <a href="GObject-Methods.html#GObject-Methods" accesskey="p" rel="prev">GObject Methods</a>, Up: <a href="Reference-Guide.html#Reference-Guide" accesskey="u" rel="up">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index.html#Index" title="Index" rel="index">Index</a>]</p>
 </div>
 
 

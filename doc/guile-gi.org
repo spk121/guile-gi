@@ -1,86 +1,35 @@
-\input texinfo    @c -*- texinfo -*-
-@c %**start of header
-@setfilename guile-gi.info
-@settitle Guile GI
-@documentencoding UTF-8
-@documentlanguage en
-@c %**end of header
+#+title: Guile GI
+#+author: Michael L. Gran
 
-@copying
-Copyright @copyright{} 2018, 2019 Michael L. Gran
+#+startup: indent
+#+language: en
 
-@quotation
+#+macro: command @@texinfo:@command{$1}@@
+#+macro: env @@texinfo:@env{$1}@@
+#+macro: file @@texinfo:@file{$1}@@
+#+macro: var @@texinfo:@var{$1}@@
+#+macro: xref @@texinfo:@xref{$1,$2,$3,$4,$5}@@
+
+* Copying
+:PROPERTIES:
+:COPYING: t
+:END:
+
+Copyright @@texinfo:@copyright{}@@ 2018, 2019 Michael L. Gran
+
+#+begin_quote
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3
 or any later version published by the Free Software Foundation;
 with no Invariant Sections, no Front-Cover Texts, and no Back-Cover
 Texts.  A copy of the license is included in the section entitled ``GNU
 Free Documentation License''.
-@end quotation
-@end copying
+#+end_quote
 
-@finalout
-@titlepage
-@title Guile GI
-@author Michael L. Gran
-@page
-@vskip 0pt plus 1filll
-@insertcopying
-@end titlepage
-
-@contents
-
-@ifnottex
-@node Top
-@top Guile GI
-@end ifnottex
-
-@menu
-* Preface::
-* Getting Started::
-* Tutorials::
-* Reference Guide::
-* Further Resources and Contact Info::
-* GNU Free Documentation License::
-* Index::
-
-@detailmenu
---- The Detailed Node Listing ---
-
-Getting Started
-
-* Installation::
-* Sample Applications::
-
-Sample Applications
-
-* Example 1::
-
-Tutorials
-
-* GObject Types and Guile Types::
-* Threads and Concurrency::
-* Debugging and Profiling::
-* Application Deployment::
-* Testing and Continuous Integration::
-
-Reference Guide
-
-* Typelib Introspection::
-* GObject Types::
-* GType::
-* GObject Methods::
-* GObject Signals::
-* GObject Properties::
-* Custom GObjects::              Defining new GObject classes
-* More Stuff::
-
-@end detailmenu
-@end menu
-
-@node Preface
-@unnumbered Preface
-
+* Preface
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
 Guile GI is a Guile package that hopes to provide access for
 GObject-based libraries such as GTK+, GLib, WebKitGTK+ and many more.
 
@@ -92,13 +41,12 @@ If you want to write a Guile application for GNOME or a Guile GUI
 application using GTK+, then Guile GI (when it is finished) will be
 the way to go.
 
-@node Getting Started
-@chapter Getting Started
-
-@quotation Warning
+* Getting Started
+#+attr_texinfo: :options Warning
+#+begin_quotation
 Guile-GI is still in its experimental phase and even so, this documentation
 describes features of vastly different age. Don't be too surprised if something breaks.
-@end quotation
+#+end_quotation
 
 To get things started, we will try to run a very simple GTK+ based GUI
 application using the bindings provided by Guile GI.
@@ -106,194 +54,150 @@ application using the bindings provided by Guile GI.
 Now, to understand how this works, one needs to distinguish between
 what Guile-GI provides and the bindings that it creates.
 
-@itemize
-@item
-Guile-GI itself is a library that allows you to parse @code{typelib}
-files, which describe code modules.  It has a handful of procedures
-for inspecting @code{typelib} files as well as some helper procedures
-for dynamically creating procedures and types.
-@item
-When Guile-GI is used, it creates procedures, variables, and types
-according to the instructions in the @code{typelib} files.  These are
-created @emph{at runtime} when the Guile-GI procedure
-@code{typelib-load} is called.
-@end itemize
+- Guile-GI itself is a library that allows you to parse ~typelib~
+  files, which describe code modules.  It has a handful of procedures
+  for inspecting ~typelib~ files as well as some helper procedures
+  for dynamically creating procedures and types.
+- When Guile-GI is used, it creates procedures, variables, and types
+  according to the instructions in the ~typelib~ files.  These are
+  created /at runtime/ when the Guile-GI procedure
+  ~typelib-load~ is called.
 
 First, for each GObject library that you want to use in your program,
 you need to have an export library.  A sample library for GTK+3 could
 take the following form.
 
-@example
+#+begin_example
 (define-module (gi gtk-3)
   #:use-module (gi))
 
 (typelib-load "Gtk" "3.0")
-@end example
+#+end_example
 
 Alternatively, you can instruct Guile-GI to create these modules for you, as
 shown in the following.
 
-@example
+#+begin_example
 (use-modules (gi))
 (use-typelibs ("GLib" "2.0") ("Gtk" "3.0"))
-@end example
+#+end_example
 
-Here, Guile-GI creates the (hopefully unique) modules @code{(%gi GLib-2.0)} and @code{(%gi Gtk-3.0)}
-and imports them into the current module using @code{use-modules}.
+Here, Guile-GI creates the (hopefully unique) modules ~(%gi GLib-2.0)~ and ~(%gi Gtk-3.0)~
+and imports them into the current module using ~use-modules~.
 
 For these auto-generated libraries, you are going to need some
-documentation. The procedure @code{typelib-document} creates some
-rough documentation for a @code{typelib}: it gives the procedure names
+documentation. The procedure ~typelib-document~ creates some
+rough documentation for a ~typelib~: it gives the procedure names
 and how they are called, plus a list of types and constants.  For
 example, the following commands would make some rough documentation
 for GTK and GIO.
 
-@example
+#+begin_example
 guile -L . -c '(use-modules (gi)) (display (typelib-document "Gtk" "3.0"))' > Gtk.txt
 guile -L . -c '(use-modules (gi)) (display (typelib-document "Gio" "2.0"))' > Gio.txt
-@end example
+#+end_example
 
-@xref{Typelib Introspection,,,,} for more information on @code{typelib-load} and @code{typelib-document}.
+{{{xref(Typelib Introspection)}}} for more information on ~typelib-load~ and ~typelib-document~.
 
 A minimal GTK application looks like this
+#+begin_export texinfo
 @example
 @include example-1.scm
 @end example
+#+end_export
 
 When it is run, it will create an empty window with a title.  Are you impressed?
 
 Let's walk through this example.  First off, you may notice two important procedures:
-@code{make} and @code{connect}, as well as a few types, most notably @code{<GtkApplication>} and @code{signal}.
+~make~ and ~connect~, as well as a few types, most notably ~<GtkApplication>~ and ~signal~.
 These procedures and types allow you to interact with GObject's very odd class system.
 
-First is @code{make}, which wraps and extends the @code{make} procedure found in GOOPS.
-@xref{GOOPS,,,guile,The Guile reference manual} for infos about GOOPS.
+First is ~make~, which wraps and extends the ~make~ procedure found in GOOPS.
+{{{xref(GOOPS,,,guile,The Guile reference manual)}}} for infos about GOOPS.
 In short the arguments, that would normally be used for slot initialization are instead used
 to initialize properties.
 This is an important distinction, as objects are represented in Scheme as GOOPS objects, whose
-slots @strong{do not} map to properties.
+slots *do not* map to properties.
 It also takes care of some types, which do not derive from GObject, such as boxed types.
 
-Next is @code{connect}, which connects Guile procedures as handlers to GObject signals.
+Next is ~connect~, which connects Guile procedures as handlers to GObject signals.
 Signals are roughly equal to hooks.
-Note, that @code{(gi)} only defines @code{connect} in terms of signal objects, while signals
+Note, that ~(gi)~ only defines ~connect~ in terms of signal objects, while signals
 are not yet exported as objects from typelibs. Hence we define our own connect method, which translates
 symbols to signal objects. In future, this will no longer be necessary and
-@code{(connect object signal handler)} should work without quoting the signal.
+~(connect object signal handler)~ should work without quoting the signal.
 
-@xref{GObject Methods,,,,} for more information on how to use methods.
-@xref{GObject Signals,,,,} for more information on how to use signals.
-@xref{GObject Properties,,,,} for more information on how to use properties.
-
-@menu
-* Installation::
-* Sample Applications::
-@end menu
-
-@node Installation
-@section Installation
-
+{{{xref(GObject Methods)}}} for more information on how to use methods.
+{{{xref(GObject Signals)}}} for more information on how to use signals.
+{{{xref(GObject Properties)}}} for more information on how to use properties.
+** Installation
 In some happy future, you might be able to get this from whatever method
 your operating system normally uses to download free software.
 
 If you are trying to build this from the Git repository, use
-@command{git clone} to copy the tree onto your computer. After closing
-the repository, you need to run @command{autoreconf} to generate a
-@file{configure} file.
+{{{command(git clone)}}} to copy the tree onto your computer. After closing
+the repository, you need to run {{{command(autoreconf)}}} to generate a
+{{{file(configure)}}} file.
 
-If you are building from a @file{guile-gi.zip} file or a
-@file{guile-gi.tar.gz}, unpack the file.
+If you are building from a {{{file(guile-gi.zip)}}} file or a
+{{{file(guile-gi.tar.gz)}}}, unpack the file.
 
-From there, running @command{configure}, then @command{make}, then
-@command{sudo make install} will give you a running system.
+From there, running {{{command(configure)}}}, then {{{command(make)}}}, then
+{{{command(sudo make install)}}} will give you a running system.
 
-In the file archives, look for files named @file{INSTALL} for detailed
+In the file archives, look for files named {{{file(INSTALL)}}} for detailed
 instructions.
 
-@node Sample Applications
-@section Sample Applications
-
-@menu
-* Example 1::
-@end menu
-
-@node Example 1
-@subsection Example 1
-
-@node Tutorials
-@chapter Tutorials
-
-@menu
-* GObject Types and Guile Types::
-* Threads and Concurrency::
-* Debugging and Profiling::
-* Application Deployment::
-* Testing and Continuous Integration::
-@end menu
-
-@node GObject Types and Guile Types
-@section GObject Types and Guile Types
-
+** Sample Applications
+*** Example 1
+* Tutorials
+** GObject Types and Guile Types
 Every time you call a GObject procedure provided by Guile-GI, the
 Guile arguments need to be converted to C arguments, and the return
 values need to be converted back into Guile values. For integer and
 string arguments, the C to Guile conversions are straightforward; for
-GObject types -- such as GTK's @code{GtkWindow} or @code{GtkButton} or
-GLib's @code{GDate} -- a Guile object needs to be converted into a C
+GObject types -- such as GTK's ~GtkWindow~ or ~GtkButton~ or
+GLib's ~GDate~ -- a Guile object needs to be converted into a C
 structure.  Hopefully, in normal circumstances, this conversion will
 happen automatically without difficulty.
 
 GObject types have different categories.  Some are simple C structs
-and unions.  Others are @emph{objects}, which is GObject's class
+and unions.  Others are /objects/, which is GObject's class
 hierarchy upon which the windowing library GTK is built.
 
 Explaining how Guile-to-C type conversion is accomplished under the
 hood can be slightly confusing because there are several different
 things named `type':
 
-@enumerate
-@item
-the C typedef of a structure, union or object, such as @code{struct GtkWindow}
-@item
-the C @code{GType}, a unique integer ID that GObject libraries provide
-for each C typedef'd structure, union, or object
-@item
-the Guile class @code{<GType>} created by Guile-GI for each GType to hold instances
-of the associated C structure
-@end enumerate
+1. the C typedef of a structure, union or object, such as ~struct GtkWindow~
+2. the C ~GType~, a unique integer ID that GObject libraries provide
+   for each C typedef'd structure, union, or object
+3. the Guile class ~<GType>~ created by Guile-GI for each GType to hold instances
+   of the associated C structure
 
-For example, GLib has a type @code{GDate *} which holds information
-about a calendar date.  The @code{GDate *} typedef has an associated
-@code{GType} integer ID.  The Guile class @code{<Date>} is created to
-hold structures with that @code{GType}.  When using GLib's date
-functions from Guile, instances of @code{GDate *} are held by
-instances of the Guile class @code{<Date>}.
+For example, GLib has a type ~GDate *~ which holds information
+about a calendar date.  The ~GDate *~ typedef has an associated
+~GType~ integer ID.  The Guile class ~<Date>~ is created to
+hold structures with that ~GType~.  When using GLib's date
+functions from Guile, instances of ~GDate *~ are held by
+instances of the Guile class ~<Date>~.
 
 Internally to Guile-GI, all of the Guile classes for GObject structs,
 objects and unions are GOOPS types that handle managing the C pointer.
-The C pointer is ``hidden'' in the @code{ptr} slot of an object.
-
-@node Threads and Concurrency
-@section Threads and Concurrency
-
+The C pointer is ``hidden'' in the ~ptr~ slot of an object.
+** Threads and Concurrency
 While Guile is multi-threaded, applications using Guile-GI are not
 fully thread-safe.  Notably, applications using GTK or GLib's mainloop
 need all rendering and mainloop activities to occur in one thread.
-Also, all calls to @code{typelib-load} need to be made from the same
+Also, all calls to ~typelib-load~ need to be made from the same
 thread.
-
-@node Debugging and Profiling
-@section Debugging and Profiling
-
+** Debugging and Profiling
 Guile-GI makes use of GLib's debug logging.  Running a program with
-the @env{G_MESSAGES_DEBUG} environment variable set to @code{all} will
+the {{{env(G_MESSAGES_DEBUG)}}} environment variable set to ~all~ will
 provide a full trace of the function calls in Guile-GI.  For more
 information on how to take advantage of this logging, see
-@uref{https://developer.gnome.org/glib/stable/glib-running.html}.
-
-@node Application Deployment
-@section Application Deployment
-
+[[https://developer.gnome.org/glib/stable/glib-running.html]].
+** Application Deployment
 If you write a program in Guile-GI and wish to share it
 with the world, you will need to ensure your users have
 all the prerequisites.
@@ -301,207 +205,182 @@ all the prerequisites.
 At a minimum, Guile-GI scripts will require that users have the
 following packages.
 
-@itemize
-@item
-Guile
-@item
-Guile-GI
-@item
-libffi
-@item
-GLib
-@item
-GObject Introspection aka GIRepository
-@end itemize
+- Guile
+- Guile-GI
+- libffi
+- GLib
+- GObject Introspection aka GIRepository
 
 And then, of course, a Guile-GI program will additionally
 require whatever libraries its uses (GTK, WebKit2) as well
 as their associated typelib files.
-
-@node Testing and Continuous Integration
-@section Testing and Continuous Integration
-
+** Testing and Continuous Integration
 The distribution does contain a couple of scripts that should enable it
 to be built by Travis-CI.  In the root directory, there is a
-@code{.travis.yml} and a @code{Dockerfile} that work together.  The
+~.travis.yml~ and a ~Dockerfile~ that work together.  The
 docker container pulls the latest version of Ubuntu, and the YML file
-builds the project and runs @code{make distcheck}.
+builds the project and runs ~make distcheck~.
 
-@node Reference Guide
-@chapter Reference Guide
-
-The Guile GI project provides a Guile module @file{(gi)}.  The
-@file{(gi)} module is an interface for dynamically creating Guile
+* Reference Guide
+The Guile GI project provides a Guile module {{{file((gi))}}}.  The
+{{{file((gi))}}} module is an interface for dynamically creating Guile
 modules for GObject-based libraries by examining the information in
-their @file{.typelib} files.
+their {{{file(.typelib)}}} files.
 
-@menu
-* Typelib Introspection::
-* GObject Types::
-* GType::
-* GObject Methods::
-* GObject Signals::
-* GObject Properties::
-* Custom GObjects::              Defining new GObject classes
-* More Stuff::
-@end menu
-
-@node Typelib Introspection
-@section Typelib Introspection
-
+** Typelib Introspection
 A GObject typelib file contains information on the public classes,
 functions, and variables in a GObject-based library, and most
 GObject-complient libraries, such as GLib and GTK, provide one.
 Usually these files are on the filesystem in a single directory
 location.  On Fedora, for example, these files may be stored in
-@file{/var/lib64/girepository-1.0}.
+{{{file(/var/lib64/girepository-1.0)}}}.
 
-@deffn Procedure typelib-get-search-path
+#+attr_texinfo: :options Procedure typelib-get-search-path
+#+begin_deffn
 This returns, as a list of strings, the current search path used to find
 typelib files.
 
 If it returns an empty list, this indicates that it is only searching
 the default typelib directory.
-@end deffn
+#+end_deffn
 
-@deffn Procedure typelib-prepend-search-path directory
-Given @var{directory}, a string representation of a filesystem
+#+attr_texinfo: :options Procedure typelib-prepend-search-path directory
+#+begin_deffn
+Given {{{var(directory)}}}, a string representation of a filesystem
 directory, this prepends that directory to the typelib search path.
 
 If using this procedure in a script, it must be called before any
-calls to @code{typelib-load}.
-@end deffn
+calls to ~typelib-load~.
+#+end_deffn
 
-@deffn Procedure typelib-document namespace version
-Given @var{namespace}, a string that names a typelib library, such as
-``Gtk'' or ``GLib'', and @var{version}, a string that names a version
+#+attr_texinfo: :options Procedure typelib-document namespace version
+#+begin_deffn
+Given {{{var(namespace)}}}, a string that names a typelib library, such as
+``Gtk'' or ``GLib'', and {{{var(version)}}}, a string that names a version
 of a typelib library, like ``2.0'' or ``3.0'', this procedure parses a
 typelib file and generates documentation of the Scheme procedures, types,
-and constants that will be provided by calling @code{typelib-load}.
+and constants that will be provided by calling ~typelib-load~.
 The documentation is returned a a string.
 
 The procedure may throw an error if a typelib file corresponding to
-@var{namespace} and @var{version} cannot be found.
-@end deffn
+{{{var(namespace)}}} and {{{var(version)}}} cannot be found.
+#+end_deffn
 
-@deffn Procedure typelib-load namespace version
-Given @var{namespace}, a string that names a typelib library, such as
-``Gtk'' or ``GLib'', and @var{version}, a string that names a version
+#+attr_texinfo: :options Procedure typelib-load namespace version
+#+begin_deffn
+Given {{{var(namespace)}}}, a string that names a typelib library, such as
+``Gtk'' or ``GLib'', and {{{var(version)}}}, a string that names a version
 of a typelib library, like ``2.0'' or ``3.0'', this procedure parses a
 typelib file and generates procedures, constants, and types which are
 loaded into the current environment.
 
 The procedure may throw an error if a typelib file corresponding to
-@var{namespace} and @var{version} cannot be found.
-@end deffn
-
-@node GObject Types
-@section GObject Types
-
+{{{var(namespace)}}} and {{{var(version)}}} cannot be found.
+#+end_deffn
+** GObject Types
 For integer and string arguments, the C to Guile conversions are the
 obvious ones. But for the specialized GObject types, things get a bit
 more complex.  GObject has three classes of custom types: structs,
 unions, and objects.
 
-GObject @emph{unions} and @emph{structs} are handled in Guile-GI by
+GObject /unions/ and /structs/ are handled in Guile-GI by
 creating a GOOPS type that wraps a C pointer.  Typically,
 instances can be created and by GObject functions and used as
 arguments, but, their contents aren't otherwise modifyiable.  GObject
 unions and structs may have GObject Methods, but do not have signals
 or properties.
 
-GObject @emph{objects} are also stored by creating a GOOPS
+GObject /objects/ are also stored by creating a GOOPS
 type that wraps a C pointer.  Unlike GObject structs and unions, they
 have more interactivity available at the Guile layer.  They have
 properties that can be queried and Guile procedures can be hooked into
 the GObject callback layer, which GObject calls ``signals''.
 
 For each custom GObject type, Guile-GI creates a variable that holds
-the GOOPS type.  That variable has the form @code{<TYPE>},
+the GOOPS type.  That variable has the form ~<TYPE>~,
 where TYPE is the GObject type name. To check whether an object
-has a given type, use the @code{is-a?} procedure found in GOOPS, which
+has a given type, use the ~is-a?~ procedure found in GOOPS, which
 Guile-GI re-exports.
 
-@example
+#+begin_example
 (use-modules (gi))
 (use-typelibs ("GObject" "2.0") ("Gio" "2.0"))
 (is-a? (make <GApplication>) <GObject>)
 ;; => #t
-@end example
+#+end_example
 
 Each GObject struct, union, or object has a place in the GObject
-single-inheritance class structure.  A @code{RadioButton} is a type of
-@code{Button} is a type of @code{Widget}, for example.  If you wish to
-introspect a GObject's type, use @code{get-gtype} and then use the GType
+single-inheritance class structure.  A ~RadioButton~ is a type of
+~Button~ is a type of ~Widget~, for example.  If you wish to
+introspect a GObject's type, use ~get-gtype~ and then use the GType
 procedures.
 
-@xref{GType,,,,} for more information on type introspection.
+{{{xref(GType)}}} for more information on type introspection.
 
-@node GType
-@section GType
-
-A @code{<GType>} is a Guile type, which corresponds to a @code{GType}.
-A @code{GType} is basically an integer ID (an @code{<integer>} in Scheme),
+** GType
+A ~<GType>~ is a Guile type, which corresponds to a ~GType~.
+A ~GType~ is basically an integer ID (an ~<integer>~ in Scheme),
 that GObject uses to identify a type.
 
 GObject has its own custom class structure.  The following procedures
-provide information about how a @code{<GType>} forms part of that
+provide information about how a ~<GType>~ forms part of that
 class structure.
 
-@deffn Procedure get-gtype object
-Given @var{object}, a GObject struct, union, or object, this procedure
-returns its GObject type as an @code{<integer>}, otherwise it returns @code{#f}.
-@end deffn
+#+attr_texinfo: :options Procedure get-gtype object
+#+begin_deffn
+Given {{{var(object)}}}, a GObject struct, union, or object, this procedure
+returns its GObject type as an ~<integer>~, otherwise it returns ~#f~.
+#+end_deffn
 
-@deffn Procedure gtype-get-scheme-type gtype
-Given @var{gtype} of type @code{<integer>}, this procedure will return
+#+attr_texinfo: :options Procedure gtype-get-scheme-type gtype
+#+begin_deffn
+Given {{{var(gtype)}}} of type ~<integer>~, this procedure will return
 the Scheme type that holds instances of that type.
-@end deffn
+#+end_deffn
 
-@deffn Procedure gtype-get-name gtype
-Given @var{gtype} of type @code{<integer>}, this procedure returns
+#+attr_texinfo: :options Procedure gtype-get-name gtype
+#+begin_deffn
+Given {{{var(gtype)}}} of type ~<integer>~, this procedure returns
 a string with GObject's internal name for this type.  This may differ
 slightly from the name that Guile-GI gives to the type.
-@end deffn
+#+end_deffn
 
 
+#+begin_export texinfo
 @deffn Procedure gtype-get-parent gtype
 @deffnx Procedure gtype-get-children gtype
 These procedures return the parent type and the child types of a
 specified @var{gtype}.
 @end deffn
+#+end_export
 
-@deffn Procedure gtype-is-a? object type
-Returns @code{#t} of @var{object} is an instance of a @var{type}.
-@end deffn
-
-@node GObject Methods
-@section GObject Methods
-
+#+attr_texinfo: :options Procedure gtype-is-a? object type
+#+begin_deffn
+Returns ~#t~ of {{{var(object)}}} is an instance of a {{{var(type)}}}.
+#+end_deffn
+** GObject Methods
 Guile-GI exports object methods as GOOPS methods in the formats
-@code{type:method} and @code{method}, where @var{type} is the
-type of an object sans namespace translated into @code{kebab-case} and
-@var{method} is the name of the method translated into
-@code{kebab-case}. For instance @code{gtk_widget_show}
-is bound to both @code{widget:show} and @code{show}.
+~type:method~ and ~method~, where {{{var(type)}}} is the
+type of an object sans namespace translated into ~kebab-case~ and
+{{{var(method)}}} is the name of the method translated into
+~kebab-case~. For instance ~gtk_widget_show~
+is bound to both ~widget:show~ and ~show~.
 
 Use whichever bindings you prefer or alternatively rename them using the
-@code{#:rename} argument to @code{use-modules} or
-@code{use-typelibs} respectively. Note that Guile currently warns if a binding
+~#:rename~ argument to ~use-modules~ or
+~use-typelibs~ respectively. Note that Guile currently warns if a binding
 is imported from multiple libraries (e.g. both GLib and Gtk), but this should
 not concern you in most cases, as both internally specialize the same generic method.
 
-@node GObject Signals
-@section GObject Signals
-
+** GObject Signals
 GObjects have a functionality for defining and calling callback
-procedures that it calls @emph{signals}.  Note that these signals
-have nothing to do with Unix signals like @code{SIGTERM}.
+procedures that it calls /signals/.  Note that these signals
+have nothing to do with Unix signals like ~SIGTERM~.
 
 To hook a callback procedure to an object's signal, use the
-@code{connect} procedure. Consider the following example.
+~connect~ procedure. Consider the following example.
 
-@example
+#+begin_example
 (define (activate app)
    ...
    )
@@ -511,19 +390,20 @@ To hook a callback procedure to an object's signal, use the
 (connect app              ; A GObject
          activate-signal  ; A <signal> object
          activate)        ; A procedure to call when emitted
-@end example
+#+end_example
 
 In that example, the caller is attaching a procedure named
-@code{activate} to the object @code{app}'s ``activate'' signal.  When
+~activate~ to the object ~app~'s ``activate'' signal.  When
 the gobject object calls all the callback procedures attached to its
-``activate'' signal it will call this @code{activate} procedure.
+``activate'' signal it will call this ~activate~ procedure.
 
 When a callback procedure is called it may receives some arguments
-from the caller and some from user data.  In the example, @code{activate}
+from the caller and some from user data.  In the example, ~activate~
 is supposed to take a single argument.
-This argument -- @code{app} -- is supplied by the caller, as are all
+This argument -- ~app~ -- is supplied by the caller, as are all
 arguments to signals.
 
+#+begin_export texinfo
 @deffn Procedure connect obj (signal <signal>) (handler <procedure>)
 @deffnx Procedure connect obj (signal <signal>) (detail <symbol>) (handler <procedure>)
 @deffnx Procedure connect-after obj (signal <signal>) (handler <procedure>)
@@ -534,61 +414,66 @@ If @var{detail} is supplied, only emissions in which the detail matches it are c
 @code{connect-after} works like @code{connect}, except that the handler is run @emph{after}
 the main handling code.
 @end deffn
+#+end_export
 
 Signal objects can also be used to emit signals. Note that you shouldn't normally do this when
 using objects of types, that you didn't define, and even when using objects of types,
 that you did define, you should only emit the signals that you defined for that object
 (and perhaps the ``notify'' signal when using explicit notification).
 
-@defspec signal obj [detail] [args...]
-Emits the @var{signal} signal of @var{obj} with @var{detail} and @var{args}.
-Note, that the interpretation of @var{detail} depends on whether or not @var{signal} is detailed.
-If it is, @var{detail} needs to be a symbol, that will be translated to the detail of the emission.
-If it is not, it is considered the first argument and will be consed with @var{args} to form
+#+attr_texinfo: :options signal obj [detail] [args...]
+#+begin_defspec
+Emits the {{{var(signal)}}} signal of {{{var(obj)}}} with {{{var(detail)}}} and {{{var(args)}}}.
+Note, that the interpretation of {{{var(detail)}}} depends on whether or not {{{var(signal)}}} is detailed.
+If it is, {{{var(detail)}}} needs to be a symbol, that will be translated to the detail of the emission.
+If it is not, it is considered the first argument and will be consed with {{{var(args)}}} to form
 an argument list.
-@end defspec
+#+end_defspec
 
 Signals have several slots, that can be bound on creation time
 (and reassigned freely, since they are proper GOOPS objects).
-When connecting signals, only @var{name} needs to be supplied.
-When using them as proper signals, at least @var{return-type} needs to be given as well.
+When connecting signals, only {{{var(name)}}} needs to be supplied.
+When using them as proper signals, at least {{{var(return-type)}}} needs to be given as well.
 
-@defvr Slot name
+#+attr_texinfo: :options Slot name
+#+begin_defvr
 The name of the signal.
 A string.
-@end defvr
+#+end_defvr
 
-@defvr Slot return-type
+#+attr_texinfo: :options Slot return-type
+#+begin_defvr
 The return type of the signal.
-A @code{<GType>} or integer.
-@end defvr
+A ~<GType>~ or integer.
+#+end_defvr
 
-@defvr Slot param-types
+#+attr_texinfo: :options Slot param-types
+#+begin_defvr
 The parameter types of the signal.
-A list of @code{<GType>} classes or integers.
-@end defvr
+A list of ~<GType>~ classes or integers.
+#+end_defvr
 
-@defvr Slot accumulator
-A procedure, called with two arguments @var{seed} and @var{current} and
+#+attr_texinfo: :options Slot accumulator
+#+begin_defvr
+A procedure, called with two arguments {{{var(seed)}}} and {{{var(current)}}} and
 produces up to two output values.
-If it produces no output value, @var{seed} is left unchanged and signal handling
+If it produces no output value, {{{var(seed)}}} is left unchanged and signal handling
 continues.
-If it produces one output value, @var{seed} is set to that value and signal handling continues.
-If it produces two output values, @var{seed} is set to the second output value and signal
-handling stops if the first is @code{#f}.
-If at any time @var{seed} would be set to an incorrect value or more than two values are returned
+If it produces one output value, {{{var(seed)}}} is set to that value and signal handling continues.
+If it produces two output values, {{{var(seed)}}} is set to the second output value and signal
+handling stops if the first is ~#f~.
+If at any time {{{var(seed)}}} would be set to an incorrect value or more than two values are returned
 signal handling is aborted.
-@end defvr
+#+end_defvr
 
-@defvr Slot flags
+#+attr_texinfo: :options Slot flags
+#+begin_defvr
 Signal flags, a logical or of  one or more of
-@code{SIGNAL_RUN_FIRST}, @code{SIGNAL_RUN_LAST},
-@code{SIGNAL_RUN_CLEANUP}, @code{SIGNAL_NO_RECURSE}, etc.
-@end defvr
+~SIGNAL_RUN_FIRST~, ~SIGNAL_RUN_LAST~,
+~SIGNAL_RUN_CLEANUP~, ~SIGNAL_NO_RECURSE~, etc.
+#+end_defvr
 
-@node GObject Properties
-@section GObject Properties
-
+** GObject Properties
 GObject objects may have one or more properties, which are variables
 attached to the object that may be gotten or set.  GObject properties
 usually have C-like types.  Remember that GObject objects are
@@ -597,9 +482,10 @@ class may one or more properties. So, for example, if the object is a
 radio button, you may get or set properties that apply specifically to
 radio buttons, or generic buttons, or generic widgets.
 
-The @code{get-property} and @code{set-property!} procedures are provided
+The ~get-property~ and ~set-property!~ procedures are provided
 to set GObject properties.
 
+#+begin_export texinfo
 @deffn Procedure get-property obj prop
 @deffnx Procedure set-property! obj prop val
 Gets or sets and object's property. @var{prop} is the symbol name
@@ -608,20 +494,23 @@ of the property to set.
 It will throw an error if the property does not exist, or if the
 setting value has the wrong type.
 @end deffn
+#+end_export
 
 Alternatively, you can also use parameter types,
-(i.e. ``objects'', that derive from @code{G_TYPE_PARAM} alias @code{<GParam>})
-as accessors. Assuming, that e.g. @code{prop} is bound to such an object,
-@code{(prop obj)} will fetch the corresponding property, whereas
-@code{(set! (prop obj) val)} will set it.
+(i.e. ``objects'', that derive from ~G_TYPE_PARAM~ alias ~<GParam>~)
+as accessors. Assuming, that e.g. ~prop~ is bound to such an object,
+~(prop obj)~ will fetch the corresponding property, whereas
+~(set! (prop obj) val)~ will set it.
 
-@node Custom GObjects
-@section Defining new GObject classes
-
+** Defining new GObject classes
+:PROPERTIES:
+:ALT_TITLE: Custom GObjects
+:DESCRIPTION: Defining new GObject classes
+:END:
 Usually any GObjects you use will be created by procedures such as
-@code{window:new}, and those GObject types will have been predefined
+~window:new~, and those GObject types will have been predefined
 in the typelib. But, it is possible to make custom GObject object
-classes using the @code{register-type} procedure.
+classes using the ~register-type~ procedure.
 
 Bear in mind, that while Guile-GI internally uses GOOPS, GObjects implemented in it
 are not quite as flexible. For instance, you can not meaningfully redefine a
@@ -631,36 +520,35 @@ such as signals.
 
 Defining a new GObject class is rather complicated.
 
-@deffn Procedure register-type type-name parent-type list-of-properties list-of-signals disposer
-This procedure creates and returns a new @code{<GType>} of a GObject
+#+attr_texinfo: :options Procedure register-type type-name parent-type list-of-properties list-of-signals disposer
+#+begin_deffn
+This procedure creates and returns a new ~<GType>~ of a GObject
 object.
 
-@var{type-name} is the string name of the new type. Note, that it will be
+{{{var(type-name)}}} is the string name of the new type. Note, that it will be
 turned into a symbol internally.
 
-@var{parent-type} is the @code{<GType>} of the parent class to this
-class.  The parent class needs to be @code{<GObject>} or a GObject
+{{{var(parent-type)}}} is the ~<GType>~ of the parent class to this
+class.  The parent class needs to be ~<GObject>~ or a GObject
 class that descends from it.
 
-@var{list-of-properties} is a list of parameter specifications.
-These parameter specifications can be created using the @code{param-spec-TYPE}
-methods found in the @code{GObject} typelib.
+{{{var(list-of-properties)}}} is a list of parameter specifications.
+These parameter specifications can be created using the ~param-spec-TYPE~
+methods found in the ~GObject~ typelib.
 
-@var{list-of-signals} is a list of signal specifications.
-@end deffn
+{{{var(list-of-signals)}}} is a list of signal specifications.
+#+end_deffn
 
-To then make instances of your custom GObject type, use @code{make}.
+To then make instances of your custom GObject type, use ~make~.
 
-@node More Stuff
-@section More Stuff
-
-@subsection On Guile to C Type Conversions
+** More Stuff
+#+texinfo: @subsection On Guile to C Type Conversions
 Guile-GI uses a rule system to convert Guile procedure arguments to C
 types.  Typically these conversions between Guile and C types are
 straightforward, but, some conversions are tricky and need additional
 description.
 
-@subsubsection Strings
+#+texinfo: @subsubsection Strings
 GObject libraries usually use UTF-8 encoding for their strings, while
 Guile uses a different encoding internally for its strings.  Thus
 every time a string is parameter is passed through to a C procedure, a
@@ -673,7 +561,7 @@ Guile-GI converts Guile strings to locale-encoded strings for those
 procedures.  Note that this may throw an encoding error if the Guile
 string cannot be represented in the current locale.
 
-@subsection C Arrays
+#+texinfo: @subsection C Arrays
 There are many different types of C arrays, and the Guile types
 expected for GObject procedures that C arrays varies depending on the
 type required.
@@ -683,7 +571,7 @@ points, etc -- a Guile bytevector needs to be used.  For these
 bytevectors, always use native-endianness.
 
 For C arrays of GObject objects, structs, unions, flags, enums, and
-GTypes, a @emph{list} is used instead of a bytevector.
+GTypes, a /list/ is used instead of a bytevector.
 
 If the C procedure expects a zero-terminated array, Guile-GI will
 provide that automatically.  There is no need to add you own zero.
@@ -692,27 +580,23 @@ Some GObject procedures write output information into preallocated C
 arrays.  For those procedures, the Guile caller will need to create
 and pass in a bytevector of the appropriate size.
 
-@quotation Warning
-It is best not to use any of GLib's @code{Array} and @code{ByteArray}
+#+attr_texinfo: :options Warning
+#+begin_quotation
+It is best not to use any of GLib's ~Array~ and ~ByteArray~
 procedures directly.  Since arrays get converted to bytevectors, these
 procedures will likely fail to do anything sensible.
-@end quotation
+#+end_quotation
 
-@node Further Resources and Contact Info
-@chapter Further Resources and Contact Info
-
+* Further Resources and Contact Info
 Uh, I dunno.
 
 Maybe the Guile mailing list?
-
-@node GNU Free Documentation License
-@appendix GNU Free Documentation License
-
-@include fdl-1.3.texi
-
-@node Index
-@unnumbered Index
-
-@printindex cp
-
-@bye
+* GNU Free Documentation License
+:PROPERTIES:
+:APPENDIX: t
+:END:
+#+texinfo: @include fdl-1.3.texi
+* Index
+:PROPERTIES:
+:INDEX: cp
+:END:
