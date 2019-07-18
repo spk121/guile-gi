@@ -17,6 +17,8 @@
              (oop goops)
              (ice-9 receive))
 
+(push-duplicate-handler! 'shrug-equals)
+
 (use-typelibs (("Gio" "2.0") #:renamer (protect 'receive))
               ("Gdk" "3.0")
               (("Gtk" "3.0") #:renamer (protect %rnrs-syntax))
