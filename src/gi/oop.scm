@@ -79,8 +79,8 @@
                         (let lp ((cpl (class-precedence-list type)))
                           (let ((elt (car cpl)))
                             (cond
-                             ((eq? a-specializer elt) #t)
-                             ((eq? b-specializer elt) #f)
+                             ((eq? a-type elt) #t)
+                             ((eq? b-type elt) #f)
                              (else (lp (cdr cpl))))))))))))))
 
 (define (%connect-generic obj signal detail handler after)

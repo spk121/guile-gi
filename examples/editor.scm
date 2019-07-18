@@ -19,7 +19,7 @@
 
 (use-typelibs (("Gio" "2.0") #:renamer (protect 'receive))
               ("Gdk" "3.0")
-              ("Gtk" "3.0")
+              (("Gtk" "3.0") #:renamer (protect %rnrs-syntax))
               ("GLib" "2.0"))
 
 (define (print-goodbye widget)
@@ -30,9 +30,6 @@
       (get-keyval event)
     (format #t "key: ~s\n" keyval)
     #f))
-
-(define-method (connect obj (signal <symbol>) (handler <procedure>))
-  (connect obj (make <signal> #:name (symbol->string signal)) handler))
 
 (define (activate app)
   (let ((window (application-window:new app))
@@ -51,12 +48,8 @@
     (set-default-size window 200 200)
 
     (map connect
-         (list editor
-               button button
-               button2)
-         '(key-press-event
-           clicked clicked
-           clicked)
+         (list editor button button button2)
+         (list key-press-event clicked clicked clicked)
          (list key-press
                print-goodbye (lambda x (destroy window))
                ;; When the 'hello' button is clicked, write the current contents
@@ -76,7 +69,7 @@
 
 (define (main)
   (let ((app (application:new "org.gtk.example" 0)))
-    (connect app 'activate activate)
+    (connect app application:activate activate)
     (run app (command-line))))
 
 (main)

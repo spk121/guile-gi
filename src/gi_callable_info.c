@@ -12,6 +12,9 @@ is_predicate(GICallableInfo *info)
     gboolean predicate = FALSE;
     GITypeInfo *return_type;
 
+    if (GI_IS_SIGNAL_INFO(info))
+        return FALSE;
+
     return_type = g_callable_info_get_return_type(info);
 
     if (g_type_info_get_tag(return_type) == GI_TYPE_TAG_BOOLEAN

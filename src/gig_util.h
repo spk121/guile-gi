@@ -18,6 +18,8 @@ SCM scm_class_set_x(SCM cls, SCM slot, SCM val);
 SCM scm_drop_right_1(SCM lst);
 SCM scm_c_reexport(const gchar *name, ...);
 
+#define scm_is_equal(a,b) scm_is_true(scm_equal_p(a,b))
+
 #define SCM_UNBND_TO_BOOL_F(obj) \
     do {                         \
         if (SCM_UNBNDP (obj))    \

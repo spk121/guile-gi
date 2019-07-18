@@ -73,20 +73,28 @@ static SCM proc4function(GIFunctionInfo *info, const gchar *name, SCM self_type,
 static SCM proc4signal(GISignalInfo *info, const gchar *name, SCM self_type,
                        int *req, int *opt, SCM *formals, SCM *specs);
 
-static SCM
-default_definition(SCM name)
-{
 #define LOOKUP_DEFINITION(module)                                       \
     do {                                                                \
         SCM variable = scm_module_variable(module, name);               \
         if (scm_is_true(variable)) return scm_variable_ref(variable);   \
     } while (0)
 
+static SCM
+current_module_definition(SCM name)
+{
+    LOOKUP_DEFINITION(scm_current_module());
+    return SCM_BOOL_F;
+}
+
+static SCM
+default_definition(SCM name)
+{
     LOOKUP_DEFINITION(scm_c_resolve_module("gi"));
     LOOKUP_DEFINITION(scm_c_resolve_module("guile"));
     LOOKUP_DEFINITION(scm_current_module());
     return SCM_BOOL_F;
 }
+#undef LOOKUP_DEFINITION
 
 void
 gig_function_define(GType type, GICallableInfo *info, const gchar *namespace)
@@ -212,7 +220,21 @@ proc4signal(GISignalInfo *info, const gchar *name, SCM self_type, int *req, int 
     // use base_info name without transformations, otherwise we could screw things up
     values[0] = scm_from_utf8_string(g_base_info_get_name(info));
 
-    return gig_make_signal(1, slots, values);
+    SCM signal = gig_make_signal(1, slots, values);
+
+    // check for collisions
+    SCM current_definition = current_module_definition(scm_from_utf8_symbol(name));
+    if (scm_is_true(current_definition))
+        for (SCM iter = scm_generic_function_methods(current_definition);
+             scm_is_pair(iter); iter = scm_cdr(iter))
+            if (scm_is_equal(*specializers, scm_method_specializers(scm_car(iter)))) {
+                // we'd be overriding an already defined generic method, let's not do that
+                scm_slot_set_x(signal, scm_from_utf8_symbol("procedure"),
+                               scm_method_procedure(scm_car(iter)));
+                break;
+            }
+
+    return signal;
 }
 
 static GigGsubr *
