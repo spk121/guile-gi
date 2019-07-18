@@ -23,12 +23,10 @@ libguile_gi_la_SOURCES = \
  gig_argument.h \
  gig_object.c \
  gig_object.h \
- gig_object_private.c \
- gig_object_private.h \
  gig_value.c \
  gig_value.h \
- gig_signal_closure.c \
- gig_signal_closure.h \
+ gig_signal.c \
+ gig_signal.h \
  gi_type_tag.c \
  gi_type_tag.h \
  gig.c \
