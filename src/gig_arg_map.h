@@ -142,7 +142,7 @@ struct _GigArgMap
     GigArgMapEntry *return_val;
 };
 
-GigArgMap *gig_arg_map_new(GIFunctionInfo *function_info);
+GigArgMap *gig_arg_map_new(GICallableInfo *function_info);
 void gig_arg_map_free(GigArgMap *am);
 void gig_arg_map_dump(const GigArgMap *am);
 

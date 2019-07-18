@@ -15,7 +15,7 @@
 
 #include <libguile.h>
 #include <girepository.h>
-#include "gi_function_info.h"
+#include "gi_callable_info.h"
 #include "gig_argument.h"
 #include "gig_type.h"
 #include "gig_typelib.h"
@@ -587,7 +587,7 @@ static void
 document_method_info(GString **export, GType gtype, GIFunctionInfo *info)
 {
     gchar *class_name = gig_type_class_name_from_gtype(gtype);
-    gchar *public_name = gi_function_info_make_name(info, NULL);
+    gchar *public_name = gi_callable_info_make_name(info, NULL);
     g_string_append_printf(*export, "%s's METHOD %s\n", class_name, public_name);
     g_free(public_name);
     g_free(class_name);
@@ -598,7 +598,7 @@ document_method_info(GString **export, GType gtype, GIFunctionInfo *info)
 static void
 document_function_info(GString **export, const gchar *parent, GIFunctionInfo *info)
 {
-    gchar *public_name = gi_function_info_make_name(info, parent);
+    gchar *public_name = gi_callable_info_make_name(info, parent);
     g_string_append_printf(*export, "PROCEDURE %s\n", public_name);
     g_free(public_name);
     document_callable_arguments(export, info);

@@ -214,7 +214,7 @@ gig_arg_map_entry_apply_callable_info(GigArgMapEntry *e, GICallableInfo *ci)
 }
 
 GigArgMap *
-gig_arg_map_new(GIFunctionInfo *function_info)
+gig_arg_map_new(GICallableInfo *function_info)
 {
     gsize arg_info_count = g_callable_info_get_n_args(function_info);
     GigArgMap *amap = g_new0(GigArgMap, 1);

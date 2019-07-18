@@ -14,7 +14,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <ffi.h>
-#include "gi_function_info.h"
+#include "gi_callable_info.h"
 #include "gig_argument.h"
 #include "gig_util.h"
 #include "gig_arg_map.h"
@@ -48,13 +48,13 @@ static SCM kwd_formals;
 static SCM kwd_procedure;
 
 
-static GigGsubr *check_gsubr_cache(GIFunctionInfo *function_info,
+static GigGsubr *check_gsubr_cache(GICallableInfo *function_info,
                                    gint *required_input_count, gint *optional_input_count,
                                    SCM *formals, SCM *specializers);
 static GigGsubr *create_gsubr(GIFunctionInfo *function_info, const gchar *name,
                               gint *required_input_count, gint *optional_input_count,
                               SCM *formals, SCM *specializers);
-static void make_formals(GigFunction *fn, gint n_inputs, SCM *formals, SCM *specializers);
+static void make_formals(GICallableInfo*, GigArgMap*, gint n_inputs, SCM *formals, SCM *specializers);
 static void function_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_data);
 
 static SCM convert_output_args(GIFunctionInfo *func_info, GigArgMap *amap, const gchar *name,
@@ -64,6 +64,9 @@ static void object_list_to_c_args(GIFunctionInfo *func_info, GigArgMap *amap, co
                                   GArray *out_args);
 static void function_free(GigFunction *fn);
 static void gig_fini_function(void);
+
+static SCM proc4function(GIFunctionInfo *info, const gchar *name, int *req, int *opt, SCM *formals, SCM *specs);
+static SCM proc4signal(GISignalInfo *info, const gchar *name, int *req, int *opt, SCM *formals, SCM *specs);
 
 static SCM
 default_definition(SCM name)
@@ -84,13 +87,12 @@ default_definition(SCM name)
 // this procedure creates a SCM wrapper for that procedure in the
 // current module.
 void
-gig_function_define_gsubr(GType type, GIFunctionInfo *info, const gchar *prefix)
+gig_function_define_gsubr(GType type, GICallableInfo *info, const gchar *prefix)
 {
-    GigGsubr *func_gsubr;
     gchar *public_name;
     gint required_input_count, optional_input_count;
     SCM formals, specializers, self_type;
-    gboolean is_method = (g_function_info_get_flags(info) & GI_FUNCTION_IS_METHOD) != 0;
+    gboolean is_method = g_callable_info_is_method(info);
     gboolean was_generic = FALSE;
 
     if (is_method) {
@@ -100,8 +102,8 @@ gig_function_define_gsubr(GType type, GIFunctionInfo *info, const gchar *prefix)
 
     scm_dynwind_begin(0);
 
-    public_name = scm_dynwind_or_bust("%gir-function-define-gsubr",
-                                      gi_function_info_make_name(info, prefix));
+    public_name = scm_dynwind_or_bust("%gig-function-define-gsubr",
+                                      gi_callable_info_make_name(info, prefix));
     g_return_if_fail(public_name != NULL);
 
     SCM sym_public_name = scm_from_utf8_symbol(public_name);
@@ -116,13 +118,13 @@ gig_function_define_gsubr(GType type, GIFunctionInfo *info, const gchar *prefix)
         scm_hashq_set_x(generic_table, sym_public_name, generic);
     }
 
-    func_gsubr = check_gsubr_cache(info, &required_input_count, &optional_input_count,
-                                   &formals, &specializers);
-    if (!func_gsubr)
-        func_gsubr = create_gsubr(info, public_name, &required_input_count,
-                                  &optional_input_count, &formals, &specializers);
-
-    SCM proc = scm_c_make_gsubr(public_name, 0, 0, 1, func_gsubr);
+    SCM proc;
+    if (GI_IS_FUNCTION_INFO(info))
+        proc = proc4function((GIFunctionInfo *) info, public_name,
+                             &required_input_count, &optional_input_count,
+                             &formals, &specializers);
+    else
+        g_assert_not_reached();
 
     if (is_method) {
         scm_set_car_x(formals, scm_from_utf8_symbol("self"));
@@ -161,8 +163,25 @@ gig_function_define_gsubr(GType type, GIFunctionInfo *info, const gchar *prefix)
     scm_dynwind_end();
 }
 
+static SCM proc4function(GIFunctionInfo *info, const gchar *name,
+                         int *req, int *opt, SCM *formals, SCM *specializers)
+{
+    GigGsubr *func_gsubr = check_gsubr_cache(info, req, opt,
+                                            formals, specializers);
+    if (!func_gsubr)
+        func_gsubr = create_gsubr(info, name, req, opt,
+                                  formals, specializers);
+
+    return scm_c_make_gsubr(name, 0, 0, 1, func_gsubr);
+}
+
+static SCM proc4signal(GISignalInfo *info, const gchar *name, int *req, int *opt, SCM *formals, SCM *specs)
+{
+    g_assert_not_reached();
+}
+
 static GigGsubr *
-check_gsubr_cache(GIFunctionInfo *function_info, gint *required_input_count,
+check_gsubr_cache(GICallableInfo *function_info, gint *required_input_count,
                   gint *optional_input_count, SCM *formals, SCM *specializers)
 {
     // Check the cache to see if this function has already been created.
@@ -173,23 +192,27 @@ check_gsubr_cache(GIFunctionInfo *function_info, gint *required_input_count,
 
     gig_arg_map_get_gsubr_args_count(gfn->amap, required_input_count, optional_input_count);
 
-    if (g_function_info_get_flags(gfn->function_info) & GI_FUNCTION_IS_METHOD)
+    if (g_callable_info_is_method(gfn->function_info))
         (*required_input_count)++;
 
-    make_formals(gfn, *required_input_count + *optional_input_count, formals, specializers);
+    make_formals(gfn->function_info,
+                 gfn->amap,
+                 *required_input_count + *optional_input_count,
+                 formals, specializers);
 
     return gfn->function_ptr;
 }
 
 static void
-make_formals(GigFunction *fn, gint n_inputs, SCM *formals, SCM *specializers)
+make_formals(GICallableInfo *callable,
+             GigArgMap *argmap, gint n_inputs, SCM *formals, SCM *specializers)
 {
     SCM i_formal, i_specializer;
 
     i_formal = *formals = scm_make_list(scm_from_int(n_inputs), SCM_BOOL_F);
     i_specializer = *specializers = scm_make_list(scm_from_int(n_inputs), top_type);
 
-    if (g_function_info_get_flags(fn->function_info) & GI_FUNCTION_IS_METHOD) {
+    if (g_callable_info_is_method(callable)) {
         // self argument is handled at top
         i_formal = scm_cdr(i_formal);
         i_specializer = scm_cdr(i_specializer);
@@ -201,7 +224,7 @@ make_formals(GigFunction *fn, gint n_inputs, SCM *formals, SCM *specializers)
         gchar *formal = g_strdup_printf("arg%d", i);
         scm_set_car_x(i_formal, scm_from_utf8_symbol(formal));
 
-        GigArgMapEntry *entry = gig_arg_map_get_entry(fn->amap, i);
+        GigArgMapEntry *entry = gig_arg_map_get_entry(argmap, i);
 
         // don't force types on nullable input, as #f can also be used to represent
         // NULL.
@@ -235,10 +258,11 @@ create_gsubr(GIFunctionInfo *function_info, const gchar *name, gint *required_in
 
     gig_arg_map_get_gsubr_args_count(gfn->amap, required_input_count, optional_input_count);
 
-    if (g_function_info_get_flags(gfn->function_info) & GI_FUNCTION_IS_METHOD)
+    if (g_callable_info_is_method(gfn->function_info))
         (*required_input_count)++;
 
-    make_formals(gfn, *required_input_count + *optional_input_count, formals, specializers);
+    make_formals(gfn->function_info,
+                 gfn->amap, *required_input_count + *optional_input_count, formals, specializers);
 
     // STEP 1
     // Allocate the block of memory that FFI uses to hold a closure
@@ -428,7 +452,7 @@ function_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
     if (SCM_UNBNDP(s_args))
         s_args = SCM_EOL;
 
-    if (g_function_info_get_flags(gfn->function_info) & GI_FUNCTION_IS_METHOD) {
+    if (g_callable_info_is_method(gfn->function_info)) {
         self = gig_type_peek_object(scm_car(s_args));
         s_args = scm_cdr(s_args);
     }

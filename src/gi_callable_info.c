@@ -1,4 +1,4 @@
-#include "gi_function_info.h"
+#include "gi_callable_info.h"
 #include "gig_util.h"
 #include "gig_function.h"
 
@@ -7,7 +7,7 @@ static gboolean is_predicate(GIFunctionInfo *info);
 
 // Returns TRUE if this function returns a single boolean.
 static gboolean
-is_predicate(GIFunctionInfo *info)
+is_predicate(GICallableInfo *info)
 {
     gboolean predicate = FALSE;
     GITypeInfo *return_type;
@@ -18,7 +18,7 @@ is_predicate(GIFunctionInfo *info)
         && !g_type_info_is_pointer(return_type)) {
         gint in, out;
 
-        gi_function_info_count_args(info, &in, &out);
+        gi_callable_info_count_args(info, &in, &out);
         if (out == 0)
             predicate = TRUE;
     }
@@ -29,16 +29,16 @@ is_predicate(GIFunctionInfo *info)
 // This procedure counts the number of arguments that the
 // GObject Introspection FFI call is expecting.
 void
-gi_function_info_count_args(GIFunctionInfo *info, gint *in, gint *out)
+gi_callable_info_count_args(GICallableInfo *info, gint *in, gint *out)
 {
     // Count the number of required input arguments, and store
     // the arg info in a newly allocate array.
-    gint n_args = g_callable_info_get_n_args((GICallableInfo *)info);
+    gint n_args = g_callable_info_get_n_args(info);
     gint n_input_args = 0;
     gint n_output_args = 0;
 
     for (int i = 0; i < n_args; i++) {
-        GIArgInfo *ai = g_callable_info_get_arg((GICallableInfo *)info, i);
+        GIArgInfo *ai = g_callable_info_get_arg(info, i);
         GIDirection dir = g_arg_info_get_direction(ai);
         g_base_info_unref(ai);
 
@@ -58,7 +58,7 @@ gi_function_info_count_args(GIFunctionInfo *info, gint *in, gint *out)
 // For function and method names, we want a lowercase string of the
 // form 'func-name-with-hyphens'
 gchar *
-gi_function_info_make_name(GIFunctionInfo *info, const gchar *prefix)
+gi_callable_info_make_name(GICallableInfo *info, const gchar *prefix)
 {
     gchar *name, *str1 = NULL, *str2 = NULL;
     gboolean predicate;
