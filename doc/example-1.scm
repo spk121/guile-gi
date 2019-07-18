@@ -8,9 +8,6 @@
 (define (print-hello widget)
   (display "Hello World\n"))
 
-(define-method (connect obj (signal <symbol>) (handler <procedure>))
-  (connect obj (make <signal> #:name (symbol->string signal)) handler))
-
 (define (activate-callback app)
   (let* ((window (make <GtkApplicationWindow>
                    #:application app
@@ -21,13 +18,13 @@
          (button (make <GtkButton>
                    #:parent button-box
                    #:label "Hello world")))
-    (connect button 'clicked print-hello)
-    (connect button 'clicked (lambda _ (destroy window)))
+    (connect button clicked print-hello)
+    (connect button clicked (lambda _ (destroy window)))
     (show-all window)))
 
 (define (main)
   (let ((app (make <GtkApplication> #:application-id "org.gtk.example")))
-    (connect app 'activate activate-callback)
+    (connect app activate activate-callback)
     (run app (command-line))))
 
 (main)

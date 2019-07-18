@@ -36,31 +36,17 @@
 // that indicate a GObject struct, union, or object type, we make a
 // Guile foreign object type.  For example, if, for example, there
 // were a GType ID 0xaabbccdd that mapped to the C struct GtkWindow
-// pointer type, on the Guile side, a <GtkWindow> foreign object type
+// pointer type, on the Guile side, a <GtkWindow> object type
 // would be created.
 
 // The Guile foreign object types that get created primarily are just
 // boxes that hold C Pointers.  The <GtkWindow> foreign object type
-// has a slot "obj".  Instances of the <GtkWindow> foreign object type
-// will use the "obj" slot to hold a C GtkWindow pointer.
+// has a slot "ptr".  Instances of the <GtkWindow> object type
+// will use the "ptr" slot to hold a C GtkWindow pointer.
 
-// But, these Guile foreign object types also have slots that may be
-// used for bookkeeping and memory management.  The slots in all the
-// Guile GObject foreign object types created by this library are
-// - ob_type: the GType ID (unsigned pointer-like integer)
-// - ob_refcnt: an integer (unsigned integer)
-// - obj: a C pointer
-// - inst_dict: a Guile key/value store that gets used for custom types
-// - weakreflist: unused for now, but, might be used later for memory management
-// - flags: (unsigned integer)
-
-// I've decided not to use GOOPS.  One problem that results from this
-// is that there is no place in the Guile foreign object types to
-// back-reference the GType ID from which the Guile type was created.
-// For example, the <GtkWindow> foreign object types doesn't have a
-// C++-like class static slot to hold the GType ID.  As a workaround,
-// there is a hash table that maps GTypeIDs to their associated
-// foreign object types.
+// These Guile types also have a few class-allocated slots, such as
+// "ref", which points to a class-specific ref-function and "unref",
+// which points to the unref-function.
 
 /*
  * When parsing a Typelib file, an argument type is a sort of a triple

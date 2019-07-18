@@ -23,7 +23,7 @@ Free Documentation License". -->
 <link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
 <link href="Reference-Guide.html#Reference-Guide" rel="up" title="Reference Guide">
 <link href="Further-Resources-and-Contact-Info.html#Further-Resources-and-Contact-Info" rel="next" title="Further Resources and Contact Info">
-<link href="Custom-GObjects.html#Custom-GObjects" rel="prev" title="Custom GObjects">
+<link href="Utilities.html#Utilities" rel="prev" title="Utilities">
 <style type="text/css">
 <!--
 a.summary-letter {text-decoration: none}
@@ -50,18 +50,18 @@ ul.no-bullet {list-style: none}
 <body lang="en">
 <span id="More-Stuff"></span><div class="header">
 <p>
-Previous: <a href="Custom-GObjects.html#Custom-GObjects" accesskey="p" rel="prev">Custom GObjects</a>, Up: <a href="Reference-Guide.html#Reference-Guide" accesskey="u" rel="up">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index.html#Index" title="Index" rel="index">Index</a>]</p>
+Previous: <a href="Utilities.html#Utilities" accesskey="p" rel="prev">Utilities</a>, Up: <a href="Reference-Guide.html#Reference-Guide" accesskey="u" rel="up">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index.html#Index" title="Index" rel="index">Index</a>]</p>
 </div>
 <hr>
-<span id="More-Stuff-1"></span><h3 class="section">3.8 More Stuff</h3>
+<span id="More-Stuff-1"></span><h3 class="section">3.9 More Stuff</h3>
 
-<span id="On-Guile-to-C-Type-Conversions"></span><h4 class="subsection">3.8.1 On Guile to C Type Conversions</h4>
+<span id="On-Guile-to-C-Type-Conversions"></span><h4 class="subsection">3.9.1 On Guile to C Type Conversions</h4>
 <p>Guile-GI uses a rule system to convert Guile procedure arguments to C
 types.  Typically these conversions between Guile and C types are
 straightforward, but, some conversions are tricky and need additional
 description.
 </p>
-<span id="Strings"></span><h4 class="subsubsection">3.8.1.1 Strings</h4>
+<span id="Strings"></span><h4 class="subsubsection">3.9.1.1 Strings</h4>
 <p>GObject libraries usually use UTF-8 encoding for their strings, while
 Guile uses a different encoding internally for its strings.  Thus
 every time a string is parameter is passed through to a C procedure, a
@@ -74,8 +74,7 @@ Guile-GI converts Guile strings to locale-encoded strings for those
 procedures.  Note that this may throw an encoding error if the Guile
 string cannot be represented in the current locale.
 </p>
-<span id="C-Arrays"></span><h4 class="subsection">3.8.2 C Arrays</h4>
-
+<span id="C-Arrays"></span><h4 class="subsection">3.9.2 C Arrays</h4>
 <p>There are many different types of C arrays, and the Guile types
 expected for GObject procedures that C arrays varies depending on the
 type required.
@@ -100,10 +99,24 @@ procedures directly.  Since arrays get converted to bytevectors, these
 procedures will likely fail to do anything sensible.
 </p></blockquote>
 
+<span id="Help_0021-Guile_002dGI-overrides-core-binding-X"></span><h4 class="subsection">3.9.3 Help! Guile-GI overrides core binding X</h4>
+<p>In most cases this is nothing to worry about. Guile-GI ensures, that
+the core binding is used as the default behaviour when the signature
+does not accidentally match that of a function in some typelib.
+However, this can still cause issues when Guile-GI overrides syntax.
+To protect your syntax (or other variables you deeply care about), use
+the <code>protect</code> or <code>protect*</code> renamer from <code>(gi util)</code>.
+</p>
+<span id="Help_0021-Guile_002dGI-bindings-conflict-with-each-other"></span><h4 class="subsection">3.9.4 Help! Guile-GI bindings conflict with each other</h4>
+<p>Again, this should be nothing to worry about. However, the warnings can
+be irritating. To silence them, use the <code>shrug-equals</code> duplicate handler
+defined in <code>(gi util)</code>. This will silence all warnings that are due to
+variables bound to the same value.
+</p>
 <hr>
 <div class="header">
 <p>
-Previous: <a href="Custom-GObjects.html#Custom-GObjects" accesskey="p" rel="prev">Custom GObjects</a>, Up: <a href="Reference-Guide.html#Reference-Guide" accesskey="u" rel="up">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index.html#Index" title="Index" rel="index">Index</a>]</p>
+Previous: <a href="Utilities.html#Utilities" accesskey="p" rel="prev">Utilities</a>, Up: <a href="Reference-Guide.html#Reference-Guide" accesskey="u" rel="up">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index.html#Index" title="Index" rel="index">Index</a>]</p>
 </div>
 
 

@@ -126,9 +126,6 @@ guile -L . -c '(use-modules (gi)) (display (typelib-document &quot;Gio&quot; &qu
 (define (print-hello widget)
   (display &quot;Hello World\n&quot;))
 
-(define-method (connect obj (signal &lt;symbol&gt;) (handler &lt;procedure&gt;))
-  (connect obj (make &lt;signal&gt; #:name (symbol-&gt;string signal)) handler))
-
 (define (activate-callback app)
   (let* ((window (make &lt;GtkApplicationWindow&gt;
                    #:application app
@@ -139,13 +136,13 @@ guile -L . -c '(use-modules (gi)) (display (typelib-document &quot;Gio&quot; &qu
          (button (make &lt;GtkButton&gt;
                    #:parent button-box
                    #:label &quot;Hello world&quot;)))
-    (connect button 'clicked print-hello)
-    (connect button 'clicked (lambda _ (destroy window)))
+    (connect button clicked print-hello)
+    (connect button clicked (lambda _ (destroy window)))
     (show-all window)))
 
 (define (main)
   (let ((app (make &lt;GtkApplication&gt; #:application-id &quot;org.gtk.example&quot;)))
-    (connect app 'activate activate-callback)
+    (connect app activate activate-callback)
     (run app (command-line))))
 
 (main)
@@ -154,10 +151,9 @@ guile -L . -c '(use-modules (gi)) (display (typelib-document &quot;Gio&quot; &qu
 <p>When it is run, it will create an empty window with a title.  Are you impressed?
 </p>
 <p>Let&rsquo;s walk through this example.  First off, you may notice two important procedures:
-<code>make</code> and <code>connect</code>, as well as a few types, most notably <code>&lt;GtkApplication&gt;</code>
-and <code>&lt;signal&gt;</code>.
-</p>
-<p>These procedures and types allow you to interact with GObject&rsquo;s very odd class system.
+<code>make</code> and <code>connect</code>, as well as a few types, such as <code>&lt;GtkApplication&gt;</code> and
+<code>&lt;GtkApplicationWindow&gt;</code>.
+These procedures and types allow you to interact with GObject&rsquo;s very odd class system.
 </p>
 <p>First is <code>make</code>, which wraps and extends the <code>make</code> procedure found in GOOPS.
 See <a href="https://www.gnu.org/software/guile/manual/html_node/GOOPS.html#GOOPS">GOOPS</a> in <cite>The Guile reference manual</cite> for infos about GOOPS.
@@ -168,11 +164,14 @@ slots <strong>do not</strong> map to properties.
 It also takes care of some types, which do not derive from GObject, such as boxed types.
 </p>
 <p>Next is <code>connect</code>, which connects Guile procedures as handlers to GObject signals.
-Signals are roughly equal to hooks.
-Note, that <code>(gi)</code> only defines <code>connect</code> in terms of signal objects, while signals
-are not yet exported as objects from typelibs. Hence we define our own connect method, which translates
-symbols to signal objects. In future, this will no longer be necessary and
-<code>(connect object signal handler)</code> should work without quoting the signal.
+Signals are roughly equal to hooks in Guile, except that they have an invisible default
+handler and hence two <code>connect</code> methods instead of a single <code>add-hook!</code> one.
+Removing a connection also requires temporarily saving the return value (which is an integer id),
+so that it can be passed to <code>signal-handler-disconnect</code>.
+</p>
+<p>Finally, we have the types. These are quite straight-forward in most cases, as there is
+a direct mapping from GObject type to Guile type.
+See <a href="GObject-Types.html#GObject-Types">GObject Types</a> on this mapping.
 </p>
 <p>See <a href="GObject-Methods.html#GObject-Methods">GObject Methods</a> on how to use methods,
 <a href="GObject-Signals.html#GObject-Signals">GObject Signals</a> on how to use signals,
