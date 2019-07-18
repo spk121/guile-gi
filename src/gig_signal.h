@@ -25,12 +25,12 @@ void gig_free_signalspec(GigSignalSpec *spec);
 
 typedef enum
 {
-    SIGNAL_SLOT_NAME,
-    SIGNAL_SLOT_FLAGS,
-    SIGNAL_SLOT_ACCUMULATOR,
-    SIGNAL_SLOT_RETURN_TYPE,
-    SIGNAL_SLOT_PARAM_TYPES,
-    SIGNAL_SLOT_COUNT
+    GIG_SIGNAL_SLOT_NAME,
+    GIG_SIGNAL_SLOT_FLAGS,
+    GIG_SIGNAL_SLOT_ACCUMULATOR,
+    GIG_SIGNAL_SLOT_RETURN_TYPE,
+    GIG_SIGNAL_SLOT_PARAM_TYPES,
+    GIG_SIGNAL_SLOT_COUNT
 } GigSignalSlot;
 
 SCM gig_signal_ref(SCM signal, GigSignalSlot slot);

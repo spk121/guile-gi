@@ -7,7 +7,7 @@
 /******************
  *  Signal Specs  *
  ******************/
-static SCM signal_slot_syms[SIGNAL_SLOT_COUNT];
+static SCM signal_slot_syms[GIG_SIGNAL_SLOT_COUNT];
 
 SCM
 gig_signal_ref(SCM signal, GigSignalSlot slot)
@@ -60,17 +60,17 @@ gig_signalspec_from_obj(SCM obj)
 
     SCM_ASSERT_TYPE(SCM_IS_A_P(obj, gig_signal_type), obj, SCM_ARG1, "%scm->signalspec", "signal");
 
-    name = scm_to_utf8_string(gig_signal_ref(obj, SIGNAL_SLOT_NAME));
-    return_type = scm_to_gtype(gig_signal_ref(obj, SIGNAL_SLOT_RETURN_TYPE));
-    sparams = gig_signal_ref(obj, SIGNAL_SLOT_PARAM_TYPES);
-    saccu = gig_signal_ref(obj, SIGNAL_SLOT_ACCUMULATOR);
+    name = scm_to_utf8_string(gig_signal_ref(obj, GIG_SIGNAL_SLOT_NAME));
+    return_type = scm_to_gtype(gig_signal_ref(obj, GIG_SIGNAL_SLOT_RETURN_TYPE));
+    sparams = gig_signal_ref(obj, GIG_SIGNAL_SLOT_PARAM_TYPES);
+    saccu = gig_signal_ref(obj, GIG_SIGNAL_SLOT_ACCUMULATOR);
     n_params = scm_to_uint(scm_length(sparams));
     params = g_new0(GType, n_params);
 
     for (guint i = 0; i < n_params; i++, sparams = scm_cdr(sparams))
         params[i] = scm_to_gtype(scm_car(sparams));
 
-    flags = scm_to_uint(gig_signal_ref(obj, SIGNAL_SLOT_FLAGS));
+    flags = scm_to_uint(gig_signal_ref(obj, GIG_SIGNAL_SLOT_FLAGS));
 
     spec = g_new0(GigSignalSpec, 1);
     spec->signal_name = name;
@@ -264,11 +264,11 @@ gig_init_signal()
     gig_signal_type = scm_c_public_ref("gi oop", "<signal>");
     make_signal_proc = scm_c_public_ref("gi oop", "make-signal");
 
-    signal_slot_syms[SIGNAL_SLOT_NAME] = scm_from_utf8_symbol("name");
-    signal_slot_syms[SIGNAL_SLOT_FLAGS] = scm_from_utf8_symbol("flags");
-    signal_slot_syms[SIGNAL_SLOT_ACCUMULATOR] = scm_from_utf8_symbol("accumulator");
-    signal_slot_syms[SIGNAL_SLOT_RETURN_TYPE] = scm_from_utf8_symbol("return-type");
-    signal_slot_syms[SIGNAL_SLOT_PARAM_TYPES] = scm_from_utf8_symbol("param-types");
+    signal_slot_syms[GIG_SIGNAL_SLOT_NAME] = scm_from_utf8_symbol("name");
+    signal_slot_syms[GIG_SIGNAL_SLOT_FLAGS] = scm_from_utf8_symbol("flags");
+    signal_slot_syms[GIG_SIGNAL_SLOT_ACCUMULATOR] = scm_from_utf8_symbol("accumulator");
+    signal_slot_syms[GIG_SIGNAL_SLOT_RETURN_TYPE] = scm_from_utf8_symbol("return-type");
+    signal_slot_syms[GIG_SIGNAL_SLOT_PARAM_TYPES] = scm_from_utf8_symbol("param-types");
 
     signal_accu_first_wins = scm_from_utf8_symbol("first-wins");
     signal_accu_true_handled = scm_from_utf8_symbol("true-handled");

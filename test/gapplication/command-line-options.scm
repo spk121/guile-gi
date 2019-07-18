@@ -13,7 +13,7 @@
      (add-main-option app "hello" (char->integer #\h) 0
                       OPTION_ARG_STRING_ARRAY "" #f)
 
-     (connect app (make-signal #:name "command-line")
+     (connect app command-line
               (lambda (app command-line)
                 (let* ((dict (get-options-dict command-line))
                        (hello (lookup-value dict "hello" #f))

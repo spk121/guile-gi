@@ -455,7 +455,7 @@ signal_lookup(char *proc, GObject *self,
               SCM signal, SCM detail,
               guint * c_signal, GSignalQuery * query_info, GQuark * c_detail)
 {
-    SCM s_name = gig_signal_ref(signal, SIGNAL_SLOT_NAME);
+    SCM s_name = gig_signal_ref(signal, GIG_SIGNAL_SLOT_NAME);
     gchar *name = scm_to_utf8_string(s_name);
 
     *c_signal = g_signal_lookup(name, G_OBJECT_TYPE(self));

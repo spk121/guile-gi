@@ -174,9 +174,10 @@ scm_i_typelib_load(const gchar *subr, const gchar *namespace_, const gchar *vers
         case GI_INFO_TYPE_OBJECT:
         {
             GType gtype = g_registered_type_info_get_g_type(info);
+            const gchar *namespace = g_base_info_get_name(info);
             if (gtype == G_TYPE_NONE) {
                 g_debug("Not loading object type '%s' because is has no GType",
-                        g_base_info_get_name(info));
+                        namespace);
                 break;
             }
             gig_type_define(gtype);
@@ -184,23 +185,17 @@ scm_i_typelib_load(const gchar *subr, const gchar *namespace_, const gchar *vers
             gint n_methods = g_object_info_get_n_methods(info);
             for (gint m = 0; m < n_methods; m++) {
                 GIFunctionInfo *func_info = g_object_info_get_method(info, m);
-                gig_function_define(gtype, func_info, g_base_info_get_name(info));
+                gig_function_define(gtype, func_info, namespace);
             }
-#if 0
+
             gint n_signals = g_object_info_get_n_signals(info);
             for (gint m = 0; m < n_signals; m++) {
                 GISignalInfo *sig_info = g_object_info_get_signal(info, m);
-                if (!(g_signal_info_get_flags(sig_info) & G_SIGNAL_DEPRECATED)) {
-                    if (!insert_into_signal_table(gtype, sig_info, &is_new_method))
-                        g_base_info_unref(sig_info);
-                    else
-                        export_signal_info(&export,
-                                           g_base_info_get_name(info), sig_info, is_new_method);
-                }
+                if (!(g_signal_info_get_flags(sig_info) & G_SIGNAL_DEPRECATED))
+                    gig_function_define(gtype, sig_info, namespace);
             }
-#endif
-        }
             break;
+        }
         case GI_INFO_TYPE_INTERFACE:
         {
             GType gtype = g_registered_type_info_get_g_type(info);

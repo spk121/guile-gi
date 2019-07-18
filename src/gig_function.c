@@ -20,6 +20,7 @@
 #include "gig_arg_map.h"
 #include "gig_function.h"
 #include "gig_type.h"
+#include "gig_signal.h"
 
 typedef struct _GigFunction
 {
@@ -95,6 +96,7 @@ void gig_function_define(GType type, GICallableInfo *info, const gchar *namespac
 
     gchar *function_name = scm_dynwind_or_bust("%gig-function-define",
                                                gi_callable_info_make_name(info, namespace));
+    g_debug("gig_function_define(%s)", function_name);
     gig_function_define1(type, info, function_name, is_method);
     if (is_method) {
         gchar *method_name = scm_dynwind_or_bust("%gig-function-define",
@@ -141,6 +143,10 @@ gig_function_define1(GType type, GICallableInfo *info, const gchar *public_name,
         proc = proc4function((GIFunctionInfo *) info, public_name,
                              &required_input_count, &optional_input_count,
                              &formals, &specializers);
+    else if (GI_IS_SIGNAL_INFO(info))
+        proc = proc4signal((GISignalInfo *) info, public_name,
+                           &required_input_count, &optional_input_count,
+                           &formals, &specializers);
     else
         g_assert_not_reached();
 
@@ -180,8 +186,9 @@ gig_function_define1(GType type, GICallableInfo *info, const gchar *public_name,
 
 }
 
-static SCM proc4function(GIFunctionInfo *info, const gchar *name,
-                         int *req, int *opt, SCM *formals, SCM *specializers)
+static SCM
+proc4function(GIFunctionInfo *info, const gchar *name,
+              int *req, int *opt, SCM *formals, SCM *specializers)
 {
     GigGsubr *func_gsubr = check_gsubr_cache(info, req, opt,
                                             formals, specializers);
@@ -192,9 +199,24 @@ static SCM proc4function(GIFunctionInfo *info, const gchar *name,
     return scm_c_make_gsubr(name, 0, 0, 1, func_gsubr);
 }
 
-static SCM proc4signal(GISignalInfo *info, const gchar *name, int *req, int *opt, SCM *formals, SCM *specs)
+static SCM
+proc4signal(GISignalInfo *info, const gchar *name, int *req, int *opt, SCM *formals,
+            SCM *specializers)
 {
-    g_assert_not_reached();
+    GigArgMap *amap;
+
+    amap = scm_dynwind_or_bust("%proc4signal", gig_arg_map_new(info));
+    gig_arg_map_get_gsubr_args_count(amap, req, opt);
+    (*req)++;
+
+    make_formals(info, amap, *req + *opt, formals, specializers);
+
+    GigSignalSlot slots[]= { GIG_SIGNAL_SLOT_NAME };
+    SCM values[1];
+
+    values[0] = scm_from_utf8_string(name);
+
+    return gig_make_signal(1, slots, values);
 }
 
 static GigGsubr *
