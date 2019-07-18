@@ -205,7 +205,8 @@ TESTS = \
  $(GRILO_TESTS) \
  $(OOP_TESTS) \
  misc/softerror_create.scm \
- misc/use-typelibs.scm
+ misc/use-typelibs.scm \
+ misc/interfaces.scm
 
 XFAIL_TESTS = \
  grilo/init_commandline.scm \

@@ -169,6 +169,34 @@ gig_type_peek_object(SCM obj)
     return gig_type_peek_typed_object(obj, gig_fundamental_type);
 }
 
+static SCM type_less_p_proc;
+static SCM sym_sort_key;
+
+static SCM
+type_less_p(SCM a, SCM b)
+{
+    SCM key_a = scm_object_property(a, sym_sort_key);
+    SCM key_b = scm_object_property(b, sym_sort_key);
+
+    // reverse order
+    return scm_less_p(key_b, key_a);
+}
+
+void
+gig_type_associate(GType gtype, SCM stype)
+{
+    g_hash_table_insert(gig_type_gtype_hash, GSIZE_TO_POINTER(gtype), SCM_UNPACK_POINTER(stype));
+    scm_set_object_property_x(stype, sym_sort_key,
+                              scm_from_size_t(g_hash_table_size(gig_type_gtype_hash)));
+#if ENABLE_GIG_TYPE_SCM_HASH
+    g_hash_table_insert(gig_type_scm_hash, SCM_UNPACK_POINTER(stype), GSIZE_TO_POINTER(gtype));
+#endif
+    SCM module = scm_current_module();
+    SCM name = scm_class_name(stype);
+    scm_module_define(module, name, stype);
+    scm_module_export(module, scm_list_1(name));
+}
+
 // Given introspection info from a typelib library for a given GType,
 // this makes a new Guile foreign object type and its associated predicate,
 // and it stores the type in our hash table of known types.
@@ -230,11 +258,33 @@ gig_type_define(GType gtype)
         case G_TYPE_INTERFACE:
         case G_TYPE_PARAM:
         case G_TYPE_OBJECT:
-            // TODO: add interfaces
-            dsupers = scm_list_1(SCM_PACK_POINTER(sparent));
+        {
+            GType *interfaces = NULL;
+            gint n_interfaces = 0;
+            if (fundamental == G_TYPE_OBJECT)
+                interfaces = g_type_interfaces(gtype, &n_interfaces);
+            else if (fundamental == G_TYPE_INTERFACE)
+                interfaces = g_type_interface_prerequisites(gtype, &n_interfaces);
+
+            if (parent == G_TYPE_INTERFACE)
+                dsupers = SCM_EOL;
+            else
+                dsupers = scm_list_1(SCM_PACK_POINTER(sparent));
+
+            for (gint n = 0; n < n_interfaces; n++) {
+                gig_type_define(interfaces[n]);
+                dsupers = scm_cons(gig_type_get_scheme_type(interfaces[n]), dsupers);
+            }
+            g_free(interfaces);
+
+            // dsupers need to be sorted, or else Guile will barf
+            dsupers = scm_sort_x(dsupers, type_less_p_proc);
             new_type = scm_call_4(make_class_proc, dsupers, slots, kwd_name,
                                   scm_from_utf8_symbol(type_class_name));
             break;
+
+        }
+
         default:
             g_error("unhandled type %s derived from %s",
                     g_type_name(gtype), g_type_name(fundamental));
@@ -244,15 +294,9 @@ gig_type_define(GType gtype)
 
         scm_permanent_object(scm_c_define(type_class_name, new_type));
         scm_c_export(type_class_name, NULL);
-        newkey = g_hash_table_insert(gig_type_gtype_hash,
-                                     GSIZE_TO_POINTER(gtype), SCM_UNPACK_POINTER(new_type));
         g_debug("Creating a new GigType: %zu -> %s aka %s", gtype,
                 type_class_name, g_type_name(gtype));
-#if ENABLE_GIG_TYPE_SCM_HASH
-        g_hash_table_insert(gig_type_scm_hash,
-                            SCM_UNPACK_POINTER(new_type), GSIZE_TO_POINTER(gtype));
-#endif
-
+        gig_type_associate(gtype, new_type);
         g_free(type_class_name);
 #if ENABLE_GIG_TYPE_SCM_HASH
         g_debug("Hash table sizes %d %d", g_hash_table_size(gig_type_gtype_hash),
@@ -262,7 +306,7 @@ gig_type_define(GType gtype)
 #endif
     }
     else
-        g_debug("GType foriegn_object_type already exists for: %zu -> %s",
+        g_debug("<GType> already exists for: %zu -> %s",
                 gtype, g_type_name(gtype));
 }
 
@@ -584,19 +628,6 @@ scm_allocate_boxed(SCM boxed_type)
 }
 
 void
-gig_type_associate(GType gtype, SCM stype)
-{
-    g_hash_table_insert(gig_type_gtype_hash, GSIZE_TO_POINTER(gtype), SCM_UNPACK_POINTER(stype));
-#if ENABLE_GIG_TYPE_SCM_HASH
-    g_hash_table_insert(gig_type_scm_hash, SCM_UNPACK_POINTER(stype), GSIZE_TO_POINTER(gtype));
-#endif
-    SCM module = scm_current_module();
-    SCM name = scm_class_name(stype);
-    scm_module_define(module, name, stype);
-    scm_module_export(module, scm_list_1(name));
-}
-
-void
 gig_type_define_fundamental(GType type, SCM extra_supers,
                             GigTypeRefFunction ref, GigTypeUnrefFunction unref)
 {
@@ -624,12 +655,15 @@ gig_init_types(void)
     make_class_proc = scm_c_public_ref("oop goops", "make-class");
     make_instance_proc = scm_c_public_ref("oop goops", "make");
     make_fundamental_proc = scm_c_private_ref("gi oop", "%make-fundamental-class");
+
     kwd_name = scm_from_utf8_keyword("name");
     kwd_ptr = scm_from_utf8_keyword("ptr");
+
     sym_ptr = scm_from_utf8_symbol("ptr");
     sym_ref = scm_from_utf8_symbol("ref");
     sym_unref = scm_from_utf8_symbol("unref");
     sym_size = scm_from_utf8_symbol("size");
+    sym_sort_key = scm_from_utf8_symbol("sort-key");
 
     gig_type_gtype_hash = g_hash_table_new(g_direct_hash, g_direct_equal);
 #if ENABLE_GIG_TYPE_SCM_HASH
@@ -684,6 +718,8 @@ gig_init_types(void)
     /* D(G_TYPE_CHECKSUM); */
     /* D(G_TYPE_POINTER); */
 #undef D
+
+    type_less_p_proc = scm_c_make_gsubr("type-<?", 2, 0, 0, type_less_p);
 
     scm_c_define_gsubr("get-gtype", 1, 0, 0, scm_type_get_gtype);
     scm_c_define_gsubr("gtype-get-scheme-type", 1, 0, 0, scm_type_gtype_get_scheme_type);
