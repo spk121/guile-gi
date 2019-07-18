@@ -168,8 +168,8 @@ gig_function_define1(const gchar *public_name, SCM proc, int opt, SCM formals, S
         if (scm_is_eq(t_formals, SCM_EOL))
             break;
 
-        t_formals = scm_drop_1(t_formals);
-        t_specializers = scm_drop_1(t_specializers);
+        t_formals = scm_drop_right_1(t_formals);
+        t_specializers = scm_drop_right_1(t_specializers);
     } while (opt-- > 0);
 
     if (was_generic)
@@ -259,11 +259,10 @@ make_formals(GICallableInfo *callable,
 
     for (gint i = 0; i < n_inputs;
          i++, i_formal = scm_cdr(i_formal), i_specializer = scm_cdr(i_specializer)) {
-        gchar *formal = g_strdup_printf("arg%d", i);
-        scm_set_car_x(i_formal, scm_from_utf8_symbol(formal));
-
         GigArgMapEntry *entry = gig_arg_map_get_entry(argmap, i);
-
+        gchar *formal = scm_dynwind_or_bust("%make-formals",
+                                            gig_gname_to_scm_name(entry->name));
+        scm_set_car_x(i_formal, scm_from_utf8_symbol(formal));
         // don't force types on nullable input, as #f can also be used to represent
         // NULL.
         if (entry->may_be_null)

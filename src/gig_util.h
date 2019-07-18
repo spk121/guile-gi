@@ -15,7 +15,7 @@ gboolean scm_is_list(SCM obj);
 gpointer scm_dynwind_or_bust(const gchar *subr, gpointer mem);
 SCM scm_class_ref(SCM cls, SCM slot);
 SCM scm_class_set_x(SCM cls, SCM slot, SCM val);
-SCM scm_drop_1(SCM lst);
+SCM scm_drop_right_1(SCM lst);
 SCM scm_c_reexport(const gchar *name, ...);
 
 #define SCM_UNBND_TO_BOOL_F(obj) \

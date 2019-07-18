@@ -107,7 +107,7 @@ scm_dynwind_or_bust(const gchar *subr, gpointer mem)
 
 static SCM class_ref_proc = SCM_UNDEFINED;
 static SCM class_set_proc = SCM_UNDEFINED;
-static SCM srfi1_drop_proc = SCM_UNDEFINED;
+static SCM srfi1_drop_right_proc = SCM_UNDEFINED;
 static SCM module_reexport_proc = SCM_UNDEFINED;
 
 SCM
@@ -128,11 +128,11 @@ scm_class_set_x(SCM cls, SCM slot, SCM val)
 }
 
 SCM
-scm_drop_1(SCM lst)
+scm_drop_right_1(SCM lst)
 {
-    if (SCM_UNBNDP(srfi1_drop_proc))
-        srfi1_drop_proc = scm_c_public_ref("srfi srfi-1", "drop");
-    return scm_call_2(srfi1_drop_proc, lst, scm_from_int(1));
+    if (SCM_UNBNDP(srfi1_drop_right_proc))
+        srfi1_drop_right_proc = scm_c_public_ref("srfi srfi-1", "drop-right");
+    return scm_call_2(srfi1_drop_right_proc, lst, scm_from_int(1));
 }
 
 SCM
