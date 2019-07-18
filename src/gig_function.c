@@ -64,9 +64,14 @@ static void object_list_to_c_args(GIFunctionInfo *func_info, GigArgMap *amap, co
                                   GArray *out_args);
 static void function_free(GigFunction *fn);
 static void gig_fini_function(void);
+static void gig_function_define1(GType type, GICallableInfo *info, const gchar *public_name,
+                                 gboolean is_method);
 
-static SCM proc4function(GIFunctionInfo *info, const gchar *name, int *req, int *opt, SCM *formals, SCM *specs);
-static SCM proc4signal(GISignalInfo *info, const gchar *name, int *req, int *opt, SCM *formals, SCM *specs);
+
+static SCM proc4function(GIFunctionInfo *info, const gchar *name, int *req, int *opt,
+                         SCM *formals, SCM *specs);
+static SCM proc4signal(GISignalInfo *info, const gchar *name, int *req, int *opt,
+                       SCM *formals, SCM *specs);
 
 static SCM
 default_definition(SCM name)
@@ -83,28 +88,41 @@ default_definition(SCM name)
     return SCM_BOOL_F;
 }
 
+void gig_function_define(GType type, GICallableInfo *info, const gchar *namespace)
+{
+    scm_dynwind_begin(0);
+    gboolean is_method = g_callable_info_is_method(info);
+
+    gchar *function_name = scm_dynwind_or_bust("%gig-function-define",
+                                               gi_callable_info_make_name(info, namespace));
+    gig_function_define1(type, info, function_name, is_method);
+    if (is_method) {
+        gchar *method_name = scm_dynwind_or_bust("%gig-function-define",
+                                                 gi_callable_info_make_name(info, NULL));
+
+        gig_function_define1(type, info, method_name, is_method);
+    }
+
+    scm_dynwind_end();
+}
+
 // Given some function introspection information from a typelib file,
 // this procedure creates a SCM wrapper for that procedure in the
 // current module.
-void
-gig_function_define_gsubr(GType type, GICallableInfo *info, const gchar *prefix)
+static void
+gig_function_define1(GType type, GICallableInfo *info, const gchar *public_name, gboolean is_method)
 {
-    gchar *public_name;
+    g_return_if_fail(info != NULL);
+    g_return_if_fail(public_name != NULL);
+
     gint required_input_count, optional_input_count;
     SCM formals, specializers, self_type;
-    gboolean is_method = g_callable_info_is_method(info);
     gboolean was_generic = FALSE;
 
     if (is_method) {
         self_type = gig_type_get_scheme_type(type);
         g_return_if_fail(scm_is_true(self_type));
     }
-
-    scm_dynwind_begin(0);
-
-    public_name = scm_dynwind_or_bust("%gig-function-define-gsubr",
-                                      gi_callable_info_make_name(info, prefix));
-    g_return_if_fail(public_name != NULL);
 
     SCM sym_public_name = scm_from_utf8_symbol(public_name);
     SCM generic = scm_hashq_ref(generic_table, sym_public_name, SCM_BOOL_F);
@@ -160,7 +178,6 @@ gig_function_define_gsubr(GType type, GICallableInfo *info, const gchar *prefix)
         scm_c_export(public_name, NULL);
     }
 
-    scm_dynwind_end();
 }
 
 static SCM proc4function(GIFunctionInfo *info, const gchar *name,

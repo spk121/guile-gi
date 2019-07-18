@@ -143,7 +143,7 @@ scm_i_typelib_load(const gchar *subr, const gchar *namespace_, const gchar *vers
             g_debug("Unsupported irepository type 'CALLBACK'");
             break;
         case GI_INFO_TYPE_FUNCTION:
-            gig_function_define_gsubr(G_TYPE_INVALID, info, NULL);
+            gig_function_define(G_TYPE_INVALID, info, NULL);
             break;
         case GI_INFO_TYPE_STRUCT:
         {
@@ -163,9 +163,7 @@ scm_i_typelib_load(const gchar *subr, const gchar *namespace_, const gchar *vers
             gint n_methods = g_struct_info_get_n_methods(info);
             for (gint m = 0; m < n_methods; m++) {
                 GIFunctionInfo *func_info = g_struct_info_get_method(info, m);
-                gig_function_define_gsubr(gtype, func_info, g_base_info_get_name(info));
-                if (g_function_info_get_flags(func_info) & GI_FUNCTION_IS_METHOD)
-                    gig_function_define_gsubr(gtype, func_info, NULL);
+                gig_function_define(gtype, func_info, g_base_info_get_name(info));
             }
         }
             break;
@@ -186,9 +184,7 @@ scm_i_typelib_load(const gchar *subr, const gchar *namespace_, const gchar *vers
             gint n_methods = g_object_info_get_n_methods(info);
             for (gint m = 0; m < n_methods; m++) {
                 GIFunctionInfo *func_info = g_object_info_get_method(info, m);
-                gig_function_define_gsubr(gtype, func_info, g_base_info_get_name(info));
-                if (g_function_info_get_flags(func_info) & GI_FUNCTION_IS_METHOD)
-                    gig_function_define_gsubr(gtype, func_info, NULL);
+                gig_function_define(gtype, func_info, g_base_info_get_name(info));
             }
 #if 0
             gint n_signals = g_object_info_get_n_signals(info);
@@ -218,9 +214,7 @@ scm_i_typelib_load(const gchar *subr, const gchar *namespace_, const gchar *vers
             gint n_methods = g_interface_info_get_n_methods(info);
             for (gint m = 0; m < n_methods; m++) {
                 GIFunctionInfo *func_info = g_interface_info_get_method(info, m);
-                gig_function_define_gsubr(gtype, func_info, g_base_info_get_name(info));
-                if (g_function_info_get_flags(func_info) & GI_FUNCTION_IS_METHOD)
-                    gig_function_define_gsubr(gtype, func_info, NULL);
+                gig_function_define(gtype, func_info, g_base_info_get_name(info));
             }
         }
             break;
@@ -244,9 +238,7 @@ scm_i_typelib_load(const gchar *subr, const gchar *namespace_, const gchar *vers
             gint n_methods = g_union_info_get_n_methods(info);
             for (gint m = 0; m < n_methods; m++) {
                 GIFunctionInfo *func_info = g_union_info_get_method(info, m);
-                gig_function_define_gsubr(gtype, func_info, g_base_info_get_name(info));
-                if (g_function_info_get_flags(func_info) & GI_FUNCTION_IS_METHOD)
-                    gig_function_define_gsubr(gtype, func_info, NULL);
+                gig_function_define(gtype, func_info, g_base_info_get_name(info));
             }
         }
             break;
