@@ -501,7 +501,7 @@ function_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
     g_assert(user_data != NULL);
 
     guint n_args = cif->nargs;
-    g_debug("Binding C function %s as %s witn %d args", g_base_info_get_name(gfn->function_info),
+    g_debug("Binding C function %s as %s with %d args", g_base_info_get_name(gfn->function_info),
             gfn->name, n_args);
 
     g_assert(n_args < 20);

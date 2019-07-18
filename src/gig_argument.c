@@ -29,6 +29,13 @@
 #define FLT_MAX 3.402823466e+38F
 #endif
 
+#if GIG_DEBUG_TRANSFERS
+#define TRACE_C2S() g_debug("[C2S] On line %d while handing %s of %s.", __LINE__, entry->name, subr)
+#define TRACE_S2C() g_debug("[S2C] On line %d while handing %s of %s.", __LINE__, entry->name, subr)
+#else
+#define TRACE_C2S()
+#define TRACE_S2C()
+#endif
 
 static void scm_to_c_immediate(S2C_ARG_DECL);
 static void scm_to_c_immediate_pointer(S2C_ARG_DECL);
@@ -1190,7 +1197,10 @@ gig_argument_preallocate_output_arg_and_object(GIArgInfo *arg_info, GIArgument *
 void
 gig_argument_c_to_scm(C2S_ARG_DECL)
 {
+    TRACE_C2S();
+
     if (!entry->is_ptr) {
+        TRACE_C2S();
         switch (entry->type_tag) {
         case GI_TYPE_TAG_VOID:
             *object = SCM_UNSPECIFIED;
@@ -1234,6 +1244,7 @@ gig_argument_c_to_scm(C2S_ARG_DECL)
         *object = SCM_BOOL_F;
     }
     else {
+        TRACE_C2S();
         switch (entry->type_tag) {
         case GI_TYPE_TAG_BOOLEAN:
         case GI_TYPE_TAG_DOUBLE:
@@ -1247,20 +1258,24 @@ gig_argument_c_to_scm(C2S_ARG_DECL)
         case GI_TYPE_TAG_UINT64:
         case GI_TYPE_TAG_UINT8:
         case GI_TYPE_TAG_UNICHAR:
+            TRACE_C2S();
             g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
             // ret = convert_immediate_pointer_arg_to_object(object, arg_info, arg);
             break;
 
         case GI_TYPE_TAG_UTF8:
         case GI_TYPE_TAG_FILENAME:
+            TRACE_C2S();
             c_string_to_scm(C2S_ARGS);
             break;
 
         case GI_TYPE_TAG_VOID:
+            TRACE_C2S();
             c_void_pointer_to_scm(C2S_ARGS);
             break;
 
         case GI_TYPE_TAG_GHASH:
+            TRACE_C2S();
             // FIXME: unhandled
             g_critical("Unhandled hash argument type tag %d", entry->type_tag);
             g_assert_not_reached();
@@ -1268,29 +1283,35 @@ gig_argument_c_to_scm(C2S_ARG_DECL)
 
         case GI_TYPE_TAG_GLIST:
         case GI_TYPE_TAG_GSLIST:
+            TRACE_C2S();
             c_list_to_scm(C2S_ARGS);
             break;
 
         case GI_TYPE_TAG_INTERFACE:
+            TRACE_C2S();
             c_interface_pointer_to_scm(C2S_ARGS);
             break;
 
         case GI_TYPE_TAG_GTYPE:
+            TRACE_C2S();
             g_critical("Unhandled argument type %s %d", __FILE__, __LINE__);
             break;
 
         case GI_TYPE_TAG_ERROR:
+            TRACE_C2S();
             // FIXME: unhandled
             g_critical("Unhandled error argument type %s %d", __FILE__, __LINE__);
             //ret = gig_argument_convert_error_to_arg(object, arg_info, must_free, arg);
             break;
 
         case GI_TYPE_TAG_ARRAY:
+            TRACE_C2S();
             // g_critical("Unhandled array argument type %s %d", __FILE__, __LINE__);
             c_array_to_scm(C2S_ARGS);
             break;
 
         default:
+            TRACE_C2S();
             g_assert_not_reached();
         }
     }
@@ -1361,7 +1382,8 @@ gig_argument_describe_return(GITypeInfo *type_info,
 
             if (referenced_base_type == GI_INFO_TYPE_STRUCT ||
                 referenced_base_type == GI_INFO_TYPE_UNION ||
-                referenced_base_type == GI_INFO_TYPE_OBJECT) {
+                referenced_base_type == GI_INFO_TYPE_OBJECT ||
+                referenced_base_type == GI_INFO_TYPE_INTERFACE) {
                 gchar *class_name = gig_type_class_name_from_gtype(referenced_base_gtype);
                 g_string_append(desc, class_name);
                 g_free(class_name);
@@ -1441,6 +1463,7 @@ c_immediate_to_scm(C2S_ARG_DECL)
 static void
 c_interface_pointer_to_scm(C2S_ARG_DECL)
 {
+    TRACE_C2S();
     g_assert_cmpint(entry->type_tag, ==, GI_TYPE_TAG_INTERFACE);
     g_assert_cmpint(entry->is_ptr, ==, TRUE);
     g_assert_nonnull(arg);
@@ -1448,23 +1471,28 @@ c_interface_pointer_to_scm(C2S_ARG_DECL)
     GIBaseInfo *referenced_base_info = g_type_info_get_interface(entry->type_info);
     GIInfoType referenced_info_type = g_base_info_get_type(referenced_base_info);
     if (referenced_info_type == GI_INFO_TYPE_ENUM) {
+        TRACE_C2S();
         g_assert_nonnull(arg->v_pointer);
         gint val = *(gint *)arg->v_pointer;
         *object = scm_from_int(val);
     }
     else if (referenced_info_type == GI_INFO_TYPE_ENUM) {
+        TRACE_C2S();
         g_assert_nonnull(arg->v_pointer);
         guint val = *(guint *) arg->v_pointer;
         *object = scm_from_uint(val);
     }
     else if (referenced_info_type == GI_INFO_TYPE_CALLBACK) {
+        TRACE_C2S();
         g_assert_nonnull(arg->v_pointer);
         gpointer callback_ptr = arg->v_pointer;
         *object = scm_from_pointer(callback_ptr, NULL);
     }
     else if (referenced_info_type == GI_INFO_TYPE_STRUCT
              || referenced_info_type == GI_INFO_TYPE_UNION
-             || referenced_info_type == GI_INFO_TYPE_OBJECT) {
+             || referenced_info_type == GI_INFO_TYPE_OBJECT
+             || referenced_info_type == GI_INFO_TYPE_INTERFACE) {
+        TRACE_C2S();
         g_assert_nonnull(arg->v_pointer);
         GType referenced_base_gtype = g_registered_type_info_get_g_type(referenced_base_info);
         *object = gig_type_transfer_object(referenced_base_gtype, arg->v_pointer, entry->transfer);
@@ -1475,6 +1503,7 @@ c_interface_pointer_to_scm(C2S_ARG_DECL)
 static void
 c_interface_to_scm(C2S_ARG_DECL)
 {
+    TRACE_C2S();
     g_assert(entry->type_tag == GI_TYPE_TAG_INTERFACE);
 
     GIBaseInfo *referenced_base_info = g_type_info_get_interface(entry->type_info);
