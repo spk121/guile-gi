@@ -19,7 +19,7 @@ Free Documentation License". -->
 <meta name="distribution" content="global">
 <meta name="Generator" content="makeinfo">
 <link href="index.html#Top" rel="start" title="Top">
-<link href="Index.html#Index" rel="index" title="Index">
+<link href="_005findex.html#g_t_005findex" rel="index" title="_index">
 <link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
 <link href="Reference-Guide.html#Reference-Guide" rel="up" title="Reference Guide">
 <link href="Further-Resources-and-Contact-Info.html#Further-Resources-and-Contact-Info" rel="next" title="Further Resources and Contact Info">
@@ -50,18 +50,21 @@ ul.no-bullet {list-style: none}
 <body lang="en">
 <span id="More-Stuff"></span><div class="header">
 <p>
-Previous: <a href="Custom-GObjects.html#Custom-GObjects" accesskey="p" rel="prev">Custom GObjects</a>, Up: <a href="Reference-Guide.html#Reference-Guide" accesskey="u" rel="up">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index.html#Index" title="Index" rel="index">Index</a>]</p>
+Previous: <a href="Custom-GObjects.html#Custom-GObjects" accesskey="p" rel="prev">Custom GObjects</a>, Up: <a href="Reference-Guide.html#Reference-Guide" accesskey="u" rel="up">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="_005findex.html#g_t_005findex" title="Index" rel="index">Index</a>]</p>
 </div>
 <hr>
 <span id="More-Stuff-1"></span><h3 class="section">3.8 More Stuff</h3>
 
+
 <span id="On-Guile-to-C-Type-Conversions"></span><h4 class="subsection">3.8.1 On Guile to C Type Conversions</h4>
+
 <p>Guile-GI uses a rule system to convert Guile procedure arguments to C
 types.  Typically these conversions between Guile and C types are
 straightforward, but, some conversions are tricky and need additional
 description.
 </p>
 <span id="Strings"></span><h4 class="subsubsection">3.8.1.1 Strings</h4>
+
 <p>GObject libraries usually use UTF-8 encoding for their strings, while
 Guile uses a different encoding internally for its strings.  Thus
 every time a string is parameter is passed through to a C procedure, a
@@ -75,6 +78,7 @@ procedures.  Note that this may throw an encoding error if the Guile
 string cannot be represented in the current locale.
 </p>
 <span id="C-Arrays"></span><h4 class="subsection">3.8.2 C Arrays</h4>
+
 <p>There are many different types of C arrays, and the Guile types
 expected for GObject procedures that C arrays varies depending on the
 type required.
@@ -102,7 +106,7 @@ procedures will likely fail to do anything sensible.
 <hr>
 <div class="header">
 <p>
-Previous: <a href="Custom-GObjects.html#Custom-GObjects" accesskey="p" rel="prev">Custom GObjects</a>, Up: <a href="Reference-Guide.html#Reference-Guide" accesskey="u" rel="up">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index.html#Index" title="Index" rel="index">Index</a>]</p>
+Previous: <a href="Custom-GObjects.html#Custom-GObjects" accesskey="p" rel="prev">Custom GObjects</a>, Up: <a href="Reference-Guide.html#Reference-Guide" accesskey="u" rel="up">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="_005findex.html#g_t_005findex" title="Index" rel="index">Index</a>]</p>
 </div>
 
 

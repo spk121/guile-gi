@@ -19,7 +19,7 @@ Free Documentation License". -->
 <meta name="distribution" content="global">
 <meta name="Generator" content="makeinfo">
 <link href="index.html#Top" rel="start" title="Top">
-<link href="Index.html#Index" rel="index" title="Index">
+<link href="_005findex.html#g_t_005findex" rel="index" title="_index">
 <link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
 <link href="Reference-Guide.html#Reference-Guide" rel="up" title="Reference Guide">
 <link href="Custom-GObjects.html#Custom-GObjects" rel="next" title="Custom GObjects">
@@ -50,7 +50,7 @@ ul.no-bullet {list-style: none}
 <body lang="en">
 <span id="GObject-Properties"></span><div class="header">
 <p>
-Next: <a href="Custom-GObjects.html#Custom-GObjects" accesskey="n" rel="next">Custom GObjects</a>, Previous: <a href="GObject-Signals.html#GObject-Signals" accesskey="p" rel="prev">GObject Signals</a>, Up: <a href="Reference-Guide.html#Reference-Guide" accesskey="u" rel="up">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index.html#Index" title="Index" rel="index">Index</a>]</p>
+Next: <a href="Custom-GObjects.html#Custom-GObjects" accesskey="n" rel="next">Custom GObjects</a>, Previous: <a href="GObject-Signals.html#GObject-Signals" accesskey="p" rel="prev">GObject Signals</a>, Up: <a href="Reference-Guide.html#Reference-Guide" accesskey="u" rel="up">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="_005findex.html#g_t_005findex" title="Index" rel="index">Index</a>]</p>
 </div>
 <hr>
 <span id="GObject-Properties-1"></span><h3 class="section">3.6 GObject Properties</h3>
@@ -63,12 +63,12 @@ class may one or more properties. So, for example, if the object is a
 radio button, you may get or set properties that apply specifically to
 radio buttons, or generic buttons, or generic widgets.
 </p>
-<p>The <code>get-property</code> and <code>set-property!</code> procedures are provided
+<p>The <code>set-property!</code> and <code>get-property</code> procedures are provided
 to set GObject properties.
 </p>
 <dl>
-<dt id="index-get_002dproperty">Procedure: <strong>get-property</strong> <em>obj prop</em></dt>
 <dt id="index-set_002dproperty_0021">Procedure: <strong>set-property!</strong> <em>obj prop val</em></dt>
+<dt id="index-get_002dproperty">Procedure: <strong>get-property</strong> <em>obj prop</em></dt>
 <dd><p>Gets or sets and object&rsquo;s property. <var>prop</var> is the symbol name
 of the property to set.
 </p>
@@ -77,7 +77,7 @@ setting value has the wrong type.
 </p></dd></dl>
 
 <p>Alternatively, you can also use parameter types,
-(i.e. &ldquo;objects&rdquo;, that derive from <code>G_TYPE_PARAM</code> alias <code>&lt;GParam&gt;</code>)
+(i.e. &ldquo;objects&rdquo;, that derive from G_TYPE_PARAM alias <code>&lt;GParam&gt;</code>)
 as accessors. Assuming, that e.g. <code>prop</code> is bound to such an object,
 <code>(prop obj)</code> will fetch the corresponding property, whereas
 <code>(set! (prop obj) val)</code> will set it.
