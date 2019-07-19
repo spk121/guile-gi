@@ -25,7 +25,7 @@ Free Documentation License''.
 @contents
 
 @c @ifnottex
-@node Top, Preface, (dir), (dir)
+@node Top
 @top Guile GI
 
 This manual is for Guile GI.
@@ -37,11 +37,11 @@ This manual is for Guile GI.
 * Tutorials::
 * Reference Guide::
 * Further Resources and Contact Info::
-* Gnu Free Documentation License::
-* _index::
+* GNU Free Documentation License::
+* Index::
 
 @detailmenu
- --- The Detailed Node Listing ---
+--- The Detailed Node Listing ---
 
 Getting Started
 
@@ -68,25 +68,27 @@ Reference Guide
 * GObject Methods::
 * GObject Signals::
 * GObject Properties::
-* Custom GObjects::
+* Custom GObjects::              Defining new GObject classes
 * More Stuff::
 
 @end detailmenu
 @end menu
 
-@node Preface, Getting Started, Top, Top
+@node Preface
 @unnumbered Preface
+
 Guile GI is a Guile package that hopes to provide access for
 GObject-based libraries such as GTK+, GLib, WebKitGTK+ and many more.
 
 It supports GNU/Linux, and has only been tested with Guile-2.2. Guile
-GI, including this documentation, is licensed under the LGPLv2.1+
+GI is licensed under the LGPLv2.1+. This documentation is licensed under
+the FDLv1.3+.
 
 If you want to write a Guile application for GNOME or a Guile GUI
-application using GTk+, then Guile GI (when it is finished) will be
+application using GTK+, then Guile GI (when it is finished) will be
 the way to go.
 
-@node Getting Started, Tutorials, Preface, Top
+@node Getting Started
 @chapter Getting Started
 
 @quotation Warning
@@ -133,7 +135,7 @@ shown in the following.
 @end example
 
 Here, Guile-GI creates the (hopefully unique) modules @code{(%gi GLib-2.0)} and @code{(%gi Gtk-3.0)}
-and imports them into the current module using @code{(use-modules)}.
+and imports them into the current module using @code{use-modules}.
 
 For these auto-generated libraries, you are going to need some
 documentation. The procedure @code{typelib-document} creates some
@@ -155,8 +157,7 @@ A minimal GTK application looks like this
 @include example-1.scm
 @end example
 
-When it is run, it will create an empty window with a title.  Are you
-impressed?
+When it is run, it will create an empty window with a title.  Are you impressed?
 
 Let's walk through this example.  First off, you may notice two important procedures:
 @code{make} and @code{connect}, as well as a few types, most notably @code{<GtkApplication>}
@@ -188,7 +189,7 @@ symbols to signal objects. In future, this will no longer be necessary and
 * Sample Applications::
 @end menu
 
-@node Installation, Sample Applications, Getting Started, Getting Started
+@node Installation
 @section Installation
 
 In some happy future, you might be able to get this from whatever method
@@ -208,17 +209,17 @@ From there, running @command{configure}, then @command{make}, then
 In the file archives, look for files named @file{INSTALL} for detailed
 instructions.
 
-@node Sample Applications,  , Installation, Getting Started
+@node Sample Applications
 @section Sample Applications
 
 @menu
 * Example 1::
 @end menu
 
-@node Example 1,  , Sample Applications, Sample Applications
+@node Example 1
 @subsection Example 1
 
-@node Tutorials, Reference Guide, Getting Started, Top
+@node Tutorials
 @chapter Tutorials
 
 @menu
@@ -229,7 +230,7 @@ instructions.
 * Testing and Continuous Integration::
 @end menu
 
-@node GObject Types and Guile Types, Threads and Concurrency, Tutorials, Tutorials
+@node GObject Types and Guile Types
 @section GObject Types and Guile Types
 
 Every time you call a GObject procedure provided by Guile-GI, the
@@ -248,10 +249,10 @@ hierarchy upon which the windowing library GTK is built.
 Explaining how Guile-to-C type conversion is accomplished under the
 hood can be slightly confusing because there are several different
 things named `type':
+
 @enumerate
 @item
-the C typedef of a structure, union or object, such as @code{struct
-GtkWindow}
+the C typedef of a structure, union or object, such as @code{struct GtkWindow}
 @item
 the C @code{GType}, a unique integer ID that GObject libraries provide
 for each C typedef'd structure, union, or object
@@ -271,7 +272,7 @@ Internally to Guile-GI, all of the Guile classes for GObject structs,
 objects and unions are GOOPS types that handle managing the C pointer.
 The C pointer is ``hidden'' in the @code{ptr} slot of an object.
 
-@node Threads and Concurrency, Debugging and Profiling, GObject Types and Guile Types, Tutorials
+@node Threads and Concurrency
 @section Threads and Concurrency
 
 While Guile is multi-threaded, applications using Guile-GI are not
@@ -289,7 +290,7 @@ provide a full trace of the function calls in Guile-GI.  For more
 information on how to take advantage of this logging, see
 @uref{https://developer.gnome.org/glib/stable/glib-running.html}.
 
-@node Application Deployment, Testing and Continuous Integration, Debugging and Profiling, Tutorials
+@node Application Deployment
 @section Application Deployment
 
 If you write a program in Guile-GI and wish to share it
@@ -315,16 +316,16 @@ FIXME: Write about a good directory structure for a GTK application.
 FIXME: Write about what to do with all the various GTK icons and XML
 files.
 
-@node Testing and Continuous Integration,  , Application Deployment, Tutorials
+@node Testing and Continuous Integration
 @section Testing and Continuous Integration
 
 The distribution does contain a couple of scripts that should enable it
 to be built by Travis-CI.  In the root directory, there is a
 @code{.travis.yml} and a @code{Dockerfile} that work together.  The
 docker container pulls the latest version of Ubuntu, and the YML file
-builds the project and runs @code{make check}.
+builds the project and runs @code{make distcheck}.
 
-@node Reference Guide, Further Resources and Contact Info, Tutorials, Top
+@node Reference Guide
 @chapter Reference Guide
 
 The Guile GI project provides a Guile module @file{(gi)}.  The
@@ -340,12 +341,12 @@ their @file{.typelib} files.
 * GObject Methods::
 * GObject Signals::
 * GObject Properties::
-* Custom GObjects::
+* Custom GObjects::              Defining new GObject classes
 * More Stuff::
 @end menu
 
 @c -----------------------------------------------------------------
-@node Typelib Introspection, GObject Types, Reference Guide, Reference Guide
+@node Typelib Introspection
 @section Typelib Introspection
 
 A GObject typelib file contains information on the public classes,
@@ -355,7 +356,7 @@ Usually these files are on the filesystem in a single directory
 location.  On Fedora, for example, these files may be stored in
 @file{/var/lib64/girepository-1.0}.
 
-@deffn Procedure get-typelib-search-path
+@deffn Procedure typelib-get-search-path
 This returns, as a list of strings, the current search path used to find
 typelib files.
 
@@ -363,7 +364,7 @@ If it returns an empty list, this indicates that it is only searching
 the default typelib directory.
 @end deffn
 
-@deffn Procedure prepend-typelib-search-path directory
+@deffn Procedure typelib-prepend-search-path directory
 Given @var{directory}, a string representation of a filesystem
 directory, this prepends that directory to the typelib search path.
 
@@ -436,7 +437,7 @@ introspect a GObject's type, use @code{get-gtype} and then use the GType
 procedures. @xref{GType}.
 
 @c -----------------------------------------------------------------
-@node GType, GObject Methods, GObject Types, Reference Guide
+@node GType
 @section GType
 
 A @code{<GType>} is a Guile type, which corresponds to a @code{GType}.
@@ -466,7 +467,7 @@ slightly from the name that Guile-GI gives to the type.
 @deffn Procedure gtype-get-parent gtype
 @deffnx Procedure gtype-get-children gtype
 These procedures return the parent type and the child types of a
-specified @code{<integer>}.
+specified @var{gtype}.
 @end deffn
 
 @deffn Procedure gtype-is-a? object type
@@ -475,7 +476,7 @@ Returns @code{#t} of @var{object} is an instance of a @var{type}.
 
 
 @c -----------------------------------------------------------------
-@node GObject Methods, GObject Signals, GType, Reference Guide
+@node GObject Methods
 @section GObject Methods
 
 Guile-GI exports object methods as GOOPS methods in the formats
@@ -492,7 +493,7 @@ is imported from multiple libraries (e.g. both GLib and Gtk), but this should
 not concern you in most cases, as both internally specialize the same generic method.
 
 @c -----------------------------------------------------------------
-@node GObject Signals, GObject Properties, GObject Methods, Reference Guide
+@node GObject Signals
 @section GObject Signals
 
 GObjects have a functionality for defining and calling callback
@@ -585,7 +586,7 @@ Signal flags, a logical or of  one or more of
 @end defvr
 
 @c -----------------------------------------------------------------
-@node GObject Properties, Custom GObjects, GObject Signals, Reference Guide
+@node GObject Properties
 @section GObject Properties
 
 GObject objects may have one or more properties, which are variables
@@ -596,11 +597,11 @@ class may one or more properties. So, for example, if the object is a
 radio button, you may get or set properties that apply specifically to
 radio buttons, or generic buttons, or generic widgets.
 
-The @code{set-property!} and @code{get-property} procedures are provided
+The @code{get-property} and @code{set-property!} procedures are provided
 to set GObject properties.
 
-@deffn Procedure set-property! obj prop val
-@deffnx Procedure get-property obj prop
+@deffn Procedure get-property obj prop
+@deffnx Procedure set-property! obj prop val
 Gets or sets and object's property. @var{prop} is the symbol name
 of the property to set.
 
@@ -609,13 +610,13 @@ setting value has the wrong type.
 @end deffn
 
 Alternatively, you can also use parameter types,
-(i.e. ``objects'', that derive from G_TYPE_PARAM alias @code{<GParam>})
+(i.e. ``objects'', that derive from @code{G_TYPE_PARAM} alias @code{<GParam>})
 as accessors. Assuming, that e.g. @code{prop} is bound to such an object,
 @code{(prop obj)} will fetch the corresponding property, whereas
 @code{(set! (prop obj) val)} will set it.
 
 @c ----------------------------------------------------------------
-@node Custom GObjects, More Stuff, GObject Properties, Reference Guide
+@node Custom GObjects
 @section Defining new GObject classes
 
 Usually any GObjects you use will be created by procedures such as
@@ -631,7 +632,7 @@ such as signals.
 
 Defining a new GObject class is rather complicated.
 
-@deffn register-type type-name parent-type list-of-properties list-of-signals disposer
+@deffn Procedure register-type type-name parent-type list-of-properties list-of-signals disposer
 This procedure creates and returns a new @code{<GType>} of a GObject
 object.
 
@@ -652,19 +653,16 @@ methods found in the @code{GObject} typelib.
 To then make instances of your custom GObject type, use @code{make}.
 
 @c ----------------------------------------------------------------
-@node More Stuff,  , Custom GObjects, Reference Guide
+@node More Stuff
 @section More Stuff
 
-
 @subsection On Guile to C Type Conversions
-
 Guile-GI uses a rule system to convert Guile procedure arguments to C
 types.  Typically these conversions between Guile and C types are
 straightforward, but, some conversions are tricky and need additional
 description.
 
 @subsubsection Strings
-
 GObject libraries usually use UTF-8 encoding for their strings, while
 Guile uses a different encoding internally for its strings.  Thus
 every time a string is parameter is passed through to a C procedure, a
@@ -703,18 +701,19 @@ procedures directly.  Since arrays get converted to bytevectors, these
 procedures will likely fail to do anything sensible.
 @end quotation
 
-@node Further Resources and Contact Info, Gnu Free Documentation License, Reference Guide, Top
+@node Further Resources and Contact Info
 @chapter Further Resources and Contact Info
 
 Uh, I dunno.
 
 Maybe the Guile mailing list?
 
-@node Gnu Free Documentation License, _index, Further Resources and Contact Info, Top
-@chapter Gnu Free Documenation License
+@node GNU Free Documentation License
+@appendix GNU Free Documentation License
+
 @include fdl-1.3.texi
 
-@node _index,  , Gnu Free Documentation License, Top
+@node Index
 @unnumbered Index
 
 @printindex cp
