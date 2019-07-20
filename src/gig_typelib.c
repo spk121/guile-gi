@@ -30,8 +30,7 @@
 static void document_callback_info(GString **export, const gchar *namespace_,
                                    GICallableInfo *info);
 static void document_method_info(GString **export, GType gtype, GIFunctionInfo *info);
-static void document_function_info(GString **export, const gchar *parent,
-                                   GIFunctionInfo *info);
+static void document_function_info(GString **export, const gchar *parent, GIFunctionInfo *info);
 static void document_type(GString **export, GITypeInfo *info);
 static void document_callable_arguments(GString **export, GICallableInfo *info);
 static void scm_i_typelib_load(const gchar *subr, const gchar *namespace, const gchar *version);
@@ -176,8 +175,7 @@ scm_i_typelib_load(const gchar *subr, const gchar *namespace_, const gchar *vers
             GType gtype = g_registered_type_info_get_g_type(info);
             const gchar *namespace = g_base_info_get_name(info);
             if (gtype == G_TYPE_NONE) {
-                g_debug("Not loading object type '%s' because is has no GType",
-                        namespace);
+                g_debug("Not loading object type '%s' because is has no GType", namespace);
                 break;
             }
             gig_type_define(gtype);
@@ -333,8 +331,7 @@ scm_typelib_document(SCM s_namespace, SCM s_version)
                     & GI_FUNCTION_IS_METHOD)
                     document_method_info(&export, gtype, func_info);
                 else
-                    document_function_info(&export,
-                                                       g_base_info_get_name(info), func_info);
+                    document_function_info(&export, g_base_info_get_name(info), func_info);
             }
         }
             break;
@@ -358,8 +355,7 @@ scm_typelib_document(SCM s_namespace, SCM s_version)
                 if (g_function_info_get_flags(func_info) & GI_FUNCTION_IS_METHOD)
                     document_method_info(&export, gtype, func_info);
                 else
-                    document_function_info(&export,
-                                                       g_base_info_get_name(info), func_info);
+                    document_function_info(&export, g_base_info_get_name(info), func_info);
             }
 #if 0
             gint n_signals = g_object_info_get_n_signals(info);
@@ -398,8 +394,7 @@ scm_typelib_document(SCM s_namespace, SCM s_version)
                 if (g_function_info_get_flags(func_info) & GI_FUNCTION_IS_METHOD)
                     document_method_info(&export, gtype, func_info);
                 else
-                    document_function_info(&export,
-                                                       g_base_info_get_name(info), func_info);
+                    document_function_info(&export, g_base_info_get_name(info), func_info);
             }
         }
             break;
@@ -496,9 +491,9 @@ document_callable_arguments(GString **export, GICallableInfo *info)
     g_assert(type_info != NULL);
     GITypeInfo *return_typeinfo = g_callable_info_get_return_type(info);
     gchar *ret_desc = gig_argument_describe_return(type_info,
-                                                  g_callable_info_get_caller_owns(info),
-                                                  g_callable_info_may_return_null(info),
-                                                  g_callable_info_skip_return(info));
+                                                   g_callable_info_get_caller_owns(info),
+                                                   g_callable_info_may_return_null(info),
+                                                   g_callable_info_skip_return(info));
 
     if (strcmp(ret_desc, "unspecified") != 0) {
         g_string_append(*export, "   RETURNS:\n");

@@ -55,7 +55,7 @@ static GigGsubr *check_gsubr_cache(GICallableInfo *function_info, SCM self_type,
 static GigGsubr *create_gsubr(GIFunctionInfo *function_info, const gchar *name, SCM self_type,
                               gint *required_input_count, gint *optional_input_count,
                               SCM *formals, SCM *specializers);
-static void make_formals(GICallableInfo*, GigArgMap*, gint n_inputs, SCM self_type,
+static void make_formals(GICallableInfo *, GigArgMap *, gint n_inputs, SCM self_type,
                          SCM *formals, SCM *specializers);
 static void function_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_data);
 
@@ -66,7 +66,8 @@ static void object_list_to_c_args(GIFunctionInfo *func_info, GigArgMap *amap, co
                                   GArray *out_args);
 static void function_free(GigFunction *fn);
 static void gig_fini_function(void);
-static void gig_function_define1(const gchar *public_name, SCM proc, int opt, SCM formals, SCM specializers);
+static void gig_function_define1(const gchar *public_name, SCM proc, int opt, SCM formals,
+                                 SCM specializers);
 
 static SCM proc4function(GIFunctionInfo *info, const gchar *name, SCM self_type,
                          int *req, int *opt, SCM *formals, SCM *specs);
@@ -94,6 +95,7 @@ default_definition(SCM name)
     LOOKUP_DEFINITION(scm_current_module());
     return SCM_BOOL_F;
 }
+
 #undef LOOKUP_DEFINITION
 
 void
@@ -118,13 +120,12 @@ gig_function_define(GType type, GICallableInfo *info, const gchar *namespace)
 
     SCM proc;
     if (GI_IS_FUNCTION_INFO(info))
-        proc = proc4function((GIFunctionInfo *) info, function_name, self_type,
+        proc = proc4function((GIFunctionInfo *)info, function_name, self_type,
                              &required_input_count, &optional_input_count,
                              &formals, &specializers);
     else if (GI_IS_SIGNAL_INFO(info))
-        proc = proc4signal((GISignalInfo *) info, function_name, self_type,
-                           &required_input_count, &optional_input_count,
-                           &formals, &specializers);
+        proc = proc4signal((GISignalInfo *)info, function_name, self_type,
+                           &required_input_count, &optional_input_count, &formals, &specializers);
     else
         g_assert_not_reached();
 
@@ -135,7 +136,8 @@ gig_function_define(GType type, GICallableInfo *info, const gchar *namespace)
     if (is_method) {
         gig_function_define1(method_name, proc, optional_input_count, formals, specializers);
         g_debug("dynamically bound %s to %s with %d required and %d optional arguments",
-                function_name, g_base_info_get_name(info), required_input_count, optional_input_count);
+                function_name, g_base_info_get_name(info), required_input_count,
+                optional_input_count);
     }
 
     scm_dynwind_end();
@@ -194,10 +196,9 @@ proc4function(GIFunctionInfo *info, const gchar *name, SCM self_type,
               int *req, int *opt, SCM *formals, SCM *specializers)
 {
     GigGsubr *func_gsubr = check_gsubr_cache(info, self_type, req, opt,
-                                            formals, specializers);
+                                             formals, specializers);
     if (!func_gsubr)
-        func_gsubr = create_gsubr(info, name, self_type, req, opt,
-                                  formals, specializers);
+        func_gsubr = create_gsubr(info, name, self_type, req, opt, formals, specializers);
 
     return scm_c_make_gsubr(name, 0, 0, 1, func_gsubr);
 }
@@ -214,7 +215,7 @@ proc4signal(GISignalInfo *info, const gchar *name, SCM self_type, int *req, int 
 
     make_formals(info, amap, *req + *opt, self_type, formals, specializers);
 
-    GigSignalSlot slots[]= { GIG_SIGNAL_SLOT_NAME };
+    GigSignalSlot slots[] = { GIG_SIGNAL_SLOT_NAME };
     SCM values[1];
 
     // use base_info name without transformations, otherwise we could screw things up
@@ -254,16 +255,14 @@ check_gsubr_cache(GICallableInfo *function_info, SCM self_type, gint *required_i
 
     make_formals(gfn->function_info,
                  gfn->amap,
-                 *required_input_count + *optional_input_count,
-                 self_type, formals, specializers);
+                 *required_input_count + *optional_input_count, self_type, formals, specializers);
 
     return gfn->function_ptr;
 }
 
 static void
 make_formals(GICallableInfo *callable,
-             GigArgMap *argmap, gint n_inputs,
-             SCM self_type, SCM *formals, SCM *specializers)
+             GigArgMap *argmap, gint n_inputs, SCM self_type, SCM *formals, SCM *specializers)
 {
     SCM i_formal, i_specializer;
 
@@ -537,8 +536,8 @@ function_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
 
 static void
 object_to_c_arg(GigArgMap *amap, gint i, const gchar *name, SCM obj,
-                GArray * cinvoke_input_arg_array, GArray * cinvoke_input_free_array,
-                GArray * cinvoke_output_arg_array)
+                GArray *cinvoke_input_arg_array, GArray *cinvoke_input_free_array,
+                GArray *cinvoke_output_arg_array)
 {
     // Convert an input scheme argument to a C invoke argument
     GIArgument arg;
@@ -623,7 +622,7 @@ object_list_to_c_args(GIFunctionInfo *func_info,
 
 static SCM
 convert_output_args(GIFunctionInfo *func_info, GigArgMap *amap,
-                    const gchar *func_name, GArray * out_args)
+                    const gchar *func_name, GArray *out_args)
 {
     SCM output = SCM_EOL;
     gint gsubr_output_index;
@@ -667,8 +666,7 @@ gig_init_function(void)
 {
     generic_table = scm_c_make_hash_table(127);
     function_cache =
-        g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL,
-                              (GDestroyNotify) function_free);
+        g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, (GDestroyNotify)function_free);
     top_type = scm_c_public_ref("oop goops", "<top>");
     method_type = scm_c_public_ref("oop goops", "<method>");
     ensure_generic_proc = scm_c_public_ref("oop goops", "ensure-generic");

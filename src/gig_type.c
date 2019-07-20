@@ -118,7 +118,7 @@ static SCM sym_ref;
 static SCM sym_unref;
 static SCM sym_size;
 
-typedef gpointer(*GigTypeRefFunction) (gpointer);
+typedef gpointer (*GigTypeRefFunction)(gpointer);
 typedef void (*GigTypeUnrefFunction)(gpointer);
 
 SCM
@@ -134,9 +134,9 @@ gig_type_transfer_object(GType type, gpointer ptr, GITransfer transfer)
     SCM scm_type = gig_type_get_scheme_type(type);
     g_return_val_if_fail(SCM_CLASSP(scm_type), SCM_BOOL_F);
     GigTypeRefFunction ref;
-    ref = (GigTypeRefFunction) scm_to_pointer(scm_class_ref(scm_type, sym_ref));
+    ref = (GigTypeRefFunction)scm_to_pointer(scm_class_ref(scm_type, sym_ref));
     GigTypeUnrefFunction unref;
-    unref = (GigTypeUnrefFunction) scm_to_pointer(scm_class_ref(scm_type, sym_unref));
+    unref = (GigTypeUnrefFunction)scm_to_pointer(scm_class_ref(scm_type, sym_unref));
 
     SCM pointer;
     switch (transfer) {
@@ -306,8 +306,7 @@ gig_type_define(GType gtype)
 #endif
     }
     else
-        g_debug("<GType> already exists for: %zu -> %s",
-                gtype, g_type_name(gtype));
+        g_debug("<GType> already exists for: %zu -> %s", gtype, g_type_name(gtype));
 }
 
 // This routine returns the integer GType ID of a scheme object, that is
@@ -621,7 +620,7 @@ scm_allocate_boxed(SCM boxed_type)
 
     gpointer boxed = g_malloc0(size);
     GigTypeUnrefFunction unref;
-    unref = (GigTypeUnrefFunction) scm_to_pointer(scm_class_ref(boxed_type, sym_unref));
+    unref = (GigTypeUnrefFunction)scm_to_pointer(scm_class_ref(boxed_type, sym_unref));
     SCM pointer = scm_from_pointer(boxed, unref);
 
     return scm_call_3(make_instance_proc, boxed_type, kwd_ptr, pointer);
@@ -633,7 +632,7 @@ gig_type_define_fundamental(GType type, SCM extra_supers,
 {
     scm_dynwind_begin(0);
     gchar *class_name = scm_dynwind_or_bust("%define-compact-type",
-                                           gig_type_class_name_from_gtype(type));
+                                            gig_type_class_name_from_gtype(type));
 
     SCM new_type = scm_call_4(make_fundamental_proc,
                               scm_from_utf8_symbol(class_name),
@@ -671,18 +670,18 @@ gig_init_types(void)
 #endif
 
     gig_type_define_fundamental(G_TYPE_OBJECT, SCM_EOL,
-                                (GigTypeRefFunction) g_object_ref_sink,
-                                (GigTypeUnrefFunction) g_object_unref);
+                                (GigTypeRefFunction)g_object_ref_sink,
+                                (GigTypeUnrefFunction)g_object_unref);
     gig_type_define_fundamental(G_TYPE_INTERFACE, SCM_EOL, NULL, NULL);
     gig_type_associate(G_TYPE_BOXED, gig_boxed_type);
     gig_type_define_fundamental(G_TYPE_PARAM,
                                 scm_list_1(scm_c_public_ref("oop goops",
                                                             "<applicable-struct-with-setter>")),
-                                (GigTypeRefFunction) g_param_spec_ref_sink,
-                                (GigTypeUnrefFunction) g_param_spec_unref);
+                                (GigTypeRefFunction)g_param_spec_ref_sink,
+                                (GigTypeUnrefFunction)g_param_spec_unref);
     gig_type_define_fundamental(G_TYPE_VARIANT, SCM_EOL,
-                                (GigTypeRefFunction) g_variant_ref_sink,
-                                (GigTypeUnrefFunction) g_variant_unref);
+                                (GigTypeRefFunction)g_variant_ref_sink,
+                                (GigTypeUnrefFunction)g_variant_unref);
 
     gig_object_type = gig_type_get_scheme_type(G_TYPE_OBJECT);
     gig_paramspec_type = gig_type_get_scheme_type(G_TYPE_PARAM);

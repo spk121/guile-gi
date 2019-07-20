@@ -27,6 +27,7 @@ static inline void
 gig_flag_document(GString **str, GIEnumInfo *info)
 {
 }
+
 void gig_init_flag(void);
 
 G_END_DECLS

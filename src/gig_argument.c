@@ -1479,7 +1479,7 @@ c_interface_pointer_to_scm(C2S_ARG_DECL)
     else if (referenced_info_type == GI_INFO_TYPE_ENUM) {
         TRACE_C2S();
         g_assert_nonnull(arg->v_pointer);
-        guint val = *(guint *) arg->v_pointer;
+        guint val = *(guint *)arg->v_pointer;
         *object = scm_from_uint(val);
     }
     else if (referenced_info_type == GI_INFO_TYPE_CALLBACK) {
@@ -1773,28 +1773,28 @@ c_list_to_scm(C2S_ARG_DECL)
         if (!item_is_ptr) {
             switch (item_type_tag) {
             case GI_TYPE_TAG_INT8:
-                scm_set_car_x(out_iter, scm_from_int8(*(gint8 *) data));
+                scm_set_car_x(out_iter, scm_from_int8(*(gint8 *)data));
                 break;
             case GI_TYPE_TAG_INT16:
-                scm_set_car_x(out_iter, scm_from_int16(*(gint16 *) data));
+                scm_set_car_x(out_iter, scm_from_int16(*(gint16 *)data));
                 break;
             case GI_TYPE_TAG_INT32:
-                scm_set_car_x(out_iter, scm_from_int32(*(gint32 *) data));
+                scm_set_car_x(out_iter, scm_from_int32(*(gint32 *)data));
                 break;
             case GI_TYPE_TAG_INT64:
-                scm_set_car_x(out_iter, scm_from_int64(*(gint64 *) data));
+                scm_set_car_x(out_iter, scm_from_int64(*(gint64 *)data));
                 break;
             case GI_TYPE_TAG_UINT8:
-                scm_set_car_x(out_iter, scm_from_uint8(*(guint8 *) data));
+                scm_set_car_x(out_iter, scm_from_uint8(*(guint8 *)data));
                 break;
             case GI_TYPE_TAG_UINT16:
-                scm_set_car_x(out_iter, scm_from_uint16(*(guint16 *) data));
+                scm_set_car_x(out_iter, scm_from_uint16(*(guint16 *)data));
                 break;
             case GI_TYPE_TAG_UINT32:
-                scm_set_car_x(out_iter, scm_from_uint32(*(guint32 *) data));
+                scm_set_car_x(out_iter, scm_from_uint32(*(guint32 *)data));
                 break;
             case GI_TYPE_TAG_UINT64:
-                scm_set_car_x(out_iter, scm_from_uint64(*(guint64 *) data));
+                scm_set_car_x(out_iter, scm_from_uint64(*(guint64 *)data));
                 break;
             case GI_TYPE_TAG_FLOAT:
                 scm_set_car_x(out_iter, scm_from_double(*(float *)data));
@@ -1803,7 +1803,7 @@ c_list_to_scm(C2S_ARG_DECL)
                 scm_set_car_x(out_iter, scm_from_double(*(double *)data));
                 break;
             case GI_TYPE_TAG_UNICHAR:
-                scm_set_car_x(out_iter, SCM_MAKE_CHAR(*(guint32 *) data));
+                scm_set_car_x(out_iter, SCM_MAKE_CHAR(*(guint32 *)data));
                 break;
             case GI_TYPE_TAG_GTYPE:
                 gig_type_register(*(gsize *)data);

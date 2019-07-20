@@ -423,7 +423,7 @@ gig_i_scm_define_type(SCM s_type_name, SCM s_parent_type, SCM s_properties, SCM 
                     s_signals, SCM_ARG4, "%define-type", "list of signal specs or #f");
 
     properties = g_ptr_array_new();
-    signals = g_ptr_array_new_with_free_func((GDestroyNotify) gig_free_signalspec);
+    signals = g_ptr_array_new_with_free_func((GDestroyNotify)gig_free_signalspec);
 
     if (scm_is_list(s_properties)) {
         n_properties = scm_to_size_t(scm_length(s_properties));
@@ -452,8 +452,7 @@ gig_i_scm_define_type(SCM s_type_name, SCM s_parent_type, SCM s_properties, SCM 
 
 void
 signal_lookup(char *proc, GObject *self,
-              SCM signal, SCM detail,
-              guint * c_signal, GSignalQuery * query_info, GQuark * c_detail)
+              SCM signal, SCM detail, guint *c_signal, GSignalQuery *query_info, GQuark *c_detail)
 {
     SCM s_name = gig_signal_ref(signal, GIG_SIGNAL_SLOT_NAME);
     gchar *name = scm_to_utf8_string(s_name);

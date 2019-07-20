@@ -123,8 +123,8 @@ gig_make_signal(gsize n_slots, GigSignalSlot *slots, SCM *slot_values)
 
     return scm_apply_0(make_signal_proc, args);
 }
-
 
+
 /******************
  *    Closures    *
  ******************/
@@ -177,10 +177,9 @@ signal_closure_invalidate(gpointer data, GClosure *closure)
 
 static void
 signal_closure_marshal(GClosure *closure,
-                          GValue *return_value,
-                          guint n_param_values,
-                          const GValue *param_values,
-                          gpointer invocation_hint, gpointer marshal_data)
+                       GValue *return_value,
+                       guint n_param_values,
+                       const GValue *param_values, gpointer invocation_hint, gpointer marshal_data)
 {
     GigClosure *pc = (GigClosure *) closure;
     SCM params, ret = SCM_BOOL_F;
@@ -253,8 +252,8 @@ gig_signal_closure_new(SCM instance, GType g_type, const gchar *signal_name, SCM
 
     return closure;
 }
-
 
+
 /******************
  * Initialization *
  ******************/
