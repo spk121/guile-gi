@@ -75,7 +75,7 @@
 -T GObjectClass
 -T GParamSpec
 -T GPtrArray
--T GQuary
+-T GQuark
 -T GSignalQuery
 -T GString
 -T GTypeInstance
@@ -94,14 +94,13 @@
 -T GISignalInfo
 -T GITypeInfo
 
--T GirPredicate
--T GigBoxedFuncs
--T SignalSpec
-
 -T GigArgMapEntry
 -T GigArgMap
+-T GigBoxedFuncs
 -T GigCallback
--T GigTypeRefFunction
--T GigTypeUnrefFunction
 -T GigFunction
 -T GigGsubr
+-T GigSignalSpec
+-T GigSignalSlot
+-T GigTypeRefFunction
+-T GigTypeUnrefFunction
