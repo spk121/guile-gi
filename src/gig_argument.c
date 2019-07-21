@@ -1042,25 +1042,7 @@ scm_to_c_native_string_array(S2C_ARG_DECL)
 
     // We're adding a zero termination despite the value of
     // array_is_zero_terminated, because it does no harm.
-    if (scm_is_true(scm_list_p(object))) {
-        gsize len = scm_to_size_t(scm_length(object));
-        *size = len;
-        gchar **strv = g_new0(gchar *, len + 1);
-        SCM iter = object;
-        for (gsize i = 0; i < len; i++) {
-            SCM elt = scm_car(iter);
-            if (entry->item_type_tag == GI_TYPE_TAG_FILENAME)
-                strv[i] = scm_to_locale_string(elt);
-            else
-                strv[i] = scm_to_utf8_string(elt);
-            iter = scm_cdr(iter);
-        }
-        strv[len] = NULL;
-        arg->v_pointer = strv;
-        if (entry->item_transfer == GI_TRANSFER_NOTHING)
-            *must_free = GIG_FREE_STRV;
-    }
-    else if (scm_is_vector(object)) {
+    if (scm_is_vector(object)) {
         scm_t_array_handle handle;
         gsize len;
         gssize inc;
@@ -1083,6 +1065,24 @@ scm_to_c_native_string_array(S2C_ARG_DECL)
             *must_free = GIG_FREE_STRV;
 
         scm_array_handle_release(&handle);
+    }
+    else if (scm_is_true(scm_list_p(object))) {
+        gsize len = scm_to_size_t(scm_length(object));
+        *size = len;
+        gchar **strv = g_new0(gchar *, len + 1);
+        SCM iter = object;
+        for (gsize i = 0; i < len; i++) {
+            SCM elt = scm_car(iter);
+            if (entry->item_type_tag == GI_TYPE_TAG_FILENAME)
+                strv[i] = scm_to_locale_string(elt);
+            else
+                strv[i] = scm_to_utf8_string(elt);
+            iter = scm_cdr(iter);
+        }
+        strv[len] = NULL;
+        arg->v_pointer = strv;
+        if (entry->item_transfer == GI_TRANSFER_NOTHING)
+            *must_free = GIG_FREE_STRV;
     }
     else
         scm_wrong_type_arg_msg(subr, argpos, object, "list or vector of strings");
