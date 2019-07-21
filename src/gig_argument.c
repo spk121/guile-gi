@@ -860,7 +860,7 @@ scm_to_c_native_immediate_array(S2C_ARG_DECL)
     g_assert_cmpint(entry->item_size, !=, 0);
 
     if (scm_is_bytevector(object)) {
-        *size = SCM_BYTEVECTOR_LENGTH(object);
+        *size = SCM_BYTEVECTOR_LENGTH(object) / entry->item_size;
         if (entry->item_transfer == GI_TRANSFER_NOTHING) {
             if (!entry->array_is_zero_terminated) {
                 // The fast path
