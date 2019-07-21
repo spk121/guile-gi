@@ -45,6 +45,7 @@ static void scm_to_c_void_pointer(S2C_ARG_DECL);
 static void scm_to_c_interface_pointer(S2C_ARG_DECL);
 static void scm_to_c_array(S2C_ARG_DECL);
 static void scm_to_c_native_array(S2C_ARG_DECL);
+static void scm_to_c_native_boolean_array(S2C_ARG_DECL);
 static void scm_to_c_native_immediate_array(S2C_ARG_DECL);
 static void scm_to_c_native_string_array(S2C_ARG_DECL);
 static void scm_to_c_native_interface_array(S2C_ARG_DECL);
@@ -789,7 +790,9 @@ scm_to_c_array(S2C_ARG_DECL)
 static void
 scm_to_c_native_array(S2C_ARG_DECL)
 {
-    if (gi_type_tag_is_integer(entry->item_type_tag)
+    if (entry->item_type_tag == GI_TYPE_TAG_BOOLEAN)
+        scm_to_c_native_boolean_array(S2C_ARGS);
+    else if (gi_type_tag_is_integer(entry->item_type_tag)
         || gi_type_tag_is_real_number(entry->item_type_tag))
         scm_to_c_native_immediate_array(S2C_ARGS);
     else if (gi_type_tag_is_string(entry->item_type_tag))
@@ -800,6 +803,24 @@ scm_to_c_native_array(S2C_ARG_DECL)
     else {
         scm_misc_error(subr, "Unhandled array type", SCM_EOL);
     }
+}
+
+static void
+scm_to_c_native_boolean_array(S2C_ARG_DECL)
+{
+    // For booleans, we expect a vector of booleans
+    if (!scm_is_vector(object))
+        scm_wrong_type_arg_msg(subr, argpos, object, "vector of booleans");
+    *size = scm_c_vector_length(object);
+    if (entry->array_is_zero_terminated) {
+        arg->v_pointer = malloc(sizeof(gboolean) * (*size + 1));
+        ((gboolean *)arg->v_pointer)[*size] = 0;
+    } else
+        arg->v_pointer = malloc(sizeof(gboolean) * *size);
+    for (gsize i = 0; i < *size; i ++)
+        ((gboolean *)(arg->v_pointer))[i] = (gboolean) scm_is_true(scm_c_vector_ref(object, i));
+    if (entry->item_transfer == GI_TRANSFER_NOTHING)
+        *must_free = GIG_FREE_SIMPLE;
 }
 
 static void
