@@ -1705,7 +1705,9 @@ c_native_array_to_scm(C2S_ARG_DECL)
             scm_c_vector_set_x(*object, k, ((gboolean *)(arg->v_pointer))[k] ? SCM_BOOL_T : SCM_BOOL_F);
         break;
     case GI_TYPE_TAG_UNICHAR:
-        // we already determined the item size earlier, nothing to do here
+        *object = scm_c_make_string(length, SCM_MAKE_CHAR(0));
+        for (gsize k = 0; k < length; k ++)
+            scm_c_string_set_x(*object, k, SCM_MAKE_CHAR(((gunichar *)(arg->v_pointer))[k]));
         break;
     case GI_TYPE_TAG_INTERFACE:
         switch (entry->referenced_base_type) {
@@ -1765,6 +1767,7 @@ c_native_array_to_scm(C2S_ARG_DECL)
         *object = scm_c_make_bytevector(sz);
         memcpy(SCM_BYTEVECTOR_CONTENTS(*object), arg->v_pointer, sz);
     }
+#undef TRANSFER
 }
 
 static void
