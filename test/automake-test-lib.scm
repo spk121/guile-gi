@@ -1,23 +1,22 @@
-;; Copyright 2016 Free Software Foundation, Inc.
+;; Copyright 2016, 2019 Free Software Foundation, Inc.
 
-;; This file is part of Guile-Ncurses.
+;; This is free software: you can redistribute it and/or modify it
+;; under the terms of the GNU Lesser General Public License as
+;; published by the Free Software Foundation, either version 3 of the
+;; License, or (at your option) any later version.
 
-;; Guile-Ncurses is free software: you can redistribute it and/or
-;; modify it under the terms of the GNU Lesser General Public License
-;; as published by the Free Software Foundation, either version 3 of
-;; the License, or (at your option) any later version.
-
-;; Guile-Ncurses is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-;; Lesser General Public License for more details.
+;; This is distributed in the hope that it will be useful, but WITHOUT
+;; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+;; or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General
+;; Public License for more details.
 
 ;; You should have received a copy of the GNU Lesser General Public
-;; License along with Guile-Ncurses.  If not, see
+;; License along with this file.  If not, see
 ;; <http://www.gnu.org/licenses/>.
 
 (define-module (test automake-test-lib)
   #:use-module (srfi srfi-1)
+  #:use-module (system foreign)
   #:replace (EXIT_SUCCESS
              EXIT_FAILURE)
   #:export (EXIT_SKIPPED
@@ -26,7 +25,13 @@
             maybe-sleep
             with-latin1-locale*
             with-utf8-locale*
-            typelib-require))
+            typelib-require
+            int-vector->list
+            list->int-vector
+            short-vector->list
+            list->short-vector
+            long-vector->list
+            list->long-vector))
 
 (define EXIT_SUCCESS 0)
 (define EXIT_FAILURE 1)
@@ -138,3 +143,57 @@
       ((_ lib ...)
        #'(unless (false-if-exception ((@ (gi) use-typelibs) lib ...))
            (exit EXIT_SKIPPED))))))
+
+(define (short-vector->list x)
+  (cond
+   ((= (sizeof short) 2)
+    (s16vector->list x))
+   ((= (sizeof short) 4)
+    (s32vector->list x))
+   (else
+    (error "unknown short size"))))
+
+(define (list->short-vector x)
+  (cond
+   ((= (sizeof short) 2)
+    (list->s16vector x))
+   ((= (sizeof short) 4)
+    (list->s32vector x))
+   (else
+    (error "unknown short size"))))
+
+(define (int-vector->list x)
+  (cond
+   ((= (sizeof int) 4)
+    (s32vector->list x))
+   ((= (sizeof int) 8)
+    (s64vector->list x))
+   (else
+    (error "unknown int size"))))
+
+(define (list->int-vector x)
+  (cond
+   ((= (sizeof int) 4)
+    (list->s32vector x))
+   ((= (sizeof int) 8)
+    (list->s64vector x))
+   (else
+    (error "unknown int size"))))
+
+(define (long-vector->list x)
+  (cond
+   ((= (sizeof long) 4)
+    (s32vector->list x))
+   ((= (sizeof long) 8)
+    (s64vector->list x))
+   (else
+    (error "unknown long int size"))))
+
+(define (list->long-vector x)
+  (cond
+   ((= (sizeof long) 4)
+    (list->s32vector x))
+   ((= (sizeof long) 8)
+    (list->s64vector x))
+   (else
+    (error "unknown long int size"))))
