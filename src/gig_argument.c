@@ -1296,7 +1296,7 @@ gig_argument_c_to_scm(C2S_ARG_DECL)
             break;
         }
     }
-    else if (entry->may_be_null && arg->v_pointer == NULL) {
+    else if (entry->may_be_null && (arg == NULL || arg->v_pointer == NULL)) {
         *object = SCM_BOOL_F;
     }
     else {
@@ -1745,7 +1745,7 @@ c_native_array_to_scm(C2S_ARG_DECL)
         g_assert(len == length);
 
         for (gsize i = 0; i < length; i++, elt += inc) {
-            gchar *str = ((char **)arg->v_pointer)[i];
+            gchar *str = ((gchar **)(arg->v_pointer))[i];
             if (str) {
                 if (entry->item_type_tag == GI_TYPE_TAG_UTF8)
                     *elt = scm_from_utf8_string(str);
