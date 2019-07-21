@@ -89,21 +89,21 @@ array_length(GigArgMapEntry *entry, GIArgument *arg)
         case 2:
         {
             gint16 *ptr = array;
-            while (ptr++ != 0)
+            while (*ptr++ != 0)
                 length++;
             return length;
         }
         case 4:
         {
             gint32 *ptr = array;
-            while (ptr++ != 0)
+            while (*ptr++ != 0)
                 length++;
             return length;
         }
         case 8:
         {
             gint64 *ptr = array;
-            while (ptr++ != 0)
+            while (*ptr++ != 0)
                 length++;
             return length;
         }
