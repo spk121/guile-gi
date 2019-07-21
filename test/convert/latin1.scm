@@ -11,7 +11,7 @@
 ;; a bytevector containg a UTF8 string.
 
 (automake-test
- (receive (converted bytes-read bytes-written)
+ (receive (converted bytes-read)
      (convert #vu8(193 201) ; Latin-1 encoded ÁÉ
               "UTF-8"
               "ISO-8859-1")

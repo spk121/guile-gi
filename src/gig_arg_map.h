@@ -119,6 +119,7 @@ struct _GigArgMapEntry
     // When non-NULL, this is the entry of the array length argument
     // for this array argument.
     GigArgMapEntry *child;
+    GigArgMapEntry *parent;
 };
 
 typedef struct _GigArgMap GigArgMap;

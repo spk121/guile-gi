@@ -267,16 +267,14 @@ gig_arg_map_new(GICallableInfo *function_info)
 
         if (type_tag == GI_TYPE_TAG_ARRAY) {
             fill_array_info(entry);
-
-            gint array_length_arg_info_index = g_type_info_get_array_length(type_info);
-
             // Sometime a single SCM array or list will map to two
             // arguments: a C array pointer and a C size parameter.
-            if (array_length_arg_info_index >= 0) {
+            if (entry->array_length_index >= 0) {
                 entry->tuple = GIG_ARG_TUPLE_ARRAY;
-                entry->child = g_ptr_array_index(entry_array, array_length_arg_info_index);
+                entry->child = g_ptr_array_index(entry_array, entry->array_length_index);
                 entry->child->tuple = GIG_ARG_TUPLE_ARRAY_SIZE;
                 entry->child->presence = GIG_ARG_PRESENCE_IMPLICIT;
+                entry->child->parent = entry;
             }
         }
 
@@ -303,6 +301,20 @@ gig_arg_map_new(GICallableInfo *function_info)
         }
     }
 
+    amap->return_val = arg_map_entry_new();
+    gig_arg_map_entry_apply_callable_info(amap->return_val, function_info);
+    if (amap->return_val->type_tag == GI_TYPE_TAG_ARRAY) {
+        fill_array_info(amap->return_val);
+        if (amap->return_val->array_length_index >= 0) {
+            amap->return_val->tuple = GIG_ARG_TUPLE_ARRAY;
+            amap->return_val->child =
+                g_ptr_array_index(entry_array, amap->return_val->array_length_index);
+            amap->return_val->child->tuple = GIG_ARG_TUPLE_ARRAY_SIZE;
+            amap->return_val->child->presence = GIG_ARG_PRESENCE_IMPLICIT;
+            amap->return_val->child->parent = amap->return_val;
+        }
+    }
+
     // We now can decide where these arguments appear in the SCM GSubr
     // call.
     for (gsize arg_info_index = 0; arg_info_index < arg_info_count; arg_info_index++) {
@@ -320,25 +332,13 @@ gig_arg_map_new(GICallableInfo *function_info)
             }
         }
         else if (entry->s_direction == GIG_ARG_DIRECTION_OUTPUT) {
-            entry->gsubr_output_index = gsubr_output_index++;
+            if (entry->tuple == GIG_ARG_TUPLE_SINGLETON || entry->tuple == GIG_ARG_TUPLE_ARRAY)
+                entry->gsubr_output_index = gsubr_output_index++;
         }
         else
             g_assert_not_reached();
 
     }
-    amap->return_val = arg_map_entry_new();
-    gig_arg_map_entry_apply_callable_info(amap->return_val, function_info);
-    if (amap->return_val->type_tag == GI_TYPE_TAG_ARRAY) {
-        fill_array_info(amap->return_val);
-        if (amap->return_val->array_length_index >= 0) {
-            amap->return_val->tuple = GIG_ARG_TUPLE_ARRAY;
-            amap->return_val->child =
-                g_ptr_array_index(entry_array, amap->return_val->array_length_index);
-            amap->return_val->child->tuple = GIG_ARG_TUPLE_ARRAY_SIZE;
-            amap->return_val->child->presence = GIG_ARG_PRESENCE_IMPLICIT;
-        }
-    }
-
 
 
     g_assert_cmpint(amap->gsubr_required_input_count + amap->gsubr_optional_input_count, ==,
@@ -349,6 +349,7 @@ gig_arg_map_new(GICallableInfo *function_info)
     amap->len = entry_array->len;
     amap->pdata = (GigArgMapEntry **)(entry_array->pdata);
     g_ptr_array_free(entry_array, FALSE);
+    // gig_arg_map_dump(amap);
     return amap;
 }
 
@@ -357,13 +358,15 @@ gig_arg_map_free(GigArgMap *amap)
 {
     for (gint i = 0; i < amap->len; i++) {
         g_base_info_unref(amap->pdata[i]->type_info);
+        free(amap->pdata[i]->name);
         free(amap->pdata[i]);
         amap->pdata[i] = NULL;
     }
+    g_base_info_unref(amap->return_val->type_info);
+    free(amap->return_val->name);
+    free(amap->return_val);
     free(amap->pdata);
     amap->pdata = NULL;
-    g_base_info_unref(amap->return_val->type_info);
-    free(amap->return_val);
     free(amap);
 }
 

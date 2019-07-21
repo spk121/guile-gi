@@ -12,7 +12,7 @@
 ;; unchanged.
 
 (automake-test
- (receive (converted bytes-read bytes-written)
+ (receive (converted bytes-read)
      (convert #vu8(65 66 67 68 69) ; ASCII 'ABCDE'
               "UTF-8"
               "US-ASCII")
