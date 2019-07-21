@@ -17,18 +17,16 @@
 guileextension_LTLIBRARIES = libguile-gi.la
 
 libguile_gi_la_SOURCES = \
- gi_function_info.c \
- gi_function_info.h \
+ gi_callable_info.c \
+ gi_callable_info.h \
  gig_argument.c \
  gig_argument.h \
  gig_object.c \
  gig_object.h \
- gig_object_private.c \
- gig_object_private.h \
  gig_value.c \
  gig_value.h \
- gig_signal_closure.c \
- gig_signal_closure.h \
+ gig_signal.c \
+ gig_signal.h \
  gi_type_tag.c \
  gi_type_tag.h \
  gig.c \

@@ -160,13 +160,12 @@ A minimal GTK application looks like this
 When it is run, it will create an empty window with a title.  Are you impressed?
 
 Let's walk through this example.  First off, you may notice two important procedures:
-@code{make} and @code{connect}, as well as a few types, most notably @code{<GtkApplication>}
-and @code{<signal>}.
-
+@code{make} and @code{connect}, as well as a few types, such as @code{<GtkApplication>} and
+@code{<GtkApplicationWindow>}.
 These procedures and types allow you to interact with GObject's very odd class system.
 
 First is @code{make}, which wraps and extends the @code{make} procedure found in GOOPS.
-@xref{GOOPS,,,guile, The Guile reference manual} for infos about GOOPS.
+@xref{GOOPS,,,guile,The Guile reference manual} for infos about GOOPS.
 In short the arguments, that would normally be used for slot initialization are instead used
 to initialize properties.
 This is an important distinction, as objects are represented in Scheme as GOOPS objects, whose
@@ -174,11 +173,14 @@ slots @strong{do not} map to properties.
 It also takes care of some types, which do not derive from GObject, such as boxed types.
 
 Next is @code{connect}, which connects Guile procedures as handlers to GObject signals.
-Signals are roughly equal to hooks.
-Note, that @code{(gi)} only defines @code{connect} in terms of signal objects, while signals
-are not yet exported as objects from typelibs. Hence we define our own connect method, which translates
-symbols to signal objects. In future, this will no longer be necessary and
-@code{(connect object signal handler)} should work without quoting the signal.
+Signals are roughly equal to hooks in Guile, except that they have an invisible default
+handler and hence two @code{connect} methods instead of a single @code{add-hook!} one.
+Removing a connection also requires temporarily saving the return value (which is an integer id),
+so that it can be passed to @code{signal-handler-disconnect}.
+
+Finally, we have the types. These are quite straight-forward in most cases, as there is
+a direct mapping from GObject type to Guile type.
+@xref{GObject Types} on this mapping.
 
 @xref{GObject Methods} on how to use methods,
 @ref{GObject Signals} on how to use signals,
@@ -281,7 +283,7 @@ need all rendering and mainloop activities to occur in one thread.
 Also, all calls to @code{typelib-load} need to be made from the same
 thread.
 
-@node Debugging and Profiling, Application Deployment, Threads and Concurrency, Tutorials
+@node Debugging and Profiling
 @section Debugging and Profiling
 
 Guile-GI makes use of GLib's debug logging.  Running a program with
@@ -342,6 +344,7 @@ their @file{.typelib} files.
 * GObject Signals::
 * GObject Properties::
 * Custom GObjects::              Defining new GObject classes
+* Utilities::
 * More Stuff::
 @end menu
 
@@ -396,7 +399,7 @@ The procedure may throw an error if a typelib file corresponding to
 @end deffn
 
 @c -----------------------------------------------------------------
-@node GObject Types, GType, Typelib Introspection, Reference Guide
+@node GObject Types
 @section GObject Types
 
 For integer and string arguments, the C to Guile conversions are the
@@ -473,7 +476,6 @@ specified @var{gtype}.
 @deffn Procedure gtype-is-a? object type
 Returns @code{#t} of @var{object} is an instance of a @var{type}.
 @end deffn
-
 
 @c -----------------------------------------------------------------
 @node GObject Methods
@@ -615,7 +617,6 @@ as accessors. Assuming, that e.g. @code{prop} is bound to such an object,
 @code{(prop obj)} will fetch the corresponding property, whereas
 @code{(set! (prop obj) val)} will set it.
 
-@c ----------------------------------------------------------------
 @node Custom GObjects
 @section Defining new GObject classes
 
@@ -653,6 +654,26 @@ methods found in the @code{GObject} typelib.
 To then make instances of your custom GObject type, use @code{make}.
 
 @c ----------------------------------------------------------------
+@node Utilities
+@section Utilities
+
+@deffn Procedure push-duplicate-handler! handler
+Adds @var{handler} to the default duplicate handlers at the start of the list.
+@end deffn
+
+@defvr {Duplicate handler} shrug-equals
+A handler, which silently accepts equal (as in @code{eq?}) bindings.
+@end defvr
+
+@deffn Procedure protect symbol [prefix] [suffix]
+@deffnx Procedure protect* symbols [prefix] [suffix]
+Returns a renamer, which ``protects'' @var{symbol}, a symbol or @var{symbols},
+a list of symbols from being overridden, by prepending prefix and appending suffix,
+both symbols.
+If neither prefix nor suffix are given, @code{'%} is used as prefix.
+@end deffn
+
+@c ----------------------------------------------------------------
 @node More Stuff
 @section More Stuff
 
@@ -676,7 +697,6 @@ procedures.  Note that this may throw an encoding error if the Guile
 string cannot be represented in the current locale.
 
 @subsection C Arrays
-
 There are many different types of C arrays, and the Guile types
 expected for GObject procedures that C arrays varies depending on the
 type required.
@@ -700,6 +720,20 @@ It is best not to use any of GLib's @code{Array} and @code{ByteArray}
 procedures directly.  Since arrays get converted to bytevectors, these
 procedures will likely fail to do anything sensible.
 @end quotation
+
+@subsection Help! Guile-GI overrides core binding X
+In most cases this is nothing to worry about. Guile-GI ensures, that
+the core binding is used as the default behaviour when the signature
+does not accidentally match that of a function in some typelib.
+However, this can still cause issues when Guile-GI overrides syntax.
+To protect your syntax (or other variables you deeply care about), use
+the @code{protect} or @code{protect*} renamer from @code{(gi util)}.
+
+@subsection Help! Guile-GI bindings conflict with each other
+Again, this should be nothing to worry about. However, the warnings can
+be irritating. To silence them, use the @code{shrug-equals} duplicate handler
+defined in @code{(gi util)}. This will silence all warnings that are due to
+variables bound to the same value.
 
 @node Further Resources and Contact Info
 @chapter Further Resources and Contact Info

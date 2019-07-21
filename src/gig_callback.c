@@ -20,7 +20,7 @@ GSList *callback_list = NULL;
 static SCM callback_call_proc(gpointer user_data);
 static SCM callback_handler_proc(gpointer user_data, SCM key, SCM params);
 static ffi_type *type_info_to_ffi_type(GITypeInfo *type_info);
-static void callback_free(GigCallback * gcb);
+static void callback_free(GigCallback *gcb);
 static void gig_fini_callback(void);
 
 // This is the core of a dynamically generated callback funcion.
@@ -60,21 +60,21 @@ callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
         else if (cif->arg_types[i] == &ffi_type_sint)
             giarg.v_int = (int)ffi_args[i];
         else if (cif->arg_types[i] == &ffi_type_sint8)
-            giarg.v_int8 = (gint8) ffi_args[i];
+            giarg.v_int8 = (gint8)ffi_args[i];
         else if (cif->arg_types[i] == &ffi_type_uint8)
-            giarg.v_uint8 = (guint8) ffi_args[i];
+            giarg.v_uint8 = (guint8)ffi_args[i];
         else if (cif->arg_types[i] == &ffi_type_sint16)
-            giarg.v_int16 = (gint16) ffi_args[i];
+            giarg.v_int16 = (gint16)ffi_args[i];
         else if (cif->arg_types[i] == &ffi_type_uint16)
-            giarg.v_uint16 = (guint16) ffi_args[i];
+            giarg.v_uint16 = (guint16)ffi_args[i];
         else if (cif->arg_types[i] == &ffi_type_sint32)
-            giarg.v_int32 = (gint32) ffi_args[i];
+            giarg.v_int32 = (gint32)ffi_args[i];
         else if (cif->arg_types[i] == &ffi_type_uint32)
-            giarg.v_uint32 = (guint32) ffi_args[i];
+            giarg.v_uint32 = (guint32)ffi_args[i];
         else if (cif->arg_types[i] == &ffi_type_sint64)
-            giarg.v_int64 = (gint64) ffi_args[i];
+            giarg.v_int64 = (gint64)ffi_args[i];
         else if (cif->arg_types[i] == &ffi_type_uint64)
-            giarg.v_uint64 = (guint64) ffi_args[i];
+            giarg.v_uint64 = (guint64)ffi_args[i];
         else if (cif->arg_types[i] == &ffi_type_float) {
             gfloat val;
             val = *(gfloat *)ffi_args[i];
@@ -381,7 +381,7 @@ gig_init_callback(void)
 }
 
 static void
-callback_free(GigCallback * gcb)
+callback_free(GigCallback *gcb)
 {
     g_free(gcb->name);
     gcb->name = NULL;
@@ -400,6 +400,6 @@ static void
 gig_fini_callback(void)
 {
     g_debug("Freeing callbacks");
-    g_slist_free_full(callback_list, (GDestroyNotify) callback_free);
+    g_slist_free_full(callback_list, (GDestroyNotify)callback_free);
     callback_list = NULL;
 }

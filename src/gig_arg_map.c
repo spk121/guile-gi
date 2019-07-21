@@ -143,6 +143,7 @@ fill_array_info(GigArgMapEntry *entry)
                 entry->item_size = g_union_info_get_size(referenced_base_info);
             break;
         case GI_INFO_TYPE_OBJECT:
+        case GI_INFO_TYPE_INTERFACE:
             entry->referenced_object_type =
                 g_registered_type_info_get_g_type(referenced_base_info);
             if (!entry->item_is_ptr)
@@ -214,7 +215,7 @@ gig_arg_map_entry_apply_callable_info(GigArgMapEntry *e, GICallableInfo *ci)
 }
 
 GigArgMap *
-gig_arg_map_new(GIFunctionInfo *function_info)
+gig_arg_map_new(GICallableInfo *function_info)
 {
     gsize arg_info_count = g_callable_info_get_n_args(function_info);
     GigArgMap *amap = g_new0(GigArgMap, 1);

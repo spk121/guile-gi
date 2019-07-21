@@ -1,8 +1,7 @@
 #include "gig_object.h"
-#include "gig_object_private.h"
 #include "gig_type.h"
 #include "gig_util.h"
-#include "gig_signal_closure.h"
+#include "gig_signal.h"
 #include "gig_value.h"
 
 GQuark gig_user_object_properties;
@@ -14,23 +13,29 @@ typedef struct _GigUserObjectInitInfo
     GPtrArray *signals;
 } GigUserObjectInitInfo;
 
-SCM
+static SCM
 gig_object_take(GObject *object)
 {
     return gig_type_transfer_object(G_OBJECT_TYPE(object), object, GI_TRANSFER_EVERYTHING);
 }
 
 
-SCM
+static SCM
 gig_object_ref(GObject *object)
 {
     return gig_type_transfer_object(G_OBJECT_TYPE(object), object, GI_TRANSFER_NOTHING);
 }
 
-GObject *
+static GObject *
 gig_object_peek(SCM object)
 {
     return gig_type_peek_typed_object(object, gig_object_type);
+}
+
+static GParamSpec *
+gig_paramspec_peek(SCM object)
+{
+    return gig_type_peek_typed_object(object, gig_paramspec_type);
 }
 
 static SCM
@@ -255,7 +260,7 @@ gig_i_scm_set_property_x(SCM self, SCM property, SCM svalue)
 }
 
 static void
-make_new_signal(SignalSpec *signal_spec, gpointer user_data)
+make_new_signal(GigSignalSpec *signal_spec, gpointer user_data)
 {
     GType instance_type = GPOINTER_TO_SIZE(user_data);
     g_signal_newv(signal_spec->signal_name, instance_type, signal_spec->signal_flags, NULL,     /* closure */
@@ -418,7 +423,7 @@ gig_i_scm_define_type(SCM s_type_name, SCM s_parent_type, SCM s_properties, SCM 
                     s_signals, SCM_ARG4, "%define-type", "list of signal specs or #f");
 
     properties = g_ptr_array_new();
-    signals = g_ptr_array_new_with_free_func((GDestroyNotify) gig_free_signalspec);
+    signals = g_ptr_array_new_with_free_func((GDestroyNotify)gig_free_signalspec);
 
     if (scm_is_list(s_properties)) {
         n_properties = scm_to_size_t(scm_length(s_properties));
@@ -433,7 +438,7 @@ gig_i_scm_define_type(SCM s_type_name, SCM s_parent_type, SCM s_properties, SCM 
     if (scm_is_list(s_signals)) {
         n_signals = scm_to_size_t(scm_length(s_signals));
         for (gsize i = 0; i < n_signals; i++) {
-            SignalSpec *sspec;
+            GigSignalSpec *sspec;
             sspec = gig_signalspec_from_obj(scm_list_ref(s_signals, scm_from_size_t(i)));
             g_ptr_array_add(signals, sspec);
         }
@@ -447,10 +452,9 @@ gig_i_scm_define_type(SCM s_type_name, SCM s_parent_type, SCM s_properties, SCM 
 
 void
 signal_lookup(char *proc, GObject *self,
-              SCM signal, SCM detail,
-              guint * c_signal, GSignalQuery * query_info, GQuark * c_detail)
+              SCM signal, SCM detail, guint *c_signal, GSignalQuery *query_info, GQuark *c_detail)
 {
-    SCM s_name = signal_ref(signal, SIGNAL_SLOT_NAME);
+    SCM s_name = gig_signal_ref(signal, GIG_SIGNAL_SLOT_NAME);
     gchar *name = scm_to_utf8_string(s_name);
 
     *c_signal = g_signal_lookup(name, G_OBJECT_TYPE(self));
@@ -483,10 +487,8 @@ gig_i_scm_connect(SCM self, SCM signal, SCM sdetail, SCM callback, SCM s_after, 
     guint sigid;
     GQuark detail;
 
-    init_gi_oop(); // for guile_signal
-
     SCM_ASSERT(SCM_IS_A_P(self, gig_object_type), self, SCM_ARG1, "%connect");
-    SCM_ASSERT(SCM_IS_A_P(signal, guile_signal), signal, SCM_ARG2, "%connect");
+    SCM_ASSERT(SCM_IS_A_P(signal, gig_signal_type), signal, SCM_ARG2, "%connect");
 
     obj = gig_object_peek(self);
 
@@ -510,7 +512,7 @@ gig_i_scm_emit(SCM self, SCM signal, SCM s_detail, SCM args)
     GQuark detail;
 
     SCM_ASSERT(SCM_IS_A_P(self, gig_object_type), self, SCM_ARG1, "%emit");
-    SCM_ASSERT(SCM_IS_A_P(signal, guile_signal), signal, SCM_ARG2, "%emit");
+    SCM_ASSERT(SCM_IS_A_P(signal, gig_signal_type), signal, SCM_ARG2, "%emit");
 
     obj = gig_object_peek(self);
 
@@ -550,7 +552,6 @@ gig_init_object()
 {
     gig_user_object_properties = g_quark_from_static_string("GigObject::properties");
 
-    gig_init_object_private();
     scm_c_define_gsubr("%make-gobject", 1, 1, 0, gig_i_scm_make_gobject);
     scm_c_define_gsubr("%object-get-pspec", 2, 0, 0, gig_i_scm_get_pspec);
     scm_c_define_gsubr("%get-property", 2, 0, 0, gig_i_scm_get_property);

@@ -15,7 +15,7 @@
 
 #include <libguile.h>
 #include <girepository.h>
-#include "gi_function_info.h"
+#include "gi_callable_info.h"
 #include "gig_argument.h"
 #include "gig_type.h"
 #include "gig_typelib.h"
@@ -30,8 +30,7 @@
 static void document_callback_info(GString **export, const gchar *namespace_,
                                    GICallableInfo *info);
 static void document_method_info(GString **export, GType gtype, GIFunctionInfo *info);
-static void document_function_info(GString **export, const gchar *parent,
-                                   GIFunctionInfo *info);
+static void document_function_info(GString **export, const gchar *parent, GIFunctionInfo *info);
 static void document_type(GString **export, GITypeInfo *info);
 static void document_callable_arguments(GString **export, GICallableInfo *info);
 static void scm_i_typelib_load(const gchar *subr, const gchar *namespace, const gchar *version);
@@ -143,7 +142,7 @@ scm_i_typelib_load(const gchar *subr, const gchar *namespace_, const gchar *vers
             g_debug("Unsupported irepository type 'CALLBACK'");
             break;
         case GI_INFO_TYPE_FUNCTION:
-            gig_function_define_gsubr(G_TYPE_INVALID, info, NULL);
+            gig_function_define(G_TYPE_INVALID, info, NULL);
             break;
         case GI_INFO_TYPE_STRUCT:
         {
@@ -163,9 +162,7 @@ scm_i_typelib_load(const gchar *subr, const gchar *namespace_, const gchar *vers
             gint n_methods = g_struct_info_get_n_methods(info);
             for (gint m = 0; m < n_methods; m++) {
                 GIFunctionInfo *func_info = g_struct_info_get_method(info, m);
-                gig_function_define_gsubr(gtype, func_info, g_base_info_get_name(info));
-                if (g_function_info_get_flags(func_info) & GI_FUNCTION_IS_METHOD)
-                    gig_function_define_gsubr(gtype, func_info, NULL);
+                gig_function_define(gtype, func_info, g_base_info_get_name(info));
             }
         }
             break;
@@ -176,9 +173,9 @@ scm_i_typelib_load(const gchar *subr, const gchar *namespace_, const gchar *vers
         case GI_INFO_TYPE_OBJECT:
         {
             GType gtype = g_registered_type_info_get_g_type(info);
+            const gchar *namespace = g_base_info_get_name(info);
             if (gtype == G_TYPE_NONE) {
-                g_debug("Not loading object type '%s' because is has no GType",
-                        g_base_info_get_name(info));
+                g_debug("Not loading object type '%s' because is has no GType", namespace);
                 break;
             }
             gig_type_define(gtype);
@@ -186,25 +183,17 @@ scm_i_typelib_load(const gchar *subr, const gchar *namespace_, const gchar *vers
             gint n_methods = g_object_info_get_n_methods(info);
             for (gint m = 0; m < n_methods; m++) {
                 GIFunctionInfo *func_info = g_object_info_get_method(info, m);
-                gig_function_define_gsubr(gtype, func_info, g_base_info_get_name(info));
-                if (g_function_info_get_flags(func_info) & GI_FUNCTION_IS_METHOD)
-                    gig_function_define_gsubr(gtype, func_info, NULL);
+                gig_function_define(gtype, func_info, namespace);
             }
-#if 0
+
             gint n_signals = g_object_info_get_n_signals(info);
             for (gint m = 0; m < n_signals; m++) {
                 GISignalInfo *sig_info = g_object_info_get_signal(info, m);
-                if (!(g_signal_info_get_flags(sig_info) & G_SIGNAL_DEPRECATED)) {
-                    if (!insert_into_signal_table(gtype, sig_info, &is_new_method))
-                        g_base_info_unref(sig_info);
-                    else
-                        export_signal_info(&export,
-                                           g_base_info_get_name(info), sig_info, is_new_method);
-                }
+                if (!(g_signal_info_get_flags(sig_info) & G_SIGNAL_DEPRECATED))
+                    gig_function_define(gtype, sig_info, namespace);
             }
-#endif
-        }
             break;
+        }
         case GI_INFO_TYPE_INTERFACE:
         {
             GType gtype = g_registered_type_info_get_g_type(info);
@@ -218,9 +207,7 @@ scm_i_typelib_load(const gchar *subr, const gchar *namespace_, const gchar *vers
             gint n_methods = g_interface_info_get_n_methods(info);
             for (gint m = 0; m < n_methods; m++) {
                 GIFunctionInfo *func_info = g_interface_info_get_method(info, m);
-                gig_function_define_gsubr(gtype, func_info, g_base_info_get_name(info));
-                if (g_function_info_get_flags(func_info) & GI_FUNCTION_IS_METHOD)
-                    gig_function_define_gsubr(gtype, func_info, NULL);
+                gig_function_define(gtype, func_info, g_base_info_get_name(info));
             }
         }
             break;
@@ -244,9 +231,7 @@ scm_i_typelib_load(const gchar *subr, const gchar *namespace_, const gchar *vers
             gint n_methods = g_union_info_get_n_methods(info);
             for (gint m = 0; m < n_methods; m++) {
                 GIFunctionInfo *func_info = g_union_info_get_method(info, m);
-                gig_function_define_gsubr(gtype, func_info, g_base_info_get_name(info));
-                if (g_function_info_get_flags(func_info) & GI_FUNCTION_IS_METHOD)
-                    gig_function_define_gsubr(gtype, func_info, NULL);
+                gig_function_define(gtype, func_info, g_base_info_get_name(info));
             }
         }
             break;
@@ -346,8 +331,7 @@ scm_typelib_document(SCM s_namespace, SCM s_version)
                     & GI_FUNCTION_IS_METHOD)
                     document_method_info(&export, gtype, func_info);
                 else
-                    document_function_info(&export,
-                                                       g_base_info_get_name(info), func_info);
+                    document_function_info(&export, g_base_info_get_name(info), func_info);
             }
         }
             break;
@@ -371,8 +355,7 @@ scm_typelib_document(SCM s_namespace, SCM s_version)
                 if (g_function_info_get_flags(func_info) & GI_FUNCTION_IS_METHOD)
                     document_method_info(&export, gtype, func_info);
                 else
-                    document_function_info(&export,
-                                                       g_base_info_get_name(info), func_info);
+                    document_function_info(&export, g_base_info_get_name(info), func_info);
             }
 #if 0
             gint n_signals = g_object_info_get_n_signals(info);
@@ -411,8 +394,7 @@ scm_typelib_document(SCM s_namespace, SCM s_version)
                 if (g_function_info_get_flags(func_info) & GI_FUNCTION_IS_METHOD)
                     document_method_info(&export, gtype, func_info);
                 else
-                    document_function_info(&export,
-                                                       g_base_info_get_name(info), func_info);
+                    document_function_info(&export, g_base_info_get_name(info), func_info);
             }
         }
             break;
@@ -509,9 +491,9 @@ document_callable_arguments(GString **export, GICallableInfo *info)
     g_assert(type_info != NULL);
     GITypeInfo *return_typeinfo = g_callable_info_get_return_type(info);
     gchar *ret_desc = gig_argument_describe_return(type_info,
-                                                  g_callable_info_get_caller_owns(info),
-                                                  g_callable_info_may_return_null(info),
-                                                  g_callable_info_skip_return(info));
+                                                   g_callable_info_get_caller_owns(info),
+                                                   g_callable_info_may_return_null(info),
+                                                   g_callable_info_skip_return(info));
 
     if (strcmp(ret_desc, "unspecified") != 0) {
         g_string_append(*export, "   RETURNS:\n");
@@ -587,7 +569,7 @@ static void
 document_method_info(GString **export, GType gtype, GIFunctionInfo *info)
 {
     gchar *class_name = gig_type_class_name_from_gtype(gtype);
-    gchar *public_name = gi_function_info_make_name(info, NULL);
+    gchar *public_name = gi_callable_info_make_name(info, NULL);
     g_string_append_printf(*export, "%s's METHOD %s\n", class_name, public_name);
     g_free(public_name);
     g_free(class_name);
@@ -598,7 +580,7 @@ document_method_info(GString **export, GType gtype, GIFunctionInfo *info)
 static void
 document_function_info(GString **export, const gchar *parent, GIFunctionInfo *info)
 {
-    gchar *public_name = gi_function_info_make_name(info, parent);
+    gchar *public_name = gi_callable_info_make_name(info, parent);
     g_string_append_printf(*export, "PROCEDURE %s\n", public_name);
     g_free(public_name);
     document_callable_arguments(export, info);

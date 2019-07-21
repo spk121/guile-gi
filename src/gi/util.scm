@@ -1,6 +1,18 @@
 (define-module (gi util)
   #:use-module (ice-9 optargs)
-  #:export (protect protect* %rnrs-syntax))
+  #:export (push-duplicate-handler!
+            protect protect* %rnrs-syntax))
+
+(define (shrug-equals module name int1 val1 int2 val2 var val)
+  (and (eq? val1 val2)
+       (make-variable val1)))
+
+(module-define! duplicate-handlers 'shrug-equals shrug-equals)
+
+(define (push-duplicate-handler! handler)
+  (default-duplicate-binding-handler
+   (cons handler
+         (default-duplicate-binding-handler))))
 
 (define %rnrs-syntax
   (cdr

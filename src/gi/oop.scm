@@ -64,11 +64,47 @@
   (next-method)
   (slot-set! signal 'procedure (cut %emit <> signal <...>)))
 
+(define (%find-signal signal type)
+  (let* ((%signals (filter (compose (cute is-a? <> <signal>) method-procedure)
+                           (generic-function-methods signal)))
+         (cpl (class-precedence-list type))
+         (signals (filter (compose (cute memq <> cpl) car method-specializers)
+                          %signals)))
+    (and (not (null? signals))
+         (method-procedure
+          (car (sort signals
+                    (lambda (a b)
+                      (let ((a-type (car (method-specializers a)))
+                            (b-type (car (method-specializers b))))
+                        (let lp ((cpl (class-precedence-list type)))
+                          (let ((elt (car cpl)))
+                            (cond
+                             ((eq? a-type elt) #t)
+                             ((eq? b-type elt) #f)
+                             (else (lp (cdr cpl))))))))))))))
+
+(define (%connect-generic obj signal detail handler after)
+  (let ((real-signal (%find-signal signal (class-of obj))))
+    (if real-signal (%connect obj real-signal detail handler)
+        (error "~S has no signal in ~S" obj signal))))
+
+(define-method (connect obj (signal <generic>) (handler <procedure>))
+  (%connect-generic obj signal #f handler #f))
+
+(define-method (connect obj (signal <generic>) (detail <symbol>) (handler <procedure>))
+  (%connect-generic obj signal detail handler #f))
+
 (define-method (connect obj (signal <signal>) (handler <procedure>))
   (%connect obj signal #f handler))
 
 (define-method (connect obj (signal <signal>) (detail <symbol>) (handler <procedure>))
   (%connect obj signal detail handler))
+
+(define-method (connect-after obj (signal <generic>) (handler <procedure>))
+  (%connect-generic obj signal #f handler #t))
+
+(define-method (connect-after obj (signal <generic>) (detail <symbol>) (handler <procedure>))
+  (%connect-generic obj signal detail handler #t))
 
 (define-method (connect-after obj (signal <signal>) (handler <procedure>))
   (%connect obj signal #f handler #t))

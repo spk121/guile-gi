@@ -87,6 +87,12 @@ MESSAGE_OUTPUT_TESTS = \
  io/log_set_handler.scm \
  io/log_writer_is_journald.scm
 
+FILE_TESTS = \
+ file/new_for_path.scm \
+ file/get_parent.scm \
+ file/has_parent.scm \
+ file/get_child.scm
+
 STRING_UTILITY_TESTS = \
  string/strdup.scm \
  string/strndup.scm \
@@ -181,6 +187,7 @@ TESTS = \
  $(MEMORY_ALLOCATION_TESTS) \
  $(MEMORY_SLICES_TESTS) \
  $(IO_CHANNELS_TESTS) \
+ $(FILE_TESTS) \
  $(MEMORY_OUTPUT_TESTS) \
  $(STRING_UTILITY_TESTS) \
  $(CHARACTER_SET_CONVERSION_TESTS) \
@@ -198,7 +205,8 @@ TESTS = \
  $(GRILO_TESTS) \
  $(OOP_TESTS) \
  misc/softerror_create.scm \
- misc/use-typelibs.scm
+ misc/use-typelibs.scm \
+ misc/interfaces.scm
 
 XFAIL_TESTS = \
  grilo/init_commandline.scm \

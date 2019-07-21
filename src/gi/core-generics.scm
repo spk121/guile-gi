@@ -7,6 +7,7 @@
     (export! x)))
 
 (ensure-generic! connect (guile))
+(ensure-generic! command-line (guile))
 (ensure-generic! equal? (guile))
 (ensure-generic! format (guile))
 (ensure-generic! send (guile))

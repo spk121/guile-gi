@@ -1,8 +1,9 @@
-(use-modules (gi)
+(use-modules (gi) (gi util)
              (rnrs bytevectors)
              (test automake-test-lib))
 
-(typelib-require ("GLib" "2.0") ("GObject" "2.0") ("Gtk" "3.0"))
+(typelib-require ("GLib" "2.0") ("GObject" "2.0")
+                 (("Gtk" "3.0") #:renamer (protect* %rnrs-syntax)))
 
 (automake-test
  (begin

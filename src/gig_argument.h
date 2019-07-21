@@ -32,9 +32,9 @@ void gig_argument_scm_to_c(S2C_ARG_DECL);
 void gig_argument_c_to_scm(C2S_ARG_DECL);
 char *gig_argument_describe_arg(GIArgInfo *arg_info);
 char *gig_argument_describe_return(GITypeInfo *type_info, GITransfer transfer, gboolean null_ok,
-                                    gboolean skip);
+                                   gboolean skip);
 void gig_argument_preallocate_output_arg_and_object(GIArgInfo *arg_info, GIArgument *arg,
-                                                     SCM *obj);
+                                                    SCM *obj);
 void gig_argument_free_args(gint n, guint *must_free, GIArgument *args);
 
 void gig_init_argument(void);
