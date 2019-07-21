@@ -1698,7 +1698,12 @@ c_native_array_to_scm(C2S_ARG_DECL)
         TRANSFER(gdouble, f64);
         break;
     case GI_TYPE_TAG_GTYPE:
+        break;
     case GI_TYPE_TAG_BOOLEAN:
+        *object = scm_c_make_vector(length, SCM_BOOL_F);
+        for (gsize k = 0; k < length; k ++)
+            scm_c_vector_set_x(*object, k, ((gboolean *)(arg->v_pointer))[k] ? SCM_BOOL_T : SCM_BOOL_F);
+        break;
     case GI_TYPE_TAG_UNICHAR:
         // we already determined the item size earlier, nothing to do here
         break;
