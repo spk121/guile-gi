@@ -1,5 +1,5 @@
 # Makefile.am - test directory
-# Copyright (C) 2018,2019 Michael L. Gran
+# Copyright (C) 2018, 2019 Michael L. Gran
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,9 +22,12 @@ test: check
 
 AM_TESTS_ENVIRONMENT = \
   GUILE_AUTO_COMPILE=0; \
-  export GUILE_AUTO_COMPILE;
+  export GUILE_AUTO_COMPILE; \
+  GI_TYPELIB_PATH='$(abs_builddir)'; \
+  export GI_TYPELIB_PATH;
 
 AM_CFLAGS = $(GUILE_CFLAGS) $(GOBJECT_INTROSPECTION_CFLAGS)
+
 TEST_EXTENSIONS = .scm
 
 noinst_DATA = lib.scm \
@@ -213,10 +216,23 @@ XFAIL_TESTS = \
  misc/atomic_int_set.scm \
  string/strjoinv.scm
 
+if HAVE_INTROSPECTION
+
+SCM_LOG_COMPILER = \
+  ${top_builddir}/libtool \
+  --dlopen=${top_builddir}/src/libguile-gi.la \
+  --dlopen=${top_builddir}/test/libeverything-1.0.la \
+  --dlopen=${top_builddir}/test/libmarshall-1.0.la \
+  --mode=execute $(GUILE)
+
+else
+
 SCM_LOG_COMPILER = \
   ${top_builddir}/libtool \
   --dlopen=${top_builddir}/src/libguile-gi.la \
   --mode=execute $(GUILE)
+
+endif
 
 AM_SCM_LOG_FLAGS = --no-auto-compile -L $(abs_top_srcdir)/src -L $(abs_top_srcdir) -s
 
@@ -227,3 +243,47 @@ EXTRA_DIST = \
   grilo/base.scm
 
 CLEANFILES = tmp.txt
+
+################
+# Testing libraries
+
+-include $(INTROSPECTION_MAKEFILE)
+if HAVE_INTROSPECTION
+pkglib_LTLIBRARIES = libeverything-1.0.la libmarshall-1.0.la
+
+INTROSPECTION_GIRS = Everything-1.0.gir Marshall-1.0.gir
+INTROSPECTION_SCANNER_ARGS = --add-include-path=$(abs_srcdir) --warn-all
+INTROSPECTION_COMPILER_ARGS = --includedir=$(abs_srcdir)
+libeverything_1_0_la_SOURCES = everything.c everything.h
+libeverything_1_0_la_CFLAGS = $(GOBJECT_CFLAGS)
+libeverything_1_0_la_LIBADD = $(GOBJECT_LIBS)
+
+libmarshall_1_0_la_SOURCES = \
+  marshall.c marshall.h gitestmacros.h
+libmarshall_1_0_la_CFLAGS = $(GOBJECT_CFLAGS)
+libmarshall_1_0_la_LIBADD = $(GOBJECT_LIBS)
+
+Everything-1.0.gir: libeverything-1.0.la
+# Everything_1_0_gir_NAMESPACE = Everything
+# Everything_1_0_gir_VERSION = 1.0
+Everything_1_0_gir_LIBS = libeverything-1.0.la
+Everything_1_0_gir_INCLUDES = GObject-2.0
+Everything_1_0_gir_FILES = everything.c everything.h
+
+Marshall-1.0.gir: libmarshall-1.0.la
+Marshall_1_0_gir_NAMESPACE = Marshall
+# GIMarshallingTests_1_0_gir_VERSION = 1.0
+Marshall_1_0_gir_LIBS = libmarshall-1.0.la
+Marshall_1_0_gir_INCLUDES = GObject-2.0
+Marshall_1_0_gir_FILES = marshall.c marshall.h
+
+pkgdata_DATA = \
+  Everything-1.0.gir Marshall-1.0.gir \
+  Everything-1.0.typelib Marshall-1.0.typelib
+
+CLEANFILES += \
+ Everything-1.0.gir Everything-1.0.typelib \
+ Marshall-1.0.gir Marshall-1.0.typelib
+
+
+endif
