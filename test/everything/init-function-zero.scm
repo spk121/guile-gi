@@ -8,6 +8,7 @@
 (automake-test
  (let ((x #()))
    (format #t "Input Before: ~S~%" x)
+   (flush-all-ports)
    (receive (ret y)
        (init-function x)
      (format #t "Input After: ~S~%" x)
