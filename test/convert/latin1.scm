@@ -17,8 +17,7 @@
               "ISO-8859-1")
      (format #t "converted: ~S~%" converted)
      (format #t "bytes-read: ~S~%" bytes-read)
-     (format #t "bytes-written: ~S~%" bytes-written)
-     (equal? converted
-             #vu8(195 129           ; UTF-8 encoded Á
-                      195 137))       ; UTF-8 encoded É
+     (list= = (u8vector->list converted)
+             '(195 129           ; UTF-8 encoded Á
+                   195 137))       ; UTF-8 encoded É
      )))

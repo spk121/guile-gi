@@ -1610,17 +1610,50 @@ c_native_array_to_scm(C2S_ARG_DECL)
     }
     *object = SCM_UNDEFINED;
 
+#define TRANSFER(_type,_short_type)                                     \
+    do {                                                                \
+        gsize sz;                                                       \
+        if (!g_size_checked_mul(&sz, length, entry->item_size) || sz == G_MAXSIZE) \
+            scm_misc_error(subr, "Array size overflow", SCM_EOL);               \
+        if (sz == 0) \
+            *object = scm_make_ ## _short_type ## vector (scm_from_int(0), scm_from_int(0)); \
+        else if (entry->transfer == GI_TRANSFER_EVERYTHING)             \
+            *object = scm_take_ ## _short_type ## vector((_type *)(arg->v_pointer), length); \
+        else                                                            \
+            *object = scm_take_ ## _short_type ## vector((_type *)g_memdup(arg->v_pointer, sz), length); \
+    } while(0)
+
     switch (entry->item_type_tag) {
     case GI_TYPE_TAG_INT8:
+        TRANSFER(gint8, s8);
+        break;
     case GI_TYPE_TAG_UINT8:
+        TRANSFER(guint8, u8);
+        break;
     case GI_TYPE_TAG_INT16:
+        TRANSFER(gint16, s16);
+        break;
     case GI_TYPE_TAG_UINT16:
+        TRANSFER(guint16, u16);
+        break;
     case GI_TYPE_TAG_INT32:
+        TRANSFER(gint32, s32);
+        break;
     case GI_TYPE_TAG_UINT32:
+        TRANSFER(guint32, u32);
+        break;
     case GI_TYPE_TAG_INT64:
+        TRANSFER(gint64, s64);
+        break;
     case GI_TYPE_TAG_UINT64:
+        TRANSFER(guint64, u64);
+        break;
     case GI_TYPE_TAG_FLOAT:
+        TRANSFER(gfloat, f32);
+        break;
     case GI_TYPE_TAG_DOUBLE:
+        TRANSFER(gdouble, f64);
+        break;
     case GI_TYPE_TAG_GTYPE:
     case GI_TYPE_TAG_BOOLEAN:
     case GI_TYPE_TAG_UNICHAR:
