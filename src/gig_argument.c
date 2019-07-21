@@ -513,20 +513,33 @@ gig_argument_describe_arg(GIArgInfo *arg_info)
     return g_string_free(desc, FALSE);
 }
 
-
 static void
 scm_to_c_immediate(S2C_ARG_DECL)
 {
     switch (entry->type_tag) {
     case GI_TYPE_TAG_INT8:
-        if (!scm_is_signed_integer(object, INT8_MIN, INT8_MAX))
+        if (SCM_CHARP(object)) {
+            if (SCM_CHAR(object) > 255)
+                scm_out_of_range(subr, object);
+            else
+                arg->v_int8 = (guint8) SCM_CHAR(object);
+        }
+        else if (!scm_is_signed_integer(object, INT8_MIN, INT8_MAX))
             scm_wrong_type_arg_msg(subr, argpos, object, "int8");
-        arg->v_int8 = scm_to_int8(object);
+        else
+            arg->v_int8 = scm_to_int8(object);
         break;
     case GI_TYPE_TAG_UINT8:
-        if (!scm_is_unsigned_integer(object, 0, UINT8_MAX))
+        if (SCM_CHARP(object)) {
+            if (SCM_CHAR(object) > 255)
+                scm_out_of_range(subr, object);
+            else
+                arg->v_uint8 = (guint8) SCM_CHAR(object);
+        }
+        else if (!scm_is_unsigned_integer(object, 0, UINT8_MAX))
             scm_wrong_type_arg_msg(subr, argpos, object, "uint8");
-        arg->v_uint8 = scm_to_uint8(object);
+        else
+            arg->v_uint8 = scm_to_uint8(object);
         break;
     case GI_TYPE_TAG_INT16:
         if (!scm_is_signed_integer(object, INT16_MIN, INT16_MAX))
