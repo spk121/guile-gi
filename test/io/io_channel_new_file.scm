@@ -12,12 +12,23 @@
     (bytevector-copy! bv start bv2 0 (- end start))
     bv2))
 
+(define (err-text status)
+  (cond
+   ((= status IOSTATUS_ERROR)
+    "error")
+   ((= status IOSTATUS_NORMAL)
+    "normal")
+   ((= status IOSTATUS_EOF)
+    "eof")
+   ((= status IOSTATUS_AGAIN)
+    "again")))
+
 (automake-test
  (begin
    ;; Let's make a channel that writes to a file.
    (let ((channel (iochannel:new-file "tmp.txt" "w")))
-     (let ((result (with-object channel (write-chars (string->utf8 "foobar") 6))))
-       (with-object channel (shutdown #t))))
+     (let ((result (write-chars channel (string->utf8 "foobar") 6)))
+       (shutdown channel #t)))
 
    ;; Now, make a channel that reads from that file.
    (let ((channel (iochannel:new-file "tmp.txt" "r"))
@@ -25,12 +36,12 @@
 
      ;; Read as much as we can.
      (receive (status nbytes)
-         (with-object channel (read-chars buf))
+         (read-chars channel buf)
        (let ((bv (subbytevector buf 0 nbytes)))
            (format #t "Output bytevector contents: ~S~%" bv)
            (format #t "Output bytevector as UTF8: ~S~%" (utf8->string bv))
            (format #t "Bytes read: ~S~%" nbytes)
-           (format #t "Error code: ~S~%" status)
+           (format #t "Error code: ~S ~S~%" status (err-text status))
            (and (string=?
                  (utf8->string bv)
                  "foobar")

@@ -212,7 +212,6 @@ TESTS = \
  misc/interfaces.scm
 
 XFAIL_TESTS = \
- grilo/init_commandline.scm \
  misc/atomic_int_set.scm \
  string/strjoinv.scm
 
@@ -435,5 +434,8 @@ EVERYTHING_TESTS = \
 
 TESTS += \
  $(EVERYTHING_TESTS)
+
+XFAIL_TESTS += \
+ everything/one-outparam-gchar.scm
 
 endif

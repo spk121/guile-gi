@@ -4,17 +4,14 @@
 
 (typelib-require ("GLib" "2.0"))
 
-;; Another curious case.  The first argument is supposed to be a
-;; zero-terminated UTF32 string that is modified in place.  The
-;; introspection info list the 1st argument as IN.  What's the right
-;; approach?
+;; The introspection info for g_unicode_canonical_ordering is incorrect.
+;; See https://gitlab.gnome.org/GNOME/glib/issues/1840
 
 (automake-test
- (let* ((instr (apply string (list #\A #\◌́ #\◌̱)))
-        (inbv (string->utf32 instr))
-        ;; (out (unicode-canonical-ordering inbv 3))
-        )
-   (write instr) (newline)
-   (write inbv) (newline)
-   ;; (write out) (newline)
-   'skipped))
+ ;; (let ((x (apply string (list #\A #\◌́ #\◌̱))))
+ ;;   (format #t "Input Before: ~S~%" x)
+ ;;   (let ((y (unicode-canonical-ordering x)))
+ ;;     (format #t "Input Before: ~S~%" x)
+ ;;     (format #t "Output: ~S~%" y)))
+ 'skipped)
+
