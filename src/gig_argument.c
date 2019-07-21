@@ -45,6 +45,7 @@ static void scm_to_c_void_pointer(S2C_ARG_DECL);
 static void scm_to_c_interface_pointer(S2C_ARG_DECL);
 static void scm_to_c_array(S2C_ARG_DECL);
 static void scm_to_c_native_array(S2C_ARG_DECL);
+static void scm_to_c_native_unichar_array(S2C_ARG_DECL);
 static void scm_to_c_native_boolean_array(S2C_ARG_DECL);
 static void scm_to_c_native_immediate_array(S2C_ARG_DECL);
 static void scm_to_c_native_string_array(S2C_ARG_DECL);
@@ -792,6 +793,8 @@ scm_to_c_native_array(S2C_ARG_DECL)
 {
     if (entry->item_type_tag == GI_TYPE_TAG_BOOLEAN)
         scm_to_c_native_boolean_array(S2C_ARGS);
+    else if (entry->item_type_tag == GI_TYPE_TAG_UNICHAR)
+        scm_to_c_native_unichar_array(S2C_ARGS);
     else if (gi_type_tag_is_integer(entry->item_type_tag)
         || gi_type_tag_is_real_number(entry->item_type_tag))
         scm_to_c_native_immediate_array(S2C_ARGS);
@@ -824,14 +827,33 @@ scm_to_c_native_boolean_array(S2C_ARG_DECL)
 }
 
 static void
+scm_to_c_native_unichar_array(S2C_ARG_DECL)
+{
+    // When asked to convert an SCM to an array of unichars,
+    // we expect that SCM to be a string.
+    if (!scm_is_string(object))
+        scm_wrong_type_arg_msg(subr, argpos, object, "string");
+    *size = scm_c_string_length(object);
+    if (entry->array_is_zero_terminated) {
+        arg->v_pointer = malloc(sizeof(gunichar) * (*size + 1));
+        ((gunichar *)arg->v_pointer)[*size] = 0;
+    } else
+        arg->v_pointer = malloc(sizeof(gunichar) * *size);
+    for (gsize i = 0; i < *size; i ++)
+        ((gunichar *)(arg->v_pointer))[i] = (gunichar) SCM_CHAR(scm_c_string_ref(object, i));
+    if (entry->item_transfer == GI_TRANSFER_NOTHING)
+        *must_free = GIG_FREE_SIMPLE;
+}
+
+static void
 scm_to_c_native_immediate_array(S2C_ARG_DECL)
 {
 #define FUNC_NAME "%object->c-native-immediate-array-arg"
-    // IMMEDIATE TYPES.  It seems only boolean, double, and 8 and
-    // 32-bit integer arrays are ever used. Sometimes deep copy.
-    // Sometimes zero terminated.  For SCM bytevectors and
-    // GI_TRANSFER_NOTHING and not zero-terminated, we can use the
-    // contents of a bytevector directly.  For SCM bytevectors and
+    // IMMEDIATE TYPES.  It seems only double, and 8 and 32-bit
+    // integer arrays are ever used. Sometimes deep copy.  Sometimes
+    // zero terminated.  For SCM bytevectors and GI_TRANSFER_NOTHING
+    // and not zero-terminated, we can use the contents of a
+    // bytevector directly.  For SCM bytevectors and
     // GI_TRANSFER_EVERYTHING, we need to make a deep copy.  If the
     // argument is NULL_OK and the SCM is #f, we pass NULL.
 
