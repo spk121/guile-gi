@@ -439,7 +439,6 @@ TESTS += \
  $(EVERYTHING_TESTS)
 
 XFAIL_TESTS += \
- everything/one-outparam-gchar.scm \
- everything/init-function-zero.scm
+ everything/one-outparam-gchar.scm
 
 endif
