@@ -3,6 +3,7 @@
 #include "gig_util.h"
 #include "gig_signal.h"
 #include "gig_value.h"
+#include "gig_function_private.h"
 
 GQuark gig_user_object_properties;
 
@@ -547,10 +548,48 @@ gig_i_scm_emit(SCM self, SCM signal, SCM s_detail, SCM args)
         return SCM_UNSPECIFIED;
 }
 
+static SCM sym_value;
+
+void
+gig_property_define(GType type, GIPropertyInfo *info, const gchar* namespace)
+{
+    SCM formals, specializers;
+    GObjectClass *class;
+    GParamSpec *prop;
+    SCM s_prop;
+
+    const gchar *name = g_base_info_get_name(info);
+    gchar *long_name;
+
+    scm_dynwind_begin(0);
+
+    formals = scm_list_2(sym_self, sym_value);
+    specializers = scm_list_2(gig_type_get_scheme_type(type), top_type);
+
+    class = g_type_class_ref(type);
+    scm_dynwind_unwind_handler(g_type_class_unref, class, SCM_F_WIND_EXPLICITLY);
+    long_name = scm_dynwind_or_bust("%gig-property-define",
+                                    g_strdup_printf("%s:%s", namespace, name));
+    long_name = scm_dynwind_or_bust("%gig-property-define", gig_gname_to_scm_name(long_name));
+
+    prop = g_object_class_find_property(class, name);
+    g_assert(prop != NULL);
+
+    s_prop = gig_type_transfer_object(G_PARAM_SPEC_TYPE(prop), prop, GI_TRANSFER_NOTHING);
+    // This should not conflict with anything else defined in a class
+    scm_c_define(long_name, s_prop);
+    scm_c_export(long_name, NULL);
+    g_debug("dynamically bound %s to property %s of %s", long_name, name, g_type_name(type));
+
+    scm_dynwind_end();
+}
+
 void
 gig_init_object()
 {
     gig_user_object_properties = g_quark_from_static_string("GigObject::properties");
+
+    sym_value = scm_from_utf8_symbol("value");
 
     scm_c_define_gsubr("%make-gobject", 1, 1, 0, gig_i_scm_make_gobject);
     scm_c_define_gsubr("%object-get-pspec", 2, 0, 0, gig_i_scm_get_pspec);

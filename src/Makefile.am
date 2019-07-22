@@ -36,6 +36,7 @@ libguile_gi_la_SOURCES = \
  gig_callback.h \
  gig_function.c \
  gig_function.h \
+ gig_function_private.h \
  gig_constant.c \
  gig_constant.h \
  gig_flag.c \
