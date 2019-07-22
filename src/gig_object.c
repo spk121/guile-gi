@@ -575,6 +575,7 @@ gig_property_define(GType type, GIPropertyInfo *info, const gchar* namespace)
     prop = g_object_class_find_property(class, name);
     g_assert(prop != NULL);
 
+    gig_type_define(G_PARAM_SPEC_TYPE(prop));
     s_prop = gig_type_transfer_object(G_PARAM_SPEC_TYPE(prop), prop, GI_TRANSFER_NOTHING);
     // This should not conflict with anything else defined in a class
     scm_c_define(long_name, s_prop);
