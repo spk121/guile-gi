@@ -429,7 +429,10 @@ EVERYTHING_TESTS = \
  everything/array-in-nonzero-nonlen.scm \
  everything/array-zero-terminated-return.scm \
  everything/array-zero-terminated-return-null.scm \
- everything/array-zero-terminated-return-unichar.scm
+ everything/array-zero-terminated-return-unichar.scm \
+ everything/array-zero-terminated-in.scm \
+ everything/array-zero-terminated-out.scm \
+ everything/array-zero-terminated-inout.scm
 
 
 TESTS += \
