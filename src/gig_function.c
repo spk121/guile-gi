@@ -490,7 +490,8 @@ function_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
     g_debug("Binding C function %s as %s with %d args", g_base_info_get_name(gfn->function_info),
             gfn->name, n_args);
 
-    g_assert(n_args < 20);
+    // we have either 0 args or 1 args, which is the already packed list
+    g_assert(n_args <= 1);
 
     if (n_args)
         s_args = SCM_PACK(*(scm_t_bits *) (ffi_args[0]));
