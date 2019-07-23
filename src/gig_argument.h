@@ -19,8 +19,8 @@ G_BEGIN_DECLS
 
 #define C2S_ARG_DECL const gchar *subr, gint argpos,    \
         GigArgMapEntry *entry, GIArgument *arg,       \
-        GPtrArray *must_free, SCM *object, gsize size
-#define C2S_ARGS subr, argpos, entry, arg, must_free, object, size
+        SCM *object, gsize size
+#define C2S_ARGS subr, argpos, entry, arg, object, size
 
 void gig_argument_scm_to_c(S2C_ARG_DECL);
 void gig_argument_c_to_scm(C2S_ARG_DECL);

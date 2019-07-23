@@ -37,7 +37,7 @@
 #define TRACE_S2C()
 #endif
 
-static void later_free(GPtrArray *must_free, GigArgMapEntry *entry, gpointer ptr);
+static gpointer later_free(GPtrArray *must_free, GigArgMapEntry *entry, gpointer ptr);
 static void scm_to_c_immediate(S2C_ARG_DECL);
 static void scm_to_c_immediate_pointer(S2C_ARG_DECL);
 static void scm_to_c_interface(S2C_ARG_DECL);
@@ -67,10 +67,11 @@ static void c_list_to_scm(C2S_ARG_DECL);
 
 static void describe_non_pointer_type(GString *desc, GITypeInfo *type_info);
 
-static void later_free(GPtrArray *must_free, GigArgMapEntry *entry, gpointer ptr)
+static gpointer later_free(GPtrArray *must_free, GigArgMapEntry *entry, gpointer ptr)
 {
-    if (entry->transfer == GI_TRANSFER_NOTHING)
+    if (must_free != NULL && entry->transfer == GI_TRANSFER_NOTHING)
         g_ptr_array_insert(must_free, 0, ptr);
+    return ptr;
 }
 
 #define LATER_FREE(_ptr) later_free(must_free, entry, _ptr)
@@ -1587,8 +1588,6 @@ c_string_to_scm(C2S_ARG_DECL)
 static void
 c_array_to_scm(C2S_ARG_DECL)
 {
-    // Array length is a misnomer. A positive array length indicates that
-    // we are supposed to use an array length passed in as an argument.
     if (entry->array_length_index >= 0)
         entry->array_fixed_size = size;
 
@@ -1672,12 +1671,20 @@ c_native_array_to_scm(C2S_ARG_DECL)
         *object = scm_c_make_vector(length, SCM_BOOL_F);
         for (gsize k = 0; k < length; k ++)
             scm_c_vector_set_x(*object, k, ((gboolean *)(arg->v_pointer))[k] ? SCM_BOOL_T : SCM_BOOL_F);
+        if (entry->transfer == GI_TRANSFER_EVERYTHING) {
+            free(arg->v_pointer);
+            arg->v_pointer = 0;
+        }
         break;
     case GI_TYPE_TAG_UNICHAR:
         *object = scm_c_make_string(length, SCM_MAKE_CHAR(0));
         for (gsize k = 0; k < length; k ++)
             scm_c_string_set_x(*object, k, SCM_MAKE_CHAR(((gunichar *)(arg->v_pointer))[k]));
         break;
+        if (entry->transfer == GI_TRANSFER_EVERYTHING) {
+            free(arg->v_pointer);
+            arg->v_pointer = 0;
+        }
     case GI_TYPE_TAG_INTERFACE:
         switch (entry->referenced_base_type) {
         case GI_INFO_TYPE_ENUM:
@@ -1721,6 +1728,15 @@ c_native_array_to_scm(C2S_ARG_DECL)
                 else
                     *elt = scm_from_locale_string(str);
             }
+            if (entry->transfer == GI_TRANSFER_EVERYTHING) {
+                free(((gchar **)(arg->v_pointer))[i]);
+                ((gchar **)(arg->v_pointer))[i] = NULL;
+            }
+        }
+        if (entry->transfer == GI_TRANSFER_EVERYTHING
+            || entry->transfer == GI_TRANSFER_CONTAINER) {
+            free(arg->v_pointer);
+            arg->v_pointer = NULL;
         }
         scm_array_handle_release(&handle);
         break;
@@ -1882,25 +1898,36 @@ c_list_to_scm(C2S_ARG_DECL)
         }
         else {
             GIArgument _arg;
-            GigArgMapEntry *ae = g_new0(GigArgMapEntry, 1);
+            GigArgMapEntry ae = {
+                .name = "(list internal)",
+                .type_info = item_type_info,
+                .type_tag = item_type_tag,
+                .is_ptr = item_is_ptr,
+                .transfer = item_transfer};
             SCM elt;
             _arg.v_pointer = *(void **)data;
 
-            ae->name = g_strdup("(list internal)");
-            ae->type_info = item_type_info;
-            ae->type_tag = item_type_tag;
-            ae->is_ptr = item_is_ptr;
-            ae->transfer = item_transfer;
-            gig_argument_c_to_scm(subr, argpos, ae, &_arg, must_free, &elt, -1);
+            gig_argument_c_to_scm(subr, argpos, &ae, &_arg, &elt, -1);
             scm_set_car_x(out_iter, elt);
-            g_free(ae->name);
-            g_free(ae);
         }
 
         out_iter = scm_cdr(out_iter);
     }
     g_base_info_unref(item_type_info);
-
+    if (list_transfer == GI_TRANSFER_EVERYTHING
+        || list_transfer == GI_TRANSFER_CONTAINER) {
+        switch (list_type_tag) {
+        case GI_TYPE_TAG_GLIST:
+            g_list_free(arg->v_pointer);
+            break;
+        case GI_TYPE_TAG_GSLIST:
+            g_slist_free(arg->v_pointer);
+            break;
+        default:
+            g_assert_not_reached();
+        }
+        arg->v_pointer = NULL;
+    }
 }
 
 static void
