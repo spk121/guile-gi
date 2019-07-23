@@ -382,6 +382,7 @@ EVERYTHING_TESTS = \
  everything/boolean-inout-true-false.scm \
  everything/boolean-inout-false-true.scm \
  everything/intXX-out-or-return-max.scm \
+ everything/uintXX-out-or-return-max.scm \
  everything/intXX-out-or-return-min.scm \
  everything/intXX-in-max.scm \
  everything/int8-in-max-latin1.scm \
@@ -393,6 +394,7 @@ EVERYTHING_TESTS = \
  everything/utf8-full-return.scm \
  everything/utf8-as-uint8array-in.scm \
  everything/utf8-none-out.scm \
+ everything/utf8-dangling-out.scm \
  everything/utf8-none-inout.scm \
  everything/utf8-full-inout.scm \
  everything/init-function-null.scm \
@@ -432,7 +434,11 @@ EVERYTHING_TESTS = \
  everything/array-zero-terminated-return-unichar.scm \
  everything/array-zero-terminated-in.scm \
  everything/array-zero-terminated-out.scm \
- everything/array-zero-terminated-inout.scm
+ everything/array-zero-terminated-inout.scm \
+ everything/gslist-int-none-return.scm \
+ everything/gslist-utf8-none-return.scm \
+ everything/gslist-utf8-container-return.scm \
+ everything/gslist-utf8-full-return.scm
 
 
 TESTS += \
