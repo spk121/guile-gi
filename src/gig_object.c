@@ -600,7 +600,11 @@ do_define_property(const gchar *public_name, SCM prop, SCM self_type, SCM value_
     sym_public_name = scm_from_utf8_symbol(public_name);
 
     SCM old_generic = scm_hashq_ref(generic_table, sym_public_name, SCM_BOOL_F);
-    generic = scm_call_2(ensure_accessor_proc, old_generic, sym_public_name);
+    if (!scm_is_generic(old_generic))
+        generic = scm_call_2(ensure_accessor_proc, default_definition(sym_public_name),
+                             sym_public_name);
+    else
+        generic = scm_call_2(ensure_accessor_proc, old_generic, sym_public_name);
     was_accessor = scm_is_eq(old_generic, generic);
 
     // getter
