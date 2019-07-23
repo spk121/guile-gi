@@ -9,7 +9,7 @@
                 #:application-id "gi.guile.Example")))
      (connect app activate
               (lambda (app)
-                (display (application:application-id app))
+                (display (application-id app))
                 (display " says \"Hello, world!\"")
                 (newline)
                 (quit app)))

@@ -10,10 +10,10 @@
          (result #f))
      (connect app activate
               (lambda (app)
-                (set! (application:resource-base-path app)
+                (set! (resource-base-path app)
                       "/gi/guile/resource/base_path")
                 (set! result
-                      (equal? (application:resource-base-path app)
+                      (equal? (resource-base-path app)
                               "/gi/guile/resource/base_path"))
                 (quit app)))
      (run app (command-line))

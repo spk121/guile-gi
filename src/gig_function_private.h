@@ -16,4 +16,6 @@ SCM kwd_procedure;
 
 SCM sym_self;
 
+SCM default_definition(SCM name);
+
 #endif

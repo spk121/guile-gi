@@ -74,7 +74,7 @@ current_module_definition(SCM name)
     return SCM_BOOL_F;
 }
 
-static SCM
+SCM
 default_definition(SCM name)
 {
     LOOKUP_DEFINITION(scm_c_resolve_module("gi"));
