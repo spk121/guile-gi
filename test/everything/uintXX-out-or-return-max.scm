@@ -1,9 +1,10 @@
-(use-modules (gi)
+(use-modules (gi) (gi util)
              (test automake-test-lib)
              (srfi srfi-1)
              (system foreign))
 
-(typelib-require ("Marshall" "1.0"))
+(typelib-require (("Marshall" "1.0")
+                  #:renamer (protect* '(sizeof short int long size_t))))
 
 (automake-test
  (let ((returned (list (uint8-return)
