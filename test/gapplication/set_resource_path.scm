@@ -8,12 +8,12 @@
    (let ((app (make <GApplication>
                 #:application-id "gi.guile.Example"))
          (result #f))
-     (connect app (make <signal> #:name "activate")
+     (connect app activate
               (lambda (app)
-                (gobject-set-property! app "resource-base-path"
-                                       "/gi/guile/resource/base_path")
+                (set! (resource-base-path app)
+                      "/gi/guile/resource/base_path")
                 (set! result
-                      (equal? (gobject-get-property app "resource-base-path")
+                      (equal? (resource-base-path app)
                               "/gi/guile/resource/base_path"))
                 (quit app)))
      (run app (command-line))

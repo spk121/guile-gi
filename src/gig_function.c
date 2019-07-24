@@ -19,6 +19,7 @@
 #include "gig_util.h"
 #include "gig_arg_map.h"
 #include "gig_function.h"
+#include "gig_function_private.h"
 #include "gig_type.h"
 #include "gig_signal.h"
 
@@ -34,20 +35,6 @@ typedef struct _GigFunction
 } GigFunction;
 
 GHashTable *function_cache;
-
-static SCM generic_table;
-
-static SCM ensure_generic_proc;
-static SCM make_proc;
-static SCM add_method_proc;
-
-static SCM top_type;
-static SCM method_type;
-
-static SCM kwd_specializers;
-static SCM kwd_formals;
-static SCM kwd_procedure;
-
 
 static GigGsubr *check_gsubr_cache(GICallableInfo *function_info, SCM self_type,
                                    gint *required_input_count, gint *optional_input_count,
@@ -87,7 +74,7 @@ current_module_definition(SCM name)
     return SCM_BOOL_F;
 }
 
-static SCM
+SCM
 default_definition(SCM name)
 {
     LOOKUP_DEFINITION(scm_c_resolve_module("gi"));
@@ -270,7 +257,7 @@ make_formals(GICallableInfo *callable,
     i_specializer = *specializers = scm_make_list(scm_from_int(n_inputs), top_type);
 
     if (g_callable_info_is_method(callable)) {
-        scm_set_car_x(i_formal, scm_from_utf8_symbol("self"));
+        scm_set_car_x(i_formal, sym_self);
         scm_set_car_x(i_specializer, self_type);
 
         i_formal = scm_cdr(i_formal);
@@ -503,7 +490,8 @@ function_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
     g_debug("Binding C function %s as %s with %d args", g_base_info_get_name(gfn->function_info),
             gfn->name, n_args);
 
-    g_assert(n_args < 20);
+    // we have either 0 args or 1 args, which is the already packed list
+    g_assert(n_args <= 1);
 
     if (n_args)
         s_args = SCM_PACK(*(scm_t_bits *) (ffi_args[0]));
@@ -676,6 +664,8 @@ gig_init_function(void)
     kwd_specializers = scm_from_utf8_keyword("specializers");
     kwd_formals = scm_from_utf8_keyword("formals");
     kwd_procedure = scm_from_utf8_keyword("procedure");
+
+    sym_self = scm_from_utf8_symbol("self");
 
     atexit(gig_fini_function);
 }

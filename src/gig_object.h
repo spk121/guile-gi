@@ -7,5 +7,6 @@
 #include <girepository.h>
 
 void gig_init_object();
+void gig_property_define(GType type, GIPropertyInfo *info, const gchar* namespace);
 
 #endif

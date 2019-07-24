@@ -192,6 +192,12 @@ scm_i_typelib_load(const gchar *subr, const gchar *namespace_, const gchar *vers
                 if (!(g_signal_info_get_flags(sig_info) & G_SIGNAL_DEPRECATED))
                     gig_function_define(gtype, sig_info, namespace);
             }
+
+            gint n_properties = g_object_info_get_n_properties(info);
+            for (gint m = 0; m < n_properties; m++) {
+                GIPropertyInfo *prop_info = g_object_info_get_property(info, m);
+                gig_property_define(gtype, prop_info, namespace);
+            }
             break;
         }
         case GI_INFO_TYPE_INTERFACE:

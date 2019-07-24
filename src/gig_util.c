@@ -62,9 +62,9 @@ gig_gname_to_scm_name(const gchar *gname)
             g_string_append_c(str, '-');
             was_lower = FALSE;
         }
-        else if (gname[i] == '?') {
-            // does this even occur?
-            g_string_append_c(str, '?');
+        else if (gname[i] == '?' ||
+                 gname[i] == ':') {
+            g_string_append_c(str, gname[i]);
             was_lower = FALSE;
         }
         else if (g_ascii_isdigit(gname[i])) {
@@ -141,18 +141,25 @@ scm_c_reexport(const gchar *name, ...)
     if (SCM_UNBNDP(module_reexport_proc))
         module_reexport_proc = scm_c_public_ref("guile", "module-re-export!");
 
-
     va_list args;
     va_start(args, name);
 
     SCM current_module = scm_current_module();
-    SCM syms = scm_list_1(scm_from_utf8_symbol(name));
+    SCM syms = SCM_EOL;
 
-    while ((name = va_arg(args, gchar *)) != NULL)
-          syms = scm_cons(scm_from_utf8_symbol(name), syms);
+    SCM public = scm_module_public_interface(current_module);
+    SCM obarray = SCM_MODULE_OBARRAY(public);
+
+    do {
+        SCM sym = scm_from_utf8_symbol(name);
+
+        if (!scm_hashq_get_handle(obarray, sym))
+            syms = scm_cons(scm_from_utf8_symbol(name), syms);
+
+        name = va_arg(args, gchar *);
+    } while (name != NULL);
 
     scm_call_2(module_reexport_proc, current_module, syms);
-
     va_end(args);
 
     return SCM_UNSPECIFIED;

@@ -7,9 +7,9 @@
  (begin
    (let ((app (make <GApplication>
                 #:application-id "gi.guile.Example")))
-     (connect app (make <signal> #:name "activate")
+     (connect app activate
               (lambda (app)
-                (display (gobject-get-property app "application-id"))
+                (display (application-id app))
                 (display " says \"Hello, world!\"")
                 (newline)
                 (quit app)))
