@@ -1,5 +1,5 @@
 # Makefile.am - test directory
-# Copyright (C) 2018,2019 Michael L. Gran
+# Copyright (C) 2018, 2019 Michael L. Gran
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,9 +22,12 @@ test: check
 
 AM_TESTS_ENVIRONMENT = \
   GUILE_AUTO_COMPILE=0; \
-  export GUILE_AUTO_COMPILE;
+  export GUILE_AUTO_COMPILE; \
+  GI_TYPELIB_PATH='$(abs_builddir)'; \
+  export GI_TYPELIB_PATH;
 
 AM_CFLAGS = $(GUILE_CFLAGS) $(GOBJECT_INTROSPECTION_CFLAGS)
+
 TEST_EXTENSIONS = .scm
 
 noinst_DATA = lib.scm \
@@ -209,14 +212,26 @@ TESTS = \
  misc/interfaces.scm
 
 XFAIL_TESTS = \
- grilo/init_commandline.scm \
  misc/atomic_int_set.scm \
  string/strjoinv.scm
+
+if HAVE_INTROSPECTION
+
+SCM_LOG_COMPILER = \
+  ${top_builddir}/libtool \
+  --dlopen=${top_builddir}/src/libguile-gi.la \
+  --dlopen=${top_builddir}/test/libeverything-1.0.la \
+  --dlopen=${top_builddir}/test/libmarshall-1.0.la \
+  --mode=execute $(GUILE)
+
+else
 
 SCM_LOG_COMPILER = \
   ${top_builddir}/libtool \
   --dlopen=${top_builddir}/src/libguile-gi.la \
   --mode=execute $(GUILE)
+
+endif
 
 AM_SCM_LOG_FLAGS = --no-auto-compile -L $(abs_top_srcdir)/src -L $(abs_top_srcdir) -s
 
@@ -227,3 +242,209 @@ EXTRA_DIST = \
   grilo/base.scm
 
 CLEANFILES = tmp.txt
+
+################
+# Testing libraries
+
+-include $(INTROSPECTION_MAKEFILE)
+if HAVE_INTROSPECTION
+pkglib_LTLIBRARIES = libeverything-1.0.la libmarshall-1.0.la
+
+INTROSPECTION_GIRS = Everything-1.0.gir Marshall-1.0.gir
+INTROSPECTION_SCANNER_ARGS = --add-include-path=$(abs_srcdir) --warn-all
+INTROSPECTION_COMPILER_ARGS = --includedir=$(abs_srcdir)
+libeverything_1_0_la_SOURCES = everything.c everything.h
+libeverything_1_0_la_CFLAGS = $(GOBJECT_CFLAGS)
+libeverything_1_0_la_LIBADD = $(GOBJECT_LIBS)
+
+libmarshall_1_0_la_SOURCES = \
+  marshall.c marshall.h gitestmacros.h
+libmarshall_1_0_la_CFLAGS = $(GOBJECT_CFLAGS)
+libmarshall_1_0_la_LIBADD = $(GOBJECT_LIBS)
+
+Everything-1.0.gir: libeverything-1.0.la
+# Everything_1_0_gir_NAMESPACE = Everything
+# Everything_1_0_gir_VERSION = 1.0
+Everything_1_0_gir_LIBS = libeverything-1.0.la
+Everything_1_0_gir_INCLUDES = GObject-2.0
+Everything_1_0_gir_FILES = everything.c everything.h
+
+Marshall-1.0.gir: libmarshall-1.0.la
+Marshall_1_0_gir_NAMESPACE = Marshall
+# GIMarshallingTests_1_0_gir_VERSION = 1.0
+Marshall_1_0_gir_LIBS = libmarshall-1.0.la
+Marshall_1_0_gir_INCLUDES = GObject-2.0
+Marshall_1_0_gir_FILES = marshall.c marshall.h
+
+pkgdata_DATA = \
+  Everything-1.0.gir Marshall-1.0.gir \
+  Everything-1.0.typelib Marshall-1.0.typelib
+
+CLEANFILES += \
+ Everything-1.0.gir Everything-1.0.typelib \
+ Marshall-1.0.gir Marshall-1.0.typelib
+
+EVERYTHING_TESTS = \
+ everything/nullfunc.scm \
+ everything/const-return-gpointer.scm \
+ everything/const-return-gintptr.scm \
+ everything/const-return-gboolean.scm \
+ everything/const-return-gint8.scm \
+ everything/const-return-guint8.scm \
+ everything/const-return-gint16.scm \
+ everything/const-return-guint16.scm \
+ everything/const-return-gint32.scm \
+ everything/const-return-guint32.scm \
+ everything/const-return-gint64.scm \
+ everything/const-return-guint64.scm \
+ everything/const-return-gchar.scm \
+ everything/const-return-gshort.scm \
+ everything/const-return-gushort.scm \
+ everything/const-return-gint.scm \
+ everything/const-return-guint.scm \
+ everything/const-return-glong.scm \
+ everything/const-return-gulong.scm \
+ everything/const-return-gsize.scm \
+ everything/const-return-gssize.scm \
+ everything/const-return-gfloat.scm \
+ everything/const-return-gdouble.scm \
+ everything/const-return-gunichar.scm \
+ everything/const-return-gtype.scm \
+ everything/const-return-utf8.scm \
+ everything/const-return-filename.scm \
+ everything/oneparam-gpointer.scm \
+ everything/oneparam-gintptr.scm \
+ everything/oneparam-guintptr.scm \
+ everything/oneparam-gboolean.scm \
+ everything/oneparam-gint8.scm \
+ everything/oneparam-guint8.scm \
+ everything/oneparam-gint16.scm \
+ everything/oneparam-guint16.scm \
+ everything/oneparam-gint32.scm \
+ everything/oneparam-guint32.scm \
+ everything/oneparam-gint64.scm \
+ everything/oneparam-guint64.scm \
+ everything/oneparam-gchar.scm \
+ everything/oneparam-gchar-char.scm \
+ everything/oneparam-gshort.scm \
+ everything/oneparam-gushort.scm \
+ everything/oneparam-gint.scm \
+ everything/oneparam-guint.scm \
+ everything/oneparam-glong.scm \
+ everything/oneparam-gulong.scm \
+ everything/oneparam-gsize.scm \
+ everything/oneparam-gssize.scm \
+ everything/oneparam-gfloat.scm \
+ everything/oneparam-gdouble.scm \
+ everything/oneparam-gunichar.scm \
+ everything/oneparam-gtype.scm \
+ everything/oneparam-utf8.scm \
+ everything/oneparam-filename.scm \
+ everything/one-outparam-gpointer.scm \
+ everything/one-outparam-gintptr.scm \
+ everything/one-outparam-guintptr.scm \
+ everything/one-outparam-gboolean.scm \
+ everything/one-outparam-gboolean.scm \
+ everything/one-outparam-gint8.scm \
+ everything/one-outparam-guint8.scm \
+ everything/one-outparam-gint16.scm \
+ everything/one-outparam-guint16.scm \
+ everything/one-outparam-gint32.scm \
+ everything/one-outparam-guint32.scm \
+ everything/one-outparam-gint64.scm \
+ everything/one-outparam-guint64.scm \
+ everything/one-outparam-gchar.scm \
+ everything/one-outparam-gshort.scm \
+ everything/one-outparam-gushort.scm \
+ everything/one-outparam-gint.scm \
+ everything/one-outparam-guint.scm \
+ everything/one-outparam-glong.scm \
+ everything/one-outparam-gulong.scm \
+ everything/one-outparam-gsize.scm \
+ everything/one-outparam-gssize.scm \
+ everything/one-outparam-gfloat.scm \
+ everything/one-outparam-gdouble.scm \
+ everything/one-outparam-gunichar.scm \
+ everything/one-outparam-gtype.scm \
+ everything/one-outparam-utf8.scm \
+ everything/one-outparam-filename.scm \
+ everything/passthrough-one-gpointer.scm \
+ everything/passthrough-one-gintptr.scm \
+ everything/passthrough-one-guintptr.scm \
+ everything/passthrough-one-utf8.scm \
+ everything/passthrough-one-filename.scm \
+ everything/boolean-return-true.scm \
+ everything/boolean-return-false.scm \
+ everything/boolean-in-true.scm \
+ everything/boolean-in-false.scm \
+ everything/boolean-out-true.scm \
+ everything/boolean-out-false.scm \
+ everything/boolean-inout-true-false.scm \
+ everything/boolean-inout-false-true.scm \
+ everything/intXX-out-or-return-max.scm \
+ everything/uintXX-out-or-return-max.scm \
+ everything/intXX-out-or-return-min.scm \
+ everything/intXX-in-max.scm \
+ everything/int8-in-max-latin1.scm \
+ everything/intXX-in-min.scm \
+ everything/intXX-inout-max-min.scm \
+ everything/intXX-inout-min-max.scm \
+ everything/time-t-out.scm \
+ everything/utf8-none-return.scm \
+ everything/utf8-full-return.scm \
+ everything/utf8-as-uint8array-in.scm \
+ everything/utf8-none-out.scm \
+ everything/utf8-dangling-out.scm \
+ everything/utf8-none-inout.scm \
+ everything/utf8-full-inout.scm \
+ everything/init-function-null.scm \
+ everything/init-function-zero.scm \
+ everything/init-function-one.scm \
+ everything/init-function-two.scm \
+ everything/array-fixed-int-return.scm \
+ everything/array-fixed-short-return.scm \
+ everything/array-fixed-int-in.scm \
+ everything/array-fixed-short-in.scm \
+ everything/array-fixed-out.scm \
+ everything/array-fixed-inout.scm \
+ everything/array-return.scm \
+ everything/array-return-etc.scm \
+ everything/array-in.scm \
+ everything/array-in-len-before.scm \
+ everything/array-in-len-zero-terminated.scm \
+ everything/array-string-in.scm \
+ everything/array-uint8-in.scm \
+ everything/array-uint8-in-latin1.scm \
+ everything/array-int64-in.scm \
+ everything/array-uint64-in.scm \
+ everything/array-unichar-in.scm \
+ everything/array-bool-in.scm \
+ everything/array-enum-in.scm \
+ everything/array-in-guint64-len.scm \
+ everything/array-in-guint8-len.scm \
+ everything/array-out.scm \
+ everything/array-out-etc.scm \
+ everything/array-bool-out.scm \
+ everything/array-unichar-out.scm \
+ everything/array-inout.scm \
+ everything/array-inout-etc.scm \
+ everything/array-in-nonzero-nonlen.scm \
+ everything/array-zero-terminated-return.scm \
+ everything/array-zero-terminated-return-null.scm \
+ everything/array-zero-terminated-return-unichar.scm \
+ everything/array-zero-terminated-in.scm \
+ everything/array-zero-terminated-out.scm \
+ everything/array-zero-terminated-inout.scm \
+ everything/gslist-int-none-return.scm \
+ everything/gslist-utf8-none-return.scm \
+ everything/gslist-utf8-container-return.scm \
+ everything/gslist-utf8-full-return.scm
+
+
+TESTS += \
+ $(EVERYTHING_TESTS)
+
+XFAIL_TESTS += \
+ everything/one-outparam-gchar.scm
+
+endif

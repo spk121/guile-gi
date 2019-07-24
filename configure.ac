@@ -57,6 +57,8 @@ GUILE_SITE_DIR
 
 AC_PATH_PROG([GLIB_COMPILE_RESOURCES],[glib-compile-resources])
 
+GOBJECT_INTROSPECTION_CHECK([1.46.0])
+
 ################
 # Guile has three directories that don't follow the GNU Filesystem
 # Heirarchy Standards.  If one follows the GNU FHS, files get installed

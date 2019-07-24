@@ -15,7 +15,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 ACLOCAL_AMFLAGS = -I m4 ${ACLOCAL_FLAGS}
-AM_DISTCHECK_CONFIGURE_FLAGS = --with-gnu-filesystem-hierarchy
+AM_DISTCHECK_CONFIGURE_FLAGS = --with-gnu-filesystem-hierarchy --enable-introspection
 SUBDIRS = src doc docs m4 build-aux tools test examples
 
 # Build ChangeLog from GIT history

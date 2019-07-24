@@ -12,14 +12,13 @@
 ;; unchanged.
 
 (automake-test
- (receive (converted bytes-read bytes-written)
+ (receive (converted bytes-read)
      (convert #vu8(65 66 67 68 69) ; ASCII 'ABCDE'
               "UTF-8"
               "US-ASCII")
      (format #t "converted: ~S~%" converted)
      (format #t "bytes-read: ~S~%" bytes-read)
-     (format #t "bytes-written: ~S~%" bytes-written)
-     (equal? converted
-             #vu8(65 66 67 68 69) ; UTF-8 'ABCDE'
-             ))))
+     (list= = (u8vector->list converted)
+            '(65 66 67 68 69) ; UTF-8 'ABCDE'
+            )))
 
