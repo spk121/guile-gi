@@ -62,8 +62,7 @@ gig_gname_to_scm_name(const gchar *gname)
             g_string_append_c(str, '-');
             was_lower = FALSE;
         }
-        else if (gname[i] == '?' ||
-                 gname[i] == ':') {
+        else if (gname[i] == '?' || gname[i] == ':') {
             g_string_append_c(str, gname[i]);
             was_lower = FALSE;
         }
@@ -153,7 +152,7 @@ scm_c_reexport(const gchar *name, ...)
     do {
         SCM sym = scm_from_utf8_symbol(name);
 
-        if (!scm_hashq_get_handle(obarray, sym))
+        if (scm_is_false(scm_hashq_get_handle(obarray, sym)))
             syms = scm_cons(scm_from_utf8_symbol(name), syms);
 
         name = va_arg(args, gchar *);
