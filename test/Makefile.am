@@ -157,9 +157,7 @@ FUZZY_MATCH_TESTS = \
 
 GTK_ENTRY_TESTS = \
  gtk_entry/set_alignment.scm \
- gtk_entry/set_alignment_zero.scm \
- gtk_entry/zero_alignment_wrapped.scm \
- gtk_entry/one_alignment_wrapped.scm
+ gtk_entry/set_alignment_zero.scm
 
 GTK_LAYOUT_TESTS = \
  gtk_layout/create_box.scm
