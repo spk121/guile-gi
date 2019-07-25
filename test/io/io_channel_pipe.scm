@@ -35,7 +35,7 @@
 
        ;;
        (receive (status nbytes-read)
-           (with-object channel (read-chars buf))
+           (read-chars channel buf)
          (write (utf8->string buf)) (newline)
            (write (list status nbytes-read)) (newline)
            (and (= status IOSTATUS_NORMAL)

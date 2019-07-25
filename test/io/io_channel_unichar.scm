@@ -22,15 +22,14 @@
    (let ((channel (iochannel:new-file "tmp.txt" "w")))
      (format #t "write-only iochannel for tmp.txt: ~S~%" channel)
      (format #t "writing to 'αβ' iochannel~%")
-     (with-object channel
-       (write-unichar #\α)
-       (write-unichar #\β)
-       (shutdown #t)))
+     (write-unichar channel #\α)
+     (write-unichar channel #\β)
+     (shutdown channel #t))
 
    ;; Now, make a channel that reads from that file.
    (let* ((channel (iochannel:new-file "tmp.txt" "r"))
-          (alpha (second-value (with-object channel (read-unichar))))
-          (beta  (second-value (with-object channel (read-unichar)))))
+          (alpha (second-value (read-unichar channel)))
+          (beta  (second-value (read-unichar channel))))
      (format #t "read-only iochannel for tmp.txt: ~S~%" channel)
      (format #t "read ~S~S from iochannel~%" alpha beta)
      (and
