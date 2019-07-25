@@ -4,18 +4,15 @@
  (let ((data (media:audio-new))
        (title "START:DASH!!")
        (artists '("Honoka Kosaka" "Kotori Minami" "Umi Sonada" #| ... |#)))
-  (with-object data (set-title
-                     ;; make sure references aren't shared
-                     (string-copy title)))
+  (set-title data ;; make sure references aren't shared
+             (string-copy title))
   (for-each
    (lambda (artist)
-     (with-object data (add-artist
-                        (string-copy artist))))
+     (add-artist data (string-copy artist)))
    artists)
   (format #t "Data: ~S~%" data)
-  (format #t "Title: ~S~%" (with-object data (get-title)))
-  (format #t "Meta: ~S~%" (with-object data (get-single-values-for-key-string METADATA_KEY_ARTIST)))
-  (and (equal? (with-object data (get-title)) title)
-       ;; list output is not yet implemented
-       (equal? (with-object data (get-single-values-for-key-string METADATA_KEY_ARTIST))
+  (format #t "Title: ~S~%" (get-title data))
+  (format #t "Artists: ~S~%" (get-single-values-for-key-string data METADATA_KEY_ARTIST))
+  (and (equal? (get-title data) title)
+       (equal? (get-single-values-for-key-string data METADATA_KEY_ARTIST)
                artists))))

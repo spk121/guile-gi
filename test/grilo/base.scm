@@ -1,8 +1,7 @@
 (define-module (test grilo base)
   #:use-module (gi)
   #:use-module (test automake-test-lib)
-  #:re-export (with-object
-               EXIT_SUCCESS
+  #:re-export (EXIT_SUCCESS
                EXIT_FAILURE)
   #:export (grilo-test))
 
