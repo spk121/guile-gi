@@ -5,4 +5,4 @@
 
 (automake-test
  (let ((mainloop (main-loop:new #f #t)))
-   (with-object mainloop (is-running?))))
+   (is-running? mainloop)))
