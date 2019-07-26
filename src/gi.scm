@@ -25,7 +25,7 @@
                is-a?
                define-method
                ;; core-generics
-               command-line equal? format write quit send)
+               command-line equal? format write quit send shutdown)
   #:replace ((%new . make))
   #:export (use-typelibs
             with-object

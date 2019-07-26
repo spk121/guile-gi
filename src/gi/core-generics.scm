@@ -11,5 +11,6 @@
 (ensure-generic! equal? (guile))
 (ensure-generic! format (guile))
 (ensure-generic! send (guile))
+(ensure-generic! shutdown (guile))
 (ensure-generic! quit (guile))
 (ensure-generic! write (guile))

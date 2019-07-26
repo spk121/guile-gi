@@ -141,8 +141,10 @@
   (lambda (stx)
     (syntax-case stx ()
       ((_ lib ...)
-       #'(unless (false-if-exception ((@ (gi) use-typelibs) lib ...))
-           (exit EXIT_SKIPPED))))))
+       #'(begin
+           ((@ (gi util) push-duplicate-handler!) 'shrug-equals)
+           (unless (false-if-exception ((@ (gi) use-typelibs) lib ...))
+             (exit EXIT_SKIPPED)))))))
 
 (define (short-vector->list x)
   (cond
