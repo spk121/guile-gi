@@ -19,6 +19,7 @@ GSList *callback_list = NULL;
 
 static SCM callback_call_proc(gpointer user_data);
 static SCM callback_handler_proc(gpointer user_data, SCM key, SCM params);
+static SCM callback_handler_pre_proc(gpointer user_data, SCM key, SCM params);
 static ffi_type *type_info_to_ffi_type(GITypeInfo *type_info);
 static void callback_free(GigCallback *gcb);
 static void gig_fini_callback(void);
@@ -41,7 +42,7 @@ callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
     g_debug("in callback C->SCM binding");
     guint n_args = cif->nargs;
 
-    g_assert(n_args < 20);
+    g_assert_cmpint(n_args, ==, g_callable_info_get_n_args(gcb->callback_info));
 
     // FIXME: cache this
     GigArgMap *amap = gig_arg_map_new(gcb->callback_info);
@@ -94,9 +95,10 @@ callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
         s_args = scm_append(scm_list_2(s_args, scm_list_1(s_entry)));
     }
 
+    SCM stack;
     s_ret = scm_c_catch(SCM_BOOL_T,
                         callback_call_proc, SCM_UNPACK_POINTER(scm_cons(gcb->s_func, s_args)),
-                        callback_handler_proc, NULL, NULL, NULL);
+                        callback_handler_proc, &stack, callback_handler_pre_proc, &stack);
     if (scm_is_false(s_ret))
         *(ffi_arg *) ret = FALSE;
     else {
@@ -118,9 +120,37 @@ callback_call_proc(gpointer user_data)
 }
 
 static SCM
+callback_handler_pre_proc(gpointer user_data, SCM key, SCM params)
+{
+    // cuts away exception handler frames, stack looks kinda like this:
+    //   3 the procedure that threw the error
+    //   2 (error ...) <- we want this frame to included in the backtrace
+    //   1 (dispatch-exception ...)
+    //   0 this handler
+    SCM cut = scm_list_2(scm_from_uint(2), scm_from_uint(0));
+    *(SCM *)user_data = scm_make_stack(SCM_BOOL_T, cut);
+    return SCM_BOOL_F;
+}
+
+static SCM
 callback_handler_proc(gpointer user_data, SCM key, SCM params)
 {
     g_critical("scheme procedure threw error in C callback");
+
+    SCM port = scm_open_output_string();
+    SCM stack = *(SCM *)user_data;
+    SCM frame = SCM_STACK_FRAME(stack);
+    SCM pre_error_frame = scm_frame_previous(frame);
+    scm_display_error(pre_error_frame, port, scm_frame_procedure_name(pre_error_frame),
+                      scm_from_utf8_string("throw to key ~A with ~A~%"),
+                      scm_list_2(key, params),
+                      SCM_UNDEFINED);
+    scm_display_backtrace(stack, port, SCM_BOOL_F, SCM_BOOL_F);
+    gchar *trace = scm_to_utf8_string(scm_get_output_string(port));
+    scm_close(port);
+
+    g_info("%s", trace);
+    g_free(trace);
     return SCM_BOOL_F;
 }
 

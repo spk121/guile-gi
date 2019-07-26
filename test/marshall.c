@@ -5708,3 +5708,16 @@ marshall_properties_object_new (void)
 {
   return g_object_new (MARSHALL_TYPE_PROPERTIES_OBJECT, NULL);
 }
+
+void
+marshall_a21(gint a, gint b, gint c, gint d, gint e, gint f, gint g, gint h, gint i, gint j,
+             gint k, gint l, gint m, gint n, gint o, gint p, gint q, gint r, gint s, gint u,
+             gint v)
+{
+}
+
+void
+marshall_callback_a21(MarshallA21 a21)
+{
+    a21(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
+}

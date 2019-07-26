@@ -190,6 +190,8 @@ gig_argument_scm_to_c(S2C_ARG_DECL)
             break;
 
         case GI_TYPE_TAG_VOID:
+            // Ignore VOID. Callbacks may be void and end up here.
+            break;
         case GI_TYPE_TAG_ARRAY:
         case GI_TYPE_TAG_UTF8:
         case GI_TYPE_TAG_FILENAME:
@@ -635,18 +637,8 @@ scm_to_c_interface(S2C_ARG_DECL)
     else if (referenced_base_type == GI_INFO_TYPE_CALLBACK) {
         GICallbackInfo *callback_info = referenced_base_info;
         if (scm_is_true(scm_procedure_p(object))) {
-            gint arity = scm_to_int(scm_car(scm_procedure_minimum_arity(object)));
-            gint n_args = g_callable_info_get_n_args(callback_info);
-            if (arity == n_args) {
-                arg->v_pointer = gig_callback_get_ptr(callback_info, object);
-                g_assert(arg->v_pointer != NULL);
-            }
-            else {
-                const gchar *msg = "a procedure requiring %d arguments";
-                gchar str[strlen(msg) + 20];
-                snprintf(str, sizeof(str), msg, n_args);
-                scm_wrong_type_arg_msg(subr, argpos, object, str);
-            }
+            arg->v_pointer = gig_callback_get_ptr(callback_info, object);
+            g_assert(arg->v_pointer != NULL);
         }
     }
     else if ((referenced_base_type == GI_INFO_TYPE_STRUCT)

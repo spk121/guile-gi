@@ -285,6 +285,8 @@ CLEANFILES += \
  Marshall-1.0.gir Marshall-1.0.typelib
 
 EVERYTHING_TESTS = \
+ everything/a21.scm \
+ everything/callback_a21.scm \
  everything/nullfunc.scm \
  everything/const-return-gpointer.scm \
  everything/const-return-gintptr.scm \

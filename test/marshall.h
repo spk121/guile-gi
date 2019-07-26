@@ -1982,4 +1982,47 @@ GType marshall_properties_object_get_type (void) G_GNUC_CONST;
 _GI_TEST_EXTERN
 MarshallPropertiesObject *marshall_properties_object_new (void);
 
+/**
+ * MarshallA21:
+ * @a:
+ * @b:
+ * @c:
+ * @d:
+ * @e:
+ * @f:
+ * @g:
+ * @i:
+ * @j:
+ * @k:
+ * @l:
+ * @m:
+ * @n:
+ * @o:
+ * @p:
+ * @q:
+ * @r:
+ * @s:
+ * @t:
+ * @u:
+ */
+typedef void (*MarshallA21)(gint a, gint b, gint c, gint d, gint e, gint f, gint g, gint h,
+                            gint i, gint j, gint k, gint l, gint m, gint n, gint o, gint p,
+                            gint q, gint r, gint s, gint t, gint u);
+
+_GI_TEST_EXTERN
+void
+marshall_a21(gint a, gint b, gint c, gint d, gint e, gint f, gint g, gint h, gint i, gint j,
+             gint k, gint l, gint m, gint n, gint o, gint p, gint q, gint r, gint s, gint t,
+             gint u);
+
+
+/**
+ * marshall_callback_a21:
+ * @a21: (scope call):
+ */
+_GI_TEST_EXTERN
+void
+marshall_callback_a21(MarshallA21 a21);
+
+
 #endif /* _MARSHALL_H_ */
