@@ -28,8 +28,6 @@
                command-line equal? format write quit send shutdown)
   #:replace ((%new . make))
   #:export (use-typelibs
-            with-object
-            (with-object . using)
             register-type))
 
 (eval-when (expand load eval)
@@ -47,53 +45,6 @@
 
 (define-public (gobject-set-property! obj prop val)
   (set! (((@@ (gi oop) %object-get-pspec) obj prop) obj) val))
-
-(define-syntax with-object
-  (lambda (stx)
-    (syntax-case stx ()
-      ((_ self block ...)
-       (identifier? #'self)
-       #`(begin
-           #,@(map
-               (lambda (block)
-                 (syntax-case block (set!
-                                     connect! connect-after!
-                                     remove! block! unblock!)
-                   ;; properties
-                   (prop
-                    (identifier? #'prop)
-                    (with-syntax ((prop-str (%syntax->string #'prop)))
-                      #'(gobject-get-property self prop-str)))
-                   ((set! prop val)
-                    (identifier? #'prop)
-                    (with-syntax ((prop-str (%syntax->string #'prop)))
-                      #'(gobject-set-property! self prop-str val)))
-                   ;; signals
-                   ((connect! signal handler)
-                    (identifier? #'signal)
-                    (with-syntax ((name (%syntax->string #'signal)))
-                      #'(connect self (make <signal> #:name name) handler)))
-                   ((connect-after! signal handler)
-                    (identifier? #'signal)
-                    (with-syntax ((name (%syntax->string #'signal)))
-                      #'(connect-after self (make <signal> #:name name) handler)))
-                   ((remove! handler)
-                    (syntax-violation #f "remove! is no longer supported"
-                                      with-object block))
-                   ((block! handler)
-                    (syntax-violation #f "block! is no longer supported"
-                                      with-object block))
-                   ((unblock! handler)
-                    (syntax-violation #f "unblock! is no longer supported"
-                                      with-object block))
-                   ;; methods
-                   ((method arg ...)
-                    (identifier? #'id)
-                    ;; (with-syntax ((method-str (%syntax->string #'method)))
-                    #'(method self arg ...))))
-               #'(block ...))))
-      ((_ self block ...)
-       #'(let ((this self)) (with-object this block ...))))))
 
 (define (%gi->module-use form subform lib version params)
   (cond
