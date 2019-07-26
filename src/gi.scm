@@ -37,15 +37,6 @@
 (define (subclass? type-a type-b)
   (memq type-b (class-precedence-list type-a)))
 
-(define %syntax->string (compose symbol->string syntax->datum))
-
-;; temporaries while property objects are not yet everywhere
-(define-public (gobject-get-property obj prop)
-  (((@@ (gi oop) %object-get-pspec) obj prop) obj))
-
-(define-public (gobject-set-property! obj prop val)
-  (set! (((@@ (gi oop) %object-get-pspec) obj prop) obj) val))
-
 (define (%gi->module-use form subform lib version params)
   (cond
    ((not (string? (syntax->datum lib)))

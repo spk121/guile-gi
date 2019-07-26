@@ -19,14 +19,7 @@
 
 (automake-test
  (let ((object (make <TestParam>)))
-   (and (= (gobject-get-property object "my-param") (my-param object) 0)
-        (begin
-          (gobject-set-property! object "my-param" 100)
-          (= (gobject-get-property object "my-param")
-             (my-param object)
-             100))
+   (and (= (my-param object) 0)
         (begin
           (set! (my-param object) 200)
-          (= (gobject-get-property object "my-param")
-             (my-param object)
-             200)))))
+          (= (my-param object) 200)))))
