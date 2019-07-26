@@ -1,8 +1,12 @@
-(use-modules (gi)
+(use-modules (gi) (gi util)
              (ice-9 ftw))
 
-(use-typelibs ("Gio" "2.0")
-              (("Gtk" "3.0") #:prefix gtk::))
+(push-duplicate-handler! 'shrug-equals)
+
+(use-typelibs
+ ("Gio" "2.0")
+ (("Gtk" "3.0")
+  #:renamer (protect* (cons* 'init 'main 'main-quit %rnrs-syntax) 'gtk::)))
 
 (define (print-hello button)
   (display "Hello World")
@@ -28,21 +32,19 @@
 
   (resources-register (find-resource "test"))
 
-  (let* ((builder (gtk::builder:new-from-resource "/test/builder.ui"))
-         (window (with-object builder (get-object "window")))
-         (button1 (with-object builder (get-object "button1")))
-         (button2 (with-object builder (get-object "button2")))
-         (button3 (with-object builder (get-object "quit"))))
-    (with-object window
-      (connect! destroy
-        (lambda (object)
-          (gtk::main-quit))))
-    (with-object button1 (connect! clicked print-hello))
-    (with-object button2 (connect! clicked print-hello))
-    (with-object button3
-      (connect! clicked
-        (lambda (button)
-          (gtk::main-quit)))))
+  (let* ((builder (builder:new-from-resource "/test/builder.ui"))
+         (window (get-object builder "window"))
+         (button1 (get-object builder "button1"))
+         (button2 (get-object builder "button2"))
+         (button3 (get-object builder "quit")))
+    (connect window destroy
+             (lambda (object)
+               (gtk::main-quit)))
+    (connect button1 clicked print-hello)
+    (connect button2 clicked print-hello)
+    (connect button3 clicked
+             (lambda (button)
+               (gtk::main-quit))))
 
   (gtk::main)
   *unspecified*)
