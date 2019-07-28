@@ -387,10 +387,12 @@ EVERYTHING_TESTS = \
  everything/uintXX-out-or-return-max.scm \
  everything/intXX-out-or-return-min.scm \
  everything/intXX-in-max.scm \
+ everything/uintXX-in.scm \
  everything/int8-in-max-latin1.scm \
  everything/intXX-in-min.scm \
  everything/intXX-inout-max-min.scm \
  everything/intXX-inout-min-max.scm \
+ everything/uintXX-inout.scm \
  everything/time-t-out.scm \
  everything/utf8-none-return.scm \
  everything/utf8-full-return.scm \
