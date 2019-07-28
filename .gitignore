@@ -67,12 +67,14 @@ __gi*.c
 __gi*.h
 
 # scripts
-tools/gdb-test
-tools/uninstalled-env
 tools/gdb-guile
-tools/run-guile
+tools/gdb-test
 tools/guile-gi
 tools/lcov.sh
+tools/run-guile
+tools/run-test
+tools/uninstalled-env
+tools/uninstalled-test-env
 
 # executables
 fo_gen

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# This script opens up a gdb session for a single guile-gi test
+# This script runs a single guile-gi test
 
 # The splitter characters used for word splitting after expansion
 IFS="$(printf '\n\t')"
@@ -34,10 +34,9 @@ then
          -dlopen ${top_builddir}/src/libguile-gi.la \
          -dlopen ${top_builddir}/test/libeverything-1.0.la \
          -dlopen ${top_builddir}/test/libmarshall-1.0.la \
-         gdb --args "@GUILE@" "$1"
          "@GUILE@" "$1"
 else
     exec ${top_builddir}/tools/uninstalled-test-env ${top_builddir}/libtool --mode=execute \
          -dlopen ${top_builddir}/src/libguile-gi.la \
-         gdb --args "@GUILE@" "$1"
+         "@GUILE@" "$1"
 fi
