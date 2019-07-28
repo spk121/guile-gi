@@ -243,7 +243,9 @@ AC_CONFIG_FILES([
  examples/resources/Makefile
  ])
 AC_CONFIG_FILES([tools/uninstalled-env], [chmod +x tools/uninstalled-env])
+AC_CONFIG_FILES([tools/uninstalled-test-env], [chmod +x tools/uninstalled-test-env])
 AC_CONFIG_FILES([tools/run-guile], [chmod +x tools/run-guile])
+AC_CONFIG_FILES([tools/run-test], [chmod +x tools/run-test])
 AC_CONFIG_FILES([tools/gdb-guile], [chmod +x tools/gdb-guile])
 AC_CONFIG_FILES([tools/gdb-test], [chmod +x tools/gdb-test])
 AC_CONFIG_FILES([tools/guile-gi], [chmod +x tools/guile-gi])

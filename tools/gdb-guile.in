@@ -20,5 +20,10 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301 USA
 
-
-@abs_top_srcdir@/tools/uninstalled-env @abs_top_builddir@/libtool --mode=execute -dlopen @abs_top_builddir@/src/libguile-gi.la gdb --args "@GUILE@" $@
+set -e
+top_builddir="@abs_top_builddir@"
+XDG_CACHE_HOME=${top_builddir}/cache
+export XDG_CACHE_HOME
+exec ${top_builddir}/tools/uninstalled-env ${top_builddir}/libtool --mode=execute \
+     -dlopen ${top_builddir}/src/libguile-gi.la \
+     gdb --args "@GUILE@" "$@"
