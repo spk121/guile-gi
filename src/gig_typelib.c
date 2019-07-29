@@ -199,7 +199,7 @@ scm_i_typelib_load(const gchar *subr, const gchar *namespace_, const gchar *vers
             gint n_properties = g_object_info_get_n_properties(info);
             for (gint m = 0; m < n_properties; m++) {
                 GIPropertyInfo *prop_info = g_object_info_get_property(info, m);
-                gig_property_define(gtype, prop_info, namespace);
+                defs = gig_property_define(gtype, prop_info, namespace, defs);
             }
             break;
         }

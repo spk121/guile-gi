@@ -551,15 +551,15 @@ gig_i_scm_emit(SCM self, SCM signal, SCM s_detail, SCM args)
 static SCM sym_value;
 static SCM ensure_accessor_proc;
 
-static void do_define_property(const gchar *, SCM, SCM, SCM);
+static SCM do_define_property(const gchar *, SCM, SCM, SCM);
 
-void
-gig_property_define(GType type, GIPropertyInfo *info, const gchar* namespace)
+SCM
+gig_property_define(GType type, GIPropertyInfo *info, const gchar* namespace, SCM defs)
 {
     SCM formals, specializers;
     GObjectClass *class;
     GParamSpec *prop;
-    SCM s_prop;
+    SCM s_prop, def;
 
     const gchar *name = g_base_info_get_name(info);
     gchar *long_name;
@@ -579,20 +579,24 @@ gig_property_define(GType type, GIPropertyInfo *info, const gchar* namespace)
 
     gig_type_define(G_PARAM_SPEC_TYPE(prop), SCM_UNDEFINED);
     s_prop = gig_type_transfer_object(G_PARAM_SPEC_TYPE(prop), prop, GI_TRANSFER_NOTHING);
-    // This should not conflict with anything else defined in a class
 
-    do_define_property(long_name, s_prop, self_type, top_type);
+    def = do_define_property(long_name, s_prop, self_type, top_type);
+    if (!SCM_UNBNDP(def))
+        defs = scm_cons(def, defs);
     g_debug("dynamically bound %s to property %s of %s", long_name, name, g_type_name(type));
-    do_define_property(name, s_prop, self_type, top_type);
+    def = do_define_property(name, s_prop, self_type, top_type);
+    if (!SCM_UNBNDP(def))
+        defs = scm_cons(def, defs);
     g_debug("dynamically bound %s to property %s of %s", name, name, g_type_name(type));
 
     scm_dynwind_end();
+    return defs;
 }
 
-static void
+static SCM
 do_define_property(const gchar *public_name, SCM prop, SCM self_type, SCM value_type)
 {
-    g_return_if_fail(public_name != NULL);
+    g_return_val_if_fail(public_name != NULL, SCM_UNDEFINED);
 
     SCM sym_public_name, formals, specializers, generic, proc, setter;
     gboolean was_accessor = FALSE;
@@ -630,10 +634,10 @@ do_define_property(const gchar *public_name, SCM prop, SCM self_type, SCM value_
                           kwd_procedure, setter));
 
     if (was_accessor)
-        scm_c_reexport(public_name, NULL);
+        return SCM_UNDEFINED;
     else {
-        scm_c_define(public_name, generic);
-        scm_c_export(public_name, NULL);
+        scm_define(sym_public_name, generic);
+        return sym_public_name;
     }
 }
 
