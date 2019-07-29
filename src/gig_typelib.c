@@ -40,6 +40,8 @@ static void scm_i_typelib_load_check_args(const gchar *subr, SCM s_lib, SCM s_ve
 #define MAX_GERROR_MSG 100
 static gchar gerror_msg[MAX_GERROR_MSG];
 
+static SCM module_export;
+
 static void
 store_gerror_message(const gchar *msg)
 {
@@ -117,6 +119,7 @@ scm_i_typelib_load(const gchar *subr, const gchar *namespace_, const gchar *vers
 {
     GITypelib *tl;
     GError *error = NULL;
+    SCM defs = SCM_EOL;
 
     tl = g_irepository_require(NULL, namespace_, version, 0, &error);
     if (tl == NULL) {
@@ -142,7 +145,7 @@ scm_i_typelib_load(const gchar *subr, const gchar *namespace_, const gchar *vers
             g_debug("Unsupported irepository type 'CALLBACK'");
             break;
         case GI_INFO_TYPE_FUNCTION:
-            gig_function_define(G_TYPE_INVALID, info, NULL);
+            defs = gig_function_define(G_TYPE_INVALID, info, NULL, defs);
             break;
         case GI_INFO_TYPE_STRUCT:
         {
@@ -162,7 +165,8 @@ scm_i_typelib_load(const gchar *subr, const gchar *namespace_, const gchar *vers
             gint n_methods = g_struct_info_get_n_methods(info);
             for (gint m = 0; m < n_methods; m++) {
                 GIFunctionInfo *func_info = g_struct_info_get_method(info, m);
-                gig_function_define(gtype, func_info, g_base_info_get_name(info));
+                defs = gig_function_define(gtype, func_info, g_base_info_get_name(info),
+                                           defs);
             }
         }
             break;
@@ -183,14 +187,15 @@ scm_i_typelib_load(const gchar *subr, const gchar *namespace_, const gchar *vers
             gint n_methods = g_object_info_get_n_methods(info);
             for (gint m = 0; m < n_methods; m++) {
                 GIFunctionInfo *func_info = g_object_info_get_method(info, m);
-                gig_function_define(gtype, func_info, namespace);
+                defs = gig_function_define(gtype, func_info, namespace,
+                                           defs);
             }
 
             gint n_signals = g_object_info_get_n_signals(info);
             for (gint m = 0; m < n_signals; m++) {
                 GISignalInfo *sig_info = g_object_info_get_signal(info, m);
                 if (!(g_signal_info_get_flags(sig_info) & G_SIGNAL_DEPRECATED))
-                    gig_function_define(gtype, sig_info, namespace);
+                    defs = gig_function_define(gtype, sig_info, namespace, defs);
             }
 
             gint n_properties = g_object_info_get_n_properties(info);
@@ -213,7 +218,8 @@ scm_i_typelib_load(const gchar *subr, const gchar *namespace_, const gchar *vers
             gint n_methods = g_interface_info_get_n_methods(info);
             for (gint m = 0; m < n_methods; m++) {
                 GIFunctionInfo *func_info = g_interface_info_get_method(info, m);
-                gig_function_define(gtype, func_info, g_base_info_get_name(info));
+                defs = gig_function_define(gtype, func_info, g_base_info_get_name(info),
+                                           defs);
             }
         }
             break;
@@ -237,7 +243,8 @@ scm_i_typelib_load(const gchar *subr, const gchar *namespace_, const gchar *vers
             gint n_methods = g_union_info_get_n_methods(info);
             for (gint m = 0; m < n_methods; m++) {
                 GIFunctionInfo *func_info = g_union_info_get_method(info, m);
-                gig_function_define(gtype, func_info, g_base_info_get_name(info));
+                defs = gig_function_define(gtype, func_info, g_base_info_get_name(info),
+                                           defs);
             }
         }
             break;
@@ -270,6 +277,8 @@ scm_i_typelib_load(const gchar *subr, const gchar *namespace_, const gchar *vers
         }
         g_base_info_unref(info);
     }
+
+    scm_call_2(module_export, scm_current_module(), defs);
 }
 
 static SCM
@@ -886,6 +895,9 @@ gig_init_typelib_private(void)
 void
 gig_init_typelib(void)
 {
+    module_export = scm_c_public_ref("guile", "module-export!"),
+
+
 #ifdef FIGURE_OUT_ALL_ARG_TYPES
     gig_arg_infos = g_ptr_array_new();
 #endif
