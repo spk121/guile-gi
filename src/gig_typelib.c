@@ -40,8 +40,6 @@ static void scm_i_typelib_load_check_args(const gchar *subr, SCM s_lib, SCM s_ve
 #define MAX_GERROR_MSG 100
 static gchar gerror_msg[MAX_GERROR_MSG];
 
-static SCM module_export;
-
 static void
 store_gerror_message(const gchar *msg)
 {
@@ -155,7 +153,7 @@ scm_i_typelib_load(const gchar *subr, const gchar *namespace_, const gchar *vers
                         g_base_info_get_name(info));
                 break;
             }
-            gig_type_define(gtype);
+            defs = gig_type_define(gtype, defs);
             if (g_struct_info_get_size(info) > 0) {
                 GQuark size_quark = g_quark_from_string("size");
                 g_type_set_qdata(gtype, size_quark,
@@ -182,7 +180,7 @@ scm_i_typelib_load(const gchar *subr, const gchar *namespace_, const gchar *vers
                 g_debug("Not loading object type '%s' because is has no GType", namespace);
                 break;
             }
-            gig_type_define(gtype);
+            defs = gig_type_define(gtype, defs);
 
             gint n_methods = g_object_info_get_n_methods(info);
             for (gint m = 0; m < n_methods; m++) {
@@ -213,7 +211,7 @@ scm_i_typelib_load(const gchar *subr, const gchar *namespace_, const gchar *vers
                         g_base_info_get_name(info));
                 break;
             }
-            gig_type_define(gtype);
+            defs = gig_type_define(gtype, defs);
 
             gint n_methods = g_interface_info_get_n_methods(info);
             for (gint m = 0; m < n_methods; m++) {
@@ -234,7 +232,7 @@ scm_i_typelib_load(const gchar *subr, const gchar *namespace_, const gchar *vers
                         g_base_info_get_name(info));
                 break;
             }
-            gig_type_define(gtype);
+            defs = gig_type_define(gtype, defs);
             if (g_union_info_get_size(info) > 0) {
                 GQuark size_quark = g_quark_from_string("size");
                 g_type_set_qdata(gtype, size_quark, GSIZE_TO_POINTER(g_union_info_get_size(info)));
@@ -278,7 +276,7 @@ scm_i_typelib_load(const gchar *subr, const gchar *namespace_, const gchar *vers
         g_base_info_unref(info);
     }
 
-    scm_call_2(module_export, scm_current_module(), defs);
+    scm_module_export(scm_current_module(), defs);
 }
 
 static SCM
@@ -895,9 +893,6 @@ gig_init_typelib_private(void)
 void
 gig_init_typelib(void)
 {
-    module_export = scm_c_public_ref("guile", "module-export!"),
-
-
 #ifdef FIGURE_OUT_ALL_ARG_TYPES
     gig_arg_infos = g_ptr_array_new();
 #endif

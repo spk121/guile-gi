@@ -447,7 +447,7 @@ gig_i_scm_define_type(SCM s_type_name, SCM s_parent_type, SCM s_properties, SCM 
 
     new_type = gig_user_object_define(type_name, parent_type, properties, signals);
 
-    gig_type_define(new_type);
+    gig_type_define(new_type, SCM_UNDEFINED);
     return gig_type_get_scheme_type(new_type);
 }
 
@@ -577,7 +577,7 @@ gig_property_define(GType type, GIPropertyInfo *info, const gchar* namespace)
     prop = g_object_class_find_property(class, name);
     g_assert(prop != NULL);
 
-    gig_type_define(G_PARAM_SPEC_TYPE(prop));
+    gig_type_define(G_PARAM_SPEC_TYPE(prop), SCM_UNDEFINED);
     s_prop = gig_type_transfer_object(G_PARAM_SPEC_TYPE(prop), prop, GI_TRANSFER_NOTHING);
     // This should not conflict with anything else defined in a class
 

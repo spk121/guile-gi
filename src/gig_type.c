@@ -182,7 +182,7 @@ type_less_p(SCM a, SCM b)
     return scm_less_p(key_b, key_a);
 }
 
-void
+SCM
 gig_type_associate(GType gtype, SCM stype)
 {
     g_hash_table_insert(gig_type_gtype_hash, GSIZE_TO_POINTER(gtype), SCM_UNPACK_POINTER(stype));
@@ -194,14 +194,14 @@ gig_type_associate(GType gtype, SCM stype)
     SCM module = scm_current_module();
     SCM name = scm_class_name(stype);
     scm_module_define(module, name, stype);
-    scm_module_export(module, scm_list_1(name));
+    return name;
 }
 
 // Given introspection info from a typelib library for a given GType,
 // this makes a new Guile foreign object type and its associated predicate,
 // and it stores the type in our hash table of known types.
-void
-gig_type_define(GType gtype)
+SCM
+gig_type_define(GType gtype, SCM defs)
 {
     g_assert(GSIZE_TO_POINTER(gtype) != NULL);
     // Make a foreign object type for instances of this GType.
@@ -217,15 +217,16 @@ gig_type_define(GType gtype)
         g_debug("trying to define %s", g_type_name(gtype));
         GType parent = g_type_parent(gtype);
 
-        gchar *type_class_name = gig_type_class_name_from_gtype(gtype);
+        gchar *_type_class_name = gig_type_class_name_from_gtype(gtype);
+        SCM type_class_name = scm_from_utf8_symbol(_type_class_name);
 
-        g_return_if_fail(parent != G_TYPE_INVALID);
-        gig_type_define(parent);
+        g_return_val_if_fail(parent != G_TYPE_INVALID, defs);
+        defs = gig_type_define(parent, defs);
 
         SCM new_type, dsupers, slots = SCM_EOL;
         gpointer sparent = g_hash_table_lookup(gig_type_gtype_hash,
                                                GSIZE_TO_POINTER(parent));
-        g_return_if_fail(sparent != NULL);
+        g_return_val_if_fail(sparent != NULL, defs);
 
 
         GType fundamental = G_TYPE_FUNDAMENTAL(parent);
@@ -235,7 +236,7 @@ gig_type_define(GType gtype)
         {
             dsupers = scm_list_1(SCM_PACK_POINTER(sparent));
             new_type = scm_call_4(make_class_proc, dsupers, slots, kwd_name,
-                                  scm_from_utf8_symbol(type_class_name));
+                                  type_class_name);
 
             GigBoxedFuncs *funcs = _boxed_funcs_for_type(gtype);
 
@@ -272,7 +273,7 @@ gig_type_define(GType gtype)
                 dsupers = scm_list_1(SCM_PACK_POINTER(sparent));
 
             for (gint n = 0; n < n_interfaces; n++) {
-                gig_type_define(interfaces[n]);
+                defs = gig_type_define(interfaces[n], defs);
                 dsupers = scm_cons(gig_type_get_scheme_type(interfaces[n]), dsupers);
             }
             g_free(interfaces);
@@ -280,7 +281,7 @@ gig_type_define(GType gtype)
             // dsupers need to be sorted, or else Guile will barf
             dsupers = scm_sort_x(dsupers, type_less_p_proc);
             new_type = scm_call_4(make_class_proc, dsupers, slots, kwd_name,
-                                  scm_from_utf8_symbol(type_class_name));
+                                  type_class_name);
             break;
 
         }
@@ -290,14 +291,11 @@ gig_type_define(GType gtype)
                     g_type_name(gtype), g_type_name(fundamental));
         }
 
-        g_return_if_fail(!SCM_UNBNDP(new_type));
+        g_return_val_if_fail(!SCM_UNBNDP(new_type), defs);
 
-        scm_permanent_object(scm_c_define(type_class_name, new_type));
-        scm_c_export(type_class_name, NULL);
         g_debug("Creating a new GigType: %zu -> %s aka %s", gtype,
-                type_class_name, g_type_name(gtype));
-        gig_type_associate(gtype, new_type);
-        g_free(type_class_name);
+                _type_class_name, g_type_name(gtype));
+        defs = scm_cons(gig_type_associate(gtype, new_type), defs);
 #if ENABLE_GIG_TYPE_SCM_HASH
         g_debug("Hash table sizes %d %d", g_hash_table_size(gig_type_gtype_hash),
                 g_hash_table_size(gig_type_scm_hash));
@@ -307,6 +305,8 @@ gig_type_define(GType gtype)
     }
     else
         g_debug("<GType> already exists for: %zu -> %s", gtype, g_type_name(gtype));
+
+    return defs;
 }
 
 // This routine returns the integer GType ID of a scheme object, that is
@@ -640,7 +640,8 @@ gig_type_define_fundamental(GType type, SCM extra_supers,
                               scm_from_pointer(ref, NULL),
                               scm_from_pointer(unref, NULL));
 
-    gig_type_associate(type, new_type);
+    scm_module_export(scm_current_module(),
+                      scm_list_1(gig_type_associate(type, new_type)));
     scm_dynwind_end();
 }
 

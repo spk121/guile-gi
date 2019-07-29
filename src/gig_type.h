@@ -29,7 +29,7 @@ SCM gig_paramspec_type;
 G_GNUC_MALLOC gchar *gig_type_document_type_from_gtype(GType gtype);
 G_GNUC_MALLOC gchar *gig_type_class_name_from_gtype(GType gtype);
 void gig_type_register(GType gtype);
-void gig_type_define(GType gtype);
+SCM gig_type_define(GType gtype, SCM defs);
 GType gig_type_get_gtype_from_obj(SCM x);
 SCM gig_type_get_scheme_type(GType gtype);
 SCM gig_type_transfer_object(GType gtype, gpointer obj, GITransfer transfer);
