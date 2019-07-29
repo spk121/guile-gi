@@ -17,12 +17,13 @@
 #define GIG_CONSTANT_H
 
 #include <girepository.h>
+#include <libguile.h>
 
 // *INDENT-OFF*
 G_BEGIN_DECLS
 // *INDENT-ON*
 
-void gig_constant_define(GIConstantInfo *info);
+SCM gig_constant_define(GIConstantInfo *info, SCM defs);
 static inline void
 gig_constant_document(GString **str, const gchar *namespace_, const gchar *parent,
                       GIConstantInfo *info)

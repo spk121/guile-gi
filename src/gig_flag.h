@@ -17,12 +17,13 @@
 #define GIG_FLAG_H
 
 #include <girepository.h>
+#include <libguile.h>
 
 // *INDENT-OFF*
 G_BEGIN_DECLS
 // *INDENT-ON*
 
-void gig_flag_define(GIEnumInfo *info);
+SCM gig_flag_define(GIEnumInfo *info, SCM defs);
 static inline void
 gig_flag_document(GString **str, GIEnumInfo *info)
 {

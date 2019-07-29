@@ -170,7 +170,7 @@ scm_i_typelib_load(const gchar *subr, const gchar *namespace_, const gchar *vers
             break;
         case GI_INFO_TYPE_ENUM:
         case GI_INFO_TYPE_FLAGS:
-            gig_flag_define(info);
+            defs = gig_flag_define(info, defs);
             break;
         case GI_INFO_TYPE_OBJECT:
         {
@@ -222,7 +222,7 @@ scm_i_typelib_load(const gchar *subr, const gchar *namespace_, const gchar *vers
         }
             break;
         case GI_INFO_TYPE_CONSTANT:
-            gig_constant_define(info);
+            defs = gig_constant_define(info, defs);
             break;
         case GI_INFO_TYPE_UNION:
         {
