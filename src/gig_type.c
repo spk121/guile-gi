@@ -240,9 +240,11 @@ gig_type_define(GType gtype, SCM defs)
 
             repository = g_irepository_get_default();
             info = g_irepository_find_by_gtype(repository, gtype);
-            if (info != NULL && GI_IS_STRUCT_INFO(info))
-                size = g_struct_info_get_size((GIStructInfo *) info);
-            g_base_info_unref(info);
+            if (info != NULL) {
+                if (GI_IS_STRUCT_INFO(info))
+                    size = g_struct_info_get_size((GIStructInfo *) info);
+                g_base_info_unref(info);
+            }
 
             scm_class_set_x(new_type, sym_ref, scm_from_pointer(funcs->copy, NULL));
             scm_class_set_x(new_type, sym_unref, scm_from_pointer(funcs->free, NULL));
@@ -697,6 +699,7 @@ gig_init_types(void)
     gig_type_associate(G_TYPE_BOXED, gig_boxed_type);
     scm_c_define("<GBoxed>", gig_boxed_type);
     scm_c_export("<GBoxed>", NULL);
+    gig_type_define(GI_TYPE_BASE_INFO, SCM_EOL);
     gig_type_define_fundamental(G_TYPE_PARAM,
                                 scm_list_1(scm_c_public_ref("oop goops",
                                                             "<applicable-struct-with-setter>")),

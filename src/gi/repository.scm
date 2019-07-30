@@ -16,7 +16,7 @@
 
 (define-module (gi repository)
   #:use-module (system foreign)
-  #:export (require))
+  #:export (require infos))
 
 (eval-when (expand load eval)
   (load-extension "libguile-gi" "gig_init_repository"))

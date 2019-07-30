@@ -18,6 +18,7 @@
 #include "gig_type.h"
 #include "gig_object.h"
 #include "gig_function.h"
+#include "gig_util.h"
 
 static SCM
 require(SCM lib, SCM version)
@@ -44,9 +45,31 @@ require(SCM lib, SCM version)
     return SCM_UNSPECIFIED;
 }
 
+static SCM
+infos(SCM lib)
+{
+    scm_dynwind_begin(0);
+    gchar *_lib = scm_dynwind_or_bust("infos", scm_to_utf8_string(lib));
+    gint n = g_irepository_get_n_infos(NULL, _lib);
+    SCM infos = SCM_EOL;
+
+    for (gint i = 0; i < n; i++) {
+        GIBaseInfo *info = g_irepository_get_info(NULL, _lib, i);
+        if (g_base_info_is_deprecated(info)) {
+            g_base_info_unref(info);
+            continue;
+        }
+        infos = scm_cons (gig_type_transfer_object(GI_TYPE_BASE_INFO, info, GI_TRANSFER_EVERYTHING),
+                          infos);
+    }
+    scm_dynwind_end();
+
+    return scm_reverse_x(infos, SCM_EOL);
+}
+
 void
 gig_init_repository()
 {
     scm_c_define_gsubr("require", 1, 1, 0, require);
-
+    scm_c_define_gsubr("infos", 1, 0, 0, infos);
 }
