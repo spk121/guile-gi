@@ -150,13 +150,11 @@ gig_function_define1(const gchar *public_name, SCM proc, int opt, SCM formals, S
 {
     g_return_val_if_fail(public_name != NULL, SCM_UNDEFINED);
 
-    gboolean was_generic = FALSE;
     SCM sym_public_name = scm_from_utf8_symbol(public_name);
     SCM generic = scm_hashq_ref(generic_table, sym_public_name, SCM_BOOL_F);
     if (!scm_is_generic(generic)) {
         generic = default_definition(sym_public_name);
-        was_generic = scm_is_generic(generic);
-        if (!was_generic)
+        if (scm_is_generic(generic))
             generic = scm_call_2(ensure_generic_proc, generic, sym_public_name);
         generic = scm_call_2(ensure_generic_proc,
                              default_definition(sym_public_name), sym_public_name);
@@ -181,12 +179,8 @@ gig_function_define1(const gchar *public_name, SCM proc, int opt, SCM formals, S
         t_specializers = scm_drop_right_1(t_specializers);
     } while (opt-- > 0);
 
-    if (was_generic)
-        return SCM_UNDEFINED;
-    else {
-        scm_define(sym_public_name, generic);
-        return sym_public_name;
-    }
+    scm_define(sym_public_name, generic);
+    return sym_public_name;
 }
 
 static SCM

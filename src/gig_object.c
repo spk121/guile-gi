@@ -598,7 +598,6 @@ do_define_property(const gchar *public_name, SCM prop, SCM self_type, SCM value_
     g_return_val_if_fail(public_name != NULL, SCM_UNDEFINED);
 
     SCM sym_public_name, formals, specializers, generic, proc, setter;
-    gboolean was_accessor = FALSE;
 
     sym_public_name = scm_from_utf8_symbol(public_name);
 
@@ -608,7 +607,6 @@ do_define_property(const gchar *public_name, SCM prop, SCM self_type, SCM value_
                              sym_public_name);
     else
         generic = scm_call_2(ensure_accessor_proc, old_generic, sym_public_name);
-    was_accessor = scm_is_eq(old_generic, generic);
 
     // getter
     proc = scm_procedure(prop);
@@ -632,12 +630,8 @@ do_define_property(const gchar *public_name, SCM prop, SCM self_type, SCM value_
                           kwd_formals, formals,
                           kwd_procedure, setter));
 
-    if (was_accessor)
-        return SCM_UNDEFINED;
-    else {
-        scm_define(sym_public_name, generic);
-        return sym_public_name;
-    }
+    scm_define(sym_public_name, generic);
+    return sym_public_name;
 }
 
 void
