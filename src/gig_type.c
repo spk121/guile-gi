@@ -191,10 +191,7 @@ gig_type_associate(GType gtype, SCM stype)
 #if ENABLE_GIG_TYPE_SCM_HASH
     g_hash_table_insert(gig_type_scm_hash, SCM_UNPACK_POINTER(stype), GSIZE_TO_POINTER(gtype));
 #endif
-    SCM module = scm_current_module();
-    SCM name = scm_class_name(stype);
-    scm_module_define(module, name, stype);
-    return name;
+    return scm_class_name(stype);
 }
 
 // Given introspection info from a typelib library for a given GType,
@@ -215,21 +212,18 @@ gig_type_define(GType gtype, SCM defs)
                                           GSIZE_TO_POINTER(gtype), &orig_key, &value);
     if (newkey == FALSE) {
         g_debug("trying to define %s", g_type_name(gtype));
-        GType parent = g_type_parent(gtype);
+        GType parent = g_type_parent(gtype), fundamental = G_TYPE_FUNDAMENTAL(parent);
 
         gchar *_type_class_name = gig_type_class_name_from_gtype(gtype);
         SCM type_class_name = scm_from_utf8_symbol(_type_class_name);
 
         g_return_val_if_fail(parent != G_TYPE_INVALID, defs);
-        defs = gig_type_define(parent, defs);
+        gig_type_define(parent, defs);
 
         SCM new_type, dsupers, slots = SCM_EOL;
         gpointer sparent = g_hash_table_lookup(gig_type_gtype_hash,
                                                GSIZE_TO_POINTER(parent));
         g_return_val_if_fail(sparent != NULL, defs);
-
-
-        GType fundamental = G_TYPE_FUNDAMENTAL(parent);
 
         switch (fundamental) {
         case G_TYPE_BOXED:
@@ -272,10 +266,8 @@ gig_type_define(GType gtype, SCM defs)
             else
                 dsupers = scm_list_1(SCM_PACK_POINTER(sparent));
 
-            for (gint n = 0; n < n_interfaces; n++) {
-                defs = gig_type_define(interfaces[n], defs);
+            for (gint n = 0; n < n_interfaces; n++)
                 dsupers = scm_cons(gig_type_get_scheme_type(interfaces[n]), dsupers);
-            }
             g_free(interfaces);
 
             // dsupers need to be sorted, or else Guile will barf
@@ -295,7 +287,12 @@ gig_type_define(GType gtype, SCM defs)
 
         g_debug("Creating a new GigType: %zu -> %s aka %s", gtype,
                 _type_class_name, g_type_name(gtype));
-        defs = scm_cons(gig_type_associate(gtype, new_type), defs);
+
+        SCM key = gig_type_associate(gtype, new_type);
+        if (!SCM_UNBNDP(defs)) {
+            scm_define(key, new_type);
+            defs = scm_cons(key, defs);
+        }
 #if ENABLE_GIG_TYPE_SCM_HASH
         g_debug("Hash table sizes %d %d", g_hash_table_size(gig_type_gtype_hash),
                 g_hash_table_size(gig_type_scm_hash));
@@ -303,8 +300,16 @@ gig_type_define(GType gtype, SCM defs)
         g_debug("Hash table size %d", g_hash_table_size(gig_type_gtype_hash));
 #endif
     }
-    else
+    else {
         g_debug("<GType> already exists for: %zu -> %s", gtype, g_type_name(gtype));
+        g_return_val_if_fail(value != NULL, defs);
+        SCM val = SCM_PACK_POINTER(value);
+        SCM key = scm_class_name(val);
+        if (!SCM_UNBNDP(defs)) {
+            scm_define(key, val);
+            defs = scm_cons(key, defs);
+        }
+    }
 
     return defs;
 }
@@ -370,13 +375,27 @@ gig_type_free_types(void)
     _free_boxed_funcs();
 }
 
-SCM
-gig_type_get_scheme_type(GType gtype)
+static SCM
+_gig_type_get_scheme_type(GType gtype)
 {
     gpointer *scm_ptr = g_hash_table_lookup(gig_type_gtype_hash, GSIZE_TO_POINTER(gtype));
     if (scm_ptr)
         return SCM_PACK_POINTER(scm_ptr);
     return SCM_BOOL_F;
+}
+
+
+SCM
+gig_type_get_scheme_type(GType gtype)
+{
+    SCM type = _gig_type_get_scheme_type(gtype);
+
+    if (scm_is_true(type) || G_TYPE_IS_FUNDAMENTAL(gtype))
+        return type;
+    else {
+        gig_type_define(gtype, SCM_UNDEFINED);
+        return _gig_type_get_scheme_type(gtype);
+    }
 }
 
 ////////////////////////////////////////////////////////////////
@@ -640,8 +659,9 @@ gig_type_define_fundamental(GType type, SCM extra_supers,
                               scm_from_pointer(ref, NULL),
                               scm_from_pointer(unref, NULL));
 
-    scm_module_export(scm_current_module(),
-                      scm_list_1(gig_type_associate(type, new_type)));
+    SCM key = gig_type_associate(type, new_type);
+    scm_define(key, new_type);
+    scm_module_export(scm_current_module(), scm_list_1(key));
     scm_dynwind_end();
 }
 
@@ -675,6 +695,8 @@ gig_init_types(void)
                                 (GigTypeUnrefFunction)g_object_unref);
     gig_type_define_fundamental(G_TYPE_INTERFACE, SCM_EOL, NULL, NULL);
     gig_type_associate(G_TYPE_BOXED, gig_boxed_type);
+    scm_c_define("<GBoxed>", gig_boxed_type);
+    scm_c_export("<GBoxed>", NULL);
     gig_type_define_fundamental(G_TYPE_PARAM,
                                 scm_list_1(scm_c_public_ref("oop goops",
                                                             "<applicable-struct-with-setter>")),

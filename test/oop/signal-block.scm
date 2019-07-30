@@ -10,13 +10,13 @@
 
 (define <TestSignal>
   ((@ (gi) register-type)
-   "TestParam"
+   "TestSignal"
    <GObject>
    '()
    (list my-signal)))
 
 (automake-test
- (let ((object (make <TestParam>))
+ (let ((object (make <TestSignal>))
        (handled #f))
    (let ((handler-id (connect object my-signal
                               (lambda (obj) (set! handled #t)))))
