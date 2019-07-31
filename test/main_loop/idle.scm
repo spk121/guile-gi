@@ -1,6 +1,7 @@
-(use-modules (gi)
+(use-modules (gi) (gi util)
              (test automake-test-lib))
 
+(push-duplicate-handler! 'merge-generics)
 (typelib-require ("GLib" "2.0"))
 
 (format #t "Will try to run on-idle callback 5 times...\n")

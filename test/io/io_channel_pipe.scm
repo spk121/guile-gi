@@ -1,4 +1,4 @@
-(use-modules (gi)
+(use-modules (gi) (gi util)
              (rnrs bytevectors)
              (ice-9 receive)
              (test automake-test-lib))

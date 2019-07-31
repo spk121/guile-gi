@@ -83,9 +83,9 @@ current_module_definition(SCM name)
 SCM
 default_definition(SCM name)
 {
+    LOOKUP_DEFINITION(scm_current_module());
     LOOKUP_DEFINITION(scm_c_resolve_module("gi"));
     LOOKUP_DEFINITION(scm_c_resolve_module("guile"));
-    LOOKUP_DEFINITION(scm_current_module());
     return SCM_BOOL_F;
 }
 
@@ -151,15 +151,9 @@ gig_function_define1(const gchar *public_name, SCM proc, int opt, SCM formals, S
     g_return_val_if_fail(public_name != NULL, SCM_UNDEFINED);
 
     SCM sym_public_name = scm_from_utf8_symbol(public_name);
-    SCM generic = scm_hashq_ref(generic_table, sym_public_name, SCM_BOOL_F);
-    if (!scm_is_generic(generic)) {
-        generic = default_definition(sym_public_name);
-        if (scm_is_generic(generic))
-            generic = scm_call_2(ensure_generic_proc, generic, sym_public_name);
-        generic = scm_call_2(ensure_generic_proc,
-                             default_definition(sym_public_name), sym_public_name);
-        scm_hashq_set_x(generic_table, sym_public_name, generic);
-    }
+    SCM generic = default_definition(sym_public_name);
+    if (!scm_is_generic(generic))
+        generic = scm_call_2(ensure_generic_proc, generic, sym_public_name);
 
     SCM t_formals = formals, t_specializers = specializers;
 
@@ -716,7 +710,6 @@ rebox_inout_args(GIFunctionInfo *func_info, GigArgMap *amap,
 void
 gig_init_function(void)
 {
-    generic_table = scm_c_make_hash_table(127);
     function_cache =
         g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, (GDestroyNotify)function_free);
     top_type = scm_c_public_ref("oop goops", "<top>");

@@ -283,6 +283,7 @@ gig_init_repository()
 
 #define D(x) scm_c_define(#x, scm_from_uint(x))
 
+    D(LOAD_INFO_ONLY);
     D(LOAD_METHODS);
     D(LOAD_PROPERTIES);
     D(LOAD_SIGNALS);

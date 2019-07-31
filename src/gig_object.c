@@ -600,13 +600,8 @@ do_define_property(const gchar *public_name, SCM prop, SCM self_type, SCM value_
     SCM sym_public_name, formals, specializers, generic, proc, setter;
 
     sym_public_name = scm_from_utf8_symbol(public_name);
-
-    SCM old_generic = scm_hashq_ref(generic_table, sym_public_name, SCM_BOOL_F);
-    if (!scm_is_generic(old_generic))
-        generic = scm_call_2(ensure_accessor_proc, default_definition(sym_public_name),
-                             sym_public_name);
-    else
-        generic = scm_call_2(ensure_accessor_proc, old_generic, sym_public_name);
+    generic = scm_call_2(ensure_accessor_proc, default_definition(sym_public_name),
+                         sym_public_name);
 
     // getter
     proc = scm_procedure(prop);
