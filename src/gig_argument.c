@@ -906,11 +906,13 @@ scm_to_c_byte_array(S2C_ARG_DECL)
 static void
 scm_to_c_garray(S2C_ARG_DECL)
 {
-#define FUNC_NAME "%object->c-garray-array-arg"
-    scm_misc_error(FUNC_NAME,
-                   "Marshalling to C GArray pointer args is unimplemented: ~S",
-                   scm_list_1(object));
-#undef FUNC_NAME
+    GIArgument _arg;
+    GigArgMapEntry ae = *entry;
+    ae.array_type = GI_ARRAY_TYPE_C;
+    gig_argument_scm_to_c(subr, argpos, &ae, object, NULL, &_arg, size);
+    arg->v_pointer = g_new0(GArray, 1);
+    ((GArray *)(arg->v_pointer))->len = *size;
+    ((GArray *)(arg->v_pointer))->data = _arg.v_pointer;
 }
 
 static void
@@ -1811,70 +1813,14 @@ c_byte_array_to_scm(C2S_ARG_DECL)
 static void
 c_garray_to_scm(C2S_ARG_DECL)
 {
+    GigArgMapEntry ae = *entry;
+    GIArgument _arg;
     GArray *array = arg->v_pointer;
-    gpointer data = array->data;
-
-    g_assert_cmpint(entry->item_size, !=, 0);
-
-    *object = scm_c_make_vector(array->len, SCM_UNDEFINED);
-
-    scm_t_array_handle handle;
-    gsize len, item_size = entry->item_size;
-    gssize inc;
-    SCM *elt;
-
-    elt = scm_vector_writable_elements(*object, &handle, &len, &inc);
-    g_assert(len == array->len);
-
-    for (gsize i = 0; i < len; i++, elt += inc, data += item_size) {
-        switch (entry->item_type_tag) {
-        case GI_TYPE_TAG_INT8:
-            *elt = scm_from_int8(*(gint8 *)data);
-            break;
-        case GI_TYPE_TAG_UINT8:
-            *elt = scm_from_uint8(*(guint8 *)data);
-            break;
-        case GI_TYPE_TAG_INT16:
-            *elt = scm_from_int16(*(gint16 *)data);
-            break;
-        case GI_TYPE_TAG_UINT16:
-            *elt = scm_from_uint16(*(guint16 *)data);
-            break;
-        case GI_TYPE_TAG_INT32:
-            *elt = scm_from_int32(*(gint32 *)data);
-            break;
-        case GI_TYPE_TAG_UINT32:
-            *elt = scm_from_uint32(*(guint32 *)data);
-            break;
-        case GI_TYPE_TAG_INT64:
-            *elt = scm_from_int64(*(gint64 *)data);
-            break;
-        case GI_TYPE_TAG_UINT64:
-            *elt = scm_from_uint64(*(guint64 *)data);
-            break;
-        case GI_TYPE_TAG_FLOAT:
-            *elt = scm_from_double(*(float *)data);
-            break;
-        case GI_TYPE_TAG_DOUBLE:
-            *elt = scm_from_double(*(double *)data);
-            break;
-        case GI_TYPE_TAG_FILENAME:
-            *elt = scm_from_locale_string(*(char **)data);
-            if (entry->transfer == GI_TRANSFER_EVERYTHING)
-                free(*(char **)data);
-            break;
-        case GI_TYPE_TAG_UTF8:
-            *elt = scm_from_utf8_string(*(char **)data);
-            if (entry->transfer == GI_TRANSFER_EVERYTHING)
-                free(*(char **)data);
-            break;
-        default:
-            *elt = scm_c_make_bytevector(item_size);
-            memcpy(SCM_BYTEVECTOR_CONTENTS(*elt), data, item_size);
-        }
-    }
-
-    scm_array_handle_release(&handle);
+    _arg.v_pointer = array->data;
+    ae.array_type = GI_ARRAY_TYPE_C;
+    ae.array_fixed_size = array->len;
+    size = array->len;
+    c_array_to_scm(subr, argpos, &ae, &_arg, object, size);
 }
 
 static void
