@@ -1,9 +1,14 @@
 (use-modules (ice-9 rdelim)
              (ice-9 ftw)
              (gi)
-             (gi util))
+             (gi repository))
 
-(use-typelibs (("Gtk" "3.0") #:renamer (protect* %rnrs-syntax)))
+(require "Gtk" "3.0")
+
+(map (lambda (n) (load-by-name "Gtk" n))
+     '("Builder" "Widget" "Button" "init" "main_quit" "main"))
+
+;; (use-typelibs (("Gtk" "3.0") #:renamer (protect* %rnrs-syntax)))
 
 (define (print-hello button)
   (display "Hello World")
