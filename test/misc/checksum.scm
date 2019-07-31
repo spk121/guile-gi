@@ -9,8 +9,8 @@
        (bv (string->utf8 "ABCDEFGHIJKLMNOPQRSTUVWXYZ\n")))
    (write cksum) (newline)
    (write bv) (newline)
-   (with-object cksum (update bv))
-   (let ((output (with-object cksum (get-string))))
+   (update cksum bv)
+   (let ((output (get-string cksum)))
      (write output) (newline)
      (string=?
       output

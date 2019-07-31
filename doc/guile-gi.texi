@@ -599,23 +599,19 @@ class may one or more properties. So, for example, if the object is a
 radio button, you may get or set properties that apply specifically to
 radio buttons, or generic buttons, or generic widgets.
 
-The @code{get-property} and @code{set-property!} procedures are provided
-to set GObject properties.
-
-@deffn Procedure get-property obj prop
-@deffnx Procedure set-property! obj prop val
-Gets or sets and object's property. @var{prop} is the symbol name
-of the property to set.
-
-It will throw an error if the property does not exist, or if the
-setting value has the wrong type.
-@end deffn
-
-Alternatively, you can also use parameter types,
-(i.e. ``objects'', that derive from @code{G_TYPE_PARAM} alias @code{<GParam>})
-as accessors. Assuming, that e.g. @code{prop} is bound to such an object,
+In Guile-GI, properties come in two flavours.
+The basic building block are objects derived from @code{G_TYPE_PARAM} alias @code{<GParam>}.
+These can be created via introspected methods found in the @code{GObject} library.
+They are enhanced so that they can work as procedures with setter.
+Given an arbitrary property @code{prop},
 @code{(prop obj)} will fetch the corresponding property, whereas
 @code{(set! (prop obj) val)} will set it.
+
+The other flavour are GOOPS accessors.
+These are used for introspected properties, so that the name may also overlap with a
+method or a signal of a different type. Other than that, they behave no different from
+@code{<GParam>}s -- in fact, they work by constructing a @code{<GParam>} and using their
+getters and setters.
 
 @node Custom GObjects
 @section Defining new GObject classes

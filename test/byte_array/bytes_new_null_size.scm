@@ -6,7 +6,7 @@
 (automake-test
  (begin
    (let* ((self (bytes:new #f))
-          (siz (with-object self (get-size))))
+          (siz (get-size self)))
      (format #t "New Byte Array: ~S~%" self)
      (format #t "Size: ~S~%" siz)
      (and (is-a? self <GBytes>)

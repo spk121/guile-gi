@@ -85,7 +85,7 @@
 
 (define (%connect-generic obj signal detail handler after)
   (let ((real-signal (%find-signal signal (class-of obj))))
-    (if real-signal (%connect obj real-signal detail handler)
+    (if real-signal (%connect obj real-signal detail handler after)
         (error "~S has no signal in ~S" obj signal))))
 
 (define-method (connect obj (signal <generic>) (handler <procedure>))

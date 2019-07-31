@@ -9,7 +9,7 @@
  (begin
    (init)
    (let ([entry (entry:new)])
-     (with-object entry (set-alignment 0))
+     (set-alignment entry 0)
      (format #t "entry: ~S~%" entry)
-     (format #t "entry alignment: ~S~%" (with-object entry (get-alignment)))
-     (= 0 (with-object entry (get-alignment))))))
+     (format #t "entry alignment: ~S~%" (get-alignment entry))
+     (= 0 (get-alignment entry)))))

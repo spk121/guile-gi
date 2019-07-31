@@ -5,5 +5,4 @@
 
 (automake-test
  (let ((mainloop (main-loop:new #f #t)))
-   (let ((ctx (with-object mainloop (get-context))))
-     (is-a? ctx <GMainContext>))))
+   (is-a? (get-context mainloop) <GMainContext>)))

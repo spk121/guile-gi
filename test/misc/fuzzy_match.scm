@@ -21,13 +21,12 @@
      (cdr c-struct))))
 
 (automake-test
- (let ((matches
-        (with-object (fuzzy-mutable-index:new #f)
-          (insert "lorem" (new-data))
-          (insert "ipsum" (new-data))
-          (insert "dolor" (new-data))
-          (insert "sit" (new-data))
-          (insert "amet" (new-data))
-          (match "lor" 0))))
+ (let* ((idx (fuzzy-mutable-index:new #f))
+        (matches
+         (begin
+           (for-each
+            (lambda (str) (insert idx str (new-data)))
+            '("lorem" "ipsum" "dolor" "sit" "amet"))
+           (match idx "lor" 0))))
    (display (map bv->match-data (vector->list matches)))
    (newline)))

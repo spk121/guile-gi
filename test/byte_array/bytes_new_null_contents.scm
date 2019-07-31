@@ -7,8 +7,7 @@
 (automake-test
  (begin
    (let ((self (bytes:new #f)))
-     (let ((data (with-object self (get-data))))
+     (let ((data (get-data self)))
        (format #t "New Byte Array: ~S~%" self)
        (format #t "Data: ~S~%" data)
        (not data)))))
-
