@@ -109,7 +109,7 @@
    ((subclass? type <GObject>)
     ((@@ (gi oop) %make-gobject) type rest))
    ((subclass? type <GBoxed>)
-    (%allocate-boxed type))
+    ((@@ (gi types) %allocate-boxed) type))
    (else
     (apply make type rest))))
 
