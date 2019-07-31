@@ -439,6 +439,13 @@ EVERYTHING_TESTS = \
  everything/array-zero-terminated-in.scm \
  everything/array-zero-terminated-out.scm \
  everything/array-zero-terminated-inout.scm \
+ everything/array-gvariant-none-in.scm \
+ everything/array-gvariant-container-in.scm \
+ everything/garray-int-none-return.scm \
+ everything/garray-uint64-none-return.scm \
+ everything/garray-utf8-none-return.scm \
+ everything/garray-utf8-container-return.scm \
+ everything/garray-utf8-full-return.scm \
  everything/gslist-int-none-return.scm \
  everything/gslist-utf8-none-return.scm \
  everything/gslist-utf8-container-return.scm \
