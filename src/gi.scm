@@ -16,6 +16,7 @@
   #:use-module (gi core-generics)
   #:use-module (gi oop)
   #:use-module (gi types)
+  #:use-module (gi repository)
   #:use-module (oop goops)
   #:use-module (srfi srfi-26)
   #:re-export (<signal>
@@ -41,12 +42,11 @@
   #:export (use-typelibs
             register-type))
 
-(eval-when (expand load eval)
-  ;; required for %typelib-module-name, which is used at expand time
-  (load-extension "libguile-gi" "gig_init_typelib_private"))
-
 (define (subclass? type-a type-b)
   (memq type-b (class-precedence-list type-a)))
+
+(define (%typelib-module-name lib version)
+  (list 'gi (string->symbol (string-append lib "-" version))))
 
 (define (%gi->module-use form subform lib version params)
   (cond
@@ -74,7 +74,7 @@
                                                             (syntax->datum version)))))
 
       #`(unless (resolve-module '#,module #:ensure #f)
-          (%typelib-define-module #,lib #,version))))))
+          (typelib->module '#,module #,lib #,version))))))
 
 (define-syntax use-typelibs
   (lambda (x)
