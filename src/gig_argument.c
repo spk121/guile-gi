@@ -987,26 +987,49 @@ scm_to_c_native_interface_array(S2C_ARG_DECL)
         // If we are a Struct or Object, we need to look up
         // our actual GType.
         g_assert(entry->referenced_object_type != G_TYPE_NONE);
+        if (!scm_is_vector(object))
+            scm_wrong_type_arg_msg(subr, argpos, object, "vector of objects");
+        *size = scm_c_vector_length(object);
+        if (entry->item_is_ptr) {
+            if (entry->array_is_zero_terminated) {
+                arg->v_pointer = malloc(sizeof(gpointer) * (*size + 1));
+                ((gpointer *)arg->v_pointer)[*size] = 0;
+            }
+            else {
+                arg->v_pointer = malloc(sizeof(gpointer) * *size);
+            }
+            for (gsize i = 0; i < *size; i++) {
+                gpointer p = gig_type_peek_object(scm_c_vector_ref(object, i));
+                if (entry->transfer == GI_TRANSFER_EVERYTHING) {
+                    if (entry->referenced_base_type == GI_INFO_TYPE_STRUCT
+                        || entry->referenced_base_type == GI_INFO_TYPE_UNION) {
+                        ((gpointer *)(arg->v_pointer))[i] = g_memdup(p, entry->item_size);
+                        // ((gpointer *)(arg->v_pointer))[i] = p;
+                    }
+                    else {
+                        ((gpointer *)(arg->v_pointer))[i] = p;
+                        g_object_ref(p);
+                    }
+                }
+                else
+                    ((gpointer *)(arg->v_pointer))[i] = p;
+            }
+        }
+        else {
+            if (entry->array_is_zero_terminated)
+                arg->v_pointer = g_malloc0(entry->item_size * (*size + 1));
+            else
+                arg->v_pointer = malloc(sizeof(gpointer) * *size);
+            for (gsize i = 0; i < *size; i++) {
+                gpointer p = gig_type_peek_object(scm_c_vector_ref(object, i));
+                if (entry->transfer == GI_TRANSFER_EVERYTHING)
+                    memcpy((char *)(arg->v_pointer) + i * entry->item_size,
+                           g_memdup(p, entry->item_size), entry->item_size);
+                else
+                    memcpy((char *)(arg->v_pointer) + i * entry->item_size, p, entry->item_size);
 
-#if 1
-        g_assert_not_reached();
-#else
-        if (!entry->item_is_ptr && entry->referenced_base_type == GI_INFO_TYPE_STRUCT)
-            object_to_c_native_direct_struct_array_arg(subr, argpos, object, ai, arg);
-        else if (entry->item_is_ptr && entry->referenced_base_type == GI_INFO_TYPE_STRUCT)
-            object_to_c_native_indirect_struct_array_arg(subr, argpos, object, ai, arg);
-        else if (!entry->item_is_ptr && entry->referenced_base_type == GI_INFO_TYPE_UNION)
-            object_to_c_native_direct_union_array_arg(subr, argpos, object, ai, arg);
-        else if (entry->item_is_ptr && entry->referenced_base_type == GI_INFO_TYPE_UNION)
-            object_to_c_native_indirect_union_array_arg(subr, argpos, object, ai, arg);
-        else if (!entry->item_is_ptr && entry->referenced_base_type == G_TYPE_OBJECT)
-            // Arrays of OBJECTS. Direct object arrays, holding the
-            // complete structures themselves.  The only example is
-            // the 'additions' argument of g_list_store_splice.
-            object_to_c_native_direct_object_array_arg(subr, argpos, object, ai, arg);
-        else if (entry->item_is_ptr && entry->referenced_base_type == G_TYPE_OBJECT)
-            object_to_c_native_indirect_object_array_arg(subr, argpos, object, ai, arg);
-#endif
+            }
+        }
     }
     else {
         // Everything else is unhandled.
@@ -1700,10 +1723,26 @@ c_native_array_to_scm(C2S_ARG_DECL)
             break;
         case GI_INFO_TYPE_STRUCT:
         case GI_INFO_TYPE_OBJECT:
-            g_assert(entry->referenced_object_type != G_TYPE_NONE);
-
-            g_critical("Unhandled array type in %s:%d", __FILE__, __LINE__);
-            g_assert_not_reached();
+        case GI_INFO_TYPE_UNION:
+        {
+            *object = scm_c_make_vector(length, SCM_BOOL_F);
+            scm_t_array_handle handle;
+            size_t i, len;
+            ssize_t inc;
+            SCM *elt;
+            elt = scm_vector_writable_elements(*object, &handle, &len, &inc);
+            g_assert_nonnull(arg->v_pointer);
+            for (gsize k = 0; k < len; k++, elt += inc) {
+                *elt =
+                    gig_type_transfer_object(entry->referenced_object_type,
+                                             ((gpointer *)(arg->v_pointer))[k], entry->transfer);
+            }
+            scm_array_handle_release(&handle);
+            if (entry->transfer == GI_TRANSFER_EVERYTHING) {
+                free(arg->v_pointer);
+                arg->v_pointer = 0;
+            }
+        }
             break;
         default:
             g_critical("Unhandled array type in %s:%d", __FILE__, __LINE__);
