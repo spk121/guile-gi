@@ -241,7 +241,6 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
     return defs;
 }
 
-
 static SCM
 load(SCM info, SCM flags)
 {
@@ -256,11 +255,30 @@ load(SCM info, SCM flags)
     return load_info(base_info, load_flags, SCM_EOL);
 }
 
+static SCM
+info(SCM lib, SCM name)
+{
+    gchar *_lib, *_name;
+    GIBaseInfo *info;
+    scm_dynwind_begin(0);
+    _lib = scm_dynwind_or_bust("info", scm_to_utf8_string(lib));
+    _name = scm_dynwind_or_bust("info", scm_to_utf8_string(name));
+
+    info = g_irepository_find_by_name(NULL, _lib, _name);
+    if (info == NULL)
+        scm_misc_error("info", "could not load ~A from ~A, did you forget to require or perhaps misspell?",
+                       scm_list_2(name, lib));
+    scm_dynwind_end();
+
+    return gig_type_transfer_object(GI_TYPE_BASE_INFO, info, GI_TRANSFER_EVERYTHING);
+}
+
 void
 gig_init_repository()
 {
     scm_c_define_gsubr("require", 1, 1, 0, require);
     scm_c_define_gsubr("infos", 1, 0, 0, infos);
+    scm_c_define_gsubr("info", 2, 0, 0, info);
     scm_c_define_gsubr("%load-info", 1, 1, 0, load);
 
 #define D(x) scm_c_define(#x, scm_from_uint(x))

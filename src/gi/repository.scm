@@ -23,7 +23,8 @@
   #:use-module (gi core-generics)
   #:re-export (load)
   #:export (require
-            infos
+            infos info
+            load-by-name
             typelib->module
             LOAD_METHODS LOAD_PROPERTIES LOAD_SIGNALS LOAD_FIELDS
             LOAD_EVERYTHING LOAD_INFO_ONLY))
@@ -32,7 +33,13 @@
   (load-extension "libguile-gi" "gig_init_repository"))
 
 (define-method (load (info <GIBaseInfo>))
-  (%load-info info))
+  (%load-info info LOAD_EVERYTHING))
+
+(define-method (load (info <GIBaseInfo>) flags)
+  (%load-info info flags))
+
+(define* (load-by-name lib name #:optional (flags LOAD_EVERYTHING))
+  (load (info lib name) flags))
 
 (define* (typelib->module module lib #:optional version)
   (require lib version)
