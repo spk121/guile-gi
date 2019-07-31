@@ -1814,9 +1814,6 @@ c_garray_to_scm(C2S_ARG_DECL)
     GArray *array = arg->v_pointer;
     gpointer data = array->data;
 
-    // We hopefully never have to deal with GArrays of pointer types,
-    // given that GPtrArray exists.
-    g_assert_false(entry->item_is_ptr);
     g_assert_cmpint(entry->item_size, !=, 0);
 
     *object = scm_c_make_vector(array->len, SCM_UNDEFINED);
@@ -1830,9 +1827,53 @@ c_garray_to_scm(C2S_ARG_DECL)
     g_assert(len == array->len);
 
     for (gsize i = 0; i < len; i++, elt += inc, data += item_size) {
-        *elt = scm_c_make_bytevector(item_size);
-        memcpy(SCM_BYTEVECTOR_CONTENTS(*elt), data, item_size);
+        switch (entry->item_type_tag) {
+        case GI_TYPE_TAG_INT8:
+            *elt = scm_from_int8(*(gint8 *)data);
+            break;
+        case GI_TYPE_TAG_UINT8:
+            *elt = scm_from_uint8(*(guint8 *)data);
+            break;
+        case GI_TYPE_TAG_INT16:
+            *elt = scm_from_int16(*(gint16 *)data);
+            break;
+        case GI_TYPE_TAG_UINT16:
+            *elt = scm_from_uint16(*(guint16 *)data);
+            break;
+        case GI_TYPE_TAG_INT32:
+            *elt = scm_from_int32(*(gint32 *)data);
+            break;
+        case GI_TYPE_TAG_UINT32:
+            *elt = scm_from_uint32(*(guint32 *)data);
+            break;
+        case GI_TYPE_TAG_INT64:
+            *elt = scm_from_int64(*(gint64 *)data);
+            break;
+        case GI_TYPE_TAG_UINT64:
+            *elt = scm_from_uint64(*(guint64 *)data);
+            break;
+        case GI_TYPE_TAG_FLOAT:
+            *elt = scm_from_double(*(float *)data);
+            break;
+        case GI_TYPE_TAG_DOUBLE:
+            *elt = scm_from_double(*(double *)data);
+            break;
+        case GI_TYPE_TAG_FILENAME:
+            *elt = scm_from_locale_string(*(char **)data);
+            if (entry->transfer == GI_TRANSFER_EVERYTHING)
+                free(*(char **)data);
+            break;
+        case GI_TYPE_TAG_UTF8:
+            *elt = scm_from_utf8_string(*(char **)data);
+            if (entry->transfer == GI_TRANSFER_EVERYTHING)
+                free(*(char **)data);
+            break;
+        default:
+            *elt = scm_c_make_bytevector(item_size);
+            memcpy(SCM_BYTEVECTOR_CONTENTS(*elt), data, item_size);
+        }
     }
+
     scm_array_handle_release(&handle);
 }
 
