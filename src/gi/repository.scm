@@ -16,7 +16,34 @@
 
 (define-module (gi repository)
   #:use-module (system foreign)
-  #:export (require infos))
+  #:use-module (ice-9 optargs)
+  #:use-module (srfi srfi-1)
+  #:export (require
+            infos load
+            typelib->module
+            LOAD_METHODS LOAD_PROPERTIES LOAD_SIGNALS LOAD_FIELDS
+            LOAD_EVERYTHING LOAD_INFO_ONLY))
+
+(define* (typelib->module module lib #:optional version)
+  (require lib version)
+  (set! module (cond
+                ((module? module) module)
+                ((list? module) (resolve-module module))
+                (else (error "not a module: ~A" module))))
+
+  (unless (module-public-interface module)
+    (let ((interface (make-module)))
+      (set-module-name! interface (module-name module))
+      (set-module-version! interface (module-version module))
+      (set-module-kind! interface 'interface)
+      (set-module-public-interface! module interface)))
+
+  (save-module-excursion
+   (lambda ()
+     (set-current-module module)
+     (module-export! module (append-map! load (infos lib)))))
+
+  module)
 
 (eval-when (expand load eval)
   (load-extension "libguile-gi" "gig_init_repository"))
