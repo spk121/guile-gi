@@ -273,6 +273,37 @@ info(SCM lib, SCM name)
     return gig_type_transfer_object(GI_TYPE_BASE_INFO, info, GI_TRANSFER_EVERYTHING);
 }
 
+static SCM
+get_search_path(void)
+{
+    GSList *slist = g_irepository_get_search_path();
+    SCM entry;
+    SCM output = SCM_EOL;
+
+    if (slist == NULL)
+        return SCM_EOL;
+    do {
+        entry = scm_from_utf8_string(slist->data);
+        output = scm_cons(entry, output);
+    } while ((slist = g_slist_next(slist)));
+    return scm_reverse_x(output, SCM_EOL);
+}
+
+static SCM
+prepend_search_path(SCM s_dir)
+{
+    gchar *dir;
+
+    SCM_ASSERT_TYPE(scm_is_string(s_dir), s_dir, SCM_ARG1,
+                    "typelib-prepend-search-path", "string");
+
+    dir = scm_to_utf8_string(s_dir);
+    g_irepository_prepend_search_path(dir);
+    g_free(dir);
+
+    return SCM_UNSPECIFIED;
+}
+
 void
 gig_init_repository()
 {
@@ -280,6 +311,8 @@ gig_init_repository()
     scm_c_define_gsubr("infos", 1, 0, 0, infos);
     scm_c_define_gsubr("info", 2, 0, 0, info);
     scm_c_define_gsubr("%load-info", 1, 1, 0, load);
+    scm_c_define_gsubr("get-search-path", 0, 0, 0, get_search_path);
+    scm_c_define_gsubr("prepend-search-path!", 1, 0, 0, prepend_search_path);
 
 #define D(x) scm_c_define(#x, scm_from_uint(x))
 

@@ -24,8 +24,10 @@
   #:re-export (load)
   #:export (require
             infos info
-            load-by-name
-            typelib->module
+            load-by-name typelib->module
+
+            get-search-path prepend-search-path!
+
             LOAD_METHODS LOAD_PROPERTIES LOAD_SIGNALS LOAD_FIELDS
             LOAD_EVERYTHING LOAD_INFO_ONLY))
 
