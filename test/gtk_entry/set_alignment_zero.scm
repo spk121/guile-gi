@@ -1,8 +1,11 @@
-(use-modules (gi) (gi util)
+(use-modules (gi) (gi repository)
              (test automake-test-lib))
 
-(typelib-require ("GLib" "2.0")
-                 (("Gtk" "3.0") #:renamer (protect* %rnrs-syntax)))
+(unless (false-if-exception (require "Gtk" "3.0"))
+  (exit 'EXIT_SKIPPED))
+
+(load-by-name "Gtk" "init")
+(load-by-name "Gtk" "Entry")
 
 ;; This test exercises float32 argument conversions and return types.
 (automake-test
