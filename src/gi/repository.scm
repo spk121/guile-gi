@@ -13,16 +13,26 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https:;;www.gnu.org/licenses/>.
 
-
 (define-module (gi repository)
-  #:use-module (system foreign)
   #:use-module (ice-9 optargs)
+  #:use-module (oop goops)
   #:use-module (srfi srfi-1)
+  #:use-module (system foreign)
+
+  #:use-module (gi types)
+  #:use-module (gi core-generics)
+  #:re-export (load)
   #:export (require
-            infos load
+            infos
             typelib->module
             LOAD_METHODS LOAD_PROPERTIES LOAD_SIGNALS LOAD_FIELDS
             LOAD_EVERYTHING LOAD_INFO_ONLY))
+
+(eval-when (expand load eval)
+  (load-extension "libguile-gi" "gig_init_repository"))
+
+(define-method (load (info <GIBaseInfo>))
+  (%load-info info))
 
 (define* (typelib->module module lib #:optional version)
   (require lib version)
@@ -44,6 +54,3 @@
      (module-export! module (append-map! load (infos lib)))))
 
   module)
-
-(eval-when (expand load eval)
-  (load-extension "libguile-gi" "gig_init_repository"))

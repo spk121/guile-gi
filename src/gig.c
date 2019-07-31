@@ -96,7 +96,6 @@ gig_init(void)
                       | G_LOG_FLAG_RECURSION, gig_log_handler, NULL);
 #endif
     g_debug("Begin libguile-gir initialization");
-    gig_init_types();
     gig_init_typelib();
     gig_init_constant();
     gig_init_flag();

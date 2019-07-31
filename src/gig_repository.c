@@ -98,6 +98,8 @@ load_nested_info(GIBaseInfo *parent, GType type, const gchar *namespace,
 SCM
 load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
 {
+    g_return_val_if_fail(info != NULL, defs);
+
     switch (g_base_info_get_type(info))
     {
     case GI_INFO_TYPE_CALLBACK:
@@ -250,7 +252,6 @@ load(SCM info, SCM flags)
         load_flags = scm_to_uint(flags);
 
     GIBaseInfo *base_info = (GIBaseInfo *)gig_type_peek_object(info);
-    scm_remember_upto_here_1(info);
 
     return load_info(base_info, load_flags, SCM_EOL);
 }
@@ -260,7 +261,7 @@ gig_init_repository()
 {
     scm_c_define_gsubr("require", 1, 1, 0, require);
     scm_c_define_gsubr("infos", 1, 0, 0, infos);
-    scm_c_define_gsubr("load", 1, 1, 0, load);
+    scm_c_define_gsubr("%load-info", 1, 1, 0, load);
 
 #define D(x) scm_c_define(#x, scm_from_uint(x))
 

@@ -15,6 +15,7 @@
 (define-module (gi)
   #:use-module (gi core-generics)
   #:use-module (gi oop)
+  #:use-module (gi types)
   #:use-module (oop goops)
   #:use-module (srfi srfi-26)
   #:re-export (<signal>
@@ -25,7 +26,17 @@
                is-a?
                define-method
                ;; core-generics
-               command-line equal? format write quit send shutdown)
+               command-line equal? format write quit send shutdown
+               ;; types
+               G_TYPE_NONE
+               G_TYPE_CHAR G_TYPE_UCHAR
+               G_TYPE_BOOLEAN
+               G_TYPE_INT G_TYPE_UINT
+               G_TYPE_INT64 G_TYPE_UINT64
+               G_TYPE_ENUM G_TYPE_FLAGS
+               G_TYPE_FLOAT G_TYPE_DOUBLE
+               G_TYPE_OBJECT
+               <GObject> <GInterface> <GVariant> <GParam> <GBoxed> <GIBaseInfo>)
   #:replace ((%new . make))
   #:export (use-typelibs
             register-type))

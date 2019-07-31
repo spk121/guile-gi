@@ -99,7 +99,12 @@ pkgguileobjectdir=$(guileobjectdir)/gi
 dist_guilesite_DATA = \
   gi.scm
 
-dist_pkgguilesite_DATA = gi/oop.scm gi/core-generics.scm gi/repository.scm gi/util.scm
+dist_pkgguilesite_DATA = \
+  gi/core-generics.scm \
+  gi/types.scm \
+  gi/oop.scm \
+  gi/repository.scm \
+  gi/util.scm
 
 pkgguileobject_DATA = $(dist_guilesite_DATA:%.scm=%.go) $(dist_pkgguilesite_DATA:%.scm=%.go)
 

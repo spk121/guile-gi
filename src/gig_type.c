@@ -669,8 +669,8 @@ gig_type_define_fundamental(GType type, SCM extra_supers,
 
 static SCM make_fundamental_proc;
 
-void
-gig_init_types(void)
+static void
+gig_init_types_once(void)
 {
     gig_fundamental_type = scm_c_private_ref("gi oop", "<GFundamental>");
     gig_boxed_type = scm_c_private_ref("gi oop", "<GBoxed>");
@@ -774,4 +774,14 @@ gig_init_types(void)
                  "gtype-is-classed?",
                  "gtype-is-instantiatable?",
                  "gtype-is-derivable?", "gtype-is-a?", "%gtype-dump-table", NULL);
+}
+
+void
+gig_init_types()
+{
+    static gsize type_init;
+    if (g_once_init_enter(&type_init)) {
+        gig_init_types_once();
+        g_once_init_leave(&type_init, 1);
+    }
 }
