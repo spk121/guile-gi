@@ -41,8 +41,6 @@ libguile_gi_la_SOURCES = \
  gig_constant.h \
  gig_flag.c \
  gig_flag.h \
- gig_typelib.c \
- gig_typelib.h \
  gig_repository.c \
  gig_type.c \
  gig_type.h \
