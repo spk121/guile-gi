@@ -205,7 +205,7 @@ gig_arg_map_entry_apply_callable_info(GigArgMapEntry *e, GICallableInfo *ci)
     g_assert_nonnull(e);
     g_assert_nonnull(ci);
 
-    e->name = g_strdup("(return)");
+    e->name = g_strdup("%return");
     e->type_info = g_callable_info_get_return_type(ci);
     e->type_tag = g_type_info_get_tag(e->type_info);
     e->is_ptr = g_type_info_is_pointer(e->type_info);
