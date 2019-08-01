@@ -163,3 +163,14 @@ scm_c_reexport(const gchar *name, ...)
 
     return SCM_UNSPECIFIED;
 }
+
+SCM
+scm_printf(SCM port, const gchar *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    gchar *_message = g_strdup_vprintf(fmt, args);
+    SCM message = scm_from_utf8_string(_message);
+    g_free(_message);
+    scm_display(message, port);
+}

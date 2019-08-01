@@ -20,4 +20,6 @@
   #:export (<GIBaseInfo>))
 
 (eval-when (expand load eval)
- (load-extension "libguile-gi" "gig_init_types"))
+  ;; this library is loaded before any other, so init logging here
+  (load-extension "libguile-gi" "gig_init_logging")
+  (load-extension "libguile-gi" "gig_init_types"))
