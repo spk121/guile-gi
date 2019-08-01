@@ -108,10 +108,15 @@ To protect your syntax (or other variables you deeply care about), use
 the <code>protect</code> or <code>protect*</code> renamer from <code>(gi util)</code>.
 </p>
 <span id="Help_0021-Guile_002dGI-bindings-conflict-with-each-other"></span><h4 class="subsection">3.9.4 Help! Guile-GI bindings conflict with each other</h4>
-<p>Again, this should be nothing to worry about. However, the warnings can
-be irritating. To silence them, use the <code>shrug-equals</code> duplicate handler
-defined in <code>(gi util)</code>. This will silence all warnings that are due to
-variables bound to the same value.
+<p>Most conflicts should be resolved using the <code>merge-generics</code> duplicate handler.
+However, this handler is not enabled by default, so you may want to push it to the
+default duplicate handlers. If this is still not working, you may somehow have ended up
+with &ldquo;equal&rdquo; duplicates, i.e. duplicates, whose bindings resolve to the same value.
+To silence warnings about them, use the <code>shrug-equals</code> duplicate handler
+defined in <code>(gi util)</code>.
+If the conflict is still not resolved, file a bug detailing it.
+As a workaround, you may also rename either binding, which is probably the best way
+to resolve a duplicate.
 </p>
 <hr>
 <div class="header">
