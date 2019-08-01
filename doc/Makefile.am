@@ -16,5 +16,5 @@
 
 info_TEXINFOS = guile-gi.texi
 guile_gi_TEXINFOS = fdl-1.3.texi
-EXTRA_DIST = example-1.scm
+EXTRA_DIST = example-1.scm gtk-3.scm
 CLEANFILES = guile-gi.dvi
