@@ -3,6 +3,7 @@
 @setfilename guile-gi.info
 @settitle Guile GI
 @c %**end of header
+@include version.texi
 
 @copying
 Copyright @copyright{} 2018, 2019 Michael L. Gran
@@ -17,6 +18,7 @@ Free Documentation License''.
 
 @titlepage
 @title Guile GI
+@subtitle Version @value{VERSION}
 @page
 @vskip 0pt plus 1filll
 @insertcopying
@@ -28,7 +30,7 @@ Free Documentation License''.
 @node Top
 @top Guile GI
 
-This manual is for Guile GI.
+This manual is for Guile GI @value{VERSION}.
 @c @end ifnottex
 
 @menu
