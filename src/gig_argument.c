@@ -62,6 +62,7 @@ static void c_array_to_scm(C2S_ARG_DECL);
 static void c_byte_array_to_scm(C2S_ARG_DECL);
 static void c_native_array_to_scm(C2S_ARG_DECL);
 static void c_garray_to_scm(C2S_ARG_DECL);
+static void c_gptrarray_to_scm(C2S_ARG_DECL);
 static void c_list_to_scm(C2S_ARG_DECL);
 
 static void describe_non_pointer_type(GString *desc, GITypeInfo *type_info);
@@ -905,11 +906,13 @@ scm_to_c_byte_array(S2C_ARG_DECL)
 static void
 scm_to_c_garray(S2C_ARG_DECL)
 {
-#define FUNC_NAME "%object->c-garray-array-arg"
-    scm_misc_error(FUNC_NAME,
-                   "Marshalling to C GArray pointer args is unimplemented: ~S",
-                   scm_list_1(object));
-#undef FUNC_NAME
+    GIArgument _arg;
+    GigArgMapEntry ae = *entry;
+    ae.array_type = GI_ARRAY_TYPE_C;
+    gig_argument_scm_to_c(subr, argpos, &ae, object, NULL, &_arg, size);
+    arg->v_pointer = g_new0(GArray, 1);
+    ((GArray *)(arg->v_pointer))->len = *size;
+    ((GArray *)(arg->v_pointer))->data = _arg.v_pointer;
 }
 
 static void
@@ -986,26 +989,49 @@ scm_to_c_native_interface_array(S2C_ARG_DECL)
         // If we are a Struct or Object, we need to look up
         // our actual GType.
         g_assert(entry->referenced_object_type != G_TYPE_NONE);
+        if (!scm_is_vector(object))
+            scm_wrong_type_arg_msg(subr, argpos, object, "vector of objects");
+        *size = scm_c_vector_length(object);
+        if (entry->item_is_ptr) {
+            if (entry->array_is_zero_terminated) {
+                arg->v_pointer = malloc(sizeof(gpointer) * (*size + 1));
+                ((gpointer *)arg->v_pointer)[*size] = 0;
+            }
+            else {
+                arg->v_pointer = malloc(sizeof(gpointer) * *size);
+            }
+            for (gsize i = 0; i < *size; i++) {
+                gpointer p = gig_type_peek_object(scm_c_vector_ref(object, i));
+                if (entry->transfer == GI_TRANSFER_EVERYTHING) {
+                    if (entry->referenced_base_type == GI_INFO_TYPE_STRUCT
+                        || entry->referenced_base_type == GI_INFO_TYPE_UNION) {
+                        ((gpointer *)(arg->v_pointer))[i] = g_memdup(p, entry->item_size);
+                        // ((gpointer *)(arg->v_pointer))[i] = p;
+                    }
+                    else {
+                        ((gpointer *)(arg->v_pointer))[i] = p;
+                        g_object_ref(p);
+                    }
+                }
+                else
+                    ((gpointer *)(arg->v_pointer))[i] = p;
+            }
+        }
+        else {
+            if (entry->array_is_zero_terminated)
+                arg->v_pointer = g_malloc0(entry->item_size * (*size + 1));
+            else
+                arg->v_pointer = malloc(sizeof(gpointer) * *size);
+            for (gsize i = 0; i < *size; i++) {
+                gpointer p = gig_type_peek_object(scm_c_vector_ref(object, i));
+                if (entry->transfer == GI_TRANSFER_EVERYTHING)
+                    memcpy((char *)(arg->v_pointer) + i * entry->item_size,
+                           g_memdup(p, entry->item_size), entry->item_size);
+                else
+                    memcpy((char *)(arg->v_pointer) + i * entry->item_size, p, entry->item_size);
 
-#if 1
-        g_assert_not_reached();
-#else
-        if (!entry->item_is_ptr && entry->referenced_base_type == GI_INFO_TYPE_STRUCT)
-            object_to_c_native_direct_struct_array_arg(subr, argpos, object, ai, arg);
-        else if (entry->item_is_ptr && entry->referenced_base_type == GI_INFO_TYPE_STRUCT)
-            object_to_c_native_indirect_struct_array_arg(subr, argpos, object, ai, arg);
-        else if (!entry->item_is_ptr && entry->referenced_base_type == GI_INFO_TYPE_UNION)
-            object_to_c_native_direct_union_array_arg(subr, argpos, object, ai, arg);
-        else if (entry->item_is_ptr && entry->referenced_base_type == GI_INFO_TYPE_UNION)
-            object_to_c_native_indirect_union_array_arg(subr, argpos, object, ai, arg);
-        else if (!entry->item_is_ptr && entry->referenced_base_type == G_TYPE_OBJECT)
-            // Arrays of OBJECTS. Direct object arrays, holding the
-            // complete structures themselves.  The only example is
-            // the 'additions' argument of g_list_store_splice.
-            object_to_c_native_direct_object_array_arg(subr, argpos, object, ai, arg);
-        else if (entry->item_is_ptr && entry->referenced_base_type == G_TYPE_OBJECT)
-            object_to_c_native_indirect_object_array_arg(subr, argpos, object, ai, arg);
-#endif
+            }
+        }
     }
     else {
         // Everything else is unhandled.
@@ -1513,9 +1539,12 @@ c_interface_pointer_to_scm(C2S_ARG_DECL)
              || referenced_info_type == GI_INFO_TYPE_OBJECT
              || referenced_info_type == GI_INFO_TYPE_INTERFACE) {
         TRACE_C2S();
-        g_assert_nonnull(arg->v_pointer);
-        GType referenced_base_gtype = g_registered_type_info_get_g_type(referenced_base_info);
-        *object = gig_type_transfer_object(referenced_base_gtype, arg->v_pointer, entry->transfer);
+        if (arg->v_pointer == NULL)
+            *object = SCM_BOOL_F;
+        else {
+            GType referenced_base_gtype = g_registered_type_info_get_g_type(referenced_base_info);
+            *object = gig_type_transfer_object(referenced_base_gtype, arg->v_pointer, entry->transfer);
+        }
     }
     g_base_info_unref(referenced_base_info);
 }
@@ -1594,6 +1623,9 @@ c_array_to_scm(C2S_ARG_DECL)
         break;
     case GI_ARRAY_TYPE_ARRAY:
         c_garray_to_scm(C2S_ARGS);
+        break;
+    case GI_ARRAY_TYPE_PTR_ARRAY:
+        c_gptrarray_to_scm(C2S_ARGS);
         break;
     default:
         g_critical("Unhandled array type in %s:%d", __FILE__, __LINE__);
@@ -1699,10 +1731,26 @@ c_native_array_to_scm(C2S_ARG_DECL)
             break;
         case GI_INFO_TYPE_STRUCT:
         case GI_INFO_TYPE_OBJECT:
-            g_assert(entry->referenced_object_type != G_TYPE_NONE);
-
-            g_critical("Unhandled array type in %s:%d", __FILE__, __LINE__);
-            g_assert_not_reached();
+        case GI_INFO_TYPE_UNION:
+        {
+            *object = scm_c_make_vector(length, SCM_BOOL_F);
+            scm_t_array_handle handle;
+            size_t i, len;
+            ssize_t inc;
+            SCM *elt;
+            elt = scm_vector_writable_elements(*object, &handle, &len, &inc);
+            g_assert_nonnull(arg->v_pointer);
+            for (gsize k = 0; k < len; k++, elt += inc) {
+                *elt =
+                    gig_type_transfer_object(entry->referenced_object_type,
+                                             ((gpointer *)(arg->v_pointer))[k], entry->transfer);
+            }
+            scm_array_handle_release(&handle);
+            if (entry->transfer == GI_TRANSFER_EVERYTHING) {
+                free(arg->v_pointer);
+                arg->v_pointer = 0;
+            }
+        }
             break;
         default:
             g_critical("Unhandled array type in %s:%d", __FILE__, __LINE__);
@@ -1771,30 +1819,29 @@ c_byte_array_to_scm(C2S_ARG_DECL)
 static void
 c_garray_to_scm(C2S_ARG_DECL)
 {
+    GigArgMapEntry ae = *entry;
+    GIArgument _arg;
     GArray *array = arg->v_pointer;
-    gpointer data = array->data;
-
-    // We hopefully never have to deal with GArrays of pointer types,
-    // given that GPtrArray exists.
-    g_assert_false(entry->item_is_ptr);
-    g_assert_cmpint(entry->item_size, !=, 0);
-
-    *object = scm_c_make_vector(array->len, SCM_UNDEFINED);
-
-    scm_t_array_handle handle;
-    gsize len, item_size = entry->item_size;
-    gssize inc;
-    SCM *elt;
-
-    elt = scm_vector_writable_elements(*object, &handle, &len, &inc);
-    g_assert(len == array->len);
-
-    for (gsize i = 0; i < len; i++, elt += inc, data += item_size) {
-        *elt = scm_c_make_bytevector(item_size);
-        memcpy(SCM_BYTEVECTOR_CONTENTS(*elt), data, item_size);
-    }
-    scm_array_handle_release(&handle);
+    _arg.v_pointer = array->data;
+    ae.array_type = GI_ARRAY_TYPE_C;
+    ae.array_fixed_size = array->len;
+    size = array->len;
+    c_array_to_scm(subr, argpos, &ae, &_arg, object, size);
 }
+
+static void
+c_gptrarray_to_scm(C2S_ARG_DECL)
+{
+    GigArgMapEntry ae = *entry;
+    GIArgument _arg;
+    GPtrArray *array = arg->v_pointer;
+    _arg.v_pointer = array->pdata;
+    ae.array_type = GI_ARRAY_TYPE_C;
+    ae.array_fixed_size = array->len;
+    size = array->len;
+    c_array_to_scm(subr, argpos, &ae, &_arg, object, size);
+}
+
 
 static void
 c_list_to_scm(C2S_ARG_DECL)
