@@ -75,6 +75,7 @@ gig_init(void)
 #endif
 }
 
+#ifdef STANDALONE
 gint
 main(gint argc, gchar **argv)
 {
@@ -84,3 +85,4 @@ main(gint argc, gchar **argv)
     scm_shell(argc, argv);
     return 0;
 }
+#endif
