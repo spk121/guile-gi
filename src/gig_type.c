@@ -195,8 +195,8 @@ gig_type_associate(GType gtype, SCM stype)
 }
 
 // Given introspection info from a typelib library for a given GType,
-// this makes a new Guile foreign object type and its associated predicate,
-// and it stores the type in our hash table of known types.
+// this makes a new Guile foreign object type and it stores the type
+// in our hash table of known types.
 SCM
 gig_type_define(GType gtype, SCM defs)
 {

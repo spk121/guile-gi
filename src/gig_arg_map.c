@@ -66,9 +66,8 @@ fill_array_info(GigArgMapEntry *entry)
 
     gboolean ret = TRUE;
 
-    // So there are layers to all this ArgInfo stuff
-    // LAYER 1: Let's start on layer 1, where this GIArgInfo tells
-    // us we're an array.
+    // So there are layers to all this ArgInfo stuff.
+    // First, GIArgInfo tells us what type of array.
     entry->array_type = g_type_info_get_array_type(entry->type_info);
     entry->array_is_zero_terminated = g_type_info_is_zero_terminated(entry->type_info);
     entry->array_length_index = g_type_info_get_array_length(entry->type_info);
@@ -80,7 +79,7 @@ fill_array_info(GigArgMapEntry *entry)
     else
         entry->transfer = GI_TRANSFER_EVERYTHING;
 
-    // LAYER 2 is where we figure out what the element type of the array is.
+    // Second, we figure out what the element type of the array is.
     GITypeInfo *item_type_info = g_type_info_get_param_type(entry->type_info, 0);
     entry->item_type_tag = g_type_info_get_tag(item_type_info);
     entry->item_is_ptr = g_type_info_is_pointer(item_type_info);
@@ -182,6 +181,7 @@ fill_array_info(GigArgMapEntry *entry)
     return ret;
 }
 
+
 static void
 gig_arg_map_entry_apply_arg_info(GigArgMapEntry *e, GIArgInfo *ai)
 {
@@ -198,6 +198,7 @@ gig_arg_map_entry_apply_arg_info(GigArgMapEntry *e, GIArgInfo *ai)
     e->is_caller_allocates = g_arg_info_is_caller_allocates(ai);
 }
 
+// This function gathers information about return values that are arrays.
 static void
 gig_arg_map_entry_apply_callable_info(GigArgMapEntry *e, GICallableInfo *ci)
 {
@@ -214,6 +215,7 @@ gig_arg_map_entry_apply_callable_info(GigArgMapEntry *e, GICallableInfo *ci)
     e->is_caller_allocates = FALSE;
 }
 
+// Gather information on how to map Scheme arguments to C arguments.
 GigArgMap *
 gig_arg_map_new(GICallableInfo *function_info)
 {
@@ -349,7 +351,7 @@ gig_arg_map_new(GICallableInfo *function_info)
     amap->len = entry_array->len;
     amap->pdata = (GigArgMapEntry **)(entry_array->pdata);
     g_ptr_array_free(entry_array, FALSE);
-    // gig_arg_map_dump(amap);
+
     return amap;
 }
 

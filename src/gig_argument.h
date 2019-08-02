@@ -10,7 +10,6 @@ G_BEGIN_DECLS
 // *INDENT-ON*
 
 #define GIG_ARRAY_SIZE_UNKNOWN ((gsize)-1)
-#define GIG_ARG_RETURN_VAL (-1)
 
 #define S2C_ARG_DECL const gchar *subr, gint argpos,    \
         GigArgMapEntry *entry, SCM object,               \

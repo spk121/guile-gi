@@ -67,6 +67,7 @@ static void c_list_to_scm(C2S_ARG_DECL);
 
 static void describe_non_pointer_type(GString *desc, GITypeInfo *type_info);
 
+// Use this to register allocated data to be freed after use.
 static gpointer
 later_free(GPtrArray *must_free, GigArgMapEntry *entry, gpointer ptr)
 {
@@ -192,6 +193,7 @@ gig_argument_scm_to_c(S2C_ARG_DECL)
         case GI_TYPE_TAG_VOID:
             // Ignore VOID. Callbacks may be void and end up here.
             break;
+
         case GI_TYPE_TAG_ARRAY:
         case GI_TYPE_TAG_UTF8:
         case GI_TYPE_TAG_FILENAME:
@@ -1043,19 +1045,11 @@ scm_to_c_native_interface_array(S2C_ARG_DECL)
 static void
 scm_to_c_native_string_array(S2C_ARG_DECL)
 {
-    // UTF8 or FILENAME pointers.  It seems that arrays of type UTF8
-    // can mean two things.
-    // 1. If zero-terminated, it means a NULL-pointer-terminated list
-    //    of gchar pointers to UTF8 strings.
-    // 2. If not zero-terminated, it could mean a non-zero-terminated
-    //    UTF8 string, but, only for GLib regex functions, which seems
-    //    like a mistake.
-    //    Also, if not zero-terminated, it could be an argv list of
-    //    strings. In that case, it seems OK to do the same thing as
-    //    case #1.
+    // This is a C array of string pointers, e.g. char **
 
-    // We're adding a zero termination despite the value of
-    // array_is_zero_terminated, because it does no harm.
+    // We're adding a NULL termination to the list of strings
+    // regardless of the value of array_is_zero_terminated, because it
+    // does no harm.
     if (scm_is_vector(object)) {
         scm_t_array_handle handle;
         gsize len;
