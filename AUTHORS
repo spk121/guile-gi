@@ -2,10 +2,9 @@ Maintained (lol) by
  Mike Gran
 
 Including patches from
- Jan Nieuwenhuizen
  LordYuuma
+ Jan Nieuwenhuizen
 
-Also some of this code was inspired by or adapted from PyGObject, and
-I need to try to figure out which code that still remains was lifted
-verbatim from PyGObject and make proper attribution.
+The original version of this code was inspired by PyGObject; however,
+I believe that none of the PyGObject code remains.
 

@@ -1,4 +1,4 @@
-2019-08-XX: version 0.1
+2019-08-02: version 0.1.0
 - Improvements in procedure generation
   - Use of GOOPS-based methods with short names
   - Renaming scheme applied to "namespaces" as well.
