@@ -28,12 +28,6 @@
 #include "gig_constant.h"
 #include "gig_flag.h"
 
-#ifdef _WIN32
-static const gint _win32 = TRUE;
-#else
-static const gint _win32 = FALSE;
-#endif
-
 #ifdef ENABLE_GCOV
 void __gcov_reset(void);
 void __gcov_dump(void);
@@ -43,28 +37,6 @@ void __gcov_dump(void);
 #include <mcheck.h>
 #endif
 
-static void
-gig_log_handler(const gchar *log_domain,
-                GLogLevelFlags log_level, const gchar *message, gpointer user_data)
-{
-    time_t timer;
-    gchar buffer[26];
-    struct tm *tm_info;
-    time(&timer);
-    tm_info = localtime(&timer);
-    strftime(buffer, 26, "%Y-%m-%d %H:%M:%S", tm_info);
-
-    // Opening and closing files as append in Win32 is noticeably slow.
-    if (log_level == G_LOG_LEVEL_DEBUG && !_win32) {
-        FILE *fp = fopen("gir-debug-log.xt", "at");
-        fprintf(fp, "%s: %s %d %s\n", buffer, log_domain, log_level, message);
-        fclose(fp);
-    }
-    else
-        fprintf(stderr, "%s: %s %d %s\n", buffer, log_domain, log_level, message);
-    fflush(stderr);
-}
-
 #ifdef ENABLE_GCOV
 static SCM
 scm_gcov_reset(void)
@@ -72,7 +44,6 @@ scm_gcov_reset(void)
     __gcov_reset();
     return SCM_UNSPECIFIED;
 }
-
 
 static SCM
 scm_gcov_dump(void)
@@ -88,12 +59,7 @@ gig_init(void)
 #ifdef MTRACE
     mtrace();
 #endif
-#if 0
-    g_log_set_handler(G_LOG_DOMAIN, G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL
-                      | G_LOG_FLAG_RECURSION, gig_log_handler, NULL);
-    g_log_set_handler("GLib", G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL
-                      | G_LOG_FLAG_RECURSION, gig_log_handler, NULL);
-#endif
+
     g_debug("Begin libguile-gir initialization");
     gig_init_constant();
     gig_init_flag();
