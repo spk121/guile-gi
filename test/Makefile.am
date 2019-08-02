@@ -446,6 +446,21 @@ EVERYTHING_TESTS = \
  everything/garray-utf8-none-return.scm \
  everything/garray-utf8-container-return.scm \
  everything/garray-utf8-full-return.scm \
+ everything/garray-int-none-in.scm \
+ everything/garray-uint64-none-in.scm \
+ everything/garray-utf8-none-in.scm \
+ everything/garray-utf8-none-out.scm \
+ everything/garray-utf8-container-out.scm \
+ everything/garray-utf8-full-out.scm \
+ everything/garray-utf8-full-out-caller-allocated.scm \
+ everything/garray-utf8-none-inout.scm \
+ everything/garray-utf8-container-inout.scm \
+ everything/garray-utf8-full-inout.scm \
+ everything/garray-bool-none-in.scm \
+ everything/garray-unichar-none-in.scm \
+ everything/gptrarray-utf8-none-return.scm \
+ everything/gptrarray-utf8-container-return.scm \
+ everything/gptrarray-utf8-full-return.scm \
  everything/gslist-int-none-return.scm \
  everything/gslist-utf8-none-return.scm \
  everything/gslist-utf8-container-return.scm \
@@ -456,6 +471,7 @@ TESTS += \
  $(EVERYTHING_TESTS)
 
 XFAIL_TESTS += \
- everything/one-outparam-gchar.scm
+ everything/one-outparam-gchar.scm \
+ everything/garray-utf8-full-out-caller-allocated.scm
 
 endif
