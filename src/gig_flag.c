@@ -77,30 +77,33 @@ gig_flag_public_name(const gchar *parent, GIBaseInfo *info)
     return public_name;
 }
 
-void
-gig_flag_define(GIEnumInfo *info)
+SCM
+gig_flag_define(GIEnumInfo *info, SCM defs)
 {
     g_assert(info != NULL);
 
     gint n_values = g_enum_info_get_n_values(info);
     gint i = 0;
     GIValueInfo *vi = NULL;
-    gchar *public_name;
+    gchar *_public_name;
+    SCM public_name;
 
     while (i < n_values) {
         vi = g_enum_info_get_value(info, i);
-        public_name = gig_flag_public_name(g_base_info_get_name(info), vi);
+        _public_name = gig_flag_public_name(g_base_info_get_name(info), vi);
+        public_name = scm_from_utf8_symbol(_public_name);
         gint64 val = g_value_info_get_value(vi);
         SCM ret = scm_from_int64(val);
 
-        g_debug("defining flag/enum %s and %" PRId64, public_name, val);
-        scm_permanent_object(scm_c_define(public_name, ret));
-        scm_c_export(public_name, NULL);
+        g_debug("defining flag/enum %s and %" PRId64, _public_name, val);
+        scm_permanent_object(scm_define(public_name, ret));
+        defs = scm_cons(public_name, defs);
 
         g_base_info_unref(vi);
-        free(public_name);
+        g_free(_public_name);
         i++;
     }
+    return defs;
 }
 
 void

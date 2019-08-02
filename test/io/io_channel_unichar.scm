@@ -1,8 +1,9 @@
-(use-modules (gi)
+(use-modules (gi) (gi util)
              (rnrs bytevectors)
              (srfi srfi-1)
              (test automake-test-lib))
 
+(push-duplicate-handler! 'merge-generics)
 (typelib-require ("GLib" "2.0"))
 
 (define SIZ 10)

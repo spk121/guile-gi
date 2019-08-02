@@ -1,7 +1,10 @@
-(use-modules (gi)
+(use-modules (gi) (gi repository)
              (test automake-test-lib))
 
-(typelib-require ("GObject" "2.0") ("Gio" "2.0"))
+(unless (false-if-exception (require "Gio" "2.0"))
+  (exit EXIT_SKIPPED))
+
+(load-by-name "Gio" "Application")
 
 (automake-test
  (begin

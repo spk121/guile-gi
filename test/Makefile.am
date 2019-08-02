@@ -35,7 +35,8 @@ noinst_DATA = lib.scm \
   grilo/base.scm
 
 TYPELIB_TESTS = \
- typelib/document.scm
+ typelib/document.scm \
+ typelib/to-module.scm
 
 VERSION_INFORMATION_TESTS = \
  version_info/MAJOR_VERSION.scm \

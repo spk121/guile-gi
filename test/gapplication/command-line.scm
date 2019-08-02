@@ -1,12 +1,13 @@
-(use-modules (gi)
+(use-modules (gi) (gi repository)
              (test automake-test-lib)
              (srfi srfi-43))
 
-(typelib-require ("Gio" "2.0"))
+(unless (false-if-exception (require "Gio" "2.0"))
+  (exit EXIT_SKIPPED))
 
-;; g_application_command_line_get_arguments returns a pointer to an
-;; array whose length is one of the returned arguments.  Array
-;; unpacking is not yet handled for this case.
+(load-by-name "Gio" "Application")
+(load-by-name "Gio" "ApplicationCommandLine")
+(load-by-name "Gio" "ApplicationFlags")
 
 (automake-test
  (begin

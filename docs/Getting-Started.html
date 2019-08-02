@@ -83,9 +83,10 @@ take the following form.
 </p>
 <div class="example">
 <pre class="example">(define-module (gi gtk-3)
-  #:use-module (gi))
+  #:use-module (gi)
+  #:use-module (gi repository))
 
-(typelib-load &quot;Gtk&quot; &quot;3.0&quot;)
+(typelib-&gt;module (current-module) &quot;Gtk&quot; &quot;3.0&quot;)
 </pre></div>
 
 <p>Alternatively, you can instruct Guile-GI to create these modules for you, as
@@ -111,17 +112,28 @@ for GTK and GIO.
 guile -L . -c '(use-modules (gi)) (display (typelib-document &quot;Gio&quot; &quot;2.0&quot;))' &gt; Gio.txt
 </pre></div>
 
-<p>See <a href="Typelib-Introspection.html#Typelib-Introspection">Typelib Introspection</a> for more information about <code>typelib-load</code> and <code>typelib-document</code>.
+<p>See <a href="Typelib-Introspection.html#Typelib-Introspection">Typelib Introspection</a> for more information about <code>typelib-&gt;module</code>.
 </p>
+<blockquote>
+<p><b>Warning:</b> <code>typelib-document</code> has been heavily outdated for a while and is no longer available in this
+version. Right now, it is probably a better idea to read the C documentation or poke at the
+library by using the GIRepository typelib itself.
+</p></blockquote>
+
 <p>A minimal GTK application looks like this
 </p>
 <div class="example">
-<pre class="example">(use-modules (gi) (oop goops))
+<pre class="example">(use-modules (gi) (gi repository))
 
-(use-typelibs (&quot;GLib&quot; &quot;2.0&quot;)
-              (&quot;GObject&quot; &quot;2.0&quot;)
-              (&quot;Gio&quot; &quot;2.0&quot;)
-              (&quot;Gtk&quot; &quot;3.0&quot;))
+(require &quot;Gio&quot; &quot;2.0&quot;)
+(require &quot;Gtk&quot; &quot;3.0&quot;)
+
+(load-by-name &quot;Gio&quot; &quot;Application&quot;) ;; activate, run
+(load-by-name &quot;Gtk&quot; &quot;Application&quot;)
+(load-by-name &quot;Gtk&quot; &quot;ApplicationWindow&quot;)
+(load-by-name &quot;Gtk&quot; &quot;Button&quot;)
+(load-by-name &quot;Gtk&quot; &quot;ButtonBox&quot;)
+(load-by-name &quot;Gtk&quot; &quot;Widget&quot;) ;; show-all
 
 (define (print-hello widget)
   (display &quot;Hello World\n&quot;))
@@ -150,9 +162,15 @@ guile -L . -c '(use-modules (gi)) (display (typelib-document &quot;Gio&quot; &qu
 
 <p>When it is run, it will create an empty window with a title.  Are you impressed?
 </p>
-<p>Let&rsquo;s walk through this example.  First off, you may notice two important procedures:
-<code>make</code> and <code>connect</code>, as well as a few types, such as <code>&lt;GtkApplication&gt;</code> and
-<code>&lt;GtkApplicationWindow&gt;</code>.
+<p>Let&rsquo;s walk through this example. Before the actual code, you see a &ldquo;header&rdquo; of
+<code>require</code>s and <code>load-by-name</code>s. These procedures are imported from
+<code>(gi repository)</code> and allow fine-grained loading of classes and functions into the
+current namespace.
+You could also load them using <code>use-typelibs</code> as shown above, but
+this approach is significantly faster for large libraries such as GTK+.
+</p>
+<p>Next, you may notice two important procedures &ndash; <code>make</code> and <code>connect</code> &ndash;
+as well as a few types, such as <code>&lt;GtkApplication&gt;</code> and <code>&lt;GtkApplicationWindow&gt;</code>.
 These procedures and types allow you to interact with GObject&rsquo;s very odd class system.
 </p>
 <p>First is <code>make</code>, which wraps and extends the <code>make</code> procedure found in GOOPS.

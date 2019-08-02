@@ -447,7 +447,7 @@ gig_i_scm_define_type(SCM s_type_name, SCM s_parent_type, SCM s_properties, SCM 
 
     new_type = gig_user_object_define(type_name, parent_type, properties, signals);
 
-    gig_type_define(new_type);
+    gig_type_define(new_type, SCM_UNDEFINED);
     return gig_type_get_scheme_type(new_type);
 }
 
@@ -551,15 +551,15 @@ gig_i_scm_emit(SCM self, SCM signal, SCM s_detail, SCM args)
 static SCM sym_value;
 static SCM ensure_accessor_proc;
 
-static void do_define_property(const gchar *, SCM, SCM, SCM);
+static SCM do_define_property(const gchar *, SCM, SCM, SCM);
 
-void
-gig_property_define(GType type, GIPropertyInfo *info, const gchar* namespace)
+SCM
+gig_property_define(GType type, GIPropertyInfo *info, const gchar* namespace, SCM defs)
 {
     SCM formals, specializers;
     GObjectClass *class;
     GParamSpec *prop;
-    SCM s_prop;
+    SCM s_prop, def;
 
     const gchar *name = g_base_info_get_name(info);
     gchar *long_name;
@@ -577,35 +577,31 @@ gig_property_define(GType type, GIPropertyInfo *info, const gchar* namespace)
     prop = g_object_class_find_property(class, name);
     g_assert(prop != NULL);
 
-    gig_type_define(G_PARAM_SPEC_TYPE(prop));
     s_prop = gig_type_transfer_object(G_PARAM_SPEC_TYPE(prop), prop, GI_TRANSFER_NOTHING);
-    // This should not conflict with anything else defined in a class
 
-    do_define_property(long_name, s_prop, self_type, top_type);
+    def = do_define_property(long_name, s_prop, self_type, top_type);
+    if (!SCM_UNBNDP(def))
+        defs = scm_cons(def, defs);
     g_debug("dynamically bound %s to property %s of %s", long_name, name, g_type_name(type));
-    do_define_property(name, s_prop, self_type, top_type);
+    def = do_define_property(name, s_prop, self_type, top_type);
+    if (!SCM_UNBNDP(def))
+        defs = scm_cons(def, defs);
     g_debug("dynamically bound %s to property %s of %s", name, name, g_type_name(type));
 
     scm_dynwind_end();
+    return defs;
 }
 
-static void
+static SCM
 do_define_property(const gchar *public_name, SCM prop, SCM self_type, SCM value_type)
 {
-    g_return_if_fail(public_name != NULL);
+    g_return_val_if_fail(public_name != NULL, SCM_UNDEFINED);
 
     SCM sym_public_name, formals, specializers, generic, proc, setter;
-    gboolean was_accessor = FALSE;
 
     sym_public_name = scm_from_utf8_symbol(public_name);
-
-    SCM old_generic = scm_hashq_ref(generic_table, sym_public_name, SCM_BOOL_F);
-    if (!scm_is_generic(old_generic))
-        generic = scm_call_2(ensure_accessor_proc, default_definition(sym_public_name),
-                             sym_public_name);
-    else
-        generic = scm_call_2(ensure_accessor_proc, old_generic, sym_public_name);
-    was_accessor = scm_is_eq(old_generic, generic);
+    generic = scm_call_2(ensure_accessor_proc, default_definition(sym_public_name),
+                         sym_public_name);
 
     // getter
     proc = scm_procedure(prop);
@@ -629,12 +625,8 @@ do_define_property(const gchar *public_name, SCM prop, SCM self_type, SCM value_
                           kwd_formals, formals,
                           kwd_procedure, setter));
 
-    if (was_accessor)
-        scm_c_reexport(public_name, NULL);
-    else {
-        scm_c_define(public_name, generic);
-        scm_c_export(public_name, NULL);
-    }
+    scm_define(sym_public_name, generic);
+    return sym_public_name;
 }
 
 void

@@ -17,8 +17,8 @@
 #include <inttypes.h>
 #include "gig_constant.h"
 
-void
-gig_constant_define(GIConstantInfo *info)
+SCM
+gig_constant_define(GIConstantInfo *info, SCM defs)
 {
     const gchar *public_name = g_base_info_get_name(info);
 
@@ -85,7 +85,7 @@ gig_constant_define(GIConstantInfo *info)
     g_base_info_unref(typeinfo);
 
     scm_permanent_object(scm_c_define(public_name, ret));
-    scm_c_export(public_name, NULL);
+    return scm_cons (scm_from_utf8_symbol(public_name), defs);
 }
 
 void

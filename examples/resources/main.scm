@@ -1,12 +1,29 @@
-(use-modules (gi) (gi util)
-             (ice-9 ftw))
+(use-modules (ice-9 rdelim)
+             (ice-9 ftw)
+             (gi)
+             (gi repository))
 
-(push-duplicate-handler! 'shrug-equals)
+(require "Gio" "2.0")
+(require "Gtk" "3.0")
 
-(use-typelibs
- ("Gio" "2.0")
- (("Gtk" "3.0")
-  #:renamer (protect* (cons* 'init 'main 'main-quit %rnrs-syntax) 'gtk::)))
+(load-by-name "Gio" "Resource")
+(load-by-name "Gio" "resources_register")
+
+(map (lambda (n) (load-by-name "Gtk" n))
+     '("Builder" "Widget" "Button"))
+
+;; avoid name conflicts and confusion by loading functions in another module
+(save-module-excursion
+ (lambda ()
+   (let ((previous-module (set-current-module (make-module))))
+     (load-by-name "Gtk" "init")
+     (load-by-name "Gtk" "main")
+     (load-by-name "Gtk" "main_quit")
+     (module-for-each (lambda (sym var)
+                        (module-define! previous-module
+                                        (symbol-append 'gtk:: sym)
+                                        (variable-ref var)))
+                      (current-module)))))
 
 (define (print-hello button)
   (display "Hello World")

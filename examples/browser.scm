@@ -13,15 +13,23 @@
 
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https:;;www.gnu.org/licenses/>.
-(use-modules (gi) (oop goops))
-(use-typelibs ("GLib" "2.0")
-              ("Gio" "2.0")
-              ("Gtk" "3.0")
-              ("WebKit2" "4.0"))
+(use-modules (gi) (gi repository)
+             (srfi srfi-26)
+             (oop goops))
+
+(map require
+     '("Gio" "Gtk" "WebKit2")
+     '("2.0" "3.0" "4.0"))
+
+(load-by-name "Gio" "Application")
+(load-by-name "WebKit2" "WebView")
+
+(for-each
+ (cute load-by-name "Gtk" <>)
+ '("ApplicationWindow" "Application" "Container" "Window" "Widget"))
 
 (define (activate app)
   (let ((window (application-window:new app))
-        (vbox (vbox:new 0 0))
         (browser (web-view:new)))
     (set-title window "Browser")
     (set-default-size window 600 400)
@@ -30,12 +38,9 @@
     (load-uri browser "http://gnu.org/s/mes")
     (show-all window)))
 
-(define-method (connect obj (signal <symbol>) (handler <procedure>))
-  (connect obj (make-signal #:name (symbol->string signal)) handler))
-
 (define (main)
   (let ((app (application:new "org.gtk.example" 0)))
-    (connect app 'activate activate)
+    (connect app application:activate activate)
     (run app (command-line))))
 
 (main)

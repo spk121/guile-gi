@@ -120,10 +120,7 @@ you need to have an export library.  A sample library for GTK+3 could
 take the following form.
 
 @example
-(define-module (gi gtk-3)
-  #:use-module (gi))
-
-(typelib-load "Gtk" "3.0")
+@include gtk-3.scm
 @end example
 
 Alternatively, you can instruct Guile-GI to create these modules for you, as
@@ -149,7 +146,13 @@ guile -L . -c '(use-modules (gi)) (display (typelib-document "Gtk" "3.0"))' > Gt
 guile -L . -c '(use-modules (gi)) (display (typelib-document "Gio" "2.0"))' > Gio.txt
 @end example
 
-@xref{Typelib Introspection} for more information about @code{typelib-load} and @code{typelib-document}.
+@xref{Typelib Introspection} for more information about @code{typelib->module}.
+
+@quotation Warning
+@code{typelib-document} has been heavily outdated for a while and is no longer available in this
+version. Right now, it is probably a better idea to read the C documentation or poke at the
+library by using the GIRepository typelib itself.
+@end quotation
 
 A minimal GTK application looks like this
 
@@ -159,9 +162,15 @@ A minimal GTK application looks like this
 
 When it is run, it will create an empty window with a title.  Are you impressed?
 
-Let's walk through this example.  First off, you may notice two important procedures:
-@code{make} and @code{connect}, as well as a few types, such as @code{<GtkApplication>} and
-@code{<GtkApplicationWindow>}.
+Let's walk through this example. Before the actual code, you see a ``header'' of
+@code{require}s and @code{load-by-name}s. These procedures are imported from
+@code{(gi repository)} and allow fine-grained loading of classes and functions into the
+current namespace.
+You could also load them using @code{use-typelibs} as shown above, but
+this approach is significantly faster for large libraries such as GTK+.
+
+Next, you may notice two important procedures -- @code{make} and @code{connect} --
+as well as a few types, such as @code{<GtkApplication>} and @code{<GtkApplicationWindow>}.
 These procedures and types allow you to interact with GObject's very odd class system.
 
 First is @code{make}, which wraps and extends the @code{make} procedure found in GOOPS.
@@ -359,43 +368,72 @@ Usually these files are on the filesystem in a single directory
 location.  On Fedora, for example, these files may be stored in
 @file{/var/lib64/girepository-1.0}.
 
-@deffn Procedure typelib-get-search-path
-This returns, as a list of strings, the current search path used to find
-typelib files.
+All functions outlined in this section are part of @code{(gi repository)}
+and are not re-exported by @code{(gi)}.
+
+@deffn Procedure require lib [version]
+Forces the namespace @var{lib} to be loaded if it isn't already.
+This step is required once per @var{lib} before any other functionality
+of this module is used.
+If @var{version} is given, loads that version, otherwise loads the latest available.
+
+Throws an error, if the library could not be found or loaded.
+@end deffn
+
+@deffn Procedure get-search-path
+This returns the current search path used to find typelib files as a list of strings.
 
 If it returns an empty list, this indicates that it is only searching
 the default typelib directory.
 @end deffn
 
-@deffn Procedure typelib-prepend-search-path directory
+@deffn Procedure prepend-search-path! directory
 Given @var{directory}, a string representation of a filesystem
 directory, this prepends that directory to the typelib search path.
 
-If using this procedure in a script, it must be called before any
-calls to @code{typelib-load}.
+This change doesn't affect libraries loaded before it. It therefore is
+advisable to put such directives at the start of a script.
 @end deffn
 
-@deffn Procedure typelib-document namespace version
-Given @var{namespace}, a string that names a typelib library, such as
-``Gtk'' or ``GLib'', and @var{version}, a string that names a version
-of a typelib library, like ``2.0'' or ``3.0'', this procedure parses a
-typelib file and generates documentation of the Scheme procedures, types,
-and constants that will be provided by calling @code{typelib-load}.
-The documentation is returned a a string.
-
-The procedure may throw an error if a typelib file corresponding to
-@var{namespace} and @var{version} cannot be found.
+@deffn Procedure infos lib
+Fetches all top-level metadata entries of @var{lib}.
 @end deffn
 
-@deffn Procedure typelib-load namespace version
-Given @var{namespace}, a string that names a typelib library, such as
-``Gtk'' or ``GLib'', and @var{version}, a string that names a version
-of a typelib library, like ``2.0'' or ``3.0'', this procedure parses a
-typelib file and generates procedures, constants, and types which are
-loaded into the current environment.
+@deffn Procedure info lib name
+Searches @var{lib} for an entry with name @var{name} and returns it.
+Throws an error, if @var{name} could not be found.
+@end deffn
 
-The procedure may throw an error if a typelib file corresponding to
-@var{namespace} and @var{version} cannot be found.
+@deffn Procedure load (info <GBaseInfo>)
+@deffnx Procedure load (info <GBaseInfo>) flags
+Generates bindings for @var{info}.
+
+@var{flags} is a logical or of @code{LOAD_METHODS}, @code{LOAD_SIGNALS},
+@code{LOAD_PROPERTIES} and @code{LOAD_FIELDS}
+and may be 0 or @code{LOAD_INFO_ONLY} tells @code{load}, how to handle
+infos with nested information, such as structs and objects.
+They enable loading of methods, signals, properties and fields respectively.
+By default, all of them are loaded.
+
+@quotation Warning
+@code{LOAD_FIELDS} currently does nothing, as fields are not yet supported.
+@end quotation
+@end deffn
+
+@deffn Procedure load-by-name lib name [flags]
+A convenience function composing @code{info} and @code{load}.
+@end deffn
+
+@deffn Procedure typelib->module module lib [version]
+Loads all infos of @var{lib} into @var{module} and adds them to its public
+interface.
+
+@var{module} may be a module or a list of symbols. If the latter is given,
+it is resolved to a (potentially new) module. In either case, the resulting
+module is returned.
+
+If @var{version} is given, loads that version, otherwise loads the latest.
+Throws an error, if the library could not be found or loaded.
 @end deffn
 
 @c -----------------------------------------------------------------
@@ -726,10 +764,15 @@ To protect your syntax (or other variables you deeply care about), use
 the @code{protect} or @code{protect*} renamer from @code{(gi util)}.
 
 @subsection Help! Guile-GI bindings conflict with each other
-Again, this should be nothing to worry about. However, the warnings can
-be irritating. To silence them, use the @code{shrug-equals} duplicate handler
-defined in @code{(gi util)}. This will silence all warnings that are due to
-variables bound to the same value.
+Most conflicts should be resolved using the @code{merge-generics} duplicate handler.
+However, this handler is not enabled by default, so you may want to push it to the
+default duplicate handlers. If this is still not working, you may somehow have ended up
+with ``equal'' duplicates, i.e. duplicates, whose bindings resolve to the same value.
+To silence warnings about them, use the @code{shrug-equals} duplicate handler
+defined in @code{(gi util)}.
+If the conflict is still not resolved, file a bug detailing it.
+As a workaround, you may also rename either binding, which is probably the best way
+to resolve a duplicate.
 
 @node Further Resources and Contact Info
 @chapter Further Resources and Contact Info

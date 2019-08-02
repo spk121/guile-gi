@@ -62,47 +62,80 @@ Usually these files are on the filesystem in a single directory
 location.  On Fedora, for example, these files may be stored in
 <samp>/var/lib64/girepository-1.0</samp>.
 </p>
+<p>All functions outlined in this section are part of <code>(gi repository)</code>
+and are not re-exported by <code>(gi)</code>.
+</p>
 <dl>
-<dt id="index-typelib_002dget_002dsearch_002dpath">Procedure: <strong>typelib-get-search-path</strong></dt>
-<dd><p>This returns, as a list of strings, the current search path used to find
-typelib files.
+<dt id="index-require">Procedure: <strong>require</strong> <em>lib [version]</em></dt>
+<dd><p>Forces the namespace <var>lib</var> to be loaded if it isn&rsquo;t already.
+This step is required once per <var>lib</var> before any other functionality
+of this module is used.
+If <var>version</var> is given, loads that version, otherwise loads the latest available.
+</p>
+<p>Throws an error, if the library could not be found or loaded.
+</p></dd></dl>
+
+<dl>
+<dt id="index-get_002dsearch_002dpath">Procedure: <strong>get-search-path</strong></dt>
+<dd><p>This returns the current search path used to find typelib files as a list of strings.
 </p>
 <p>If it returns an empty list, this indicates that it is only searching
 the default typelib directory.
 </p></dd></dl>
 
 <dl>
-<dt id="index-typelib_002dprepend_002dsearch_002dpath">Procedure: <strong>typelib-prepend-search-path</strong> <em>directory</em></dt>
+<dt id="index-prepend_002dsearch_002dpath_0021">Procedure: <strong>prepend-search-path!</strong> <em>directory</em></dt>
 <dd><p>Given <var>directory</var>, a string representation of a filesystem
 directory, this prepends that directory to the typelib search path.
 </p>
-<p>If using this procedure in a script, it must be called before any
-calls to <code>typelib-load</code>.
+<p>This change doesn&rsquo;t affect libraries loaded before it. It therefore is
+advisable to put such directives at the start of a script.
 </p></dd></dl>
 
 <dl>
-<dt id="index-typelib_002ddocument">Procedure: <strong>typelib-document</strong> <em>namespace version</em></dt>
-<dd><p>Given <var>namespace</var>, a string that names a typelib library, such as
-&ldquo;Gtk&rdquo; or &ldquo;GLib&rdquo;, and <var>version</var>, a string that names a version
-of a typelib library, like &ldquo;2.0&rdquo; or &ldquo;3.0&rdquo;, this procedure parses a
-typelib file and generates documentation of the Scheme procedures, types,
-and constants that will be provided by calling <code>typelib-load</code>.
-The documentation is returned a a string.
-</p>
-<p>The procedure may throw an error if a typelib file corresponding to
-<var>namespace</var> and <var>version</var> cannot be found.
+<dt id="index-infos">Procedure: <strong>infos</strong> <em>lib</em></dt>
+<dd><p>Fetches all top-level metadata entries of <var>lib</var>.
 </p></dd></dl>
 
 <dl>
-<dt id="index-typelib_002dload">Procedure: <strong>typelib-load</strong> <em>namespace version</em></dt>
-<dd><p>Given <var>namespace</var>, a string that names a typelib library, such as
-&ldquo;Gtk&rdquo; or &ldquo;GLib&rdquo;, and <var>version</var>, a string that names a version
-of a typelib library, like &ldquo;2.0&rdquo; or &ldquo;3.0&rdquo;, this procedure parses a
-typelib file and generates procedures, constants, and types which are
-loaded into the current environment.
+<dt id="index-info">Procedure: <strong>info</strong> <em>lib name</em></dt>
+<dd><p>Searches <var>lib</var> for an entry with name <var>name</var> and returns it.
+Throws an error, if <var>name</var> could not be found.
+</p></dd></dl>
+
+<dl>
+<dt id="index-load">Procedure: <strong>load</strong> <em>(info &lt;GBaseInfo&gt;)</em></dt>
+<dt id="index-load-1">Procedure: <strong>load</strong> <em>(info &lt;GBaseInfo&gt;) flags</em></dt>
+<dd><p>Generates bindings for <var>info</var>.
 </p>
-<p>The procedure may throw an error if a typelib file corresponding to
-<var>namespace</var> and <var>version</var> cannot be found.
+<p><var>flags</var> is a logical or of <code>LOAD_METHODS</code>, <code>LOAD_SIGNALS</code>,
+<code>LOAD_PROPERTIES</code> and <code>LOAD_FIELDS</code>
+and may be 0 or <code>LOAD_INFO_ONLY</code> tells <code>load</code>, how to handle
+infos with nested information, such as structs and objects.
+They enable loading of methods, signals, properties and fields respectively.
+By default, all of them are loaded.
+</p>
+<blockquote>
+<p><b>Warning:</b> <code>LOAD_FIELDS</code> currently does nothing, as fields are not yet supported.
+</p></blockquote>
+</dd></dl>
+
+<dl>
+<dt id="index-load_002dby_002dname">Procedure: <strong>load-by-name</strong> <em>lib name [flags]</em></dt>
+<dd><p>A convenience function composing <code>info</code> and <code>load</code>.
+</p></dd></dl>
+
+<dl>
+<dt id="index-typelib_002d_003emodule">Procedure: <strong>typelib-&gt;module</strong> <em>module lib [version]</em></dt>
+<dd><p>Loads all infos of <var>lib</var> into <var>module</var> and adds them to its public
+interface.
+</p>
+<p><var>module</var> may be a module or a list of symbols. If the latter is given,
+it is resolved to a (potentially new) module. In either case, the resulting
+module is returned.
+</p>
+<p>If <var>version</var> is given, loads that version, otherwise loads the latest.
+Throws an error, if the library could not be found or loaded.
 </p></dd></dl>
 
 <hr>

@@ -13,16 +13,26 @@
 
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https:;;www.gnu.org/licenses/>.
-(use-modules (gi) (gi util)
+(use-modules (gi) (gi repository)
+             (srfi srfi-26)
              (oop goops)
              (ice-9 receive))
 
-(push-duplicate-handler! 'shrug-equals)
+(map require
+     '("Gio" "Gtk" "Gdk")
+     '("2.0" "3.0" "3.0"))
 
-(use-typelibs (("Gio" "2.0") #:renamer (protect 'receive))
-              ("Gdk" "3.0")
-              (("Gtk" "3.0") #:renamer (protect %rnrs-syntax))
-              ("GLib" "2.0"))
+(load-by-name "Gdk" "Event")
+(load-by-name "Gdk" "EventMask")
+(load-by-name "Gio" "Application")
+
+(for-each
+ (cute load-by-name "Gtk" <>)
+ '("ApplicationWindow" "Application"
+   "Button" "VBox" "ButtonBox"
+   ;; base types that we use for some methods
+   "Container" "Window" "Widget"
+   "TextView" "TextBuffer" "TextIter"))
 
 (define (print-goodbye widget)
   (display "Goodbye World\n"))

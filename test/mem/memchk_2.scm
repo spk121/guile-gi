@@ -1,9 +1,9 @@
-(use-modules (gi)
-	     (test automake-test-lib))
+(use-modules (gi) (gi repository)
+             (test automake-test-lib))
 
 (automake-test
  (begin
    (format #t "Running a GC after loading Glib~%")
-   (typelib-load "GLib" "2.0")
+   (typelib->module (current-module) "GLib" "2.0")
    (gc)
    #t))

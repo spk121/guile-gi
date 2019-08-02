@@ -1,9 +1,14 @@
-(use-modules (gi) (oop goops))
+(use-modules (gi) (gi repository))
 
-(use-typelibs ("GLib" "2.0")
-              ("GObject" "2.0")
-              ("Gio" "2.0")
-              ("Gtk" "3.0"))
+(require "Gio" "2.0")
+(require "Gtk" "3.0")
+
+(load-by-name "Gio" "Application") ;; activate, run
+(load-by-name "Gtk" "Application")
+(load-by-name "Gtk" "ApplicationWindow")
+(load-by-name "Gtk" "Button")
+(load-by-name "Gtk" "ButtonBox")
+(load-by-name "Gtk" "Widget") ;; show-all
 
 (define (print-hello widget)
   (display "Hello World\n"))

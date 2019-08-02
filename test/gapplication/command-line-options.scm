@@ -1,8 +1,16 @@
-(use-modules (gi)
+(use-modules (gi) (gi repository)
              (test automake-test-lib)
              (srfi srfi-43))
 
-(typelib-require ("GLib" "2.0") ("GObject" "2.0") ("Gio" "2.0"))
+(unless (false-if-exception
+         (begin (require "GLib" "2.0")
+                (require "Gio" "2.0")))
+  (exit EXIT_SKIPPED))
+
+(for-each load-by-name
+          (append (make-list 3 "GLib") (make-list 3 "Gio"))
+          '("Variant" "VariantDict" "OptionArg"
+            "Application" "ApplicationCommandLine" "ApplicationFlags"))
 
 (automake-test
  (begin

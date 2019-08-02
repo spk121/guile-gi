@@ -41,8 +41,7 @@ libguile_gi_la_SOURCES = \
  gig_constant.h \
  gig_flag.c \
  gig_flag.h \
- gig_typelib.c \
- gig_typelib.h \
+ gig_repository.c \
  gig_type.c \
  gig_type.h \
  gig_type_private.c \
@@ -98,7 +97,12 @@ pkgguileobjectdir=$(guileobjectdir)/gi
 dist_guilesite_DATA = \
   gi.scm
 
-dist_pkgguilesite_DATA = gi/oop.scm gi/core-generics.scm gi/util.scm
+dist_pkgguilesite_DATA = \
+  gi/core-generics.scm \
+  gi/types.scm \
+  gi/oop.scm \
+  gi/repository.scm \
+  gi/util.scm
 
 pkgguileobject_DATA = $(dist_guilesite_DATA:%.scm=%.go) $(dist_pkgguilesite_DATA:%.scm=%.go)
 

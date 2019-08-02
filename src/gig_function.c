@@ -59,8 +59,8 @@ static SCM rebox_inout_args(GIFunctionInfo *func_info, GigArgMap *amap,
                             const gchar *func_name, GArray *in_args, GArray *out_args, SCM s_args);
 static void function_free(GigFunction *fn);
 static void gig_fini_function(void);
-static void gig_function_define1(const gchar *public_name, SCM proc, int opt, SCM formals,
-                                 SCM specializers);
+static SCM gig_function_define1(const gchar *public_name, SCM proc, int opt, SCM formals,
+                                SCM specializers);
 
 static SCM proc4function(GIFunctionInfo *info, const gchar *name, SCM self_type,
                          int *req, int *opt, SCM *formals, SCM *specs);
@@ -83,18 +83,19 @@ current_module_definition(SCM name)
 SCM
 default_definition(SCM name)
 {
+    LOOKUP_DEFINITION(scm_current_module());
     LOOKUP_DEFINITION(scm_c_resolve_module("gi"));
     LOOKUP_DEFINITION(scm_c_resolve_module("guile"));
-    LOOKUP_DEFINITION(scm_current_module());
     return SCM_BOOL_F;
 }
 
 #undef LOOKUP_DEFINITION
 
-void
-gig_function_define(GType type, GICallableInfo *info, const gchar *namespace)
+SCM
+gig_function_define(GType type, GICallableInfo *info, const gchar *namespace, SCM defs)
 {
     scm_dynwind_begin(0);
+    SCM def;
     gboolean is_method = g_callable_info_is_method(info);
 
     gchar *function_name, *method_name;
@@ -106,7 +107,7 @@ gig_function_define(GType type, GICallableInfo *info, const gchar *namespace)
 
     if (is_method) {
         self_type = gig_type_get_scheme_type(type);
-        g_return_if_fail(scm_is_true(self_type));
+        g_return_val_if_fail(scm_is_true(self_type), defs);
         method_name = scm_dynwind_or_bust("%gig-function-define",
                                           gi_callable_info_make_name(info, NULL));
     }
@@ -122,40 +123,37 @@ gig_function_define(GType type, GICallableInfo *info, const gchar *namespace)
     else
         g_assert_not_reached();
 
-    gig_function_define1(function_name, proc, optional_input_count, formals, specializers);
+    def = gig_function_define1(function_name, proc, optional_input_count, formals, specializers);
+    if (!SCM_UNBNDP(def))
+        defs = scm_cons(def, defs);
     g_debug("dynamically bound %s to %s with %d required and %d optional arguments",
             function_name, g_base_info_get_name(info), required_input_count, optional_input_count);
 
     if (is_method) {
-        gig_function_define1(method_name, proc, optional_input_count, formals, specializers);
+        def = gig_function_define1(method_name, proc, optional_input_count, formals, specializers);
+        if (!SCM_UNBNDP(def))
+            defs = scm_cons(def, defs);
         g_debug("dynamically bound %s to %s with %d required and %d optional arguments",
                 function_name, g_base_info_get_name(info), required_input_count,
                 optional_input_count);
     }
 
     scm_dynwind_end();
+    return defs;
 }
 
 // Given some function introspection information from a typelib file,
 // this procedure creates a SCM wrapper for that procedure in the
 // current module.
-static void
+static SCM
 gig_function_define1(const gchar *public_name, SCM proc, int opt, SCM formals, SCM specializers)
 {
-    g_return_if_fail(public_name != NULL);
+    g_return_val_if_fail(public_name != NULL, SCM_UNDEFINED);
 
-    gboolean was_generic = FALSE;
     SCM sym_public_name = scm_from_utf8_symbol(public_name);
-    SCM generic = scm_hashq_ref(generic_table, sym_public_name, SCM_BOOL_F);
-    if (!scm_is_generic(generic)) {
-        generic = default_definition(sym_public_name);
-        was_generic = scm_is_generic(generic);
-        if (!was_generic)
-            generic = scm_call_2(ensure_generic_proc, generic, sym_public_name);
-        generic = scm_call_2(ensure_generic_proc,
-                             default_definition(sym_public_name), sym_public_name);
-        scm_hashq_set_x(generic_table, sym_public_name, generic);
-    }
+    SCM generic = default_definition(sym_public_name);
+    if (!scm_is_generic(generic))
+        generic = scm_call_2(ensure_generic_proc, generic, sym_public_name);
 
     SCM t_formals = formals, t_specializers = specializers;
 
@@ -175,13 +173,8 @@ gig_function_define1(const gchar *public_name, SCM proc, int opt, SCM formals, S
         t_specializers = scm_drop_right_1(t_specializers);
     } while (opt-- > 0);
 
-    if (was_generic)
-        scm_c_reexport(public_name, NULL);
-    else {
-        scm_c_define(public_name, generic);
-        scm_c_export(public_name, NULL);
-    }
-
+    scm_define(sym_public_name, generic);
+    return sym_public_name;
 }
 
 static SCM
@@ -717,7 +710,6 @@ rebox_inout_args(GIFunctionInfo *func_info, GigArgMap *amap,
 void
 gig_init_function(void)
 {
-    generic_table = scm_c_make_hash_table(127);
     function_cache =
         g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, (GDestroyNotify)function_free);
     top_type = scm_c_public_ref("oop goops", "<top>");

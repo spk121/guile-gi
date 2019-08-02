@@ -1,7 +1,8 @@
-(use-modules (gi)
+(use-modules (gi) (gi repository)
              (empty-window empty-app))
 
-(use-typelibs ("Gtk" "3.0"))
+(require "Gio" "2.0")
+(load-by-name "Gio" "Application" LOAD_METHODS)
 
 (define (main)
   (let ((app (empty-app-new)))
