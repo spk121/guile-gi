@@ -1539,9 +1539,12 @@ c_interface_pointer_to_scm(C2S_ARG_DECL)
              || referenced_info_type == GI_INFO_TYPE_OBJECT
              || referenced_info_type == GI_INFO_TYPE_INTERFACE) {
         TRACE_C2S();
-        g_assert_nonnull(arg->v_pointer);
-        GType referenced_base_gtype = g_registered_type_info_get_g_type(referenced_base_info);
-        *object = gig_type_transfer_object(referenced_base_gtype, arg->v_pointer, entry->transfer);
+        if (arg->v_pointer == NULL)
+            *object = SCM_BOOL_F;
+        else {
+            GType referenced_base_gtype = g_registered_type_info_get_g_type(referenced_base_info);
+            *object = gig_type_transfer_object(referenced_base_gtype, arg->v_pointer, entry->transfer);
+        }
     }
     g_base_info_unref(referenced_base_info);
 }
