@@ -64,9 +64,6 @@ NUMERICAL_DEFINITIONS_TESTS = \
  basic_types/E.scm \
  basic_types/PI.scm
 
-ATOMIC_OPERATIONS_TESTS = \
- misc/atomic_int_set.scm
-
 MAIN_EVENT_LOOP_TESTS = \
  main_loop/new.scm \
  main_loop/runs.scm \
@@ -104,8 +101,7 @@ STRING_UTILITY_TESTS = \
  string/stpcpy.scm \
  string/strstr_len.scm \
  string/str_has_prefix.scm \
- string/str_tokenize_and_fold.scm \
- string/strjoinv.scm
+ string/str_tokenize_and_fold.scm
 
 CHARACTER_SET_CONVERSION_TESTS = \
  convert/ascii.scm \
@@ -183,7 +179,6 @@ TESTS = \
  $(STANDARD_MACROS_TESTS) \
  $(BYTE_ORDER_MACROS_TESTS) \
  $(NUMERICAL_DEFINITIONS_TESTS) \
- $(ATOMIC_OPERATIONS_TESTS) \
  $(MESSAGE_OUTPUT_TESTS) \
  $(MAIN_EVENT_LOOP_TESTS) \
  $(MEMORY_ALLOCATION_TESTS) \
@@ -210,9 +205,7 @@ TESTS = \
  misc/use-typelibs.scm \
  misc/interfaces.scm
 
-XFAIL_TESTS = \
- misc/atomic_int_set.scm \
- string/strjoinv.scm
+XFAIL_TESTS =
 
 if HAVE_INTROSPECTION
 
