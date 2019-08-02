@@ -10,18 +10,18 @@ This library allows Guile to use GObject-based libraries -- such as GTK+3,
 GLib, and WebKit2 -- by generating a Scheme API from the GObject Introspection
 information provided by those libraries.
 
-This is pre-alpha code.  It barely works.  The API is in flux.
+This is alpha code.  It is barely documented.  The API may not be stable.
 
 Guile GI has two primary components.
 
-* `(gi)` aka `gi.scm`: a guile module that provides functionality to
-  generate Scheme API from GObject typelib files
+* The `gi` scheme modules: guile modules that provide functionality to
+  dynamically generate Scheme API from GObject typelib files
 
 * `libguile-gi.so` or `libguile-gi.dll`: a compiled module that
   contains glue code to interface with GObject
 
-To create bindings, use the `use-typelibs` syntax
-found in the `(gi)` library.
+To create bindings, use the `use-typelibs` syntax found in the `(gi)`
+library.
 
 For the moment, the docs are at
 [spk121.github.io/guile-gi](https://spk121.github.io/guile-gi/)
