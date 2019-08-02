@@ -62,7 +62,7 @@ gig_gname_to_scm_name(const gchar *gname)
             g_string_append_c(str, '-');
             was_lower = FALSE;
         }
-        else if (gname[i] == '?' || gname[i] == ':') {
+        else if (gname[i] == '?' || gname[i] == ':' || gname[i] == '%') {
             g_string_append_c(str, gname[i]);
             was_lower = FALSE;
         }

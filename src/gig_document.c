@@ -54,7 +54,9 @@ ohnono(GIBaseInfo *info, int i)
 static void
 document_arg_entry(const gchar *kind, GigArgMapEntry *entry)
 {
-    scm_printf(SCM_UNDEFINED, "<%s name=\"%s\">", kind, entry->name);
+    gchar *name = gig_gname_to_scm_name(entry->name);
+    scm_dynwind_free(name);
+    scm_printf(SCM_UNDEFINED, "<%s name=\"%s\" c:name=\"%s\">", kind, name, entry->name);
     scm_printf(SCM_UNDEFINED, "</%s>", kind);
 }
 
