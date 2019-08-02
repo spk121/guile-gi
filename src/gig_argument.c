@@ -63,6 +63,7 @@ static void c_array_to_scm(C2S_ARG_DECL);
 static void c_byte_array_to_scm(C2S_ARG_DECL);
 static void c_native_array_to_scm(C2S_ARG_DECL);
 static void c_garray_to_scm(C2S_ARG_DECL);
+static void c_gptrarray_to_scm(C2S_ARG_DECL);
 static void c_list_to_scm(C2S_ARG_DECL);
 
 static void describe_non_pointer_type(GString *desc, GITypeInfo *type_info);
@@ -1624,6 +1625,9 @@ c_array_to_scm(C2S_ARG_DECL)
     case GI_ARRAY_TYPE_ARRAY:
         c_garray_to_scm(C2S_ARGS);
         break;
+    case GI_ARRAY_TYPE_PTR_ARRAY:
+        c_gptrarray_to_scm(C2S_ARGS);
+        break;
     default:
         g_critical("Unhandled array type in %s:%d", __FILE__, __LINE__);
         g_assert_not_reached();
@@ -1825,6 +1829,20 @@ c_garray_to_scm(C2S_ARG_DECL)
     size = array->len;
     c_array_to_scm(subr, argpos, &ae, &_arg, object, size);
 }
+
+static void
+c_gptrarray_to_scm(C2S_ARG_DECL)
+{
+    GigArgMapEntry ae = *entry;
+    GIArgument _arg;
+    GPtrArray *array = arg->v_pointer;
+    _arg.v_pointer = array->pdata;
+    ae.array_type = GI_ARRAY_TYPE_C;
+    ae.array_fixed_size = array->len;
+    size = array->len;
+    c_array_to_scm(subr, argpos, &ae, &_arg, object, size);
+}
+
 
 static void
 c_list_to_scm(C2S_ARG_DECL)
