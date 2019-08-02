@@ -1,4 +1,20 @@
+2019-08-XX: version 0.1
+- Improvements in procedure generation
+  - Use of GOOPS-based methods with short names
+  - Renaming scheme applied to "namespaces" as well.
+- Mapping of GObject oriented programming to GOOPS
+  - added signals
+  - added properties as accessors
+- Improvements in C-to-SCM procedure argument conversions
+  - Implicitly handle length arguments
+  - Support for more types
+- Better Typelib support
+  - allow loading of single infos
+  - prevent accidental leaking of definitions into the wrong module
+- Support building with GCOV.
+
 XXXX-XX-XX: version 0.0.3
+- skipped (development only)
 
 2019-06-16: version 0.0.2
 - Improvements in C-to-SCM procedure argument conversions
@@ -8,4 +24,3 @@ XXXX-XX-XX: version 0.0.3
 
 2018-11-15 05:56: version 0.0.1
 - initial release
-
