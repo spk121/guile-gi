@@ -314,7 +314,7 @@ gig_init_repository()
     scm_c_define_gsubr("get-search-path", 0, 0, 0, get_search_path);
     scm_c_define_gsubr("prepend-search-path!", 1, 0, 0, prepend_search_path);
 
-#define D(x) scm_c_define(#x, scm_from_uint(x))
+#define D(x) scm_permanent_object(scm_c_define(#x, scm_from_uint(x)))
 
     D(LOAD_INFO_ONLY);
     D(LOAD_METHODS);
