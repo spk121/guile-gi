@@ -19,6 +19,7 @@
 #include "gi_type_tag.h"
 #include "gig_argument.h"
 #include "gig_callback.h"
+#include "gig_flag.h"
 #include "gig_object.h"
 #include "gig_type.h"
 
@@ -352,9 +353,9 @@ scm_to_c_enum(S2C_ARG_DECL)
     TRACE_S2C();
     GType fundamental_type = G_TYPE_FUNDAMENTAL(meta->gtype);
     if (fundamental_type == G_TYPE_ENUM)
-        arg->v_int = scm_to_int(object);
+        arg->v_int = gig_enum_to_int(object);
     else if (fundamental_type == G_TYPE_FLAGS)
-        arg->v_uint = scm_to_uint(object);
+        arg->v_uint = gig_flags_to_uint(object);
     else
         UNHANDLED;
 }
@@ -510,12 +511,12 @@ scm_to_c_native_array(S2C_ARG_DECL)
              || item_type == G_TYPE_INT64
              || item_type == G_TYPE_UINT64
              || item_type == G_TYPE_FLOAT
-             || item_type == G_TYPE_DOUBLE
-             || fundamental_item_type == G_TYPE_ENUM || fundamental_item_type == G_TYPE_FLAGS)
+             || item_type == G_TYPE_DOUBLE)
         scm_to_c_native_immediate_array(S2C_ARGS);
     else if (item_type == G_TYPE_STRING || item_type == G_TYPE_LOCALE_STRING)
         scm_to_c_native_string_array(S2C_ARGS);
-    else if (item_type == G_TYPE_VARIANT)
+    else if (item_type == G_TYPE_VARIANT
+             || fundamental_item_type == G_TYPE_ENUM || fundamental_item_type == G_TYPE_FLAGS)
         scm_to_c_native_interface_array(S2C_ARGS);
     else
         UNHANDLED;
@@ -572,11 +573,6 @@ scm_to_c_native_immediate_array(S2C_ARG_DECL)
     // IMMEDIATE TYPES.  It seems only double, and 8 and 32-bit
     // integer arrays are ever used. Sometimes deep copy.  Sometimes
     // zero terminated.
-
-    if (G_TYPE_FUNDAMENTAL(meta->params[0].gtype) == G_TYPE_ENUM
-        || G_TYPE_FUNDAMENTAL(meta->params[0].gtype) == G_TYPE_FLAGS)
-        // FIXME: figure out where this should have been filled in upstream
-        meta->params[0].item_size = sizeof(int);
 
     g_assert_cmpint(meta->params[0].item_size, !=, 0);
 
@@ -933,7 +929,16 @@ static void
 c_enum_to_scm(C2S_ARG_DECL)
 {
     TRACE_C2S();
-    *object = scm_from_uint32(arg->v_uint32);
+    switch(G_TYPE_FUNDAMENTAL(meta->gtype)) {
+    case G_TYPE_ENUM:
+        *object = gig_int_to_enum(arg->v_int32, meta->gtype);
+        break;
+    case G_TYPE_FLAGS:
+        *object = gig_uint_to_flags(arg->v_uint32, meta->gtype);
+        break;
+    default:
+        UNHANDLED;
+    }
 }
 
 static void

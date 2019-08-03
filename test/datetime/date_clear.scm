@@ -4,7 +4,7 @@
 (typelib-require ("GLib" "2.0"))
 
 (automake-test
- (let* ([date (date:new-dmy 25 12 1990)]
+ (let* ([date (date:new-dmy 25 (make <%GDateMonth> 'december) 1990)]
         [date2 (copy date)])
 
    ;; Clear one GDate starting at the memory location in date2.  This
