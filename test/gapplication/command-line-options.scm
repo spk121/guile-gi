@@ -20,8 +20,8 @@
          (success #f))
      ;; (display (flags->number (flags app)))
      (add-main-option app "hello" (char->integer #\h)
-                      (make <%GOptionFlags> '())
-                      (make <%GOptionArg> 'string-array) "" #f)
+                      (number->option-flags 0)
+                      (symbol->option-arg 'string-array) "" #f)
 
      (connect app command-line
               (lambda (app command-line)
