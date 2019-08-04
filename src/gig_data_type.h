@@ -83,6 +83,7 @@ struct _GigTypeMeta
     {
         GigTypeMeta *params;
         GICallableInfo *callable_info;
+        GIEnumInfo *enum_info;
     };
 };
 

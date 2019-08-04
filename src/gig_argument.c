@@ -693,6 +693,35 @@ scm_to_c_native_interface_array(S2C_ARG_DECL)
             }
         }
     }
+    else if (fundamental_item_type == G_TYPE_ENUM ||
+             fundamental_item_type == G_TYPE_FLAGS) {
+        // TODO: coerce to vector as above?
+        if (scm_is_true(scm_list_p(object))) {
+            gsize length = scm_to_size_t(scm_length(object));
+            *size = length;
+            gint *ptr;
+            if (meta->is_zero_terminated)
+                ptr = g_new0(gint, length + 1);
+            else
+                ptr = g_new0(gint, length);
+            arg->v_pointer = ptr;
+            LATER_FREE(ptr);
+            SCM iter = object;
+
+            for (gsize i = 0; i < length; i++, iter = scm_cdr(iter))
+                switch (fundamental_item_type)
+                {
+                case G_TYPE_ENUM:
+                    ptr[i] = gig_enum_to_int(scm_car(iter));
+                    break;
+                case G_TYPE_FLAGS:
+                    ptr[i] = (gint)gig_flags_to_uint(scm_car(iter));
+                    break;
+                }
+        }
+        else
+            g_assert_not_reached ();
+    }
     else {
         // Everything else is unhandled.
         UNHANDLED;
@@ -931,10 +960,16 @@ c_enum_to_scm(C2S_ARG_DECL)
     TRACE_C2S();
     switch(G_TYPE_FUNDAMENTAL(meta->gtype)) {
     case G_TYPE_ENUM:
-        *object = gig_int_to_enum(arg->v_int32, meta->gtype);
+        if (meta->gtype == G_TYPE_ENUM)
+            *object = gig_int_to_enum_with_info(arg->v_int32, meta->enum_info);
+        else
+            *object = gig_int_to_enum(arg->v_int32, meta->gtype);
         break;
     case G_TYPE_FLAGS:
-        *object = gig_uint_to_flags(arg->v_uint32, meta->gtype);
+        if (meta->gtype == G_TYPE_FLAGS)
+            *object = gig_uint_to_flags_with_info(arg->v_uint32, meta->enum_info);
+        else
+            *object = gig_uint_to_flags(arg->v_int32, meta->gtype);
         break;
     default:
         UNHANDLED;

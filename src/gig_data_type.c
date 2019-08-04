@@ -206,21 +206,10 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
         else if (itype == GI_INFO_TYPE_ENUM || itype == GI_INFO_TYPE_FLAGS) {
             meta->gtype = g_registered_type_info_get_g_type(referenced_base_info);
             // Not all enum or flag types have an associated GType
-            add_params(meta, 1);
-            if (meta->gtype == G_TYPE_NONE || meta->gtype == 0) {
-                if (itype == GI_INFO_TYPE_ENUM) {
-                    meta->gtype = G_TYPE_ENUM;
-                    gig_type_meta_init_from_basic_type_tag(meta->params, GI_TYPE_TAG_INT32);
-                }
-                else {
-                    meta->gtype = G_TYPE_FLAGS;
-                    gig_type_meta_init_from_basic_type_tag(meta->params, GI_TYPE_TAG_UINT32);
-                }
-            }
-            else {
-                gig_type_meta_init_from_basic_type_tag(meta->params,
-                                                       g_enum_info_get_storage_type
-                                                       (referenced_base_info));
+            // Hence we store the enum info for GIArgument conversions
+            if (meta->gtype == G_TYPE_NONE) {
+                meta->enum_info = g_base_info_ref(referenced_base_info);
+                meta->gtype = itype == GI_INFO_TYPE_ENUM ? G_TYPE_ENUM : G_TYPE_FLAGS;
             }
         }
         else if (itype == GI_INFO_TYPE_STRUCT) {
