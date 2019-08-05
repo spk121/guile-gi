@@ -21,6 +21,7 @@
 #include "gig_util.h"
 #include "gig_constant.h"
 #include "gig_flag.h"
+#include "gig_repository.h"
 
 static SCM
 require(SCM lib, SCM version)
@@ -62,8 +63,8 @@ infos(SCM lib)
             g_base_info_unref(info);
             continue;
         }
-        infos = scm_cons (gig_type_transfer_object(GI_TYPE_BASE_INFO, info, GI_TRANSFER_EVERYTHING),
-                          infos);
+        infos = scm_cons(gig_type_transfer_object(GI_TYPE_BASE_INFO, info, GI_TRANSFER_EVERYTHING),
+                         infos);
     }
     scm_dynwind_end();
 
@@ -72,27 +73,64 @@ infos(SCM lib)
 
 typedef enum _LoadFlags
 {
-    LOAD_INFO_ONLY  = 0,
-    LOAD_METHODS    = 1 << 0,
+    LOAD_INFO_ONLY = 0,
+    LOAD_METHODS = 1 << 0,
     LOAD_PROPERTIES = 1 << 1,
-    LOAD_SIGNALS    = 1 << 2,
-    LOAD_FIELDS     = 1 << 3,
+    LOAD_SIGNALS = 1 << 2,
+    LOAD_FIELDS = 1 << 3,
     LOAD_EVERYTHING = LOAD_METHODS | LOAD_PROPERTIES | LOAD_SIGNALS | LOAD_FIELDS
 } LoadFlags;
 
-typedef gint (*NestedNum)(GIBaseInfo *info);
-typedef GIBaseInfo *(*NestedInfo)(GIBaseInfo *info, int i);
-typedef SCM (*NestedDefine)(GType type, GIBaseInfo *info, const gchar *namespace, SCM defs);
-
-static SCM
-load_nested_info(GIBaseInfo *parent, GType type, const gchar *namespace,
-                 NestedNum nested_num, NestedInfo nested_info,
-                 NestedDefine nested_define, SCM defs)
+void
+gig_repository_nested_infos(GIBaseInfo *base,
+                            gint *n_methods,
+                            GigRepositoryNested *method,
+                            gint *n_properties,
+                            GigRepositoryNested *property,
+                            gint *n_signals,
+                            GigRepositoryNested *signal,
+                            gint *n_fields, GigRepositoryNested *field)
 {
-    gint n = nested_num(parent);
-    for (gint i = 0; i < n; i++)
-        defs = nested_define(type, nested_info(parent, i), namespace, defs);
-    return defs;
+    switch (g_base_info_get_type(base)) {
+    case GI_INFO_TYPE_STRUCT:
+        *n_methods = g_struct_info_get_n_methods(base);
+        *method = (GigRepositoryNested)g_struct_info_get_method;
+        *n_properties = *n_signals = *n_fields = 0;
+        *property = *signal = *field = NULL;
+        break;
+    case GI_INFO_TYPE_UNION:
+        *n_methods = g_union_info_get_n_methods(base);
+        *method = (GigRepositoryNested)g_union_info_get_method;
+        *n_properties = *n_signals = *n_fields = 0;
+        *property = *signal = *field = NULL;
+        break;
+    case GI_INFO_TYPE_ENUM:
+    case GI_INFO_TYPE_FLAGS:
+        *n_methods = g_enum_info_get_n_methods(base);
+        *method = (GigRepositoryNested)g_enum_info_get_method;
+        *n_properties = *n_signals = *n_fields = 0;
+        *property = *signal = *field = NULL;
+        break;
+    case GI_INFO_TYPE_INTERFACE:
+        *n_methods = g_interface_info_get_n_methods(base);
+        *method = (GigRepositoryNested)g_interface_info_get_method;
+        *n_properties = *n_signals = *n_fields = 0;
+        *property = *signal = *field = NULL;
+        break;
+    case GI_INFO_TYPE_OBJECT:
+        *n_methods = g_object_info_get_n_methods(base);
+        *method = (GigRepositoryNested)g_object_info_get_method;
+        *n_properties = g_object_info_get_n_properties(base);
+        *property = (GigRepositoryNested)g_object_info_get_property;
+        *n_signals = g_object_info_get_n_signals(base);
+        *signal = (GigRepositoryNested)g_object_info_get_signal;
+        *n_fields = 0;
+        *field = NULL;
+        break;
+    default:
+        *n_methods = *n_properties = *n_signals = *n_fields = 0;
+        *method = *property = *signal = *field = NULL;
+    }
 }
 
 SCM
@@ -100,13 +138,25 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
 {
     g_return_val_if_fail(info != NULL, defs);
 
-    switch (g_base_info_get_type(info))
-    {
+    GIBaseInfo *parent = g_base_info_get_container(info);
+    GType parent_gtype = G_TYPE_INVALID;
+    const gchar *parent_name = NULL;
+    if (parent) {
+        parent_gtype = g_registered_type_info_get_g_type(parent);
+        parent_name = g_base_info_get_name(parent);
+    }
+
+    switch (g_base_info_get_type(info)) {
     case GI_INFO_TYPE_CALLBACK:
         g_debug("Unsupported irepository type 'CALLBACK'");
         break;
     case GI_INFO_TYPE_FUNCTION:
-        defs = gig_function_define(G_TYPE_INVALID, info, NULL, defs);
+    case GI_INFO_TYPE_SIGNAL:
+        defs = gig_function_define(parent_gtype, info, parent_name, defs);
+        break;
+    case GI_INFO_TYPE_PROPERTY:
+        g_assert(G_TYPE_IS_CLASSED(parent_gtype));
+        gig_property_define(parent_gtype, info, parent_name, defs);
         break;
     case GI_INFO_TYPE_STRUCT:
     {
@@ -119,18 +169,9 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
         defs = gig_type_define(gtype, defs);
         if (g_struct_info_get_size(info) > 0) {
             GQuark size_quark = g_quark_from_string("size");
-            g_type_set_qdata(gtype, size_quark,
-                             GSIZE_TO_POINTER(g_struct_info_get_size(info)));
+            g_type_set_qdata(gtype, size_quark, GSIZE_TO_POINTER(g_struct_info_get_size(info)));
         }
-
-        if (flags & LOAD_METHODS)
-            defs = load_nested_info(info, gtype, g_base_info_get_name(info),
-                                    (NestedNum)g_struct_info_get_n_methods,
-                                    (NestedInfo)g_struct_info_get_method,
-                                    (NestedDefine)gig_function_define,
-                                    defs);
-
-        break;
+        goto recursion;
     }
     case GI_INFO_TYPE_ENUM:
     case GI_INFO_TYPE_FLAGS:
@@ -145,28 +186,7 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
             break;
         }
         defs = gig_type_define(gtype, defs);
-
-        if (flags & LOAD_METHODS)
-            defs = load_nested_info(info, gtype, namespace,
-                                    (NestedNum)g_object_info_get_n_methods,
-                                    (NestedInfo)g_object_info_get_method,
-                                    (NestedDefine)gig_function_define,
-                                    defs);
-
-        if (flags & LOAD_SIGNALS)
-            defs = load_nested_info(info, gtype, namespace,
-                                    (NestedNum)g_object_info_get_n_signals,
-                                    (NestedInfo)g_object_info_get_signal,
-                                    (NestedDefine)gig_function_define,
-                                    defs);
-
-        if (flags & LOAD_PROPERTIES)
-            defs = load_nested_info(info, gtype, namespace,
-                                    (NestedNum)g_object_info_get_n_properties,
-                                    (NestedInfo)g_object_info_get_property,
-                                    (NestedDefine)gig_property_define,
-                                    defs);
-        break;
+        goto recursion;
     }
     case GI_INFO_TYPE_INTERFACE:
     {
@@ -177,14 +197,7 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
             break;
         }
         defs = gig_type_define(gtype, defs);
-
-        if (flags & LOAD_METHODS)
-            defs = load_nested_info(info, gtype, g_base_info_get_name(info),
-                                    (NestedNum)g_interface_info_get_n_methods,
-                                    (NestedInfo)g_interface_info_get_method,
-                                    (NestedDefine)gig_function_define,
-                                    defs);
-        break;
+        goto recursion;
     }
     case GI_INFO_TYPE_CONSTANT:
         defs = gig_constant_define(info, defs);
@@ -202,26 +215,13 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
             GQuark size_quark = g_quark_from_string("size");
             g_type_set_qdata(gtype, size_quark, GSIZE_TO_POINTER(g_union_info_get_size(info)));
         }
-
-        if (flags & LOAD_METHODS)
-            defs = load_nested_info(info, gtype, g_base_info_get_name(info),
-                                    (NestedNum)g_union_info_get_n_methods,
-                                    (NestedInfo)g_union_info_get_method,
-                                    (NestedDefine)gig_function_define,
-                                    defs);
-        break;
+        goto recursion;
     }
     case GI_INFO_TYPE_VALUE:
         g_critical("Unsupported irepository type 'VALUE'");
         break;
-    case GI_INFO_TYPE_SIGNAL:
-        g_critical("Unsupported irepository type 'SIGNAL'");
-        break;
     case GI_INFO_TYPE_VFUNC:
         g_critical("Unsupported irepository type 'VFUNC'");
-        break;
-    case GI_INFO_TYPE_PROPERTY:
-        g_critical("Unsupported irepository type 'PROPERTY'");
         break;
     case GI_INFO_TYPE_FIELD:
         g_critical("Unsupported irepository type 'FIELD'");
@@ -238,7 +238,33 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
         g_critical("Unsupported irepository type %d", g_base_info_get_type(info));
         break;
     }
+
+  end:
     return defs;
+
+  recursion:
+    {
+#define LOAD_NESTED(F, N, I)                                    \
+        do {                                                    \
+            if (flags & F)                                      \
+                for (gint i = 0; i < N; i++)                    \
+                    defs = load_info(I(info, i), flags, defs);  \
+        } while (0)
+
+        gint n_methods, n_properties, n_signals, n_fields;
+        GigRepositoryNested method, property, signal, field;
+
+        gig_repository_nested_infos(info, &n_methods, &method, &n_properties, &property,
+                                    &n_signals, &signal, &n_fields, &field);
+
+        LOAD_NESTED(LOAD_METHODS, n_methods, method);
+        LOAD_NESTED(LOAD_PROPERTIES, n_properties, property);
+        LOAD_NESTED(LOAD_SIGNALS, n_signals, signal);
+        LOAD_NESTED(LOAD_FIELDS, n_fields, field);
+#undef LOAD_NESTED
+        goto end;
+    }
+
 }
 
 static SCM
@@ -266,7 +292,8 @@ info(SCM lib, SCM name)
 
     info = g_irepository_find_by_name(NULL, _lib, _name);
     if (info == NULL)
-        scm_misc_error("info", "could not load ~A from ~A, did you forget to require or perhaps misspell?",
+        scm_misc_error("info",
+                       "could not load ~A from ~A, did you forget to require or perhaps misspell?",
                        scm_list_2(name, lib));
     scm_dynwind_end();
 

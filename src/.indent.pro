@@ -100,6 +100,7 @@
 -T GigCallback
 -T GigFunction
 -T GigGsubr
+-T GigRepositoryNested
 -T GigSignalSpec
 -T GigSignalSlot
 -T GigTypeRefFunction

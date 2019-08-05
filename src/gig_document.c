@@ -21,34 +21,34 @@
 #include "gig_util.h"
 #include "gi_callable_info.h"
 #include "gig_arg_map.h"
+#include "gig_repository.h"
 
-typedef gint (*NestedNum)(GIBaseInfo *info);
-typedef GIBaseInfo *(*NestedInfo)(GIBaseInfo *info, int i);
-
-static void
-do_document(GIBaseInfo *info, const gchar *parent);
+static void do_document(GIBaseInfo *info, const gchar *parent);
 
 static void
-document_nested(GIBaseInfo *parent, NestedNum nested_num, NestedInfo nested_info)
+document_nested(GIBaseInfo *parent)
 {
+#define DOCUMENT_NESTED(N, I)                               \
+    do {                                                    \
+        for (gint i = 0; i < N; i++)                        \
+            do_document(I(parent, i), namespace);           \
+    } while (0)
+
     gchar *namespace = gig_gname_to_scm_name(g_base_info_get_name(parent));
     scm_dynwind_free(namespace);
 
-    gint n = nested_num(parent);
-    for (gint i = 0; i < n; i++)
-        do_document(nested_info(parent, i), namespace);
-}
+    gint n_methods, n_properties, n_signals, n_fields;
+    GigRepositoryNested method, property, signal, field;
 
-static gint
-const0(GIBaseInfo *info)
-{
-    return 0;
-}
+    gig_repository_nested_infos(parent, &n_methods, &method, &n_properties, &property,
+                                &n_signals, &signal, &n_fields, &field);
 
-static GIBaseInfo *
-ohnono(GIBaseInfo *info, int i)
-{
-    g_assert_not_reached();
+    DOCUMENT_NESTED(n_methods, method);
+    DOCUMENT_NESTED(n_properties, property);
+    DOCUMENT_NESTED(n_signals, signal);
+    DOCUMENT_NESTED(n_fields, field);
+
+#undef DOCUMENT_NESTED
 }
 
 static void
@@ -84,13 +84,14 @@ do_document(GIBaseInfo *info, const gchar *namespace)
             scm_printf(SCM_UNDEFINED, "<scheme><procedure name=\"%s\" long-name=\"%s:%s\">",
                        scheme_name, namespace, scheme_name);
         else if (namespace != NULL)
-            scm_printf(SCM_UNDEFINED, "<scheme><procedure name=\"%s:%s\">", namespace, scheme_name);
+            scm_printf(SCM_UNDEFINED, "<scheme><procedure name=\"%s:%s\">", namespace,
+                       scheme_name);
         else
             scm_printf(SCM_UNDEFINED, "<scheme><procedure name=\"%s\">", scheme_name);
 
 
         arg_map = gig_arg_map_new(info);
-        scm_dynwind_unwind_handler((scm_t_pointer_finalizer)gig_arg_map_free,
+        scm_dynwind_unwind_handler((scm_t_pointer_finalizer) gig_arg_map_free,
                                    arg_map, SCM_F_WIND_EXPLICITLY);
         gig_arg_map_get_cinvoke_args_count(arg_map, &in, &out);
         gig_arg_map_get_gsubr_args_count(arg_map, &req, &opt);
@@ -123,48 +124,26 @@ do_document(GIBaseInfo *info, const gchar *namespace)
         if (gtype == G_TYPE_NONE)
             break;
 
-        NestedNum n_methods, n_properties, n_signals;
-        NestedInfo method, property, signal;
-
-        switch(type)
-        {
+        switch (type) {
         case GI_INFO_TYPE_STRUCT:
             kind = "record";
-            n_methods = (NestedNum)g_struct_info_get_n_methods;
-            n_properties = n_signals = const0;
-            method = (NestedInfo)g_struct_info_get_method;
-            property = signal = ohnono;
             break;
         case GI_INFO_TYPE_UNION:
             kind = "union";
-            n_methods = (NestedNum)g_union_info_get_n_methods;
-            n_properties = n_signals = const0;
-            method = (NestedInfo)g_union_info_get_method;
-            property = signal = ohnono;
             break;
         case GI_INFO_TYPE_INTERFACE:
             kind = "interface";
-            n_methods = (NestedNum)g_interface_info_get_n_methods;
-            n_properties = n_signals = const0;
-            method = (NestedInfo)g_interface_info_get_method;
-            property = signal = ohnono;
             break;
         case GI_INFO_TYPE_OBJECT:
             kind = "object";
-            n_methods = (NestedNum)g_object_info_get_n_methods;
-            n_signals = (NestedNum)g_object_info_get_n_signals;
-            n_properties = (NestedNum)g_object_info_get_n_properties;
-            method = (NestedInfo)g_object_info_get_property;
-            signal = (NestedInfo)g_object_info_get_signal;
-            property = (NestedInfo)g_object_info_get_property;
+            break;
         }
 
         scm_printf(SCM_UNDEFINED, "<%s name=\"%s\">", kind, g_base_info_get_name(info));
-        scm_printf(SCM_UNDEFINED, "<scheme><type name=\"&lt;%s&gt;\" /></scheme>", g_type_name(gtype));
+        scm_printf(SCM_UNDEFINED, "<scheme><type name=\"&lt;%s&gt;\" /></scheme>",
+                   g_type_name(gtype));
 
-        document_nested(info, n_methods, method);
-        document_nested(info, n_properties, property);
-        document_nested(info, n_signals, signal);
+        document_nested(info);
 
         scm_printf(SCM_UNDEFINED, "</%s>", kind);
         break;
