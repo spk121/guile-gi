@@ -1734,11 +1734,21 @@ c_native_array_to_scm(C2S_ARG_DECL)
             SCM *elt;
             elt = scm_vector_writable_elements(*object, &handle, &len, &inc);
             g_assert_nonnull(arg->v_pointer);
+
+            GIArgument _arg;
+            GigArgMapEntry ae = {
+                .name = "(array internal)",
+                .type_info = g_type_info_get_param_type(entry->type_info, 0),
+                .type_tag = entry->item_type_tag,
+                .is_ptr = entry->item_is_ptr,
+                .transfer = entry->item_transfer
+            };
+
             for (gsize k = 0; k < len; k++, elt += inc) {
-                *elt =
-                    gig_type_transfer_object(entry->referenced_object_type,
-                                             ((gpointer *)(arg->v_pointer))[k], entry->transfer);
+                _arg.v_pointer = ((gpointer *)(arg->v_pointer))[k];
+                gig_argument_c_to_scm(subr, argpos, &ae, &_arg, elt, -1);
             }
+
             scm_array_handle_release(&handle);
             if (entry->transfer == GI_TRANSFER_EVERYTHING) {
                 free(arg->v_pointer);
