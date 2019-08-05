@@ -66,16 +66,12 @@ is_enabled(GLogLevelFlags flags, const GLogField *domain)
 }
 
 static GLogWriterOutput
-gig_log_writer(GLogLevelFlags flags,
-               const GLogField *fields,
-               gsize n_fields,
-               gpointer user_data)
+gig_log_writer(GLogLevelFlags flags, const GLogField *fields, gsize n_fields, gpointer user_data)
 {
     const GLogField *message, domain;
 
     const gchar *prefix, *color;
-    switch(flags & G_LOG_LEVEL_MASK)
-    {
+    switch (flags & G_LOG_LEVEL_MASK) {
     case G_LOG_LEVEL_ERROR:
         color = "\033[1;31m%s\033[0m";
         prefix = "ERROR";
@@ -113,7 +109,8 @@ gig_log_writer(GLogLevelFlags flags,
 
     if (SCM_OPFPORTP(port)) {
         gint fd = scm_to_int(scm_fileno(port));
-        gchar *colored_prefix = g_strdup_printf(g_log_writer_supports_color(fd) ? color : "%s", prefix);
+        gchar *colored_prefix =
+            g_strdup_printf(g_log_writer_supports_color(fd) ? color : "%s", prefix);
         dprintf(fd, "%s: %s\n", colored_prefix, (const gchar *)message->value);
         g_free(colored_prefix);
     }

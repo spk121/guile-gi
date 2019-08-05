@@ -71,6 +71,8 @@
 -T GClosure
 -T GDestroyNotify
 -T GError
+-T GLogLevelFlags
+-T GLogField
 -T GObject
 -T GObjectClass
 -T GParamSpec
@@ -91,6 +93,7 @@
 -T GIFunctionInfo
 -T GIInterfaceInfo
 -T GIObjectInfo
+-T GIPropertyInfo
 -T GISignalInfo
 -T GITypeInfo
 
