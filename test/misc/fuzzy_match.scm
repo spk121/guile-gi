@@ -1,5 +1,5 @@
 (use-modules (gi)
-             (rnrs bytevectors)
+             (srfi srfi-43)
              (system foreign)
              (test automake-test-lib))
 
@@ -21,7 +21,6 @@
      (cdr c-struct))))
 
 (automake-test
- #|
  (let* ((idx (fuzzy-mutable-index:new #f))
         (matches
          (begin
@@ -29,6 +28,9 @@
             (lambda (str) (insert idx str (new-data)))
             '("lorem" "ipsum" "dolor" "sit" "amet"))
            (match idx "lor" 0))))
-   (display (map bv->match-data (vector->list matches)))
- (newline))|#
- 'skipped)
+   (= 2
+      ;; two matches
+      (vector-length matches)
+      ;; no #f
+      (vector-count (lambda (i x) (and x (format #t "~a~%" (bv->match-data x))))
+                    matches))))

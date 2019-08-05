@@ -1551,15 +1551,38 @@ c_interface_to_scm(C2S_ARG_DECL)
 
     GIBaseInfo *referenced_base_info = g_type_info_get_interface(entry->type_info);
     GIInfoType referenced_info_type = g_base_info_get_type(referenced_base_info);
-    if (referenced_info_type == GI_INFO_TYPE_ENUM || referenced_info_type == GI_INFO_TYPE_FLAGS) {
+    GType referenced_base_gtype = g_registered_type_info_get_g_type(referenced_base_info);
+
+    switch (referenced_info_type)
+    {
+    case GI_INFO_TYPE_ENUM:
+    case GI_INFO_TYPE_FLAGS:
         *object = scm_from_uint32(arg->v_uint32);
-    }
-    else if (referenced_info_type == GI_INFO_TYPE_CALLBACK) {
-        gpointer callback_ptr = arg->v_pointer;
-        *object = scm_from_pointer(callback_ptr, NULL);
-    }
-    else {
-        // This case of returning a struct directly.
+        break;
+    case GI_INFO_TYPE_CALLBACK:
+        *object = scm_from_pointer(arg->v_pointer, NULL);
+        break;
+    case GI_INFO_TYPE_STRUCT:
+        if (referenced_base_gtype == G_TYPE_NONE) {
+            gpointer struct_ptr = arg->v_pointer;
+            gsize size = g_struct_info_get_size(referenced_base_info);
+            *object = scm_c_make_bytevector(size);
+            memcpy(SCM_BYTEVECTOR_CONTENTS(*object), arg->v_pointer, size);
+            break;
+        }
+        g_assert_not_reached();
+
+    case GI_INFO_TYPE_UNION:
+        if (referenced_base_gtype == G_TYPE_NONE) {
+            gpointer struct_ptr = arg->v_pointer;
+            gsize size = g_struct_info_get_size(referenced_base_info);
+            *object = scm_c_make_bytevector(size);
+            memcpy(SCM_BYTEVECTOR_CONTENTS(*object), arg->v_pointer, size);
+            break;
+        }
+        g_assert_not_reached();
+    case GI_INFO_TYPE_INTERFACE:
+    case GI_INFO_TYPE_OBJECT:
         g_assert_not_reached();
     }
     g_base_info_unref(referenced_base_info);
@@ -1686,6 +1709,23 @@ c_native_array_to_scm(C2S_ARG_DECL)
         TRANSFER(gdouble, f64);
         break;
     case GI_TYPE_TAG_GTYPE:
+        switch(entry->item_size)
+        {
+        case 1:
+            TRANSFER(guint8, u8);
+            break;
+        case 2:
+            TRANSFER(guint16, u16);
+            break;
+        case 4:
+            TRANSFER(guint32, u32);
+            break;
+        case 8:
+            TRANSFER(guint64, u64);
+            break;
+        default:
+            g_assert(!"what weird machine are you running this on?");
+        }
         break;
     case GI_TYPE_TAG_BOOLEAN:
     {
@@ -1716,13 +1756,13 @@ c_native_array_to_scm(C2S_ARG_DECL)
     case GI_TYPE_TAG_INTERFACE:
         switch (entry->referenced_base_type) {
         case GI_INFO_TYPE_ENUM:
+            g_assert(!entry->item_is_ptr);
+            TRANSFER(gint32,s32);
+
         case GI_INFO_TYPE_FLAGS:
-            if (entry->item_is_ptr) {
-                // Don't think there are any output arrays of pointers to flags or enums
-                g_critical("Unhandled array type in %s:%d", __FILE__, __LINE__);
-                g_assert_not_reached();
-            }
-            break;
+            g_assert(!entry->item_is_ptr);
+            TRANSFER(guint32,u32);
+
         case GI_INFO_TYPE_STRUCT:
         case GI_INFO_TYPE_OBJECT:
         case GI_INFO_TYPE_UNION:
@@ -1736,6 +1776,7 @@ c_native_array_to_scm(C2S_ARG_DECL)
             g_assert_nonnull(arg->v_pointer);
 
             GIArgument _arg;
+            _arg.v_pointer = arg->v_pointer;
             GigArgMapEntry ae = {
                 .name = "(array internal)",
                 .type_info = g_type_info_get_param_type(entry->type_info, 0),
@@ -1744,10 +1785,8 @@ c_native_array_to_scm(C2S_ARG_DECL)
                 .transfer = entry->item_transfer
             };
 
-            for (gsize k = 0; k < len; k++, elt += inc) {
-                _arg.v_pointer = ((gpointer *)(arg->v_pointer))[k];
+            for (gsize k = 0; k < len; k++, elt += inc, _arg.v_pointer += entry->item_size)
                 gig_argument_c_to_scm(subr, argpos, &ae, &_arg, elt, -1);
-            }
 
             scm_array_handle_release(&handle);
             if (entry->transfer == GI_TRANSFER_EVERYTHING) {
@@ -1799,12 +1838,7 @@ c_native_array_to_scm(C2S_ARG_DECL)
         g_assert_not_reached();
     }
 
-    if (SCM_UNBNDP(*object) && entry->item_size) {
-        gsize sz = length * entry->item_size;
-        // FIXME: maybe return a typed vector or list
-        *object = scm_c_make_bytevector(sz);
-        memcpy(SCM_BYTEVECTOR_CONTENTS(*object), arg->v_pointer, sz);
-    }
+    g_assert(!SCM_UNBNDP(*object));
 #undef TRANSFER
 }
 
