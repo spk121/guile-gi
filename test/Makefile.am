@@ -242,28 +242,37 @@ CLEANFILES = tmp.txt
 if HAVE_INTROSPECTION
 pkglib_LTLIBRARIES = libeverything-1.0.la libmarshall-1.0.la
 
+BUILT_SOURCES = everything.c everything.h gitestmacros.h
+CLEANFILES += $(BUILT_SOURCES)
+
+everything.c: $(GI_DATA_DIR)/tests/everything.c
+	cp $< $@
+everything.h: $(GI_DATA_DIR)/tests/everything.h
+	cp $< $@
+gitestmacros.h : $(GI_DATA_DIR)/tests/gitestmacros.h
+	cp $< $@
+
 INTROSPECTION_GIRS = Everything-1.0.gir Marshall-1.0.gir
 INTROSPECTION_SCANNER_ARGS = --add-include-path=$(abs_srcdir) --warn-all
 INTROSPECTION_COMPILER_ARGS = --includedir=$(abs_srcdir)
-libeverything_1_0_la_SOURCES = everything.c everything.h
+nodist_libeverything_1_0_la_SOURCES = everything.c everything.h
 libeverything_1_0_la_CFLAGS = $(GOBJECT_CFLAGS)
 libeverything_1_0_la_LIBADD = $(GOBJECT_LIBS)
 
 libmarshall_1_0_la_SOURCES = \
-  marshall.c marshall.h gitestmacros.h
+  marshall.c marshall.h
+nodist_libmarshall_1_0_la_SOURCES = \
+  gitestmacros.h
 libmarshall_1_0_la_CFLAGS = $(GOBJECT_CFLAGS)
 libmarshall_1_0_la_LIBADD = $(GOBJECT_LIBS)
 
 Everything-1.0.gir: libeverything-1.0.la
-# Everything_1_0_gir_NAMESPACE = Everything
-# Everything_1_0_gir_VERSION = 1.0
 Everything_1_0_gir_LIBS = libeverything-1.0.la
 Everything_1_0_gir_INCLUDES = GObject-2.0
 Everything_1_0_gir_FILES = everything.c everything.h
 
 Marshall-1.0.gir: libmarshall-1.0.la
 Marshall_1_0_gir_NAMESPACE = Marshall
-# GIMarshallingTests_1_0_gir_VERSION = 1.0
 Marshall_1_0_gir_LIBS = libmarshall-1.0.la
 Marshall_1_0_gir_INCLUDES = GObject-2.0
 Marshall_1_0_gir_FILES = marshall.c marshall.h
