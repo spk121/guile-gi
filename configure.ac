@@ -146,6 +146,9 @@ PKG_CHECK_MODULES(GOBJECT, [gobject-2.0])
 PKG_CHECK_MODULES(GOBJECT_INTROSPECTION, [gobject-introspection-1.0])
 PKG_CHECK_MODULES(FFI, [libffi])
 
+PKG_CHECK_VAR(GI_GIR_DIR, [gobject-introspection-1.0], [girdir])
+PKG_CHECK_VAR(GI_DATA_DIR, [gobject-introspection-1.0], [gidatadir])
+
 ################
 # Check for header files
 
