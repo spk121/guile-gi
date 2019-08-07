@@ -22,16 +22,19 @@
   #:use-module (srfi srfi-2)
   #:use-module (srfi srfi-26)
   #:use-module (sxml simple)
+  #:use-module (sxml fold)
   #:use-module ((sxml xpath) #:prefix xpath:)
+  #:use-module (gi config)
   #:use-module (gi types)
   #:use-module ((gi repository) #:select (infos require))
-  #:export (info typelib ->guile-procedures.txt))
+  #:export (info typelib gir ->guile-procedures.txt))
 
 (eval-when (expand load eval)
   (load-extension "libguile-gi" "gig_init_document"))
 
 (define namespaces
   '((c ."http://www.gtk.org/introspection/c/1.0")
+    (core ."http://www.gtk.org/introspection/core/1.0")
     (glib . "http://www.gtk.org/introspection/glib/1.0")))
 
 (define-method (%info (info <GIBaseInfo>))
@@ -48,6 +51,32 @@
    (format #f "<namespace name=~s>~a</namespace>" lib
            (string-join (filter-map %info (infos lib)) ""))
    #:namespaces namespaces))
+
+(define (find-gir lib version)
+  (or
+   (find identity (map (lambda (path)
+                         (let ((file (format #f "~a/~a-~a.gir" path lib version)))
+                           (and (file-exists? file) file)))
+                       (gir-search-path)))
+   (error "unable to find gir for ~a-~a" (list lib version))))
+
+(define (%strip-core xml)
+  (foldt identity
+         (lambda (here)
+           (if (symbol? here)
+               (let ((tokens (string-tokenize (symbol->string here) char-set:letter+digit)))
+                 (if (and (= (length tokens) 2)
+                          (string=? (first tokens) "core"))
+                     (string->symbol (second tokens))
+                     here))
+               here))
+         xml))
+
+(define (gir lib version)
+  (call-with-input-file (find-gir lib version)
+    (compose
+     %strip-core
+     (cut xml->sxml <> #:namespaces namespaces #:trim-whitespace? #t))))
 
 (define* (sort+delete-duplicates! list less #:optional (= equal?))
   "Sort LIST according to LESS and delete duplicate entries according to `='."

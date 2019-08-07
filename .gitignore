@@ -32,6 +32,7 @@ Makefile
 Makefile.in
 
 ChangeLog
+README
 INSTALL
 aclocal.m4
 ar-lib
@@ -65,6 +66,12 @@ texinfo.tex
 /m4/lt~obsolete.m4
 
 /Debug/
+
+# Generated sources
+src/gi/config.scm
+test/everything.c
+test/everything.h
+test/gitestmacros.h
 
 # Scripts
 tools/gdb-guile
@@ -123,4 +130,3 @@ doc/stamp-vti
 doc/version.texi
 tmp
 tmp.*
-

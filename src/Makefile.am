@@ -99,6 +99,9 @@ pkgguileobjectdir=$(guileobjectdir)/gi
 dist_guilesite_DATA = \
   gi.scm
 
+nodist_pkgguilesite_DATA = \
+  gi/config.scm
+
 dist_pkgguilesite_DATA = \
   gi/core-generics.scm \
   gi/documentation.scm \
@@ -107,11 +110,14 @@ dist_pkgguilesite_DATA = \
   gi/types.scm \
   gi/util.scm
 
-pkgguileobject_DATA = $(dist_guilesite_DATA:%.scm=%.go) $(dist_pkgguilesite_DATA:%.scm=%.go)
+pkgguileobject_DATA = \
+  $(dist_guilesite_DATA:%.scm=%.go) \
+  $(dist_pkgguilesite_DATA:%.scm=%.go) \
+  $(nodist_pkgguilesite_DATA:%.scm=%.go)
 
 $(pkgguileobject_DATA): libguile-gi.la
 
-GUILEC_FLAGS = -Warity-mismatch -Wformat --load-path=$(abs_srcdir)
+GUILEC_FLAGS = -Warity-mismatch -Wformat --load-path=$(abs_srcdir) --load-path=$(abs_builddir)
 
 .scm.go:
 	GUILE_AUTO_COMPILE=0 \

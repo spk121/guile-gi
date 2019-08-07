@@ -230,6 +230,7 @@ AM_CONDITIONAL([MTRACE], [test x$mtrace = xtrue])
 AC_CONFIG_FILES([
  Makefile
  src/Makefile
+ src/gi/config.scm
  doc/Makefile
  docs/Makefile
  m4/Makefile
