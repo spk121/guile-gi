@@ -80,48 +80,45 @@ AC_ARG_WITH([gnu-filesystem-hierarchy],
             [AS_HELP_STRING([--with-gnu-filesystem-hierarchy],
                             [Strictly follow GNU Filesystem Heirarchy when installing, instead of querying Guile to discover the install directories that it expects.])])
 
-case "x$with_gnu_filesystem_hierarchy" in
-     xyes)
-       # Follow the GNU Filesystem Heirarchy Standard correctly
-       # Installed .scm scheme libraries go here
-       AC_MSG_CHECKING([Guile site directory])
-       guilesitedir="\${datadir}/guile/site/$guile_effective_version"
-       AC_MSG_RESULT([$guilesitedir])
-       AC_SUBST(guilesitedir)
+AS_CASE(["x$with_gnu_file_system_hierarchy"], [xyes],
+    [
+    # Follow the GNU Filesystem Hierarchy Standard correctly
+    # Installed .scm scheme libraries go here
+    AC_MSG_CHECKING([Guile site directory])
+    guilesitedir="\${datadir}/guile/site/$guile_effective_version"
+    AC_MSG_RESULT([$guilesitedir])
+    AC_SUBST(guilesitedir)
 
-       # Compiled libguile-*.so extension libraries go here
-       AC_MSG_CHECKING([Guile extension directory])
-       guileextensiondir="$libdir/guile/$guile_effective_version"
-       AC_MSG_RESULT([$guileextensiondir])
-       AC_SUBST(guileextensiondir)
+    # Compiled libguile-*.so extension libraries go here
+    AC_MSG_CHECKING([Guile extension directory])
+    guileextensiondir="$libdir/guile/$guile_effective_version"
+    AC_MSG_RESULT([$guileextensiondir])
+    AC_SUBST(guileextensiondir)
 
-       # Compiled .go scheme libraries go here
-       AC_MSG_CHECKING([Guile object directory])
-       guileobjectdir="$libdir/guile/$guile_effective_version/site-ccache"
-       AC_MSG_RESULT([$guileobjectdir])
-       AC_SUBST(guileobjectdir)
-       ;;
-     *)
-       # Get the installation directories from Guile
-       # Installed .scm scheme libraries go here
-       AC_MSG_CHECKING([Guile site directory])
-       guilesitedir=$GUILE_SITE
-       AC_MSG_RESULT([$guilesitedir])
-       AC_SUBST(guilesitedir)
+    # Compiled .go scheme libraries go here
+    AC_MSG_CHECKING([Guile object directory])
+    guileobjectdir="$libdir/guile/$guile_effective_version/site-ccache"
+    AC_MSG_RESULT([$guileobjectdir])
+    AC_SUBST(guileobjectdir)],
+    [
+    # Get the installation directories from Guile
+    # Installed .scm scheme libraries go here
+    AC_MSG_CHECKING([Guile site directory])
+    guilesitedir=$GUILE_SITE
+    AC_MSG_RESULT([$guilesitedir])
+    AC_SUBST(guilesitedir)
 
-       # Compiled libguile-*.so extension libraries go here
-       AC_MSG_CHECKING([Guile extension directory])
-       guileextensiondir=$GUILE_EXTENSION
-       AC_MSG_RESULT([$guileextensiondir])
-       AC_SUBST(guileextensiondir)
+    # Compiled libguile-*.so extension libraries go here
+    AC_MSG_CHECKING([Guile extension directory])
+    guileextensiondir=$GUILE_EXTENSION
+    AC_MSG_RESULT([$guileextensiondir])
+    AC_SUBST(guileextensiondir)
 
-       # Compiled .go scheme libraries go here
-       AC_MSG_CHECKING([Guile object directory])
-       guileobjectdir=$GUILE_SITE_CCACHE
-       AC_MSG_RESULT([$guileobjectdir])
-       AC_SUBST(guileobjectdir)
-       ;;
-esac
+    # Compiled .go scheme libraries go here
+    AC_MSG_CHECKING([Guile object directory])
+    guileobjectdir=$GUILE_SITE_CCACHE
+    AC_MSG_RESULT([$guileobjectdir])
+    AC_SUBST(guileobjectdir)])
 
 ################
 # Check for Libtool
@@ -132,18 +129,12 @@ LT_INIT([disable-fast-install disable-static win32-dll])
 ##################
 # Initial guess of platform specific options
 
-case $host_os in
-mingw* | cygwin* | os2* | pw32* | cegcc*)
-	[building_dll=yes] ;;
-*)
-	[building_dll=no] ;;
-esac
-case $host_os in
-mingw* )
-	[dll_version_info=no] ;;
-*)
-	[dll_version_info=yes] ;;
-esac
+AS_CASE([$host_os],
+        [mingw*], [building_dll=yes;dll_version_info=no],
+        [cygwin*], [building_dll=yes;dll_version_info=yes],
+        [pw32*], [building_dll=yes;dll_version_info=yes],
+        [cegcc*], [building_dll=yes;dll_version_info=yes],
+        [building_dll=no;dll_version_info=yes])
 
 AM_CONDITIONAL([BUILDING_DLL], [test "$building_dll" = yes])
 AM_CONDITIONAL([DLL_VERSION_INFO], [test "$dll_version_info" = yes])
@@ -191,43 +182,35 @@ m4_define([compiler_flags_common],[ dnl
 ])
 
 AC_ARG_ENABLE([hardening],
-            [AS_HELP_STRING([--enable-hardening],
-                            [compile with common hardening flags])])
-case "x$enable_hardening" in
-     xyes)
-     CC_CHECK_CFLAGS_APPEND([compiler_flags_common])
-     ;;
-esac
+              [AS_HELP_STRING([--enable-hardening],
+                              [compile with common hardening flags])])
+AS_IF([test "x$enable_hardening" = xyes],
+      [CC_CHECK_CFLAGS_APPEND([compiler_flags_common])])
 
 AC_ARG_ENABLE([reverse-hash],
-            [AS_HELP_STRING([--enable-reverse-hash],
-                            [have reverse type lookup hash])])
-case "x$enable_reverse_hash" in
-     xyes)
-     AC_DEFINE([ENABLE_GIG_TYPE_SCM_HASH], [1],
-               [Define if SCM to GType hash is enabled.])
-     ;;
-esac
+              [AS_HELP_STRING([--enable-reverse-hash],
+                              [have reverse type lookup hash])])
+AS_IF([test "x$enable_reverse_hash" = xyes],
+      [AC_DEFINE([ENABLE_GIG_TYPE_SCM_HASH], [1],
+                 [Define if SCM to GType hash is enabled.])])
 
 AC_ARG_ENABLE([coverage],
               [AS_HELP_STRING([--enable-coverage],
                               [compile with gcov support])],
-              [case "${enableval}" in
-                 yes) cov=true ;;
-                 no)  cov=false ;;
-                 *) AC_MSG_ERROR([bad value ${enableval} for --enable-coverage]) ;;
-               esac],
+              [AS_CASE(["${enableval}"],
+                       [yes], [cov=true],
+                       [no], [cov=false],
+                       [AC_MSG_ERROR([bad value ${enableval} for --enable-coverage])])],
               [cov=false])
 AM_CONDITIONAL([COVERAGE], [test x$cov = xtrue])
 
 AC_ARG_ENABLE([mtrace],
               [AS_HELP_STRING([--enable-mtrace],
                               [compile with gcc's memory tracing support])],
-              [case "${enableval}" in
-                 yes) mtrace=true ;;
-                 no)  mtrace=false ;;
-                 *) AC_MSG_ERROR([bad value ${enableval} for --enable-mtrace]) ;;
-               esac],
+              [AS_CASE(["${enableval}"],
+                       [yes], [mtrace=true],
+                       [no], [mtrace=false],
+                       [AC_MSG_ERROR([bad value ${enableval} for --enable-mtrace])])],
               [mtrace=false])
 AM_CONDITIONAL([MTRACE], [test x$mtrace = xtrue])
 
