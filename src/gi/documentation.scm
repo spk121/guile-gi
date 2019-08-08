@@ -22,20 +22,105 @@
   #:use-module (srfi srfi-2)
   #:use-module (srfi srfi-26)
   #:use-module (sxml simple)
+  #:use-module (sxml ssax)
   #:use-module (sxml fold)
   #:use-module ((sxml xpath) #:prefix xpath:)
   #:use-module (gi config)
   #:use-module (gi types)
   #:use-module ((gi repository) #:select (infos require))
-  #:export (info typelib gir ->guile-procedures.txt))
+  #:export (parse
+            info typelib gir ->guile-procedures.txt))
 
 (eval-when (expand load eval)
   (load-extension "libguile-gi" "gig_init_document"))
 
-(define namespaces
+(define gi-namespaces
   '((c ."http://www.gtk.org/introspection/c/1.0")
     (core ."http://www.gtk.org/introspection/core/1.0")
     (glib . "http://www.gtk.org/introspection/glib/1.0")))
+
+(define* (parse string-or-port #:optional (preload '()))
+  (letrec ((documentation preload)
+           (namespaces
+            (map (lambda (el)
+                   (cons* #f (car el) (ssax:uri-string->symbol (cdr el))))
+                 gi-namespaces))
+           (res-name->sxml
+            (lambda (name)
+              (cond
+               ((symbol? name) name)
+               ((eq? (car name) 'core) (cdr name))
+               (else (symbol-append (car name) ': (cdr name))))))
+
+           (crumb (lambda (elem-gi name)
+                    (cons (res-name->sxml elem-gi) name)))
+
+           (assoc-subcons!
+            (lambda (alist key subkey value)
+              (let ((handle (assoc-ref alist key)))
+                (cond
+                 ((null? list)
+                  (list (cons key (list (cons subkey value)))))
+                 ((not handle)
+                  (assoc-set! alist key (list (cons subkey value))))
+                 (else
+                  (assoc-set! alist key (assoc-set! handle subkey value)))))))
+
+           (parser
+            (ssax:make-parser
+             NEW-LEVEL-SEED
+             (lambda (elem-gi attrs ns content seed)
+               (let ((name (assq-ref attrs 'name))
+                     (%path (assq-ref seed '%path)))
+                 (if name
+                     (acons '%path (cons (crumb elem-gi name) (or %path '())) seed)
+                     seed)))
+
+             FINISH-ELEMENT
+             (lambda (elem-gi attributes namespaces parent-seed seed)
+               (let ((path (assq-ref seed '%path))
+                     (end (car seed))
+                     (seed (cdr (ssax:reverse-collect-str-drop-ws seed)))
+                     (name (res-name->sxml elem-gi))
+                     (attrs
+                      (attlist-fold (lambda (attr accum)
+                                      (cons (list (res-name->sxml (car attr)) (cdr attr))
+                                            accum))
+                                    '() attributes)))
+                 (case (res-name->sxml elem-gi)
+                   ((doc core:doc)
+                    (let ((real-doc end))
+                      (when path
+                        (set! documentation
+                              (assoc-subcons! documentation (reverse path) 'doc real-doc))))))
+                 (cons
+                  (cons name
+                        (if (null? attrs) seed (cons (cons '@ attrs) seed)))
+                  parent-seed)))
+
+             ;; the rest is taken from ssax:xml->sxml
+             CHAR-DATA-HANDLER
+             (lambda (string1 string2 seed)
+               (if (string-null? string2) (cons string1 seed)
+                   (cons* string2 string1 seed)))
+
+             DOCTYPE
+             (lambda (port docname systemid internal-subset? seed)
+               (when internal-subset? (ssax:skip-internal-dtd port))
+               (values #f '() namespaces seed))
+
+             UNDECL-ROOT
+             (lambda (elem-gi seed)
+               (values #f '() namespaces seed))
+
+             PI
+             ((*DEFAULT* .
+                         (lambda (port pi-tag seed)
+                           (ssax:read-pi-body-as-string port)
+                           seed))))))
+    (parser (if (string? string-or-port) (open-input-string string-or-port) string-or-port)
+            '())
+    documentation))
 
 (define-method (%info (info <GIBaseInfo>))
   (let ((doc (with-output-to-string (lambda () (%document info)))))
@@ -43,14 +128,14 @@
 
 (define-method (info (info <GIBaseInfo>))
   (and-let* ((i (%info info)))
-    (xml->sxml i #:namespaces namespaces)))
+    (xml->sxml i #:namespaces gi-namespaces)))
 
 (define* (typelib lib #:optional version #:key (require? #t))
   (when require? (require lib version))
   (xml->sxml
    (format #f "<namespace name=~s>~a</namespace>" lib
            (string-join (filter-map %info (infos lib)) ""))
-   #:namespaces namespaces))
+   #:namespaces gi-namespaces))
 
 (define (find-gir lib version)
   (or
@@ -60,23 +145,9 @@
                        (gir-search-path)))
    (error "unable to find gir for ~a-~a" (list lib version))))
 
-(define (%strip-core xml)
-  (foldt identity
-         (lambda (here)
-           (if (symbol? here)
-               (let ((tokens (string-tokenize (symbol->string here) char-set:letter+digit)))
-                 (if (and (= (length tokens) 2)
-                          (string=? (first tokens) "core"))
-                     (string->symbol (second tokens))
-                     here))
-               here))
-         xml))
-
 (define (gir lib version)
   (call-with-input-file (find-gir lib version)
-    (compose
-     %strip-core
-     (cut xml->sxml <> #:namespaces namespaces #:trim-whitespace? #t))))
+    parse))
 
 (define* (sort+delete-duplicates! list less #:optional (= equal?))
   "Sort LIST according to LESS and delete duplicate entries according to `='."
