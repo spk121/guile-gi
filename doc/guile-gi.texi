@@ -65,6 +65,7 @@ Tutorials
 Reference Guide
 
 * Typelib Introspection::
+* Typelib Documentation::
 * GObject Types::
 * GType::
 * GObject Methods::
@@ -136,25 +137,36 @@ shown in the following.
 Here, Guile-GI creates the (hopefully unique) modules @code{(%gi GLib-2.0)} and @code{(%gi Gtk-3.0)}
 and imports them into the current module using @code{use-modules}.
 
-For these auto-generated libraries, you are going to need some
-documentation. The procedure @code{typelib-document} creates some
-rough documentation for a @code{typelib}: it gives the procedure names
-and how they are called, plus a list of types and constants.  For
-example, the following commands would make some rough documentation
-for GTK and GIO.
+You will likely need some documentation for these auto-generated libraries.
+We'd like to point you to the respective C documentation, but it is not really
+apparent from that alone, which methods you can call from Scheme and how.
+To bridge this gap, we've added some documentation functionality.
+Consider a file @file{doc.scm} with roughly the following contents:
 
 @example
-guile -L . -c '(use-modules (gi)) (display (typelib-document "Gtk" "3.0"))' > Gtk.txt
-guile -L . -c '(use-modules (gi)) (display (typelib-document "Gio" "2.0"))' > Gio.txt
+#!/path/to/guile
+(use-modules (gi documentation))
+
+(let ((%typelib (typelib "GObject" "2.0"))
+      (%gir (false-if-exception (gir "GObject" "2.0")))
+      (%doc '()))
+  (set! %doc (parse %typelib %doc))
+  (close %typelib)
+  (when %gir
+    (set! %doc (parse %gir %doc))
+    (close %gir))
+  (->guile-procedures.txt %doc))
 @end example
 
-@xref{Typelib Introspection} for more information about @code{typelib->module}.
+When @file{doc.scm} is executed by Guile, it will read both the information available in the
+GIR metadata XML and runtime information created by Guile-GI, merging them into a single structure.
+This structure can then be post-processed to generate the actual documentation.
+Right now, we only offer the function @code{->guile-procedures.txt}, which generates content mimicking the
+style of @file{guile-procedures.txt} files, such as @file{/usr/share/guile/2.2/guile-procedures.txt}.
+Use shell pipes to redirect them into a file.
 
-@quotation Warning
-@code{typelib-document} has been heavily outdated for a while and is no longer available in this
-version. Right now, it is probably a better idea to read the C documentation or poke at the
-library by using the GIRepository typelib itself.
-@end quotation
+@xref{Typelib Introspection} for more information about @code{typelib->module} and
+@ref{Typelib Documentation} for more information about @code{(gi documentation)}.
 
 A minimal GTK application looks like this
 
@@ -194,7 +206,7 @@ a direct mapping from GObject type to Guile type.
 @xref{GObject Types} on this mapping.
 
 @xref{GObject Methods} on how to use methods,
-@ref{GObject Signals} on how to use signals,
+@ref{GObject Signals} on how to use signals and
 @ref{GObject Properties} on how to use properties.
 
 @menu
@@ -349,6 +361,7 @@ their @file{.typelib} files.
 @c -----------------------------------------------------------------
 @menu
 * Typelib Introspection::
+* Typelib Documentation::
 * GObject Types::
 * GType::
 * GObject Methods::
@@ -437,6 +450,56 @@ module is returned.
 If @var{version} is given, loads that version, otherwise loads the latest.
 Throws an error, if the library could not be found or loaded.
 @end deffn
+
+@c -----------------------------------------------------------------
+@node Typelib Documentation
+@section Typelib Documentation
+
+@deffn Procedure typelib lib [version] [#:require?=#t]
+Open a new input port, whose contents describe the runtime bindings created
+for @var{lib}. If @var{version} is given, use that version of the typelib,
+otherwise the latest. If @var{require?} is true (the default), require
+it first.
+@end deffn
+
+@deffn Procedure gir lib version
+Open a new file input port for the GIR metadata of LIB. VERSION applies just
+as with @code{typelib}, but is required.
+@end deffn
+
+@deffn Parameter gir-search-path
+Search path, that @code{gir} searches GIR metadata in.
+This parameter is actually defined in @code{(gi config)}.
+@end deffn
+
+@deffn Procedure parse xml [documentation]
+Parse XML into a structure suitable for post-processing.
+If @var{documentation} is given, use it as base, otherwise generate a new one.
+Returns and modifies @var{documentation}. If you need the old one for some
+weird reason, use @code{list-copy} to duplicate it.
+
+The documentation returned is an alist @code{(path . doc)},
+where path is a path of ``named'' elements in the tree,
+(e.g. @code{((namespace . "GObject") (object . "Object"))})
+and @var{doc} is an alist with the following key symbols:
+@itemize
+@item @code{doc}:
+The documentation string found in the GIR XML.
+@item @code{%return}:
+(For functions and methods.) The documentation string
+for the return value.
+@item @code{scheme}:
+The generated scheme bindings.
+These are further categorized into @code{type}s and
+@code{procedure}s, both of which can be analyzed by examining
+their values.
+@end itemize
+@end deffn
+
+@deffn Procedure ->guile-procedures.txt documentation
+Display @var{documentation} in an @file{guile-procedures.txt}-esque style.
+@end deffn
+
 
 @c -----------------------------------------------------------------
 @node GObject Types
