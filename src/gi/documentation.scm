@@ -34,14 +34,28 @@
 (eval-when (expand load eval)
   (load-extension "libguile-gi" "gig_init_document"))
 
+(define documentation-specials
+  (cdr '(%
+         namespace
+         ;; introspected types
+         class record union interface
+         function method
+         ;; leaves
+         doc scheme)))
+
+(define (documentation-special? sym)
+  (member sym documentation-specials))
+
 (define gi-namespaces
   '((c ."http://www.gtk.org/introspection/c/1.0")
     (core ."http://www.gtk.org/introspection/core/1.0")
     (glib . "http://www.gtk.org/introspection/glib/1.0")))
 
-(define* (parse string-or-port #:optional (preload '()))
-  (letrec ((documentation preload)
-           (namespaces
+(define (car? pair)
+  (and (pair? pair) (car pair)))
+
+(define* (parse string-or-port #:optional (documentation '()))
+  (letrec ((namespaces
             (map (lambda (el)
                    (cons* (car el) (car el) (ssax:uri-string->symbol (cdr el))))
                  gi-namespaces))
@@ -52,69 +66,91 @@
                ((eq? (car name) 'core) (cdr name))
                (else (symbol-append (car name) ': (cdr name))))))
 
-           (crumb (lambda (elem-gi name)
-                    (cons (res-name->sxml elem-gi) name)))
-
-           (assoc-subcons!
-            (lambda (alist key subkey value)
-              (let ((handle (assoc-ref alist key)))
-                (cond
-                 ((null? list)
-                  (list (cons key (list (cons subkey value)))))
-                 ((not handle)
-                  (assoc-set! alist key (list (cons subkey value))))
-                 (else
-                  (assoc-set! alist key (assoc-set! handle subkey value)))))))
+           (%existing
+            (case-lambda
+             ((elem-gi)
+              (xpath:node-or
+                (xpath:select-kids
+                 (xpath:node-typeof? (res-name->sxml elem-gi)))
+                (xpath:node-self
+                 (xpath:node-typeof? (res-name->sxml elem-gi)))))
+             ((elem-gi name)
+              (compose
+               (xpath:filter
+                (compose
+                 (xpath:select-kids (xpath:node-equal? `(name ,name)))
+                 (xpath:select-kids (xpath:node-typeof? '@))))
+               (%existing elem-gi)))))
 
            (parser
             (ssax:make-parser
+             ;; the real work here lies in detecting existing items
+             ;; and making them the new seed
              NEW-LEVEL-SEED
              (lambda (elem-gi attrs ns content seed)
                (let ((name (assq-ref attrs 'name))
-                     (%path (or (assq-ref seed '%path) '())))
-                 (cond
-                  (name
-                   (list
-                    (cons '%path
-                          (cons (crumb elem-gi name)
-                                %path))))
-                  ((equal? elem-gi '(core . return-value))
-                   (list (cons* '%path 'return-value %path)))
-                  (else
-                   (list (cons '%path %path))))))
+                     (%path (or (assq-ref seed '%path) '()))
+                     (existing '()))
+                 (if name
+                     (set! existing ((%existing elem-gi name) seed)))
+
+                 (cons*
+                  ;; the current path in tags
+                  (cons* '%path (res-name->sxml elem-gi) %path)
+                  ;; link to the existing element
+                  (cons '%existing (car? existing))
+                  (cond
+                   ((equal? (res-name->sxml elem-gi) 'namespace)
+                    ;; we have to pull documentation directly here instead of having it as
+                    ;; seed because of some oddities regarding the <repository> tag
+                    (let ((existing-ns ((%existing elem-gi name) documentation)))
+                      (if (pair? existing-ns)
+                          (cddar existing-ns)
+                          '())))
+                   (name
+                    (if (pair? existing)
+                        (cddar existing)
+                        '()))
+                   (else
+                    '())))))
 
              FINISH-ELEMENT
              (lambda (elem-gi attributes namespaces parent-seed seed)
                (let ((path (assq-ref seed '%path))
-                     (end (car seed))
-                     (seed (cdr (ssax:reverse-collect-str-drop-ws seed)))
-                     (name (res-name->sxml elem-gi))
+                     (existing (assq-ref seed '%existing))
+                     (end (car? seed))
+                     ;; collect strings and drop helper elements
+                     (seed (filter (negate (lambda (elt)
+                                             (member (car? elt) '(%path %existing))))
+                                   (ssax:reverse-collect-str-drop-ws seed)))
+                     (name (assq-ref attributes 'name))
                      (attrs
                       (attlist-fold (lambda (attr accum)
                                       (cons (list (res-name->sxml (car attr)) (cdr attr))
                                             accum))
                                     '() attributes)))
-                 (case (res-name->sxml elem-gi)
-                   ((doc core:doc)
-                    (let ((real-doc end))
-                      (cond
-                       ((null? path) #f) ;; no docs for pathless nodes
-                       ((equal? (car path) 'return-value)
-                        (set! documentation
-                              (assoc-subcons! documentation (reverse (cdr path)) '%return real-doc)))
-                       (else
-                        (set! documentation
-                              (assoc-subcons! documentation (reverse path) 'doc real-doc))))))
-                   ((scheme)
-                    (set! documentation
-                          (assoc-subcons! documentation (reverse path) 'scheme seed))))
-                 (acons (res-name->sxml elem-gi)
-                        (if (null? attrs)
-                            seed
-                            (cons (cons '@ attrs) seed))
-                        parent-seed)))
+                 (let ((seed (if (or (member 'scheme path)
+                                     (member 'doc path))
+                                 seed
+                                 (filter
+                                  (compose documentation-special? car?)
+                                  seed))))
+                   (cond
+                    ;; we've reached the top and are only interested in namespaces
+                    ((equal? (res-name->sxml elem-gi) 'repository)
+                     (cons (res-name->sxml elem-gi)
+                           (filter
+                            (lambda (head)
+                              (eq? (car? head) 'namespace))
+                            seed)))
+                    ;; keep the XML structure, but delete the previously existing element
+                    (else
+                     (acons
+                      (res-name->sxml elem-gi)
+                      (if (null? attrs) seed (cons (cons '@ attrs) seed))
+                      (delq existing parent-seed)))))))
 
-             ;; the rest is taken from ssax:xml->sxml
+             ;; the rest is taken from ssax:xml->sxml with minor changes
              CHAR-DATA-HANDLER
              (lambda (string1 string2 seed)
                (if (string-null? string2) (cons string1 seed)
@@ -132,11 +168,11 @@
              PI
              ((*DEFAULT* .
                          (lambda (port pi-tag seed)
-                           (ssax:read-pi-body-as-string port)
-                           seed))))))
+                           (cons
+                            (list '*PI* pi-tag (ssax:read-pi-body-as-string port))
+                            seed)))))))
     (parser (if (string? string-or-port) (open-input-string string-or-port) string-or-port)
-            '())
-    documentation))
+            '())))
 
 (define-method (%info (info <GIBaseInfo>))
   (let ((doc (with-output-to-string (lambda () (%document info)))))
@@ -145,7 +181,7 @@
 (define* (typelib lib #:optional version #:key (require? #t))
   (when require? (require lib version))
   (open-input-string
-   (format #f "<namespace name=~s>~a</namespace>" lib
+   (format #f "<repository><namespace name=~s>~a</namespace></repository>" lib
            (string-join (map %info (infos lib)) ""))))
 
 (define (find-gir lib version)
@@ -172,9 +208,6 @@
       (loop (cdr list))))
   list)
 
-(define (car? pair)
-  (and (pair? pair) (car pair)))
-
 (define %long-name
   (xpath:sxpath `(@ long-name ,cdr)))
 
@@ -188,10 +221,9 @@
   (xpath:sxpath `(return @ name ,cdr)))
 
 (define %doc
-  (cute assq-ref <> 'doc))
+  (xpath:sxpath `(doc *text*)))
 
-(define %procedures
-  (xpath:sxpath `(// procedure)))
+(define %procedures (xpath:sxpath `(// procedure)))
 
 (define (%procedures-by-name name)
   (xpath:filter
@@ -202,7 +234,8 @@
     (xpath:select-kids (xpath:node-typeof? '@)))))
 
 (define (->guile-procedures.txt xml)
-  (let* ((^ (compose cdar (xpath:node-parent xml)))
+  (let* ((^ (xpath:node-parent xml))
+         (^^ (compose ^ ^))
          (procedures (%procedures xml))
          (names (sort+delete-duplicates! (append (%name procedures)
                                                  (%long-name procedures))
@@ -221,7 +254,7 @@
                                (equal? name long-name))
                        ;; we have a fully qualified name, so display doc if
                        ;; available
-                       (let ((doc (%doc (^ p))))
+                       (let ((doc (car? (%doc (^^ p)))))
                           (when doc (display doc) (newline))))))
                  ((%procedures-by-name name) procedures)))
     names)))

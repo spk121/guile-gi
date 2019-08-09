@@ -77,28 +77,25 @@ This parameter is actually defined in <code>(gi config)</code>.
 
 <dl>
 <dt id="index-parse">Procedure: <strong>parse</strong> <em>xml [documentation]</em></dt>
-<dd><p>Parse XML into a structure suitable for post-processing.
-If <var>documentation</var> is given, use it as base, otherwise generate a new one.
-Returns and modifies <var>documentation</var>. If you need the old one for some
-weird reason, use <code>list-copy</code> to duplicate it.
+<dd><p>Parse <var>xml</var> into a structure suitable for post-processing.
+If <var>documentation</var> is given, use it as a base, merging the two.
 </p>
-<p>The documentation returned is an alist <code>(path . doc)</code>,
-where path is a path of &ldquo;named&rdquo; elements in the tree,
-(e.g. <code>((namespace . &quot;GObject&quot;) (object . &quot;Object&quot;))</code>)
-and <var>doc</var> is an alist with the following key symbols:
-</p><ul>
-<li> <code>doc</code>:
-The documentation string found in the GIR XML.
-</li><li> <code>%return</code>:
-(For functions and methods.) The documentation string
-for the return value.
-</li><li> <code>scheme</code>:
-The generated scheme bindings.
-These are further categorized into <code>type</code>s and
-<code>procedure</code>s, both of which can be analyzed by examining
-their values.
-</li></ul>
-</dd></dl>
+<p><var>xml</var> is expected to be a string or port containing documentation
+in an XML format. <var>documentation</var> should either be the empty list
+(the default) or the result of a previous <code>parse</code> operation.
+</p>
+<p>It should be noted, that the order in which documentations are
+threaded through <code>parse</code> matters. The last <code>xml</code> &ldquo;wins&rdquo;
+in cases where multiple ones fill in the same value (e.g. attributes).
+Since GIRs has more information than typelibs, you should therefore
+handle typelibs first in most cases.
+</p>
+<p>The result is a nodeset corresponding to the (merged) XML.
+However, it is stripped down to only contain nodes relevant for
+documentation (the exact subset may be subject to change) and also
+contains the non-standard <code>scheme</code> node for bindings created
+by Guile-GI.
+</p></dd></dl>
 
 <dl>
 <dt id="index-_002d_003eguile_002dprocedures_002etxt">Procedure: <strong>-&gt;guile-procedures.txt</strong> <em>documentation</em></dt>

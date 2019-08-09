@@ -135,7 +135,7 @@ do_document(GIBaseInfo *info, const gchar *namespace)
             kind = "interface";
             break;
         case GI_INFO_TYPE_OBJECT:
-            kind = "object";
+            kind = "class";
             break;
         }
 

@@ -473,27 +473,24 @@ This parameter is actually defined in @code{(gi config)}.
 @end deffn
 
 @deffn Procedure parse xml [documentation]
-Parse XML into a structure suitable for post-processing.
-If @var{documentation} is given, use it as base, otherwise generate a new one.
-Returns and modifies @var{documentation}. If you need the old one for some
-weird reason, use @code{list-copy} to duplicate it.
+Parse @var{xml} into a structure suitable for post-processing.
+If @var{documentation} is given, use it as a base, merging the two.
 
-The documentation returned is an alist @code{(path . doc)},
-where path is a path of ``named'' elements in the tree,
-(e.g. @code{((namespace . "GObject") (object . "Object"))})
-and @var{doc} is an alist with the following key symbols:
-@itemize
-@item @code{doc}:
-The documentation string found in the GIR XML.
-@item @code{%return}:
-(For functions and methods.) The documentation string
-for the return value.
-@item @code{scheme}:
-The generated scheme bindings.
-These are further categorized into @code{type}s and
-@code{procedure}s, both of which can be analyzed by examining
-their values.
-@end itemize
+@var{xml} is expected to be a string or port containing documentation
+in an XML format. @var{documentation} should either be the empty list
+(the default) or the result of a previous @code{parse} operation.
+
+It should be noted, that the order in which documentations are
+threaded through @code{parse} matters. The last @code{xml} ``wins''
+in cases where multiple ones fill in the same value (e.g. attributes).
+Since GIRs has more information than typelibs, you should therefore
+handle typelibs first in most cases.
+
+The result is a nodeset corresponding to the (merged) XML.
+However, it is stripped down to only contain nodes relevant for
+documentation (the exact subset may be subject to change) and also
+contains the non-standard @code{scheme} node for bindings created
+by Guile-GI.
 @end deffn
 
 @deffn Procedure ->guile-procedures.txt documentation
