@@ -1,5 +1,5 @@
 (define-module (gi config)
-  #:export (gir-dir))
+  #:export (gir-search-path))
 
 (define gir-search-path
   (make-parameter
