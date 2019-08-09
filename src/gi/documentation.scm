@@ -29,7 +29,7 @@
   #:use-module (gi types)
   #:use-module ((gi repository) #:select (infos require))
   #:export (parse
-            info typelib gir ->guile-procedures.txt))
+            typelib gir ->guile-procedures.txt))
 
 (eval-when (expand load eval)
   (load-extension "libguile-gi" "gig_init_document"))
@@ -43,7 +43,7 @@
   (letrec ((documentation preload)
            (namespaces
             (map (lambda (el)
-                   (cons* #f (car el) (ssax:uri-string->symbol (cdr el))))
+                   (cons* (car el) (car el) (ssax:uri-string->symbol (cdr el))))
                  gi-namespaces))
            (res-name->sxml
             (lambda (name)
@@ -71,10 +71,17 @@
              NEW-LEVEL-SEED
              (lambda (elem-gi attrs ns content seed)
                (let ((name (assq-ref attrs 'name))
-                     (%path (assq-ref seed '%path)))
-                 (if name
-                     (acons '%path (cons (crumb elem-gi name) (or %path '())) seed)
-                     seed)))
+                     (%path (or (assq-ref seed '%path) '())))
+                 (cond
+                  (name
+                   (list
+                    (cons '%path
+                          (cons (crumb elem-gi name)
+                                %path))))
+                  ((equal? elem-gi '(core . return-value))
+                   (list (cons* '%path 'return-value %path)))
+                  (else
+                   (list (cons '%path %path))))))
 
              FINISH-ELEMENT
              (lambda (elem-gi attributes namespaces parent-seed seed)
@@ -90,13 +97,22 @@
                  (case (res-name->sxml elem-gi)
                    ((doc core:doc)
                     (let ((real-doc end))
-                      (when path
+                      (cond
+                       ((null? path) #f) ;; no docs for pathless nodes
+                       ((equal? (car path) 'return-value)
+                        (set! documentation
+                              (assoc-subcons! documentation (reverse (cdr path)) '%return real-doc)))
+                       (else
                         (set! documentation
                               (assoc-subcons! documentation (reverse path) 'doc real-doc))))))
-                 (cons
-                  (cons name
-                        (if (null? attrs) seed (cons (cons '@ attrs) seed)))
-                  parent-seed)))
+                   ((scheme)
+                    (set! documentation
+                          (assoc-subcons! documentation (reverse path) 'scheme seed))))
+                 (acons (res-name->sxml elem-gi)
+                        (if (null? attrs)
+                            seed
+                            (cons (cons '@ attrs) seed))
+                        parent-seed)))
 
              ;; the rest is taken from ssax:xml->sxml
              CHAR-DATA-HANDLER
@@ -124,18 +140,13 @@
 
 (define-method (%info (info <GIBaseInfo>))
   (let ((doc (with-output-to-string (lambda () (%document info)))))
-    (and (> (string-length doc) 0) doc)))
-
-(define-method (info (info <GIBaseInfo>))
-  (and-let* ((i (%info info)))
-    (xml->sxml i #:namespaces gi-namespaces)))
+    doc))
 
 (define* (typelib lib #:optional version #:key (require? #t))
   (when require? (require lib version))
-  (xml->sxml
+  (open-input-string
    (format #f "<namespace name=~s>~a</namespace>" lib
-           (string-join (filter-map %info (infos lib)) ""))
-   #:namespaces gi-namespaces))
+           (string-join (map %info (infos lib)) ""))))
 
 (define (find-gir lib version)
   (or
@@ -146,8 +157,7 @@
    (error "unable to find gir for ~a-~a" (list lib version))))
 
 (define (gir lib version)
-  (call-with-input-file (find-gir lib version)
-    parse))
+  (open-input-file (find-gir lib version)))
 
 (define* (sort+delete-duplicates! list less #:optional (= equal?))
   "Sort LIST according to LESS and delete duplicate entries according to `='."
@@ -177,29 +187,41 @@
 (define %returns
   (xpath:sxpath `(return @ name ,cdr)))
 
+(define %doc
+  (cute assq-ref <> 'doc))
+
 (define %procedures
   (xpath:sxpath `(// procedure)))
 
 (define (%procedures-by-name name)
   (xpath:filter
    (compose
-    (xpath:select-kids (xpath:node-equal? `(name ,name)))
+    (xpath:node-or
+     (xpath:select-kids (xpath:node-equal? `(name ,name)))
+     (xpath:select-kids (xpath:node-equal? `(long-name ,name))))
     (xpath:select-kids (xpath:node-typeof? '@)))))
 
 (define (->guile-procedures.txt xml)
-  (let* ((procedures (%procedures xml))
-         (names (sort+delete-duplicates! (%name procedures) string<=? string=?)))
+  (let* ((^ (compose cdar (xpath:node-parent xml)))
+         (procedures (%procedures xml))
+         (names (sort+delete-duplicates! (append (%name procedures)
+                                                 (%long-name procedures))
+                                         string<=? string=?)))
     (for-each
      (lambda (name)
        (format #t "~c~a~%~%" #\page name)
        (for-each (lambda (p)
                    (let ((long-name (car? (%long-name p))))
                      (if long-name
-                       (begin
                          (format #t "- Method: ~a ~a => ~a~%" long-name
-                                 (%args p) (%returns p)))
-                       (begin
+                                 (%args p) (%returns p))
                          (format #t "- Procedure: ~a ~a => ~a~%" name
-                                 (%args p) (%returns p))))))
+                                 (%args p) (%returns p)))
+                     (when (or (not long-name)
+                               (equal? name long-name))
+                       ;; we have a fully qualified name, so display doc if
+                       ;; available
+                       (let ((doc (%doc (^ p))))
+                          (when doc (display doc) (newline))))))
                  ((%procedures-by-name name) procedures)))
-     names)))
+    names)))
