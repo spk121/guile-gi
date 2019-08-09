@@ -6,7 +6,7 @@
    (or (getenv "GI_GIR_PATH") "@GI_GIR_DIR@")
    (lambda (path)
      (cond
-      ((string? path) parse-path)
+      ((string? path) (parse-path path))
       ((list? path) path)
       (else (scm-error 'wrong-type-arg "%set-gir-search-path"
                        "expected list or string" '() (list path)))))))
