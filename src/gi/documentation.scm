@@ -124,12 +124,10 @@
              (lambda (elem-gi attributes namespaces parent-seed seed)
                (let ((path (assq-ref seed '%path))
                      (existing (assq-ref seed '%existing))
-                     (end (car? seed))
                      ;; collect strings and drop helper elements
                      (seed (filter (negate (lambda (elt)
                                              (member (car? elt) '(%path %existing))))
                                    (ssax:reverse-collect-str-drop-ws seed)))
-                     (name (assq-ref attributes 'name))
                      (attrs
                       (attlist-fold (lambda (attr accum)
                                       (cons (list (res-name->sxml (car attr)) (cdr attr))
