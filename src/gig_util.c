@@ -62,7 +62,7 @@ gig_gname_to_scm_name(const gchar *gname)
             g_string_append_c(str, '-');
             was_lower = FALSE;
         }
-        else if (gname[i] == '?' || gname[i] == ':') {
+        else if (gname[i] == '?' || gname[i] == ':' || gname[i] == '%') {
             g_string_append_c(str, gname[i]);
             was_lower = FALSE;
         }
@@ -162,4 +162,15 @@ scm_c_reexport(const gchar *name, ...)
     va_end(args);
 
     return SCM_UNSPECIFIED;
+}
+
+SCM
+scm_printf(SCM port, const gchar *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    gchar *_message = g_strdup_vprintf(fmt, args);
+    SCM message = scm_from_utf8_string(_message);
+    g_free(_message);
+    scm_display(message, port);
 }

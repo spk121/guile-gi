@@ -42,6 +42,8 @@ libguile_gi_la_SOURCES = \
  gig_flag.c \
  gig_flag.h \
  gig_repository.c \
+ gig_repository.h \
+ gig_document.c \
  gig_type.c \
  gig_type.h \
  gig_type_private.c \
@@ -97,18 +99,25 @@ pkgguileobjectdir=$(guileobjectdir)/gi
 dist_guilesite_DATA = \
   gi.scm
 
+nodist_pkgguilesite_DATA = \
+  gi/config.scm
+
 dist_pkgguilesite_DATA = \
   gi/core-generics.scm \
-  gi/types.scm \
+  gi/documentation.scm \
   gi/oop.scm \
   gi/repository.scm \
+  gi/types.scm \
   gi/util.scm
 
-pkgguileobject_DATA = $(dist_guilesite_DATA:%.scm=%.go) $(dist_pkgguilesite_DATA:%.scm=%.go)
+pkgguileobject_DATA = \
+  $(dist_guilesite_DATA:%.scm=%.go) \
+  $(dist_pkgguilesite_DATA:%.scm=%.go) \
+  $(nodist_pkgguilesite_DATA:%.scm=%.go)
 
 $(pkgguileobject_DATA): libguile-gi.la
 
-GUILEC_FLAGS = -Warity-mismatch -Wformat --load-path=$(abs_srcdir)
+GUILEC_FLAGS = -Warity-mismatch -Wformat --load-path=$(abs_srcdir) --load-path=$(abs_builddir)
 
 .scm.go:
 	GUILE_AUTO_COMPILE=0 \

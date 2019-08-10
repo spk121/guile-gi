@@ -17,6 +17,7 @@ SCM scm_class_ref(SCM cls, SCM slot);
 SCM scm_class_set_x(SCM cls, SCM slot, SCM val);
 SCM scm_drop_right_1(SCM lst);
 SCM scm_c_reexport(const gchar *name, ...);
+SCM scm_printf(SCM port, const gchar *fmt, ...);
 
 #define scm_is_equal(a,b) scm_is_true(scm_equal_p(a,b))
 
