@@ -259,7 +259,8 @@
                        ;; available
                        (let ((doc (car? (%doc (^^ p)))))
                           (when doc (display doc) (newline))))))
-                 ((%procedures-by-name name) procedures)))
+                 ((%procedures-by-name name) procedures))
+       (newline))
     names)))
 
 (define (string-whitespace? str)
