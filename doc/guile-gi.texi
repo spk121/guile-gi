@@ -497,6 +497,18 @@ by Guile-GI.
 Display @var{documentation} in an @file{guile-procedures.txt}-esque style.
 @end deffn
 
+@deffn Procedure ->docbook documentation
+Display @var{documentation} as DocBook XML.
+@quotation Warning
+The standard DocBook tools installable through most distributions do
+not handle XML, but rather SGML.
+Trying to postprocess the results of this function with them will
+only end up in weird results, (potentially lots of) errors and user frustration.
+Use GTK-Doc instead, either directly or through @code{xsltproc},
+or use your own XSLT stylesheets.
+@end quotation
+@end deffn
+
 
 @c -----------------------------------------------------------------
 @node GObject Types

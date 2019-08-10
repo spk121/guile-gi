@@ -17,19 +17,22 @@
   #:use-module (ice-9 curried-definitions)
   #:use-module (ice-9 optargs)
   #:use-module (ice-9 format)
+  #:use-module (ice-9 regex)
   #:use-module (oop goops)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-2)
   #:use-module (srfi srfi-26)
   #:use-module (sxml simple)
   #:use-module (sxml ssax)
-  #:use-module (sxml fold)
+  #:use-module (sxml transform)
   #:use-module ((sxml xpath) #:prefix xpath:)
   #:use-module (gi config)
   #:use-module (gi types)
   #:use-module ((gi repository) #:select (infos require))
   #:export (parse
-            typelib gir ->guile-procedures.txt))
+            typelib gir
+            ->guile-procedures.txt
+            ->docbook))
 
 (eval-when (expand load eval)
   (load-extension "libguile-gi" "gig_init_document"))
@@ -209,16 +212,16 @@
   list)
 
 (define %long-name
-  (xpath:sxpath `(@ long-name ,cdr)))
+  (xpath:sxpath `(@ long-name *text*)))
 
 (define %name
-  (xpath:sxpath `(@ name ,cdr)))
+  (xpath:sxpath `(@ name *text*)))
 
 (define %args
-  (xpath:sxpath `(argument @ name ,cdr)))
+  (xpath:sxpath `(argument @ name *text*)))
 
 (define %returns
-  (xpath:sxpath `(return @ name ,cdr)))
+  (xpath:sxpath `(return @ name *text*)))
 
 (define %doc
   (xpath:sxpath `(doc *text*)))
@@ -258,3 +261,160 @@
                           (when doc (display doc) (newline))))))
                  ((%procedures-by-name name) procedures)))
     names)))
+
+(define (string-whitespace? str)
+  (string-fold (lambda (char seed) (and (char-whitespace? char) seed)) #t str))
+
+(define (extract-informal-examples str)
+  (reverse!
+   (let ((code-block-start (make-regexp "\\|\\["))
+        (code-block-end (make-regexp "\\]\\|")))
+    (let loop
+        ((chain '())
+         (point 0)
+         (starts (list-matches code-block-start str))
+         (ends (list-matches code-block-end str)))
+      (cond
+       ((null? starts)
+        (cons (substring str point (string-length str))
+              chain))
+
+       ((null? ends)
+        (cons (substring str point (string-length str))
+              chain))
+
+       (else
+        (let ((start (car starts))
+              (end (car ends)))
+          (cond
+           ((< (match:start start) point)
+            (loop chain point (cdr starts) ends))
+           ((< (match:start end) (match:end start))
+            (loop chain point starts (cdr ends)))
+           (else
+            (loop
+             (let ((pre (substring str point (match:start start)))
+                   (this (substring str (match:end start) (match:start end))))
+               (if (string-whitespace? pre)
+                   (cons `(informalexample (programlisting (,this)))
+                         chain)
+                   (cons* `(informalexample (programlisting (,this)))
+                          pre chain)))
+             (match:end end)
+             (cdr starts)
+             (cdr ends)))))))))))
+
+(define ->docbook
+  (letrec ((%scheme (xpath:sxpath `(scheme)))
+           (%section (xpath:sxpath `(section)))
+           (%simplesect (xpath:sxpath `(simplesect)))
+           (%top (xpath:sxpath '(namespace *any*)))
+
+           (\n\n (make-regexp "\n\n"))
+
+           (paras
+            (lambda (kids)
+              (append-map
+               (compose
+                (lambda (elts)
+                  (append-map
+                   (lambda (elt)
+                     (if (pair? elt)
+                         `((para ,elt))
+                         ((compose
+                           (lambda (elts)
+                             (map (lambda (elt) `(para ,elt))
+                                  (filter (negate string-whitespace?) elts)))
+                           (lambda (str) (string-split str #\page))
+                           (lambda (str)
+                             (regexp-substitute/global
+                              #f \n\n str 'pre (string #\page) 'post)))
+                          elt)))
+                   elts))
+                extract-informal-examples)
+               (filter string? kids))))
+
+           (title
+            (lambda (tag . kids)
+              `(title
+                ,@(%name (cons tag kids)))))
+
+           (chapter
+            (lambda (tag . kids)
+              (let ((simple (%simplesect (cons tag kids)))
+                    (sections (%section (cons tag kids))))
+                `(chapter
+                  (title ,@(%name (cons tag kids)))
+                  (section (@ (name "Contents")))
+                  ,@sections
+                  ,@simple))))
+
+           (section
+            (lambda (tag . kids)
+              (let ((doc (%doc (cons tag kids)))
+                    (scheme (%scheme (cons tag kids)))
+                    (sections (%simplesect (cons tag kids))))
+                (cond
+                 ((and (null? scheme) (null? sections))
+                  '())
+
+                 ((null? scheme)
+                  `(section ,@sections))
+
+                 (else
+                  `(section
+                    ,@(cdar scheme)
+                    ,@(paras doc)
+                    ,@sections))))))
+
+           (simplesect
+            (lambda (tag . kids)
+              (let ((doc (%doc (cons tag kids)))
+                    (scheme (%scheme (cons tag kids))))
+                (cond
+                 ((null? scheme) '())
+                 ((null? doc)
+                  `(simplesect ,@(cadar scheme)
+                               (para "Undocumented")))
+                 (else `(simplesect ,@(cadar scheme) ,@(paras doc))))))))
+    (compose
+     sxml->xml
+     (cute
+      pre-post-order
+      <>
+      `((repository . ,(lambda (tag . kids)
+                         `(*TOP* (book ,@kids))))
+        (namespace . ,chapter)
+        (record . ,section)
+        (class . ,section)
+        (interface . ,section)
+        (union . ,section)
+        (method . ,simplesect)
+        (function . ,simplesect)
+
+        (procedure
+         .
+         ,(lambda (tag . kids)
+            (let ((node (cons tag kids)))
+              `(,(apply title tag kids)
+                ,(car
+                  (map
+                   (lambda (ln)
+                     `(subtitle
+                       (code
+                        ,(format
+                          #f "~a ;=> ~a"
+                          (cons
+                           ln
+                           (append-map %name
+                                       ((xpath:sxpath `(argument)) node)))
+                          (append-map %name
+                                      ((xpath:sxpath `(return)) node))))))
+                   (append (%long-name node)
+                           (%name node))))))))
+        (type . ,title)
+
+        (*text* . ,(lambda (tag txt)
+                     txt))
+        (*default* . ,(lambda (tag . kids)
+                        (cons tag kids))))))))
