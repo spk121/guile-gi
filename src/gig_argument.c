@@ -1565,9 +1565,9 @@ c_interface_to_scm(C2S_ARG_DECL)
     case GI_INFO_TYPE_STRUCT:
         if (referenced_base_gtype == G_TYPE_NONE) {
             gpointer struct_ptr = arg->v_pointer;
-            gsize size = g_struct_info_get_size(referenced_base_info);
-            *object = scm_c_make_bytevector(size);
-            memcpy(SCM_BYTEVECTOR_CONTENTS(*object), arg->v_pointer, size);
+            gsize _size = g_struct_info_get_size(referenced_base_info);
+            *object = scm_c_make_bytevector(_size);
+            memcpy(SCM_BYTEVECTOR_CONTENTS(*object), struct_ptr, _size);
             break;
         }
         g_assert_not_reached();
@@ -1575,9 +1575,9 @@ c_interface_to_scm(C2S_ARG_DECL)
     case GI_INFO_TYPE_UNION:
         if (referenced_base_gtype == G_TYPE_NONE) {
             gpointer struct_ptr = arg->v_pointer;
-            gsize size = g_struct_info_get_size(referenced_base_info);
-            *object = scm_c_make_bytevector(size);
-            memcpy(SCM_BYTEVECTOR_CONTENTS(*object), arg->v_pointer, size);
+            gsize _size = g_struct_info_get_size(referenced_base_info);
+            *object = scm_c_make_bytevector(_size);
+            memcpy(SCM_BYTEVECTOR_CONTENTS(*object), struct_ptr, _size);
             break;
         }
         g_assert_not_reached();
@@ -1731,7 +1731,7 @@ c_native_array_to_scm(C2S_ARG_DECL)
     {
         *object = scm_c_make_vector(length, SCM_BOOL_F);
         scm_t_array_handle handle;
-        size_t i, len;
+        size_t len;
         ssize_t inc;
         SCM *elt;
         elt = scm_vector_writable_elements(*object, &handle, &len, &inc);
@@ -1769,7 +1769,7 @@ c_native_array_to_scm(C2S_ARG_DECL)
         {
             *object = scm_c_make_vector(length, SCM_BOOL_F);
             scm_t_array_handle handle;
-            size_t i, len;
+            size_t len;
             ssize_t inc;
             SCM *elt;
             elt = scm_vector_writable_elements(*object, &handle, &len, &inc);
