@@ -46,16 +46,16 @@ static void make_formals(GICallableInfo *, GigArgMap *, gint n_inputs, SCM self_
                          SCM *formals, SCM *specializers);
 static void function_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_data);
 
-static SCM convert_output_args(GIFunctionInfo *func_info, GigArgMap *amap, const gchar *name,
+static SCM convert_output_args(GigArgMap *amap, const gchar *name,
                                GArray *out_args);
-static void object_list_to_c_args(GIFunctionInfo *func_info, GigArgMap *amap, const gchar *subr,
+static void object_list_to_c_args(GigArgMap *amap, const gchar *subr,
                                   SCM s_args, GArray *in_args, GPtrArray *cinvoke_free_array,
                                   GArray *out_args);
 static void
 store_argument(gint invoke_in, gint invoke_out, gboolean inout, GIArgument *arg,
                GArray *cinvoke_input_arg_array, GPtrArray *cinvoke_free_array,
                GArray *cinvoke_output_arg_array);
-static SCM rebox_inout_args(GIFunctionInfo *func_info, GigArgMap *amap,
+static SCM rebox_inout_args(GigArgMap *amap,
                             const gchar *func_name, GArray *in_args, GArray *out_args, SCM s_args);
 static void function_free(GigFunction *fn);
 static void gig_fini_function(void);
@@ -386,7 +386,7 @@ gig_function_invoke(GIFunctionInfo *func_info, GigArgMap *amap, const gchar *nam
     cinvoke_free_array = g_ptr_array_new_with_free_func(g_free);
 
     // Convert the scheme arguments into C.
-    object_list_to_c_args(func_info, amap, name, args, cinvoke_input_arg_array,
+    object_list_to_c_args(amap, name, args, cinvoke_input_arg_array,
                           cinvoke_free_array, cinvoke_output_arg_array);
     // For methods calls, the object gets inserted as the 1st argument.
     if (self) {
@@ -441,8 +441,8 @@ gig_function_invoke(GIFunctionInfo *func_info, GigArgMap *amap, const gchar *nam
         else
             output = scm_list_1(s_return);
 
-        SCM output2 = convert_output_args(func_info, amap, name, cinvoke_output_arg_array);
-        SCM output3 = rebox_inout_args(func_info, amap, name, cinvoke_input_arg_array,
+        SCM output2 = convert_output_args(amap, name, cinvoke_output_arg_array);
+        SCM output3 = rebox_inout_args(amap, name, cinvoke_input_arg_array,
                                        cinvoke_output_arg_array, args);
         output = scm_append(scm_list_3(output, output2, output3));
     }
@@ -593,13 +593,11 @@ store_argument(gint invoke_in, gint invoke_out, gboolean inout, GIArgument *arg,
 }
 
 static void
-object_list_to_c_args(GIFunctionInfo *func_info,
-                      GigArgMap *amap,
+object_list_to_c_args(GigArgMap *amap,
                       const gchar *subr, SCM s_args,
                       GArray *cinvoke_input_arg_array,
                       GPtrArray *cinvoke_free_array, GArray *cinvoke_output_arg_array)
 {
-    g_assert_nonnull(func_info);
     g_assert_nonnull(amap);
     g_assert_nonnull(subr);
     g_assert_nonnull(cinvoke_input_arg_array);
@@ -631,7 +629,7 @@ object_list_to_c_args(GIFunctionInfo *func_info,
 }
 
 static SCM
-convert_output_args(GIFunctionInfo *func_info, GigArgMap *amap,
+convert_output_args(GigArgMap *amap,
                     const gchar *func_name, GArray *out_args)
 {
     SCM output = SCM_EOL;
@@ -666,7 +664,7 @@ convert_output_args(GIFunctionInfo *func_info, GigArgMap *amap,
 // For INOUT args, if they came from SCM boxes, push the resulting
 // outputs back into those boxes.
 static SCM
-rebox_inout_args(GIFunctionInfo *func_info, GigArgMap *amap,
+rebox_inout_args(GigArgMap *amap,
                  const gchar *func_name, GArray *in_args, GArray *out_args, SCM s_args)
 {
     if (scm_is_null(s_args))
