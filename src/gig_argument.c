@@ -639,7 +639,7 @@ scm_to_c_interface(S2C_ARG_DECL)
     else if (referenced_base_type == GI_INFO_TYPE_CALLBACK) {
         GICallbackInfo *callback_info = referenced_base_info;
         if (scm_is_true(scm_procedure_p(object))) {
-            arg->v_pointer = gig_callback_get_ptr(callback_info, object);
+            arg->v_pointer = gig_callback_to_c(callback_info, object);
             g_assert(arg->v_pointer != NULL);
         }
     }
@@ -1526,7 +1526,7 @@ c_interface_pointer_to_scm(C2S_ARG_DECL)
         TRACE_C2S();
         g_assert_nonnull(arg->v_pointer);
         gpointer callback_ptr = arg->v_pointer;
-        *object = scm_from_pointer(callback_ptr, NULL);
+        *object = gig_callback_to_scm(referenced_base_info, callback_ptr);
     }
     else if (referenced_info_type == GI_INFO_TYPE_STRUCT
              || referenced_info_type == GI_INFO_TYPE_UNION
