@@ -6,7 +6,6 @@
 typedef struct _GigCallback GigCallback;
 struct _GigCallback
 {
-    GICallbackInfo *callback_info;
     GigArgMap *amap;
     ffi_closure *closure;
     ffi_cif cif;
@@ -43,9 +42,11 @@ callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
     g_debug("in callback C->SCM binding");
     guint n_args = cif->nargs;
 
-    g_assert_cmpint(n_args, ==, g_callable_info_get_n_args(gcb->callback_info));
     g_assert(gcb->amap != NULL);
     GigArgMap *amap = gcb->amap;
+    gint in, out;
+    gig_arg_map_get_cinvoke_args_count(amap, &in, &out);
+    g_assert_cmpint(n_args, ==, in + out);
 
     for (guint i = 0; i < n_args; i++) {
         SCM s_entry = SCM_BOOL_F;
@@ -174,8 +175,7 @@ gig_callback_new(GICallbackInfo *callback_info, SCM s_func)
     }
 
     gcb->s_func = s_func;
-    gcb->callback_info = g_base_info_ref(callback_info);
-    gcb->amap = gig_arg_map_new(gcb->callback_info);
+    gcb->amap = gig_arg_map_new(callback_info);
 
     // STEP 1
     // Allocate the block of memory that FFI uses to hold a closure object,
@@ -238,18 +238,13 @@ gig_callback_to_c(GICallbackInfo *cb_info, SCM s_func)
     // Lookup s_func in the callback cache.
     GSList *x = callback_list;
     GigCallback *gcb;
-    GIInfoType cb_typeinfo = g_base_info_get_type(cb_info);
-    GIInfoType gcb_typeinfo;
 
     // A callback is only a 'match' if it is the same Scheme produre
     // as well as the same GObject C Callback type.
     while (x != NULL) {
         gcb = x->data;
-        if (scm_is_eq(gcb->s_func, s_func)) {
-            gcb_typeinfo = g_base_info_get_type(gcb->callback_info);
-            if (cb_typeinfo == gcb_typeinfo)
-                return gcb->callback_ptr;
-        }
+        if (scm_is_eq(gcb->s_func, s_func))
+            return gcb->callback_ptr;
         x = x->next;
     }
 
@@ -424,7 +419,6 @@ callback_free(GigCallback *gcb)
     gcb->closure = NULL;
 
     gig_arg_map_free(gcb->amap);
-    g_base_info_unref(gcb->callback_info);
     g_free(gcb->atypes);
     gcb->atypes = NULL;
 
