@@ -44,8 +44,8 @@
   (cdr '(%
          namespace
          ;; introspected types
-         class record union interface
-         function method
+         class record union interface enumeration bitfield
+         function method member
          ;; leaves
          doc scheme)))
 
@@ -177,8 +177,6 @@
                             seed)))))))
     (parser (if (string? string-or-port) (open-input-string string-or-port) string-or-port)
             '())))
-
-;;; Metadata Sources
 
 (define-method (%info (info <GIBaseInfo>))
   (let ((doc (with-output-to-string (lambda () (%document info)))))
@@ -400,6 +398,7 @@
                (xpath:node-typeof? 'method))
               (xpath:node-self
                (xpath:node-typeof? 'function)))))
+           (%c-id (xpath:sxpath `(@ c:identifier *text*)))
 
            (fancy-quote
             (lambda (str)
@@ -517,8 +516,12 @@
         (class . ,entry)
         (interface . ,entry)
         (union . ,entry)
+        (enumeration . ,entry)
+        (bitfield . ,entry)
+
         (method . ,refsect2)
         (function . ,refsect2)
+        (member . ,refsect2)
 
         (procedure
          .
@@ -542,6 +545,12 @@
                    (append (%long-name node)
                            (%name node))))))))
         (type . ,refname)
+        (symbol . ,(lambda (tag . kids)
+                     (let ((c-id (car? (%c-id (cons tag kids)))))
+                       `((title ,@(%name (cons tag kids)))
+                         ,(if c-id
+                              `((subtitle "alias " (code ,c-id)))
+                              '())))))
 
         (*text* . ,(lambda (tag txt)
                      txt))
