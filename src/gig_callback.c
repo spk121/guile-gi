@@ -7,6 +7,7 @@ typedef struct _GigCallback GigCallback;
 struct _GigCallback
 {
     GICallbackInfo *callback_info;
+    GigArgMap *amap;
     ffi_closure *closure;
     ffi_cif cif;
     SCM s_func;
@@ -43,9 +44,8 @@ callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
     guint n_args = cif->nargs;
 
     g_assert_cmpint(n_args, ==, g_callable_info_get_n_args(gcb->callback_info));
-
-    // FIXME: cache this
-    GigArgMap *amap = gig_amap_new(gcb->callback_info);
+    g_assert(gcb->amap != NULL);
+    GigArgMap *amap = gcb->amap;
 
     for (guint i = 0; i < n_args; i++) {
         SCM s_entry = SCM_BOOL_F;
@@ -109,7 +109,6 @@ callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
         // I'll try brutally coercing the data, and see what happens.
         *(ffi_arg *) ret = giarg.v_uint64;
     }
-    gig_amap_free(amap);
 }
 
 static SCM
@@ -174,8 +173,8 @@ gig_callback_new(GICallbackInfo *callback_info, SCM s_func)
     }
 
     gcb->s_func = s_func;
-    gcb->callback_info = callback_info;
-    g_base_info_ref(callback_info);
+    gcb->callback_info = g_base_info_ref(callback_info);
+    gcb->amap = gig_amap_new(gcb->callback_info);
 
     // STEP 1
     // Allocate the block of memory that FFI uses to hold a closure object,
@@ -423,6 +422,7 @@ callback_free(GigCallback *gcb)
     ffi_closure_free(gcb->closure);
     gcb->closure = NULL;
 
+    gig_amap_free(gcb->amap);
     g_base_info_unref(gcb->callback_info);
     g_free(gcb->atypes);
     gcb->atypes = NULL;
