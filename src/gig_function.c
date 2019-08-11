@@ -360,31 +360,29 @@ create_gsubr(GIFunctionInfo *function_info, const gchar *name, SCM self_type,
     return gfn->function_ptr;
 }
 
-
-SCM
-gig_function_invoke(GIFunctionInfo *func_info, GigArgMap *amap, const gchar *name, GObject *self,
-                    SCM args, GError **error)
+static void
+gig_callable_prepare_invoke(GigArgMap *amap,
+                            const gchar *name,
+                            GObject *self,
+                            SCM args,
+                            GArray **cinvoke_input_arg_array,
+                            GArray **cinvoke_output_arg_array,
+                            GPtrArray **cinvoke_free_array,
+                            GIArgument **out_args,
+                            GIArgument **out_boxes)
 {
-    GArray *cinvoke_input_arg_array;
-    GPtrArray *cinvoke_free_array;
-    GArray *cinvoke_output_arg_array;
-    GIArgument *out_args, *out_boxes;
-    GIArgument return_arg;
-    SCM output;
-    gboolean ok;
-
-    cinvoke_input_arg_array = g_array_new(FALSE, TRUE, sizeof(GIArgument));
-    cinvoke_output_arg_array = g_array_new(FALSE, TRUE, sizeof(GIArgument));
-    cinvoke_free_array = g_ptr_array_new_with_free_func(g_free);
+    *cinvoke_input_arg_array = g_array_new(FALSE, TRUE, sizeof(GIArgument));
+    *cinvoke_output_arg_array = g_array_new(FALSE, TRUE, sizeof(GIArgument));
+    *cinvoke_free_array = g_ptr_array_new_with_free_func(g_free);
 
     // Convert the scheme arguments into C.
-    object_list_to_c_args(amap, name, args, cinvoke_input_arg_array,
-                          cinvoke_free_array, cinvoke_output_arg_array);
+    object_list_to_c_args(amap, name, args, *cinvoke_input_arg_array,
+                          *cinvoke_free_array, *cinvoke_output_arg_array);
     // For methods calls, the object gets inserted as the 1st argument.
     if (self) {
         GIArgument self_arg;
         self_arg.v_pointer = self;
-        g_array_prepend_val(cinvoke_input_arg_array, self_arg);
+        g_array_prepend_val(*cinvoke_input_arg_array, self_arg);
     }
 
     // Since, in the Guile binding, we're allocating the output
@@ -395,29 +393,34 @@ gig_function_invoke(GIFunctionInfo *func_info, GigArgMap *amap, const gchar *nam
     // allocate space for *all* the output arguments, even when not
     // needed.  It is easier than figuring out which output arguments
     // need allocation.
-    out_args = (GIArgument *)(cinvoke_output_arg_array->data);
-    out_boxes = g_new0(GIArgument, cinvoke_output_arg_array->len);
-    g_ptr_array_insert(cinvoke_free_array, 0, out_boxes);
-    for (guint i = 0; i < cinvoke_output_arg_array->len; i++)
-        if (out_args[i].v_pointer == NULL)
-            out_args[i].v_pointer = &out_boxes[i];
+    *out_args = (GIArgument *)((*cinvoke_output_arg_array)->data);
+    *out_boxes = g_new0(GIArgument, (*cinvoke_output_arg_array)->len);
+    g_ptr_array_insert(*cinvoke_free_array, 0, *out_boxes);
+    for (guint i = 0; i < (*cinvoke_output_arg_array)->len; i++)
+        if ((*out_args + i)->v_pointer == NULL)
+            (*out_args + i)->v_pointer = *out_boxes + i;
+}
 
-    // Make the actual call.
-    // Use GObject's ffi to call the C function.
-    g_debug("Calling %s with %d input and %d output arguments",
-            name, cinvoke_input_arg_array->len, cinvoke_output_arg_array->len);
-    gig_arg_map_dump(amap);
-    ok = g_function_info_invoke(func_info, (GIArgument *)(cinvoke_input_arg_array->data),
-                                cinvoke_input_arg_array->len,
-                                (GIArgument *)(cinvoke_output_arg_array->data),
-                                cinvoke_output_arg_array->len, &return_arg, error);
+static SCM
+gig_callable_return_value(GigArgMap *amap,
+                          const gchar *name,
+                          SCM args,
+                          gboolean ok,
+                          GIArgument *return_arg,
+                          GArray *cinvoke_input_arg_array,
+                          GArray *cinvoke_output_arg_array,
+                          GPtrArray *cinvoke_free_array,
+                          GIArgument *out_args,
+                          GIArgument *out_boxes,
+                          GError **error)
+{
+    SCM output;
 
     // Here is where I check to see if I used the allocated
     // output argument space created above.
     for (guint i = 0; i < cinvoke_output_arg_array->len; i++)
-        if (out_args[i].v_pointer == &out_boxes[i]) {
+        if (out_args[i].v_pointer == &out_boxes[i])
             memcpy(&out_args[i], &out_boxes[i], sizeof(GIArgument));
-        }
 
     if (ok) {
         SCM s_return;
@@ -428,7 +431,7 @@ gig_function_invoke(GIFunctionInfo *func_info, GigArgMap *amap, const gchar *nam
             sz = ((GIArgument *)(cinvoke_output_arg_array->data))[idx].v_size;
         }
 
-        gig_argument_c_to_scm(name, -1, amap->return_val, &return_arg, &s_return, sz);
+        gig_argument_c_to_scm(name, -1, amap->return_val, return_arg, &s_return, sz);
         if (scm_is_eq(s_return, SCM_UNSPECIFIED))
             output = SCM_EOL;
         else
@@ -445,6 +448,7 @@ gig_function_invoke(GIFunctionInfo *func_info, GigArgMap *amap, const gchar *nam
     g_ptr_array_free(cinvoke_free_array, TRUE);
 
     if (!ok)
+        // this should signal an error, should it not?
         return SCM_UNSPECIFIED;
 
     switch (scm_to_int(scm_length(output))) {
@@ -455,6 +459,39 @@ gig_function_invoke(GIFunctionInfo *func_info, GigArgMap *amap, const gchar *nam
     default:
         return scm_values(output);
     }
+}
+
+SCM
+gig_function_invoke(GIFunctionInfo *func_info, GigArgMap *amap, const gchar *name, GObject *self,
+                    SCM args, GError **error)
+{
+    GArray *cinvoke_input_arg_array;
+    GPtrArray *cinvoke_free_array;
+    GArray *cinvoke_output_arg_array;
+    GIArgument *out_args, *out_boxes;
+    GIArgument return_arg;
+    gboolean ok;
+
+    gig_callable_prepare_invoke(amap, name, self, args,
+                                &cinvoke_input_arg_array,
+                                &cinvoke_output_arg_array,
+                                &cinvoke_free_array,
+                                &out_args, &out_boxes);
+
+    // Make the actual call.
+    // Use GObject's ffi to call the C function.
+    g_debug("Calling %s with %d input and %d output arguments",
+            name, cinvoke_input_arg_array->len, cinvoke_output_arg_array->len);
+    gig_arg_map_dump(amap);
+
+    ok = g_function_info_invoke(func_info, (GIArgument *)(cinvoke_input_arg_array->data),
+                                cinvoke_input_arg_array->len,
+                                (GIArgument *)(cinvoke_output_arg_array->data),
+                                cinvoke_output_arg_array->len, &return_arg, error);
+
+    return gig_callable_return_value(amap, name, args, ok, &return_arg,
+                                     cinvoke_input_arg_array, cinvoke_output_arg_array,
+                                     cinvoke_free_array, out_args, out_boxes, error);
 }
 
 // This is the core of a dynamically generated GICallable function wrapper.
