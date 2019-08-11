@@ -436,7 +436,7 @@ scm_to_c_pointer(S2C_ARG_DECL)
         arg->v_pointer = NULL;
     else if (meta->gtype == G_TYPE_CALLBACK) {
         if (scm_is_true(scm_procedure_p(object))) {
-            arg->v_pointer = gig_callback_get_ptr(meta->callable_info, object);
+            arg->v_pointer = gig_callback_to_c(meta->callable_info, object);
             g_assert(arg->v_pointer != NULL);
         }
         else
@@ -1321,8 +1321,7 @@ c_pointer_to_scm(C2S_ARG_DECL)
     else if (meta->gtype == G_TYPE_GTYPE)
         *object = scm_from_uintptr_t(arg->v_pointer);
     else if (meta->gtype == G_TYPE_CALLBACK)
-        *object =
-            gig_type_transfer_object(meta->gtype, arg->v_pointer, meta->transfer);
+        *object = gig_callback_to_scm(meta->callable_info, arg->v_pointer);
     else if (size != GIG_ARRAY_SIZE_UNKNOWN) {
         SCM bv = scm_c_make_bytevector(size);
         memcpy(SCM_BYTEVECTOR_CONTENTS(bv), arg->v_pointer, size);

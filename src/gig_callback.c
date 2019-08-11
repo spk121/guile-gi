@@ -230,7 +230,7 @@ gig_callback_new(GICallbackInfo *callback_info, SCM s_func)
 }
 
 gpointer
-gig_callback_get_ptr(GICallbackInfo *cb_info, SCM s_func)
+gig_callback_to_c(GICallbackInfo *cb_info, SCM s_func)
 {
     g_assert(cb_info != NULL);
     g_assert(scm_is_true(scm_procedure_p(s_func)));
@@ -257,6 +257,12 @@ gig_callback_get_ptr(GICallbackInfo *cb_info, SCM s_func)
     gcb = gig_callback_new(cb_info, s_func);
     callback_list = g_slist_prepend(callback_list, gcb);
     return gcb->callback_ptr;
+}
+
+SCM
+gig_callback_to_scm(GICallbackInfo *info, gpointer callback)
+{
+    return scm_from_pointer(callback, NULL);
 }
 
 static ffi_type *
