@@ -1533,12 +1533,20 @@ c_interface_pointer_to_scm(C2S_ARG_DECL)
              || referenced_info_type == GI_INFO_TYPE_OBJECT
              || referenced_info_type == GI_INFO_TYPE_INTERFACE) {
         TRACE_C2S();
+        GType referenced_base_gtype = g_registered_type_info_get_g_type(referenced_base_info);
         if (arg->v_pointer == NULL)
             *object = SCM_BOOL_F;
-        else {
-            GType referenced_base_gtype = g_registered_type_info_get_g_type(referenced_base_info);
+        else if (referenced_base_gtype != G_TYPE_NONE)
             *object = gig_type_transfer_object(referenced_base_gtype, arg->v_pointer, entry->transfer);
+        else if (referenced_info_type == GI_INFO_TYPE_STRUCT ||
+                 referenced_info_type == GI_INFO_TYPE_UNION) {
+            gpointer struct_ptr = arg->v_pointer;
+            gsize _size = g_struct_info_get_size(referenced_base_info);
+            *object = scm_c_make_bytevector(_size);
+            memcpy(SCM_BYTEVECTOR_CONTENTS(*object), struct_ptr, _size);
         }
+        else
+            g_assert_not_reached();
     }
     g_base_info_unref(referenced_base_info);
 }
@@ -1775,18 +1783,23 @@ c_native_array_to_scm(C2S_ARG_DECL)
             elt = scm_vector_writable_elements(*object, &handle, &len, &inc);
             g_assert_nonnull(arg->v_pointer);
 
+            gpointer iter = arg->v_pointer;
             GIArgument _arg;
-            _arg.v_pointer = arg->v_pointer;
             GigArgMapEntry ae = {
                 .name = "(array internal)",
                 .type_info = g_type_info_get_param_type(entry->type_info, 0),
                 .type_tag = entry->item_type_tag,
-                .is_ptr = entry->item_is_ptr,
+                .is_ptr = TRUE,
                 .transfer = entry->item_transfer
             };
 
-            for (gsize k = 0; k < len; k++, elt += inc, _arg.v_pointer += entry->item_size)
+            for (gsize k = 0; k < len; k++, elt += inc, iter += entry->item_size) {
+                if (entry->item_is_ptr)
+                    _arg.v_pointer = *(gpointer *)iter;
+                else
+                    _arg.v_pointer = iter;
                 gig_argument_c_to_scm(subr, argpos, &ae, &_arg, elt, -1);
+            }
 
             scm_array_handle_release(&handle);
             if (entry->transfer == GI_TRANSFER_EVERYTHING) {
