@@ -1160,6 +1160,13 @@ _GI_TEST_EXTERN
 glong marshall_callback_return_value_only (MarshallCallbackReturnValueOnly callback);
 
 /**
+ * marshall_new_callback_return_value_only:
+ * @callback: (out) (scope call):
+ */
+_GI_TEST_EXTERN
+void marshall_new_callback_return_value_only(MarshallCallbackReturnValueOnly *callback);
+
+/**
  * MarshallCallbackOneOutParameter:
  * @a: (out):
  */

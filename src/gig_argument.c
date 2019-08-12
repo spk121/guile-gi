@@ -1320,8 +1320,10 @@ c_pointer_to_scm(C2S_ARG_DECL)
         *object = SCM_BOOL_F;
     else if (meta->gtype == G_TYPE_GTYPE)
         *object = scm_from_uintptr_t(arg->v_pointer);
-    else if (meta->gtype == G_TYPE_CALLBACK)
-        *object = gig_callback_to_scm(meta->callable_info, arg->v_pointer);
+    else if (meta->gtype == G_TYPE_CALLBACK) {
+        gpointer cb = meta->is_ptr ? *(gpointer *)arg->v_pointer : arg->v_pointer;
+        *object = gig_callback_to_scm(meta->callable_info, cb);
+    }
     else if (size != GIG_ARRAY_SIZE_UNKNOWN) {
         SCM bv = scm_c_make_bytevector(size);
         memcpy(SCM_BYTEVECTOR_CONTENTS(bv), arg->v_pointer, size);

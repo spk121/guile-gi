@@ -2,6 +2,7 @@
 #include <ffi.h>
 #include "gig_argument.h"
 #include "gig_callback.h"
+#include "gig_function.h"
 
 typedef struct _GigCallback GigCallback;
 struct _GigCallback
@@ -10,7 +11,11 @@ struct _GigCallback
     GigArgMap *amap;
     ffi_closure *closure;
     ffi_cif cif;
-    SCM s_func;
+    union
+    {
+        SCM s_func;
+        gpointer c_func;
+    };
     gchar *name;
     gpointer callback_ptr;
     ffi_type **atypes;
@@ -109,6 +114,41 @@ callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
         // I'll try brutally coercing the data, and see what happens.
         *(ffi_arg *) ret = giarg.v_uint64;
     }
+}
+
+void
+c_callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_data)
+{
+    GigCallback *gcb = user_data;
+    SCM s_args = SCM_UNDEFINED;
+
+    g_assert(cif != NULL);
+    g_assert(ret != NULL);
+    g_assert(ffi_args != NULL);
+    g_assert(user_data != NULL);
+
+    guint n_args = cif->nargs;
+    g_debug("Invoking callback %s with %d args", gcb->name, n_args);
+
+    // we have either 0 args or 1 args, which is the already packed list
+    g_assert(n_args <= 1);
+    if (n_args)
+        s_args = SCM_PACK(*(scm_t_bits *) (ffi_args[0]));
+
+    if (SCM_UNBNDP(s_args))
+        s_args = SCM_EOL;
+
+    GError *error = NULL;
+    SCM output = gig_callable_invoke(gcb->callback_info, gcb->c_func, gcb->amap, gcb->name, NULL,
+                                     s_args, &error);
+
+    if (error != NULL) {
+        SCM err = scm_from_utf8_string(error->message);
+        g_error_free(error);
+        scm_misc_error(gcb->name, "~A", scm_list_1(err));
+    }
+
+    *(ffi_arg *)ret = SCM_UNPACK(output);
 }
 
 static SCM
@@ -228,6 +268,41 @@ gig_callback_new(GICallbackInfo *callback_info, SCM s_func)
     return gcb;
 }
 
+GigCallback *
+gig_callback_new_for_callback(GICallbackInfo *info, gpointer c_func)
+{
+    gint n_args = g_callable_info_get_n_args(info);
+
+    // we only take one arg now, the scm arg list
+    n_args = n_args == 0 ? 0 : 1;
+
+    GigCallback *gcb = g_new0(GigCallback, 1);
+    ffi_type *ffi_ret_type;
+
+    gcb->name = g_strdup("(anonymous)");
+
+    gcb->c_func = c_func;
+    gcb->callback_info = g_base_info_ref(info);
+    gcb->amap = gig_amap_new(gcb->callback_info);
+
+    if (n_args > 0) {
+        gcb->atypes = g_new0(ffi_type *, 1);
+        gcb->atypes[0] = &ffi_type_pointer;
+    }
+
+    ffi_status prep_ok, closure_ok;
+    prep_ok = ffi_prep_cif(&(gcb->cif), FFI_DEFAULT_ABI, n_args, &ffi_type_pointer, gcb->atypes);
+    g_return_val_if_fail(prep_ok == FFI_OK, NULL);
+
+    gcb->closure = ffi_closure_alloc(sizeof(ffi_closure), &(gcb->callback_ptr));
+    closure_ok = ffi_prep_closure_loc(gcb->closure, &(gcb->cif), c_callback_binding, gcb,
+                                      gcb->callback_ptr);
+    g_return_val_if_fail(closure_ok == FFI_OK, NULL);
+
+    return gcb;
+}
+
+
 gpointer
 gig_callback_to_c(GICallbackInfo *cb_info, SCM s_func)
 {
@@ -237,18 +312,13 @@ gig_callback_to_c(GICallbackInfo *cb_info, SCM s_func)
     // Lookup s_func in the callback cache.
     GSList *x = callback_list;
     GigCallback *gcb;
-    GIInfoType cb_typeinfo = g_base_info_get_type(cb_info);
-    GIInfoType gcb_typeinfo;
 
     // A callback is only a 'match' if it is the same Scheme produre
     // as well as the same GObject C Callback type.
     while (x != NULL) {
         gcb = x->data;
-        if (scm_is_eq(gcb->s_func, s_func)) {
-            gcb_typeinfo = g_base_info_get_type(gcb->callback_info);
-            if (cb_typeinfo == gcb_typeinfo)
-                return gcb->callback_ptr;
-        }
+        if (scm_is_eq(gcb->s_func, s_func))
+            return gcb->callback_ptr;
         x = x->next;
     }
 
@@ -261,7 +331,10 @@ gig_callback_to_c(GICallbackInfo *cb_info, SCM s_func)
 SCM
 gig_callback_to_scm(GICallbackInfo *info, gpointer callback)
 {
-    return scm_from_pointer(callback, NULL);
+    // we probably shouldn't cache this, because C callbacks can be
+    // invalidated
+    GigCallback *gcb = gig_callback_new_for_callback(info, callback);
+    return scm_c_make_gsubr("(anonymous)", 0, 0, 1, gcb->closure);
 }
 
 static ffi_type *

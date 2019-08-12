@@ -30,6 +30,8 @@ typedef SCM (*GigGsubr)(void);
 SCM gig_function_define(GType type, GICallableInfo *info, const gchar *namespace, SCM defs);
 SCM gig_function_invoke(GIFunctionInfo *info, GigArgMap *amap, const gchar *name, GObject *object,
                         SCM args, GError **error);
+SCM gig_callable_invoke(GICallableInfo *callable_info, gpointer callable, GigArgMap *amap,
+                        const gchar *name, GObject *self, SCM args, GError **error);
 void gig_init_function(void);
 
 G_END_DECLS

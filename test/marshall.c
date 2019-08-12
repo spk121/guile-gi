@@ -3558,6 +3558,17 @@ glong marshall_callback_return_value_only (MarshallCallbackReturnValueOnly callb
   return callback ();
 }
 
+glong
+return_value_only()
+{
+    return 42;
+}
+
+void marshall_new_callback_return_value_only(MarshallCallbackReturnValueOnly *callback)
+{
+    *callback = return_value_only;
+}
+
 /**
  * marshall_callback_one_out_parameter:
  * @callback: (scope call):
