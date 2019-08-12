@@ -1525,7 +1525,7 @@ c_interface_pointer_to_scm(C2S_ARG_DECL)
     else if (referenced_info_type == GI_INFO_TYPE_CALLBACK) {
         TRACE_C2S();
         g_assert_nonnull(arg->v_pointer);
-        gpointer callback_ptr = arg->v_pointer;
+        gpointer callback_ptr = *(gpointer *)arg->v_pointer;
         *object = gig_callback_to_scm(referenced_base_info, callback_ptr);
     }
     else if (referenced_info_type == GI_INFO_TYPE_STRUCT
@@ -1559,7 +1559,9 @@ c_interface_to_scm(C2S_ARG_DECL)
 
     GIBaseInfo *referenced_base_info = g_type_info_get_interface(entry->type_info);
     GIInfoType referenced_info_type = g_base_info_get_type(referenced_base_info);
-    GType referenced_base_gtype = g_registered_type_info_get_g_type(referenced_base_info);
+    GType referenced_base_gtype = G_TYPE_INVALID;
+    if (GI_IS_REGISTERED_TYPE_INFO (referenced_base_info))
+        referenced_base_gtype = g_registered_type_info_get_g_type(referenced_base_info);
 
     switch (referenced_info_type)
     {
@@ -1568,7 +1570,7 @@ c_interface_to_scm(C2S_ARG_DECL)
         *object = scm_from_uint32(arg->v_uint32);
         break;
     case GI_INFO_TYPE_CALLBACK:
-        *object = scm_from_pointer(arg->v_pointer, NULL);
+        *object = gig_callback_to_scm(referenced_base_info, arg->v_pointer);
         break;
     case GI_INFO_TYPE_STRUCT:
         if (referenced_base_gtype == G_TYPE_NONE) {

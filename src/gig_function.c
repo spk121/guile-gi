@@ -411,8 +411,7 @@ gig_callable_return_value(GigArgMap *amap,
                           GArray *cinvoke_output_arg_array,
                           GPtrArray *cinvoke_free_array,
                           GIArgument *out_args,
-                          GIArgument *out_boxes,
-                          GError **error)
+                          GIArgument *out_boxes)
 {
     SCM output;
 
@@ -448,8 +447,7 @@ gig_callable_return_value(GigArgMap *amap,
     g_ptr_array_free(cinvoke_free_array, TRUE);
 
     if (!ok)
-        // this should signal an error, should it not?
-        return SCM_UNSPECIFIED;
+        return SCM_UNDEFINED;
 
     switch (scm_to_int(scm_length(output))) {
     case 0:
@@ -491,8 +489,46 @@ gig_function_invoke(GIFunctionInfo *func_info, GigArgMap *amap, const gchar *nam
 
     return gig_callable_return_value(amap, name, args, ok, &return_arg,
                                      cinvoke_input_arg_array, cinvoke_output_arg_array,
-                                     cinvoke_free_array, out_args, out_boxes, error);
+                                     cinvoke_free_array, out_args, out_boxes);
 }
+
+SCM
+gig_callable_invoke(GICallableInfo *callable_info, gpointer callable, GigArgMap *amap,
+                    const gchar *name, GObject *self, SCM args, GError **error)
+{
+    GArray *cinvoke_input_arg_array;
+    GPtrArray *cinvoke_free_array;
+    GArray *cinvoke_output_arg_array;
+    GIArgument *out_args, *out_boxes;
+    GIArgument return_arg;
+    gboolean ok;
+
+    gig_callable_prepare_invoke(amap, name, self, args,
+                                &cinvoke_input_arg_array,
+                                &cinvoke_output_arg_array,
+                                &cinvoke_free_array,
+                                &out_args, &out_boxes);
+
+    // Make the actual call.
+    // Use GObject's ffi to call the C function.
+    g_debug("Calling %s with %d input and %d output arguments",
+            name, cinvoke_input_arg_array->len, cinvoke_output_arg_array->len);
+    gig_arg_map_dump(amap);
+
+    ok = g_callable_info_invoke(callable_info, callable,
+                                (GIArgument *)(cinvoke_input_arg_array->data),
+                                cinvoke_input_arg_array->len,
+                                (GIArgument *)(cinvoke_output_arg_array->data),
+                                cinvoke_output_arg_array->len, &return_arg,
+                                g_callable_info_is_method(callable_info),
+                                g_callable_info_can_throw_gerror(callable_info),
+                                error);
+
+    return gig_callable_return_value(amap, name, args, ok, &return_arg,
+                                     cinvoke_input_arg_array, cinvoke_output_arg_array,
+                                     cinvoke_free_array, out_args, out_boxes);
+}
+
 
 // This is the core of a dynamically generated GICallable function wrapper.
 // It converts FFI arguments to SCM arguments, converts those
