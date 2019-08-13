@@ -17,10 +17,14 @@
   #:use-module (oop goops)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-2)
+  #:use-module (srfi srfi-26)
   #:use-module (system foreign)
+
   #:use-module (gi oop)
 
   #:export (<GIBaseInfo>
+            <GBoxed> <GValue> transform
+            <GEnum> <GFlags>
             enum->number enum->symbol number->enum symbol->enum
             flags->number flags->list number->flags list->flags flags-set?
             flags-mask flags-union flags-intersection flags-difference
@@ -30,7 +34,26 @@
 (eval-when (expand load eval)
   ;; this library is loaded before any other, so init logging here
   (load-extension "libguile-gi" "gig_init_logging")
-  (load-extension "libguile-gi" "gig_init_types"))
+  (load-extension "libguile-gi" "gig_init_types")
+  (load-extension "libguile-gi" "gig_init_value"))
+
+;;; Values and Params
+
+(define-method (initialize (value <GValue>) initargs)
+  (next-method)
+  (slot-set! value 'procedure (cut %get value))
+  (slot-set! value 'setter
+             (case-lambda
+              ((v) (%set! value v))
+              ((t v) (%set-type! value t) (%set! value v)))))
+
+(define-method (transform (value <GValue>) gtype)
+  (%transform value gtype))
+
+(define-method (initialize (pspec <GParam>) initargs)
+  (next-method)
+  (slot-set! pspec 'procedure (cut (@@ (gi oop) %get-property) <> pspec))
+  (slot-set! pspec 'setter (cut (@@ (gi oop) %set-property!) <> pspec <>)))
 
 ;;; Enum conversions
 

@@ -458,37 +458,31 @@ gig_value_as_scm(const GValue *value, gboolean copy_boxed)
 }
 
 SCM
-gig_value_type()
-{
-    return gig_type_get_scheme_type(G_TYPE_VALUE);
-}
-
-SCM
 gig_value_get(SCM value)
 {
-    GValue *gvalue = gig_type_peek_typed_object(value, gig_value_type());
+    GValue *gvalue = gig_type_peek_typed_object(value, gig_value_type);
     return gig_value_as_scm(gvalue, FALSE);
 }
 
 SCM
 gig_value_get_type(SCM value)
 {
-    GValue *gvalue = gig_type_peek_typed_object(value, gig_value_type());
+    GValue *gvalue = gig_type_peek_typed_object(value, gig_value_type);
     return gig_type_get_scheme_type(G_VALUE_TYPE(gvalue));
 }
 
 SCM
 gig_value_set(SCM where, SCM what)
 {
-    GValue *value = gig_type_peek_typed_object(where, gig_value_type());
-    gig_value_from_scm_with_error("%set", value, what, SCM_ARG2);
+    GValue *value = gig_type_peek_typed_object(where, gig_value_type);
+    gig_value_from_scm_with_error(value, what, "%set", SCM_ARG2);
     return SCM_UNSPECIFIED;
 }
 
 SCM
 gig_value_set_type(SCM where, SCM what)
 {
-    GValue *value = gig_type_peek_typed_object(where, gig_value_type());
+    GValue *value = gig_type_peek_typed_object(where, gig_value_type);
     GType type = scm_to_gtype(what);
     g_value_unset(value);
     g_value_init(value, type);
@@ -498,7 +492,7 @@ gig_value_set_type(SCM where, SCM what)
 SCM
 gig_value_transform(SCM val, SCM type)
 {
-    GValue *old_val = gig_type_peek_typed_object(val, gig_value_type());
+    GValue *old_val = gig_type_peek_typed_object(val, gig_value_type);
     GValue new_val = G_VALUE_INIT;
     g_value_init(&new_val, scm_to_gtype(type));
     if (g_value_transform(old_val, &new_val))

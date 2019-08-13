@@ -37,8 +37,8 @@
                G_TYPE_ENUM G_TYPE_FLAGS
                G_TYPE_FLOAT G_TYPE_DOUBLE
                G_TYPE_OBJECT
-               <GObject> <GInterface> <GVariant> <GParam> <GBoxed> <GIBaseInfo>
-               enum->number flags->number)
+               <GObject> <GInterface> <GVariant> <GValue> <GParam> <GBoxed> <GIBaseInfo>
+               enum->number flags->number transform)
   #:replace ((%new . make))
   #:export (use-typelibs
             register-type))
@@ -117,11 +117,6 @@
     (error "use list->flags or number->flags instead"))
    (else
     (apply make type rest))))
-
-(define-method (initialize (pspec <GParam>) initargs)
-  (next-method)
-  (slot-set! pspec 'procedure (cut (@@ (gi oop) %get-property) <> pspec))
-  (slot-set! pspec 'setter (cut (@@ (gi oop) %set-property!) <> pspec <>)))
 
 (define (register-type name parent . rest)
   (cond
