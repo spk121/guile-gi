@@ -110,7 +110,8 @@ dist_pkgguilesite_DATA = \
   gi/oop.scm \
   gi/repository.scm \
   gi/types.scm \
-  gi/util.scm
+  gi/util.scm \
+  gi/value.scm
 
 pkgguileobject_DATA = \
   $(dist_guilesite_DATA:%.scm=%.go) \

@@ -456,3 +456,64 @@ gig_value_as_scm(const GValue *value, gboolean copy_boxed)
         guobj = gig_value_to_scm_structured_type(value, fundamental, copy_boxed);
     return guobj;
 }
+
+SCM
+gig_value_type()
+{
+    return gig_type_get_scheme_type(G_TYPE_VALUE);
+}
+
+SCM
+gig_value_get(SCM value)
+{
+    GValue *gvalue = gig_type_peek_typed_object(value, gig_value_type());
+    return gig_value_as_scm(gvalue, FALSE);
+}
+
+SCM
+gig_value_get_type(SCM value)
+{
+    GValue *gvalue = gig_type_peek_typed_object(value, gig_value_type());
+    return gig_type_get_scheme_type(G_VALUE_TYPE(gvalue));
+}
+
+SCM
+gig_value_set(SCM where, SCM what)
+{
+    GValue *value = gig_type_peek_typed_object(where, gig_value_type());
+    gig_value_from_scm_with_error("%set", value, what, SCM_ARG2);
+    return SCM_UNSPECIFIED;
+}
+
+SCM
+gig_value_set_type(SCM where, SCM what)
+{
+    GValue *value = gig_type_peek_typed_object(where, gig_value_type());
+    GType type = scm_to_gtype(what);
+    g_value_unset(value);
+    g_value_init(value, type);
+    return SCM_UNSPECIFIED;
+}
+
+SCM
+gig_value_transform(SCM val, SCM type)
+{
+    GValue *old_val = gig_type_peek_typed_object(val, gig_value_type());
+    GValue new_val = G_VALUE_INIT;
+    g_value_init(&new_val, scm_to_gtype(type));
+    if (g_value_transform(old_val, &new_val))
+        return gig_value_as_scm(&new_val, FALSE);
+    else
+        scm_misc_error("%transform",
+                       "failed to transform ~A into ~A", scm_list_2(val, type));
+}
+
+void
+gig_init_value()
+{
+    scm_c_define_gsubr("%get", 1, 0, 0, gig_value_get);
+    scm_c_define_gsubr("%get-type", 1, 0, 0, gig_value_get_type);
+    scm_c_define_gsubr("%set!", 2, 0, 0, gig_value_set);
+    scm_c_define_gsubr("%set-type!", 2, 0, 0, gig_value_set_type);
+    scm_c_define_gsubr("%transform", 2, 0, 0, gig_value_transform);
+}
