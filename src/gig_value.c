@@ -338,6 +338,7 @@ gig_value_to_scm_basic_type(const GValue *value, GType fundamental, gboolean *ha
     case G_TYPE_STRING:
     {
         const gchar *str = g_value_get_string(value);
+        g_debug("%s", str);
         if (str)
             return scm_from_utf8_string(str);
         else
@@ -493,13 +494,15 @@ SCM
 gig_value_transform(SCM val, SCM type)
 {
     GValue *old_val = gig_type_peek_typed_object(val, gig_value_type);
-    GValue new_val = G_VALUE_INIT;
-    g_value_init(&new_val, scm_to_gtype(type));
-    if (g_value_transform(old_val, &new_val))
-        return gig_value_as_scm(&new_val, FALSE);
-    else
+    GValue* new_val = g_new0(GValue, 1);
+    g_value_init(new_val, scm_to_gtype(type));
+    if (g_value_transform(old_val, new_val))
+        return gig_type_transfer_object(G_TYPE_VALUE, new_val, GI_TRANSFER_EVERYTHING);
+    else {
+        g_free(new_val);
         scm_misc_error("%transform",
                        "failed to transform ~A into ~A", scm_list_2(val, type));
+    }
 }
 
 void

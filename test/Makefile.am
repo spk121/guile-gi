@@ -173,6 +173,10 @@ OOP_TESTS = \
  oop/signal-accumulator.scm \
  oop/signal-block.scm
 
+VALUE_TESTS = \
+ value/getset.scm \
+ value/transform.scm
+
 FLAGS_TESTS = \
  flags/complement.scm \
  flags/difference.scm \
@@ -209,6 +213,7 @@ TESTS = \
  $(GTK_LAYOUT_TESTS) \
  $(GRILO_TESTS) \
  $(OOP_TESTS) \
+ $(VALUE_TESTS) \
  $(FLAGS_TESTS) \
  misc/softerror_create.scm \
  misc/use-typelibs.scm \
@@ -395,10 +400,12 @@ EVERYTHING_TESTS = \
  everything/uintXX-out-or-return-max.scm \
  everything/intXX-out-or-return-min.scm \
  everything/intXX-in-max.scm \
+ everything/uintXX-in.scm \
  everything/int8-in-max-latin1.scm \
  everything/intXX-in-min.scm \
  everything/intXX-inout-max-min.scm \
  everything/intXX-inout-min-max.scm \
+ everything/uintXX-inout.scm \
  everything/time-t-out.scm \
  everything/utf8-none-return.scm \
  everything/utf8-full-return.scm \
@@ -445,6 +452,28 @@ EVERYTHING_TESTS = \
  everything/array-zero-terminated-in.scm \
  everything/array-zero-terminated-out.scm \
  everything/array-zero-terminated-inout.scm \
+ everything/array-gvariant-none-in.scm \
+ everything/array-gvariant-container-in.scm \
+ everything/garray-int-none-return.scm \
+ everything/garray-uint64-none-return.scm \
+ everything/garray-utf8-none-return.scm \
+ everything/garray-utf8-container-return.scm \
+ everything/garray-utf8-full-return.scm \
+ everything/garray-int-none-in.scm \
+ everything/garray-uint64-none-in.scm \
+ everything/garray-utf8-none-in.scm \
+ everything/garray-utf8-none-out.scm \
+ everything/garray-utf8-container-out.scm \
+ everything/garray-utf8-full-out.scm \
+ everything/garray-utf8-full-out-caller-allocated.scm \
+ everything/garray-utf8-none-inout.scm \
+ everything/garray-utf8-container-inout.scm \
+ everything/garray-utf8-full-inout.scm \
+ everything/garray-bool-none-in.scm \
+ everything/garray-unichar-none-in.scm \
+ everything/gptrarray-utf8-none-return.scm \
+ everything/gptrarray-utf8-container-return.scm \
+ everything/gptrarray-utf8-full-return.scm \
  everything/gslist-int-none-return.scm \
  everything/gslist-utf8-none-return.scm \
  everything/gslist-utf8-container-return.scm \
@@ -455,6 +484,7 @@ TESTS += \
  $(EVERYTHING_TESTS)
 
 XFAIL_TESTS += \
- everything/one-outparam-gchar.scm
+ everything/one-outparam-gchar.scm \
+ everything/garray-utf8-full-out-caller-allocated.scm
 
 endif

@@ -37,6 +37,7 @@
                G_TYPE_ENUM G_TYPE_FLAGS
                G_TYPE_FLOAT G_TYPE_DOUBLE
                G_TYPE_OBJECT
+               <string>
                <GObject> <GInterface> <GVariant> <GValue> <GParam> <GBoxed> <GIBaseInfo>
                enum->number flags->number transform)
   #:replace ((%new . make))

@@ -741,6 +741,7 @@ gig_init_types_once(void)
         scm_define(key, S);                                         \
     } while (0)
 
+    // fundamental types
     gig_type_define_fundamental(G_TYPE_OBJECT, SCM_EOL,
                                 (GigTypeRefFunction)g_object_ref_sink,
                                 (GigTypeUnrefFunction)g_object_unref);
@@ -756,25 +757,31 @@ gig_init_types_once(void)
                                 (GigTypeRefFunction)g_param_spec_ref_sink,
                                 (GigTypeUnrefFunction)g_param_spec_unref);
 
-    GigBoxedFuncs *value_funcs = _boxed_funcs_for_type(G_TYPE_VALUE);
-
-    gig_value_type = scm_call_4(make_class_proc,
-                                scm_list_2(gig_boxed_type, getter_with_setter),
-                                SCM_EOL,
-                                kwd_name, scm_from_utf8_string("<GValue>"));
-
-    scm_class_set_x(gig_value_type, sym_ref, scm_from_pointer(value_funcs->copy, NULL));
-    scm_class_set_x(gig_value_type, sym_unref, scm_from_pointer(value_funcs->free, NULL));
-    scm_class_set_x(gig_value_type, sym_size, scm_from_size_t(sizeof (GValue)));
-
-    scm_c_define("<GValue>", gig_value_type);
-
     gig_type_define_fundamental(G_TYPE_VARIANT, SCM_EOL,
                                 (GigTypeRefFunction)g_variant_ref_sink,
                                 (GigTypeUnrefFunction)g_variant_unref);
 
     gig_object_type = gig_type_get_scheme_type(G_TYPE_OBJECT);
     gig_paramspec_type = gig_type_get_scheme_type(G_TYPE_PARAM);
+
+    // value type
+    GigBoxedFuncs *value_funcs = _boxed_funcs_for_type(G_TYPE_VALUE);
+
+    gig_value_type = scm_call_4(make_class_proc,
+                                scm_list_2(gig_boxed_type, getter_with_setter),
+                                SCM_EOL,
+                                kwd_name, scm_from_utf8_symbol("<GValue>"));
+
+    scm_class_set_x(gig_value_type, sym_ref, scm_from_pointer(value_funcs->copy, NULL));
+    scm_class_set_x(gig_value_type, sym_unref, scm_from_pointer(value_funcs->free, NULL));
+    scm_class_set_x(gig_value_type, sym_size, scm_from_size_t(sizeof (GValue)));
+
+    gig_type_associate(G_TYPE_VALUE, gig_value_type);
+
+    scm_c_define("<GValue>", gig_value_type);
+
+    // value associations, do not rely on them for anything else
+    gig_type_associate(G_TYPE_STRING, scm_c_public_ref("oop goops", "<string>"));
 
     atexit(gig_type_free_types);
 
