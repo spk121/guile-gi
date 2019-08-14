@@ -17,6 +17,7 @@
 #include "gig_type.h"
 #include "gig_util.h"
 #include "gig_signal.h"
+#include "gig_closure.h"
 #include "gig_value.h"
 #include "gig_function_private.h"
 
@@ -446,7 +447,7 @@ gig_i_scm_connect(SCM self, SCM signal, SCM sdetail, SCM callback, SCM s_after, 
     signal_lookup("%connect", obj, signal, sdetail, &sigid, &query_info, &detail);
 
     after = !SCM_UNBNDP(s_after) && scm_to_bool(s_after);
-    closure = gig_signal_closure_new(self, query_info.itype, query_info.signal_name, callback);
+    closure = gig_closure_new(callback);
 
     handlerid = g_signal_connect_closure_by_id(obj, sigid, detail, closure, after);
 
