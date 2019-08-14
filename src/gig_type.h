@@ -28,6 +28,7 @@ SCM gig_object_type;
 SCM gig_interface_type;
 SCM gig_paramspec_type;
 SCM gig_value_type;
+SCM gig_closure_type;
 
 G_GNUC_MALLOC gchar *gig_type_document_type_from_gtype(GType gtype);
 G_GNUC_MALLOC gchar *gig_type_class_name_from_gtype(GType gtype);

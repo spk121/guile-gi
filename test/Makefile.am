@@ -175,7 +175,8 @@ OOP_TESTS = \
 
 VALUE_TESTS = \
  value/getset.scm \
- value/transform.scm
+ value/transform.scm \
+ closure/simple.scm
 
 FLAGS_TESTS = \
  flags/complement.scm \

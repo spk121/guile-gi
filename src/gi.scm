@@ -38,8 +38,10 @@
                G_TYPE_FLOAT G_TYPE_DOUBLE
                G_TYPE_OBJECT
                <string>
-               <GObject> <GInterface> <GVariant> <GValue> <GParam> <GBoxed> <GIBaseInfo>
-               enum->number flags->number transform)
+               <GObject> <GInterface> <GParam> <GBoxed> <GIBaseInfo>
+               <GVariant> <GValue> <GClosure>
+               enum->number flags->number
+               transform procedure->closure)
   #:replace ((%new . make))
   #:export (use-typelibs
             register-type))

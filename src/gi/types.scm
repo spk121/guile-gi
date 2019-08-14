@@ -23,7 +23,9 @@
   #:use-module (gi oop)
 
   #:export (<GIBaseInfo>
-            <GBoxed> <GValue> transform
+            <GBoxed> 
+            <GValue> transform
+            <GClosure> procedure->closure
             <GEnum> <GFlags>
             enum->number enum->symbol number->enum symbol->enum
             flags->number flags->list number->flags list->flags flags-set?
@@ -39,7 +41,8 @@
   ;; extension.
   (load-extension "libguile-gi" "gig_init_logging")
   (load-extension "libguile-gi" "gig_init_types")
-  (load-extension "libguile-gi" "gig_init_value"))
+  (load-extension "libguile-gi" "gig_init_value")
+  (load-extension "libguile-gi" "gig_init_closure"))
 
 ;;; Values and Params
 
@@ -58,6 +61,12 @@
   (next-method)
   (slot-set! pspec 'procedure (cut (@@ (gi oop) %get-property) <> pspec))
   (slot-set! pspec 'setter (cut (@@ (gi oop) %set-property!) <> pspec <>)))
+
+;;; Closures
+
+(define-method (initialize (closure <GClosure>) initargs)
+  (next-method)
+  (slot-set! closure 'procedure (lambda (type . args) (%invoke-closure closure type args))))
 
 ;;; Enum conversions
 

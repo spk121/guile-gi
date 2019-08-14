@@ -764,21 +764,27 @@ gig_init_types_once(void)
     gig_object_type = gig_type_get_scheme_type(G_TYPE_OBJECT);
     gig_paramspec_type = gig_type_get_scheme_type(G_TYPE_PARAM);
 
-    // value type
-    GigBoxedFuncs *value_funcs = _boxed_funcs_for_type(G_TYPE_VALUE);
+#define EXTENDED_BOXED_TYPE(S,G,name,supers,size)                       \
+    do {                                                                \
+        GigBoxedFuncs *fns = _boxed_funcs_for_type(G);                  \
+        S = scm_call_4(make_class_proc, supers, SCM_EOL, kwd_name,      \
+                       scm_from_utf8_symbol(name));                     \
+        scm_class_set_x(S, sym_ref,                                     \
+                        scm_from_pointer(fns->copy, NULL));             \
+        scm_class_set_x(S, sym_unref,                                   \
+                        scm_from_pointer(fns->free, NULL));             \
+        scm_class_set_x(S, sym_size, scm_from_size_t(size));            \
+        gig_type_associate(G, S);                                       \
+        scm_c_define(name, S);                                          \
+    } while (0)
 
-    gig_value_type = scm_call_4(make_class_proc,
-                                scm_list_2(gig_boxed_type, getter_with_setter),
-                                SCM_EOL,
-                                kwd_name, scm_from_utf8_symbol("<GValue>"));
+    EXTENDED_BOXED_TYPE(gig_value_type, G_TYPE_VALUE, "<GValue>",
+                        scm_list_2(gig_boxed_type, getter_with_setter),
+                        sizeof(GValue));
 
-    scm_class_set_x(gig_value_type, sym_ref, scm_from_pointer(value_funcs->copy, NULL));
-    scm_class_set_x(gig_value_type, sym_unref, scm_from_pointer(value_funcs->free, NULL));
-    scm_class_set_x(gig_value_type, sym_size, scm_from_size_t(sizeof (GValue)));
-
-    gig_type_associate(G_TYPE_VALUE, gig_value_type);
-
-    scm_c_define("<GValue>", gig_value_type);
+    EXTENDED_BOXED_TYPE(gig_closure_type, G_TYPE_CLOSURE, "<GClosure>",
+                        scm_list_2(gig_boxed_type, scm_c_public_ref("oop goops", "<applicable-struct>")),
+                        /* we don't want users to allocate closures */ 0);
 
     // value associations, do not rely on them for anything else
     gig_type_associate(G_TYPE_STRING, scm_c_public_ref("oop goops", "<string>"));
