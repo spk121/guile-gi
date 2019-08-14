@@ -1,4 +1,4 @@
-;; Copyright (C) 2019 Michael L. Gran
+;; Copyright (C), 2019 Michael L. Gran
 
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -32,7 +32,11 @@
             flags-projection/number))
 
 (eval-when (expand load eval)
-  ;; this library is loaded before any other, so init logging here
+  ;; This module is loaded before most others and indeed most of the library
+  ;; as well, but also shortly before the first logging is done.
+  ;; The only GI module, that is loaded prior to this one is (gi oop), which
+  ;; does not need logging for the few functions it has to load from the
+  ;; extension.
   (load-extension "libguile-gi" "gig_init_logging")
   (load-extension "libguile-gi" "gig_init_types")
   (load-extension "libguile-gi" "gig_init_value"))
