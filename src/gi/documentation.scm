@@ -381,8 +381,6 @@
            (%simplesect (xpath:sxpath `(simplesect)))
            (%top (xpath:sxpath '(namespace *any*)))
 
-           (\n\n (make-regexp "\n\n"))
-
            (title
             (lambda (tag . kids)
               `(title
