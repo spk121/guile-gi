@@ -266,44 +266,114 @@
 (define (string-whitespace? str)
   (string-fold (lambda (char seed) (and (char-whitespace? char) seed)) #t str))
 
-(define (extract-informal-examples str)
+(define (parse-markdown-1 str chain)
+  (let ((function (make-regexp "([A-Za-z0-9_]+\\(\\))"))
+        (param (make-regexp "@([A-Za-z0-9_]+)"))
+        (symbol (make-regexp "#([A-Za-z0-9_]+)"))
+        (propsig (make-regexp "#[A-Za-z0-9_]+::?([a-z0-9-]+)"))
+        (constant (make-regexp "%([A-Za-z0-9_]+)"))
+        (\n\n (make-regexp "(\n\n)"))
+
+        (para
+         (lambda (chain)
+           (call-with-values (lambda ()
+                               (span
+                                (lambda (elt)
+                                  (if (pair? elt)
+                                      (not (equal? (car elt) 'para))
+                                      #t))
+                                chain))
+             (lambda (para paras)
+               (if (null? para)
+                   paras
+                   (cons `(para ,@(reverse! para)) paras))))))
+
+        (parse-matches
+         (lambda (tag regex)
+           (fold-matches regex str '()
+            (lambda (match rest)
+             (cons
+              (list (match:start match)
+                    (match:end match)
+                    tag
+                    (match:substring match 1))
+              rest)))))
+        (string-cons?
+         (lambda (str rest)
+           (if (string-whitespace? str)
+               rest
+               (cons str rest)))))
+
+    (let loop ((chain chain)
+               (point 0)
+               (matches
+                (sort
+                 (append
+                  (parse-matches 'function function)
+                  (parse-matches 'parameter param)
+                  (parse-matches 'type symbol)
+                  (parse-matches 'constant constant)
+                  (parse-matches 'literal propsig)
+                  (parse-matches 'para \n\n))
+                 (lambda (a b) (< (car a) (car b))))))
+      (if (null? matches)
+          (para (string-cons? (substring str point (string-length str)) chain))
+          (let* ((match (car matches))
+                 (start (first match))
+                 (end (second match))
+                 (tag (third match))
+                 (match-str (fourth match)))
+            (loop
+             (case tag
+               ((para)
+                (para (string-cons? (substring str point start) chain)))
+               ((literal)
+                (cons `(type ,(string-append "“" match-str "”"))
+                      ;; the previous chain element is the type, drop it
+                      (cdr chain)))
+               ((function parameter type constant)
+                (cons
+                 `(,tag ,match-str)
+                 (string-cons? (substring str point start) chain)))
+               (else (error "invalid tag")))
+             end
+             (cdr matches)))))))
+
+(define (parse-markdown str)
   (reverse!
    (let ((code-block-start (make-regexp "\\|\\["))
-        (code-block-end (make-regexp "\\]\\|")))
-    (let loop
-        ((chain '())
-         (point 0)
-         (starts (list-matches code-block-start str))
-         (ends (list-matches code-block-end str)))
-      (cond
-       ((null? starts)
-        (cons (substring str point (string-length str))
-              chain))
+         (code-block-end (make-regexp "\\]\\|")))
+     (let loop
+         ((chain '())
+          (point 0)
+          (starts (list-matches code-block-start str))
+          (ends (list-matches code-block-end str)))
+       (cond
+        ((null? starts)
+         (parse-markdown-1 (substring str point (string-length str))
+                           chain))
 
-       ((null? ends)
-        (cons (substring str point (string-length str))
-              chain))
+        ((null? ends)
+         (parse-markdown-1 (substring str point (string-length str))
+                           chain))
 
-       (else
-        (let ((start (car starts))
-              (end (car ends)))
-          (cond
-           ((< (match:start start) point)
-            (loop chain point (cdr starts) ends))
-           ((< (match:start end) (match:end start))
-            (loop chain point starts (cdr ends)))
-           (else
-            (loop
-             (let ((pre (substring str point (match:start start)))
-                   (this (substring str (match:end start) (match:start end))))
-               (if (string-whitespace? pre)
-                   (cons `(informalexample (programlisting (,this)))
-                         chain)
-                   (cons* `(informalexample (programlisting (,this)))
-                          pre chain)))
-             (match:end end)
-             (cdr starts)
-             (cdr ends)))))))))))
+        (else
+         (let ((start (car starts))
+               (end (car ends)))
+           (cond
+            ((< (match:start start) point)
+             (loop chain point (cdr starts) ends))
+            ((< (match:start end) (match:end start))
+             (loop chain point starts (cdr ends)))
+            (else
+             (loop
+              (let ((pre (substring str point (match:start start)))
+                    (this (substring str (match:end start) (match:start end))))
+                (cons* `(para (informalexample (programlisting (,this))))
+                       (parse-markdown-1 pre chain)))
+              (match:end end)
+              (cdr starts)
+              (cdr ends)))))))))))
 
 (define ->docbook
   (letrec ((%scheme (xpath:sxpath `(scheme)))
@@ -312,28 +382,6 @@
            (%top (xpath:sxpath '(namespace *any*)))
 
            (\n\n (make-regexp "\n\n"))
-
-           (paras
-            (lambda (kids)
-              (append-map
-               (compose
-                (lambda (elts)
-                  (append-map
-                   (lambda (elt)
-                     (if (pair? elt)
-                         `((para ,elt))
-                         ((compose
-                           (lambda (elts)
-                             (map (lambda (elt) `(para ,elt))
-                                  (filter (negate string-whitespace?) elts)))
-                           (lambda (str) (string-split str #\page))
-                           (lambda (str)
-                             (regexp-substitute/global
-                              #f \n\n str 'pre (string #\page) 'post)))
-                          elt)))
-                   elts))
-                extract-informal-examples)
-               (filter string? kids))))
 
            (title
             (lambda (tag . kids)
@@ -365,7 +413,7 @@
                  (else
                   `(section
                     ,@(cdar scheme)
-                    ,@(paras doc)
+                    ,@(parse-markdown (string-join doc ""))
                     ,@sections))))))
 
            (simplesect
@@ -377,7 +425,7 @@
                  ((null? doc)
                   `(simplesect ,@(cadar scheme)
                                (para "Undocumented")))
-                 (else `(simplesect ,@(cadar scheme) ,@(paras doc))))))))
+                 (else `(simplesect ,@(cadar scheme) ,@(parse-markdown (string-join doc "")))))))))
     (compose
      sxml->xml
      (cute
