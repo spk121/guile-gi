@@ -17,7 +17,7 @@
   #:use-module (ice-9 curried-definitions)
   #:use-module (ice-9 optargs)
   #:use-module (ice-9 format)
-  #:use-module (ice-9 regex)
+  #:use-module (ice-9 peg)
   #:use-module (oop goops)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-2)
@@ -263,123 +263,113 @@
        (newline))
     names)))
 
-(define (string-whitespace? str)
-  (string-fold (lambda (char seed) (and (char-whitespace? char) seed)) #t str))
+(define-peg-pattern inline-ws body (or " "))
+(define-peg-pattern any-ws body (or inline-ws "\n"))
+(define-peg-pattern wordsep body
+  (or any-ws "-" "_" "/" "+" "*" "<" ">" "=" "." ":" "," ";" "?" "!"))
 
-(define (parse-markdown-1 str chain)
-  (let ((function (make-regexp "([A-Za-z0-9_]+\\(\\))"))
-        (param (make-regexp "@([A-Za-z0-9_]+)"))
-        (symbol (make-regexp "#([A-Za-z0-9_]+)"))
-        (propsig (make-regexp "#[A-Za-z0-9_]+::?([a-z0-9-]+)"))
-        (constant (make-regexp "%([A-Za-z0-9_]+)"))
-        (\n\n (make-regexp "(\n\n)"))
+(define-peg-pattern listing-language none
+  (and "<!--"
+       (* any-ws)
+       "language=\"" (+ (and (not-followed-by "\"") peg-any)) "\""
+       (* any-ws)
+       "-->"))
+(define-peg-pattern listing-body body
+  (and  (? "\n")
+        (and
+         (* (and (not-followed-by (and "\n" (* inline-ws) "]|")) peg-any))
+         "\n")))
+(define-peg-pattern listing all
+  (and (ignore "|[")
+       (? listing-language)
+       listing-body
+       (ignore (* inline-ws))
+       (ignore "]|")))
 
-        (para
-         (lambda (chain)
-           (call-with-values (lambda ()
-                               (span
-                                (lambda (elt)
-                                  (if (pair? elt)
-                                      (not (equal? (car elt) 'para))
-                                      #t))
-                                chain))
-             (lambda (para paras)
-               (if (null? para)
-                   paras
-                   (cons `(para ,@(reverse! para)) paras))))))
+(define-peg-pattern word body
+  (+ (and (not-followed-by wordsep) peg-any)))
 
-        (parse-matches
-         (lambda (tag regex)
-           (fold-matches regex str '()
-            (lambda (match rest)
-             (cons
-              (list (match:start match)
-                    (match:end match)
-                    tag
-                    (match:substring match 1))
-              rest)))))
-        (string-cons?
-         (lambda (str rest)
-           (if (string-whitespace? str)
-               rest
-               (cons str rest)))))
+(define-peg-pattern token body
+  (+ (or (range #\A #\Z)
+         (range #\a #\z)
+         (range #\0 #\9)
+         "_")))
+(define-peg-pattern id body
+  (+ (or (range #\a #\z)
+         (range #\0 #\9)
+         "_" "-")))
 
-    (let loop ((chain chain)
-               (point 0)
-               (matches
-                (sort
-                 (append
-                  (parse-matches 'function function)
-                  (parse-matches 'parameter param)
-                  (parse-matches 'type symbol)
-                  (parse-matches 'constant constant)
-                  (parse-matches 'literal propsig)
-                  (parse-matches 'para \n\n))
-                 (lambda (a b) (< (car a) (car b))))))
-      (if (null? matches)
-          (para (string-cons? (substring str point (string-length str)) chain))
-          (let* ((match (car matches))
-                 (start (first match))
-                 (end (second match))
-                 (tag (third match))
-                 (match-str (fourth match)))
-            (loop
-             (case tag
-               ((para)
-                (para (string-cons? (substring str point start) chain)))
-               ((literal)
-                (cons `(type ,(string-append "“" match-str "”"))
-                      ;; the previous chain element is the type, drop it
-                      (cdr chain)))
-               ((function parameter type constant)
-                (cons
-                 `(,tag ,match-str)
-                 (string-cons? (substring str point start) chain)))
-               (else (error "invalid tag")))
-             end
-             (cdr matches)))))))
+(define-peg-pattern function all (and token "()"))
+(define-peg-pattern parameter all (and (ignore "@") token))
+(define-peg-pattern constant all (and (ignore "%") token))
+(define-peg-pattern symbol all (and (ignore "#") token (not-followed-by ":")))
+(define-peg-pattern property all (and (ignore "#") token ":" id))
+(define-peg-pattern property-id body (and (ignore (and token ":")) id))
+(define-peg-pattern signal all (and (ignore "#") token "::" id))
+(define-peg-pattern signal-id body (and (ignore (and token "::")) id))
 
-(define (parse-markdown str)
-  (reverse!
-   (let ((code-block-start (make-regexp "\\|\\["))
-         (code-block-end (make-regexp "\\]\\|")))
-     (let loop
-         ((chain '())
-          (point 0)
-          (starts (list-matches code-block-start str))
-          (ends (list-matches code-block-end str)))
-       (cond
-        ((null? starts)
-         (parse-markdown-1 (substring str point (string-length str))
-                           chain))
+(define-peg-pattern paragraph all
+  (+
+   (and
+    (not-followed-by "\n")
+    (* inline-ws)
+    (or
+     listing
+     (and
+      (*
+       (and
+        (not-followed-by "\n")
+        (or function parameter constant symbol property signal word
+            wordsep)))
+      (? "\n"))))))
 
-        ((null? ends)
-         (parse-markdown-1 (substring str point (string-length str))
-                           chain))
-
-        (else
-         (let ((start (car starts))
-               (end (car ends)))
-           (cond
-            ((< (match:start start) point)
-             (loop chain point (cdr starts) ends))
-            ((< (match:start end) (match:end start))
-             (loop chain point starts (cdr ends)))
-            (else
-             (loop
-              (let ((pre (substring str point (match:start start)))
-                    (this (substring str (match:end start) (match:start end))))
-                (cons* `(para (informalexample (programlisting (,this))))
-                       (parse-markdown-1 pre chain)))
-              (match:end end)
-              (cdr starts)
-              (cdr ends)))))))))))
+(define-peg-pattern doc-string body
+  (+ (or paragraph (ignore any-ws))))
 
 (define ->docbook
   (letrec ((%scheme (xpath:sxpath `(scheme)))
            (%section (xpath:sxpath `(section)))
            (%simplesect (xpath:sxpath `(simplesect)))
            (%top (xpath:sxpath '(namespace *any*)))
+
+           (quote-pattern
+            (lambda (pattern str)
+              (string-append
+               "“"
+               (peg:tree (match-pattern pattern str))
+               "”")))
+
+           (markdown-1
+            (lambda (str)
+              (let ((match (match-pattern doc-string str)))
+                (if match
+                    (pre-post-order
+                     (peg:tree match)
+                     `((paragraph . ,(lambda (tag . kids) `(para ,@kids)))
+                       (listing . ,(lambda (tag . kids)
+                                     `(informalexample (programlisting ,@kids))))
+                       (property . ,(lambda (tag property . ignore)
+                                      `(type ,(quote-pattern property-id property))))
+                       (signal . ,(lambda (tag signal . ignore)
+                                    `(type ,(quote-pattern signal-id signal))))
+                       (symbol . ,(lambda (tag . kids) `(type ,@kids)))
+                       (*text* . ,(lambda (tag txt) txt))
+                       (*default* . ,(lambda (tag . kids) (cons tag kids)))))
+                    (begin
+                      (display "WARNING: unparseable docstring will be included literally"
+                               (current-error-port))
+                      (newline (current-error-port))
+                      (list str))))))
+
+           (markdown
+            (lambda (str)
+              (let ((md (markdown-1 str)))
+                (cond
+                 ((string? (car md))
+                  `((para ,@md)))
+                 ((symbol? (car md))
+                  (list md))
+                 (else md)))))
 
            (title
             (lambda (tag . kids)
@@ -411,7 +401,7 @@
                  (else
                   `(section
                     ,@(cdar scheme)
-                    ,@(parse-markdown (string-join doc ""))
+                    ,@(markdown (string-join doc ""))
                     ,@sections))))))
 
            (simplesect
@@ -423,7 +413,7 @@
                  ((null? doc)
                   `(simplesect ,@(cadar scheme)
                                (para "Undocumented")))
-                 (else `(simplesect ,@(cadar scheme) ,@(parse-markdown (string-join doc "")))))))))
+                 (else `(simplesect ,@(cadar scheme) ,@(markdown (string-join doc "")))))))))
     (compose
      sxml->xml
      (cute
