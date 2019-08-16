@@ -312,7 +312,7 @@
 (define-peg-pattern paragraph all
   (+
    (and
-    (not-followed-by "\n")
+    (not-followed-by (or (and (+ "#") inline-ws) "\n"))
     (* inline-ws)
     (or
      listing
@@ -324,8 +324,24 @@
             wordsep)))
       (? "\n"))))))
 
+(define-peg-pattern anchor all
+  (and (ignore (* "#"))
+       (ignore (* inline-ws))
+       (ignore "{#")
+       (+ (and (not-followed-by "}") peg-any))
+       (ignore "}")))
+
+(define-peg-pattern title all
+  (and (ignore (+ inline-ws))
+       (+ (and (not-followed-by (or anchor "\n")) peg-any))
+       (? anchor)))
+
+(define-peg-pattern sect2 all
+  (and (ignore "##") title (ignore "\n")
+       (* (or (ignore any-ws) paragraph))))
+
 (define-peg-pattern doc-string body
-  (+ (or (ignore any-ws) paragraph)))
+  (+ (or (ignore any-ws) sect2 paragraph)))
 
 (define ->docbook
   (letrec ((%scheme (xpath:sxpath `(scheme)))
@@ -351,6 +367,7 @@
                        (signal . ,(lambda (tag signal . ignore)
                                     `(type ,(fancy-quote signal))))
                        (symbol . ,(lambda (tag . kids) `(type ,@kids)))
+                       (anchor . ,(lambda (tag id . ignore) `(,tag (@ (id ,id)))))
                        (*text* . ,(lambda (tag txt) txt))
                        (*default* . ,(lambda (tag . kids) (cons tag kids)))))
                     (begin
