@@ -276,9 +276,12 @@
        "-->"))
 (define-peg-pattern listing-body body
   (and  (? "\n")
-        (and
-         (* (and (not-followed-by (and "\n" (* inline-ws) "]|")) peg-any))
-         "\n")))
+        (*
+         (and
+          (* inline-ws)
+          (not-followed-by "]|")
+          (* (and (not-followed-by "\n") peg-any))
+          "\n"))))
 (define-peg-pattern listing all
   (and (ignore "|[")
        (? listing-language)
@@ -303,10 +306,8 @@
 (define-peg-pattern parameter all (and (ignore "@") token))
 (define-peg-pattern constant all (and (ignore "%") token))
 (define-peg-pattern symbol all (and (ignore "#") token (not-followed-by ":")))
-(define-peg-pattern property all (and (ignore "#") token ":" id))
-(define-peg-pattern property-id body (and (ignore (and token ":")) id))
-(define-peg-pattern signal all (and (ignore "#") token "::" id))
-(define-peg-pattern signal-id body (and (ignore (and token "::")) id))
+(define-peg-pattern property all (and (ignore (and "#" token ":")) id))
+(define-peg-pattern signal all (and (ignore (and "#" token "::")) id))
 
 (define-peg-pattern paragraph all
   (+
@@ -324,7 +325,7 @@
       (? "\n"))))))
 
 (define-peg-pattern doc-string body
-  (+ (or paragraph (ignore any-ws))))
+  (+ (or (ignore any-ws) paragraph)))
 
 (define ->docbook
   (letrec ((%scheme (xpath:sxpath `(scheme)))
@@ -332,12 +333,9 @@
            (%simplesect (xpath:sxpath `(simplesect)))
            (%top (xpath:sxpath '(namespace *any*)))
 
-           (quote-pattern
-            (lambda (pattern str)
-              (string-append
-               "“"
-               (peg:tree (match-pattern pattern str))
-               "”")))
+           (fancy-quote
+            (lambda (str)
+              (string-append "“" str "”")))
 
            (markdown-1
             (lambda (str)
@@ -349,9 +347,9 @@
                        (listing . ,(lambda (tag . kids)
                                      `(informalexample (programlisting ,@kids))))
                        (property . ,(lambda (tag property . ignore)
-                                      `(type ,(quote-pattern property-id property))))
+                                      `(type ,(fancy-quote property))))
                        (signal . ,(lambda (tag signal . ignore)
-                                    `(type ,(quote-pattern signal-id signal))))
+                                    `(type ,(fancy-quote signal))))
                        (symbol . ,(lambda (tag . kids) `(type ,@kids)))
                        (*text* . ,(lambda (tag txt) txt))
                        (*default* . ,(lambda (tag . kids) (cons tag kids)))))
