@@ -303,6 +303,8 @@
          (range #\0 #\9)
          "_" "-")))
 
+(define-peg-pattern code all
+  (and (ignore "`") (+ (and (not-followed-by "`") peg-any)) (ignore "`")))
 (define-peg-pattern function all (and token "()"))
 (define-peg-pattern parameter all (and (ignore "@") token))
 (define-peg-pattern constant all (and (ignore "%") token))
@@ -321,8 +323,10 @@
       (*
        (and
         (not-followed-by "\n")
-        (or function parameter constant symbol property signal word
-            wordsep)))
+        (or code
+            function parameter constant
+            symbol property signal
+            word wordsep)))
       (? "\n"))))))
 
 (define-peg-pattern anchor all
