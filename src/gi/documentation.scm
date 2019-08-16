@@ -18,6 +18,7 @@
   #:use-module (ice-9 optargs)
   #:use-module (ice-9 format)
   #:use-module (ice-9 peg)
+  #:use-module (ice-9 pretty-print)
   #:use-module (oop goops)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-2)
@@ -336,22 +337,39 @@
        (+ (and (not-followed-by (or anchor "\n")) peg-any))
        (? anchor)))
 
-(define-peg-pattern sect2 all
+(define-peg-pattern refsect2 all
   (and (ignore "##") title (ignore "\n")
        (* (or (ignore any-ws) paragraph))))
 
 (define-peg-pattern doc-string body
-  (+ (or (ignore any-ws) sect2 paragraph)))
+  (+ (or (ignore any-ws) refsect2 paragraph)))
 
 (define ->docbook
   (letrec ((%scheme (xpath:sxpath `(scheme)))
-           (%section (xpath:sxpath `(section)))
-           (%simplesect (xpath:sxpath `(simplesect)))
-           (%top (xpath:sxpath '(namespace *any*)))
+           (%entry (xpath:sxpath `(refentry)))
+           (%functions
+            (compose
+             (xpath:select-kids identity)
+             (xpath:node-or
+              (xpath:node-self
+               (xpath:node-typeof? 'method))
+              (xpath:node-self
+               (xpath:node-typeof? 'function)))))
 
            (fancy-quote
             (lambda (str)
               (string-append "“" str "”")))
+
+           (ppfn
+            (lambda (port name args returns)
+              (let ((name (string->symbol name))
+                    (args (map string->symbol args))
+                    (returns (map string->symbol returns)))
+               (pretty-print
+               `(define-values ,returns (,name ,@args))
+               port
+               ;; allow one-liners
+               #:max-expr-width 79))))
 
            (markdown-1
             (lambda (str)
@@ -386,49 +404,62 @@
                   (list md))
                  (else md)))))
 
-           (title
+           (refname
             (lambda (tag . kids)
-              `(title
+              `(refname
                 ,@(%name (cons tag kids)))))
 
            (chapter
             (lambda (tag . kids)
-              (let ((simple (%simplesect (cons tag kids)))
-                    (sections (%section (cons tag kids))))
+              (let ((functions (%functions kids))
+                    (entries (%entry (cons tag kids))))
                 `(chapter
                   (title ,@(%name (cons tag kids)))
-                  (section (@ (name "Contents")))
-                  ,@sections
-                  ,@simple))))
+                  ,@entries
+                  (refentry
+                   (refnamediv (refname "Functions"))
+                   (refsect1 (title "Functions")
+                    ,@functions))))))
 
-           (section
+           (entry
             (lambda (tag . kids)
               (let ((doc (%doc (cons tag kids)))
                     (scheme (%scheme (cons tag kids)))
-                    (sections (%simplesect (cons tag kids))))
+                    (functions (%functions kids)))
                 (cond
-                 ((and (null? scheme) (null? sections))
+                 ((null? scheme)
                   '())
 
-                 ((null? scheme)
-                  `(section ,@sections))
+                 ((null? doc)
+                  `(refentry
+                    (refnamediv ,@(cdar scheme))
+                    (refsect1
+                     (title "Methods")
+                     ,@functions)))
 
                  (else
-                  `(section
-                    ,@(cdar scheme)
-                    ,@(markdown (string-join doc ""))
-                    ,@sections))))))
+                  `(refentry
+                    (refnamediv ,@(cdar scheme))
+                    (refsect1
+                     (title "Description")
+                     ,@(markdown (string-join doc "")))
+                    (refsect1
+                     (title "Methods")
+                     ,@functions)))))))
 
-           (simplesect
+           (refsect2
             (lambda (tag . kids)
               (let ((doc (%doc (cons tag kids)))
                     (scheme (%scheme (cons tag kids))))
-                (cond
-                 ((null? scheme) '())
-                 ((null? doc)
-                  `(simplesect ,@(cadar scheme)
-                               (para "Undocumented")))
-                 (else `(simplesect ,@(cadar scheme) ,@(markdown (string-join doc "")))))))))
+                (list
+                 tag
+                 (cond
+                  ((null? scheme) '())
+                  ((null? doc)
+                   `(refsect2 ,@(cadar scheme)
+                              (para "Undocumented")))
+                  (else `(refsect2 ,@(cadar scheme) ,@(markdown (string-join doc ""))))))))))
+
     (compose
      sxml->xml
      (cute
@@ -437,34 +468,35 @@
       `((repository . ,(lambda (tag . kids)
                          `(*TOP* (book ,@kids))))
         (namespace . ,chapter)
-        (record . ,section)
-        (class . ,section)
-        (interface . ,section)
-        (union . ,section)
-        (method . ,simplesect)
-        (function . ,simplesect)
+        (record . ,entry)
+        (class . ,entry)
+        (interface . ,entry)
+        (union . ,entry)
+        (method . ,refsect2)
+        (function . ,refsect2)
 
         (procedure
          .
          ,(lambda (tag . kids)
             (let ((node (cons tag kids)))
-              `(,(apply title tag kids)
+              `((title ,@(%name (cons tag kids)))
                 ,(car
                   (map
                    (lambda (ln)
-                     `(subtitle
-                       (code
-                        ,(format
-                          #f "~a ;=> ~a"
-                          (cons
-                           ln
-                           (append-map %name
-                                       ((xpath:sxpath `(argument)) node)))
-                          (append-map %name
-                                      ((xpath:sxpath `(return)) node))))))
+                     `(informalexample
+                       (programlisting
+                        ,(call-with-output-string
+                          (lambda (port)
+                            (ppfn port ln
+                                  (append-map
+                                    %name
+                                    ((xpath:sxpath `(argument)) node))
+                                  (append-map
+                                   %name
+                                   ((xpath:sxpath `(return)) node))))))))
                    (append (%long-name node)
                            (%name node))))))))
-        (type . ,title)
+        (type . ,refname)
 
         (*text* . ,(lambda (tag txt)
                      txt))
