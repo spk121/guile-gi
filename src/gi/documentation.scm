@@ -254,15 +254,15 @@
                  ((null? doc) '())
                  ((null? long-name)
                   (cons* 'procedure (car name)
-                         (format #f "- Procedure: ~a ~a => ~a"
-                                 (car name) args
+                         (format #f "- Procedure: ~a => ~a"
+                                 (cons (car name) args)
                                  returns)
                          doc))
                  (else
                   (cons* 'procedure (car long-name)
                          `(alias ,@name)
-                         (format #f "- Method: ~a ~a => ~a"
-                                 (car long-name) args
+                         (format #f "- Method: ~a => ~a"
+                                 (cons (car long-name) args)
                                  returns)
                          doc))))))
            (assoc-cons!
