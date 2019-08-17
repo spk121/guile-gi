@@ -38,6 +38,8 @@
 (eval-when (expand load eval)
   (load-extension "libguile-gi" "gig_init_document"))
 
+;;; XML Parsing
+
 (define documentation-specials
   (cdr '(%
          namespace
@@ -178,6 +180,8 @@
     (parser (if (string? string-or-port) (open-input-string string-or-port) string-or-port)
             '())))
 
+;;; Metadata Sources
+
 (define-method (%info (info <GIBaseInfo>))
   (let ((doc (with-output-to-string (lambda () (%document info)))))
     doc))
@@ -199,18 +203,93 @@
 (define (gir lib version)
   (open-input-file (find-gir lib version)))
 
-(define* (sort+delete-duplicates! list less #:optional (= equal?))
-  "Sort LIST according to LESS and delete duplicate entries according to `='."
-  (set! list (sort! list less))
-  (let loop ((list list))
-    (unless (null? list)
-      (do ((item (car list))
-           (rest (cdr list) (cdr rest)))
-          ((or (null? rest)
-               (not (= item (car rest)))))
-        (set-cdr! list (cdr rest)))
-      (loop (cdr list))))
-  list)
+;;; (GTK flavoured) Markdown Parser
+
+(define-peg-pattern inline-ws body (or " "))
+(define-peg-pattern any-ws body (or inline-ws "\n"))
+(define-peg-pattern wordsep body
+  (or any-ws "-" "_" "/" "+" "*" "<" ">" "=" "." ":" "," ";" "?" "!"))
+
+(define-peg-pattern listing-language none
+  (and "<!--"
+       (* any-ws)
+       "language=\"" (+ (and (not-followed-by "\"") peg-any)) "\""
+       (* any-ws)
+       "-->"))
+(define-peg-pattern listing-body body
+  (and  (? "\n")
+        (*
+         (and
+          (* inline-ws)
+          (not-followed-by "]|")
+          (* (and (not-followed-by "\n") peg-any))
+          "\n"))))
+(define-peg-pattern listing all
+  (and (ignore "|[")
+       (? listing-language)
+       listing-body
+       (ignore (* inline-ws))
+       (ignore "]|")))
+
+(define-peg-pattern word body
+  (+ (and (not-followed-by wordsep) peg-any)))
+
+(define-peg-pattern token body
+  (+ (or (range #\A #\Z)
+         (range #\a #\z)
+         (range #\0 #\9)
+         "_")))
+(define-peg-pattern id body
+  (+ (or (range #\a #\z)
+         (range #\0 #\9)
+         "_" "-")))
+
+(define-peg-pattern code all
+  (and (ignore "`") (+ (and (not-followed-by "`") peg-any)) (ignore "`")))
+(define-peg-pattern function all (and token "()"))
+(define-peg-pattern parameter all (and (ignore "@") token))
+(define-peg-pattern constant all (and (ignore "%") token))
+(define-peg-pattern symbol all (and (ignore "#") token (not-followed-by ":")))
+(define-peg-pattern property all (and (ignore (and "#" token ":")) id))
+(define-peg-pattern signal all (and (ignore (and "#" token "::")) id))
+
+(define-peg-pattern paragraph all
+  (+
+   (and
+    (not-followed-by (or (and (+ "#") inline-ws) "\n"))
+    (* inline-ws)
+    (or
+     listing
+     (and
+      (*
+       (and
+        (not-followed-by "\n")
+        (or code
+            function parameter constant
+            symbol property signal
+            word wordsep)))
+      (? "\n"))))))
+
+(define-peg-pattern anchor all
+  (and (ignore (* "#"))
+       (ignore (* inline-ws))
+       (ignore "{#")
+       (+ (and (not-followed-by "}") peg-any))
+       (ignore "}")))
+
+(define-peg-pattern title all
+  (and (ignore (+ inline-ws))
+       (+ (and (not-followed-by (or anchor "\n")) peg-any))
+       (? anchor)))
+
+(define-peg-pattern refsect2 all
+  (and (ignore "##") title (ignore "\n")
+       (* (or (ignore any-ws) paragraph))))
+
+(define-peg-pattern doc-string body
+  (+ (or (ignore any-ws) refsect2 paragraph)))
+
+;;; Backends
 
 (define %long-name
   (xpath:sxpath `(@ long-name *text*)))
@@ -226,16 +305,6 @@
 
 (define %doc
   (xpath:sxpath `(doc *text*)))
-
-(define %procedures (xpath:sxpath `(// procedure)))
-
-(define (%procedures-by-name name)
-  (xpath:filter
-   (compose
-    (xpath:node-or
-     (xpath:select-kids (xpath:node-equal? `(name ,name)))
-     (xpath:select-kids (xpath:node-equal? `(long-name ,name))))
-    (xpath:select-kids (xpath:node-typeof? '@)))))
 
 (define (->guile-procedures.txt xml)
   (letrec ((%scheme
@@ -321,90 +390,6 @@
 
        (*text* . ,(lambda (tag txt) txt))
        (*default* . ,(lambda (tag . kids) (cons tag kids)))))))
-
-(define-peg-pattern inline-ws body (or " "))
-(define-peg-pattern any-ws body (or inline-ws "\n"))
-(define-peg-pattern wordsep body
-  (or any-ws "-" "_" "/" "+" "*" "<" ">" "=" "." ":" "," ";" "?" "!"))
-
-(define-peg-pattern listing-language none
-  (and "<!--"
-       (* any-ws)
-       "language=\"" (+ (and (not-followed-by "\"") peg-any)) "\""
-       (* any-ws)
-       "-->"))
-(define-peg-pattern listing-body body
-  (and  (? "\n")
-        (*
-         (and
-          (* inline-ws)
-          (not-followed-by "]|")
-          (* (and (not-followed-by "\n") peg-any))
-          "\n"))))
-(define-peg-pattern listing all
-  (and (ignore "|[")
-       (? listing-language)
-       listing-body
-       (ignore (* inline-ws))
-       (ignore "]|")))
-
-(define-peg-pattern word body
-  (+ (and (not-followed-by wordsep) peg-any)))
-
-(define-peg-pattern token body
-  (+ (or (range #\A #\Z)
-         (range #\a #\z)
-         (range #\0 #\9)
-         "_")))
-(define-peg-pattern id body
-  (+ (or (range #\a #\z)
-         (range #\0 #\9)
-         "_" "-")))
-
-(define-peg-pattern code all
-  (and (ignore "`") (+ (and (not-followed-by "`") peg-any)) (ignore "`")))
-(define-peg-pattern function all (and token "()"))
-(define-peg-pattern parameter all (and (ignore "@") token))
-(define-peg-pattern constant all (and (ignore "%") token))
-(define-peg-pattern symbol all (and (ignore "#") token (not-followed-by ":")))
-(define-peg-pattern property all (and (ignore (and "#" token ":")) id))
-(define-peg-pattern signal all (and (ignore (and "#" token "::")) id))
-
-(define-peg-pattern paragraph all
-  (+
-   (and
-    (not-followed-by (or (and (+ "#") inline-ws) "\n"))
-    (* inline-ws)
-    (or
-     listing
-     (and
-      (*
-       (and
-        (not-followed-by "\n")
-        (or code
-            function parameter constant
-            symbol property signal
-            word wordsep)))
-      (? "\n"))))))
-
-(define-peg-pattern anchor all
-  (and (ignore (* "#"))
-       (ignore (* inline-ws))
-       (ignore "{#")
-       (+ (and (not-followed-by "}") peg-any))
-       (ignore "}")))
-
-(define-peg-pattern title all
-  (and (ignore (+ inline-ws))
-       (+ (and (not-followed-by (or anchor "\n")) peg-any))
-       (? anchor)))
-
-(define-peg-pattern refsect2 all
-  (and (ignore "##") title (ignore "\n")
-       (* (or (ignore any-ws) paragraph))))
-
-(define-peg-pattern doc-string body
-  (+ (or (ignore any-ws) refsect2 paragraph)))
 
 (define ->docbook
   (letrec ((%scheme (xpath:sxpath `(scheme)))
