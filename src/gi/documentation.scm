@@ -238,31 +238,89 @@
     (xpath:select-kids (xpath:node-typeof? '@)))))
 
 (define (->guile-procedures.txt xml)
-  (let* ((^ (xpath:node-parent xml))
-         (^^ (compose ^ ^))
-         (procedures (%procedures xml))
-         (names (sort+delete-duplicates! (append (%name procedures)
-                                                 (%long-name procedures))
-                                         string<=? string=?)))
-    (for-each
-     (lambda (name)
-       (format #t "~c~a~%~%" #\page name)
-       (for-each (lambda (p)
-                   (let ((long-name (car? (%long-name p))))
-                     (if long-name
-                         (format #t "- Method: ~a ~a => ~a~%" long-name
-                                 (%args p) (%returns p))
-                         (format #t "- Procedure: ~a ~a => ~a~%" name
-                                 (%args p) (%returns p)))
-                     (when (or (not long-name)
-                               (equal? name long-name))
-                       ;; we have a fully qualified name, so display doc if
-                       ;; available
-                       (let ((doc (car? (%doc (^^ p)))))
-                          (when doc (display doc) (newline))))))
-                 ((%procedures-by-name name) procedures))
-       (newline))
-    names)))
+  (letrec ((%scheme
+            (compose (xpath:select-kids identity)
+                     (xpath:node-self (xpath:node-typeof? 'scheme))))
+           (procedure
+            (lambda (tag . kids)
+              (let* ((doc (%doc (cons tag kids)))
+                     (scheme (%scheme kids))
+                     (args (%args scheme))
+                     (returns (%returns scheme))
+                     (long-name (%long-name scheme))
+                     (name (%name scheme)))
+                (cond
+                 ((null? scheme) '())
+                 ((null? doc) '())
+                 ((null? long-name)
+                  (cons* 'procedure (car name)
+                         (format #f "- Procedure: ~a ~a => ~a"
+                                 (car name) args
+                                 returns)
+                         doc))
+                 (else
+                  (cons* 'procedure (car long-name)
+                         `(alias ,@name)
+                         (format #f "- Method: ~a ~a => ~a"
+                                 (car long-name) args
+                                 returns)
+                         doc))))))
+           (assoc-cons!
+            (lambda (alist key val)
+              (assoc-set! alist key (cons val (or (assoc-ref alist key) '())))))
+
+           (container
+            (lambda (tag . kids)
+              (filter (xpath:node-typeof? 'procedure) kids))))
+    (pre-post-order
+     xml
+     `((repository . ,(lambda (tag . procedures)
+                        (for-each
+                         (lambda (proc)
+                           (format #t "~c~a~%~%~a~%~%"
+                                   #\page (car proc)
+                                   (string-join (cdr proc) "\n")))
+                         (sort
+                          (apply append procedures)
+                          (lambda (a b)
+                            (string< (car a) (car b)))))))
+       (namespace . ,(compose
+                      (lambda (procedures)
+                        (fold
+                         (lambda (proc seed)
+                           (let* ((name (cadr proc))
+                                  (%doc (cddr proc))
+                                  (alias (and (pair? (car %doc)) (car %doc)))
+                                  (stx (if alias (cadr %doc) (car %doc)))
+                                  (doc (if alias (caddr %doc) (cadr %doc))))
+                             (assoc-cons!
+                              (if alias
+                                  (assoc-cons! seed (cadr alias) stx)
+                                  seed)
+                              name (string-join (list stx doc) "\n"))))
+                         '() procedures))
+                      (lambda (tag . kids)
+                        (append-map
+                         (lambda (kid)
+                           (cond
+                            ((null? kid) kid)
+                            ((equal? 'procedure (car kid)) (list kid))
+                            ((and (pair? (car kid))
+                                  (equal? 'procedure (caar kid)))
+                             kid)
+                            (else '())))
+                         kids))))
+
+       (record . ,container)
+       (class . ,container)
+       (interface . ,container)
+       (union . ,container)
+
+       (method . ,procedure)
+       (function . ,procedure)
+
+       (*text* . ,(lambda (tag txt) txt))
+       (*default* . ,(lambda (tag . kids) (cons tag kids)))))))
 
 (define-peg-pattern inline-ws body (or " "))
 (define-peg-pattern any-ws body (or inline-ws "\n"))
