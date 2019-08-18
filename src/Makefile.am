@@ -125,7 +125,6 @@ GUILEC_FLAGS = \
  -Wformat \
  -Wmacro-use-before-definition \
  -Wunbound-variable \
- -Wunused-variable \
  --load-path=$(abs_srcdir) \
  --load-path=$(abs_builddir)
 
