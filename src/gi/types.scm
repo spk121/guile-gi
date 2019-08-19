@@ -23,7 +23,7 @@
   #:use-module (gi oop)
 
   #:export (<GIBaseInfo>
-            <GBoxed> 
+            <GBoxed>
             <GValue> transform
             <GClosure> procedure->closure
             <GEnum> <GFlags>

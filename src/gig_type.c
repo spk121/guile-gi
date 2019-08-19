@@ -196,7 +196,7 @@ gig_type_associate(GType gtype, SCM stype)
 // this makes a new Guile foreign object type and it stores the type
 // in our hash table of known types.
 SCM
-gig_type_define(GType gtype, SCM defs)
+gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
 {
     g_assert(GSIZE_TO_POINTER(gtype) != NULL);
     // Make a foreign object type for instances of this GType.
@@ -268,7 +268,7 @@ gig_type_define(GType gtype, SCM defs)
 
         case G_TYPE_BOXED:
         {
-            dsupers = scm_list_1(SCM_PACK_POINTER(sparent));
+            dsupers = scm_cons(SCM_PACK_POINTER(sparent), extra_supers);
             new_type = scm_call_4(make_class_proc, dsupers, slots, kwd_name, type_class_name);
 
             GigBoxedFuncs *funcs = _boxed_funcs_for_type(gtype);
@@ -303,9 +303,9 @@ gig_type_define(GType gtype, SCM defs)
                 interfaces = g_type_interface_prerequisites(gtype, &n_interfaces);
 
             if (parent == G_TYPE_INTERFACE)
-                dsupers = SCM_EOL;
+                dsupers = extra_supers;
             else
-                dsupers = scm_list_1(SCM_PACK_POINTER(sparent));
+                dsupers = scm_cons(SCM_PACK_POINTER(sparent), extra_supers);
 
             for (gint n = 0; n < n_interfaces; n++)
                 dsupers = scm_cons(gig_type_get_scheme_type(interfaces[n]), dsupers);
@@ -352,6 +352,12 @@ gig_type_define(GType gtype, SCM defs)
     }
 
     return defs;
+}
+
+SCM
+gig_type_define(GType gtype, SCM defs)
+{
+    return gig_type_define_full(gtype, defs, SCM_EOL);
 }
 
 // This routine returns the integer GType ID of a scheme object, that is
@@ -764,27 +770,13 @@ gig_init_types_once(void)
     gig_object_type = gig_type_get_scheme_type(G_TYPE_OBJECT);
     gig_paramspec_type = gig_type_get_scheme_type(G_TYPE_PARAM);
 
-#define EXTENDED_BOXED_TYPE(S,G,name,supers,size)                       \
-    do {                                                                \
-        GigBoxedFuncs *fns = _boxed_funcs_for_type(G);                  \
-        S = scm_call_4(make_class_proc, supers, SCM_EOL, kwd_name,      \
-                       scm_from_utf8_symbol(name));                     \
-        scm_class_set_x(S, sym_ref,                                     \
-                        scm_from_pointer(fns->copy, NULL));             \
-        scm_class_set_x(S, sym_unref,                                   \
-                        scm_from_pointer(fns->free, NULL));             \
-        scm_class_set_x(S, sym_size, scm_from_size_t(size));            \
-        gig_type_associate(G, S);                                       \
-        scm_c_define(name, S);                                          \
-    } while (0)
+    gig_type_define_full(G_TYPE_VALUE, SCM_EOL, scm_list_1(getter_with_setter));
+    gig_value_type = gig_type_get_scheme_type(G_TYPE_VALUE);
+    gig_type_define_full(G_TYPE_CLOSURE, SCM_EOL,
+                         scm_list_1(scm_c_public_ref("oop goops", "<applicable-struct>")));
+    gig_closure_type = gig_type_get_scheme_type(G_TYPE_CLOSURE);
 
-    EXTENDED_BOXED_TYPE(gig_value_type, G_TYPE_VALUE, "<GValue>",
-                        scm_list_2(gig_boxed_type, getter_with_setter),
-                        sizeof(GValue));
-
-    EXTENDED_BOXED_TYPE(gig_closure_type, G_TYPE_CLOSURE, "<GClosure>",
-                        scm_list_2(gig_boxed_type, scm_c_public_ref("oop goops", "<applicable-struct>")),
-                        /* we don't want users to allocate closures */ 0);
+    scm_class_set_x(gig_value_type, sym_size, scm_from_size_t(sizeof (GValue)));
 
     // value associations, do not rely on them for anything else
     gig_type_associate(G_TYPE_STRING, scm_c_public_ref("oop goops", "<string>"));
