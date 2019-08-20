@@ -1086,10 +1086,18 @@ c_native_array_to_scm(C2S_ARG_DECL)
         g_assert_nonnull(arg->v_pointer);
 
         GIArgument _arg;
-        _arg.v_pointer = arg->v_pointer;
+        GigTypeMeta _meta = meta->params[0];
+        gboolean is_pointer = _meta.is_ptr;
+        _meta.is_ptr = TRUE;
+        gpointer iter = arg->v_pointer;
 
-        for (gsize k = 0; k < len; k++, elt += inc, _arg.v_pointer += meta->item_size)
-            gig_argument_c_to_scm(subr, argpos, &meta->params[0], &_arg, elt, -1);
+        for (gsize k = 0; k < len; k++, elt += inc, iter += meta->item_size) {
+            if (is_pointer)
+                _arg.v_pointer = *(gpointer *)iter;
+            else
+                _arg.v_pointer = iter;
+            gig_argument_c_to_scm(subr, argpos, &_meta, &_arg, elt, -1);
+        }
 
         scm_array_handle_release(&handle);
         if (meta->is_transfer_ownership) {
