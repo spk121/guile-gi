@@ -49,10 +49,7 @@ gig_type_meta_init_from_arg_info(GigTypeMeta *meta, GIArgInfo *ai)
     meta->is_optional = g_arg_info_is_optional(ai);
     meta->is_nullable = g_arg_info_may_be_null(ai);
 
-    meta->is_transfer_ownership = (transfer == GI_TRANSFER_EVERYTHING);
-    meta->is_transfer_container = (transfer == GI_TRANSFER_CONTAINER ||
-                                   transfer == GI_TRANSFER_EVERYTHING);
-
+    meta->transfer = transfer;
 }
 
 void
@@ -74,10 +71,7 @@ gig_type_meta_init_from_callable_info(GigTypeMeta *meta, GICallableInfo *ci)
     meta->is_optional = FALSE;
     meta->is_nullable = g_callable_info_may_return_null(ci);
 
-    meta->is_transfer_ownership = (transfer == GI_TRANSFER_EVERYTHING);
-    meta->is_transfer_container = (transfer == GI_TRANSFER_CONTAINER ||
-                                   transfer == GI_TRANSFER_EVERYTHING);
-
+    meta->transfer = transfer;
 }
 
 void
@@ -98,14 +92,10 @@ add_child_params(GigTypeMeta *meta, GITypeInfo *type_info, gint n)
         gig_type_meta_init_from_type_info(meta->params, param_type);
         g_base_info_unref(param_type);
 
-        if (meta->is_transfer_ownership && meta->is_transfer_container) {
-            meta->params[i].is_transfer_ownership = 1;
-            meta->params[i].is_transfer_container = 1;
-        }
-        else {
-            meta->params[i].is_transfer_ownership = 0;
-            meta->params[i].is_transfer_container = 0;
-        }
+        if (meta->transfer == GI_TRANSFER_EVERYTHING)
+            meta->params[i].transfer = GI_TRANSFER_EVERYTHING;
+        else
+            meta->params[i].transfer = GI_TRANSFER_NOTHING;
     }
 }
 

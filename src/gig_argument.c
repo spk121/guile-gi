@@ -91,7 +91,7 @@ static void c_list_to_scm(C2S_ARG_DECL);
 static gpointer
 later_free(GPtrArray *must_free, GigTypeMeta *meta, gpointer ptr)
 {
-    if ((must_free != NULL) && !meta->is_transfer_ownership)
+    if ((must_free != NULL) && meta->transfer != GI_TRANSFER_EVERYTHING)
         g_ptr_array_insert(must_free, 0, ptr);
     return ptr;
 }
@@ -399,7 +399,7 @@ scm_to_c_string(S2C_ARG_DECL)
         // place to store an output.  Since Glib strings and Guile
         // strings have no encoding in common, we can use
         // bytevectors...
-        if (!meta->is_transfer_ownership) {
+        if (meta->transfer != GI_TRANSFER_EVERYTHING) {
             // But when we're using bytevectors as a possibly writable
             // location, they do need to be null terminated.
             gboolean terminated = FALSE;
@@ -582,7 +582,7 @@ scm_to_c_native_immediate_array(S2C_ARG_DECL)
 
     if (scm_is_bytevector(object)) {
         *size = SCM_BYTEVECTOR_LENGTH(object) / meta->params[0].item_size;
-        if (meta->is_transfer_ownership) {
+        if (meta->transfer == GI_TRANSFER_EVERYTHING) {
             if (meta->is_zero_terminated) {
                 gsize len = SCM_BYTEVECTOR_LENGTH(object);
                 // Note, null terminated here.
@@ -621,7 +621,7 @@ scm_to_c_byte_array(S2C_ARG_DECL)
         gpointer contents = SCM_BYTEVECTOR_CONTENTS(object);
         gsize len = SCM_BYTEVECTOR_LENGTH(object);
         *size = len;
-        if (meta->is_transfer_ownership == GI_TRANSFER_EVERYTHING)
+        if (meta->transfer == GI_TRANSFER_EVERYTHING)
             arg->v_pointer = g_byte_array_new_take(contents, len);
         else
             arg->v_pointer = g_byte_array_new_take(g_memdup(contents, len), len);
@@ -667,7 +667,7 @@ scm_to_c_native_interface_array(S2C_ARG_DECL)
             }
             for (gsize i = 0; i < *size; i++) {
                 gpointer p = gig_type_peek_object(scm_c_vector_ref(object, i));
-                if (meta->is_transfer_ownership) {
+                if (meta->transfer == GI_TRANSFER_EVERYTHING) {
                     if (fundamental_item_type == G_TYPE_BOXED) {
                         ((gpointer *)(arg->v_pointer))[i] = g_memdup(p, meta->params[0].item_size);
                         // ((gpointer *)(arg->v_pointer))[i] = p;
@@ -688,7 +688,7 @@ scm_to_c_native_interface_array(S2C_ARG_DECL)
                 arg->v_pointer = malloc(sizeof(gpointer) * *size);
             for (gsize i = 0; i < *size; i++) {
                 gpointer p = gig_type_peek_object(scm_c_vector_ref(object, i));
-                if (meta->is_transfer_ownership)
+                if (meta->transfer == GI_TRANSFER_EVERYTHING)
                     memcpy((char *)(arg->v_pointer) + i * meta->item_size,
                            g_memdup(p, meta->item_size), meta->item_size);
                 else
@@ -898,35 +898,35 @@ c_boxed_to_scm(C2S_ARG_DECL)
         c_list_to_scm(C2S_ARGS);
     else
         *object =
-            gig_type_transfer_object(meta->gtype, arg->v_pointer, meta->is_transfer_ownership);
+            gig_type_transfer_object(meta->gtype, arg->v_pointer, meta->transfer);
 }
 
 static void
 c_interface_to_scm(C2S_ARG_DECL)
 {
     TRACE_C2S();
-    *object = gig_type_transfer_object(meta->gtype, arg->v_pointer, meta->is_transfer_ownership);
+    *object = gig_type_transfer_object(meta->gtype, arg->v_pointer, meta->transfer);
 }
 
 static void
 c_object_to_scm(C2S_ARG_DECL)
 {
     TRACE_C2S();
-    *object = gig_type_transfer_object(meta->gtype, arg->v_pointer, meta->is_transfer_ownership);
+    *object = gig_type_transfer_object(meta->gtype, arg->v_pointer, meta->transfer);
 }
 
 static void
 c_variant_to_scm(C2S_ARG_DECL)
 {
     TRACE_C2S();
-    *object = gig_type_transfer_object(meta->gtype, arg->v_pointer, meta->is_transfer_ownership);
+    *object = gig_type_transfer_object(meta->gtype, arg->v_pointer, meta->transfer);
 }
 
 static void
 c_param_to_scm(C2S_ARG_DECL)
 {
     TRACE_C2S();
-    *object = gig_type_transfer_object(meta->gtype, arg->v_pointer, meta->is_transfer_ownership);
+    *object = gig_type_transfer_object(meta->gtype, arg->v_pointer, meta->transfer);
 }
 
 static void
@@ -959,7 +959,7 @@ c_string_to_scm(C2S_ARG_DECL)
                 else
                     *object = scm_from_locale_string(arg->v_string);
             }
-            if (meta->is_transfer_ownership) {
+            if (meta->transfer == GI_TRANSFER_EVERYTHING) {
                 g_free(arg->v_string);
                 arg->v_string = NULL;
             }
@@ -1006,7 +1006,7 @@ c_native_array_to_scm(C2S_ARG_DECL)
             scm_misc_error(subr, "Array size overflow", SCM_EOL);               \
         if (sz == 0) \
             *object = scm_make_ ## _short_type ## vector (scm_from_int(0), scm_from_int(0)); \
-        else if (meta->is_transfer_ownership) \
+        else if (meta->transfer == GI_TRANSFER_EVERYTHING) \
             *object = scm_take_ ## _short_type ## vector((_type *)(arg->v_pointer), length); \
         else                                                            \
             *object = scm_take_ ## _short_type ## vector((_type *)g_memdup(arg->v_pointer, sz), length); \
@@ -1026,7 +1026,7 @@ c_native_array_to_scm(C2S_ARG_DECL)
                    arg->v_pointer + k * meta->params[0].item_size, meta->params[0].item_size);
         }
         scm_array_handle_release(&handle);
-        if (meta->is_transfer_ownership) {
+        if (meta->transfer == GI_TRANSFER_EVERYTHING) {
             free(arg->v_pointer);
             arg->v_pointer = 0;
         }
@@ -1063,7 +1063,7 @@ c_native_array_to_scm(C2S_ARG_DECL)
         for (gsize k = 0; k < len; k++, elt += inc)
             *elt = ((gboolean *)(arg->v_pointer))[k] ? SCM_BOOL_T : SCM_BOOL_F;
         scm_array_handle_release(&handle);
-        if (meta->is_transfer_ownership) {
+        if (meta->transfer == GI_TRANSFER_EVERYTHING) {
             free(arg->v_pointer);
             arg->v_pointer = 0;
         }
@@ -1072,7 +1072,7 @@ c_native_array_to_scm(C2S_ARG_DECL)
         *object = scm_c_make_string(length, SCM_MAKE_CHAR(0));
         for (gsize k = 0; k < length; k++)
             scm_c_string_set_x(*object, k, SCM_MAKE_CHAR(((gunichar *)(arg->v_pointer))[k]));
-        if (meta->is_transfer_ownership) {
+        if (meta->transfer == GI_TRANSFER_EVERYTHING) {
             free(arg->v_pointer);
             arg->v_pointer = 0;
         }
@@ -1101,7 +1101,7 @@ c_native_array_to_scm(C2S_ARG_DECL)
         }
 
         scm_array_handle_release(&handle);
-        if (meta->is_transfer_ownership) {
+        if (meta->transfer == GI_TRANSFER_EVERYTHING) {
             free(arg->v_pointer);
             arg->v_pointer = 0;
         }
@@ -1124,12 +1124,12 @@ c_native_array_to_scm(C2S_ARG_DECL)
                 else
                     *elt = scm_from_locale_string(str);
             }
-            if (meta->is_transfer_ownership) {
+            if (meta->transfer == GI_TRANSFER_EVERYTHING) {
                 free(((gchar **)(arg->v_pointer))[i]);
                 ((gchar **)(arg->v_pointer))[i] = NULL;
             }
         }
-        if (meta->is_transfer_ownership || meta->is_transfer_container) {
+        if (meta->transfer != GI_TRANSFER_NOTHING) {
             free(arg->v_pointer);
             arg->v_pointer = NULL;
         }
@@ -1148,7 +1148,7 @@ c_byte_array_to_scm(C2S_ARG_DECL)
     GByteArray *byte_array = arg->v_pointer;
     *object = scm_c_make_bytevector(byte_array->len);
     memcpy(SCM_BYTEVECTOR_CONTENTS(*object), byte_array->data, byte_array->len);
-    if (meta->is_transfer_ownership)
+    if (meta->transfer == GI_TRANSFER_EVERYTHING)
         g_byte_array_free(byte_array, TRUE);
     else
         g_byte_array_free(byte_array, FALSE);
@@ -1263,7 +1263,7 @@ c_list_to_scm(C2S_ARG_DECL)
 
         out_iter = scm_cdr(out_iter);
     }
-    if (meta->is_transfer_ownership || meta->is_transfer_container) {
+    if (meta->transfer != GI_TRANSFER_NOTHING) {
         if (meta->gtype == G_TYPE_LIST)
             g_list_free(arg->v_pointer);
         else
@@ -1282,7 +1282,7 @@ c_pointer_to_scm(C2S_ARG_DECL)
         *object = scm_from_uintptr_t(arg->v_pointer);
     else if (meta->gtype == G_TYPE_CALLBACK)
         *object =
-            gig_type_transfer_object(meta->gtype, arg->v_pointer, meta->is_transfer_ownership);
+            gig_type_transfer_object(meta->gtype, arg->v_pointer, meta->transfer);
     else if (size != GIG_ARRAY_SIZE_UNKNOWN) {
         SCM bv = scm_c_make_bytevector(size);
         memcpy(SCM_BYTEVECTOR_CONTENTS(bv), arg->v_pointer, size);

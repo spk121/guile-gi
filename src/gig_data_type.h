@@ -64,20 +64,18 @@ struct _GigTypeMeta
     guint16 is_optional:1;      // Out-only. Pass in NULL to ignore this.
     guint16 is_nullable:1;      // For in, can pass in NULL. For out, may return NULL.
 
-    // For container types
-    guint16 is_transfer_ownership:1;
-    guint16 is_transfer_container:1;
-
     // Error status
     guint16 is_invalid:1;       // True when one of the arguments has invalid type
     guint16 is_raw_array:1;
     guint16 is_zero_terminated:1;
     guint16 has_size:1;
-    guint16 padding1:3;
+    guint16 padding1:5;
 
     // For C array types
     gsize length;
     gsize item_size;
+
+    GITransfer transfer;
 
     // Subtypes and callables
     guint16 n_params;
