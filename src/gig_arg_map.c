@@ -39,7 +39,7 @@ const gchar presence_strings[GIG_ARG_PRESENCE_COUNT][9] = {
 
 static GigArgMap *arg_map_allocate(gsize n);
 static void arg_map_apply_function_info(GigArgMap *amap, GIFunctionInfo *func_info);
-static void arg_map_determine_argument_presence(GigArgMap *amap);
+static void arg_map_determine_argument_presence(GigArgMap *amap, GIFunctionInfo *info);
 static void arg_map_compute_c_invoke_positions(GigArgMap *amap);
 static void arg_map_compute_s_call_positions(GigArgMap *amap);
 static void arg_map_entry_init(GigArgMapEntry *map);
@@ -65,7 +65,7 @@ gig_amap_new(GICallableInfo *function_info)
     arg_map_apply_function_info(amap, function_info);
     if (amap->is_invalid)
         return NULL;
-    arg_map_determine_argument_presence(amap);
+    arg_map_determine_argument_presence(amap, function_info);
     arg_map_compute_c_invoke_positions(amap);
     arg_map_compute_s_call_positions(amap);
     gig_amap_dump(amap);
@@ -112,7 +112,25 @@ arg_map_apply_function_info(GigArgMap *amap, GIFunctionInfo *func_info)
 }
 
 static void
-arg_map_determine_argument_presence(GigArgMap *amap)
+arg_map_determine_array_length_index(GigArgMap *amap, GigArgMapEntry *entry, GITypeInfo *info)
+{
+    if (entry->meta.gtype == G_TYPE_ARRAY &&
+        entry->meta.has_size) {
+        gint idx = g_type_info_get_array_length(info);
+
+        g_assert_cmpint(idx, !=, -1);
+
+        entry->tuple = GIG_ARG_TUPLE_ARRAY;
+        entry->child = amap->pdata + idx;
+        entry->child->tuple = GIG_ARG_TUPLE_ARRAY_SIZE;
+        entry->child->presence = GIG_ARG_PRESENCE_IMPLICIT;
+        entry->child->parent = entry;
+        entry->child->is_s_output = 0;
+    }
+}
+
+static void
+arg_map_determine_argument_presence(GigArgMap *amap, GIFunctionInfo *info)
 {
     GigArgMapEntry *entry;
     gboolean opt_flag = TRUE;
@@ -141,26 +159,14 @@ arg_map_determine_argument_presence(GigArgMap *amap)
     // In C, if there is an array defined as a pointer and a
     // length parameter, it becomes a single S parameter.
     for (i = 0; i < n; i++) {
-        entry = &amap->pdata[i];
-        if (entry->meta.gtype == G_TYPE_LENGTH_CARRAY) {
-            entry->tuple = GIG_ARG_TUPLE_ARRAY;
-            entry->child = &amap->pdata[entry->meta.length];
-            entry->child->tuple = GIG_ARG_TUPLE_ARRAY_SIZE;
-            entry->child->presence = GIG_ARG_PRESENCE_IMPLICIT;
-            entry->child->parent = entry;
-            entry->child->is_s_output = 0;
-        }
+        entry = amap->pdata + i;
+        GIArgInfo *a = g_callable_info_get_arg(info, i);
+        GITypeInfo *t = g_arg_info_get_type(a);
+        arg_map_determine_array_length_index(amap, entry, t);
     }
 
     amap->return_val.tuple = GIG_ARG_TUPLE_SINGLETON;
-    if (amap->return_val.meta.gtype == G_TYPE_LENGTH_CARRAY) {
-        amap->return_val.tuple = GIG_ARG_TUPLE_ARRAY;
-        amap->return_val.child = &amap->pdata[amap->return_val.meta.length];
-        amap->return_val.child->tuple = GIG_ARG_TUPLE_ARRAY_SIZE;
-        amap->return_val.child->presence = GIG_ARG_PRESENCE_IMPLICIT;
-        amap->return_val.child->parent = &amap->return_val;
-        amap->return_val.child->is_s_output = 0;
-    }
+    arg_map_determine_array_length_index(amap, &amap->return_val, g_callable_info_get_return_type(info));
 }
 
 static void
@@ -300,7 +306,7 @@ gig_amap_dump(const GigArgMap *amap)
         }
     }
     if (amap->return_val.meta.gtype != G_TYPE_NONE) {
-        GigArgMapEntry *entry = &amap->return_val;
+        const GigArgMapEntry *entry = &amap->return_val;
         GString *s = g_string_new(NULL);
         g_string_append_printf(s, " Return: '%s' %s",
                                entry->name, gig_type_meta_describe(&entry->meta));

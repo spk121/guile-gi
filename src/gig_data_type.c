@@ -14,6 +14,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <glib-object.h>
+#include "gig_argument.h"
 #include "gig_data_type.h"
 #include "gig_util.h"
 
@@ -24,9 +25,6 @@ GType g_type_uint16;
 GType g_type_uint32;
 GType g_type_locale_string;
 
-GType g_type_fixed_size_carray;
-GType g_type_zero_terminated_carray;
-GType g_type_length_carray;
 GType g_type_list;
 GType g_type_slist;
 GType g_type_callback;
@@ -166,19 +164,20 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
         add_child_params(meta, type_info, 1);
 
         if (array_type == GI_ARRAY_TYPE_C) {
-            if ((len = g_type_info_get_array_length(type_info)) != -1) {
-                meta->gtype = G_TYPE_LENGTH_CARRAY;
+            meta->gtype = G_TYPE_ARRAY;
+            meta->is_raw_array = TRUE;
+            meta->length = GIG_ARRAY_SIZE_UNKNOWN;
+
+            if ((len = g_type_info_get_array_length(type_info)) != -1)
+                meta->has_size = TRUE;
+            else if ((len = g_type_info_get_array_fixed_size(type_info)) != -1)
                 meta->length = len;
-            }
-            else if ((len = g_type_info_get_array_fixed_size(type_info)) != -1) {
-                meta->gtype = G_TYPE_FIXED_SIZE_CARRAY;
-                meta->length = len;
-            }
-            else if (g_type_info_is_zero_terminated(type_info)) {
-                meta->gtype = G_TYPE_ZERO_TERMINATED_CARRAY;
-            }
-            else {
-                g_warning("unsized C array");
+
+            if (g_type_info_is_zero_terminated(type_info))
+                meta->is_zero_terminated = TRUE;
+
+            if (len == -1 && !meta->is_zero_terminated) {
+                g_warning("no way of determining array size, coercing to pointer");
                 meta->gtype = G_TYPE_POINTER;
             }
         }
@@ -323,15 +322,6 @@ gig_init_data_type(void)
     g_type_uint32 = g_type_register_static_simple(G_TYPE_UINT, "guint32", 0, NULL, 0, NULL, 0);
     g_type_locale_string = g_type_register_static_simple(G_TYPE_STRING,
                                                          "locale-string", 0, NULL, 0, NULL, 0);
-
-    // These 3 array types are all just aliases for GArray, but, their
-    // types designate how that interacted with the GObject C FFI.
-    g_type_fixed_size_carray =
-        g_boxed_type_register_static("fixed-size-carray", g_array_ref, g_array_unref);
-    g_type_zero_terminated_carray =
-        g_boxed_type_register_static("zero-terminated-carray", g_array_ref, g_array_unref);
-    g_type_length_carray =
-        g_boxed_type_register_static("length+carray", g_array_ref, g_array_unref);
 
     g_type_list = g_list_get_type();
     g_type_slist = g_slist_get_type();

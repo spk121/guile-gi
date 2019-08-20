@@ -29,9 +29,6 @@ extern GType g_type_uint16;
 extern GType g_type_uint32;
 extern GType g_type_locale_string;
 
-extern GType g_type_fixed_size_carray;
-extern GType g_type_zero_terminated_carray;
-extern GType g_type_length_carray;
 extern GType g_type_list;
 extern GType g_type_slist;
 extern GType g_type_callback;
@@ -42,13 +39,12 @@ extern GType g_type_callback;
 #define G_TYPE_UINT16 (g_type_uint16)
 #define G_TYPE_UINT32 (g_type_uint32)
 
-#define G_TYPE_LENGTH_CARRAY (g_type_length_carray)
-#define G_TYPE_ZERO_TERMINATED_CARRAY (g_type_zero_terminated_carray)
-#define G_TYPE_FIXED_SIZE_CARRAY (g_type_fixed_size_carray)
 #define G_TYPE_LIST (g_type_list)
 #define G_TYPE_SLIST (g_type_slist)
 #define G_TYPE_LOCALE_STRING (g_type_locale_string)
 #define G_TYPE_CALLBACK (g_type_callback)
+
+#define GIG_ARRAY_SIZE_UNKNOWN ((gsize)-1)
 
 typedef struct _GigTypeMeta GigTypeMeta;
 struct _GigTypeMeta
@@ -73,13 +69,15 @@ struct _GigTypeMeta
     guint16 is_transfer_container:1;
 
     // Error status
-    guint16 is_invalid:1;       // True when one of the arguments has
-    // invalid type
-    guint16 padding1:6;
+    guint16 is_invalid:1;       // True when one of the arguments has invalid type
+    guint16 is_raw_array:1;
+    guint16 is_zero_terminated:1;
+    guint16 has_size:1;
+    guint16 padding1:3;
 
     // For C array types
-    guint16 length;
-    guint16 item_size;
+    gsize length;
+    gsize item_size;
 
     // Subtypes and callables
     guint16 n_params;

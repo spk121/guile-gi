@@ -430,8 +430,8 @@ gig_function_invoke(GIFunctionInfo *func_info, GigArgMap *amap, const gchar *nam
     if (ok) {
         SCM s_return;
         gsize sz = -1;
-        if (amap->return_val.meta.gtype == G_TYPE_LENGTH_CARRAY) {
-            gsize idx = amap->pdata[amap->return_val.meta.length].c_output_pos;
+        if (amap->return_val.tuple == GIG_ARG_TUPLE_ARRAY) {
+            gsize idx = amap->return_val.child->c_output_pos;
             sz = ((GIArgument *)(cinvoke_output_arg_array->data))[idx].v_size;
         }
 
@@ -484,6 +484,7 @@ function_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
     guint n_args = cif->nargs;
     g_debug("Binding C function %s as %s with %d args", g_base_info_get_name(gfn->function_info),
             gfn->name, n_args);
+    gig_amap_dump(gfn->amap);
 
     // we have either 0 args or 1 args, which is the already packed list
     g_assert(n_args <= 1);
@@ -549,14 +550,8 @@ object_to_c_arg(GigArgMap *amap, gint s, const gchar *name, SCM obj,
 
     // If this argument is an array with an associated size, store the
     // array size as well.
-    is_in = gig_amap_input_s_2_child_input_c(amap, s, &c_invoke_in);
-    is_out = gig_amap_input_s_2_child_output_c(amap, s, &c_invoke_out);
-    if (!is_in)
-        c_invoke_in = -1;
-    if (!is_out)
-        c_invoke_out = -1;
-    if (c_invoke_in >= 0 || c_invoke_out >= 0) {
-        GigArgMapEntry *size_entry = &amap->pdata[entry->meta.length];
+    if (gig_amap_input_s_2_child_input_c(amap, s, &c_invoke_in)) {
+        GigArgMapEntry *size_entry = entry->child;
         GIArgument size_arg;
         gsize dummy_size;
 

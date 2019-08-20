@@ -9,8 +9,6 @@
 G_BEGIN_DECLS
 // *INDENT-ON*
 
-#define GIG_ARRAY_SIZE_UNKNOWN ((gsize)-1)
-
 #define S2C_ARG_DECL const gchar *subr, gint argpos,    \
         GigTypeMeta *meta, SCM object,               \
         GPtrArray *must_free, GIArgument *arg, gsize *size

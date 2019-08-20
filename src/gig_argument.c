@@ -81,7 +81,6 @@ static void c_object_to_scm(C2S_ARG_DECL);
 static void c_variant_to_scm(C2S_ARG_DECL);
 
 // Derived types
-static void c_array_to_scm(C2S_ARG_DECL);
 static void c_byte_array_to_scm(C2S_ARG_DECL);
 static void c_native_array_to_scm(C2S_ARG_DECL);
 static void c_garray_to_scm(C2S_ARG_DECL);
@@ -102,7 +101,10 @@ later_free(GPtrArray *must_free, GigTypeMeta *meta, gpointer ptr)
 static gsize
 array_length(GigTypeMeta *meta, GIArgument *arg)
 {
-    if (meta->gtype == G_TYPE_ZERO_TERMINATED_CARRAY) {
+    if (meta->length != GIG_ARRAY_SIZE_UNKNOWN)
+        return meta->length;
+
+    else if (meta->is_zero_terminated) {
         gpointer array = arg->v_pointer;
         if (array == NULL)
             return 0;
@@ -162,8 +164,6 @@ array_length(GigTypeMeta *meta, GIArgument *arg)
         }
         }
     }
-    else if (meta->gtype == G_TYPE_FIXED_SIZE_CARRAY)
-        return meta->length;
 
     return GIG_ARRAY_SIZE_UNKNOWN;
 }
@@ -462,8 +462,7 @@ scm_to_c_boxed(S2C_ARG_DECL)
     if (meta->is_nullable && scm_is_false(object)) {
         arg->v_pointer = NULL;
     }
-    else if (t == G_TYPE_LENGTH_CARRAY
-             || t == G_TYPE_ZERO_TERMINATED_CARRAY || t == G_TYPE_FIXED_SIZE_CARRAY)
+    else if (meta->is_raw_array)
         scm_to_c_native_array(S2C_ARGS);
     else if (t == G_TYPE_ARRAY)
         scm_to_c_garray(S2C_ARGS);
@@ -530,7 +529,7 @@ scm_to_c_native_boolean_array(S2C_ARG_DECL)
     if (!scm_is_vector(object))
         scm_wrong_type_arg_msg(subr, argpos, object, "vector of booleans");
     *size = scm_c_vector_length(object);
-    if (meta->gtype == G_TYPE_ZERO_TERMINATED_CARRAY) {
+    if (meta->is_zero_terminated) {
         arg->v_pointer = malloc(sizeof(gboolean) * (*size + 1));
         ((gboolean *)arg->v_pointer)[*size] = 0;
         LATER_FREE(arg->v_pointer);
@@ -552,7 +551,7 @@ scm_to_c_native_unichar_array(S2C_ARG_DECL)
     if (!scm_is_string(object))
         scm_wrong_type_arg_msg(subr, argpos, object, "string");
     *size = scm_c_string_length(object);
-    if (meta->gtype == G_TYPE_ZERO_TERMINATED_CARRAY) {
+    if (meta->is_zero_terminated) {
         arg->v_pointer = malloc(sizeof(gunichar) * (*size + 1));
         ((gunichar *)arg->v_pointer)[*size] = 0;
         LATER_FREE(arg->v_pointer);
@@ -583,30 +582,30 @@ scm_to_c_native_immediate_array(S2C_ARG_DECL)
 
     if (scm_is_bytevector(object)) {
         *size = SCM_BYTEVECTOR_LENGTH(object) / meta->params[0].item_size;
-        if (!meta->is_transfer_ownership) {
-            if (meta->gtype != G_TYPE_ZERO_TERMINATED_CARRAY) {
-                // The fast path
-                arg->v_pointer = SCM_BYTEVECTOR_CONTENTS(object);
+        if (meta->is_transfer_ownership) {
+            if (meta->is_zero_terminated) {
+                gsize len = SCM_BYTEVECTOR_LENGTH(object);
+                // Note, null terminated here.
+                arg->v_pointer = g_malloc0(len + meta->params[0].item_size);
+                memcpy(arg->v_pointer, SCM_BYTEVECTOR_CONTENTS(object), len);
             }
             else {
+                arg->v_pointer = g_memdup(SCM_BYTEVECTOR_CONTENTS(object),
+                                          SCM_BYTEVECTOR_LENGTH(object));
+            }
+        }
+        else {
+            if (meta->is_zero_terminated) {
                 gsize len = SCM_BYTEVECTOR_LENGTH(object);
                 // Adding null terminator element.
                 arg->v_pointer = g_malloc0(len + meta->params[0].item_size);
                 LATER_FREE(arg->v_pointer);
                 memcpy(arg->v_pointer, SCM_BYTEVECTOR_CONTENTS(object), len);
             }
-        }
-        else if (meta->is_transfer_ownership) {
-            if (meta->gtype != G_TYPE_ZERO_TERMINATED_CARRAY) {
-                arg->v_pointer = g_memdup(SCM_BYTEVECTOR_CONTENTS(object),
-                                          SCM_BYTEVECTOR_LENGTH(object));
-            }
-            else {
-                gsize len = SCM_BYTEVECTOR_LENGTH(object);
-                // Note, null terminated here.
-                arg->v_pointer = g_malloc0(len + meta->params[0].item_size);
-                memcpy(arg->v_pointer, SCM_BYTEVECTOR_CONTENTS(object), len);
-            }
+            else
+                // The fast path
+                arg->v_pointer = SCM_BYTEVECTOR_CONTENTS(object);
+
         }
     }
     else
@@ -637,7 +636,7 @@ scm_to_c_garray(S2C_ARG_DECL)
     TRACE_S2C();
     GIArgument _arg;
     GigTypeMeta _meta = *meta;
-    _meta.gtype = G_TYPE_LENGTH_CARRAY;
+    _meta.is_raw_array = TRUE;
     gig_argument_scm_to_c(subr, argpos, &_meta, object, NULL, &_arg, size);
     arg->v_pointer = g_new0(GArray, 1);
     ((GArray *)(arg->v_pointer))->len = *size;
@@ -659,7 +658,7 @@ scm_to_c_native_interface_array(S2C_ARG_DECL)
             scm_wrong_type_arg_msg(subr, argpos, object, "vector of objects");
         *size = scm_c_vector_length(object);
         if (meta->is_ptr) {
-            if (meta->gtype == G_TYPE_ZERO_TERMINATED_CARRAY) {
+            if (meta->is_zero_terminated) {
                 arg->v_pointer = malloc(sizeof(gpointer) * (*size + 1));
                 ((gpointer *)arg->v_pointer)[*size] = 0;
             }
@@ -683,7 +682,7 @@ scm_to_c_native_interface_array(S2C_ARG_DECL)
             }
         }
         else {
-            if (meta->gtype == G_TYPE_ZERO_TERMINATED_CARRAY)
+            if (meta->is_zero_terminated)
                 arg->v_pointer = g_malloc0(meta->item_size * (*size + 1));
             else
                 arg->v_pointer = malloc(sizeof(gpointer) * *size);
@@ -882,17 +881,17 @@ static void
 c_boxed_to_scm(C2S_ARG_DECL)
 {
     TRACE_C2S();
-    if (meta->gtype == G_TYPE_LENGTH_CARRAY) {
-        meta->length = size;
-        c_native_array_to_scm(C2S_ARGS);
-    }
-    else if (meta->gtype == G_TYPE_FIXED_SIZE_CARRAY ||
-             meta->gtype == G_TYPE_ZERO_TERMINATED_CARRAY)
-        c_native_array_to_scm(C2S_ARGS);
-    else if (meta->gtype == G_TYPE_BYTE_ARRAY)
+    if (meta->gtype == G_TYPE_BYTE_ARRAY)
         c_byte_array_to_scm(C2S_ARGS);
-    else if (meta->gtype == G_TYPE_ARRAY)
-        c_garray_to_scm(C2S_ARGS);
+    else if (meta->gtype == G_TYPE_ARRAY) {
+        if (meta->is_raw_array) {
+            if (meta->has_size)
+                meta->length = size;
+            c_native_array_to_scm(C2S_ARGS);
+        }
+        else
+            c_garray_to_scm(C2S_ARGS);
+    }
     else if (meta->gtype == G_TYPE_PTR_ARRAY)
         c_gptrarray_to_scm(C2S_ARGS);
     else if (meta->gtype == G_TYPE_LIST || meta->gtype == G_TYPE_SLIST)
@@ -970,6 +969,7 @@ c_string_to_scm(C2S_ARG_DECL)
         UNHANDLED;
 }
 
+#if 0
 static void
 c_array_to_scm(C2S_ARG_DECL)
 {
@@ -984,6 +984,7 @@ c_array_to_scm(C2S_ARG_DECL)
     else
         UNHANDLED;
 }
+#endif
 
 static void
 c_native_array_to_scm(C2S_ARG_DECL)
@@ -1161,11 +1162,11 @@ c_garray_to_scm(C2S_ARG_DECL)
     GIArgument _arg;
     GArray *array = arg->v_pointer;
     _arg.v_pointer = array->data;
-    _meta.gtype = G_TYPE_FIXED_SIZE_CARRAY;
+    _meta.is_raw_array = TRUE;
     _meta.length = array->len;
 
     size = array->len;
-    c_array_to_scm(subr, argpos, &_meta, &_arg, object, size);
+    c_native_array_to_scm(subr, argpos, &_meta, &_arg, object, size);
 }
 
 static void
@@ -1176,10 +1177,10 @@ c_gptrarray_to_scm(C2S_ARG_DECL)
     GIArgument _arg;
     GPtrArray *array = arg->v_pointer;
     _arg.v_pointer = array->pdata;
-    _meta.gtype = G_TYPE_FIXED_SIZE_CARRAY;
+    _meta.is_raw_array = TRUE;
     _meta.length = array->len;
     size = array->len;
-    c_array_to_scm(subr, argpos, &_meta, &_arg, object, size);
+    c_native_array_to_scm(subr, argpos, &_meta, &_arg, object, size);
 }
 
 static void
