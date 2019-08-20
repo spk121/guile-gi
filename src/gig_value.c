@@ -233,7 +233,7 @@ gig_value_from_scm(GValue *value, SCM obj)
 }
 
 void
-gig_value_from_scm_with_error(const gchar *subr, GValue *value, SCM obj, gint pos)
+gig_value_from_scm_with_error(GValue *value, SCM obj, const gchar *subr, gint pos)
 {
     gint res = gig_value_from_scm(value, obj);
     switch (res) {
