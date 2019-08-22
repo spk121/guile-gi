@@ -90,27 +90,29 @@ do_document(GIBaseInfo *info, const gchar *namespace)
             scm_printf(SCM_UNDEFINED, "<scheme><procedure name=\"%s\">", scheme_name);
 
 
-        arg_map = gig_arg_map_new(info);
-        scm_dynwind_unwind_handler((scm_t_pointer_finalizer) gig_arg_map_free,
-                                   arg_map, SCM_F_WIND_EXPLICITLY);
-        gig_arg_map_get_cinvoke_args_count(arg_map, &in, &out);
-        gig_arg_map_get_gsubr_args_count(arg_map, &req, &opt);
+        arg_map = gig_amap_new(info);
+        if (arg_map)
+            scm_dynwind_unwind_handler((scm_t_pointer_finalizer) gig_amap_free,
+                                       arg_map, SCM_F_WIND_EXPLICITLY);
+        if (arg_map) {
+            gig_amap_c_count(arg_map, &in, &out);
+            gig_amap_s_input_count(arg_map, &req, &opt);
 
-        if (g_callable_info_is_method(info)) {
-            scm_printf(SCM_UNDEFINED, "<argument name=\"self\">");
-            scm_printf(SCM_UNDEFINED, "</argument>");
-        }
+            if (g_callable_info_is_method(info)) {
+                scm_printf(SCM_UNDEFINED, "<argument name=\"self\">");
+                scm_printf(SCM_UNDEFINED, "</argument>");
+            }
+            for (gint i = 0; i < req + opt; i++) {
+                GigArgMapEntry *entry = gig_amap_get_input_entry_by_s(arg_map, i);
+                document_arg_entry("argument", entry);
+            }
+            if (arg_map->return_val.meta.gtype != G_TYPE_NONE)
+                document_arg_entry("return", &arg_map->return_val);
 
-        for (gint i = 0; i < req + opt; i++) {
-            GigArgMapEntry *entry = gig_arg_map_get_entry(arg_map, i);
-            document_arg_entry("argument", entry);
-        }
-        if (arg_map->return_val->type_tag != GI_TYPE_TAG_VOID)
-            document_arg_entry("return", arg_map->return_val);
-
-        for (gint i = 0; i < out; i++) {
-            GigArgMapEntry *entry = gig_arg_map_get_output_entry(arg_map, i);
-            document_arg_entry("return", entry);
+            for (gint i = 0; i < out; i++) {
+                GigArgMapEntry *entry = gig_amap_get_output_entry_by_c(arg_map, i);
+                document_arg_entry("return", entry);
+            }
         }
         scm_printf(SCM_UNDEFINED, "</procedure></scheme></%s>", kind);
         break;
@@ -151,8 +153,34 @@ do_document(GIBaseInfo *info, const gchar *namespace)
 
     case GI_INFO_TYPE_ENUM:
     case GI_INFO_TYPE_FLAGS:
-        scm_printf(SCM_UNDEFINED, "<enumeration name=\"%s\">", g_base_info_get_name(info));
-        scm_printf(SCM_UNDEFINED, "</enumeration>");
+        if (type == GI_INFO_TYPE_FLAGS)
+            kind = "bitfield";
+        else
+            kind = "enumeration";
+
+        scm_printf(SCM_UNDEFINED, "<%s name=\"%s\">", kind, g_base_info_get_name(info));
+
+        GType gtype = g_registered_type_info_get_g_type(info);
+
+        scm_printf(SCM_UNDEFINED, "<scheme>");
+
+        if (gtype != G_TYPE_NONE)
+            scm_printf(SCM_UNDEFINED, "<type name=\"&lt;%s&gt;\" />",
+                       g_type_name(gtype));
+        else
+            scm_printf(SCM_UNDEFINED, "<type name=\"&lt;%%%s%s&gt;\" />",
+                       g_base_info_get_namespace(info),
+                       g_base_info_get_name(info));
+
+        scm_printf(SCM_UNDEFINED, "</scheme>");
+
+        document_nested(info);
+
+        gint n_values = g_enum_info_get_n_values(info);
+        for (gint i = 0; i < n_values; i++)
+            do_document(g_enum_info_get_value(info, i), g_base_info_get_name(info));
+
+        scm_printf(SCM_UNDEFINED, "</%s>", kind);
         break;
 
     case GI_INFO_TYPE_SIGNAL:
@@ -166,9 +194,19 @@ do_document(GIBaseInfo *info, const gchar *namespace)
         scm_printf(SCM_UNDEFINED, "<field name=\"%s\" />", g_base_info_get_name(info));
         break;
 
+    case GI_INFO_TYPE_VALUE:
+        scheme_name = scm_dynwind_or_bust("%document",
+                                          gig_gname_to_scm_name(g_base_info_get_name(info)));
+        scm_printf(SCM_UNDEFINED, "<member name=\"%s\">", g_base_info_get_name(info));
+        scm_printf(SCM_UNDEFINED, "<scheme><symbol name=\"%s\"", scheme_name);
+        GIAttributeIter iter = {0, };
+        char *name, *value;
+        while (g_base_info_iterate_attributes(info, &iter, &name, &value))
+            scm_printf(SCM_UNDEFINED, "%s=\"%s\"", name, value);
+        scm_printf(SCM_UNDEFINED, "/></scheme></member>", scheme_name);
+        break;
     case GI_INFO_TYPE_CONSTANT:
     case GI_INFO_TYPE_CALLBACK:
-    case GI_INFO_TYPE_VALUE:
     case GI_INFO_TYPE_ARG:
     case GI_INFO_TYPE_TYPE:
         break;

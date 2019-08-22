@@ -16,7 +16,7 @@ SCM gig_value_to_scm_basic_type(const GValue *value, GType fundamental, gboolean
 SCM gig_value_param_as_scm(const GValue *gvalue, gboolean copy_boxed, const GParamSpec *pspec);
 
 SCM gig_value_as_scm(const GValue *value, gboolean copy_boxed);
-void gig_value_from_scm_with_error(const gchar *subr, GValue *value, SCM obj, gint pos);
+void gig_value_from_scm_with_error(GValue *value, SCM obj, const gchar *subr, gint pos);
 int gig_value_from_scm(GValue *value, SCM obj);
 
 void gig_init_value(void);

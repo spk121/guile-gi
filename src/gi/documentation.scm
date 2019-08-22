@@ -17,7 +17,8 @@
   #:use-module (ice-9 curried-definitions)
   #:use-module (ice-9 optargs)
   #:use-module (ice-9 format)
-  #:use-module (ice-9 regex)
+  #:use-module (ice-9 peg)
+  #:use-module (ice-9 pretty-print)
   #:use-module (oop goops)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-2)
@@ -37,12 +38,14 @@
 (eval-when (expand load eval)
   (load-extension "libguile-gi" "gig_init_document"))
 
+;;; XML Parsing
+
 (define documentation-specials
   (cdr '(%
          namespace
          ;; introspected types
-         class record union interface
-         function method
+         class record union interface enumeration bitfield
+         function method member
          ;; leaves
          doc scheme)))
 
@@ -121,12 +124,10 @@
              (lambda (elem-gi attributes namespaces parent-seed seed)
                (let ((path (assq-ref seed '%path))
                      (existing (assq-ref seed '%existing))
-                     (end (car? seed))
                      ;; collect strings and drop helper elements
                      (seed (filter (negate (lambda (elt)
                                              (member (car? elt) '(%path %existing))))
                                    (ssax:reverse-collect-str-drop-ws seed)))
-                     (name (assq-ref attributes 'name))
                      (attrs
                       (attlist-fold (lambda (attr accum)
                                       (cons (list (res-name->sxml (car attr)) (cdr attr))
@@ -198,18 +199,93 @@
 (define (gir lib version)
   (open-input-file (find-gir lib version)))
 
-(define* (sort+delete-duplicates! list less #:optional (= equal?))
-  "Sort LIST according to LESS and delete duplicate entries according to `='."
-  (set! list (sort! list less))
-  (let loop ((list list))
-    (unless (null? list)
-      (do ((item (car list))
-           (rest (cdr list) (cdr rest)))
-          ((or (null? rest)
-               (not (= item (car rest)))))
-        (set-cdr! list (cdr rest)))
-      (loop (cdr list))))
-  list)
+;;; (GTK flavoured) Markdown Parser
+
+(define-peg-pattern inline-ws body (or " "))
+(define-peg-pattern any-ws body (or inline-ws "\n"))
+(define-peg-pattern wordsep body
+  (or any-ws "-" "_" "/" "+" "*" "<" ">" "=" "." ":" "," ";" "?" "!"))
+
+(define-peg-pattern listing-language none
+  (and "<!--"
+       (* any-ws)
+       "language=\"" (+ (and (not-followed-by "\"") peg-any)) "\""
+       (* any-ws)
+       "-->"))
+(define-peg-pattern listing-body body
+  (and  (? "\n")
+        (*
+         (and
+          (* inline-ws)
+          (not-followed-by "]|")
+          (* (and (not-followed-by "\n") peg-any))
+          "\n"))))
+(define-peg-pattern listing all
+  (and (ignore "|[")
+       (? listing-language)
+       listing-body
+       (ignore (* inline-ws))
+       (ignore "]|")))
+
+(define-peg-pattern word body
+  (+ (and (not-followed-by wordsep) peg-any)))
+
+(define-peg-pattern token body
+  (+ (or (range #\A #\Z)
+         (range #\a #\z)
+         (range #\0 #\9)
+         "_")))
+(define-peg-pattern id body
+  (+ (or (range #\a #\z)
+         (range #\0 #\9)
+         "_" "-")))
+
+(define-peg-pattern code all
+  (and (ignore "`") (+ (and (not-followed-by "`") peg-any)) (ignore "`")))
+(define-peg-pattern function all (and token "()"))
+(define-peg-pattern parameter all (and (ignore "@") token))
+(define-peg-pattern constant all (and (ignore "%") token))
+(define-peg-pattern symbol all (and (ignore "#") token (not-followed-by ":")))
+(define-peg-pattern property all (and (ignore (and "#" token ":")) id))
+(define-peg-pattern signal all (and (ignore (and "#" token "::")) id))
+
+(define-peg-pattern paragraph all
+  (+
+   (and
+    (not-followed-by (or (and (+ "#") inline-ws) "\n"))
+    (* inline-ws)
+    (or
+     listing
+     (and
+      (*
+       (and
+        (not-followed-by "\n")
+        (or code
+            function parameter constant
+            symbol property signal
+            word wordsep)))
+      (? "\n"))))))
+
+(define-peg-pattern anchor all
+  (and (ignore (* "#"))
+       (ignore (* inline-ws))
+       (ignore "{#")
+       (+ (and (not-followed-by "}") peg-any))
+       (ignore "}")))
+
+(define-peg-pattern title all
+  (and (ignore (+ inline-ws))
+       (+ (and (not-followed-by (or anchor "\n")) peg-any))
+       (? anchor)))
+
+(define-peg-pattern refsect2 all
+  (and (ignore "##") title (ignore "\n")
+       (* (or (ignore any-ws) paragraph))))
+
+(define-peg-pattern doc-string body
+  (+ (or (ignore any-ws) refsect2 paragraph)))
+
+;;; Backends
 
 (define %long-name
   (xpath:sxpath `(@ long-name *text*)))
@@ -226,158 +302,208 @@
 (define %doc
   (xpath:sxpath `(doc *text*)))
 
-(define %procedures (xpath:sxpath `(// procedure)))
-
-(define (%procedures-by-name name)
-  (xpath:filter
-   (compose
-    (xpath:node-or
-     (xpath:select-kids (xpath:node-equal? `(name ,name)))
-     (xpath:select-kids (xpath:node-equal? `(long-name ,name))))
-    (xpath:select-kids (xpath:node-typeof? '@)))))
-
 (define (->guile-procedures.txt xml)
-  (let* ((^ (xpath:node-parent xml))
-         (^^ (compose ^ ^))
-         (procedures (%procedures xml))
-         (names (sort+delete-duplicates! (append (%name procedures)
-                                                 (%long-name procedures))
-                                         string<=? string=?)))
-    (for-each
-     (lambda (name)
-       (format #t "~c~a~%~%" #\page name)
-       (for-each (lambda (p)
-                   (let ((long-name (car? (%long-name p))))
-                     (if long-name
-                         (format #t "- Method: ~a ~a => ~a~%" long-name
-                                 (%args p) (%returns p))
-                         (format #t "- Procedure: ~a ~a => ~a~%" name
-                                 (%args p) (%returns p)))
-                     (when (or (not long-name)
-                               (equal? name long-name))
-                       ;; we have a fully qualified name, so display doc if
-                       ;; available
-                       (let ((doc (car? (%doc (^^ p)))))
-                          (when doc (display doc) (newline))))))
-                 ((%procedures-by-name name) procedures))
-       (newline))
-    names)))
+  (letrec ((%scheme
+            (compose (xpath:select-kids identity)
+                     (xpath:node-self (xpath:node-typeof? 'scheme))))
+           (procedure
+            (lambda (tag . kids)
+              (let* ((doc (%doc (cons tag kids)))
+                     (scheme (%scheme kids))
+                     (args (%args scheme))
+                     (returns (%returns scheme))
+                     (long-name (%long-name scheme))
+                     (name (%name scheme)))
+                (cond
+                 ((null? scheme) '())
+                 ((null? doc) '())
+                 ((null? long-name)
+                  (cons* 'procedure (car name)
+                         (format #f "- Procedure: ~a => ~a"
+                                 (cons (car name) args)
+                                 returns)
+                         doc))
+                 (else
+                  (cons* 'procedure (car long-name)
+                         `(alias ,@name)
+                         (format #f "- Method: ~a => ~a"
+                                 (cons (car long-name) args)
+                                 returns)
+                         doc))))))
+           (assoc-cons!
+            (lambda (alist key val)
+              (assoc-set! alist key (cons val (or (assoc-ref alist key) '())))))
 
-(define (string-whitespace? str)
-  (string-fold (lambda (char seed) (and (char-whitespace? char) seed)) #t str))
+           (container
+            (lambda (tag . kids)
+              (filter (xpath:node-typeof? 'procedure) kids))))
+    (pre-post-order
+     xml
+     `((repository . ,(lambda (tag . procedures)
+                        (for-each
+                         (lambda (proc)
+                           (format #t "~c~a~%~%~a~%~%"
+                                   #\page (car proc)
+                                   (string-join (cdr proc) "\n")))
+                         (sort
+                          (apply append procedures)
+                          (lambda (a b)
+                            (string< (car a) (car b)))))))
+       (namespace . ,(compose
+                      (lambda (procedures)
+                        (fold
+                         (lambda (proc seed)
+                           (let* ((name (cadr proc))
+                                  (%doc (cddr proc))
+                                  (alias (and (pair? (car %doc)) (car %doc)))
+                                  (stx (if alias (cadr %doc) (car %doc)))
+                                  (doc (if alias (caddr %doc) (cadr %doc))))
+                             (assoc-cons!
+                              (if alias
+                                  (assoc-cons! seed (cadr alias) stx)
+                                  seed)
+                              name (string-join (list stx doc) "\n"))))
+                         '() procedures))
+                      (lambda (tag . kids)
+                        (append-map
+                         (lambda (kid)
+                           (cond
+                            ((null? kid) kid)
+                            ((equal? 'procedure (car kid)) (list kid))
+                            ((and (pair? (car kid))
+                                  (equal? 'procedure (caar kid)))
+                             kid)
+                            (else '())))
+                         kids))))
 
-(define (extract-informal-examples str)
-  (reverse!
-   (let ((code-block-start (make-regexp "\\|\\["))
-        (code-block-end (make-regexp "\\]\\|")))
-    (let loop
-        ((chain '())
-         (point 0)
-         (starts (list-matches code-block-start str))
-         (ends (list-matches code-block-end str)))
-      (cond
-       ((null? starts)
-        (cons (substring str point (string-length str))
-              chain))
+       (record . ,container)
+       (class . ,container)
+       (interface . ,container)
+       (union . ,container)
 
-       ((null? ends)
-        (cons (substring str point (string-length str))
-              chain))
+       (method . ,procedure)
+       (function . ,procedure)
 
-       (else
-        (let ((start (car starts))
-              (end (car ends)))
-          (cond
-           ((< (match:start start) point)
-            (loop chain point (cdr starts) ends))
-           ((< (match:start end) (match:end start))
-            (loop chain point starts (cdr ends)))
-           (else
-            (loop
-             (let ((pre (substring str point (match:start start)))
-                   (this (substring str (match:end start) (match:start end))))
-               (if (string-whitespace? pre)
-                   (cons `(informalexample (programlisting (,this)))
-                         chain)
-                   (cons* `(informalexample (programlisting (,this)))
-                          pre chain)))
-             (match:end end)
-             (cdr starts)
-             (cdr ends)))))))))))
+       (*text* . ,(lambda (tag txt) txt))
+       (*default* . ,(lambda (tag . kids) (cons tag kids)))))))
 
 (define ->docbook
   (letrec ((%scheme (xpath:sxpath `(scheme)))
-           (%section (xpath:sxpath `(section)))
-           (%simplesect (xpath:sxpath `(simplesect)))
-           (%top (xpath:sxpath '(namespace *any*)))
+           (%entry (xpath:sxpath `(refentry)))
+           (%functions
+            (compose
+             (xpath:select-kids identity)
+             (xpath:node-or
+              (xpath:node-self
+               (xpath:node-typeof? 'method))
+              (xpath:node-self
+               (xpath:node-typeof? 'function)))))
+           (%c-id (xpath:sxpath `(@ c:identifier *text*)))
 
-           (\n\n (make-regexp "\n\n"))
+           (fancy-quote
+            (lambda (str)
+              (string-append "“" str "”")))
 
-           (paras
-            (lambda (kids)
-              (append-map
-               (compose
-                (lambda (elts)
-                  (append-map
-                   (lambda (elt)
-                     (if (pair? elt)
-                         `((para ,elt))
-                         ((compose
-                           (lambda (elts)
-                             (map (lambda (elt) `(para ,elt))
-                                  (filter (negate string-whitespace?) elts)))
-                           (lambda (str) (string-split str #\page))
-                           (lambda (str)
-                             (regexp-substitute/global
-                              #f \n\n str 'pre (string #\page) 'post)))
-                          elt)))
-                   elts))
-                extract-informal-examples)
-               (filter string? kids))))
+           (ppfn
+            (lambda (port name args returns)
+              (let ((name (string->symbol name))
+                    (args (map string->symbol args))
+                    (returns (map string->symbol returns)))
+               (pretty-print
+               `(define-values ,returns (,name ,@args))
+               port
+               ;; allow one-liners
+               #:max-expr-width 79))))
 
-           (title
+           (markdown-1
+            (lambda (str)
+              (let ((match (match-pattern doc-string str)))
+                (if match
+                    (pre-post-order
+                     (peg:tree match)
+                     `((paragraph . ,(lambda (tag . kids) `(para ,@kids)))
+                       (listing . ,(lambda (tag . kids)
+                                     `(informalexample (programlisting ,@kids))))
+                       (property . ,(lambda (tag property . ignore)
+                                      `(type ,(fancy-quote property))))
+                       (signal . ,(lambda (tag signal . ignore)
+                                    `(type ,(fancy-quote signal))))
+                       (symbol . ,(lambda (tag . kids) `(type ,@kids)))
+                       (anchor . ,(lambda (tag id . ignore) `(,tag (@ (id ,id)))))
+                       (*text* . ,(lambda (tag txt) txt))
+                       (*default* . ,(lambda (tag . kids) (cons tag kids)))))
+                    (begin
+                      (display "WARNING: unparseable docstring will be included literally"
+                               (current-error-port))
+                      (newline (current-error-port))
+                      (list str))))))
+
+           (markdown
+            (lambda (str)
+              (let ((md (markdown-1 str)))
+                (cond
+                 ((string? (car md))
+                  `((para ,@md)))
+                 ((symbol? (car md))
+                  (list md))
+                 (else md)))))
+
+           (refname
             (lambda (tag . kids)
-              `(title
+              `(refname
                 ,@(%name (cons tag kids)))))
 
            (chapter
             (lambda (tag . kids)
-              (let ((simple (%simplesect (cons tag kids)))
-                    (sections (%section (cons tag kids))))
+              (let ((functions (%functions kids))
+                    (entries (%entry (cons tag kids))))
                 `(chapter
                   (title ,@(%name (cons tag kids)))
-                  (section (@ (name "Contents")))
-                  ,@sections
-                  ,@simple))))
+                  ,@entries
+                  (refentry
+                   (refnamediv (refname "Functions"))
+                   (refsect1 (title "Functions")
+                    ,@functions))))))
 
-           (section
+           (entry
             (lambda (tag . kids)
               (let ((doc (%doc (cons tag kids)))
                     (scheme (%scheme (cons tag kids)))
-                    (sections (%simplesect (cons tag kids))))
+                    (functions (%functions kids)))
                 (cond
-                 ((and (null? scheme) (null? sections))
+                 ((null? scheme)
                   '())
 
-                 ((null? scheme)
-                  `(section ,@sections))
+                 ((null? doc)
+                  `(refentry
+                    (refnamediv ,@(cdar scheme))
+                    (refsect1
+                     (title "Methods")
+                     ,@functions)))
 
                  (else
-                  `(section
-                    ,@(cdar scheme)
-                    ,@(paras doc)
-                    ,@sections))))))
+                  `(refentry
+                    (refnamediv ,@(cdar scheme))
+                    (refsect1
+                     (title "Description")
+                     ,@(markdown (string-join doc "")))
+                    (refsect1
+                     (title "Methods")
+                     ,@functions)))))))
 
-           (simplesect
+           (refsect2
             (lambda (tag . kids)
               (let ((doc (%doc (cons tag kids)))
                     (scheme (%scheme (cons tag kids))))
-                (cond
-                 ((null? scheme) '())
-                 ((null? doc)
-                  `(simplesect ,@(cadar scheme)
-                               (para "Undocumented")))
-                 (else `(simplesect ,@(cadar scheme) ,@(paras doc))))))))
+                (list
+                 tag
+                 (cond
+                  ((null? scheme) '())
+                  ((null? doc)
+                   `(refsect2 ,@(cadar scheme)
+                              (para "Undocumented")))
+                  (else `(refsect2 ,@(cadar scheme) ,@(markdown (string-join doc ""))))))))))
+
     (compose
      sxml->xml
      (cute
@@ -386,34 +512,45 @@
       `((repository . ,(lambda (tag . kids)
                          `(*TOP* (book ,@kids))))
         (namespace . ,chapter)
-        (record . ,section)
-        (class . ,section)
-        (interface . ,section)
-        (union . ,section)
-        (method . ,simplesect)
-        (function . ,simplesect)
+        (record . ,entry)
+        (class . ,entry)
+        (interface . ,entry)
+        (union . ,entry)
+        (enumeration . ,entry)
+        (bitfield . ,entry)
+
+        (method . ,refsect2)
+        (function . ,refsect2)
+        (member . ,refsect2)
 
         (procedure
          .
          ,(lambda (tag . kids)
             (let ((node (cons tag kids)))
-              `(,(apply title tag kids)
+              `((title ,@(%name (cons tag kids)))
                 ,(car
                   (map
                    (lambda (ln)
-                     `(subtitle
-                       (code
-                        ,(format
-                          #f "~a ;=> ~a"
-                          (cons
-                           ln
-                           (append-map %name
-                                       ((xpath:sxpath `(argument)) node)))
-                          (append-map %name
-                                      ((xpath:sxpath `(return)) node))))))
+                     `(informalexample
+                       (programlisting
+                        ,(call-with-output-string
+                          (lambda (port)
+                            (ppfn port ln
+                                  (append-map
+                                    %name
+                                    ((xpath:sxpath `(argument)) node))
+                                  (append-map
+                                   %name
+                                   ((xpath:sxpath `(return)) node))))))))
                    (append (%long-name node)
                            (%name node))))))))
-        (type . ,title)
+        (type . ,refname)
+        (symbol . ,(lambda (tag . kids)
+                     (let ((c-id (car? (%c-id (cons tag kids)))))
+                       `((title ,@(%name (cons tag kids)))
+                         ,(if c-id
+                              `((subtitle "alias " (code ,c-id)))
+                              '())))))
 
         (*text* . ,(lambda (tag txt)
                      txt))

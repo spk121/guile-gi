@@ -32,6 +32,7 @@ TEST_EXTENSIONS = .scm
 
 noinst_DATA = lib.scm \
   automake-test-lib.scm \
+  flags/flags.scm \
   grilo/base.scm
 
 TYPELIB_TESTS = \
@@ -172,6 +173,17 @@ OOP_TESTS = \
  oop/signal-accumulator.scm \
  oop/signal-block.scm
 
+VALUE_TESTS = \
+ value/getset.scm \
+ value/transform.scm \
+ closure/simple.scm
+
+FLAGS_TESTS = \
+ flags/complement.scm \
+ flags/difference.scm \
+ flags/projection.scm \
+ flags/union.scm
+
 TESTS = \
  $(TYPELIB_TESTS) \
  $(VERSION_INFORMATION_TESTS) \
@@ -179,6 +191,7 @@ TESTS = \
  $(STANDARD_MACROS_TESTS) \
  $(BYTE_ORDER_MACROS_TESTS) \
  $(NUMERICAL_DEFINITIONS_TESTS) \
+ $(ATOMIC_OPERATIONS_TESTS) \
  $(MESSAGE_OUTPUT_TESTS) \
  $(MAIN_EVENT_LOOP_TESTS) \
  $(MEMORY_ALLOCATION_TESTS) \
@@ -201,6 +214,8 @@ TESTS = \
  $(GTK_LAYOUT_TESTS) \
  $(GRILO_TESTS) \
  $(OOP_TESTS) \
+ $(VALUE_TESTS) \
+ $(FLAGS_TESTS) \
  misc/softerror_create.scm \
  misc/use-typelibs.scm \
  misc/interfaces.scm
@@ -229,9 +244,7 @@ AM_SCM_LOG_FLAGS = --no-auto-compile -L $(abs_top_builddir)/src -L $(abs_top_src
 
 EXTRA_DIST = \
   $(TESTS) \
-  lib.scm \
-  automake-test-lib.scm \
-  grilo/base.scm
+  $(noinst_DATA)
 
 CLEANFILES = tmp.txt
 

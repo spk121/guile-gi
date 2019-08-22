@@ -1,4 +1,4 @@
-(use-modules (gi) (gi repository)
+(use-modules (gi) (gi repository) (gi types)
              (test automake-test-lib)
              (srfi srfi-43))
 
@@ -8,18 +8,20 @@
   (exit EXIT_SKIPPED))
 
 (for-each load-by-name
-          (append (make-list 3 "GLib") (make-list 3 "Gio"))
-          '("Variant" "VariantDict" "OptionArg"
+          (append (make-list 4 "GLib") (make-list 3 "Gio"))
+          '("Variant" "VariantDict" "OptionArg" "OptionFlags"
             "Application" "ApplicationCommandLine" "ApplicationFlags"))
 
 (automake-test
  (begin
    (let ((app (make <GApplication>
                 #:application-id "gi.guile.Example"
-                #:flags APPLICATION_HANDLES_COMMAND_LINE))
+                #:flags '(handles-command-line)))
          (success #f))
-     (add-main-option app "hello" (char->integer #\h) 0
-                      OPTION_ARG_STRING_ARRAY "" #f)
+     ;; (display (flags->number (flags app)))
+     (add-main-option app "hello" (char->integer #\h)
+                      (number->option-flags 0)
+                      (symbol->option-arg 'string-array) "" #f)
 
      (connect app command-line
               (lambda (app command-line)

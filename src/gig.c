@@ -17,22 +17,23 @@
 #include "config.h"
 #endif
 
-#include <time.h>
+#include <girepository.h>
 #include <glib-object.h>
 #include <glib.h>
-#include <girepository.h>
 #include <libguile.h>
 #include <stdio.h>
-#include "gig_object.h"
-#include "gig_value.h"
-#include "gig_signal.h"
+#include <time.h>
 #include "gig_argument.h"
-#include "gig_type.h"
 #include "gig_callback.h"
-#include "gig_function.h"
 #include "gig_constant.h"
+#include "gig_data_type.h"
 #include "gig_flag.h"
+#include "gig_function.h"
+#include "gig_object.h"
+#include "gig_signal.h"
+#include "gig_type.h"
 #include "gig_util.h"
+#include "gig_value.h"
 
 #ifdef ENABLE_GCOV
 void __gcov_reset(void);
@@ -42,6 +43,8 @@ void __gcov_dump(void);
 #ifdef MTRACE
 #include <mcheck.h>
 #endif
+
+_Thread_local int logger_initialized = 0;
 
 static const GLogField *
 field_ref(const gchar *needle, const GLogField *fields, gsize n_fields)
@@ -71,6 +74,10 @@ gig_log_writer(GLogLevelFlags flags, const GLogField *fields, gsize n_fields, gp
     const GLogField *message, domain;
 
     const gchar *prefix, *color;
+    if (!logger_initialized) {
+        scm_init_guile();
+        logger_initialized = 1;
+    }
     switch (flags & G_LOG_LEVEL_MASK) {
     case G_LOG_LEVEL_ERROR:
         color = "\033[1;31m%s\033[0m";
@@ -150,6 +157,7 @@ gig_init(void)
     mtrace();
 #endif
     g_debug("Begin libguile-gir initialization");
+    gig_init_data_type();
     gig_init_constant();
     gig_init_flag();
     gig_init_argument();

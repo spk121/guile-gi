@@ -16,7 +16,7 @@
 #include "gig_value.h"
 #include "gig_type.h"
 #include "gig_object.h"
-#include "gig_type.h"
+#include "gig_flag.h"
 
 #ifndef FLT_MAX
 #define FLT_MAX 3.402823466e+38F
@@ -145,27 +145,30 @@ gig_value_from_scm(GValue *value, SCM obj)
     }
     case G_TYPE_ENUM:
     {
-        if (!scm_is_exact_integer(obj))
+        if (SCM_IS_A_P(obj, gig_enum_type))
+            g_value_set_enum(value, gig_enum_to_int(obj));
+        else if (scm_is_symbol(obj)) {
+            SCM type = gig_type_get_scheme_type(value_type);
+            obj = gig_symbol_to_enum(type, obj);
+            g_value_set_enum(value, gig_enum_to_int(obj));
+        }
+        else
             return GIG_VALUE_WRONG_TYPE;
-        if (!scm_is_unsigned_integer(obj, 0, G_MAXULONG))
-            return GIG_VALUE_OUT_OF_RANGE;
-        gint val;
-        val = scm_to_ulong(obj);
-        g_value_set_enum(value, val);
-    }
-        break;
-    case G_TYPE_FLAGS:
-    {
-        if (!scm_is_exact_integer(obj))
-            return GIG_VALUE_WRONG_TYPE;
-        if (!scm_is_unsigned_integer(obj, 0, G_MAXULONG))
-            return GIG_VALUE_OUT_OF_RANGE;
-        guint val = 0;
-        val = scm_to_ulong(obj);
-        g_value_set_flags(value, val);
         return 0;
     }
-        break;
+    case G_TYPE_FLAGS:
+    {
+        if (SCM_IS_A_P(obj, gig_flags_type))
+            g_value_set_flags(value, gig_flags_to_uint(obj));
+        else if (scm_is_true(scm_list_p(obj))) {
+            SCM type = gig_type_get_scheme_type(value_type);
+            obj = gig_list_to_flags(type, obj);
+            g_value_set_flags(value, gig_flags_to_uint(obj));
+        }
+        else
+            return GIG_VALUE_WRONG_TYPE;
+        return 0;
+    }
     case G_TYPE_FLOAT:
     {
         if (!scm_is_true(scm_real_p(obj)))
@@ -233,7 +236,7 @@ gig_value_from_scm(GValue *value, SCM obj)
 }
 
 void
-gig_value_from_scm_with_error(const gchar *subr, GValue *value, SCM obj, gint pos)
+gig_value_from_scm_with_error(GValue *value, SCM obj, const gchar *subr, gint pos)
 {
     gint res = gig_value_from_scm(value, obj);
     switch (res) {
@@ -325,13 +328,9 @@ gig_value_to_scm_basic_type(const GValue *value, GType fundamental, gboolean *ha
     case G_TYPE_UINT64:
         return scm_from_uint64(g_value_get_uint64(value));
     case G_TYPE_ENUM:
-        /* return gi_genum_from_gtype (G_VALUE_TYPE (value), */
-        /*                             g_value_get_enum (value)); */
-        return scm_from_ulong(g_value_get_enum(value));
+        return gig_int_to_enum(g_value_get_enum(value), G_VALUE_TYPE(value));
     case G_TYPE_FLAGS:
-        /* return gi_gflags_from_gtype (G_VALUE_TYPE (value), */
-        /*                              g_value_get_flags (value)); */
-        return scm_from_ulong(g_value_get_flags(value));
+        return gig_uint_to_flags(g_value_get_flags(value), G_VALUE_TYPE(value));
     case G_TYPE_FLOAT:
         return scm_from_double(g_value_get_float(value));
     case G_TYPE_DOUBLE:
@@ -339,6 +338,7 @@ gig_value_to_scm_basic_type(const GValue *value, GType fundamental, gboolean *ha
     case G_TYPE_STRING:
     {
         const gchar *str = g_value_get_string(value);
+        g_debug("%s", str);
         if (str)
             return scm_from_utf8_string(str);
         else
@@ -456,4 +456,61 @@ gig_value_as_scm(const GValue *value, gboolean copy_boxed)
     if (!handled)
         guobj = gig_value_to_scm_structured_type(value, fundamental, copy_boxed);
     return guobj;
+}
+
+SCM
+gig_value_get(SCM value)
+{
+    GValue *gvalue = gig_type_peek_typed_object(value, gig_value_type);
+    return gig_value_as_scm(gvalue, FALSE);
+}
+
+SCM
+gig_value_get_type(SCM value)
+{
+    GValue *gvalue = gig_type_peek_typed_object(value, gig_value_type);
+    return gig_type_get_scheme_type(G_VALUE_TYPE(gvalue));
+}
+
+SCM
+gig_value_set(SCM where, SCM what)
+{
+    GValue *value = gig_type_peek_typed_object(where, gig_value_type);
+    gig_value_from_scm_with_error(value, what, "%set", SCM_ARG2);
+    return SCM_UNSPECIFIED;
+}
+
+SCM
+gig_value_set_type(SCM where, SCM what)
+{
+    GValue *value = gig_type_peek_typed_object(where, gig_value_type);
+    GType type = scm_to_gtype(what);
+    g_value_unset(value);
+    g_value_init(value, type);
+    return SCM_UNSPECIFIED;
+}
+
+SCM
+gig_value_transform(SCM val, SCM type)
+{
+    GValue *old_val = gig_type_peek_typed_object(val, gig_value_type);
+    GValue* new_val = g_new0(GValue, 1);
+    g_value_init(new_val, scm_to_gtype(type));
+    if (g_value_transform(old_val, new_val))
+        return gig_type_transfer_object(G_TYPE_VALUE, new_val, GI_TRANSFER_EVERYTHING);
+    else {
+        g_free(new_val);
+        scm_misc_error("%transform",
+                       "failed to transform ~A into ~A", scm_list_2(val, type));
+    }
+}
+
+void
+gig_init_value()
+{
+    scm_c_define_gsubr("%get", 1, 0, 0, gig_value_get);
+    scm_c_define_gsubr("%get-type", 1, 0, 0, gig_value_get_type);
+    scm_c_define_gsubr("%set!", 2, 0, 0, gig_value_set);
+    scm_c_define_gsubr("%set-type!", 2, 0, 0, gig_value_set_type);
+    scm_c_define_gsubr("%transform", 2, 0, 0, gig_value_transform);
 }

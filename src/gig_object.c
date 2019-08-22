@@ -17,6 +17,7 @@
 #include "gig_type.h"
 #include "gig_util.h"
 #include "gig_signal.h"
+#include "gig_closure.h"
 #include "gig_value.h"
 #include "gig_function_private.h"
 
@@ -99,73 +100,8 @@ gig_i_scm_make_gobject(SCM s_gtype, SCM s_prop_keylist)
             }
             else {
                 GValue *value = &values[i];
-                if (G_IS_PARAM_SPEC_CHAR(pspec)) {
-                    g_value_init(value, G_TYPE_CHAR);
-                    g_value_set_schar(value, scm_to_int8(s_value));
-                }
-                else if (G_IS_PARAM_SPEC_UCHAR(pspec)) {
-                    g_value_init(value, G_TYPE_UCHAR);
-                    g_value_set_uchar(value, scm_to_uint8(s_value));
-                }
-                else if (G_IS_PARAM_SPEC_INT(pspec)) {
-                    g_value_init(value, G_TYPE_INT);
-                    g_value_set_int(value, scm_to_int(s_value));
-                }
-                else if (G_IS_PARAM_SPEC_UINT(pspec)) {
-                    g_value_init(value, G_TYPE_UINT);
-                    g_value_set_uint(value, scm_to_uint(s_value));
-                }
-                else if (G_IS_PARAM_SPEC_LONG(pspec)) {
-                    g_value_init(value, G_TYPE_LONG);
-                    g_value_set_uint(value, scm_to_long(s_value));
-                }
-                else if (G_IS_PARAM_SPEC_ULONG(pspec)) {
-                    g_value_init(value, G_TYPE_ULONG);
-                    g_value_set_ulong(value, scm_to_ulong(s_value));
-                }
-                else if (G_IS_PARAM_SPEC_INT64(pspec)) {
-                    g_value_init(value, G_TYPE_INT64);
-                    g_value_set_int64(value, scm_to_int64(s_value));
-                }
-                else if (G_IS_PARAM_SPEC_UINT64(pspec)) {
-                    g_value_init(value, G_TYPE_UINT64);
-                    g_value_set_uint64(value, scm_to_uint64(s_value));
-                }
-                else if (G_IS_PARAM_SPEC_FLOAT(pspec)) {
-                    g_value_init(value, G_TYPE_FLOAT);
-                    g_value_set_float(value, scm_to_double(s_value));
-                }
-                else if (G_IS_PARAM_SPEC_DOUBLE(pspec)) {
-                    g_value_init(value, G_TYPE_DOUBLE);
-                    g_value_set_double(value, scm_to_double(s_value));
-                }
-                else if (G_IS_PARAM_SPEC_ENUM(pspec)) {
-                    g_value_init(value, G_PARAM_SPEC_VALUE_TYPE(pspec));
-                    g_value_set_enum(value, scm_to_uint64(s_value));
-                }
-                else if (G_IS_PARAM_SPEC_FLAGS(pspec)) {
-                    g_value_init(value, G_PARAM_SPEC_VALUE_TYPE(pspec));
-                    g_value_set_flags(value, scm_to_ulong(s_value));
-                }
-                else if (G_IS_PARAM_SPEC_STRING(pspec)) {
-                    g_value_init(value, G_TYPE_STRING);
-                    g_value_set_string(value, scm_to_utf8_string(s_value));
-                }
-                else if (G_IS_PARAM_SPEC_OBJECT(pspec)) {
-                    GType src_type = gig_type_get_gtype_from_obj(s_value);
-                    GType dest_type = G_PARAM_SPEC_VALUE_TYPE(pspec);
-                    if (g_type_is_a(src_type, dest_type)) {
-                        g_value_init(value, dest_type);
-                        g_value_set_object(value, gig_object_peek(s_value));
-                    }
-                    else
-                        scm_misc_error(FUNC,
-                                       "unable to convert parameter ~S of type ~S into a ~S",
-                                       scm_list_3(s_value,
-                                                  scm_from_utf8_string(g_type_name(src_type)),
-                                                  scm_from_utf8_string(g_type_name(dest_type))));
-                }
-                else
+                g_value_init(value, G_PARAM_SPEC_VALUE_TYPE(pspec));
+                if (gig_value_from_scm(value, s_value))
                     scm_misc_error(FUNC, "unable to convert parameter ~S", scm_list_1(s_value));
             }
         }
@@ -269,7 +205,7 @@ gig_i_scm_set_property_x(SCM self, SCM property, SCM svalue)
     }
 
     g_value_init(&value, G_PARAM_SPEC_VALUE_TYPE(pspec));
-    gig_value_from_scm_with_error("%set-property!", &value, svalue, SCM_ARG3);
+    gig_value_from_scm_with_error(&value, svalue, "%set-property!", SCM_ARG3);
     g_object_set_property(obj, pspec->name, &value);
 
     return SCM_UNSPECIFIED;
@@ -511,7 +447,7 @@ gig_i_scm_connect(SCM self, SCM signal, SCM sdetail, SCM callback, SCM s_after, 
     signal_lookup("%connect", obj, signal, sdetail, &sigid, &query_info, &detail);
 
     after = !SCM_UNBNDP(s_after) && scm_to_bool(s_after);
-    closure = gig_signal_closure_new(self, query_info.itype, query_info.signal_name, callback);
+    closure = gig_closure_new(callback);
 
     handlerid = g_signal_connect_closure_by_id(obj, sigid, detail, closure, after);
 
@@ -546,11 +482,11 @@ gig_i_scm_emit(SCM self, SCM signal, SCM s_detail, SCM args)
 
     values = g_new0(GValue, query_info.n_params + 1);
     g_value_init(values, G_OBJECT_TYPE(obj));
-    gig_value_from_scm_with_error("%emit", values, self, SCM_ARG1);
+    gig_value_from_scm_with_error(values, self, "%emit", SCM_ARG1);
     SCM iter = args;
     for (guint i = 0; i < query_info.n_params; i++, iter = scm_cdr(iter)) {
         g_value_init(values + i + 1, query_info.param_types[i]);
-        gig_value_from_scm_with_error("%emit", values + i + 1, iter, SCM_ARGn);
+        gig_value_from_scm_with_error(values + i + 1, iter, "%emit", SCM_ARGn);
     }
 
     if (query_info.return_type != G_TYPE_NONE)
@@ -569,9 +505,8 @@ static SCM ensure_accessor_proc;
 static SCM do_define_property(const gchar *, SCM, SCM, SCM);
 
 SCM
-gig_property_define(GType type, GIPropertyInfo *info, const gchar* namespace, SCM defs)
+gig_property_define(GType type, GIPropertyInfo *info, const gchar *namespace, SCM defs)
 {
-    SCM formals, specializers;
     GObjectClass *class;
     GParamSpec *prop;
     SCM s_prop, def;
@@ -626,8 +561,7 @@ do_define_property(const gchar *public_name, SCM prop, SCM self_type, SCM value_
     scm_call_2(add_method_proc, generic,
                scm_call_7(make_proc, method_type,
                           kwd_specializers, specializers,
-                          kwd_formals, formals,
-                          kwd_procedure, proc));
+                          kwd_formals, formals, kwd_procedure, proc));
 
     // setter
     setter = scm_setter(prop);
@@ -637,8 +571,7 @@ do_define_property(const gchar *public_name, SCM prop, SCM self_type, SCM value_
     scm_call_2(add_method_proc, scm_setter(generic),
                scm_call_7(make_proc, method_type,
                           kwd_specializers, specializers,
-                          kwd_formals, formals,
-                          kwd_procedure, setter));
+                          kwd_formals, formals, kwd_procedure, setter));
 
     scm_define(sym_public_name, generic);
     return sym_public_name;

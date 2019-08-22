@@ -21,6 +21,10 @@ libguile_gi_la_SOURCES = \
  gi_callable_info.h \
  gig_argument.c \
  gig_argument.h \
+ gig_closure.c \
+ gig_closure.h \
+ gig_data_type.c \
+ gig_data_type.h \
  gig_object.c \
  gig_object.h \
  gig_value.c \
@@ -117,7 +121,14 @@ pkgguileobject_DATA = \
 
 $(pkgguileobject_DATA): libguile-gi.la
 
-GUILEC_FLAGS = -Warity-mismatch -Wformat --load-path=$(abs_srcdir) --load-path=$(abs_builddir)
+GUILEC_FLAGS = \
+ -O2 \
+ -Warity-mismatch \
+ -Wformat \
+ -Wmacro-use-before-definition \
+ -Wunbound-variable \
+ --load-path=$(abs_srcdir) \
+ --load-path=$(abs_builddir)
 
 .scm.go:
 	GUILE_AUTO_COMPILE=0 \
