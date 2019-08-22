@@ -752,12 +752,6 @@ gig_init_types_once(void)
                                 (GigTypeRefFunction)g_object_ref_sink,
                                 (GigTypeUnrefFunction)g_object_unref);
     gig_type_define_fundamental(G_TYPE_INTERFACE, SCM_EOL, NULL, NULL);
-
-    A(G_TYPE_BOXED, gig_boxed_type);
-    A(G_TYPE_ENUM, gig_enum_type);
-    A(G_TYPE_FLAGS, gig_flags_type);
-
-    gig_type_define(GI_TYPE_BASE_INFO, SCM_EOL);
     gig_type_define_fundamental(G_TYPE_PARAM,
                                 scm_list_1(getter_with_setter),
                                 (GigTypeRefFunction)g_param_spec_ref_sink,
@@ -767,8 +761,16 @@ gig_init_types_once(void)
                                 (GigTypeRefFunction)g_variant_ref_sink,
                                 (GigTypeUnrefFunction)g_variant_unref);
 
+    A(G_TYPE_BOXED, gig_boxed_type);
+    A(G_TYPE_ENUM, gig_enum_type);
+    A(G_TYPE_FLAGS, gig_flags_type);
+
     gig_object_type = gig_type_get_scheme_type(G_TYPE_OBJECT);
     gig_paramspec_type = gig_type_get_scheme_type(G_TYPE_PARAM);
+
+    // derived types
+
+    gig_type_define(GI_TYPE_BASE_INFO, SCM_EOL);
 
     gig_type_define_full(G_TYPE_VALUE, SCM_EOL, scm_list_1(getter_with_setter));
     gig_value_type = gig_type_get_scheme_type(G_TYPE_VALUE);
