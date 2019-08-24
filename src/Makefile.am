@@ -96,49 +96,6 @@ libguile_gi_la_LIBADD = \
  $(FFI_LIBS)
 
 ################################################################
-
-pkgguilesitedir=$(guilesitedir)/gi
-pkgguileobjectdir=$(guileobjectdir)/gi
-
-dist_guilesite_DATA = \
-  gi.scm
-
-nodist_pkgguilesite_DATA = \
-  gi/config.scm
-
-dist_pkgguilesite_DATA = \
-  gi/core-generics.scm \
-  gi/documentation.scm \
-  gi/oop.scm \
-  gi/repository.scm \
-  gi/types.scm \
-  gi/util.scm
-
-pkgguileobject_DATA = \
-  $(dist_guilesite_DATA:%.scm=%.go) \
-  $(dist_pkgguilesite_DATA:%.scm=%.go) \
-  $(nodist_pkgguilesite_DATA:%.scm=%.go)
-
-$(pkgguileobject_DATA): libguile-gi.la
-
-GUILEC_FLAGS = \
- -O2 \
- -Warity-mismatch \
- -Wformat \
- -Wmacro-use-before-definition \
- -Wunbound-variable \
- --load-path=$(abs_srcdir) \
- --load-path=$(abs_builddir)
-
-.scm.go:
-	GUILE_AUTO_COMPILE=0 \
-	LTDL_LIBRARY_PATH=$(abs_builddir)/.libs \
-	$(GUILE_TOOLS) compile --target="$(host)" $(GUILEC_FLAGS) \
-	-o "$@" "$<"
-
-CLEANFILES = $(pkgguileobject_DATA) $(BUILT_SOURCES)
-
-################################################################
 # FLYMAKE
 
 .PHONY: check-syntax

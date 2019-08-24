@@ -236,7 +236,7 @@ SCM_LOG_COMPILER = \
 
 endif
 
-AM_SCM_LOG_FLAGS = --no-auto-compile -L $(abs_top_builddir)/src -L $(abs_top_srcdir)/src -L $(abs_top_srcdir) -s
+AM_SCM_LOG_FLAGS = --no-auto-compile -L $(abs_top_builddir)/module -L $(abs_top_srcdir)/module -L $(abs_top_srcdir) -s
 
 EXTRA_DIST = \
   $(TESTS) \

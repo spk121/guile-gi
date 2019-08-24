@@ -68,7 +68,7 @@ texinfo.tex
 /Debug/
 
 # Generated sources
-src/gi/config.scm
+module/gi/config.scm
 test/everything.c
 test/everything.h
 test/gitestmacros.h
@@ -106,9 +106,9 @@ a.out
 vgrind.out
 
 # Crashes
-!core-generics.scm
 core*
 vgcore*
+!core-generics.scm
 
 # Temp files
 *.aux
