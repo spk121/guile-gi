@@ -15,7 +15,9 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 pkgguilesitedir=$(guilesitedir)/gi
+scriptguilesitedir=$(guilesitedir)/scripts
 pkgguileobjectdir=$(guileobjectdir)/gi
+scriptguileobjectdir=$(guileobjectdir)/scripts
 
 dist_guilesite_DATA = \
   gi.scm
@@ -31,10 +33,18 @@ dist_pkgguilesite_DATA = \
   gi/types.scm \
   gi/util.scm
 
+dist_scriptguilesite_DATA = \
+  scripts/gi-gtkdoc.scm
+
+guileobject_DATA = \
+  $(dist_guilesite_DATA:%.scm=%.go)
+
 pkgguileobject_DATA = \
-  $(dist_guilesite_DATA:%.scm=%.go) \
   $(dist_pkgguilesite_DATA:%.scm=%.go) \
   $(nodist_pkgguilesite_DATA:%.scm=%.go)
+
+scriptguileobject_DATA = \
+  $(dist_scriptguilesite_DATA:%.scm=%.go)
 
 GUILEC_FLAGS = \
  -O2 \
@@ -50,3 +60,5 @@ GUILEC_FLAGS = \
 	LTDL_LIBRARY_PATH=$(abs_top_builddir)/src/.libs \
 	$(GUILE_TOOLS) compile --target="$(host)" $(GUILEC_FLAGS) \
 	-o "$@" "$<"
+
+CLEANFILES = $(guileobject_DATA) $(pkgguileobject_DATA) $(scriptguileobject_DATA)
