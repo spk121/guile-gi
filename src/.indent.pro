@@ -83,6 +83,8 @@
 -T GTypeInstance
 -T GValue
 
+-T ffi_arg
+
 -T GIArgInfo
 -T GIArgument
 -T GIBaseInfo
@@ -101,6 +103,7 @@
 -T GigArgMap
 -T GigBoxedFuncs
 -T GigCallback
+-T GigClosure
 -T GigFunction
 -T GigGsubr
 -T GigRepositoryNested
