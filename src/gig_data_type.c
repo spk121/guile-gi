@@ -197,8 +197,7 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
     else if (tag == GI_TYPE_TAG_INTERFACE) {
         GIBaseInfo *referenced_base_info = g_type_info_get_interface(type_info);
         GIInfoType itype = g_base_info_get_type(referenced_base_info);
-        switch (itype)
-        {
+        switch (itype) {
         case GI_INFO_TYPE_UNRESOLVED:
             meta->gtype = G_TYPE_INVALID;
             meta->is_invalid = TRUE;

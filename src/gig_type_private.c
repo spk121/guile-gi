@@ -9,7 +9,7 @@ _boxed_copy(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
 #if GIG_DEBUG_TRANSFERS
     g_debug("boxed_copy(%s, %p)", g_type_name(type), *(gpointer *)ffi_args[0]);
 #endif
-    *(ffi_arg *) ret = (ffi_arg) g_boxed_copy(type, *(gpointer *)ffi_args[0]);
+    *(ffi_arg *)ret = (ffi_arg)g_boxed_copy(type, *(gpointer *)ffi_args[0]);
 }
 
 static void

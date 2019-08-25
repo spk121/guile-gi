@@ -494,14 +494,13 @@ SCM
 gig_value_transform(SCM val, SCM type)
 {
     GValue *old_val = gig_type_peek_typed_object(val, gig_value_type);
-    GValue* new_val = g_new0(GValue, 1);
+    GValue *new_val = g_new0(GValue, 1);
     g_value_init(new_val, scm_to_gtype(type));
     if (g_value_transform(old_val, new_val))
         return gig_type_transfer_object(G_TYPE_VALUE, new_val, GI_TRANSFER_EVERYTHING);
     else {
         g_free(new_val);
-        scm_misc_error("%transform",
-                       "failed to transform ~A into ~A", scm_list_2(val, type));
+        scm_misc_error("%transform", "failed to transform ~A into ~A", scm_list_2(val, type));
     }
 }
 

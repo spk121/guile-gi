@@ -165,12 +165,10 @@ do_document(GIBaseInfo *info, const gchar *namespace)
         scm_printf(SCM_UNDEFINED, "<scheme>");
 
         if (gtype != G_TYPE_NONE)
-            scm_printf(SCM_UNDEFINED, "<type name=\"&lt;%s&gt;\" />",
-                       g_type_name(gtype));
+            scm_printf(SCM_UNDEFINED, "<type name=\"&lt;%s&gt;\" />", g_type_name(gtype));
         else
             scm_printf(SCM_UNDEFINED, "<type name=\"&lt;%%%s%s&gt;\" />",
-                       g_base_info_get_namespace(info),
-                       g_base_info_get_name(info));
+                       g_base_info_get_namespace(info), g_base_info_get_name(info));
 
         scm_printf(SCM_UNDEFINED, "</scheme>");
 
@@ -199,7 +197,7 @@ do_document(GIBaseInfo *info, const gchar *namespace)
                                           gig_gname_to_scm_name(g_base_info_get_name(info)));
         scm_printf(SCM_UNDEFINED, "<member name=\"%s\">", g_base_info_get_name(info));
         scm_printf(SCM_UNDEFINED, "<scheme><symbol name=\"%s\"", scheme_name);
-        GIAttributeIter iter = {0, };
+        GIAttributeIter iter = { 0, };
         char *name, *value;
         while (g_base_info_iterate_attributes(info, &iter, &name, &value))
             scm_printf(SCM_UNDEFINED, "%s=\"%s\"", name, value);
