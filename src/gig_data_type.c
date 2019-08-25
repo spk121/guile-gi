@@ -195,15 +195,18 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
     else if (tag == GI_TYPE_TAG_INTERFACE) {
         GIBaseInfo *referenced_base_info = g_type_info_get_interface(type_info);
         GIInfoType itype = g_base_info_get_type(referenced_base_info);
-        if (itype == GI_INFO_TYPE_UNRESOLVED) {
+        switch (itype)
+        {
+        case GI_INFO_TYPE_UNRESOLVED:
             meta->gtype = G_TYPE_INVALID;
             meta->is_invalid = TRUE;
             g_warning("Unrepresentable type: %s, %s, %s",
                       g_base_info_get_name_safe(type_info),
                       g_base_info_get_name_safe(referenced_base_info),
                       g_info_type_to_string(itype));
-        }
-        else if (itype == GI_INFO_TYPE_ENUM || itype == GI_INFO_TYPE_FLAGS) {
+            break;
+        case GI_INFO_TYPE_ENUM:
+        case GI_INFO_TYPE_FLAGS:
             meta->gtype = g_registered_type_info_get_g_type(referenced_base_info);
             // Not all enum or flag types have an associated GType
             // Hence we store the enum info for GIArgument conversions
@@ -211,39 +214,42 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
                 meta->enum_info = g_base_info_ref(referenced_base_info);
                 meta->gtype = itype == GI_INFO_TYPE_ENUM ? G_TYPE_ENUM : G_TYPE_FLAGS;
             }
-        }
-        else if (itype == GI_INFO_TYPE_STRUCT) {
+            break;
+
+        case GI_INFO_TYPE_STRUCT:
+        case GI_INFO_TYPE_UNION:
+        case GI_INFO_TYPE_OBJECT:
+        case GI_INFO_TYPE_INTERFACE:
             meta->gtype = g_registered_type_info_get_g_type(referenced_base_info);
-            if (!meta->is_ptr)
-                meta->item_size = g_struct_info_get_size(referenced_base_info);
-            else
+            if (meta->is_ptr)
                 meta->item_size = sizeof(gpointer);
-        }
-        else if (itype == GI_INFO_TYPE_UNION) {
-            meta->gtype = g_registered_type_info_get_g_type(referenced_base_info);
-            if (!meta->is_ptr)
+            else if (itype == GI_INFO_TYPE_STRUCT)
+                meta->item_size = g_struct_info_get_size(referenced_base_info);
+            else if (itype == GI_INFO_TYPE_UNION)
                 meta->item_size = g_union_info_get_size(referenced_base_info);
             else
-                meta->item_size = sizeof(gpointer);
-        }
-        else if (itype == GI_INFO_TYPE_OBJECT || itype == GI_INFO_TYPE_INTERFACE) {
-            meta->gtype = g_registered_type_info_get_g_type(referenced_base_info);
-            if (!meta->is_ptr)
+                // FIXME: is this a good idea? should we not rather invalidate?
                 meta->item_size = 0;
-            else
-                meta->item_size = sizeof(gpointer);
-        }
-        else if (GI_IS_REGISTERED_TYPE_INFO(referenced_base_info)) {
-            meta->gtype = g_registered_type_info_get_g_type(referenced_base_info);
-        }
-        else if (itype == GI_INFO_TYPE_CALLBACK) {
+
+            if (meta->gtype == G_TYPE_NONE)
+                meta->is_invalid = TRUE;
+            break;
+        case GI_INFO_TYPE_CALLBACK:
             meta->gtype = G_TYPE_CALLBACK;
-            g_base_info_ref(referenced_base_info);
-            meta->callable_info = referenced_base_info;
+            meta->callable_info = g_base_info_ref(referenced_base_info);
+            break;
+        default:
+            if (GI_IS_REGISTERED_TYPE_INFO(referenced_base_info)) {
+                meta->gtype = g_registered_type_info_get_g_type(referenced_base_info);
+                if (meta->gtype == G_TYPE_NONE)
+                    meta->is_invalid = TRUE;
+            }
+            else {
+                g_critical("Unhandled item type in %s:%d", __FILE__, __LINE__);
+                meta->is_invalid = TRUE;
+            }
         }
-        else {
-            g_critical("Unhandled item type in %s:%d", __FILE__, __LINE__);
-        }
+
         g_base_info_unref(referenced_base_info);
     }
     else
