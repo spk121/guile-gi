@@ -29,8 +29,6 @@ static SCM symbol_to_enum;
 static SCM flags_to_list;
 static SCM list_to_flags;
 
-GHashTable *gig_flag_hash = NULL;
-
 gint
 gig_enum_to_int(SCM val)
 {
@@ -68,29 +66,10 @@ enum_info_to_class_name(GIEnumInfo *info)
     return g_strdup_printf("<%%%s%s>", prefix, g_base_info_get_name(info));
 }
 
-static SCM
-gig_flag_peek(GIEnumInfo *info)
-{
-    gchar *name = enum_info_to_class_name(info);
-    gpointer type = g_hash_table_lookup(gig_flag_hash, name);
-    g_free(name);
-    return SCM_PACK_POINTER(type);
-}
-
-static SCM
-gig_flag_ref(GIEnumInfo *info)
-{
-    gig_define_enum(info, SCM_UNDEFINED);
-    gchar *name = enum_info_to_class_name(info);
-    gpointer type = g_hash_table_lookup(gig_flag_hash, name);
-    g_free(name);
-    return SCM_PACK_POINTER(type);
-}
-
 SCM
 gig_int_to_enum_with_info(gint v, GIEnumInfo *info)
 {
-    SCM type = gig_flag_ref(info);
+    SCM type = gig_type_get_scheme_type_with_info(info);
     SCM val = scm_from_int(v);
     return scm_call_2(number_to_enum, type, val);
 }
@@ -98,7 +77,7 @@ gig_int_to_enum_with_info(gint v, GIEnumInfo *info)
 SCM
 gig_uint_to_flags_with_info(guint v, GIEnumInfo *info)
 {
-    SCM type = gig_flag_ref(info);
+    SCM type = gig_type_get_scheme_type_with_info(info);
     SCM val = scm_from_uint(v);
     return scm_call_2(number_to_flags, type, val);
 }
@@ -116,12 +95,6 @@ gig_list_to_flags(SCM type, SCM list)
 }
 
 void
-gig_flag_fini(void)
-{
-    g_hash_table_remove_all(gig_flag_hash);
-}
-
-void
 gig_init_flag(void)
 {
     enum_to_number = scm_c_public_ref("gi types", "enum->number");
@@ -132,9 +105,6 @@ gig_init_flag(void)
     number_to_flags = scm_c_public_ref("gi types", "number->flags");
     list_to_flags = scm_c_public_ref("gi types", "list->flags");
     flags_to_list = scm_c_public_ref("gi types", "flags->list");
-
-    gig_flag_hash = g_hash_table_new(g_str_hash, g_str_equal);
-    atexit(gig_flag_fini);
 }
 
 static SCM
@@ -158,7 +128,7 @@ gig_define_enum_conversions(GIEnumInfo *info, GType type, SCM defs)
     if (type != G_TYPE_NONE)
         class = gig_type_get_scheme_type(type);
     else
-        class = gig_flag_peek(info);
+        class = gig_type_get_scheme_type_with_info(info);
 
 #define C(fmt, proc) \
     do {                                                                \
@@ -199,22 +169,16 @@ gig_define_enum(GIEnumInfo *info, SCM defs)
     SCM key;
     SCM class;
 
-    gchar *name = enum_info_to_class_name(info);
-    gpointer _name, _type;
-    if (g_hash_table_lookup_extended(gig_flag_hash, name, &_name, &_type)) {
-        g_free(name);
-        defs = scm_cons(SCM_PACK_POINTER(_type), defs);
-        return defs;
-    }
+    SCM existing = gig_type_get_scheme_type_with_info(info);
+    if (!SCM_UNBNDP(existing))
+        return scm_cons(existing, defs);
 
     switch (t) {
     case GI_INFO_TYPE_ENUM:
-        class = scm_call_4(make_class_proc, scm_list_1(gig_enum_type), SCM_EOL, kwd_name,
-                           scm_from_utf8_symbol(name));
+        class = gig_type_define_with_info(info, scm_list_1(gig_enum_type), SCM_EOL);
         break;
     case GI_INFO_TYPE_FLAGS:
-        class = scm_call_4(make_class_proc, scm_list_1(gig_flags_type), SCM_EOL, kwd_name,
-                           scm_from_utf8_symbol(name));
+        class = gig_type_define_with_info(info, scm_list_1(gig_flags_type), SCM_EOL);
         break;
     default:
         g_assert_not_reached();
@@ -250,8 +214,6 @@ gig_define_enum(GIEnumInfo *info, SCM defs)
 
     scm_define(scm_class_name(class), class);
     defs = scm_cons(scm_class_name(class), defs);
-
-    g_hash_table_insert(gig_flag_hash, name, SCM_UNPACK_POINTER(class));
 
     return defs;
 }

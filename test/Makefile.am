@@ -150,9 +150,6 @@ GAPPLICATION_TESTS = \
  gapplication/make.scm \
  gapplication/set_resource_path.scm
 
-FUZZY_MATCH_TESTS = \
- misc/fuzzy_match.scm
-
 GTK_ENTRY_TESTS = \
  gtk_entry/set_alignment.scm \
  gtk_entry/set_alignment_zero.scm
@@ -209,7 +206,6 @@ TESTS = \
  $(MEMCHK_TESTS) \
  $(BYTE_ARRAY_TESTS) \
  $(GAPPLICATION_TESTS) \
- $(FUZZY_MATCH_TESTS) \
  $(GTK_ENTRY_TESTS) \
  $(GTK_LAYOUT_TESTS) \
  $(GRILO_TESTS) \

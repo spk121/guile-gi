@@ -112,7 +112,7 @@ gig_function_define(GType type, GICallableInfo *info, const gchar *namespace, SC
                                           gi_callable_info_make_name(info, NULL));
     }
 
-    SCM proc;
+    SCM proc = SCM_UNDEFINED;
     if (GI_IS_FUNCTION_INFO(info))
         proc = proc4function((GIFunctionInfo *)info, function_name, self_type,
                              &required_input_count, &optional_input_count,
@@ -122,6 +122,9 @@ gig_function_define(GType type, GICallableInfo *info, const gchar *namespace, SC
                            &required_input_count, &optional_input_count, &formals, &specializers);
     else
         g_assert_not_reached();
+
+    if (SCM_UNBNDP(proc))
+        goto end;
 
     def = gig_function_define1(function_name, proc, optional_input_count, formals, specializers);
     if (!SCM_UNBNDP(def))
@@ -138,6 +141,7 @@ gig_function_define(GType type, GICallableInfo *info, const gchar *namespace, SC
                 optional_input_count);
     }
 
+ end:
     scm_dynwind_end();
     return defs;
 }
@@ -188,7 +192,7 @@ proc4function(GIFunctionInfo *info, const gchar *name, SCM self_type,
 
     if (!func_gsubr) {
         g_debug("Could not create a gsubr for %s", name);
-        return SCM_BOOL_F;
+        return SCM_UNDEFINED;
     }
 
     return scm_c_make_gsubr(name, 0, 0, 1, func_gsubr);
@@ -200,11 +204,15 @@ proc4signal(GISignalInfo *info, const gchar *name, SCM self_type, int *req, int 
 {
     GigArgMap *amap;
 
-    amap = scm_dynwind_or_bust("%proc4signal", gig_amap_new(info));
+    amap = gig_amap_new(info);
+    if (amap == NULL)
+        return SCM_UNDEFINED;
+
     gig_amap_s_input_count(amap, req, opt);
     (*req)++;
 
     make_formals(info, amap, *req + *opt, self_type, formals, specializers);
+    gig_amap_free(amap);
 
     GigSignalSlot slots[] = { GIG_SIGNAL_SLOT_NAME };
     SCM values[1];

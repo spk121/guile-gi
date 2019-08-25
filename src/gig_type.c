@@ -72,6 +72,7 @@
 
 // Maps GType to SCM (pointer)
 GHashTable *gig_type_gtype_hash = NULL;
+GHashTable *gig_type_name_hash = NULL;
 #if ENABLE_GIG_TYPE_SCM_HASH
 // Maps SCM to GType
 GHashTable *gig_type_scm_hash = NULL;
@@ -190,6 +191,36 @@ gig_type_associate(GType gtype, SCM stype)
     g_hash_table_insert(gig_type_scm_hash, SCM_UNPACK_POINTER(stype), GSIZE_TO_POINTER(gtype));
 #endif
     return scm_class_name(stype);
+}
+
+SCM
+gig_type_define_with_info(GIRegisteredTypeInfo *info, SCM dsupers, SCM slots)
+{
+    if (g_registered_type_info_get_g_type(info) != G_TYPE_NONE) {
+        g_critical ("gig_type_define_with_info used when GType was available, "
+                    "use gig_type_define or gig_type_define_full instead.");
+        return SCM_UNDEFINED;
+    }
+
+    gchar *_name = g_registered_type_info_get_qualified_name (info);
+    g_assert(_name != NULL);
+    gpointer _key, _value;
+    gboolean exists = g_hash_table_lookup_extended(gig_type_name_hash, _name, &_key, &_value);
+
+    SCM cls;
+    if (exists) {
+        g_free(_name);
+        cls = SCM_PACK_POINTER(_value);
+    }
+    else {
+        gchar *name = g_strdup_printf("<%s>", _name);
+        SCM class_name = scm_from_utf8_symbol(name);
+        g_free(name);
+        cls = scm_call_4(make_class_proc, dsupers, slots, kwd_name, class_name);
+        g_hash_table_insert(gig_type_name_hash, _name, SCM_UNPACK_POINTER(cls));
+    }
+
+    return cls;
 }
 
 // Given introspection info from a typelib library for a given GType,
@@ -415,6 +446,7 @@ gig_type_free_types(void)
 {
     g_debug("Freeing gtype hash table");
     g_hash_table_remove_all(gig_type_gtype_hash);
+    g_hash_table_remove_all(gig_type_name_hash);
 #if ENABLE_GIG_TYPE_SCM_HASH
     g_hash_table_remove_all(gig_type_scm_hash);
 #endif
@@ -442,6 +474,17 @@ gig_type_get_scheme_type(GType gtype)
         gig_type_define(gtype, SCM_UNDEFINED);
         return _gig_type_get_scheme_type(gtype);
     }
+}
+
+SCM
+gig_type_get_scheme_type_with_info(GIRegisteredTypeInfo *info)
+{
+    gchar *_name = g_registered_type_info_get_qualified_name(info);
+    gpointer *scm_ptr = g_hash_table_lookup(gig_type_name_hash, _name);
+    g_free(_name);
+    if (scm_ptr == NULL)
+        return SCM_UNDEFINED;
+    return SCM_PACK_POINTER(scm_ptr);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -737,6 +780,7 @@ gig_init_types_once(void)
     SCM getter_with_setter = scm_c_public_ref("oop goops", "<applicable-struct-with-setter>");
 
     gig_type_gtype_hash = g_hash_table_new(g_direct_hash, g_direct_equal);
+    gig_type_name_hash = g_hash_table_new(g_str_hash, g_str_equal);
 #if ENABLE_GIG_TYPE_SCM_HASH
     gig_type_scm_hash = g_hash_table_new(g_direct_hash, g_direct_equal);
 #endif
@@ -752,12 +796,6 @@ gig_init_types_once(void)
                                 (GigTypeRefFunction)g_object_ref_sink,
                                 (GigTypeUnrefFunction)g_object_unref);
     gig_type_define_fundamental(G_TYPE_INTERFACE, SCM_EOL, NULL, NULL);
-
-    A(G_TYPE_BOXED, gig_boxed_type);
-    A(G_TYPE_ENUM, gig_enum_type);
-    A(G_TYPE_FLAGS, gig_flags_type);
-
-    gig_type_define(GI_TYPE_BASE_INFO, SCM_EOL);
     gig_type_define_fundamental(G_TYPE_PARAM,
                                 scm_list_1(getter_with_setter),
                                 (GigTypeRefFunction)g_param_spec_ref_sink,
@@ -767,8 +805,16 @@ gig_init_types_once(void)
                                 (GigTypeRefFunction)g_variant_ref_sink,
                                 (GigTypeUnrefFunction)g_variant_unref);
 
+    A(G_TYPE_BOXED, gig_boxed_type);
+    A(G_TYPE_ENUM, gig_enum_type);
+    A(G_TYPE_FLAGS, gig_flags_type);
+
     gig_object_type = gig_type_get_scheme_type(G_TYPE_OBJECT);
     gig_paramspec_type = gig_type_get_scheme_type(G_TYPE_PARAM);
+
+    // derived types
+
+    gig_type_define(GI_TYPE_BASE_INFO, SCM_EOL);
 
     gig_type_define_full(G_TYPE_VALUE, SCM_EOL, scm_list_1(getter_with_setter));
     gig_value_type = gig_type_get_scheme_type(G_TYPE_VALUE);
