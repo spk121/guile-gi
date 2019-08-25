@@ -196,7 +196,7 @@ gig_define_enum(GIEnumInfo *info, SCM defs)
     GIValueInfo *vi = NULL;
     GIInfoType t = g_base_info_get_type(info);
     gchar *_key;
-    SCM key, val;
+    SCM key;
     SCM class;
 
     gchar *name = enum_info_to_class_name(info);

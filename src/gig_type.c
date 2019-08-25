@@ -205,9 +205,9 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
     // ob_type,ob_refcnt,obj,inst_dict,weakreflist,flags
 
     gboolean newkey;
-    gpointer orig_key, value;
+    gpointer orig_key, orig_value;
     newkey = g_hash_table_lookup_extended(gig_type_gtype_hash,
-                                          GSIZE_TO_POINTER(gtype), &orig_key, &value);
+                                          GSIZE_TO_POINTER(gtype), &orig_key, &orig_value);
     if (newkey == FALSE) {
         g_debug("trying to define %s", g_type_name(gtype));
         GType parent = g_type_parent(gtype), fundamental = G_TYPE_FUNDAMENTAL(parent);
@@ -342,8 +342,8 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
     }
     else {
         g_debug("<GType> already exists for: %zu -> %s", gtype, g_type_name(gtype));
-        g_return_val_if_fail(value != NULL, defs);
-        SCM val = SCM_PACK_POINTER(value);
+        g_return_val_if_fail(orig_value != NULL, defs);
+        SCM val = SCM_PACK_POINTER(orig_value);
         SCM key = scm_class_name(val);
         if (!SCM_UNBNDP(defs)) {
             scm_define(key, val);
