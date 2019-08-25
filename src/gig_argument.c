@@ -1053,25 +1053,7 @@ c_native_array_to_scm(C2S_ARG_DECL)
     } while(0)
 
     GType item_type = meta->params[0].gtype;
-    if (item_type == G_TYPE_NONE && meta->params[0].item_size > 0) {
-        *object = scm_c_make_vector(length, SCM_BOOL_F);
-        scm_t_array_handle handle;
-        size_t len;
-        ssize_t inc;
-        SCM *elt;
-        elt = scm_vector_writable_elements(*object, &handle, &len, &inc);
-        for (gsize k = 0; k < len; k++, elt += inc) {
-            *elt = scm_c_make_bytevector(meta->params[0].item_size);
-            memcpy(SCM_BYTEVECTOR_CONTENTS(*elt),
-                   arg->v_pointer + k * meta->params[0].item_size, meta->params[0].item_size);
-        }
-        scm_array_handle_release(&handle);
-        if (meta->transfer == GI_TRANSFER_EVERYTHING) {
-            free(arg->v_pointer);
-            arg->v_pointer = 0;
-        }
-    }
-    else if (item_type == G_TYPE_CHAR)
+    if (item_type == G_TYPE_CHAR)
         TRANSFER(gint8, s8);
     else if (item_type == G_TYPE_UCHAR)
         TRANSFER(guint8, u8);

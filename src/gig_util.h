@@ -20,6 +20,7 @@ SCM scm_drop_right_1(SCM lst);
 SCM scm_c_reexport(const gchar *name, ...);
 SCM scm_printf(SCM port, const gchar *fmt, ...);
 const gchar *g_base_info_get_name_safe(GIBaseInfo *info);
+gchar *g_registered_type_info_get_qualified_name(GIRegisteredTypeInfo *info);
 
 #define scm_is_equal(a,b) scm_is_true(scm_equal_p(a,b))
 
