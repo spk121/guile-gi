@@ -96,6 +96,8 @@ add_child_params(GigTypeMeta *meta, GITypeInfo *type_info, gint n)
             meta->params[i].transfer = GI_TRANSFER_EVERYTHING;
         else
             meta->params[i].transfer = GI_TRANSFER_NOTHING;
+
+        meta->is_invalid |= meta->params[i].is_invalid;
     }
 }
 
