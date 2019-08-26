@@ -63,8 +63,10 @@ gig_amap_new(GICallableInfo *function_info)
     free(amap->name);
     amap->name = g_strdup(g_base_info_get_name(function_info));
     arg_map_apply_function_info(amap, function_info);
-    if (amap->is_invalid)
+    if (amap->is_invalid) {
+        gig_amap_free(amap);
         return NULL;
+    }
     arg_map_determine_argument_presence(amap, function_info);
     arg_map_compute_c_invoke_positions(amap);
     arg_map_compute_s_call_positions(amap);
@@ -163,10 +165,14 @@ arg_map_determine_argument_presence(GigArgMap *amap, GIFunctionInfo *info)
         GIArgInfo *a = g_callable_info_get_arg(info, i);
         GITypeInfo *t = g_arg_info_get_type(a);
         arg_map_determine_array_length_index(amap, entry, t);
+        g_base_info_unref(t);
+        g_base_info_unref(a);
     }
 
     amap->return_val.tuple = GIG_ARG_TUPLE_SINGLETON;
-    arg_map_determine_array_length_index(amap, &amap->return_val, g_callable_info_get_return_type(info));
+    GITypeInfo *return_type = g_callable_info_get_return_type(info);
+    arg_map_determine_array_length_index(amap, &amap->return_val, return_type);
+    g_base_info_unref(return_type);
 }
 
 static void
@@ -261,8 +267,12 @@ arg_map_compute_s_call_positions(GigArgMap *amap)
 void
 gig_amap_free(GigArgMap *amap)
 {
+    if (!amap)
+        return;
+
     for (gint i = 0; i < amap->len; i++) {
-        free(amap->pdata[i].name);
+        gig_data_type_free(&amap->pdata[i].meta);
+        g_free(amap->pdata[i].name);
     }
     free(amap->return_val.name);
     free(amap->pdata);

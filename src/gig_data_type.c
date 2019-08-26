@@ -50,6 +50,7 @@ gig_type_meta_init_from_arg_info(GigTypeMeta *meta, GIArgInfo *ai)
     meta->is_nullable = g_arg_info_may_be_null(ai);
 
     meta->transfer = transfer;
+    g_base_info_unref(type_info);
 }
 
 void
@@ -72,6 +73,7 @@ gig_type_meta_init_from_callable_info(GigTypeMeta *meta, GICallableInfo *ci)
     meta->is_nullable = g_callable_info_may_return_null(ci);
 
     meta->transfer = transfer;
+    g_base_info_unref(type_info);
 }
 
 void
@@ -197,8 +199,7 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
     else if (tag == GI_TYPE_TAG_INTERFACE) {
         GIBaseInfo *referenced_base_info = g_type_info_get_interface(type_info);
         GIInfoType itype = g_base_info_get_type(referenced_base_info);
-        switch (itype)
-        {
+        switch (itype) {
         case GI_INFO_TYPE_UNRESOLVED:
             meta->gtype = G_TYPE_INVALID;
             meta->is_invalid = TRUE;
@@ -271,6 +272,21 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
         if (meta->gtype == 0)
             g_warning("gtype of %s is zero", g_base_info_get_name(type_info));
     }
+}
+
+void
+gig_data_type_free(GigTypeMeta *meta)
+{
+    for (gint i = 0; i < meta->n_params; i++)
+        gig_data_type_free(&meta->params[i]);
+    if (meta->n_params > 0)
+        g_free(meta->params);
+
+    if ((meta->gtype == G_TYPE_CALLBACK) && meta->callable_info)
+        g_base_info_unref(meta->callable_info);
+    if (((meta->gtype == G_TYPE_ENUM) || (meta->gtype == G_TYPE_FLAGS))
+        && meta->enum_info)
+        g_base_info_unref(meta->enum_info);
 }
 
 #define STRLEN 128

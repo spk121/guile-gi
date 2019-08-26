@@ -314,6 +314,7 @@ create_gsubr(GIFunctionInfo *function_info, const gchar *name, SCM self_type,
     gfn = g_new0(GigFunction, 1);
     gfn->function_info = function_info;
     gfn->amap = amap;
+    g_free(gfn->name);
     gfn->name = g_strdup(name);
     g_base_info_ref(function_info);
 
@@ -820,6 +821,7 @@ function_free(GigFunction *gfn)
     gfn->atypes = NULL;
 
     // TODO: should we free gfn->amap?
+    gig_amap_free(gfn->amap);
 
     g_free(gfn);
 }
@@ -829,5 +831,6 @@ gig_fini_function(void)
 {
     g_debug("Freeing functions");
     g_hash_table_remove_all(function_cache);
+    g_hash_table_unref(function_cache);
     function_cache = NULL;
 }

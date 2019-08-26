@@ -370,6 +370,7 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
 #else
         g_debug("Hash table size %d", g_hash_table_size(gig_type_gtype_hash));
 #endif
+        g_free(_type_class_name);
     }
     else {
         g_debug("<GType> already exists for: %zu -> %s", gtype, g_type_name(gtype));
@@ -780,7 +781,7 @@ gig_init_types_once(void)
     SCM getter_with_setter = scm_c_public_ref("oop goops", "<applicable-struct-with-setter>");
 
     gig_type_gtype_hash = g_hash_table_new(g_direct_hash, g_direct_equal);
-    gig_type_name_hash = g_hash_table_new(g_str_hash, g_str_equal);
+    gig_type_name_hash = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
 #if ENABLE_GIG_TYPE_SCM_HASH
     gig_type_scm_hash = g_hash_table_new(g_direct_hash, g_direct_equal);
 #endif
