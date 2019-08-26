@@ -14,6 +14,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <stdio.h>
+#include <string.h>
 #include "gig_arg_map.h"
 #include "gig_data_type.h"
 
@@ -60,7 +61,7 @@ gig_amap_new(GICallableInfo *function_info)
 
     n = g_callable_info_get_n_args(function_info);
     amap = arg_map_allocate(n);
-    free(amap->name);
+    g_free(amap->name);
     amap->name = g_strdup(g_base_info_get_name(function_info));
     arg_map_apply_function_info(amap, function_info);
     if (amap->is_invalid) {
@@ -102,7 +103,7 @@ arg_map_apply_function_info(GigArgMap *amap, GIFunctionInfo *func_info)
     for (i = 0; i < n; i++) {
         arg_info = g_callable_info_get_arg(func_info, i);
         gig_type_meta_init_from_arg_info(&amap->pdata[i].meta, arg_info);
-        free(amap->pdata[i].name);
+        g_free(amap->pdata[i].name);
         amap->pdata[i].name = g_strdup(g_base_info_get_name(arg_info));
         g_base_info_unref(arg_info);
         amap->is_invalid |= amap->pdata[i].meta.is_invalid;
@@ -273,11 +274,11 @@ gig_amap_free(GigArgMap *amap)
         gig_data_type_free(&amap->pdata[i].meta);
         g_free(amap->pdata[i].name);
     }
-    free(amap->return_val.name);
-    free(amap->pdata);
-    free(amap->name);
+    g_free(amap->return_val.name);
+    g_free(amap->pdata);
+    g_free(amap->name);
     amap->pdata = NULL;
-    free(amap);
+    g_free(amap);
 }
 
 void
