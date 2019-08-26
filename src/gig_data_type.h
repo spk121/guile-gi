@@ -22,17 +22,6 @@
 G_BEGIN_DECLS
 // *INDENT-ON*
 
-extern GType g_type_locale_string;
-
-extern GType g_type_list;
-extern GType g_type_slist;
-extern GType g_type_callback;
-
-#define G_TYPE_LIST (g_type_list)
-#define G_TYPE_SLIST (g_type_slist)
-#define G_TYPE_LOCALE_STRING (g_type_locale_string)
-#define G_TYPE_CALLBACK (g_type_callback)
-
 #define GIG_ARRAY_SIZE_UNKNOWN ((gsize)-1)
 
 typedef struct _GigTypeMeta GigTypeMeta;
@@ -61,9 +50,23 @@ struct _GigTypeMeta
     guint16 is_unichar:1;
     guint16 padding1:4;
 
-    // For C array types
-    union {
+    union
+    {
+        // For string and pointer types
+        enum
+        {
+            GIG_DATA_VOID = 0,
+            GIG_DATA_UTF8_STRING,
+            GIG_DATA_LOCALE_STRING,
+            GIG_DATA_LIST,
+            GIG_DATA_SLIST,
+            GIG_DATA_HASH_TABLE,
+            GIG_DATA_CALLBACK
+        } pointer_type;
+
+        // For C array types
         gsize length;
+        // For C element types
         gsize item_size;
     };
 

@@ -433,6 +433,9 @@ scm_to_c_string(S2C_ARG_DECL)
         // place to store an output.  Since Glib strings and Guile
         // strings have no encoding in common, we can use
         // bytevectors...
+
+        // FIXME: is there any guarantee, that the bytevector
+        // has the correct locale? This seems like a very ugly hack.
         if (meta->transfer != GI_TRANSFER_EVERYTHING) {
             // But when we're using bytevectors as a possibly writable
             // location, they do need to be null terminated.
@@ -451,7 +454,7 @@ scm_to_c_string(S2C_ARG_DECL)
                                       SCM_BYTEVECTOR_LENGTH(object));
     }
     else if (scm_is_string(object)) {
-        if (meta->gtype == G_TYPE_LOCALE_STRING)
+        if (meta->pointer_type == GIG_DATA_LOCALE_STRING)
             arg->v_string = scm_to_locale_string(object);
         else
             arg->v_string = scm_to_utf8_string(object);
@@ -467,7 +470,7 @@ scm_to_c_pointer(S2C_ARG_DECL)
     TRACE_S2C();
     if (scm_is_false(object) && meta->is_nullable)
         arg->v_pointer = NULL;
-    else if (meta->gtype == G_TYPE_CALLBACK) {
+    else if (meta->pointer_type == GIG_DATA_CALLBACK) {
         if (scm_is_true(scm_procedure_p(object))) {
             arg->v_pointer = gig_callback_to_c(meta->callable_info, object);
             g_assert(arg->v_pointer != NULL);
@@ -543,7 +546,7 @@ scm_to_c_native_array(S2C_ARG_DECL)
              || item_type == G_TYPE_UINT64
              || item_type == G_TYPE_FLOAT || item_type == G_TYPE_DOUBLE)
         scm_to_c_native_immediate_array(S2C_ARGS);
-    else if (item_type == G_TYPE_STRING || item_type == G_TYPE_LOCALE_STRING)
+    else if (item_type == G_TYPE_STRING)
         scm_to_c_native_string_array(S2C_ARGS);
     else if (item_type == G_TYPE_VARIANT
              || fundamental_item_type == G_TYPE_ENUM || fundamental_item_type == G_TYPE_FLAGS)
@@ -696,7 +699,8 @@ scm_to_c_native_interface_array(S2C_ARG_DECL)
                 gpointer p = gig_type_peek_object(scm_c_vector_ref(object, i));
                 if (meta->transfer == GI_TRANSFER_EVERYTHING) {
                     if (fundamental_item_type == G_TYPE_BOXED) {
-                        ((gpointer *)(arg->v_pointer))[i] = g_memdup(p, gig_meta_real_item_size(&meta->params[0]));
+                        ((gpointer *)(arg->v_pointer))[i] =
+                            g_memdup(p, gig_meta_real_item_size(&meta->params[0]));
                         // ((gpointer *)(arg->v_pointer))[i] = p;
                     }
                     else {
@@ -717,9 +721,11 @@ scm_to_c_native_interface_array(S2C_ARG_DECL)
                 gpointer p = gig_type_peek_object(scm_c_vector_ref(object, i));
                 if (meta->transfer == GI_TRANSFER_EVERYTHING)
                     memcpy((char *)(arg->v_pointer) + i * gig_meta_real_item_size(meta),
-                           g_memdup(p, gig_meta_real_item_size(meta)), gig_meta_real_item_size(meta));
+                           g_memdup(p, gig_meta_real_item_size(meta)),
+                           gig_meta_real_item_size(meta));
                 else
-                    memcpy((char *)(arg->v_pointer) + i * gig_meta_real_item_size(meta), p, gig_meta_real_item_size(meta));
+                    memcpy((char *)(arg->v_pointer) + i * gig_meta_real_item_size(meta), p,
+                           gig_meta_real_item_size(meta));
 
             }
         }
@@ -781,7 +787,7 @@ scm_to_c_native_string_array(S2C_ARG_DECL)
         LATER_FREE(strv);
 
         for (gsize i = 0; i < len; i++, elt += inc) {
-            if (meta->params[0].gtype == G_TYPE_LOCALE_STRING)
+            if (meta->params[0].pointer_type == GIG_DATA_LOCALE_STRING)
                 strv[i] = scm_to_locale_string(*elt);
             else
                 strv[i] = scm_to_utf8_string(*elt);
@@ -800,7 +806,7 @@ scm_to_c_native_string_array(S2C_ARG_DECL)
         SCM iter = object;
         for (gsize i = 0; i < len; i++) {
             SCM elt = scm_car(iter);
-            if (meta->params[0].gtype == G_TYPE_LOCALE_STRING)
+            if (meta->params[0].pointer_type == GIG_DATA_LOCALE_STRING)
                 strv[i] = scm_to_locale_string(elt);
             else
                 strv[i] = scm_to_utf8_string(elt);
@@ -973,8 +979,6 @@ c_boxed_to_scm(C2S_ARG_DECL)
     }
     else if (meta->gtype == G_TYPE_PTR_ARRAY)
         c_gptrarray_to_scm(C2S_ARGS);
-    else if (meta->gtype == G_TYPE_LIST || meta->gtype == G_TYPE_SLIST)
-        c_list_to_scm(C2S_ARGS);
     else
         *object = gig_type_transfer_object(meta->gtype, arg->v_pointer, meta->transfer);
 }
@@ -1036,11 +1040,11 @@ c_string_to_scm(C2S_ARG_DECL)
     // We can't transfer strings directly, since GObject and Guile use
     // different internal encodings.  So for GI_TRANSFER_EVERYTHGING,
     // we just free.
-    if (meta->gtype == G_TYPE_STRING || meta->gtype == G_TYPE_LOCALE_STRING) {
+    if (meta->gtype == G_TYPE_STRING) {
         if (!arg->v_string)
             *object = scm_c_make_string(0, SCM_MAKE_CHAR(0));
         else {
-            if (meta->gtype == G_TYPE_STRING) {
+            if (meta->pointer_type == GIG_DATA_UTF8_STRING) {
                 if (size != GIG_ARRAY_SIZE_UNKNOWN)
                     *object = scm_from_utf8_stringn(arg->v_string, size);
                 else
@@ -1207,7 +1211,7 @@ c_native_array_to_scm(C2S_ARG_DECL)
             arg->v_pointer = 0;
         }
     }
-    else if (item_type == G_TYPE_STRING || item_type == G_TYPE_LOCALE_STRING) {
+    else if (item_type == G_TYPE_STRING) {
         *object = scm_c_make_vector(length, SCM_BOOL_F);
         scm_t_array_handle handle;
         gsize len;
@@ -1220,7 +1224,7 @@ c_native_array_to_scm(C2S_ARG_DECL)
         for (gsize i = 0; i < length; i++, elt += inc) {
             gchar *str = ((gchar **)(arg->v_pointer))[i];
             if (str) {
-                if (item_type == G_TYPE_STRING)
+                if (meta->params[0].pointer_type == GIG_DATA_UTF8_STRING)
                     *elt = scm_from_utf8_string(str);
                 else
                     *elt = scm_from_locale_string(str);
@@ -1295,11 +1299,11 @@ c_list_to_scm(C2S_ARG_DECL)
     gsize length;
 
     // Step 1: allocate
-    if (meta->gtype == G_TYPE_LIST) {
+    if (meta->pointer_type == GIG_DATA_LIST) {
         _list = list;
         length = g_list_length(_list);
     }
-    else if (meta->gtype == G_TYPE_SLIST) {
+    else if (meta->pointer_type == GIG_DATA_SLIST) {
         _slist = list;
         length = g_slist_length(_slist);
     }
@@ -1312,7 +1316,7 @@ c_list_to_scm(C2S_ARG_DECL)
 
     // Step 2: iterate
     while (list != NULL) {
-        if (meta->gtype == G_TYPE_LIST) {
+        if (meta->pointer_type == GIG_DATA_LIST) {
             data = &_list->data;
             list = _list = _list->next;
         }
@@ -1329,7 +1333,7 @@ c_list_to_scm(C2S_ARG_DECL)
             else if (item_type == G_TYPE_UCHAR)
                 SET_CAR_FROM_INT(uint8);
             else if (item_type == G_TYPE_INT) {
-                switch(meta->params[0].item_size) {
+                switch (meta->params[0].item_size) {
                 case 1:
                     SET_CAR_FROM_INT(int8);
                     break;
@@ -1348,7 +1352,7 @@ c_list_to_scm(C2S_ARG_DECL)
                 if (meta->is_unichar)
                     scm_set_car_x(out_iter, SCM_MAKE_CHAR(*(guint32 *)data));
                 else
-                    switch(meta->params[0].item_size) {
+                    switch (meta->params[0].item_size) {
                     case 1:
                         SET_CAR_FROM_INT(uint8);
                         break;
@@ -1391,7 +1395,7 @@ c_list_to_scm(C2S_ARG_DECL)
         out_iter = scm_cdr(out_iter);
     }
     if (meta->transfer != GI_TRANSFER_NOTHING) {
-        if (meta->gtype == G_TYPE_LIST)
+        if (meta->pointer_type == GIG_DATA_LIST)
             g_list_free(arg->v_pointer);
         else
             g_slist_free(arg->v_pointer);
@@ -1407,10 +1411,12 @@ c_pointer_to_scm(C2S_ARG_DECL)
         *object = SCM_BOOL_F;
     else if (meta->gtype == G_TYPE_GTYPE)
         *object = scm_from_uintptr_t(arg->v_pointer);
-    else if (meta->gtype == G_TYPE_CALLBACK) {
+    else if (meta->pointer_type == GIG_DATA_CALLBACK) {
         gpointer cb = meta->is_ptr ? *(gpointer *)arg->v_pointer : arg->v_pointer;
         *object = gig_callback_to_scm(meta->callable_info, cb);
     }
+    else if (meta->pointer_type == GIG_DATA_LIST || meta->pointer_type == GIG_DATA_SLIST)
+        c_list_to_scm(C2S_ARGS);
     else if (size != GIG_ARRAY_SIZE_UNKNOWN) {
         SCM bv = scm_c_make_bytevector(size);
         memcpy(SCM_BYTEVECTOR_CONTENTS(bv), arg->v_pointer, size);

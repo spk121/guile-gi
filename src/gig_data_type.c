@@ -18,12 +18,6 @@
 #include "gig_data_type.h"
 #include "gig_util.h"
 
-GType g_type_locale_string;
-
-GType g_type_list;
-GType g_type_slist;
-GType g_type_callback;
-
 static void gig_type_meta_init_from_type_info(GigTypeMeta *type, GITypeInfo *ti);
 static void gig_type_meta_init_from_basic_type_tag(GigTypeMeta *meta, GITypeTag tag);
 
@@ -124,12 +118,20 @@ gig_type_meta_init_from_basic_type_tag(GigTypeMeta *meta, GITypeTag tag)
     T(GI_TYPE_TAG_UINT64, G_TYPE_UINT, guint64);
     if (tag == GI_TYPE_TAG_UNICHAR) {
         meta->gtype = G_TYPE_UINT;
-        meta->item_size = sizeof (gunichar);
+        meta->item_size = sizeof(gunichar);
         meta->is_unichar = TRUE;
         return;
     }
-    T(GI_TYPE_TAG_UTF8, G_TYPE_STRING, gchar *);
-    T(GI_TYPE_TAG_FILENAME, G_TYPE_LOCALE_STRING, gchar *);
+    if (tag == GI_TYPE_TAG_UTF8) {
+        meta->gtype = G_TYPE_STRING;
+        meta->pointer_type = GIG_DATA_UTF8_STRING;
+        return;
+    }
+    if (tag == GI_TYPE_TAG_FILENAME) {
+        meta->gtype = G_TYPE_STRING;
+        meta->pointer_type = GIG_DATA_LOCALE_STRING;
+        return;
+    }
     T(GI_TYPE_TAG_ERROR, G_TYPE_ERROR, GError);
     g_error("Unhandled type '%s' %s %d", g_type_tag_to_string(tag), __FILE__, __LINE__);
 #undef T
@@ -186,14 +188,17 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
     }
     else if (tag == GI_TYPE_TAG_GHASH) {
         meta->gtype = G_TYPE_HASH_TABLE;
+        meta->pointer_type = GIG_DATA_HASH_TABLE;
         add_child_params(meta, type_info, 2);
     }
     else if (tag == GI_TYPE_TAG_GLIST) {
-        meta->gtype = G_TYPE_LIST;
+        meta->gtype = G_TYPE_POINTER;
+        meta->pointer_type = GIG_DATA_LIST;
         add_child_params(meta, type_info, 1);
     }
     else if (tag == GI_TYPE_TAG_GSLIST) {
-        meta->gtype = G_TYPE_SLIST;
+        meta->gtype = G_TYPE_POINTER;
+        meta->pointer_type = GIG_DATA_SLIST;
         add_child_params(meta, type_info, 1);
     }
     else if (tag == GI_TYPE_TAG_INTERFACE) {
@@ -233,7 +238,8 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
                 meta->is_invalid = TRUE;
             break;
         case GI_INFO_TYPE_CALLBACK:
-            meta->gtype = G_TYPE_CALLBACK;
+            meta->gtype = G_TYPE_POINTER;
+            meta->pointer_type = GIG_DATA_CALLBACK;
             meta->callable_info = g_base_info_ref(referenced_base_info);
             break;
         default:
@@ -269,8 +275,8 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
 G_GNUC_PURE gsize
 gig_meta_real_item_size(const GigTypeMeta *meta)
 {
-    if (meta->is_ptr)
-        return sizeof (gpointer);
+    if (meta->gtype == G_TYPE_STRING || meta->gtype == G_TYPE_POINTER || meta->is_ptr)
+        return sizeof(gpointer);
     return meta->item_size;
 }
 
@@ -282,7 +288,8 @@ gig_data_type_free(GigTypeMeta *meta)
     if (meta->n_params > 0)
         g_free(meta->params);
 
-    if ((meta->gtype == G_TYPE_CALLBACK) && meta->callable_info)
+    if ((meta->gtype == G_TYPE_POINTER) && (meta->pointer_type == GIG_DATA_CALLBACK) &&
+        meta->callable_info)
         g_base_info_unref(meta->callable_info);
     if (((meta->gtype == G_TYPE_ENUM) || (meta->gtype == G_TYPE_FLAGS))
         && meta->enum_info)
@@ -312,17 +319,7 @@ gig_type_meta_describe(const GigTypeMeta *meta)
 
 #undef STRLEN
 
-G_DEFINE_BOXED_TYPE(GList, g_list, g_list_copy, g_list_free);
-G_DEFINE_BOXED_TYPE(GSList, g_slist, g_slist_copy, g_slist_free);
-
 void
 gig_init_data_type(void)
 {
-    g_type_locale_string = g_type_register_static_simple(G_TYPE_STRING,
-                                                         "locale-string", 0, NULL, 0, NULL, 0);
-
-    g_type_list = g_list_get_type();
-    g_type_slist = g_slist_get_type();
-
-    g_type_callback = g_pointer_type_register_static("callback");
 }
