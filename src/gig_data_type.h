@@ -23,10 +23,6 @@ G_BEGIN_DECLS
 // *INDENT-ON*
 
 extern GType g_type_unichar;
-extern GType g_type_int16;
-extern GType g_type_int32;
-extern GType g_type_uint16;
-extern GType g_type_uint32;
 extern GType g_type_locale_string;
 
 extern GType g_type_list;
@@ -34,10 +30,6 @@ extern GType g_type_slist;
 extern GType g_type_callback;
 
 #define G_TYPE_UNICHAR (g_type_unichar)
-#define G_TYPE_INT16 (g_type_int16)
-#define G_TYPE_INT32 (g_type_int32)
-#define G_TYPE_UINT16 (g_type_uint16)
-#define G_TYPE_UINT32 (g_type_uint32)
 
 #define G_TYPE_LIST (g_type_list)
 #define G_TYPE_SLIST (g_type_slist)
@@ -89,6 +81,7 @@ struct _GigTypeMeta
 
 void gig_type_meta_init_from_arg_info(GigTypeMeta *type, GIArgInfo *ai);
 void gig_type_meta_init_from_callable_info(GigTypeMeta *type, GICallableInfo *ci);
+G_GNUC_PURE gsize gig_meta_real_item_size(const GigTypeMeta *meta);
 const char *gig_type_meta_describe(const GigTypeMeta *meta);
 void gig_data_type_free(GigTypeMeta *meta);
 void gig_init_data_type(void);

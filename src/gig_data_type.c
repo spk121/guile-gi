@@ -19,10 +19,6 @@
 #include "gig_util.h"
 
 GType g_type_unichar;
-GType g_type_int16;
-GType g_type_int32;
-GType g_type_uint16;
-GType g_type_uint32;
 GType g_type_locale_string;
 
 GType g_type_list;
@@ -110,7 +106,7 @@ gig_type_meta_init_from_basic_type_tag(GigTypeMeta *meta, GITypeTag tag)
     do {                                                                \
         if (tag == TYPETAG) {                                           \
             meta->gtype = GTYPE;                                        \
-            meta->item_size = meta->is_ptr ? sizeof(gpointer) : sizeof (CTYPE); \
+            meta->item_size = sizeof (CTYPE);                           \
             return;                                                     \
         }                                                               \
     } while(FALSE)
@@ -120,16 +116,16 @@ gig_type_meta_init_from_basic_type_tag(GigTypeMeta *meta, GITypeTag tag)
     T(GI_TYPE_TAG_FLOAT, G_TYPE_FLOAT, gfloat);
     T(GI_TYPE_TAG_GTYPE, G_TYPE_GTYPE, GType);
     T(GI_TYPE_TAG_INT8, G_TYPE_CHAR, gint8);
-    T(GI_TYPE_TAG_INT16, G_TYPE_INT16, gint16);
-    T(GI_TYPE_TAG_INT32, G_TYPE_INT32, gint32);
-    T(GI_TYPE_TAG_INT64, G_TYPE_INT64, gint64);
+    T(GI_TYPE_TAG_INT16, G_TYPE_INT, gint16);
+    T(GI_TYPE_TAG_INT32, G_TYPE_INT, gint32);
+    T(GI_TYPE_TAG_INT64, G_TYPE_INT, gint64);
     T(GI_TYPE_TAG_UINT8, G_TYPE_UCHAR, guint8);
-    T(GI_TYPE_TAG_UINT16, G_TYPE_UINT16, guint16);
-    T(GI_TYPE_TAG_UINT32, G_TYPE_UINT32, guint32);
-    T(GI_TYPE_TAG_UINT64, G_TYPE_UINT64, guint64);
+    T(GI_TYPE_TAG_UINT16, G_TYPE_UINT, guint16);
+    T(GI_TYPE_TAG_UINT32, G_TYPE_UINT, guint32);
+    T(GI_TYPE_TAG_UINT64, G_TYPE_UINT, guint64);
     T(GI_TYPE_TAG_UNICHAR, G_TYPE_UNICHAR, gunichar);
-    T(GI_TYPE_TAG_UTF8, G_TYPE_STRING, 0);
-    T(GI_TYPE_TAG_FILENAME, G_TYPE_LOCALE_STRING, 0);
+    T(GI_TYPE_TAG_UTF8, G_TYPE_STRING, gchar *);
+    T(GI_TYPE_TAG_FILENAME, G_TYPE_LOCALE_STRING, gchar *);
     T(GI_TYPE_TAG_ERROR, G_TYPE_ERROR, GError);
     g_error("Unhandled type '%s' %s %d", g_type_tag_to_string(tag), __FILE__, __LINE__);
 #undef T
@@ -224,15 +220,10 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
         case GI_INFO_TYPE_OBJECT:
         case GI_INFO_TYPE_INTERFACE:
             meta->gtype = g_registered_type_info_get_g_type(referenced_base_info);
-            if (meta->is_ptr)
-                meta->item_size = sizeof(gpointer);
-            else if (itype == GI_INFO_TYPE_STRUCT)
+            if (itype == GI_INFO_TYPE_STRUCT)
                 meta->item_size = g_struct_info_get_size(referenced_base_info);
             else if (itype == GI_INFO_TYPE_UNION)
                 meta->item_size = g_union_info_get_size(referenced_base_info);
-            else
-                // FIXME: is this a good idea? should we not rather invalidate?
-                meta->item_size = 0;
 
             if (meta->gtype == G_TYPE_NONE)
                 meta->is_invalid = TRUE;
@@ -258,7 +249,7 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
     else
         gig_type_meta_init_from_basic_type_tag(meta, tag);
 
-    //
+    // FIXME: how did we get here?
     if (meta->gtype == 0) {
         if (meta->is_ptr) {
             meta->gtype = G_TYPE_POINTER;
@@ -268,10 +259,15 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
             meta->gtype = G_TYPE_NONE;
             meta->item_size = 0;
         }
-
-        if (meta->gtype == 0)
-            g_warning("gtype of %s is zero", g_base_info_get_name(type_info));
     }
+}
+
+G_GNUC_PURE gsize
+gig_meta_real_item_size(const GigTypeMeta *meta)
+{
+    if (meta->is_ptr)
+        return sizeof (gpointer);
+    return meta->item_size;
 }
 
 void
@@ -319,10 +315,6 @@ void
 gig_init_data_type(void)
 {
     g_type_unichar = g_type_register_static_simple(G_TYPE_INT, "gunichar", 0, NULL, 0, NULL, 0);
-    g_type_int16 = g_type_register_static_simple(G_TYPE_INT, "gint16", 0, NULL, 0, NULL, 0);
-    g_type_int32 = g_type_register_static_simple(G_TYPE_INT, "gint32", 0, NULL, 0, NULL, 0);
-    g_type_uint16 = g_type_register_static_simple(G_TYPE_UINT, "guint16", 0, NULL, 0, NULL, 0);
-    g_type_uint32 = g_type_register_static_simple(G_TYPE_UINT, "guint32", 0, NULL, 0, NULL, 0);
     g_type_locale_string = g_type_register_static_simple(G_TYPE_STRING,
                                                          "locale-string", 0, NULL, 0, NULL, 0);
 

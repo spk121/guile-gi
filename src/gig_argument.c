@@ -119,7 +119,8 @@ array_length(GigTypeMeta *meta, GIArgument *arg)
             return length;
         }
 
-        switch (meta->params[0].item_size) {
+        gsize item_size = gig_meta_real_item_size(&meta->params[0]);
+        switch (item_size) {
         case 0:
             g_assert_not_reached();
         case 1:
@@ -153,12 +154,12 @@ array_length(GigTypeMeta *meta, GIArgument *arg)
             do {
                 length++;
                 non_null = FALSE;
-                for (gsize i = 0; i <= meta->params[0].item_size; i++)
+                for (gsize i = 0; i <= item_size; i++)
                     if (ptr + i != 0) {
                         non_null = TRUE;
                         break;
                     }
-                ptr += meta->params[0].item_size;
+                ptr += item_size;
             } while (non_null);
 
             return length;
@@ -304,26 +305,58 @@ scm_to_c_integer(S2C_ARG_DECL)
 {
     TRACE_S2C();
     GType t = meta->gtype;
-    if (t == G_TYPE_INT16) {
-        if (!scm_is_signed_integer(object, INT16_MIN, INT16_MAX))
-            scm_wrong_type_arg_msg(subr, argpos, object, "int16");
-        arg->v_int16 = scm_to_int16(object);
+    if (t == G_TYPE_INT) {
+#define T(t,min,max)                                                \
+        do {                                                        \
+            if (!scm_is_signed_integer(object, min, max))           \
+                scm_wrong_type_arg_msg(subr, argpos, object, #t);   \
+            arg->v_ ## t = scm_to_ ## t(object);                    \
+        } while (0)                                                 \
+
+        switch (meta->item_size) {
+        case 1:
+            T(int8, INT8_MIN, INT8_MAX);
+            break;
+        case 2:
+            T(int16, INT16_MIN, INT16_MAX);
+            break;
+        case 4:
+            T(int32, INT32_MIN, INT32_MAX);
+            break;
+        case 8:
+            // future-proofing for int == int64
+            T(int64, INT64_MIN, INT64_MAX);
+            break;
+        }
+#undef T
     }
-    else if (t == G_TYPE_UINT16) {
-        if (!scm_is_unsigned_integer(object, 0, UINT16_MAX))
-            scm_wrong_type_arg_msg(subr, argpos, object, "uint16");
-        arg->v_uint16 = scm_to_uint16(object);
+
+    else if (t == G_TYPE_UINT) {
+#define T(t,min,max)                                                  \
+        do {                                                          \
+            if (!scm_is_unsigned_integer(object, min, max))           \
+                scm_wrong_type_arg_msg(subr, argpos, object, #t);     \
+            arg->v_ ## t = scm_to_ ## t(object);                      \
+        } while (0)                                                   \
+
+        switch (meta->item_size) {
+        case 1:
+            T(uint8, 0, UINT8_MAX);
+            break;
+        case 2:
+            T(uint16, 0, UINT16_MAX);
+            break;
+        case 4:
+            T(uint32, 0, UINT32_MAX);
+            break;
+        case 8:
+            // future-proofing for uint == uint64
+            T(uint64, 0, UINT64_MAX);
+            break;
+        }
+#undef T
     }
-    else if (t == G_TYPE_INT32) {
-        if (!scm_is_signed_integer(object, INT32_MIN, INT32_MAX))
-            scm_wrong_type_arg_msg(subr, argpos, object, "int32");
-        arg->v_int32 = scm_to_int32(object);
-    }
-    else if (t == G_TYPE_UINT32) {
-        if (!scm_is_unsigned_integer(object, 0, UINT32_MAX))
-            scm_wrong_type_arg_msg(subr, argpos, object, "uint32");
-        arg->v_uint32 = scm_to_uint32(object);
-    }
+
     else if (t == G_TYPE_INT64) {
         if (!scm_is_signed_integer(object, INT64_MIN, INT64_MAX))
             scm_wrong_type_arg_msg(subr, argpos, object, "int64");
@@ -504,10 +537,8 @@ scm_to_c_native_array(S2C_ARG_DECL)
         scm_to_c_native_unichar_array(S2C_ARGS);
     else if (item_type == G_TYPE_CHAR
              || item_type == G_TYPE_UCHAR
-             || item_type == G_TYPE_INT16
-             || item_type == G_TYPE_UINT16
-             || item_type == G_TYPE_INT32
-             || item_type == G_TYPE_UINT32
+             || item_type == G_TYPE_INT
+             || item_type == G_TYPE_UINT
              || item_type == G_TYPE_INT64
              || item_type == G_TYPE_UINT64
              || item_type == G_TYPE_FLOAT || item_type == G_TYPE_DOUBLE)
@@ -573,15 +604,16 @@ scm_to_c_native_immediate_array(S2C_ARG_DECL)
     // integer arrays are ever used. Sometimes deep copy.  Sometimes
     // zero terminated.
 
-    g_assert_cmpint(meta->params[0].item_size, !=, 0);
+    gsize item_size = gig_meta_real_item_size(&meta->params[0]);
+    g_assert_cmpint(item_size, !=, 0);
 
     if (scm_is_bytevector(object)) {
-        *size = SCM_BYTEVECTOR_LENGTH(object) / meta->params[0].item_size;
+        *size = SCM_BYTEVECTOR_LENGTH(object) / item_size;
         if (meta->transfer == GI_TRANSFER_EVERYTHING) {
             if (meta->is_zero_terminated) {
                 gsize len = SCM_BYTEVECTOR_LENGTH(object);
                 // Note, null terminated here.
-                arg->v_pointer = g_malloc0(len + meta->params[0].item_size);
+                arg->v_pointer = g_malloc0(len + item_size);
                 memcpy(arg->v_pointer, SCM_BYTEVECTOR_CONTENTS(object), len);
             }
             else {
@@ -593,7 +625,7 @@ scm_to_c_native_immediate_array(S2C_ARG_DECL)
             if (meta->is_zero_terminated) {
                 gsize len = SCM_BYTEVECTOR_LENGTH(object);
                 // Adding null terminator element.
-                arg->v_pointer = g_malloc0(len + meta->params[0].item_size);
+                arg->v_pointer = g_malloc0(len + item_size);
                 LATER_FREE(arg->v_pointer);
                 memcpy(arg->v_pointer, SCM_BYTEVECTOR_CONTENTS(object), len);
             }
@@ -664,7 +696,7 @@ scm_to_c_native_interface_array(S2C_ARG_DECL)
                 gpointer p = gig_type_peek_object(scm_c_vector_ref(object, i));
                 if (meta->transfer == GI_TRANSFER_EVERYTHING) {
                     if (fundamental_item_type == G_TYPE_BOXED) {
-                        ((gpointer *)(arg->v_pointer))[i] = g_memdup(p, meta->params[0].item_size);
+                        ((gpointer *)(arg->v_pointer))[i] = g_memdup(p, gig_meta_real_item_size(&meta->params[0]));
                         // ((gpointer *)(arg->v_pointer))[i] = p;
                     }
                     else {
@@ -678,16 +710,16 @@ scm_to_c_native_interface_array(S2C_ARG_DECL)
         }
         else {
             if (meta->is_zero_terminated)
-                arg->v_pointer = g_malloc0(meta->item_size * (*size + 1));
+                arg->v_pointer = g_malloc0(gig_meta_real_item_size(meta) * (*size + 1));
             else
                 arg->v_pointer = malloc(sizeof(gpointer) * *size);
             for (gsize i = 0; i < *size; i++) {
                 gpointer p = gig_type_peek_object(scm_c_vector_ref(object, i));
                 if (meta->transfer == GI_TRANSFER_EVERYTHING)
-                    memcpy((char *)(arg->v_pointer) + i * meta->item_size,
-                           g_memdup(p, meta->item_size), meta->item_size);
+                    memcpy((char *)(arg->v_pointer) + i * gig_meta_real_item_size(meta),
+                           g_memdup(p, gig_meta_real_item_size(meta)), gig_meta_real_item_size(meta));
                 else
-                    memcpy((char *)(arg->v_pointer) + i * meta->item_size, p, meta->item_size);
+                    memcpy((char *)(arg->v_pointer) + i * gig_meta_real_item_size(meta), p, gig_meta_real_item_size(meta));
 
             }
         }
@@ -869,14 +901,38 @@ static void
 c_integer_to_scm(C2S_ARG_DECL)
 {
     TRACE_C2S();
-    if (meta->gtype == G_TYPE_INT16)
-        *object = scm_from_int16(arg->v_int16);
-    else if (meta->gtype == G_TYPE_UINT16)
-        *object = scm_from_uint16(arg->v_uint16);
-    else if (meta->gtype == G_TYPE_INT32)
-        *object = scm_from_int32(arg->v_int32);
-    else if (meta->gtype == G_TYPE_UINT32)
-        *object = scm_from_uint32(arg->v_uint32);
+    if (meta->gtype == G_TYPE_INT) {
+        switch (meta->item_size) {
+        case 1:
+            *object = scm_from_int8(arg->v_int8);
+            break;
+        case 2:
+            *object = scm_from_int16(arg->v_int16);
+            break;
+        case 4:
+            *object = scm_from_int32(arg->v_int32);
+            break;
+        case 8:
+            *object = scm_from_int64(arg->v_int64);
+            break;
+        }
+    }
+    else if (meta->gtype == G_TYPE_UINT) {
+        switch (meta->item_size) {
+        case 1:
+            *object = scm_from_uint8(arg->v_uint8);
+            break;
+        case 2:
+            *object = scm_from_uint16(arg->v_uint16);
+            break;
+        case 4:
+            *object = scm_from_uint32(arg->v_uint32);
+            break;
+        case 8:
+            *object = scm_from_uint64(arg->v_uint64);
+            break;
+        }
+    }
     else if (meta->gtype == G_TYPE_INT64)
         *object = scm_from_int64(arg->v_int64);
     else if (meta->gtype == G_TYPE_UINT64)
@@ -1038,7 +1094,7 @@ c_native_array_to_scm(C2S_ARG_DECL)
 #define TRANSFER(_type,_short_type)                                     \
     do {                                                                \
         gsize sz;                                                       \
-        if (!g_size_checked_mul(&sz, length, meta->params[0].item_size) || sz == G_MAXSIZE) \
+        if (!g_size_checked_mul(&sz, length, gig_meta_real_item_size(&meta->params[0])) || sz == G_MAXSIZE) \
             scm_misc_error(subr, "Array size overflow", SCM_EOL);               \
         if (sz == 0) \
             *object = scm_make_ ## _short_type ## vector (scm_from_int(0), scm_from_int(0)); \
@@ -1053,14 +1109,38 @@ c_native_array_to_scm(C2S_ARG_DECL)
         TRANSFER(gint8, s8);
     else if (item_type == G_TYPE_UCHAR)
         TRANSFER(guint8, u8);
-    else if (item_type == G_TYPE_INT16)
-        TRANSFER(gint16, s16);
-    else if (item_type == G_TYPE_UINT16)
-        TRANSFER(guint16, u16);
-    else if (item_type == G_TYPE_INT32)
-        TRANSFER(gint32, s32);
-    else if (item_type == G_TYPE_UINT32)
-        TRANSFER(guint32, u32);
+    else if (item_type == G_TYPE_INT) {
+#define DO_TRANSFER(n, m)                \
+        case n:                          \
+            TRANSFER(gint ## m, s ## m); \
+            break;
+
+        switch (meta->params[0].item_size) {
+            DO_TRANSFER(1, 8);
+            DO_TRANSFER(2, 16);
+            DO_TRANSFER(4, 32);
+            DO_TRANSFER(8, 64);
+        default:
+            UNHANDLED;
+        }
+#undef DO_TRANSFER
+    }
+    else if (item_type == G_TYPE_UINT) {
+#define DO_TRANSFER(n, m)                        \
+        case n:                                  \
+            TRANSFER(guint ## m, u ## m);        \
+            break;
+
+        switch (meta->params[0].item_size) {
+            DO_TRANSFER(1, 8);
+            DO_TRANSFER(2, 16);
+            DO_TRANSFER(4, 32);
+            DO_TRANSFER(8, 64);
+        default:
+            UNHANDLED;
+        }
+#undef DO_TRANSFER
+    }
     else if (item_type == G_TYPE_INT64)
         TRANSFER(gint64, s64);
     else if (item_type == G_TYPE_UINT64)
@@ -1110,7 +1190,7 @@ c_native_array_to_scm(C2S_ARG_DECL)
         _meta.is_ptr = TRUE;
         gpointer iter = arg->v_pointer;
 
-        for (gsize k = 0; k < len; k++, elt += inc, iter += meta->item_size) {
+        for (gsize k = 0; k < len; k++, elt += inc, iter += gig_meta_real_item_size(meta)) {
             if (is_pointer)
                 _arg.v_pointer = *(gpointer *)iter;
             else
@@ -1240,20 +1320,45 @@ c_list_to_scm(C2S_ARG_DECL)
 
         if (!meta->params[0].is_ptr) {
             GType item_type = meta->params[0].gtype;
+#define SET_CAR_FROM_INT(i) scm_set_car_x(out_iter, scm_from_ ## i (*(g ## i *) data))
             if (item_type == G_TYPE_CHAR)
-                scm_set_car_x(out_iter, scm_from_int8(*(gint8 *)data));
-            else if (item_type == G_TYPE_INT16)
-                scm_set_car_x(out_iter, scm_from_int16(*(gint16 *)data));
-            else if (item_type == G_TYPE_INT32)
-                scm_set_car_x(out_iter, scm_from_int32(*(gint32 *)data));
+                SET_CAR_FROM_INT(int8);
+            else if (item_type == G_TYPE_UCHAR)
+                SET_CAR_FROM_INT(uint8);
+            else if (item_type == G_TYPE_INT) {
+                switch(meta->params[0].item_size) {
+                case 1:
+                    SET_CAR_FROM_INT(int8);
+                    break;
+                case 2:
+                    SET_CAR_FROM_INT(int16);
+                    break;
+                case 4:
+                    SET_CAR_FROM_INT(int32);
+                    break;
+                case 8:
+                    SET_CAR_FROM_INT(int64);
+                    break;
+                }
+            }
+            else if (item_type == G_TYPE_UINT) {
+                switch(meta->params[0].item_size) {
+                case 1:
+                    SET_CAR_FROM_INT(uint8);
+                    break;
+                case 2:
+                    SET_CAR_FROM_INT(uint16);
+                    break;
+                case 4:
+                    SET_CAR_FROM_INT(uint32);
+                    break;
+                case 8:
+                    SET_CAR_FROM_INT(uint64);
+                    break;
+                }
+            }
             else if (item_type == G_TYPE_INT64)
                 scm_set_car_x(out_iter, scm_from_int64(*(gint64 *)data));
-            else if (item_type == G_TYPE_UCHAR)
-                scm_set_car_x(out_iter, scm_from_uint8(*(guint8 *)data));
-            else if (item_type == G_TYPE_UINT16)
-                scm_set_car_x(out_iter, scm_from_uint16(*(guint16 *)data));
-            else if (item_type == G_TYPE_UINT32)
-                scm_set_car_x(out_iter, scm_from_uint32(*(guint32 *)data));
             else if (item_type == G_TYPE_UINT64)
                 scm_set_car_x(out_iter, scm_from_uint64(*(guint64 *)data));
             else if (item_type == G_TYPE_FLOAT)
