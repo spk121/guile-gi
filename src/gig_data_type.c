@@ -18,7 +18,6 @@
 #include "gig_data_type.h"
 #include "gig_util.h"
 
-GType g_type_unichar;
 GType g_type_locale_string;
 
 GType g_type_list;
@@ -123,7 +122,12 @@ gig_type_meta_init_from_basic_type_tag(GigTypeMeta *meta, GITypeTag tag)
     T(GI_TYPE_TAG_UINT16, G_TYPE_UINT, guint16);
     T(GI_TYPE_TAG_UINT32, G_TYPE_UINT, guint32);
     T(GI_TYPE_TAG_UINT64, G_TYPE_UINT, guint64);
-    T(GI_TYPE_TAG_UNICHAR, G_TYPE_UNICHAR, gunichar);
+    if (tag == GI_TYPE_TAG_UNICHAR) {
+        meta->gtype = G_TYPE_UINT;
+        meta->item_size = sizeof (gunichar);
+        meta->is_unichar = TRUE;
+        return;
+    }
     T(GI_TYPE_TAG_UTF8, G_TYPE_STRING, gchar *);
     T(GI_TYPE_TAG_FILENAME, G_TYPE_LOCALE_STRING, gchar *);
     T(GI_TYPE_TAG_ERROR, G_TYPE_ERROR, GError);
@@ -314,7 +318,6 @@ G_DEFINE_BOXED_TYPE(GSList, g_slist, g_slist_copy, g_slist_free);
 void
 gig_init_data_type(void)
 {
-    g_type_unichar = g_type_register_static_simple(G_TYPE_INT, "gunichar", 0, NULL, 0, NULL, 0);
     g_type_locale_string = g_type_register_static_simple(G_TYPE_STRING,
                                                          "locale-string", 0, NULL, 0, NULL, 0);
 

@@ -339,21 +339,30 @@ scm_to_c_integer(S2C_ARG_DECL)
             arg->v_ ## t = scm_to_ ## t(object);                      \
         } while (0)                                                   \
 
-        switch (meta->item_size) {
-        case 1:
-            T(uint8, 0, UINT8_MAX);
-            break;
-        case 2:
-            T(uint16, 0, UINT16_MAX);
-            break;
-        case 4:
-            T(uint32, 0, UINT32_MAX);
-            break;
-        case 8:
-            // future-proofing for uint == uint64
-            T(uint64, 0, UINT64_MAX);
-            break;
+        if (meta->is_unichar) {
+            if (SCM_CHARP(object))
+                arg->v_uint32 = SCM_CHAR(object);
+            else if (scm_is_unsigned_integer(object, 0, SCM_CODEPOINT_MAX))
+                arg->v_uint32 = scm_to_uint32(object);
+            else
+                scm_wrong_type_arg_msg(subr, argpos, object, "char");
         }
+        else
+            switch (meta->item_size) {
+            case 1:
+                T(uint8, 0, UINT8_MAX);
+                break;
+            case 2:
+                T(uint16, 0, UINT16_MAX);
+                break;
+            case 4:
+                T(uint32, 0, UINT32_MAX);
+                break;
+            case 8:
+                // future-proofing for uint == uint64
+                T(uint64, 0, UINT64_MAX);
+                break;
+            }
 #undef T
     }
 
@@ -366,15 +375,6 @@ scm_to_c_integer(S2C_ARG_DECL)
         if (!scm_is_unsigned_integer(object, 0, UINT64_MAX))
             scm_wrong_type_arg_msg(subr, argpos, object, "uint64");
         arg->v_uint64 = scm_to_uint64(object);
-    }
-    else if (t == G_TYPE_UNICHAR) {
-        if (SCM_CHARP(object))
-            arg->v_uint32 = SCM_CHAR(object);
-        else if (scm_is_unsigned_integer(object, 0, SCM_CODEPOINT_MAX))
-            arg->v_uint32 = scm_to_uint32(object);
-        else {
-            scm_wrong_type_arg_msg(subr, argpos, object, "char");
-        }
     }
     else
         UNHANDLED;
@@ -533,7 +533,7 @@ scm_to_c_native_array(S2C_ARG_DECL)
 
     if (item_type == G_TYPE_BOOLEAN)
         scm_to_c_native_boolean_array(S2C_ARGS);
-    else if (item_type == G_TYPE_UNICHAR)
+    else if (meta->params[0].is_unichar)
         scm_to_c_native_unichar_array(S2C_ARGS);
     else if (item_type == G_TYPE_CHAR
              || item_type == G_TYPE_UCHAR
@@ -918,27 +918,28 @@ c_integer_to_scm(C2S_ARG_DECL)
         }
     }
     else if (meta->gtype == G_TYPE_UINT) {
-        switch (meta->item_size) {
-        case 1:
-            *object = scm_from_uint8(arg->v_uint8);
-            break;
-        case 2:
-            *object = scm_from_uint16(arg->v_uint16);
-            break;
-        case 4:
-            *object = scm_from_uint32(arg->v_uint32);
-            break;
-        case 8:
-            *object = scm_from_uint64(arg->v_uint64);
-            break;
-        }
+        if (meta->is_unichar)
+            *object = SCM_MAKE_CHAR(arg->v_uint32);
+        else
+            switch (meta->item_size) {
+            case 1:
+                *object = scm_from_uint8(arg->v_uint8);
+                break;
+            case 2:
+                *object = scm_from_uint16(arg->v_uint16);
+                break;
+            case 4:
+                *object = scm_from_uint32(arg->v_uint32);
+                break;
+            case 8:
+                *object = scm_from_uint64(arg->v_uint64);
+                break;
+            }
     }
     else if (meta->gtype == G_TYPE_INT64)
         *object = scm_from_int64(arg->v_int64);
     else if (meta->gtype == G_TYPE_UINT64)
         *object = scm_from_uint64(arg->v_uint64);
-    else if (meta->gtype == G_TYPE_UNICHAR)
-        *object = SCM_MAKE_CHAR(arg->v_uint32);
     else
         UNHANDLED;
 }
@@ -1131,14 +1132,25 @@ c_native_array_to_scm(C2S_ARG_DECL)
             TRANSFER(guint ## m, u ## m);        \
             break;
 
-        switch (meta->params[0].item_size) {
-            DO_TRANSFER(1, 8);
-            DO_TRANSFER(2, 16);
-            DO_TRANSFER(4, 32);
-            DO_TRANSFER(8, 64);
-        default:
-            UNHANDLED;
+        if (meta->params[0].is_unichar) {
+            *object = scm_c_make_string(length, SCM_MAKE_CHAR(0));
+            for (gsize k = 0; k < length; k++)
+                scm_c_string_set_x(*object, k, SCM_MAKE_CHAR(((gunichar *)(arg->v_pointer))[k]));
+            if (meta->transfer == GI_TRANSFER_EVERYTHING) {
+                free(arg->v_pointer);
+                arg->v_pointer = 0;
+            }
         }
+
+        else
+            switch (meta->params[0].item_size) {
+                DO_TRANSFER(1, 8);
+                DO_TRANSFER(2, 16);
+                DO_TRANSFER(4, 32);
+                DO_TRANSFER(8, 64);
+            default:
+                UNHANDLED;
+            }
 #undef DO_TRANSFER
     }
     else if (item_type == G_TYPE_INT64)
@@ -1161,15 +1173,6 @@ c_native_array_to_scm(C2S_ARG_DECL)
         for (gsize k = 0; k < len; k++, elt += inc)
             *elt = ((gboolean *)(arg->v_pointer))[k] ? SCM_BOOL_T : SCM_BOOL_F;
         scm_array_handle_release(&handle);
-        if (meta->transfer == GI_TRANSFER_EVERYTHING) {
-            free(arg->v_pointer);
-            arg->v_pointer = 0;
-        }
-    }
-    else if (item_type == G_TYPE_UNICHAR) {
-        *object = scm_c_make_string(length, SCM_MAKE_CHAR(0));
-        for (gsize k = 0; k < length; k++)
-            scm_c_string_set_x(*object, k, SCM_MAKE_CHAR(((gunichar *)(arg->v_pointer))[k]));
         if (meta->transfer == GI_TRANSFER_EVERYTHING) {
             free(arg->v_pointer);
             arg->v_pointer = 0;
@@ -1342,20 +1345,23 @@ c_list_to_scm(C2S_ARG_DECL)
                 }
             }
             else if (item_type == G_TYPE_UINT) {
-                switch(meta->params[0].item_size) {
-                case 1:
-                    SET_CAR_FROM_INT(uint8);
-                    break;
-                case 2:
-                    SET_CAR_FROM_INT(uint16);
-                    break;
-                case 4:
-                    SET_CAR_FROM_INT(uint32);
-                    break;
-                case 8:
-                    SET_CAR_FROM_INT(uint64);
-                    break;
-                }
+                if (meta->is_unichar)
+                    scm_set_car_x(out_iter, SCM_MAKE_CHAR(*(guint32 *)data));
+                else
+                    switch(meta->params[0].item_size) {
+                    case 1:
+                        SET_CAR_FROM_INT(uint8);
+                        break;
+                    case 2:
+                        SET_CAR_FROM_INT(uint16);
+                        break;
+                    case 4:
+                        SET_CAR_FROM_INT(uint32);
+                        break;
+                    case 8:
+                        SET_CAR_FROM_INT(uint64);
+                        break;
+                    }
             }
             else if (item_type == G_TYPE_INT64)
                 scm_set_car_x(out_iter, scm_from_int64(*(gint64 *)data));
@@ -1365,8 +1371,6 @@ c_list_to_scm(C2S_ARG_DECL)
                 scm_set_car_x(out_iter, scm_from_double(*(float *)data));
             else if (item_type == G_TYPE_DOUBLE)
                 scm_set_car_x(out_iter, scm_from_double(*(double *)data));
-            else if (item_type == G_TYPE_UNICHAR)
-                scm_set_car_x(out_iter, SCM_MAKE_CHAR(*(guint32 *)data));
             else if (item_type == G_TYPE_GTYPE) {
                 gig_type_register(*(gsize *)data);
                 scm_set_car_x(out_iter, scm_from_size_t(*(gsize *)data));

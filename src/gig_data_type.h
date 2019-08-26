@@ -22,14 +22,11 @@
 G_BEGIN_DECLS
 // *INDENT-ON*
 
-extern GType g_type_unichar;
 extern GType g_type_locale_string;
 
 extern GType g_type_list;
 extern GType g_type_slist;
 extern GType g_type_callback;
-
-#define G_TYPE_UNICHAR (g_type_unichar)
 
 #define G_TYPE_LIST (g_type_list)
 #define G_TYPE_SLIST (g_type_slist)
@@ -61,7 +58,8 @@ struct _GigTypeMeta
     guint16 is_raw_array:1;
     guint16 is_zero_terminated:1;
     guint16 has_size:1;
-    guint16 padding1:5;
+    guint16 is_unichar:1;
+    guint16 padding1:4;
 
     // For C array types
     union {
