@@ -64,8 +64,10 @@ struct _GigTypeMeta
     guint16 padding1:5;
 
     // For C array types
-    gsize length;
-    gsize item_size;
+    union {
+        gsize length;
+        gsize item_size;
+    };
 
     GITransfer transfer;
 
