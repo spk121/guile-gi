@@ -266,14 +266,22 @@ INTROSPECTION_SCANNER_ARGS = --add-include-path=$(abs_srcdir) --warn-all
 INTROSPECTION_COMPILER_ARGS = --includedir=$(abs_srcdir)
 nodist_libeverything_1_0_la_SOURCES = everything.c everything.h
 libeverything_1_0_la_CFLAGS = $(GOBJECT_CFLAGS)
+libeverything_1_0_la_LDFLAGS =
 libeverything_1_0_la_LIBADD = $(GOBJECT_LIBS)
+if BUILDING_DLL
+libeverything_1_0_la_LDFLAGS += -no-undefined
+endif
 
 libmarshall_1_0_la_SOURCES = \
   marshall.c marshall.h
 nodist_libmarshall_1_0_la_SOURCES = \
   gitestmacros.h
 libmarshall_1_0_la_CFLAGS = $(GOBJECT_CFLAGS)
+libmarshall_1_0_la_LDFLAGS =
 libmarshall_1_0_la_LIBADD = $(GOBJECT_LIBS)
+if BUILDING_DLL
+libmarshall_1_0_la_LDFLAGS += -no-undefined
+endif
 
 Everything-1.0.gir: libeverything-1.0.la
 Everything_1_0_gir_LIBS = libeverything-1.0.la
