@@ -197,12 +197,12 @@ SCM
 gig_type_define_with_info(GIRegisteredTypeInfo *info, SCM dsupers, SCM slots)
 {
     if (g_registered_type_info_get_g_type(info) != G_TYPE_NONE) {
-        g_critical ("gig_type_define_with_info used when GType was available, "
-                    "use gig_type_define or gig_type_define_full instead.");
+        g_critical("gig_type_define_with_info used when GType was available, "
+                   "use gig_type_define or gig_type_define_full instead.");
         return SCM_UNDEFINED;
     }
 
-    gchar *_name = g_registered_type_info_get_qualified_name (info);
+    gchar *_name = g_registered_type_info_get_qualified_name(info);
     g_assert(_name != NULL);
     gpointer _key, _value;
     gboolean exists = g_hash_table_lookup_extended(gig_type_name_hash, _name, &_key, &_value);
@@ -269,8 +269,7 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
             g_type_class_unref(class);
 
             dsupers = scm_list_1(SCM_PACK_POINTER(sparent));
-            new_type = scm_call_4(make_class_proc, dsupers, slots, kwd_name,
-                                  type_class_name);
+            new_type = scm_call_4(make_class_proc, dsupers, slots, kwd_name, type_class_name);
 
             scm_class_set_x(new_type, sym_obarray, obarray);
             break;
@@ -290,8 +289,7 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
             g_type_class_unref(class);
 
             dsupers = scm_list_1(SCM_PACK_POINTER(sparent));
-            new_type = scm_call_4(make_class_proc, dsupers, slots, kwd_name,
-                                  type_class_name);
+            new_type = scm_call_4(make_class_proc, dsupers, slots, kwd_name, type_class_name);
 
             scm_class_set_x(new_type, sym_obarray, obarray);
             break;
@@ -823,7 +821,7 @@ gig_init_types_once(void)
                          scm_list_1(scm_c_public_ref("oop goops", "<applicable-struct>")));
     gig_closure_type = gig_type_get_scheme_type(G_TYPE_CLOSURE);
 
-    scm_class_set_x(gig_value_type, sym_size, scm_from_size_t(sizeof (GValue)));
+    scm_class_set_x(gig_value_type, sym_size, scm_from_size_t(sizeof(GValue)));
 
     // value associations, do not rely on them for anything else
     gig_type_associate(G_TYPE_STRING, scm_c_public_ref("oop goops", "<string>"));

@@ -46,8 +46,7 @@ static void make_formals(GICallableInfo *, GigArgMap *, gint n_inputs, SCM self_
                          SCM *formals, SCM *specializers);
 static void function_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_data);
 
-static SCM convert_output_args(GigArgMap *amap, const gchar *name,
-                               GArray *out_args);
+static SCM convert_output_args(GigArgMap *amap, const gchar *name, GArray *out_args);
 static void object_list_to_c_args(GigArgMap *amap, const gchar *subr,
                                   SCM s_args, GArray *in_args, GPtrArray *cinvoke_free_array,
                                   GArray *out_args);
@@ -141,7 +140,7 @@ gig_function_define(GType type, GICallableInfo *info, const gchar *namespace, SC
                 optional_input_count);
     }
 
- end:
+  end:
     scm_dynwind_end();
     return defs;
 }
@@ -385,8 +384,7 @@ gig_callable_prepare_invoke(GigArgMap *amap,
                             GArray **cinvoke_input_arg_array,
                             GArray **cinvoke_output_arg_array,
                             GPtrArray **cinvoke_free_array,
-                            GIArgument **out_args,
-                            GIArgument **out_boxes)
+                            GIArgument **out_args, GIArgument **out_boxes)
 {
     *cinvoke_input_arg_array = g_array_new(FALSE, TRUE, sizeof(GIArgument));
     *cinvoke_output_arg_array = g_array_new(FALSE, TRUE, sizeof(GIArgument));
@@ -427,8 +425,7 @@ gig_callable_return_value(GigArgMap *amap,
                           GArray *cinvoke_input_arg_array,
                           GArray *cinvoke_output_arg_array,
                           GPtrArray *cinvoke_free_array,
-                          GIArgument *out_args,
-                          GIArgument *out_boxes)
+                          GIArgument *out_args, GIArgument *out_boxes)
 {
     SCM output;
 
@@ -489,8 +486,7 @@ gig_function_invoke(GIFunctionInfo *func_info, GigArgMap *amap, const gchar *nam
     gig_callable_prepare_invoke(amap, name, self, args,
                                 &cinvoke_input_arg_array,
                                 &cinvoke_output_arg_array,
-                                &cinvoke_free_array,
-                                &out_args, &out_boxes);
+                                &cinvoke_free_array, &out_args, &out_boxes);
 
     // Make the actual call.
     // Use GObject's ffi to call the C function.
@@ -522,8 +518,7 @@ gig_callable_invoke(GICallableInfo *callable_info, gpointer callable, GigArgMap 
     gig_callable_prepare_invoke(amap, name, self, args,
                                 &cinvoke_input_arg_array,
                                 &cinvoke_output_arg_array,
-                                &cinvoke_free_array,
-                                &out_args, &out_boxes);
+                                &cinvoke_free_array, &out_args, &out_boxes);
 
     // Make the actual call.
     // Use GObject's ffi to call the C function.
@@ -537,8 +532,7 @@ gig_callable_invoke(GICallableInfo *callable_info, gpointer callable, GigArgMap 
                                 (GIArgument *)(cinvoke_output_arg_array->data),
                                 cinvoke_output_arg_array->len, &return_arg,
                                 g_callable_info_is_method(callable_info),
-                                g_callable_info_can_throw_gerror(callable_info),
-                                error);
+                                g_callable_info_can_throw_gerror(callable_info), error);
 
     return gig_callable_return_value(amap, name, args, ok, &return_arg,
                                      cinvoke_input_arg_array, cinvoke_output_arg_array,
@@ -596,7 +590,7 @@ function_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
         g_return_if_reached();
     }
 
-    *(ffi_arg *) ret = SCM_UNPACK(output);
+    *(ffi_arg *)ret = SCM_UNPACK(output);
 }
 
 static void
@@ -710,8 +704,7 @@ object_list_to_c_args(GigArgMap *amap,
 }
 
 static SCM
-convert_output_args(GigArgMap *amap,
-                    const gchar *func_name, GArray *out_args)
+convert_output_args(GigArgMap *amap, const gchar *func_name, GArray *out_args)
 {
     SCM output = SCM_EOL;
     gint s_output_pos;

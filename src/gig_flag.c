@@ -137,7 +137,7 @@ gig_define_enum_conversions(GIEnumInfo *info, GType type, SCM defs)
                         defs);                                          \
     } while (0)
 
-    switch(g_base_info_get_type(info)) {
+    switch (g_base_info_get_type(info)) {
     case GI_INFO_TYPE_ENUM:
         C("%s->number", enum_to_number);
         C("%s->symbol", enum_to_symbol);

@@ -116,8 +116,7 @@ arg_map_apply_function_info(GigArgMap *amap, GIFunctionInfo *func_info)
 static void
 arg_map_determine_array_length_index(GigArgMap *amap, GigArgMapEntry *entry, GITypeInfo *info)
 {
-    if (entry->meta.gtype == G_TYPE_ARRAY &&
-        entry->meta.has_size) {
+    if (entry->meta.gtype == G_TYPE_ARRAY && entry->meta.has_size) {
         gint idx = g_type_info_get_array_length(info);
 
         g_assert_cmpint(idx, !=, -1);

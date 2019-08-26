@@ -46,6 +46,7 @@
  */
 -T SCM
 
+-T ffi_arg
 -T ffi_cif
 -T ffi_closure
 
@@ -83,8 +84,6 @@
 -T GTypeInstance
 -T GValue
 
--T ffi_arg
-
 -T GIArgInfo
 -T GIArgument
 -T GIBaseInfo
@@ -96,6 +95,7 @@
 -T GIInterfaceInfo
 -T GIObjectInfo
 -T GIPropertyInfo
+-T GIRegisteredTypeInfo
 -T GISignalInfo
 -T GITypeInfo
 

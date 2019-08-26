@@ -209,7 +209,7 @@ g_base_info_get_name_safe(GIBaseInfo *info)
 gchar *
 g_registered_type_info_get_qualified_name(GIRegisteredTypeInfo *info)
 {
-    const gchar *_name = g_base_info_get_attribute (info, "c:type");
+    const gchar *_name = g_base_info_get_attribute(info, "c:type");
     if (_name != NULL)
         return g_strdup(_name);
 

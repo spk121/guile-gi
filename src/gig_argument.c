@@ -510,8 +510,7 @@ scm_to_c_native_array(S2C_ARG_DECL)
              || item_type == G_TYPE_UINT32
              || item_type == G_TYPE_INT64
              || item_type == G_TYPE_UINT64
-             || item_type == G_TYPE_FLOAT
-             || item_type == G_TYPE_DOUBLE)
+             || item_type == G_TYPE_FLOAT || item_type == G_TYPE_DOUBLE)
         scm_to_c_native_immediate_array(S2C_ARGS);
     else if (item_type == G_TYPE_STRING || item_type == G_TYPE_LOCALE_STRING)
         scm_to_c_native_string_array(S2C_ARGS);
@@ -693,8 +692,7 @@ scm_to_c_native_interface_array(S2C_ARG_DECL)
             }
         }
     }
-    else if (fundamental_item_type == G_TYPE_ENUM ||
-             fundamental_item_type == G_TYPE_FLAGS) {
+    else if (fundamental_item_type == G_TYPE_ENUM || fundamental_item_type == G_TYPE_FLAGS) {
         // TODO: coerce to vector as above?
         if (scm_is_true(scm_list_p(object))) {
             gsize length = scm_to_size_t(scm_length(object));
@@ -709,8 +707,7 @@ scm_to_c_native_interface_array(S2C_ARG_DECL)
             SCM iter = object;
 
             for (gsize i = 0; i < length; i++, iter = scm_cdr(iter))
-                switch (fundamental_item_type)
-                {
+                switch (fundamental_item_type) {
                 case G_TYPE_ENUM:
                     ptr[i] = gig_enum_to_int(scm_car(iter));
                     break;
@@ -720,7 +717,7 @@ scm_to_c_native_interface_array(S2C_ARG_DECL)
                 }
         }
         else
-            g_assert_not_reached ();
+            g_assert_not_reached();
     }
     else {
         // Everything else is unhandled.
@@ -922,8 +919,7 @@ c_boxed_to_scm(C2S_ARG_DECL)
     else if (meta->gtype == G_TYPE_LIST || meta->gtype == G_TYPE_SLIST)
         c_list_to_scm(C2S_ARGS);
     else
-        *object =
-            gig_type_transfer_object(meta->gtype, arg->v_pointer, meta->transfer);
+        *object = gig_type_transfer_object(meta->gtype, arg->v_pointer, meta->transfer);
 }
 
 static void
@@ -958,7 +954,7 @@ static void
 c_enum_to_scm(C2S_ARG_DECL)
 {
     TRACE_C2S();
-    switch(G_TYPE_FUNDAMENTAL(meta->gtype)) {
+    switch (G_TYPE_FUNDAMENTAL(meta->gtype)) {
     case G_TYPE_ENUM:
         if (meta->gtype == G_TYPE_ENUM)
             *object = gig_int_to_enum_with_info(arg->v_int32, meta->enum_info);
