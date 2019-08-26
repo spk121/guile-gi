@@ -144,14 +144,12 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
     meta->is_ptr = g_type_info_is_pointer(type_info);
 
     if (tag == GI_TYPE_TAG_VOID) {
-        if (meta->is_ptr) {
+        if (meta->is_ptr)
             meta->gtype = G_TYPE_POINTER;
-            meta->item_size = sizeof(gpointer);
-        }
-        else {
+        else
             meta->gtype = G_TYPE_NONE;
-            meta->item_size = 0;
-        }
+        // Also sets pointer_type to VOID, which is exactly, what we want
+        meta->item_size = 0;
     }
     else if (tag == GI_TYPE_TAG_ARRAY) {
         GIArrayType array_type = g_type_info_get_array_type(type_info);
@@ -261,14 +259,11 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
 
     // FIXME: how did we get here?
     if (meta->gtype == 0) {
-        if (meta->is_ptr) {
+        if (meta->is_ptr)
             meta->gtype = G_TYPE_POINTER;
-            meta->item_size = sizeof(gpointer);
-        }
-        else {
+        else
             meta->gtype = G_TYPE_NONE;
-            meta->item_size = 0;
-        }
+        meta->item_size = 0;
     }
 }
 
