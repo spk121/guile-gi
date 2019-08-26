@@ -22,28 +22,6 @@
 G_BEGIN_DECLS
 // *INDENT-ON*
 
-extern GType g_type_unichar;
-extern GType g_type_int16;
-extern GType g_type_int32;
-extern GType g_type_uint16;
-extern GType g_type_uint32;
-extern GType g_type_locale_string;
-
-extern GType g_type_list;
-extern GType g_type_slist;
-extern GType g_type_callback;
-
-#define G_TYPE_UNICHAR (g_type_unichar)
-#define G_TYPE_INT16 (g_type_int16)
-#define G_TYPE_INT32 (g_type_int32)
-#define G_TYPE_UINT16 (g_type_uint16)
-#define G_TYPE_UINT32 (g_type_uint32)
-
-#define G_TYPE_LIST (g_type_list)
-#define G_TYPE_SLIST (g_type_slist)
-#define G_TYPE_LOCALE_STRING (g_type_locale_string)
-#define G_TYPE_CALLBACK (g_type_callback)
-
 #define GIG_ARRAY_SIZE_UNKNOWN ((gsize)-1)
 
 typedef struct _GigTypeMeta GigTypeMeta;
@@ -69,11 +47,28 @@ struct _GigTypeMeta
     guint16 is_raw_array:1;
     guint16 is_zero_terminated:1;
     guint16 has_size:1;
-    guint16 padding1:5;
+    guint16 is_unichar:1;
+    guint16 padding1:4;
 
-    // For C array types
-    gsize length;
-    gsize item_size;
+    union
+    {
+        // For string and pointer types
+        enum
+        {
+            GIG_DATA_VOID = 0,
+            GIG_DATA_UTF8_STRING,
+            GIG_DATA_LOCALE_STRING,
+            GIG_DATA_LIST,
+            GIG_DATA_SLIST,
+            GIG_DATA_HASH_TABLE,
+            GIG_DATA_CALLBACK
+        } pointer_type;
+
+        // For C array types
+        gsize length;
+        // For C element types
+        gsize item_size;
+    };
 
     GITransfer transfer;
 
@@ -89,6 +84,7 @@ struct _GigTypeMeta
 
 void gig_type_meta_init_from_arg_info(GigTypeMeta *type, GIArgInfo *ai);
 void gig_type_meta_init_from_callable_info(GigTypeMeta *type, GICallableInfo *ci);
+G_GNUC_PURE gsize gig_meta_real_item_size(const GigTypeMeta *meta);
 const char *gig_type_meta_describe(const GigTypeMeta *meta);
 void gig_data_type_free(GigTypeMeta *meta);
 void gig_init_data_type(void);

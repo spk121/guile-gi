@@ -119,7 +119,8 @@ array_length(GigTypeMeta *meta, GIArgument *arg)
             return length;
         }
 
-        switch (meta->params[0].item_size) {
+        gsize item_size = gig_meta_real_item_size(&meta->params[0]);
+        switch (item_size) {
         case 0:
             g_assert_not_reached();
         case 1:
@@ -153,12 +154,12 @@ array_length(GigTypeMeta *meta, GIArgument *arg)
             do {
                 length++;
                 non_null = FALSE;
-                for (gsize i = 0; i <= meta->params[0].item_size; i++)
+                for (gsize i = 0; i <= item_size; i++)
                     if (ptr + i != 0) {
                         non_null = TRUE;
                         break;
                     }
-                ptr += meta->params[0].item_size;
+                ptr += item_size;
             } while (non_null);
 
             return length;
@@ -304,26 +305,67 @@ scm_to_c_integer(S2C_ARG_DECL)
 {
     TRACE_S2C();
     GType t = meta->gtype;
-    if (t == G_TYPE_INT16) {
-        if (!scm_is_signed_integer(object, INT16_MIN, INT16_MAX))
-            scm_wrong_type_arg_msg(subr, argpos, object, "int16");
-        arg->v_int16 = scm_to_int16(object);
+    if (t == G_TYPE_INT) {
+#define T(t,min,max)                                                \
+        do {                                                        \
+            if (!scm_is_signed_integer(object, min, max))           \
+                scm_wrong_type_arg_msg(subr, argpos, object, #t);   \
+            arg->v_ ## t = scm_to_ ## t(object);                    \
+        } while (0)                                                 \
+
+        switch (meta->item_size) {
+        case 1:
+            T(int8, INT8_MIN, INT8_MAX);
+            break;
+        case 2:
+            T(int16, INT16_MIN, INT16_MAX);
+            break;
+        case 4:
+            T(int32, INT32_MIN, INT32_MAX);
+            break;
+        case 8:
+            // future-proofing for int == int64
+            T(int64, INT64_MIN, INT64_MAX);
+            break;
+        }
+#undef T
     }
-    else if (t == G_TYPE_UINT16) {
-        if (!scm_is_unsigned_integer(object, 0, UINT16_MAX))
-            scm_wrong_type_arg_msg(subr, argpos, object, "uint16");
-        arg->v_uint16 = scm_to_uint16(object);
+
+    else if (t == G_TYPE_UINT) {
+#define T(t,min,max)                                                  \
+        do {                                                          \
+            if (!scm_is_unsigned_integer(object, min, max))           \
+                scm_wrong_type_arg_msg(subr, argpos, object, #t);     \
+            arg->v_ ## t = scm_to_ ## t(object);                      \
+        } while (0)                                                   \
+
+        if (meta->is_unichar) {
+            if (SCM_CHARP(object))
+                arg->v_uint32 = SCM_CHAR(object);
+            else if (scm_is_unsigned_integer(object, 0, SCM_CODEPOINT_MAX))
+                arg->v_uint32 = scm_to_uint32(object);
+            else
+                scm_wrong_type_arg_msg(subr, argpos, object, "char");
+        }
+        else
+            switch (meta->item_size) {
+            case 1:
+                T(uint8, 0, UINT8_MAX);
+                break;
+            case 2:
+                T(uint16, 0, UINT16_MAX);
+                break;
+            case 4:
+                T(uint32, 0, UINT32_MAX);
+                break;
+            case 8:
+                // future-proofing for uint == uint64
+                T(uint64, 0, UINT64_MAX);
+                break;
+            }
+#undef T
     }
-    else if (t == G_TYPE_INT32) {
-        if (!scm_is_signed_integer(object, INT32_MIN, INT32_MAX))
-            scm_wrong_type_arg_msg(subr, argpos, object, "int32");
-        arg->v_int32 = scm_to_int32(object);
-    }
-    else if (t == G_TYPE_UINT32) {
-        if (!scm_is_unsigned_integer(object, 0, UINT32_MAX))
-            scm_wrong_type_arg_msg(subr, argpos, object, "uint32");
-        arg->v_uint32 = scm_to_uint32(object);
-    }
+
     else if (t == G_TYPE_INT64) {
         if (!scm_is_signed_integer(object, INT64_MIN, INT64_MAX))
             scm_wrong_type_arg_msg(subr, argpos, object, "int64");
@@ -333,15 +375,6 @@ scm_to_c_integer(S2C_ARG_DECL)
         if (!scm_is_unsigned_integer(object, 0, UINT64_MAX))
             scm_wrong_type_arg_msg(subr, argpos, object, "uint64");
         arg->v_uint64 = scm_to_uint64(object);
-    }
-    else if (t == G_TYPE_UNICHAR) {
-        if (SCM_CHARP(object))
-            arg->v_uint32 = SCM_CHAR(object);
-        else if (scm_is_unsigned_integer(object, 0, SCM_CODEPOINT_MAX))
-            arg->v_uint32 = scm_to_uint32(object);
-        else {
-            scm_wrong_type_arg_msg(subr, argpos, object, "char");
-        }
     }
     else
         UNHANDLED;
@@ -400,6 +433,9 @@ scm_to_c_string(S2C_ARG_DECL)
         // place to store an output.  Since Glib strings and Guile
         // strings have no encoding in common, we can use
         // bytevectors...
+
+        // FIXME: is there any guarantee, that the bytevector
+        // has the correct locale? This seems like a very ugly hack.
         if (meta->transfer != GI_TRANSFER_EVERYTHING) {
             // But when we're using bytevectors as a possibly writable
             // location, they do need to be null terminated.
@@ -418,7 +454,7 @@ scm_to_c_string(S2C_ARG_DECL)
                                       SCM_BYTEVECTOR_LENGTH(object));
     }
     else if (scm_is_string(object)) {
-        if (meta->gtype == G_TYPE_LOCALE_STRING)
+        if (meta->pointer_type == GIG_DATA_LOCALE_STRING)
             arg->v_string = scm_to_locale_string(object);
         else
             arg->v_string = scm_to_utf8_string(object);
@@ -434,7 +470,7 @@ scm_to_c_pointer(S2C_ARG_DECL)
     TRACE_S2C();
     if (scm_is_false(object) && meta->is_nullable)
         arg->v_pointer = NULL;
-    else if (meta->gtype == G_TYPE_CALLBACK) {
+    else if (meta->pointer_type == GIG_DATA_CALLBACK) {
         if (scm_is_true(scm_procedure_p(object))) {
             arg->v_pointer = gig_callback_to_c(meta->callable_info, object);
             g_assert(arg->v_pointer != NULL);
@@ -500,19 +536,17 @@ scm_to_c_native_array(S2C_ARG_DECL)
 
     if (item_type == G_TYPE_BOOLEAN)
         scm_to_c_native_boolean_array(S2C_ARGS);
-    else if (item_type == G_TYPE_UNICHAR)
+    else if (meta->params[0].is_unichar)
         scm_to_c_native_unichar_array(S2C_ARGS);
     else if (item_type == G_TYPE_CHAR
              || item_type == G_TYPE_UCHAR
-             || item_type == G_TYPE_INT16
-             || item_type == G_TYPE_UINT16
-             || item_type == G_TYPE_INT32
-             || item_type == G_TYPE_UINT32
+             || item_type == G_TYPE_INT
+             || item_type == G_TYPE_UINT
              || item_type == G_TYPE_INT64
              || item_type == G_TYPE_UINT64
              || item_type == G_TYPE_FLOAT || item_type == G_TYPE_DOUBLE)
         scm_to_c_native_immediate_array(S2C_ARGS);
-    else if (item_type == G_TYPE_STRING || item_type == G_TYPE_LOCALE_STRING)
+    else if (item_type == G_TYPE_STRING)
         scm_to_c_native_string_array(S2C_ARGS);
     else if (item_type == G_TYPE_VARIANT
              || fundamental_item_type == G_TYPE_ENUM || fundamental_item_type == G_TYPE_FLAGS)
@@ -573,15 +607,16 @@ scm_to_c_native_immediate_array(S2C_ARG_DECL)
     // integer arrays are ever used. Sometimes deep copy.  Sometimes
     // zero terminated.
 
-    g_assert_cmpint(meta->params[0].item_size, !=, 0);
+    gsize item_size = gig_meta_real_item_size(&meta->params[0]);
+    g_assert_cmpint(item_size, !=, 0);
 
     if (scm_is_bytevector(object)) {
-        *size = SCM_BYTEVECTOR_LENGTH(object) / meta->params[0].item_size;
+        *size = SCM_BYTEVECTOR_LENGTH(object) / item_size;
         if (meta->transfer == GI_TRANSFER_EVERYTHING) {
             if (meta->is_zero_terminated) {
                 gsize len = SCM_BYTEVECTOR_LENGTH(object);
                 // Note, null terminated here.
-                arg->v_pointer = g_malloc0(len + meta->params[0].item_size);
+                arg->v_pointer = g_malloc0(len + item_size);
                 memcpy(arg->v_pointer, SCM_BYTEVECTOR_CONTENTS(object), len);
             }
             else {
@@ -593,7 +628,7 @@ scm_to_c_native_immediate_array(S2C_ARG_DECL)
             if (meta->is_zero_terminated) {
                 gsize len = SCM_BYTEVECTOR_LENGTH(object);
                 // Adding null terminator element.
-                arg->v_pointer = g_malloc0(len + meta->params[0].item_size);
+                arg->v_pointer = g_malloc0(len + item_size);
                 LATER_FREE(arg->v_pointer);
                 memcpy(arg->v_pointer, SCM_BYTEVECTOR_CONTENTS(object), len);
             }
@@ -664,7 +699,8 @@ scm_to_c_native_interface_array(S2C_ARG_DECL)
                 gpointer p = gig_type_peek_object(scm_c_vector_ref(object, i));
                 if (meta->transfer == GI_TRANSFER_EVERYTHING) {
                     if (fundamental_item_type == G_TYPE_BOXED) {
-                        ((gpointer *)(arg->v_pointer))[i] = g_memdup(p, meta->params[0].item_size);
+                        ((gpointer *)(arg->v_pointer))[i] =
+                            g_memdup(p, gig_meta_real_item_size(&meta->params[0]));
                         // ((gpointer *)(arg->v_pointer))[i] = p;
                     }
                     else {
@@ -678,16 +714,18 @@ scm_to_c_native_interface_array(S2C_ARG_DECL)
         }
         else {
             if (meta->is_zero_terminated)
-                arg->v_pointer = g_malloc0(meta->item_size * (*size + 1));
+                arg->v_pointer = g_malloc0(gig_meta_real_item_size(meta) * (*size + 1));
             else
                 arg->v_pointer = malloc(sizeof(gpointer) * *size);
             for (gsize i = 0; i < *size; i++) {
                 gpointer p = gig_type_peek_object(scm_c_vector_ref(object, i));
                 if (meta->transfer == GI_TRANSFER_EVERYTHING)
-                    memcpy((char *)(arg->v_pointer) + i * meta->item_size,
-                           g_memdup(p, meta->item_size), meta->item_size);
+                    memcpy((char *)(arg->v_pointer) + i * gig_meta_real_item_size(meta),
+                           g_memdup(p, gig_meta_real_item_size(meta)),
+                           gig_meta_real_item_size(meta));
                 else
-                    memcpy((char *)(arg->v_pointer) + i * meta->item_size, p, meta->item_size);
+                    memcpy((char *)(arg->v_pointer) + i * gig_meta_real_item_size(meta), p,
+                           gig_meta_real_item_size(meta));
 
             }
         }
@@ -749,7 +787,7 @@ scm_to_c_native_string_array(S2C_ARG_DECL)
         LATER_FREE(strv);
 
         for (gsize i = 0; i < len; i++, elt += inc) {
-            if (meta->params[0].gtype == G_TYPE_LOCALE_STRING)
+            if (meta->params[0].pointer_type == GIG_DATA_LOCALE_STRING)
                 strv[i] = scm_to_locale_string(*elt);
             else
                 strv[i] = scm_to_utf8_string(*elt);
@@ -768,7 +806,7 @@ scm_to_c_native_string_array(S2C_ARG_DECL)
         SCM iter = object;
         for (gsize i = 0; i < len; i++) {
             SCM elt = scm_car(iter);
-            if (meta->params[0].gtype == G_TYPE_LOCALE_STRING)
+            if (meta->params[0].pointer_type == GIG_DATA_LOCALE_STRING)
                 strv[i] = scm_to_locale_string(elt);
             else
                 strv[i] = scm_to_utf8_string(elt);
@@ -869,20 +907,45 @@ static void
 c_integer_to_scm(C2S_ARG_DECL)
 {
     TRACE_C2S();
-    if (meta->gtype == G_TYPE_INT16)
-        *object = scm_from_int16(arg->v_int16);
-    else if (meta->gtype == G_TYPE_UINT16)
-        *object = scm_from_uint16(arg->v_uint16);
-    else if (meta->gtype == G_TYPE_INT32)
-        *object = scm_from_int32(arg->v_int32);
-    else if (meta->gtype == G_TYPE_UINT32)
-        *object = scm_from_uint32(arg->v_uint32);
+    if (meta->gtype == G_TYPE_INT) {
+        switch (meta->item_size) {
+        case 1:
+            *object = scm_from_int8(arg->v_int8);
+            break;
+        case 2:
+            *object = scm_from_int16(arg->v_int16);
+            break;
+        case 4:
+            *object = scm_from_int32(arg->v_int32);
+            break;
+        case 8:
+            *object = scm_from_int64(arg->v_int64);
+            break;
+        }
+    }
+    else if (meta->gtype == G_TYPE_UINT) {
+        if (meta->is_unichar)
+            *object = SCM_MAKE_CHAR(arg->v_uint32);
+        else
+            switch (meta->item_size) {
+            case 1:
+                *object = scm_from_uint8(arg->v_uint8);
+                break;
+            case 2:
+                *object = scm_from_uint16(arg->v_uint16);
+                break;
+            case 4:
+                *object = scm_from_uint32(arg->v_uint32);
+                break;
+            case 8:
+                *object = scm_from_uint64(arg->v_uint64);
+                break;
+            }
+    }
     else if (meta->gtype == G_TYPE_INT64)
         *object = scm_from_int64(arg->v_int64);
     else if (meta->gtype == G_TYPE_UINT64)
         *object = scm_from_uint64(arg->v_uint64);
-    else if (meta->gtype == G_TYPE_UNICHAR)
-        *object = SCM_MAKE_CHAR(arg->v_uint32);
     else
         UNHANDLED;
 }
@@ -916,8 +979,6 @@ c_boxed_to_scm(C2S_ARG_DECL)
     }
     else if (meta->gtype == G_TYPE_PTR_ARRAY)
         c_gptrarray_to_scm(C2S_ARGS);
-    else if (meta->gtype == G_TYPE_LIST || meta->gtype == G_TYPE_SLIST)
-        c_list_to_scm(C2S_ARGS);
     else
         *object = gig_type_transfer_object(meta->gtype, arg->v_pointer, meta->transfer);
 }
@@ -979,11 +1040,11 @@ c_string_to_scm(C2S_ARG_DECL)
     // We can't transfer strings directly, since GObject and Guile use
     // different internal encodings.  So for GI_TRANSFER_EVERYTHGING,
     // we just free.
-    if (meta->gtype == G_TYPE_STRING || meta->gtype == G_TYPE_LOCALE_STRING) {
+    if (meta->gtype == G_TYPE_STRING) {
         if (!arg->v_string)
             *object = scm_c_make_string(0, SCM_MAKE_CHAR(0));
         else {
-            if (meta->gtype == G_TYPE_STRING) {
+            if (meta->pointer_type == GIG_DATA_UTF8_STRING) {
                 if (size != GIG_ARRAY_SIZE_UNKNOWN)
                     *object = scm_from_utf8_stringn(arg->v_string, size);
                 else
@@ -1038,7 +1099,7 @@ c_native_array_to_scm(C2S_ARG_DECL)
 #define TRANSFER(_type,_short_type)                                     \
     do {                                                                \
         gsize sz;                                                       \
-        if (!g_size_checked_mul(&sz, length, meta->params[0].item_size) || sz == G_MAXSIZE) \
+        if (!g_size_checked_mul(&sz, length, gig_meta_real_item_size(&meta->params[0])) || sz == G_MAXSIZE) \
             scm_misc_error(subr, "Array size overflow", SCM_EOL);               \
         if (sz == 0) \
             *object = scm_make_ ## _short_type ## vector (scm_from_int(0), scm_from_int(0)); \
@@ -1053,14 +1114,49 @@ c_native_array_to_scm(C2S_ARG_DECL)
         TRANSFER(gint8, s8);
     else if (item_type == G_TYPE_UCHAR)
         TRANSFER(guint8, u8);
-    else if (item_type == G_TYPE_INT16)
-        TRANSFER(gint16, s16);
-    else if (item_type == G_TYPE_UINT16)
-        TRANSFER(guint16, u16);
-    else if (item_type == G_TYPE_INT32)
-        TRANSFER(gint32, s32);
-    else if (item_type == G_TYPE_UINT32)
-        TRANSFER(guint32, u32);
+    else if (item_type == G_TYPE_INT) {
+#define DO_TRANSFER(n, m)                \
+        case n:                          \
+            TRANSFER(gint ## m, s ## m); \
+            break;
+
+        switch (meta->params[0].item_size) {
+            DO_TRANSFER(1, 8);
+            DO_TRANSFER(2, 16);
+            DO_TRANSFER(4, 32);
+            DO_TRANSFER(8, 64);
+        default:
+            UNHANDLED;
+        }
+#undef DO_TRANSFER
+    }
+    else if (item_type == G_TYPE_UINT) {
+#define DO_TRANSFER(n, m)                        \
+        case n:                                  \
+            TRANSFER(guint ## m, u ## m);        \
+            break;
+
+        if (meta->params[0].is_unichar) {
+            *object = scm_c_make_string(length, SCM_MAKE_CHAR(0));
+            for (gsize k = 0; k < length; k++)
+                scm_c_string_set_x(*object, k, SCM_MAKE_CHAR(((gunichar *)(arg->v_pointer))[k]));
+            if (meta->transfer == GI_TRANSFER_EVERYTHING) {
+                free(arg->v_pointer);
+                arg->v_pointer = 0;
+            }
+        }
+
+        else
+            switch (meta->params[0].item_size) {
+                DO_TRANSFER(1, 8);
+                DO_TRANSFER(2, 16);
+                DO_TRANSFER(4, 32);
+                DO_TRANSFER(8, 64);
+            default:
+                UNHANDLED;
+            }
+#undef DO_TRANSFER
+    }
     else if (item_type == G_TYPE_INT64)
         TRANSFER(gint64, s64);
     else if (item_type == G_TYPE_UINT64)
@@ -1086,15 +1182,6 @@ c_native_array_to_scm(C2S_ARG_DECL)
             arg->v_pointer = 0;
         }
     }
-    else if (item_type == G_TYPE_UNICHAR) {
-        *object = scm_c_make_string(length, SCM_MAKE_CHAR(0));
-        for (gsize k = 0; k < length; k++)
-            scm_c_string_set_x(*object, k, SCM_MAKE_CHAR(((gunichar *)(arg->v_pointer))[k]));
-        if (meta->transfer == GI_TRANSFER_EVERYTHING) {
-            free(arg->v_pointer);
-            arg->v_pointer = 0;
-        }
-    }
     else if (item_type == G_TYPE_VARIANT) {
         *object = scm_c_make_vector(length, SCM_BOOL_F);
         scm_t_array_handle handle;
@@ -1110,7 +1197,7 @@ c_native_array_to_scm(C2S_ARG_DECL)
         _meta.is_ptr = TRUE;
         gpointer iter = arg->v_pointer;
 
-        for (gsize k = 0; k < len; k++, elt += inc, iter += meta->item_size) {
+        for (gsize k = 0; k < len; k++, elt += inc, iter += gig_meta_real_item_size(meta)) {
             if (is_pointer)
                 _arg.v_pointer = *(gpointer *)iter;
             else
@@ -1124,7 +1211,7 @@ c_native_array_to_scm(C2S_ARG_DECL)
             arg->v_pointer = 0;
         }
     }
-    else if (item_type == G_TYPE_STRING || item_type == G_TYPE_LOCALE_STRING) {
+    else if (item_type == G_TYPE_STRING) {
         *object = scm_c_make_vector(length, SCM_BOOL_F);
         scm_t_array_handle handle;
         gsize len;
@@ -1137,7 +1224,7 @@ c_native_array_to_scm(C2S_ARG_DECL)
         for (gsize i = 0; i < length; i++, elt += inc) {
             gchar *str = ((gchar **)(arg->v_pointer))[i];
             if (str) {
-                if (item_type == G_TYPE_STRING)
+                if (meta->params[0].pointer_type == GIG_DATA_UTF8_STRING)
                     *elt = scm_from_utf8_string(str);
                 else
                     *elt = scm_from_locale_string(str);
@@ -1212,11 +1299,11 @@ c_list_to_scm(C2S_ARG_DECL)
     gsize length;
 
     // Step 1: allocate
-    if (meta->gtype == G_TYPE_LIST) {
+    if (meta->pointer_type == GIG_DATA_LIST) {
         _list = list;
         length = g_list_length(_list);
     }
-    else if (meta->gtype == G_TYPE_SLIST) {
+    else if (meta->pointer_type == GIG_DATA_SLIST) {
         _slist = list;
         length = g_slist_length(_slist);
     }
@@ -1229,7 +1316,7 @@ c_list_to_scm(C2S_ARG_DECL)
 
     // Step 2: iterate
     while (list != NULL) {
-        if (meta->gtype == G_TYPE_LIST) {
+        if (meta->pointer_type == GIG_DATA_LIST) {
             data = &_list->data;
             list = _list = _list->next;
         }
@@ -1240,28 +1327,54 @@ c_list_to_scm(C2S_ARG_DECL)
 
         if (!meta->params[0].is_ptr) {
             GType item_type = meta->params[0].gtype;
+#define SET_CAR_FROM_INT(i) scm_set_car_x(out_iter, scm_from_ ## i (*(g ## i *) data))
             if (item_type == G_TYPE_CHAR)
-                scm_set_car_x(out_iter, scm_from_int8(*(gint8 *)data));
-            else if (item_type == G_TYPE_INT16)
-                scm_set_car_x(out_iter, scm_from_int16(*(gint16 *)data));
-            else if (item_type == G_TYPE_INT32)
-                scm_set_car_x(out_iter, scm_from_int32(*(gint32 *)data));
+                SET_CAR_FROM_INT(int8);
+            else if (item_type == G_TYPE_UCHAR)
+                SET_CAR_FROM_INT(uint8);
+            else if (item_type == G_TYPE_INT) {
+                switch (meta->params[0].item_size) {
+                case 1:
+                    SET_CAR_FROM_INT(int8);
+                    break;
+                case 2:
+                    SET_CAR_FROM_INT(int16);
+                    break;
+                case 4:
+                    SET_CAR_FROM_INT(int32);
+                    break;
+                case 8:
+                    SET_CAR_FROM_INT(int64);
+                    break;
+                }
+            }
+            else if (item_type == G_TYPE_UINT) {
+                if (meta->is_unichar)
+                    scm_set_car_x(out_iter, SCM_MAKE_CHAR(*(guint32 *)data));
+                else
+                    switch (meta->params[0].item_size) {
+                    case 1:
+                        SET_CAR_FROM_INT(uint8);
+                        break;
+                    case 2:
+                        SET_CAR_FROM_INT(uint16);
+                        break;
+                    case 4:
+                        SET_CAR_FROM_INT(uint32);
+                        break;
+                    case 8:
+                        SET_CAR_FROM_INT(uint64);
+                        break;
+                    }
+            }
             else if (item_type == G_TYPE_INT64)
                 scm_set_car_x(out_iter, scm_from_int64(*(gint64 *)data));
-            else if (item_type == G_TYPE_UCHAR)
-                scm_set_car_x(out_iter, scm_from_uint8(*(guint8 *)data));
-            else if (item_type == G_TYPE_UINT16)
-                scm_set_car_x(out_iter, scm_from_uint16(*(guint16 *)data));
-            else if (item_type == G_TYPE_UINT32)
-                scm_set_car_x(out_iter, scm_from_uint32(*(guint32 *)data));
             else if (item_type == G_TYPE_UINT64)
                 scm_set_car_x(out_iter, scm_from_uint64(*(guint64 *)data));
             else if (item_type == G_TYPE_FLOAT)
                 scm_set_car_x(out_iter, scm_from_double(*(float *)data));
             else if (item_type == G_TYPE_DOUBLE)
                 scm_set_car_x(out_iter, scm_from_double(*(double *)data));
-            else if (item_type == G_TYPE_UNICHAR)
-                scm_set_car_x(out_iter, SCM_MAKE_CHAR(*(guint32 *)data));
             else if (item_type == G_TYPE_GTYPE) {
                 gig_type_register(*(gsize *)data);
                 scm_set_car_x(out_iter, scm_from_size_t(*(gsize *)data));
@@ -1282,7 +1395,7 @@ c_list_to_scm(C2S_ARG_DECL)
         out_iter = scm_cdr(out_iter);
     }
     if (meta->transfer != GI_TRANSFER_NOTHING) {
-        if (meta->gtype == G_TYPE_LIST)
+        if (meta->pointer_type == GIG_DATA_LIST)
             g_list_free(arg->v_pointer);
         else
             g_slist_free(arg->v_pointer);
@@ -1298,10 +1411,12 @@ c_pointer_to_scm(C2S_ARG_DECL)
         *object = SCM_BOOL_F;
     else if (meta->gtype == G_TYPE_GTYPE)
         *object = scm_from_uintptr_t(arg->v_pointer);
-    else if (meta->gtype == G_TYPE_CALLBACK) {
+    else if (meta->pointer_type == GIG_DATA_CALLBACK) {
         gpointer cb = meta->is_ptr ? *(gpointer *)arg->v_pointer : arg->v_pointer;
         *object = gig_callback_to_scm(meta->callable_info, cb);
     }
+    else if (meta->pointer_type == GIG_DATA_LIST || meta->pointer_type == GIG_DATA_SLIST)
+        c_list_to_scm(C2S_ARGS);
     else if (size != GIG_ARRAY_SIZE_UNKNOWN) {
         SCM bv = scm_c_make_bytevector(size);
         memcpy(SCM_BYTEVECTOR_CONTENTS(bv), arg->v_pointer, size);

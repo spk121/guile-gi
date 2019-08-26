@@ -18,17 +18,6 @@
 #include "gig_data_type.h"
 #include "gig_util.h"
 
-GType g_type_unichar;
-GType g_type_int16;
-GType g_type_int32;
-GType g_type_uint16;
-GType g_type_uint32;
-GType g_type_locale_string;
-
-GType g_type_list;
-GType g_type_slist;
-GType g_type_callback;
-
 static void gig_type_meta_init_from_type_info(GigTypeMeta *type, GITypeInfo *ti);
 static void gig_type_meta_init_from_basic_type_tag(GigTypeMeta *meta, GITypeTag tag);
 
@@ -110,7 +99,7 @@ gig_type_meta_init_from_basic_type_tag(GigTypeMeta *meta, GITypeTag tag)
     do {                                                                \
         if (tag == TYPETAG) {                                           \
             meta->gtype = GTYPE;                                        \
-            meta->item_size = meta->is_ptr ? sizeof(gpointer) : sizeof (CTYPE); \
+            meta->item_size = sizeof (CTYPE);                           \
             return;                                                     \
         }                                                               \
     } while(FALSE)
@@ -120,16 +109,29 @@ gig_type_meta_init_from_basic_type_tag(GigTypeMeta *meta, GITypeTag tag)
     T(GI_TYPE_TAG_FLOAT, G_TYPE_FLOAT, gfloat);
     T(GI_TYPE_TAG_GTYPE, G_TYPE_GTYPE, GType);
     T(GI_TYPE_TAG_INT8, G_TYPE_CHAR, gint8);
-    T(GI_TYPE_TAG_INT16, G_TYPE_INT16, gint16);
-    T(GI_TYPE_TAG_INT32, G_TYPE_INT32, gint32);
-    T(GI_TYPE_TAG_INT64, G_TYPE_INT64, gint64);
+    T(GI_TYPE_TAG_INT16, G_TYPE_INT, gint16);
+    T(GI_TYPE_TAG_INT32, G_TYPE_INT, gint32);
+    T(GI_TYPE_TAG_INT64, G_TYPE_INT, gint64);
     T(GI_TYPE_TAG_UINT8, G_TYPE_UCHAR, guint8);
-    T(GI_TYPE_TAG_UINT16, G_TYPE_UINT16, guint16);
-    T(GI_TYPE_TAG_UINT32, G_TYPE_UINT32, guint32);
-    T(GI_TYPE_TAG_UINT64, G_TYPE_UINT64, guint64);
-    T(GI_TYPE_TAG_UNICHAR, G_TYPE_UNICHAR, gunichar);
-    T(GI_TYPE_TAG_UTF8, G_TYPE_STRING, 0);
-    T(GI_TYPE_TAG_FILENAME, G_TYPE_LOCALE_STRING, 0);
+    T(GI_TYPE_TAG_UINT16, G_TYPE_UINT, guint16);
+    T(GI_TYPE_TAG_UINT32, G_TYPE_UINT, guint32);
+    T(GI_TYPE_TAG_UINT64, G_TYPE_UINT, guint64);
+    if (tag == GI_TYPE_TAG_UNICHAR) {
+        meta->gtype = G_TYPE_UINT;
+        meta->item_size = sizeof(gunichar);
+        meta->is_unichar = TRUE;
+        return;
+    }
+    if (tag == GI_TYPE_TAG_UTF8) {
+        meta->gtype = G_TYPE_STRING;
+        meta->pointer_type = GIG_DATA_UTF8_STRING;
+        return;
+    }
+    if (tag == GI_TYPE_TAG_FILENAME) {
+        meta->gtype = G_TYPE_STRING;
+        meta->pointer_type = GIG_DATA_LOCALE_STRING;
+        return;
+    }
     T(GI_TYPE_TAG_ERROR, G_TYPE_ERROR, GError);
     g_error("Unhandled type '%s' %s %d", g_type_tag_to_string(tag), __FILE__, __LINE__);
 #undef T
@@ -142,14 +144,12 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
     meta->is_ptr = g_type_info_is_pointer(type_info);
 
     if (tag == GI_TYPE_TAG_VOID) {
-        if (meta->is_ptr) {
+        if (meta->is_ptr)
             meta->gtype = G_TYPE_POINTER;
-            meta->item_size = sizeof(gpointer);
-        }
-        else {
+        else
             meta->gtype = G_TYPE_NONE;
-            meta->item_size = 0;
-        }
+        // Also sets pointer_type to VOID, which is exactly, what we want
+        meta->item_size = 0;
     }
     else if (tag == GI_TYPE_TAG_ARRAY) {
         GIArrayType array_type = g_type_info_get_array_type(type_info);
@@ -186,14 +186,17 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
     }
     else if (tag == GI_TYPE_TAG_GHASH) {
         meta->gtype = G_TYPE_HASH_TABLE;
+        meta->pointer_type = GIG_DATA_HASH_TABLE;
         add_child_params(meta, type_info, 2);
     }
     else if (tag == GI_TYPE_TAG_GLIST) {
-        meta->gtype = G_TYPE_LIST;
+        meta->gtype = G_TYPE_POINTER;
+        meta->pointer_type = GIG_DATA_LIST;
         add_child_params(meta, type_info, 1);
     }
     else if (tag == GI_TYPE_TAG_GSLIST) {
-        meta->gtype = G_TYPE_SLIST;
+        meta->gtype = G_TYPE_POINTER;
+        meta->pointer_type = GIG_DATA_SLIST;
         add_child_params(meta, type_info, 1);
     }
     else if (tag == GI_TYPE_TAG_INTERFACE) {
@@ -224,21 +227,17 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
         case GI_INFO_TYPE_OBJECT:
         case GI_INFO_TYPE_INTERFACE:
             meta->gtype = g_registered_type_info_get_g_type(referenced_base_info);
-            if (meta->is_ptr)
-                meta->item_size = sizeof(gpointer);
-            else if (itype == GI_INFO_TYPE_STRUCT)
+            if (itype == GI_INFO_TYPE_STRUCT)
                 meta->item_size = g_struct_info_get_size(referenced_base_info);
             else if (itype == GI_INFO_TYPE_UNION)
                 meta->item_size = g_union_info_get_size(referenced_base_info);
-            else
-                // FIXME: is this a good idea? should we not rather invalidate?
-                meta->item_size = 0;
 
             if (meta->gtype == G_TYPE_NONE)
                 meta->is_invalid = TRUE;
             break;
         case GI_INFO_TYPE_CALLBACK:
-            meta->gtype = G_TYPE_CALLBACK;
+            meta->gtype = G_TYPE_POINTER;
+            meta->pointer_type = GIG_DATA_CALLBACK;
             meta->callable_info = g_base_info_ref(referenced_base_info);
             break;
         default:
@@ -258,20 +257,22 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
     else
         gig_type_meta_init_from_basic_type_tag(meta, tag);
 
-    //
+    // FIXME: how did we get here?
     if (meta->gtype == 0) {
-        if (meta->is_ptr) {
+        if (meta->is_ptr)
             meta->gtype = G_TYPE_POINTER;
-            meta->item_size = sizeof(gpointer);
-        }
-        else {
+        else
             meta->gtype = G_TYPE_NONE;
-            meta->item_size = 0;
-        }
-
-        if (meta->gtype == 0)
-            g_warning("gtype of %s is zero", g_base_info_get_name(type_info));
+        meta->item_size = 0;
     }
+}
+
+G_GNUC_PURE gsize
+gig_meta_real_item_size(const GigTypeMeta *meta)
+{
+    if (meta->gtype == G_TYPE_STRING || meta->gtype == G_TYPE_POINTER || meta->is_ptr)
+        return sizeof(gpointer);
+    return meta->item_size;
 }
 
 void
@@ -282,7 +283,8 @@ gig_data_type_free(GigTypeMeta *meta)
     if (meta->n_params > 0)
         g_free(meta->params);
 
-    if ((meta->gtype == G_TYPE_CALLBACK) && meta->callable_info)
+    if ((meta->gtype == G_TYPE_POINTER) && (meta->pointer_type == GIG_DATA_CALLBACK) &&
+        meta->callable_info)
         g_base_info_unref(meta->callable_info);
     if (((meta->gtype == G_TYPE_ENUM) || (meta->gtype == G_TYPE_FLAGS))
         && meta->enum_info)
@@ -312,22 +314,7 @@ gig_type_meta_describe(const GigTypeMeta *meta)
 
 #undef STRLEN
 
-G_DEFINE_BOXED_TYPE(GList, g_list, g_list_copy, g_list_free);
-G_DEFINE_BOXED_TYPE(GSList, g_slist, g_slist_copy, g_slist_free);
-
 void
 gig_init_data_type(void)
 {
-    g_type_unichar = g_type_register_static_simple(G_TYPE_INT, "gunichar", 0, NULL, 0, NULL, 0);
-    g_type_int16 = g_type_register_static_simple(G_TYPE_INT, "gint16", 0, NULL, 0, NULL, 0);
-    g_type_int32 = g_type_register_static_simple(G_TYPE_INT, "gint32", 0, NULL, 0, NULL, 0);
-    g_type_uint16 = g_type_register_static_simple(G_TYPE_UINT, "guint16", 0, NULL, 0, NULL, 0);
-    g_type_uint32 = g_type_register_static_simple(G_TYPE_UINT, "guint32", 0, NULL, 0, NULL, 0);
-    g_type_locale_string = g_type_register_static_simple(G_TYPE_STRING,
-                                                         "locale-string", 0, NULL, 0, NULL, 0);
-
-    g_type_list = g_list_get_type();
-    g_type_slist = g_slist_get_type();
-
-    g_type_callback = g_pointer_type_register_static("callback");
 }
