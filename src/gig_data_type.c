@@ -186,7 +186,7 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
     }
     else if (tag == GI_TYPE_TAG_GHASH) {
         meta->gtype = G_TYPE_HASH_TABLE;
-        meta->pointer_type = GIG_DATA_HASH_TABLE;
+        meta->item_size = sizeof(GHashTable *);
         add_child_params(meta, type_info, 2);
     }
     else if (tag == GI_TYPE_TAG_GLIST) {
