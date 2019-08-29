@@ -72,6 +72,9 @@
                   (false-if-exception
                    (let ((f (tmpnam)))
                      (mkdir f)
+                     (format (current-error-port)
+                             "No output directory given, using \"~a/\" ~%"
+                             f)
                      f))))
          (fmt (option-ref p 'format "html"))
          (documentation '())
