@@ -366,6 +366,8 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
         g_debug("<GType> already exists for: %zu -> %s", gtype, g_type_name(gtype));
         g_return_val_if_fail(orig_value != NULL, defs);
         SCM val = SCM_PACK_POINTER(orig_value);
+
+        g_return_val_if_fail(!SCM_UNBNDP(val), defs);
         SCM key = scm_class_name(val);
         if (!SCM_UNBNDP(defs)) {
             scm_define(key, val);
@@ -424,25 +426,25 @@ gig_type_free_types(void)
 }
 
 static SCM
-_gig_type_get_scheme_type(GType gtype)
+_gig_type_check_scheme_type(gpointer _stype)
 {
-    gpointer *scm_ptr = g_hash_table_lookup(gig_type_gtype_hash, GSIZE_TO_POINTER(gtype));
-    if (scm_ptr)
-        return SCM_PACK_POINTER(scm_ptr);
-    return SCM_BOOL_F;
+    g_return_val_if_fail(_stype != NULL, SCM_UNDEFINED);
+    return SCM_PACK_POINTER(_stype);
 }
-
 
 SCM
 gig_type_get_scheme_type(GType gtype)
 {
-    SCM type = _gig_type_get_scheme_type(gtype);
+    gpointer _key, _value;
+    gboolean exists = g_hash_table_lookup_extended(gig_type_gtype_hash, GSIZE_TO_POINTER(gtype),
+                                                   &_key, &_value);
 
-    if (scm_is_true(type) || G_TYPE_IS_FUNDAMENTAL(gtype))
-        return type;
+    if (exists)
+        return _gig_type_check_scheme_type(_value);
     else {
         gig_type_define(gtype, SCM_UNDEFINED);
-        return _gig_type_get_scheme_type(gtype);
+        _value = g_hash_table_lookup(gig_type_gtype_hash, GSIZE_TO_POINTER(gtype));
+        return _gig_type_check_scheme_type(_value);
     }
 }
 
@@ -794,9 +796,25 @@ gig_init_types_once(void)
 
     // value associations, do not rely on them for anything else
     gig_type_associate(G_TYPE_STRING, scm_c_public_ref("oop goops", "<string>"));
+    SCM _scm_real = scm_c_public_ref("oop goops", "<real>");
+    SCM _scm_integer = scm_c_public_ref("oop goops", "<integer>");
+    gig_type_register(G_TYPE_INT, _scm_integer);
+    gig_type_register(G_TYPE_UINT, _scm_integer);
+    gig_type_register(G_TYPE_LONG, _scm_integer);
+    gig_type_register(G_TYPE_ULONG, _scm_integer);
+    gig_type_register(G_TYPE_INT64, _scm_integer);
+    gig_type_register(G_TYPE_UINT64, _scm_integer);
+
+    gig_type_register(G_TYPE_FLOAT, _scm_real);
+    gig_type_register(G_TYPE_DOUBLE, _scm_real);
+
+    gig_type_register(G_TYPE_BYTE_ARRAY, SCM_UNDEFINED);
+    gig_type_register(G_TYPE_ARRAY, SCM_UNDEFINED);
+    gig_type_register(G_TYPE_PTR_ARRAY, SCM_UNDEFINED);
 
     atexit(gig_type_free_types);
 
+    // G_TYPE_X constants for use where SCM classes don't apply
 #define D(x)                                                            \
     do                                                                  \
     {                                                                   \
@@ -806,7 +824,6 @@ gig_init_types_once(void)
     } while (0)
 
     D(G_TYPE_NONE);
-    /* D(G_TYPE_INTERFACE); */
     D(G_TYPE_CHAR);
     D(G_TYPE_UCHAR);
     D(G_TYPE_BOOLEAN);
@@ -820,11 +837,7 @@ gig_init_types_once(void)
     D(G_TYPE_FLAGS);
     D(G_TYPE_FLOAT);
     D(G_TYPE_DOUBLE);
-    /* D(G_TYPE_STRING); */
-    /* D(G_TYPE_GTYPE); */
-    /* D(G_TYPE_VARIANT); */
-    /* D(G_TYPE_CHECKSUM); */
-    /* D(G_TYPE_POINTER); */
+    D(G_TYPE_GTYPE);
     D(G_TYPE_OBJECT);
 #undef D
 
