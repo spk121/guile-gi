@@ -190,13 +190,6 @@ AC_ARG_ENABLE([hardening],
 AS_IF([test "x$enable_hardening" = xyes],
       [CC_CHECK_CFLAGS_APPEND([compiler_flags_common])])
 
-AC_ARG_ENABLE([reverse-hash],
-              [AS_HELP_STRING([--enable-reverse-hash],
-                              [have reverse type lookup hash])])
-AS_IF([test "x$enable_reverse_hash" = xyes],
-      [AC_DEFINE([ENABLE_GIG_TYPE_SCM_HASH], [1],
-                 [Define if SCM to GType hash is enabled.])])
-
 AC_ARG_ENABLE([coverage],
               [AS_HELP_STRING([--enable-coverage],
                               [compile with gcov support])],
