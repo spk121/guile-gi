@@ -218,25 +218,7 @@ TESTS = \
 
 XFAIL_TESTS =
 
-if HAVE_INTROSPECTION
-
-SCM_LOG_COMPILER = \
-  ${top_builddir}/libtool \
-  --dlopen=${top_builddir}/src/libguile-gi.la \
-  --dlopen=${top_builddir}/test/libeverything-1.0.la \
-  --dlopen=${top_builddir}/test/libmarshall-1.0.la \
-  --mode=execute $(GUILE)
-
-else
-
-SCM_LOG_COMPILER = \
-  ${top_builddir}/libtool \
-  --dlopen=${top_builddir}/src/libguile-gi.la \
-  --mode=execute $(GUILE)
-
-endif
-
-AM_SCM_LOG_FLAGS = --no-auto-compile -L $(abs_top_builddir)/module -L $(abs_top_srcdir)/module -L $(abs_top_srcdir) -s
+SCM_LOG_COMPILER = ${top_builddir}/tools/run-test
 
 EXTRA_DIST = \
   $(TESTS) \
