@@ -258,12 +258,27 @@ check_gsubr_cache(GICallableInfo *function_info, SCM self_type, gint *required_i
     return gfn->function_ptr;
 }
 
+SCM char_type;
+SCM list_type;
+SCM string_type;
+SCM applicable_type;
+
 static SCM
 type_specializer(GigTypeMeta *meta) {
     switch (meta->gtype) {
     case G_TYPE_POINTER:
-        // TODO: handle lists, procedures, etc.
-        return SCM_UNDEFINED;
+        switch(meta->pointer_type) {
+        case GIG_DATA_UTF8_STRING:
+        case GIG_DATA_LOCALE_STRING:
+            return string_type;
+        case GIG_DATA_LIST:
+        case GIG_DATA_SLIST:
+            return list_type;
+        case GIG_DATA_CALLBACK:
+            return applicable_type;
+        default:
+            return SCM_UNDEFINED;
+        }
     case G_TYPE_UINT:
         if (meta->is_unichar)
             return char_type;
@@ -823,6 +838,8 @@ gig_init_function(void)
     method_type = scm_c_public_ref("oop goops", "<method>");
     char_type = scm_c_public_ref("oop goops", "<char>");
     list_type = scm_c_public_ref("oop goops", "<list>");
+    string_type = scm_c_public_ref("oop goops", "<string>");
+    applicable_type = scm_c_public_ref("oop goops", "<applicable>");
 
     ensure_generic_proc = scm_c_public_ref("oop goops", "ensure-generic");
     make_proc = scm_c_public_ref("oop goops", "make");

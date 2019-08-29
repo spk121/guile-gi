@@ -7,8 +7,6 @@ SCM add_method_proc;
 
 SCM top_type;
 SCM method_type;
-SCM char_type;
-SCM list_type;
 
 SCM kwd_specializers;
 SCM kwd_formals;
