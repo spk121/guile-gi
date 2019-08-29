@@ -22,7 +22,7 @@
 ;;
 ;; Example: gi-gtkdoc -n GLib -v 2.0
 ;;
-;; Required Options are:
+;; Required options are:
 ;;
 ;;   -n, --namespace=NAMESPACE   The namespace to document.
 ;;   -v, --version=VERSION       The version of the documented namespace.
@@ -48,6 +48,8 @@
 (define-module (scripts gi-gtkdoc)
   #:use-module (ice-9 optargs)
   #:use-module (ice-9 getopt-long)
+  #:use-module (ice-9 documentation)
+  #:use-module (ice-9 regex)
   #:use-module (rnrs io ports)
   #:use-module (gi documentation)
   #:export (gtkdoc))
@@ -63,51 +65,16 @@
     (help      (single-char #\h))))
 
 (define (display-help)
-  (display "Usage: gi-gtkdoc -n NAMESPACE -v VERSION [OPTIONS]\n")
-  (newline)
   (display
-   "This program creates documentation for Guile-GI bindings to libraries,\n")
-  (display "that use GObject introspection, via gtkdoc.\n")
-  (newline)
-  (display "Example: gi-gtkdoc -n GLib -v 2.0\n")
-  (newline)
-  (display "Required Options are:\n")
-  (newline)
-  (display "   -n, --namespace=NAMESPACE   The namespace to document.\n")
-  (display
-   "   -v, --version=VERSION       The version of the documented namespace.\n")
-  (newline)
-  (display "Additional options are:\n")
-  (newline)
-  (display
-   "  -f, --format=FORMAT         Use FORMAT as output format instead of\n")
-  (display
-   "                              the default, which is \"html\". This works\n")
-  (display
-   "                              by appending FORMAT to \"gtkdoc-mk\" to form\n")
-  (display
-   "                              a command. Supported formats are (to the\n")
-  (display
-   "                              best of our knowledge): html, man, pdf.\n")
-  (display
-   "  -o, --output=DIRECTORY      Store the generated output in DIRECTORY.\n")
-  (display
-   "                              By default, a new temporary directory\n")
-  (display
-   "                              is created and used, which may not be\n")
-  (display
-   "                              what you want.\n")
-  (display
-   "  -s, --skip-gir              Skip reading of the .gir XML files.\n")
-  (display
-   "                              Doing so will only document functions,\n")
-  (display
-   "                              that can be documented from the typelib\n")
-  (display
-   "                              alone. This is not recommended.\n")
-  (display
-   "  -h, --help                  Display this message\n")
-  (newline))
+   ((lambda (s)
+      (substring s 1 (1- (string-length s))))
+    (file-commentary (%search-load-path "scripts/gi-gtkdoc.scm")
+                     "^;;; Commentary:"
+                     ";;; Code:"
+                     (let ((dirt (make-regexp "^;+ ?")))
+                       (lambda (line)
+                         (let ((m (regexp-exec dirt line)))
+                           (if m (match:suffix m) ""))))))))
 
 (define (gtkdoc . args)
   (let ((p (getopt-long (cons "gi-gtkdoc" args) command-synopsis)))
