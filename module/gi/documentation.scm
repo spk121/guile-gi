@@ -510,7 +510,7 @@
       pre-post-order
       <>
       `((repository . ,(lambda (tag . kids)
-                         `(*TOP* (book ,@kids))))
+                         `(*TOP* (*PI* xml "version=\"1.0\"") (book ,@kids))))
         (namespace . ,chapter)
         (record . ,entry)
         (class . ,entry)

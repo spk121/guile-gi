@@ -24,12 +24,12 @@ top_builddir="@abs_top_builddir@"
 
 if [ x"$GUILE_LOAD_PATH" = x ]
 then
-    GUILE_LOAD_PATH="${top_srcdir}/src"
+    GUILE_LOAD_PATH="${top_srcdir}/module"
     if test "${top_srcdir}" != "${top_builddir}"; then
-        GUILE_LOAD_PATH="$GUILE_LOAD_PATH:${top_builddir}/src"
+        GUILE_LOAD_PATH="$GUILE_LOAD_PATH:${top_builddir}/module"
     fi
 else
-    for d in "/src"
+    for d in "/module"
     do
         # This hair prevents double inclusion.
         # The ":" prevents prefix aliasing.
@@ -47,7 +47,7 @@ else
 fi
 export GUILE_LOAD_PATH
 
-for d in "/src"
+for d in "/module"
 do
     # This hair prevents double inclusion.
     # The ":" prevents prefix aliasing.

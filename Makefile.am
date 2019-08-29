@@ -16,7 +16,7 @@
 
 ACLOCAL_AMFLAGS = -I m4 ${ACLOCAL_FLAGS}
 AM_DISTCHECK_CONFIGURE_FLAGS = --with-gnu-filesystem-hierarchy --enable-introspection
-SUBDIRS = src doc docs m4 build-aux tools test examples
+SUBDIRS = src doc docs m4 module build-aux tools test examples
 
 # Build ChangeLog from GIT history
 EXTRA_DIST = README.md
