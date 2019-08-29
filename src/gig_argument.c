@@ -478,11 +478,8 @@ scm_to_c_pointer(S2C_ARG_DECL)
         else
             scm_wrong_type_arg_msg(subr, argpos, object, "a procedure");
     }
-    else if (meta->gtype == G_TYPE_GTYPE) {
-        if (!scm_is_unsigned_integer(object, 0, UINT64_MAX))
-            scm_wrong_type_arg_msg(subr, argpos, object, "GType integer");
-        arg->v_size = scm_to_size_t(object);
-    }
+    else if (meta->gtype == G_TYPE_GTYPE)
+        arg->v_size = scm_to_gtype_full(object, subr, argpos);
     else if (SCM_POINTER_P(object))
         arg->v_pointer = scm_to_pointer(object);
     else if (scm_is_bytevector(object))
@@ -1400,10 +1397,8 @@ c_list_to_scm(C2S_ARG_DECL)
                 scm_set_car_x(out_iter, scm_from_double(*(float *)data));
             else if (item_type == G_TYPE_DOUBLE)
                 scm_set_car_x(out_iter, scm_from_double(*(double *)data));
-            else if (item_type == G_TYPE_GTYPE) {
-                gig_type_register(*(gsize *)data, SCM_UNDEFINED);
-                scm_set_car_x(out_iter, scm_from_size_t(*(gsize *)data));
-            }
+            else if (item_type == G_TYPE_GTYPE)
+                scm_set_car_x(out_iter, scm_from_gtype(*(gsize *)data));
             else
                 UNHANDLED;
         }
@@ -1435,7 +1430,7 @@ c_pointer_to_scm(C2S_ARG_DECL)
     if (arg->v_pointer == NULL && meta->is_nullable)
         *object = SCM_BOOL_F;
     else if (meta->gtype == G_TYPE_GTYPE)
-        *object = scm_from_uintptr_t(arg->v_pointer);
+        *object = scm_from_gtype(arg->v_size);
     else if (meta->pointer_type == GIG_DATA_CALLBACK) {
         gpointer cb = meta->is_ptr ? *(gpointer *)arg->v_pointer : arg->v_pointer;
         *object = gig_callback_to_scm(meta->callable_info, cb);

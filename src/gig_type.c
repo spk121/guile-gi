@@ -387,16 +387,34 @@ gig_type_define(GType gtype, SCM defs)
 // This routine returns the integer GType ID of a scheme object, that is
 // - already a GType ID encoded as size_t,
 // - a foreign object for a GType
-// - a foreign object for an object instance
-// The last one is accidental, as internally `gig_type_get_gtype_from_obj'
-// is used. This may change in future and should not be relied on.
 GType
 scm_to_gtype(SCM x)
 {
-    if (scm_is_integer(x))
+    scm_to_gtype_full(x, NULL, SCM_ARGn);
+}
+
+GType
+scm_to_gtype_full(SCM x, const gchar *subr, gint argpos)
+{
+    if (scm_is_unsigned_integer(x, 0, SIZE_MAX))
         return scm_to_size_t(x);
+    else if (SCM_CLASSP(x))
+        return GPOINTER_TO_SIZE(g_hash_table_lookup(gig_type_scm_hash, SCM_UNPACK_POINTER(x)));
     else
-        return gig_type_get_gtype_from_obj(x);
+        scm_wrong_type_arg_msg(subr, argpos, x, "GType integer or class");
+}
+
+SCM
+scm_from_gtype(GType x)
+{
+    gpointer _key, _value;
+
+    // GType <-> SCM associations must go both ways
+    if (g_hash_table_lookup_extended(gig_type_gtype_hash, GSIZE_TO_POINTER(x), &_key, &_value)
+        && g_hash_table_lookup_extended(gig_type_scm_hash, _value, &_value, &_key))
+        return SCM_PACK_POINTER(_value);
+    else
+        return scm_from_size_t(x);
 }
 
 // This routine returns the integer GType ID of a given
