@@ -666,9 +666,14 @@ scm_to_c_garray(S2C_ARG_DECL)
     TRACE_S2C();
     GIArgument _arg;
     GigTypeMeta _meta = *meta;
+
     _meta.is_raw_array = TRUE;
+    // The GArray is going to take ownership of the array contents
+    _meta.transfer = GI_TRANSFER_EVERYTHING;
+
     gig_argument_scm_to_c(subr, argpos, &_meta, object, NULL, &_arg, size);
-    arg->v_pointer = g_new0(GArray, 1);
+    arg->v_pointer = g_array_new(_meta.is_zero_terminated, FALSE, _meta.params[0].item_size);
+    g_assert_nonnull(arg->v_pointer);
     ((GArray *)(arg->v_pointer))->len = *size;
     ((GArray *)(arg->v_pointer))->data = _arg.v_pointer;
 }
@@ -1260,6 +1265,13 @@ c_byte_array_to_scm(C2S_ARG_DECL)
 }
 
 static void
+deep_free(void *x)
+{
+    char *p = *(char **)x;
+    g_free(p);
+}
+
+static void
 c_garray_to_scm(C2S_ARG_DECL)
 {
     TRACE_C2S();
@@ -1269,9 +1281,22 @@ c_garray_to_scm(C2S_ARG_DECL)
     _arg.v_pointer = array->data;
     _meta.is_raw_array = TRUE;
     _meta.length = array->len;
+    // The GArray retains ownership of the conents.
+    _meta.transfer = GI_TRANSFER_NOTHING;
 
     size = array->len;
+
     c_native_array_to_scm(subr, argpos, &_meta, &_arg, object, size);
+
+    // Since the GArray retained ownership of the contents, we free as
+    // necessary here.
+    if (meta->transfer == GI_TRANSFER_EVERYTHING) {
+        if (meta->params[0].gtype == G_TYPE_STRING)
+            g_array_set_clear_func(array, deep_free);
+        g_array_free(array, TRUE);
+    }
+    else if (meta->transfer == GI_TRANSFER_CONTAINER)
+        g_array_free(array, FALSE);
 }
 
 static void
