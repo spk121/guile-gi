@@ -110,6 +110,7 @@ arg_map_apply_function_info(GigArgMap *amap, GIFunctionInfo *func_info)
     }
 
     gig_type_meta_init_from_callable_info(&amap->return_val.meta, func_info);
+    g_free(amap->return_val.name);
     amap->return_val.name = g_strdup("%return");
     amap->is_invalid |= amap->return_val.meta.is_invalid;
 }
@@ -274,6 +275,7 @@ gig_amap_free(GigArgMap *amap)
         gig_data_type_free(&amap->pdata[i].meta);
         g_free(amap->pdata[i].name);
     }
+    gig_data_type_free(&amap->return_val.meta);
     g_free(amap->return_val.name);
     g_free(amap->pdata);
     g_free(amap->name);

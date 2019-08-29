@@ -833,7 +833,6 @@ function_free(GigFunction *gfn)
     g_free(gfn->atypes);
     gfn->atypes = NULL;
 
-    // TODO: should we free gfn->amap?
     gig_amap_free(gfn->amap);
 
     g_free(gfn);

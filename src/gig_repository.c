@@ -254,8 +254,11 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
 #define LOAD_NESTED(F, N, I)                                    \
         do {                                                    \
             if (flags & F)                                      \
-                for (gint i = 0; i < N; i++)                    \
-                    defs = load_info(I(info, i), flags, defs);  \
+                for (gint i = 0; i < N; i++) {                  \
+                    GIBaseInfo *nested_info = I(info, i);       \
+                    defs = load_info(nested_info, flags, defs); \
+                    g_base_info_unref(nested_info);             \
+                }                                               \
         } while (0)
 
         gint n_methods, n_properties, n_signals, n_fields;
