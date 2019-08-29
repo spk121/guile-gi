@@ -95,14 +95,14 @@ gig_type_document_type_from_gtype(GType gtype)
 // that GType in our hash table of known types without creating an
 // associated foreign object type.
 void
-gig_type_register(GType gtype)
+gig_type_register(GType gtype, SCM stype)
 {
     GType parent = g_type_parent(gtype);
     if (parent != 0)
-        gig_type_register(parent);
+        gig_type_register(parent, SCM_UNDEFINED);
 
     if (!g_hash_table_contains(gig_type_gtype_hash, GSIZE_TO_POINTER(gtype))) {
-        g_hash_table_insert(gig_type_gtype_hash, GSIZE_TO_POINTER(gtype), NULL);
+        g_hash_table_insert(gig_type_gtype_hash, GSIZE_TO_POINTER(gtype), SCM_UNPACK_POINTER(stype));
         g_debug("Registering a new GType: %zu -> %s", gtype, g_type_name(gtype));
     }
 }
@@ -800,7 +800,7 @@ gig_init_types_once(void)
 #define D(x)                                                            \
     do                                                                  \
     {                                                                   \
-        gig_type_register(x);                                           \
+        gig_type_register(x, SCM_UNDEFINED);                            \
         scm_permanent_object(scm_c_define(#x, scm_from_uintptr_t(x)));  \
         scm_c_export(#x, NULL);                                         \
     } while (0)

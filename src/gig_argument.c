@@ -1401,7 +1401,7 @@ c_list_to_scm(C2S_ARG_DECL)
             else if (item_type == G_TYPE_DOUBLE)
                 scm_set_car_x(out_iter, scm_from_double(*(double *)data));
             else if (item_type == G_TYPE_GTYPE) {
-                gig_type_register(*(gsize *)data);
+                gig_type_register(*(gsize *)data, SCM_UNDEFINED);
                 scm_set_car_x(out_iter, scm_from_size_t(*(gsize *)data));
             }
             else
