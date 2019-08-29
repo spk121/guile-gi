@@ -54,63 +54,115 @@
 
 (define %summary "Document Guile bindings for GObject-based libraries")
 
+(define command-synopsis
+  '((namespace (single-char #\n) (value #t))
+    (version   (single-char #\v) (value #t))
+    (skip-gir  (single-char #\s))
+    (output    (single-char #\o) (value #t))
+    (format    (single-char #\f) (value #t))
+    (help      (single-char #\h))))
+
+(define (display-help)
+  (display "Usage: gi-gtkdoc -n NAMESPACE -v VERSION [OPTIONS]\n")
+  (newline)
+  (display
+   "This program creates documentation for Guile-GI bindings to libraries,\n")
+  (display "that use GObject introspection, via gtkdoc.\n")
+  (newline)
+  (display "Example: gi-gtkdoc -n GLib -v 2.0\n")
+  (newline)
+  (display "Required Options are:\n")
+  (newline)
+  (display "   -n, --namespace=NAMESPACE   The namespace to document.\n")
+  (display
+   "   -v, --version=VERSION       The version of the documented namespace.\n")
+  (newline)
+  (display "Additional options are:\n")
+  (newline)
+  (display
+   "  -f, --format=FORMAT         Use FORMAT as output format instead of\n")
+  (display
+   "                              the default, which is \"html\". This works\n")
+  (display
+   "                              by appending FORMAT to \"gtkdoc-mk\" to form\n")
+  (display
+   "                              a command. Supported formats are (to the\n")
+  (display
+   "                              best of our knowledge): html, man, pdf.\n")
+  (display
+   "  -o, --output=DIRECTORY      Store the generated output in DIRECTORY.\n")
+  (display
+   "                              By default, a new temporary directory\n")
+  (display
+   "                              is created and used, which may not be\n")
+  (display
+   "                              what you want.\n")
+  (display
+   "  -s, --skip-gir              Skip reading of the .gir XML files.\n")
+  (display
+   "                              Doing so will only document functions,\n")
+  (display
+   "                              that can be documented from the typelib\n")
+  (display
+   "                              alone. This is not recommended.\n")
+  (display
+   "  -h, --help                  Display this message\n")
+  (newline))
+
 (define (gtkdoc . args)
-  (let* ((p (getopt-long (cons 'gtkdoc args)
-                         '((namespace (single-char #\n) (value #t)
-                                      (required? #t))
-                           (version (single-char #\v) (value #t)
-                                    (required? #t))
-                           (skip-gir (single-char #\s))
-                           (output (single-char #\o) (value #t))
-                           (format (single-char #\f) (value #t)))))
+  (let ((p (getopt-long (cons "gi-gtkdoc" args) command-synopsis)))
+    (let ((help-wanted? (option-ref p 'help #f))
+          (namespace (option-ref p 'namespace #f))
+          (version (option-ref p 'version #f))
+          (skip-gir? (option-ref p 'skip-gir #f))
+          (fmt (option-ref p 'format "html")))
+      (cond
+       ((or help-wanted? (not namespace) (not version))
+        (display-help))
+       (else
+        (let* ((output (or
+                        (option-ref p 'output #f)
+                        (false-if-exception
+                         (let ((f (tmpnam)))
+                           (mkdir f)
+                           (format (current-error-port)
+                                   "No output directory given, using \"~a/\" ~%"
+                                   f)
+                           f))))
+               (documentation '())
+               (add-documentation!
+                (lambda (port) (set! documentation (parse port documentation))))
+               (docfile (string-join `(,namespace "gtkdoc" "xml") ".")))
+          (unless output
+            (format (current-error-port)
+                    "ERROR: ~a~%"
+                    "no output given and temporary output could not be created")
+            (exit EXIT_FAILURE))
 
-         (namespace (option-ref p 'namespace #f))
-         (version (option-ref p 'version #f))
-         (skip-gir? (option-ref p 'skip-gir #f))
-         (output (or
-                  (option-ref p 'output #f)
-                  (false-if-exception
-                   (let ((f (tmpnam)))
-                     (mkdir f)
-                     (format (current-error-port)
-                             "No output directory given, using \"~a/\" ~%"
-                             f)
-                     f))))
-         (fmt (option-ref p 'format "html"))
-         (documentation '())
-         (add-documentation!
-          (lambda (port) (set! documentation (parse port documentation))))
-         (docfile (string-join `(,namespace "gtkdoc" "xml") ".")))
-    (unless output
-      (format (current-error-port)
-              "ERROR: ~a~%"
-              "no output given and temporary output could not be created")
-      (exit EXIT_FAILURE))
+          (if (file-exists? output)
+              (unless (file-is-directory? output)
+                (format (current-error-port)
+                        "ERROR: ~a~%"
+                        "output must be a directory")
+                (exit EXIT_FAILURE))
+              (unless (= (system* "mkdir" "-p" output) 0)
+                (format (current-error-port)
+                        "ERROR: ~a~%"
+                        "failed to create output directory")
+                (exit EXIT_FAILURE)))
 
-    (if (file-exists? output)
-        (unless (file-is-directory? output)
-          (format (current-error-port)
-                  "ERROR: ~a~%"
-                  "output must be a directory")
-          (exit EXIT_FAILURE))
-        (unless (= (system* "mkdir" "-p" output) 0)
-          (format (current-error-port)
-                  "ERROR: ~a~%"
-                  "failed to create output directory")
-          (exit EXIT_FAILURE)))
+          (chdir output)
 
-    (chdir output)
+          (call-with-port (typelib namespace version) add-documentation!)
+          (unless skip-gir?
+            (call-with-port (gir namespace version) add-documentation!))
 
-    (call-with-port (typelib namespace version) add-documentation!)
-    (unless skip-gir?
-      (call-with-port (gir namespace version) add-documentation!))
+          (with-output-to-file docfile
+            (lambda ()
+              (->docbook documentation)))
 
-    (with-output-to-file docfile
-      (lambda ()
-        (->docbook documentation)))
-
-    (system* (string-join `("gtkdoc-mk" ,fmt) "")
-             (string-join `("Guile" ,namespace) "-")
-             docfile)))
+          (system* (string-join `("gtkdoc-mk" ,fmt) "")
+                   (string-join `("Guile" ,namespace) "-")
+                   docfile)))))))
 
 (define main gtkdoc)
