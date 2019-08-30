@@ -31,8 +31,6 @@ libguile_gi_la_SOURCES = \
  gig_value.h \
  gig_signal.c \
  gig_signal.h \
- gi_type_tag.c \
- gi_type_tag.h \
  gig.c \
  gig_arg_map.c \
  gig_arg_map.h \

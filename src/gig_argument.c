@@ -16,7 +16,6 @@
 #include <girepository.h>
 #include <glib.h>
 #include <libguile.h>
-#include "gi_type_tag.h"
 #include "gig_argument.h"
 #include "gig_callback.h"
 #include "gig_flag.h"
