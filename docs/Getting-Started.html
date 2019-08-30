@@ -60,164 +60,18 @@ Next: <a href="Tutorials.html#Tutorials" accesskey="n" rel="next">Tutorials</a>,
 describes features of vastly different age. Don&rsquo;t be too surprised if something breaks.
 </p></blockquote>
 
-<p>To get things started, we will try to run a very simple GTK+ based GUI
-application using the bindings provided by Guile GI.
-</p>
-<p>Now, to understand how this works, one needs to distinguish between
-what Guile-GI provides and the bindings that it creates.
-</p>
-<ul>
-<li> Guile-GI itself is a library that allows you to parse <code>typelib</code>
-files, which describe code modules.  It has a handful of procedures
-for inspecting <code>typelib</code> files as well as some helper procedures
-for dynamically creating procedures and types.
-</li><li> When Guile-GI is used, it creates procedures, variables, and types
-according to the instructions in the <code>typelib</code> files.  These are
-created <em>at runtime</em> when the Guile-GI procedure
-<code>typelib-load</code> is called.
-</li></ul>
-
-<p>First, for each GObject library that you want to use in your program,
-you need to have an export library.  A sample library for GTK+3 could
-take the following form.
-</p>
-<div class="example">
-<pre class="example">(define-module (gi gtk-3)
-  #:use-module (gi)
-  #:use-module (gi repository))
-
-(typelib-&gt;module (current-module) &quot;Gtk&quot; &quot;3.0&quot;)
-</pre></div>
-
-<p>Alternatively, you can instruct Guile-GI to create these modules for you, as
-shown in the following.
-</p>
-<div class="example">
-<pre class="example">(use-modules (gi))
-(use-typelibs (&quot;GLib&quot; &quot;2.0&quot;) (&quot;Gtk&quot; &quot;3.0&quot;))
-</pre></div>
-
-<p>Here, Guile-GI creates the (hopefully unique) modules <code>(%gi GLib-2.0)</code> and <code>(%gi Gtk-3.0)</code>
-and imports them into the current module using <code>use-modules</code>.
-</p>
-<p>You will likely need some documentation for these auto-generated libraries.
-We&rsquo;d like to point you to the respective C documentation, but it is not really
-apparent from that alone, which methods you can call from Scheme and how.
-To bridge this gap, we&rsquo;ve added some documentation functionality.
-Consider a file <samp>doc.scm</samp> with roughly the following contents:
-</p>
-<div class="example">
-<pre class="example">#!/path/to/guile
-(use-modules (gi documentation))
-
-(let ((%typelib (typelib &quot;GObject&quot; &quot;2.0&quot;))
-      (%gir (false-if-exception (gir &quot;GObject&quot; &quot;2.0&quot;)))
-      (%doc '()))
-  (set! %doc (parse %typelib %doc))
-  (close %typelib)
-  (when %gir
-    (set! %doc (parse %gir %doc))
-    (close %gir))
-  (-&gt;guile-procedures.txt %doc))
-</pre></div>
-
-<p>When <samp>doc.scm</samp> is executed by Guile, it will read both the information available in the
-GIR metadata XML and runtime information created by Guile-GI, merging them into a single structure.
-This structure can then be post-processed to generate the actual documentation.
-Right now, we only offer the function <code>-&gt;guile-procedures.txt</code>, which generates content mimicking the
-style of <samp>guile-procedures.txt</samp> files, such as <samp>/usr/share/guile/2.2/guile-procedures.txt</samp>.
-Use shell pipes to redirect them into a file.
-</p>
-<p>See <a href="Typelib-Introspection.html#Typelib-Introspection">Typelib Introspection</a> for more information about <code>typelib-&gt;module</code> and
-<a href="Typelib-Documentation.html#Typelib-Documentation">Typelib Documentation</a> for more information about <code>(gi documentation)</code>.
-</p>
-<p>A minimal GTK application looks like this
-</p>
-<div class="example">
-<pre class="example">(use-modules (gi) (gi repository))
-
-(require &quot;Gio&quot; &quot;2.0&quot;)
-(require &quot;Gtk&quot; &quot;3.0&quot;)
-
-(load-by-name &quot;Gio&quot; &quot;Application&quot;) ;; activate, run
-(load-by-name &quot;Gtk&quot; &quot;Application&quot;)
-(load-by-name &quot;Gtk&quot; &quot;ApplicationWindow&quot;)
-(load-by-name &quot;Gtk&quot; &quot;Button&quot;)
-(load-by-name &quot;Gtk&quot; &quot;ButtonBox&quot;)
-(load-by-name &quot;Gtk&quot; &quot;Widget&quot;) ;; show-all
-
-(define (print-hello widget)
-  (display &quot;Hello World\n&quot;))
-
-(define (activate-callback app)
-  (let* ((window (make &lt;GtkApplicationWindow&gt;
-                   #:application app
-                   #:default-height 200
-                   #:default-width 200
-                   #:title &quot;Window&quot;))
-         (button-box (make &lt;GtkButtonBox&gt; #:parent window))
-         (button (make &lt;GtkButton&gt;
-                   #:parent button-box
-                   #:label &quot;Hello world&quot;)))
-    (connect button clicked print-hello)
-    (connect button clicked (lambda _ (destroy window)))
-    (show-all window)))
-
-(define (main)
-  (let ((app (make &lt;GtkApplication&gt; #:application-id &quot;org.gtk.example&quot;)))
-    (connect app activate activate-callback)
-    (run app (command-line))))
-
-(main)
-</pre></div>
-
-<p>When it is run, it will create an empty window with a title.  Are you impressed?
-</p>
-<p>Let&rsquo;s walk through this example. Before the actual code, you see a &ldquo;header&rdquo; of
-<code>require</code>s and <code>load-by-name</code>s. These procedures are imported from
-<code>(gi repository)</code> and allow fine-grained loading of classes and functions into the
-current namespace.
-You could also load them using <code>use-typelibs</code> as shown above, but
-this approach is significantly faster for large libraries such as GTK+.
-</p>
-<p>Next, you may notice two important procedures &ndash; <code>make</code> and <code>connect</code> &ndash;
-as well as a few types, such as <code>&lt;GtkApplication&gt;</code> and <code>&lt;GtkApplicationWindow&gt;</code>.
-These procedures and types allow you to interact with GObject&rsquo;s very odd class system.
-</p>
-<p>First is <code>make</code>, which wraps and extends the <code>make</code> procedure found in GOOPS.
-See <a href="https://www.gnu.org/software/guile/manual/html_node/GOOPS.html#GOOPS">GOOPS</a> in <cite>The Guile reference manual</cite> for infos about GOOPS.
-In short the arguments, that would normally be used for slot initialization are instead used
-to initialize properties.
-This is an important distinction, as objects are represented in Scheme as GOOPS objects, whose
-slots <strong>do not</strong> map to properties.
-It also takes care of some types, which do not derive from GObject, such as boxed types.
-</p>
-<p>Next is <code>connect</code>, which connects Guile procedures as handlers to GObject signals.
-Signals are roughly equal to hooks in Guile, except that they have an invisible default
-handler and hence two <code>connect</code> methods instead of a single <code>add-hook!</code> one.
-Removing a connection also requires temporarily saving the return value (which is an integer id),
-so that it can be passed to <code>signal-handler-disconnect</code>.
-</p>
-<p>Finally, we have the types. These are quite straight-forward in most cases, as there is
-a direct mapping from GObject type to Guile type.
-See <a href="GObject-Types.html#GObject-Types">GObject Types</a> on this mapping.
-</p>
-<p>See <a href="GObject-Methods.html#GObject-Methods">GObject Methods</a> on how to use methods,
-<a href="GObject-Signals.html#GObject-Signals">GObject Signals</a> on how to use signals and
-<a href="GObject-Properties.html#GObject-Properties">GObject Properties</a> on how to use properties.
+<p>In the followings section we will walk you through all steps from installation
+to writing applications.
 </p>
 <table class="menu" border="0" cellspacing="0">
 <tr><td align="left" valign="top">&bull; <a href="Installation.html#Installation" accesskey="1">Installation</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
-<tr><td align="left" valign="top">&bull; <a href="Sample-Applications.html#Sample-Applications" accesskey="2">Sample Applications</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+<tr><td align="left" valign="top">&bull; <a href="Guile_002dGI-and-Typelibs.html#Guile_002dGI-and-Typelibs" accesskey="2">Guile-GI and Typelibs</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">How to load libraries through GI
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Sample-Applications.html#Sample-Applications" accesskey="3">Sample Applications</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
 </table>
 
-<hr>
-<div class="header">
-<p>
-Next: <a href="Tutorials.html#Tutorials" accesskey="n" rel="next">Tutorials</a>, Previous: <a href="Preface.html#Preface" accesskey="p" rel="prev">Preface</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index.html#Index" title="Index" rel="index">Index</a>]</p>
-</div>
 
 
 

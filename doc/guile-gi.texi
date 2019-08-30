@@ -48,11 +48,12 @@ This manual is for Guile GI @value{VERSION}.
 Getting Started
 
 * Installation::
+* Guile-GI and Typelibs::
 * Sample Applications::
 
 Sample Applications
 
-* Example 1::
+* Empty Window::
 
 Tutorials
 
@@ -101,118 +102,12 @@ Guile-GI is still in its experimental phase and even so, this documentation
 describes features of vastly different age. Don't be too surprised if something breaks.
 @end quotation
 
-To get things started, we will try to run a very simple GTK+ based GUI
-application using the bindings provided by Guile GI.
-
-Now, to understand how this works, one needs to distinguish between
-what Guile-GI provides and the bindings that it creates.
-
-@itemize
-@item
-Guile-GI itself is a library that allows you to parse @code{typelib}
-files, which describe code modules.  It has a handful of procedures
-for inspecting @code{typelib} files as well as some helper procedures
-for dynamically creating procedures and types.
-@item
-When Guile-GI is used, it creates procedures, variables, and types
-according to the instructions in the @code{typelib} files.  These are
-created @emph{at runtime} when the Guile-GI procedure
-@code{typelib-load} is called.
-@end itemize
-
-First, for each GObject library that you want to use in your program,
-you need to have an export library.  A sample library for GTK+3 could
-take the following form.
-
-@example
-@include gtk-3.scm
-@end example
-
-Alternatively, you can instruct Guile-GI to create these modules for you, as
-shown in the following.
-
-@example
-(use-modules (gi))
-(use-typelibs ("GLib" "2.0") ("Gtk" "3.0"))
-@end example
-
-Here, Guile-GI creates the (hopefully unique) modules @code{(%gi GLib-2.0)} and @code{(%gi Gtk-3.0)}
-and imports them into the current module using @code{use-modules}.
-
-You will likely need some documentation for these auto-generated libraries.
-We'd like to point you to the respective C documentation, but it is not really
-apparent from that alone, which methods you can call from Scheme and how.
-To bridge this gap, we've added some documentation functionality.
-Consider a file @file{doc.scm} with roughly the following contents:
-
-@example
-#!/path/to/guile
-(use-modules (gi documentation))
-
-(let ((%typelib (typelib "GObject" "2.0"))
-      (%gir (false-if-exception (gir "GObject" "2.0")))
-      (%doc '()))
-  (set! %doc (parse %typelib %doc))
-  (close %typelib)
-  (when %gir
-    (set! %doc (parse %gir %doc))
-    (close %gir))
-  (->guile-procedures.txt %doc))
-@end example
-
-When @file{doc.scm} is executed by Guile, it will read both the information available in the
-GIR metadata XML and runtime information created by Guile-GI, merging them into a single structure.
-This structure can then be post-processed to generate the actual documentation.
-Right now, we only offer the function @code{->guile-procedures.txt}, which generates content mimicking the
-style of @file{guile-procedures.txt} files, such as @file{/usr/share/guile/2.2/guile-procedures.txt}.
-Use shell pipes to redirect them into a file.
-
-@xref{Typelib Introspection} for more information about @code{typelib->module} and
-@ref{Typelib Documentation} for more information about @code{(gi documentation)}.
-
-A minimal GTK application looks like this
-
-@example
-@include example-1.scm
-@end example
-
-When it is run, it will create an empty window with a title.  Are you impressed?
-
-Let's walk through this example. Before the actual code, you see a ``header'' of
-@code{require}s and @code{load-by-name}s. These procedures are imported from
-@code{(gi repository)} and allow fine-grained loading of classes and functions into the
-current namespace.
-You could also load them using @code{use-typelibs} as shown above, but
-this approach is significantly faster for large libraries such as GTK+.
-
-Next, you may notice two important procedures -- @code{make} and @code{connect} --
-as well as a few types, such as @code{<GtkApplication>} and @code{<GtkApplicationWindow>}.
-These procedures and types allow you to interact with GObject's very odd class system.
-
-First is @code{make}, which wraps and extends the @code{make} procedure found in GOOPS.
-@xref{GOOPS,,,guile,The Guile reference manual} for infos about GOOPS.
-In short the arguments, that would normally be used for slot initialization are instead used
-to initialize properties.
-This is an important distinction, as objects are represented in Scheme as GOOPS objects, whose
-slots @strong{do not} map to properties.
-It also takes care of some types, which do not derive from GObject, such as boxed types.
-
-Next is @code{connect}, which connects Guile procedures as handlers to GObject signals.
-Signals are roughly equal to hooks in Guile, except that they have an invisible default
-handler and hence two @code{connect} methods instead of a single @code{add-hook!} one.
-Removing a connection also requires temporarily saving the return value (which is an integer id),
-so that it can be passed to @code{signal-handler-disconnect}.
-
-Finally, we have the types. These are quite straight-forward in most cases, as there is
-a direct mapping from GObject type to Guile type.
-@xref{GObject Types} on this mapping.
-
-@xref{GObject Methods} on how to use methods,
-@ref{GObject Signals} on how to use signals and
-@ref{GObject Properties} on how to use properties.
+In the followings section we will walk you through all steps from installation
+to writing applications.
 
 @menu
 * Installation::
+* Guile-GI and Typelibs:: How to load libraries through GI
 * Sample Applications::
 @end menu
 
@@ -236,15 +131,137 @@ From there, running @command{configure}, then @command{make}, then
 In the file archives, look for files named @file{INSTALL} for detailed
 instructions.
 
+@node Guile-GI and Typelibs
+@section Guile-GI and Typelibs
+
+To understand how Guile-GI works, one needs to distinguish between
+itself and the bindings it creates.
+
+@itemize
+@item
+Guile-GI itself is a library that allows you to parse @code{typelib}
+files, which describe code modules.  It has a handful of procedures
+for inspecting @code{typelib} files as well as some helper procedures
+for dynamically creating procedures and types.
+@item
+When Guile-GI is used, it creates procedures, variables, and types
+according to the instructions in the @code{typelib} files.  These are
+created @emph{at runtime} as Guile loads them from the @code{typelib} file.
+@end itemize
+
+In order to make use of the latter, you must load a typelib through Guile-GI in one
+form or another.  The easiest and recommended way of doing so is @code{use-typelibs},
+as shown below.
+
+@example
+(use-modules (gi))
+(use-typelibs ("GLib" "2.0") ("Gtk" "3.0"))
+@end example
+
+@code{use-typelibs} works quite similar to @code{use-modules} and is in fact implemented in terms
+of it. The only difference in syntax is, that instead of a list of symbols describing a module,
+you have a list of exactly two strings, the first being the name of the typelib and the second being
+the version.
+
+Semantically, however, the difference to @code{use-modules} is bigger.
+Internally, Guile-GI creates modules for the typelibs as needed -- in this example
+these modules would be @code{(%gi GLib-2.0)} and @code{(%gi Gtk-3.0)} -- and loads the entire
+typelib into them. This approach has two major drawbacks.
+@enumerate
+@item
+Guile-GI has to load the entire typelib. For large typelibs, such as GTK, this takes a lot
+of time.  Instead, you may want to only load parts, e.g. just GtkApplication and GtkWindow
+to significantly speed up loading.  @code{(gi repository)} has primitives to facilitate exactly
+that. @xref{Typelib Introspection}.
+
+@item
+Even though Guile-GI internally uses modules, these modules are not available to the user
+in any meaningful way.  Even another @code{use-modules} on them actually leads to undefined
+behaviour.  It may load the module if it has already been defined somewhere else, but it might
+also throw an error, claiming that no code for the module could be found.
+This is to be expected, given that the modules are not backed by actual files.
+
+If you need to use @code{use-modules} (e.g. as a part of a @code{define-module}),
+you need to write the module yourself.  As a convenience, @code{(gi repository)} defines
+@code{typelib->module}, which loads a typelib into a module and also adds all loaded functionality
+to its public interface.  Use it as in the following example.
+@example
+@include gtk-3.scm
+
+;; additional code you might want to add and export
+@end example
+@end enumerate
+
+Loading typelibs alone might be all you need if you have perfect knowledge of all the libraries
+you are going to use and an intuitive understanding of how they are mapped to Scheme procedures.
+Chances are, however, that you do not.
+In this case, it might be useful to generate some documentation. @xref{Typelib Documentation}.
+
+Upon installation of Guile-GI, we install a script called @code{gi-gtkdoc}, that can be invoked
+through @code{guild}.  You may also want to create a @file{guile-procedures.txt} file for use
+in the REPL.  We currently have no script for that, but one can easily be written.
+The following for example exports all the documentation for GObject-2.0.
+
+@example
+#!/path/to/guile
+(use-modules (gi documentation))
+
+(let ((%typelib (typelib "GObject" "2.0"))
+      (%gir (false-if-exception (gir "GObject" "2.0")))
+      (%doc '()))
+  (set! %doc (parse %typelib %doc))
+  (close %typelib)
+  (when %gir
+    (set! %doc (parse %gir %doc))
+    (close %gir))
+  (->guile-procedures.txt %doc))
+@end example
+
+Use shell pipes to redirect the output into a file, preferably one called ``guile-procedures.txt''.
+Guile will search for documentation in such files in a few locations,
+including the current working directory.
+
 @node Sample Applications
 @section Sample Applications
 
 @menu
-* Example 1::
+* Empty Window::
 @end menu
 
-@node Example 1
-@subsection Example 1
+@node Empty Window
+@subsection Empty Window
+We will skillfully demonstrate the capabilities of Guile-GI by creating an empty window with
+a title.  Are you excited?  Behold!
+
+@example
+@include example-1.scm
+@end example
+
+As discussed in the previous section, loading the entirety of Gtk is slow, so
+we instead use primitives from @code{(gi repository)}.  In addition, there are some
+functions, that we didn't yet learn about, as well as the bindings created for
+@code{<GtkApplication>}, etc.
+
+First is @code{make}, which wraps and extends the @code{make} procedure found in GOOPS.
+@xref{GOOPS,,,guile,The Guile reference manual} for infos about GOOPS.
+In short the arguments, that would normally be used for slot initialization are instead used
+to initialize properties.
+This is important, because the slots of the GOOPS object @strong{do not} map to properties,
+and neither do the properties map to slots.
+@code{make} can also be used on some types, which do not derive from GObject, most notably
+it can be called without any arguments to allocate boxed types.
+
+Next is @code{connect}, which connects Guile procedures as handlers to GObject signals.
+Signals are roughly equal to hooks in Guile, except that they have an invisible default
+handler and hence two @code{connect} methods instead of a single @code{add-hook!} one.
+Removing a connection also requires temporarily saving the return value (which is an integer id),
+so that it can be passed to @code{signal-handler-disconnect}.
+
+Finally, we have the bindings themselves, as mentioned before.
+@xref{GObject Types} on the mapping of types,
+@ref{GObject Methods} on how to use methods,
+@ref{GObject Signals} on how to use signals and
+@ref{GObject Properties} on how to use properties.
 
 @node Tutorials
 @chapter Tutorials
@@ -338,10 +355,31 @@ And then, of course, a Guile-GI program will additionally
 require whatever libraries its uses (GTK, WebKit2) as well
 as their associated typelib files.
 
-FIXME: Write about a good directory structure for a GTK application.
+A good layout for an application might be the following, though we can't
+discourage you from using any other.
+@example
+/path/to/project
+|-- doc
+|-- data
+|   |-- icons
+|   |-- various XML files
+|   `-- etc.
+|-- module
+|   |-- project.scm
+|   `-- project
+|       `-- more Scheme source files
+|-- src
+|   `-- C source files (optional, when depending on other libraries/non-GI functionality)
+|-- test
+|   `-- tests
+`-- READMEs, ChangeLogs, build system stuff ...
+@end example
 
-FIXME: Write about what to do with all the various GTK icons and XML
-files.
+You should be able to make use of most ``data APIs'' (such as GSettings,
+GResource, GtkBuilder...), as long as the data files don't need to reference
+functionality implemented in your Scheme code.  If you do find yourself needing
+some of that, e.g. if you want to write a GtkBuilder file for a custom class,
+consider implementing this functionality in C and exporting it as a typelib instead.
 
 @node Testing and Continuous Integration
 @section Testing and Continuous Integration
