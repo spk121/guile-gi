@@ -60,7 +60,6 @@ struct _GigTypeMeta
             GIG_DATA_LOCALE_STRING,
             GIG_DATA_LIST,
             GIG_DATA_SLIST,
-            GIG_DATA_HASH_TABLE,
             GIG_DATA_CALLBACK
         } pointer_type;
 

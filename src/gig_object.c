@@ -71,7 +71,7 @@ gig_i_scm_make_gobject(SCM s_gtype, SCM s_prop_keylist)
     SCM_ASSERT_TYPE(G_TYPE_IS_CLASSED(type), s_gtype, SCM_ARG1, FUNC,
                     "typeid derived from G_TYPE_OBJECT or scheme type derived from <GObject>");
 
-    if (scm_is_false(gig_type_get_scheme_type(type)))
+    if (SCM_UNBNDP(gig_type_get_scheme_type(type)))
         scm_misc_error(FUNC, "type ~S lacks introspection", scm_list_1(s_gtype));
 
     scm_dynwind_begin(0);
@@ -360,7 +360,7 @@ gig_i_scm_define_type(SCM s_type_name, SCM s_parent_type, SCM s_properties, SCM 
 
     parent_type = scm_to_gtype(s_parent_type);
 
-    if (scm_is_false(gig_type_get_scheme_type(parent_type)))
+    if (SCM_UNBNDP(gig_type_get_scheme_type(parent_type)))
         scm_misc_error("%define-type", "type ~S is dupe", scm_list_1(s_parent_type));
 
     SCM_UNBND_TO_BOOL_F(s_properties);

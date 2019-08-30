@@ -7,4 +7,4 @@
  (let ((x (const-return-gtype)))
    (write x)
    (newline)
-   (eqv? x G_TYPE_OBJECT)))
+   (eq? x <GObject>)))

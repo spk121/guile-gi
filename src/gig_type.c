@@ -73,10 +73,8 @@
 // Maps GType to SCM (pointer)
 GHashTable *gig_type_gtype_hash = NULL;
 GHashTable *gig_type_name_hash = NULL;
-#if ENABLE_GIG_TYPE_SCM_HASH
 // Maps SCM to GType
 GHashTable *gig_type_scm_hash = NULL;
-#endif
 
 gchar *
 gig_type_class_name_from_gtype(GType gtype)
@@ -97,14 +95,14 @@ gig_type_document_type_from_gtype(GType gtype)
 // that GType in our hash table of known types without creating an
 // associated foreign object type.
 void
-gig_type_register(GType gtype)
+gig_type_register(GType gtype, SCM stype)
 {
     GType parent = g_type_parent(gtype);
     if (parent != 0)
-        gig_type_register(parent);
+        gig_type_register(parent, SCM_UNDEFINED);
 
     if (!g_hash_table_contains(gig_type_gtype_hash, GSIZE_TO_POINTER(gtype))) {
-        g_hash_table_insert(gig_type_gtype_hash, GSIZE_TO_POINTER(gtype), NULL);
+        g_hash_table_insert(gig_type_gtype_hash, GSIZE_TO_POINTER(gtype), SCM_UNPACK_POINTER(stype));
         g_debug("Registering a new GType: %zu -> %s", gtype, g_type_name(gtype));
     }
 }
@@ -187,9 +185,7 @@ gig_type_associate(GType gtype, SCM stype)
     g_hash_table_insert(gig_type_gtype_hash, GSIZE_TO_POINTER(gtype), SCM_UNPACK_POINTER(stype));
     scm_set_object_property_x(stype, sym_sort_key,
                               scm_from_size_t(g_hash_table_size(gig_type_gtype_hash)));
-#if ENABLE_GIG_TYPE_SCM_HASH
     g_hash_table_insert(gig_type_scm_hash, SCM_UNPACK_POINTER(stype), GSIZE_TO_POINTER(gtype));
-#endif
     return scm_class_name(stype);
 }
 
@@ -362,18 +358,19 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
             scm_define(key, new_type);
             defs = scm_cons(key, defs);
         }
-#if ENABLE_GIG_TYPE_SCM_HASH
         g_debug("Hash table sizes %d %d", g_hash_table_size(gig_type_gtype_hash),
                 g_hash_table_size(gig_type_scm_hash));
-#else
-        g_debug("Hash table size %d", g_hash_table_size(gig_type_gtype_hash));
-#endif
         g_free(_type_class_name);
     }
     else {
         g_debug("<GType> already exists for: %zu -> %s", gtype, g_type_name(gtype));
         g_return_val_if_fail(orig_value != NULL, defs);
         SCM val = SCM_PACK_POINTER(orig_value);
+
+        // FIXME: The warning below should be infrequent enough to not need silencing
+        if (SCM_UNBNDP(val))
+            return defs;
+        g_return_val_if_fail(!SCM_UNBNDP(val), defs);
         SCM key = scm_class_name(val);
         if (!SCM_UNBNDP(defs)) {
             scm_define(key, val);
@@ -393,16 +390,34 @@ gig_type_define(GType gtype, SCM defs)
 // This routine returns the integer GType ID of a scheme object, that is
 // - already a GType ID encoded as size_t,
 // - a foreign object for a GType
-// - a foreign object for an object instance
-// The last one is accidental, as internally `gig_type_get_gtype_from_obj'
-// is used. This may change in future and should not be relied on.
 GType
 scm_to_gtype(SCM x)
 {
-    if (scm_is_integer(x))
+    scm_to_gtype_full(x, NULL, SCM_ARGn);
+}
+
+GType
+scm_to_gtype_full(SCM x, const gchar *subr, gint argpos)
+{
+    if (scm_is_unsigned_integer(x, 0, SIZE_MAX))
         return scm_to_size_t(x);
+    else if (SCM_CLASSP(x))
+        return GPOINTER_TO_SIZE(g_hash_table_lookup(gig_type_scm_hash, SCM_UNPACK_POINTER(x)));
     else
-        return gig_type_get_gtype_from_obj(x);
+        scm_wrong_type_arg_msg(subr, argpos, x, "GType integer or class");
+}
+
+SCM
+scm_from_gtype(GType x)
+{
+    gpointer _key, _value;
+
+    // GType <-> SCM associations must go both ways
+    if (g_hash_table_lookup_extended(gig_type_gtype_hash, GSIZE_TO_POINTER(x), &_key, &_value)
+        && g_hash_table_lookup_extended(gig_type_scm_hash, _value, &_value, &_key))
+        return SCM_PACK_POINTER(_value);
+    else
+        return scm_from_size_t(x);
 }
 
 // This routine returns the integer GType ID of a given
@@ -411,31 +426,12 @@ scm_to_gtype(SCM x)
 GType
 gig_type_get_gtype_from_obj(SCM x)
 {
-#if ENABLE_GIG_TYPE_SCM_HASH
     gpointer value;
     if ((value = g_hash_table_lookup(gig_type_scm_hash, SCM_UNPACK_POINTER(x))))
         return GPOINTER_TO_SIZE(value);
     else if (SCM_INSTANCEP(x) &&
              (value = g_hash_table_lookup(gig_type_scm_hash, SCM_UNPACK_POINTER(SCM_CLASS_OF(x)))))
         return GPOINTER_TO_SIZE(value);
-#else
-    SCM klass;
-    if (SCM_INSTANCEP(x))
-        klass = SCM_CLASS_OF(x);
-    else
-        klass = x;
-
-    GHashTableIter iter;
-    gpointer key, value;
-
-    g_hash_table_iter_init(&iter, gig_type_gtype_hash);
-    while (g_hash_table_iter_next(&iter, &key, &value)) {
-        SCM svalue = SCM_PACK_POINTER(value);
-        if (scm_is_eq(klass, svalue)
-            || scm_is_eq(x, svalue))
-            return GPOINTER_TO_SIZE(key);
-    }
-#endif
 
     return G_TYPE_INVALID;
 }
@@ -446,32 +442,30 @@ gig_type_free_types(void)
     g_debug("Freeing gtype hash table");
     g_hash_table_remove_all(gig_type_gtype_hash);
     g_hash_table_remove_all(gig_type_name_hash);
-#if ENABLE_GIG_TYPE_SCM_HASH
     g_hash_table_remove_all(gig_type_scm_hash);
-#endif
     _free_boxed_funcs();
 }
 
 static SCM
-_gig_type_get_scheme_type(GType gtype)
+_gig_type_check_scheme_type(gpointer _stype)
 {
-    gpointer *scm_ptr = g_hash_table_lookup(gig_type_gtype_hash, GSIZE_TO_POINTER(gtype));
-    if (scm_ptr)
-        return SCM_PACK_POINTER(scm_ptr);
-    return SCM_BOOL_F;
+    g_return_val_if_fail(_stype != NULL, SCM_UNDEFINED);
+    return SCM_PACK_POINTER(_stype);
 }
-
 
 SCM
 gig_type_get_scheme_type(GType gtype)
 {
-    SCM type = _gig_type_get_scheme_type(gtype);
+    gpointer _key, _value;
+    gboolean exists = g_hash_table_lookup_extended(gig_type_gtype_hash, GSIZE_TO_POINTER(gtype),
+                                                   &_key, &_value);
 
-    if (scm_is_true(type) || G_TYPE_IS_FUNDAMENTAL(gtype))
-        return type;
+    if (exists)
+        return _gig_type_check_scheme_type(_value);
     else {
         gig_type_define(gtype, SCM_UNDEFINED);
-        return _gig_type_get_scheme_type(gtype);
+        _value = g_hash_table_lookup(gig_type_gtype_hash, GSIZE_TO_POINTER(gtype));
+        return _gig_type_check_scheme_type(_value);
     }
 }
 
@@ -780,9 +774,7 @@ gig_init_types_once(void)
 
     gig_type_gtype_hash = g_hash_table_new(g_direct_hash, g_direct_equal);
     gig_type_name_hash = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
-#if ENABLE_GIG_TYPE_SCM_HASH
     gig_type_scm_hash = g_hash_table_new(g_direct_hash, g_direct_equal);
-#endif
 
 #define A(G,S)                                                      \
     do {                                                            \
@@ -825,19 +817,34 @@ gig_init_types_once(void)
 
     // value associations, do not rely on them for anything else
     gig_type_associate(G_TYPE_STRING, scm_c_public_ref("oop goops", "<string>"));
+    SCM _scm_real = scm_c_public_ref("oop goops", "<real>");
+    SCM _scm_integer = scm_c_public_ref("oop goops", "<integer>");
+    gig_type_register(G_TYPE_INT, _scm_integer);
+    gig_type_register(G_TYPE_UINT, _scm_integer);
+    gig_type_register(G_TYPE_LONG, _scm_integer);
+    gig_type_register(G_TYPE_ULONG, _scm_integer);
+    gig_type_register(G_TYPE_INT64, _scm_integer);
+    gig_type_register(G_TYPE_UINT64, _scm_integer);
+
+    gig_type_register(G_TYPE_FLOAT, _scm_real);
+    gig_type_register(G_TYPE_DOUBLE, _scm_real);
+
+    gig_type_register(G_TYPE_BYTE_ARRAY, SCM_UNDEFINED);
+    gig_type_register(G_TYPE_ARRAY, SCM_UNDEFINED);
+    gig_type_register(G_TYPE_PTR_ARRAY, SCM_UNDEFINED);
 
     atexit(gig_type_free_types);
 
+    // G_TYPE_X constants for use where SCM classes don't apply
 #define D(x)                                                            \
     do                                                                  \
     {                                                                   \
-        gig_type_register(x);                                           \
+        gig_type_register(x, SCM_UNDEFINED);                            \
         scm_permanent_object(scm_c_define(#x, scm_from_uintptr_t(x)));  \
         scm_c_export(#x, NULL);                                         \
     } while (0)
 
     D(G_TYPE_NONE);
-    /* D(G_TYPE_INTERFACE); */
     D(G_TYPE_CHAR);
     D(G_TYPE_UCHAR);
     D(G_TYPE_BOOLEAN);
@@ -851,11 +858,7 @@ gig_init_types_once(void)
     D(G_TYPE_FLAGS);
     D(G_TYPE_FLOAT);
     D(G_TYPE_DOUBLE);
-    /* D(G_TYPE_STRING); */
-    /* D(G_TYPE_GTYPE); */
-    /* D(G_TYPE_VARIANT); */
-    /* D(G_TYPE_CHECKSUM); */
-    /* D(G_TYPE_POINTER); */
+    D(G_TYPE_GTYPE);
     D(G_TYPE_OBJECT);
 #undef D
 

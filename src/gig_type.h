@@ -33,12 +33,14 @@ SCM gig_closure_type;
 G_GNUC_MALLOC gchar *gig_type_document_type_from_gtype(GType gtype);
 G_GNUC_MALLOC gchar *gig_type_class_name_from_gtype(GType gtype);
 
-void gig_type_register(GType gtype);
+void gig_type_register(GType gtype, SCM stype);
 SCM gig_type_define(GType gtype, SCM defs);
 SCM gig_type_define_full(GType gtype, SCM defs, SCM extra_supers);
 SCM gig_type_define_with_info(GIRegisteredTypeInfo *info, SCM supers, SCM slots);
 
 GType scm_to_gtype(SCM x);
+GType scm_to_gtype_full(SCM x, const gchar *subr, gint argpos);
+SCM scm_from_gtype(GType x);
 GType gig_type_get_gtype_from_obj(SCM x);
 SCM gig_type_get_scheme_type(GType gtype);
 SCM gig_type_get_scheme_type_with_info(GIRegisteredTypeInfo *info);

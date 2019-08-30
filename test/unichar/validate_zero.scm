@@ -4,4 +4,4 @@
 (typelib-require ("GLib" "2.0"))
 
 (automake-test
- (unichar-validate? #x0000))
+ (unichar-validate? #\x0000))
