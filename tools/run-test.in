@@ -7,6 +7,15 @@ IFS="$(printf '\n\t')"
 
 # Exit immediately if a command returns a non-zero status
 set -e
+_exit() {
+    retval=$?
+    if [[ $retval -gt 128 ]]; then
+        exit 99
+    else
+        exit $retval
+    fi
+}
+trap "_exit" EXIT
 
 # Make sure there is exactly one parameter
 if [ "$#" -ne 1 ]; then
@@ -30,13 +39,13 @@ export GUILE_AUTO_COMPILE
 
 if test -e "${top_builddir}/test/libeverything-1.0.la"
 then
-    exec ${top_builddir}/tools/uninstalled-test-env ${top_builddir}/libtool --mode=execute \
+    ${top_builddir}/tools/uninstalled-test-env ${top_builddir}/libtool --mode=execute \
          -dlopen ${top_builddir}/src/libguile-gi.la \
          -dlopen ${top_builddir}/test/libeverything-1.0.la \
          -dlopen ${top_builddir}/test/libmarshall-1.0.la \
          "@GUILE@" "$1"
 else
-    exec ${top_builddir}/tools/uninstalled-test-env ${top_builddir}/libtool --mode=execute \
+    ${top_builddir}/tools/uninstalled-test-env ${top_builddir}/libtool --mode=execute \
          -dlopen ${top_builddir}/src/libguile-gi.la \
          "@GUILE@" "$1"
 fi
