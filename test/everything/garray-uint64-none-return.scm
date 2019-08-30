@@ -8,4 +8,3 @@
  (let ((x (garray-uint64-none-return)))
    (format #t "Output: ~S~%" x)
    (list= eqv? '(0 #xFFFFFFFFFFFFFFFF) (u64vector->list x))))
-

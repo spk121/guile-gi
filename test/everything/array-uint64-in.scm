@@ -8,4 +8,3 @@
    (format #t "Input: ~S~%" x)
    (array-uint64-in x)
    #t))
-

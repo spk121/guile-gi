@@ -8,4 +8,3 @@
    (format #t "Input: ~S~%" x)
    (array-bool-in x)
    #t))
-

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-#	Copyright (C) 2003, 2006, 2008, 2009, 2010, 2016 Free Software Foundation
+#   Copyright (C) 2003, 2006, 2008, 2009, 2010, 2016 Free Software Foundation
 #
 #   This file is part of GUILE, that has been modified for the
 #   guile-gi project
@@ -47,26 +47,26 @@ top_builddir="@abs_top_builddir@"
 
 if [ x"$GUILE_LOAD_PATH" = x ]
 then
-	GUILE_LOAD_PATH="${top_srcdir}/module:${top_srcdir}"
-	if test "${top_srcdir}" != "${top_builddir}"; then
+    GUILE_LOAD_PATH="${top_srcdir}/module:${top_srcdir}"
+    if test "${top_srcdir}" != "${top_builddir}"; then
         GUILE_LOAD_PATH="$GUILE_LOAD_PATH:${top_builddir}/module:${top_builddir}"
-	fi
+    fi
 else
-	for d in "/module" ""
-	do
+    for d in "/module" ""
+    do
         # This hair prevents double inclusion.
         # The ":" prevents prefix aliasing.
-	    case x"$GUILE_LOAD_PATH" in
-		    x*${top_srcdir}${d}:*) ;;
-		    x*${top_srcdir}${d}) ;;
-		    *) GUILE_LOAD_PATH="${top_srcdir}${d}:$GUILE_LOAD_PATH" ;;
-	    esac
-	    case x"$GUILE_LOAD_PATH" in
-		    x*${top_builddir}${d}:*) ;;
-		    x*${top_builddir}${d}) ;;
-		    *) GUILE_LOAD_PATH="${top_builddir}${d}:$GUILE_LOAD_PATH" ;;
-	    esac
-	done
+        case x"$GUILE_LOAD_PATH" in
+            x*${top_srcdir}${d}:*) ;;
+            x*${top_srcdir}${d}) ;;
+            *) GUILE_LOAD_PATH="${top_srcdir}${d}:$GUILE_LOAD_PATH" ;;
+        esac
+        case x"$GUILE_LOAD_PATH" in
+            x*${top_builddir}${d}:*) ;;
+            x*${top_builddir}${d}) ;;
+            *) GUILE_LOAD_PATH="${top_builddir}${d}:$GUILE_LOAD_PATH" ;;
+        esac
+    done
 fi
 export GUILE_LOAD_PATH
 
@@ -76,10 +76,10 @@ do
     # The ":" prevents prefix aliasing.
     case x"$GUILE_LOAD_COMPILED_PATH" in
         x) GUILE_LOAD_COMPILED_PATH="${top_builddir}${d}" ;;
-     	x*${top_builddir}${d}:*) ;;
-     	x*${top_builddir}${d}) ;;
-	    *) GUILE_LOAD_COMPILED_PATH="${top_builddir}${d}:$GUILE_LOAD_COMPILED_PATH" ;;
-	esac
+        x*${top_builddir}${d}:*) ;;
+        x*${top_builddir}${d}) ;;
+        *) GUILE_LOAD_COMPILED_PATH="${top_builddir}${d}:$GUILE_LOAD_COMPILED_PATH" ;;
+    esac
 done
 export GUILE_LOAD_COMPILED_PATH
 
@@ -89,10 +89,10 @@ do
     # The ":" prevents prefix aliasing.
     case x"$GI_TYPELIB_PATH" in
         x) GI_TYPELIB_PATH="${top_builddir}${d}" ;;
-     	x*${top_builddir}${d}:*) ;;
-     	x*${top_builddir}${d}) ;;
-	    *) GI_TYPELIB_PATH="${top_builddir}${d}:$GI_TYPELIB_PATH" ;;
-	esac
+        x*${top_builddir}${d}:*) ;;
+        x*${top_builddir}${d}) ;;
+        *) GI_TYPELIB_PATH="${top_builddir}${d}:$GI_TYPELIB_PATH" ;;
+    esac
 done
 export GI_TYPELIB_PATH
 

@@ -8,4 +8,3 @@
    (format #t "Input: ~S~%" flag)
    (boolean-in-true flag)
    #t))
-

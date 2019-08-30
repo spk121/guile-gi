@@ -10,4 +10,3 @@
      (write bv) (newline)
      (write str) (newline)
      (string? str))))
-

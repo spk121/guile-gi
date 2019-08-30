@@ -25,4 +25,3 @@
    (map (lambda (proc val)
           (proc val))
         procs x)))
-

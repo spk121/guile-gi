@@ -11,4 +11,3 @@
      (format #t "Input After: ~S~%" x)
      (format #t "Output: ~S~%" y)
      (vector= string=? #("-1" "0" "1" "2") y))))
- 

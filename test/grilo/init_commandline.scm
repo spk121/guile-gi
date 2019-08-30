@@ -14,5 +14,3 @@
      (format #t "Input after: ~S~%" cmdline)
      (format #t "Output: ~S~%" ret)
      (vector= string=? cmdline ret))))
-
-

@@ -8,4 +8,3 @@
  (let ((x (garray-utf8-full-return)))
    (format #t "Output: ~S~%" x)
    (list= string=? '("0" "1" "2") (vector->list x))))
-

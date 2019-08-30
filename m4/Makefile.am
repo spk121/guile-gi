@@ -16,4 +16,3 @@
 
 # Aditional files to distribute
 EXTRA_DIST = attributes.m4
-

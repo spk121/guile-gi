@@ -7,4 +7,3 @@
  (let ((x (boolean-out-false)))
    (format #t "Output: ~S~%" x)
    (not x)))
-

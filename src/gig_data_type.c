@@ -133,7 +133,7 @@ gig_type_meta_init_from_basic_type_tag(GigTypeMeta *meta, GITypeTag tag)
         return;
     }
     T(GI_TYPE_TAG_ERROR, G_TYPE_ERROR, GError);
-    g_error("Unhandled type '%s' %s %d", g_type_tag_to_string(tag), __FILE__, __LINE__);
+    g_error("unhandled type '%s' %s %d", g_type_tag_to_string(tag), __FILE__, __LINE__);
 #undef T
 }
 

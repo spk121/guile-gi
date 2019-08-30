@@ -36,4 +36,3 @@
      (format #t "Output: ~S~%" y)
      (format #t "Expected output: ~S~%" expected)
      (list= = y expected))))
-

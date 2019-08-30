@@ -11,4 +11,3 @@
      (format #t "Input After: ~S~%" x)
      (format #t "Output: ~S~%" y)
      (list= string=? '("-2" "-1" "0" "1") (vector->list y)))))
-

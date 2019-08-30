@@ -8,4 +8,3 @@
    (format #t "Input: ~S~%" x)
    (int8-in-max x)
    #t))
-

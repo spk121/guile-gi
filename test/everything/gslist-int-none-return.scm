@@ -8,4 +8,3 @@
  (let ((x (gslist-int-none-return)))
    (format #t "Output: ~S~%" x)
    (list= = x '(-1 0 1 2))))
-

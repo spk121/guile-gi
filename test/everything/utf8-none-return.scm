@@ -7,4 +7,3 @@
  (let ((x (utf8-none-return)))
    (format #t "Output: ~S~%" x)
    (string=? x CONSTANT_UTF8)))
-

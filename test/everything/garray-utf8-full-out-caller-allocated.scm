@@ -16,5 +16,3 @@
    (garray-utf8-full-out-caller-allocated x)
      (format #t "Input after: ~S~%" x)
      (list= string=? '("0" "1" "2") (vector->list x)))))
-
-

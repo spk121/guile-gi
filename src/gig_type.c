@@ -20,9 +20,6 @@
 #include "gig_util.h"
 #include "gig_object.h"
 #include "gig_type_private.h"
-#if HAVE_CONFIG_H
-#include "config.h"
-#endif
 
 // In C, a GType is an integer.  It is an integer ID that maps to a
 // type of GObject.

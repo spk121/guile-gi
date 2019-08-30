@@ -24,4 +24,3 @@
        (list= = (u8vector->list converted)
 	      '(65 66 67 68 69) ; UTF-8 'ABCDE'
 	      ))))
-

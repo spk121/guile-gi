@@ -8,4 +8,3 @@
  (let ((x (gslist-utf8-none-return)))
    (format #t "Output: ~S~%" x)
    (list= string=? x '("0" "1" "2"))))
-

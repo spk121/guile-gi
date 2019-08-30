@@ -37,7 +37,7 @@
 
 #define UNHANDLED                               \
     do { \
-    g_error("Unhandled argument type '%s' %s:%d", gig_type_meta_describe(meta), __FILE__, __LINE__); \
+    g_error("unhandled argument type '%s' %s:%d", gig_type_meta_describe(meta), __FILE__, __LINE__); \
     } while(FALSE)
 
 static gpointer later_free(GPtrArray *must_free, GigTypeMeta *meta, gpointer ptr);
@@ -1101,7 +1101,7 @@ c_native_array_to_scm(C2S_ARG_DECL)
     do {                                                                \
         gsize sz;                                                       \
         if (!g_size_checked_mul(&sz, length, gig_meta_real_item_size(&meta->params[0])) || sz == G_MAXSIZE) \
-            scm_misc_error(subr, "Array size overflow", SCM_EOL);               \
+            scm_misc_error(subr, "array size overflow", SCM_EOL);               \
         if (sz == 0) \
             *object = scm_make_ ## _short_type ## vector (scm_from_int(0), scm_from_int(0)); \
         else if (meta->transfer == GI_TRANSFER_EVERYTHING) \

@@ -382,7 +382,7 @@ their @file{.typelib} files.
 A GObject typelib file contains information on the public classes,
 functions, and variables in a GObject-based library, and most
 GObject-complient libraries, such as GLib and GTK, provide one.
-Usually these files are on the filesystem in a single directory
+Usually these files are on the file system in a single directory
 location.  On Fedora, for example, these files may be stored in
 @file{/var/lib64/girepository-1.0}.
 
@@ -406,7 +406,7 @@ the default typelib directory.
 @end deffn
 
 @deffn Procedure prepend-search-path! directory
-Given @var{directory}, a string representation of a filesystem
+Given @var{directory}, a string representation of a file system
 directory, this prepends that directory to the typelib search path.
 
 This change doesn't affect libraries loaded before it. It therefore is
@@ -737,7 +737,7 @@ in the typelib. But, it is possible to make custom GObject object
 classes using the @code{register-type} procedure.
 
 Bear in mind, that while Guile-GI internally uses GOOPS, GObjects implemented in it
-are not quite as flexible. For instance, you can not meaningfully redefine a
+are not quite as flexible. For instance, you cannot meaningfully redefine a
 GObject-based type, which you could if you just used GOOPS types.
 On the other hand, you can make use of the features of the GObject infrastructure,
 such as signals.

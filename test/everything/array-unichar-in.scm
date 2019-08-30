@@ -8,5 +8,3 @@
    (format #t "Input: ~S~%" CONSTANT_UTF8)
    (array-unichar-in CONSTANT_UTF8)
    #t))
-
-

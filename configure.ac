@@ -73,16 +73,16 @@ AC_EGREP_CPP(XOPEN_700_SUPPORT,
               [AC_MSG_FAILURE([Implementation does not conform to X/Open 7])])
 
 ################
-# Guile has three directories that don't follow the GNU Filesystem
+# Guile has three directories that don't follow the GNU File System
 # Heirarchy Standards.  If one follows the GNU FHS, files get installed
 # in directories in which Guile does not search for them by default.
 AC_ARG_WITH([gnu-filesystem-hierarchy],
             [AS_HELP_STRING([--with-gnu-filesystem-hierarchy],
-                            [Strictly follow GNU Filesystem Heirarchy when installing, instead of querying Guile to discover the install directories that it expects.])])
+                            [Strictly follow GNU File System Heirarchy when installing, instead of querying Guile to discover the install directories that it expects.])])
 
 AS_CASE(["x$with_gnu_file_system_hierarchy"], [xyes],
     [
-    # Follow the GNU Filesystem Hierarchy Standard correctly
+    # Follow the GNU File System Hierarchy Standard correctly
     # Installed .scm scheme libraries go here
     AC_MSG_CHECKING([Guile site directory])
     guilesitedir="\${datadir}/guile/site/$guile_effective_version"

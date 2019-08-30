@@ -10,4 +10,3 @@
      (format #t "Input After: ~S~%" x)
      (format #t "Output: ~S~%" y)
      (string-null? y))))
-
