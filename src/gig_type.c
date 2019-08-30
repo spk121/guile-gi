@@ -367,6 +367,9 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
         g_return_val_if_fail(orig_value != NULL, defs);
         SCM val = SCM_PACK_POINTER(orig_value);
 
+        // FIXME: The warning below should be infrequent enough to not need silencing
+        if (SCM_UNBNDP(val))
+            return defs;
         g_return_val_if_fail(!SCM_UNBNDP(val), defs);
         SCM key = scm_class_name(val);
         if (!SCM_UNBNDP(defs)) {
