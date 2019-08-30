@@ -79,15 +79,6 @@ gig_type_class_name_from_gtype(GType gtype)
     return g_strdup_printf("<%s>", g_type_name(gtype));
 }
 
-gchar *
-gig_type_document_type_from_gtype(GType gtype)
-{
-    gchar *class_name = gig_type_class_name_from_gtype(gtype);
-    gchar *str = g_strdup_printf("TYPE %s\n\n", class_name);
-    g_free(class_name);
-    return str;
-}
-
 // Given a GType integer but no introspection information, this stores
 // that GType in our hash table of known types without creating an
 // associated foreign object type.

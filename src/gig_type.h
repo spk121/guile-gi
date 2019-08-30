@@ -30,7 +30,6 @@ SCM gig_paramspec_type;
 SCM gig_value_type;
 SCM gig_closure_type;
 
-G_GNUC_MALLOC gchar *gig_type_document_type_from_gtype(GType gtype);
 G_GNUC_MALLOC gchar *gig_type_class_name_from_gtype(GType gtype);
 
 void gig_type_register(GType gtype, SCM stype);
