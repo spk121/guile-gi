@@ -14,7 +14,6 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <ffi.h>
-#include "gi_callable_info.h"
 #include "gig_argument.h"
 #include "gig_util.h"
 #include "gig_arg_map.h"
@@ -99,7 +98,7 @@ gig_function_define(GType type, GICallableInfo *info, const gchar *namespace, SC
 
     gchar *function_name, *method_name;
     function_name = scm_dynwind_or_bust("%gig-function-define",
-                                        gi_callable_info_make_name(info, namespace));
+                                        gig_callable_info_make_name(info, namespace));
 
     gint required_input_count, optional_input_count;
     SCM formals, specializers, self_type = SCM_UNDEFINED;
@@ -108,7 +107,7 @@ gig_function_define(GType type, GICallableInfo *info, const gchar *namespace, SC
         self_type = gig_type_get_scheme_type(type);
         g_return_val_if_fail(!SCM_UNBNDP(self_type), defs);
         method_name = scm_dynwind_or_bust("%gig-function-define",
-                                          gi_callable_info_make_name(info, NULL));
+                                          gig_callable_info_make_name(info, NULL));
     }
 
     SCM proc = SCM_UNDEFINED;

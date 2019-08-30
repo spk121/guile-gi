@@ -19,7 +19,6 @@
 #include <girepository.h>
 #include "gig_type.h"
 #include "gig_util.h"
-#include "gi_callable_info.h"
 #include "gig_arg_map.h"
 #include "gig_repository.h"
 
@@ -78,7 +77,7 @@ do_document(GIBaseInfo *info, const gchar *namespace)
             kind = "function";
 
         scm_printf(SCM_UNDEFINED, "<%s name=\"%s\">", kind, g_base_info_get_name(info));
-        scheme_name = scm_dynwind_or_bust(FUNC, gi_callable_info_make_name(info, NULL));
+        scheme_name = scm_dynwind_or_bust(FUNC, gig_callable_info_make_name(info, NULL));
 
         if (g_callable_info_is_method(info))
             scm_printf(SCM_UNDEFINED, "<scheme><procedure name=\"%s\" long-name=\"%s:%s\">",

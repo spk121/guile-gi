@@ -9,6 +9,7 @@
 G_BEGIN_DECLS
 // *INDENT-ON*
 
+G_GNUC_MALLOC gchar *gig_callable_info_make_name(GICallableInfo *info, const gchar *prefix);
 const gchar *gig_constant_strip_prefix(const gchar *name, const gchar *strip_prefix);
 gchar *gig_gname_to_scm_name(const gchar *gname);
 SCM scm_c_list_ref(SCM list, gsize k);
