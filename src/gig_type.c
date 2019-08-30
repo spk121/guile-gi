@@ -393,7 +393,7 @@ gig_type_define(GType gtype, SCM defs)
 GType
 scm_to_gtype(SCM x)
 {
-    scm_to_gtype_full(x, NULL, SCM_ARGn);
+    return scm_to_gtype_full(x, NULL, SCM_ARGn);
 }
 
 GType
