@@ -23,6 +23,7 @@ EXTRA_DIST = \
   gdb-test.in \
   guile-gi.in \
   lcov.sh.in \
-  valgrind.sh.in
+  valgrind.sh.in \
+  valgrind.supp
 
 bin_SCRIPTS = guile-gi
