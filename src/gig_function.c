@@ -263,10 +263,11 @@ SCM string_type;
 SCM applicable_type;
 
 static SCM
-type_specializer(GigTypeMeta *meta) {
+type_specializer(GigTypeMeta *meta)
+{
     switch (meta->gtype) {
     case G_TYPE_POINTER:
-        switch(meta->pointer_type) {
+        switch (meta->pointer_type) {
         case GIG_DATA_UTF8_STRING:
         case GIG_DATA_LOCALE_STRING:
             return string_type;
