@@ -80,7 +80,7 @@ AC_ARG_WITH([gnu-filesystem-hierarchy],
             [AS_HELP_STRING([--with-gnu-filesystem-hierarchy],
                             [Strictly follow GNU File System Heirarchy when installing, instead of querying Guile to discover the install directories that it expects.])])
 
-AS_CASE(["x$with_gnu_file_system_hierarchy"], [xyes],
+AS_CASE(["x$with_gnu_filesystem_hierarchy"], [xyes],
     [
     # Follow the GNU File System Hierarchy Standard correctly
     # Installed .scm scheme libraries go here
