@@ -1,3 +1,17 @@
+XXXX-XX-XX: version 0.2.0
+- Improvements in SCM <-> C argument conversion
+  - simplified to GType + metadata (#31)
+  - more type associations (#25)
+    - enum and flags classes, plus an API for them (#33)
+    - procedure wrappers for callbacks and closures
+    - accessor wrapper for values
+    - integer data types must be `<integer>`
+    - float and double must be `<real>`
+- Support generation of documentation
+  - In-REPL documentation through guile-procedures.txt (#24)
+  - Docbook XML (#23)
+  - Add gtkdoc support through `gi-gtkdoc` (use `guild` to invoke)
+
 2019-08-02: version 0.1.0
 - Improvements in procedure generation
   - Use of GOOPS-based methods with short names

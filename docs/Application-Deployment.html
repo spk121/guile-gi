@@ -73,10 +73,31 @@ following packages.
 require whatever libraries its uses (GTK, WebKit2) as well
 as their associated typelib files.
 </p>
-<p>FIXME: Write about a good directory structure for a GTK application.
-</p>
-<p>FIXME: Write about what to do with all the various GTK icons and XML
-files.
+<p>A good layout for an application might be the following, though we can&rsquo;t
+discourage you from using any other.
+</p><div class="example">
+<pre class="example">/path/to/project
+|-- doc
+|-- data
+|   |-- icons
+|   |-- various XML files
+|   `-- etc.
+|-- module
+|   |-- project.scm
+|   `-- project
+|       `-- more Scheme source files
+|-- src
+|   `-- C source files (optional, when depending on other libraries/non-GI functionality)
+|-- test
+|   `-- tests
+`-- READMEs, ChangeLogs, build system stuff ...
+</pre></div>
+
+<p>You should be able to make use of most &ldquo;data APIs&rdquo; (such as GSettings,
+GResource, GtkBuilder...), as long as the data files don&rsquo;t need to reference
+functionality implemented in your Scheme code.  If you do find yourself needing
+some of that, e.g. if you want to write a GtkBuilder file for a custom class,
+consider implementing this functionality in C and exporting it as a typelib instead.
 </p>
 
 

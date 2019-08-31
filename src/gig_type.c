@@ -90,7 +90,8 @@ gig_type_register(GType gtype, SCM stype)
         gig_type_register(parent, SCM_UNDEFINED);
 
     if (!g_hash_table_contains(gig_type_gtype_hash, GSIZE_TO_POINTER(gtype))) {
-        g_hash_table_insert(gig_type_gtype_hash, GSIZE_TO_POINTER(gtype), SCM_UNPACK_POINTER(stype));
+        g_hash_table_insert(gig_type_gtype_hash, GSIZE_TO_POINTER(gtype),
+                            SCM_UNPACK_POINTER(stype));
         g_debug("Registering a new GType: %zu -> %s", gtype, g_type_name(gtype));
     }
 }
