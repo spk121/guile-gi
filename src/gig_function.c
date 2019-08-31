@@ -90,7 +90,7 @@ default_definition(SCM name)
 #undef LOOKUP_DEFINITION
 
 SCM
-gig_function_define(GType type, GICallableInfo *info, const gchar *namespace, SCM defs)
+gig_function_define(GType type, GICallableInfo *info, const gchar *_namespace, SCM defs)
 {
     scm_dynwind_begin(0);
     SCM def;
@@ -98,7 +98,7 @@ gig_function_define(GType type, GICallableInfo *info, const gchar *namespace, SC
 
     gchar *function_name, *method_name;
     function_name = scm_dynwind_or_bust("%gig-function-define",
-                                        gig_callable_info_make_name(info, namespace));
+                                        gig_callable_info_make_name(info, _namespace));
 
     gint required_input_count, optional_input_count;
     SCM formals, specializers, self_type = SCM_UNDEFINED;

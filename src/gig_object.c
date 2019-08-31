@@ -61,7 +61,7 @@ gig_i_scm_make_gobject(SCM s_gtype, SCM s_prop_keylist)
 #define FUNC "%make-gobject"
     GType type;
     GObject *obj;
-    GObjectClass *class;
+    GObjectClass *_class;
     gsize n_prop;
     const gchar **keys;
     GValue *values;
@@ -77,8 +77,8 @@ gig_i_scm_make_gobject(SCM s_gtype, SCM s_prop_keylist)
     scm_dynwind_begin(0);
 
     if (scm_is_true(scm_list_p(s_prop_keylist))) {
-        class = g_type_class_ref(type);
-        scm_dynwind_unwind_handler(g_type_class_unref, class, SCM_F_WIND_EXPLICITLY);
+        _class = g_type_class_ref(type);
+        scm_dynwind_unwind_handler(g_type_class_unref, _class, SCM_F_WIND_EXPLICITLY);
 
         n_prop = scm_to_size_t(scm_length(s_prop_keylist)) / 2;
         keys = scm_dynwind_or_bust(FUNC, calloc(n_prop, sizeof(char *)));
@@ -94,7 +94,7 @@ gig_i_scm_make_gobject(SCM s_gtype, SCM s_prop_keylist)
             key = scm_symbol_to_string(scm_keyword_to_symbol(key));
 
             keys[i] = scm_dynwind_or_bust(FUNC, scm_to_utf8_string(key));
-            GParamSpec *pspec = g_object_class_find_property(class, keys[i]);
+            GParamSpec *pspec = g_object_class_find_property(_class, keys[i]);
             if (!pspec) {
                 scm_misc_error(FUNC, "unknown object parameter ~S", scm_list_1(key));
             }
@@ -268,17 +268,17 @@ gig_user_object_finalize(GObject *object)
 }
 
 static void
-gig_user_class_init(GObjectClass *class, gpointer class_info)
+gig_user_class_init(GObjectClass *_class, gpointer class_info)
 {
-    GType type = G_TYPE_FROM_CLASS(class);
+    GType type = G_TYPE_FROM_CLASS(_class);
     GigUserObjectInitInfo *init_info = class_info;
     gsize n_properties = init_info->properties->len;
     GParamSpec **properties = (GParamSpec **)init_info->properties->pdata;
 
-    class->set_property = gig_user_object_set_property;
-    class->get_property = gig_user_object_get_property;
-    class->dispose = gig_user_object_dispose;
-    class->finalize = gig_user_object_finalize;
+    _class->set_property = gig_user_object_set_property;
+    _class->get_property = gig_user_object_get_property;
+    _class->dispose = gig_user_object_dispose;
+    _class->finalize = gig_user_object_finalize;
 
     /* Since the parent type could be anything, some pointer math is
      * required to figure out where our part of the object class is
@@ -286,7 +286,7 @@ gig_user_class_init(GObjectClass *class, gpointer class_info)
     g_ptr_array_foreach(init_info->signals, (GFunc) make_new_signal, GSIZE_TO_POINTER(type));
 
     for (gsize i = 1; i <= n_properties; i++)
-        g_object_class_install_property(class, i, properties[i - 1]);
+        g_object_class_install_property(_class, i, properties[i - 1]);
 }
 
 static void
@@ -402,8 +402,8 @@ gig_i_scm_define_type(SCM s_type_name, SCM s_parent_type, SCM s_properties, SCM 
     return gig_type_get_scheme_type(new_type);
 }
 
-void
-signal_lookup(char *proc, GObject *self,
+static void
+signal_lookup(const char *proc, GObject *self,
               SCM signal, SCM detail, guint *c_signal, GSignalQuery *query_info, GQuark *c_detail)
 {
     SCM s_name = gig_signal_ref(signal, GIG_SIGNAL_SLOT_NAME);
@@ -505,9 +505,9 @@ static SCM ensure_accessor_proc;
 static SCM do_define_property(const gchar *, SCM, SCM, SCM);
 
 SCM
-gig_property_define(GType type, GIPropertyInfo *info, const gchar *namespace, SCM defs)
+gig_property_define(GType type, GIPropertyInfo *info, const gchar *_namespace, SCM defs)
 {
-    GObjectClass *class;
+    GObjectClass *_class;
     GParamSpec *prop;
     SCM s_prop, def;
 
@@ -518,13 +518,13 @@ gig_property_define(GType type, GIPropertyInfo *info, const gchar *namespace, SC
 
     scm_dynwind_begin(0);
 
-    class = g_type_class_ref(type);
-    scm_dynwind_unwind_handler(g_type_class_unref, class, SCM_F_WIND_EXPLICITLY);
+    _class = g_type_class_ref(type);
+    scm_dynwind_unwind_handler(g_type_class_unref, _class, SCM_F_WIND_EXPLICITLY);
     long_name = scm_dynwind_or_bust("%gig-property-define",
-                                    g_strdup_printf("%s:%s", namespace, name));
+                                    g_strdup_printf("%s:%s", _namespace, name));
     long_name = scm_dynwind_or_bust("%gig-property-define", gig_gname_to_scm_name(long_name));
 
-    prop = g_object_class_find_property(class, name);
+    prop = g_object_class_find_property(_class, name);
     g_assert(prop != NULL);
 
     s_prop = gig_type_transfer_object(G_PARAM_SPEC_TYPE(prop), prop, GI_TRANSFER_NOTHING);

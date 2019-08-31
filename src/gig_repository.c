@@ -29,7 +29,6 @@ require(SCM lib, SCM version)
     gchar *_lib, *_version = NULL;
     GITypelib *tl;
     GError *error = NULL;
-    SCM slib;
 
     scm_dynwind_begin(0);
     _lib = scm_dynwind_or_bust("require", scm_to_utf8_string(lib));
@@ -187,9 +186,9 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
     case GI_INFO_TYPE_OBJECT:
     {
         GType gtype = g_registered_type_info_get_g_type(info);
-        const gchar *namespace = g_base_info_get_name(info);
+        const gchar *_namespace = g_base_info_get_name(info);
         if (gtype == G_TYPE_NONE) {
-            g_debug("Not loading object type '%s' because is has no GType", namespace);
+            g_debug("Not loading object type '%s' because is has no GType", _namespace);
             break;
         }
         defs = gig_type_define(gtype, defs);

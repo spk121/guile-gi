@@ -19,7 +19,7 @@ SCM scm_class_ref(SCM cls, SCM slot);
 SCM scm_class_set_x(SCM cls, SCM slot, SCM val);
 SCM scm_drop_right_1(SCM lst);
 SCM scm_c_reexport(const gchar *name, ...);
-SCM scm_printf(SCM port, const gchar *fmt, ...);
+void scm_printf(SCM port, const gchar *fmt, ...);
 const gchar *g_base_info_get_name_safe(GIBaseInfo *info);
 gchar *g_registered_type_info_get_qualified_name(GIRegisteredTypeInfo *info);
 

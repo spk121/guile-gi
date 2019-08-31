@@ -111,20 +111,20 @@ define_conversion(const gchar *fmt, const gchar *name, SCM proc)
 SCM
 gig_define_enum_conversions(GIEnumInfo *info, GType type, SCM defs)
 {
-    SCM class;
+    SCM _class;
     scm_dynwind_begin(0);
     gchar *cls = gig_gname_to_scm_name(g_base_info_get_name(info));
     scm_dynwind_or_bust("%define-enum-conversions", cls);
 
     if (type != G_TYPE_NONE)
-        class = gig_type_get_scheme_type(type);
+        _class = gig_type_get_scheme_type(type);
     else
-        class = gig_type_get_scheme_type_with_info(info);
+        _class = gig_type_get_scheme_type_with_info(info);
 
 #define C(fmt, proc) \
     do {                                                                \
         defs = scm_cons(define_conversion(fmt, cls,                     \
-                                          scm_call_1(proc, class)),     \
+                                          scm_call_1(proc, _class)),     \
                         defs);                                          \
     } while (0)
 
@@ -158,7 +158,7 @@ gig_define_enum(GIEnumInfo *info, SCM defs)
     GIInfoType t = g_base_info_get_type(info);
     gchar *_key;
     SCM key;
-    SCM class;
+    SCM _class;
 
     SCM existing = gig_type_get_scheme_type_with_info(info);
     if (!SCM_UNBNDP(existing))
@@ -166,10 +166,10 @@ gig_define_enum(GIEnumInfo *info, SCM defs)
 
     switch (t) {
     case GI_INFO_TYPE_ENUM:
-        class = gig_type_define_with_info(info, scm_list_1(gig_enum_type), SCM_EOL);
+        _class = gig_type_define_with_info(info, scm_list_1(gig_enum_type), SCM_EOL);
         break;
     case GI_INFO_TYPE_FLAGS:
-        class = gig_type_define_with_info(info, scm_list_1(gig_flags_type), SCM_EOL);
+        _class = gig_type_define_with_info(info, scm_list_1(gig_flags_type), SCM_EOL);
         break;
     default:
         g_assert_not_reached();
@@ -191,6 +191,8 @@ gig_define_enum(GIEnumInfo *info, SCM defs)
         case GI_INFO_TYPE_FLAGS:
             val = scm_from_uint(_val);
             break;
+        default:
+            g_assert_not_reached();
         }
 
         g_debug("defining flag/enum %s and %" PRId64, _key, _val);
@@ -201,10 +203,10 @@ gig_define_enum(GIEnumInfo *info, SCM defs)
         i++;
     }
 
-    scm_class_set_x(class, sym_obarray, obarray);
+    scm_class_set_x(_class, sym_obarray, obarray);
 
-    scm_define(scm_class_name(class), class);
-    defs = scm_cons(scm_class_name(class), defs);
+    scm_define(scm_class_name(_class), _class);
+    defs = scm_cons(scm_class_name(_class), defs);
 
     return defs;
 }

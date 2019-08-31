@@ -277,7 +277,6 @@ gig_callback_new_for_callback(GICallbackInfo *info, gpointer c_func)
     n_args = n_args == 0 ? 0 : 1;
 
     GigCallback *gcb = g_new0(GigCallback, 1);
-    ffi_type *ffi_ret_type;
 
     gcb->name = g_strdup("(anonymous)");
 

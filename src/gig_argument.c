@@ -1196,7 +1196,7 @@ c_native_array_to_scm(C2S_ARG_DECL)
         GigTypeMeta _meta = meta->params[0];
         gboolean is_pointer = _meta.is_ptr;
         _meta.is_ptr = TRUE;
-        gpointer iter = arg->v_pointer;
+        guint8 *iter = arg->v_pointer;
 
         for (gsize k = 0; k < len; k++, elt += inc, iter += gig_meta_real_item_size(meta)) {
             if (is_pointer)

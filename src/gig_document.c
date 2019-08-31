@@ -30,11 +30,11 @@ document_nested(GIBaseInfo *parent)
 #define DOCUMENT_NESTED(N, I)                               \
     do {                                                    \
         for (gint i = 0; i < N; i++)                        \
-            do_document(I(parent, i), namespace);           \
+            do_document(I(parent, i), _namespace);           \
     } while (0)
 
-    gchar *namespace = gig_gname_to_scm_name(g_base_info_get_name(parent));
-    scm_dynwind_free(namespace);
+    gchar *_namespace = gig_gname_to_scm_name(g_base_info_get_name(parent));
+    scm_dynwind_free(_namespace);
 
     gint n_methods, n_properties, n_signals, n_fields;
     GigRepositoryNested method, property, signal, field;
@@ -60,10 +60,11 @@ document_arg_entry(const gchar *kind, GigArgMapEntry *entry)
 }
 
 static void
-do_document(GIBaseInfo *info, const gchar *namespace)
+do_document(GIBaseInfo *info, const gchar *_namespace)
 {
 #define FUNC "%document"
-    gchar *scheme_name, *kind;
+    gchar *scheme_name;
+    const gchar *kind;
     GigArgMap *arg_map;
     gint in, out, req, opt;
     GIInfoType type = g_base_info_get_type(info);
@@ -81,9 +82,9 @@ do_document(GIBaseInfo *info, const gchar *namespace)
 
         if (g_callable_info_is_method(info))
             scm_printf(SCM_UNDEFINED, "<scheme><procedure name=\"%s\" long-name=\"%s:%s\">",
-                       scheme_name, namespace, scheme_name);
-        else if (namespace != NULL)
-            scm_printf(SCM_UNDEFINED, "<scheme><procedure name=\"%s:%s\">", namespace,
+                       scheme_name, _namespace, scheme_name);
+        else if (_namespace != NULL)
+            scm_printf(SCM_UNDEFINED, "<scheme><procedure name=\"%s:%s\">", _namespace,
                        scheme_name);
         else
             scm_printf(SCM_UNDEFINED, "<scheme><procedure name=\"%s\">", scheme_name);
@@ -138,6 +139,8 @@ do_document(GIBaseInfo *info, const gchar *namespace)
         case GI_INFO_TYPE_OBJECT:
             kind = "class";
             break;
+        default:
+            g_assert_not_reached();
         }
 
         scm_printf(SCM_UNDEFINED, "<%s name=\"%s\">", kind, g_base_info_get_name(info));
@@ -152,6 +155,7 @@ do_document(GIBaseInfo *info, const gchar *namespace)
 
     case GI_INFO_TYPE_ENUM:
     case GI_INFO_TYPE_FLAGS:
+    {
         if (type == GI_INFO_TYPE_FLAGS)
             kind = "bitfield";
         else
@@ -178,6 +182,7 @@ do_document(GIBaseInfo *info, const gchar *namespace)
             do_document(g_enum_info_get_value(info, i), g_base_info_get_name(info));
 
         scm_printf(SCM_UNDEFINED, "</%s>", kind);
+    }
         break;
 
     case GI_INFO_TYPE_SIGNAL:
@@ -192,6 +197,7 @@ do_document(GIBaseInfo *info, const gchar *namespace)
         break;
 
     case GI_INFO_TYPE_VALUE:
+    {
         scheme_name = scm_dynwind_or_bust("%document",
                                           gig_gname_to_scm_name(g_base_info_get_name(info)));
         scm_printf(SCM_UNDEFINED, "<member name=\"%s\">", g_base_info_get_name(info));
@@ -201,6 +207,7 @@ do_document(GIBaseInfo *info, const gchar *namespace)
         while (g_base_info_iterate_attributes(info, &iter, &name, &value))
             scm_printf(SCM_UNDEFINED, "%s=\"%s\"", name, value);
         scm_printf(SCM_UNDEFINED, "/></scheme></member>", scheme_name);
+    }
         break;
     case GI_INFO_TYPE_CONSTANT:
     case GI_INFO_TYPE_CALLBACK:

@@ -13,6 +13,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 #include <girepository.h>
 #include <glib-object.h>
 #include <glib.h>
@@ -67,7 +70,7 @@ is_enabled(GLogLevelFlags flags, const GLogField *domain)
 static GLogWriterOutput
 gig_log_writer(GLogLevelFlags flags, const GLogField *fields, gsize n_fields, gpointer user_data)
 {
-    const GLogField *message, domain;
+    const GLogField *message;
 
     const gchar *prefix, *color;
     if (!logger_initialized) {

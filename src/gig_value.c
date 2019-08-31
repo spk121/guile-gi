@@ -250,7 +250,6 @@ gig_value_from_scm_with_error(GValue *value, SCM obj, const gchar *subr, gint po
     }
 }
 
-
 SCM
 gig_value_param_as_scm(const GValue *gvalue, gboolean copy_boxed, const GParamSpec *pspec)
 {

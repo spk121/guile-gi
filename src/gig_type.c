@@ -242,16 +242,16 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
         switch (fundamental) {
         case G_TYPE_ENUM:
         {
-            GEnumClass *class = g_type_class_ref(gtype);
-            SCM size = scm_from_uint(class->n_values);
+            GEnumClass *_class = g_type_class_ref(gtype);
+            SCM size = scm_from_uint(_class->n_values);
             SCM obarray = scm_make_hash_table(size);
 
-            for (guint i = 0; i < class->n_values; i++) {
-                SCM key = scm_from_utf8_symbol(class->values[i].value_nick);
-                SCM value = scm_from_int(class->values[i].value);
+            for (guint i = 0; i < _class->n_values; i++) {
+                SCM key = scm_from_utf8_symbol(_class->values[i].value_nick);
+                SCM value = scm_from_int(_class->values[i].value);
                 scm_hashq_set_x(obarray, key, value);
             }
-            g_type_class_unref(class);
+            g_type_class_unref(_class);
 
             dsupers = scm_list_1(SCM_PACK_POINTER(sparent));
             new_type = scm_call_4(make_class_proc, dsupers, slots, kwd_name, type_class_name);
@@ -262,16 +262,16 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
 
         case G_TYPE_FLAGS:
         {
-            GFlagsClass *class = g_type_class_ref(gtype);
-            SCM size = scm_from_uint(class->n_values);
+            GFlagsClass *_class = g_type_class_ref(gtype);
+            SCM size = scm_from_uint(_class->n_values);
             SCM obarray = scm_make_hash_table(size);
 
-            for (guint i = 0; i < class->n_values; i++) {
-                SCM key = scm_from_utf8_symbol(class->values[i].value_nick);
-                SCM value = scm_from_int(class->values[i].value);
+            for (guint i = 0; i < _class->n_values; i++) {
+                SCM key = scm_from_utf8_symbol(_class->values[i].value_nick);
+                SCM value = scm_from_int(_class->values[i].value);
                 scm_hashq_set_x(obarray, key, value);
             }
-            g_type_class_unref(class);
+            g_type_class_unref(_class);
 
             dsupers = scm_list_1(SCM_PACK_POINTER(sparent));
             new_type = scm_call_4(make_class_proc, dsupers, slots, kwd_name, type_class_name);
@@ -310,7 +310,7 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
         case G_TYPE_OBJECT:
         {
             GType *interfaces = NULL;
-            gint n_interfaces = 0;
+            guint n_interfaces = 0;
             if (fundamental == G_TYPE_OBJECT)
                 interfaces = g_type_interfaces(gtype, &n_interfaces);
             else if (fundamental == G_TYPE_INTERFACE)
@@ -321,7 +321,7 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
             else
                 dsupers = scm_cons(SCM_PACK_POINTER(sparent), extra_supers);
 
-            for (gint n = 0; n < n_interfaces; n++)
+            for (guint n = 0; n < n_interfaces; n++)
                 dsupers = scm_cons(gig_type_get_scheme_type(interfaces[n]), dsupers);
             g_free(interfaces);
 

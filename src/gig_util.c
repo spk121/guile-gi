@@ -227,8 +227,8 @@ scm_c_reexport(const gchar *name, ...)
     SCM current_module = scm_current_module();
     SCM syms = SCM_EOL;
 
-    SCM public = scm_module_public_interface(current_module);
-    SCM obarray = SCM_MODULE_OBARRAY(public);
+    SCM _public = scm_module_public_interface(current_module);
+    SCM obarray = SCM_MODULE_OBARRAY(_public);
 
     do {
         SCM sym = scm_from_utf8_symbol(name);
@@ -245,7 +245,7 @@ scm_c_reexport(const gchar *name, ...)
     return SCM_UNSPECIFIED;
 }
 
-SCM
+void
 scm_printf(SCM port, const gchar *fmt, ...)
 {
     va_list args;
@@ -294,8 +294,8 @@ g_registered_type_info_get_qualified_name(GIRegisteredTypeInfo *info)
     if (_name != NULL)
         return g_strdup(_name);
 
-    const gchar *namespace = g_base_info_get_namespace(info);
-    const gchar *prefix = g_irepository_get_c_prefix(NULL, namespace);
+    const gchar *_namespace = g_base_info_get_namespace(info);
+    const gchar *prefix = g_irepository_get_c_prefix(NULL, _namespace);
 
     // add initial % to ensure that the name is private
     return g_strdup_printf("%%%s%s", prefix, g_base_info_get_name(info));
