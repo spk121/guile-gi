@@ -265,34 +265,6 @@ gig_value_param_as_scm(const GValue *gvalue, gboolean copy_boxed, const GParamSp
 
 }
 
-static int
-gig_value_array_from_scm_list(GValue *value, SCM list)
-{
-    gssize len, i;
-    GArray *array;
-
-    len = scm_to_size_t(scm_length(list));
-
-    array = g_array_new(FALSE, TRUE, sizeof(GValue));
-
-    for (i = 0; i < len; ++i) {
-        SCM item = scm_list_ref(list, scm_from_size_t(i));
-        GType type;
-        GValue item_value = { 0, };
-
-        type = gig_type_get_gtype_from_obj(item);
-
-        g_value_init(&item_value, type);
-        gig_value_from_scm(&item_value, item);
-
-        g_array_append_val(array, item_value);
-    }
-
-    g_value_take_boxed(value, array);
-    return 0;
-}
-
-
 /**
  * gig_value_to_scm_basic_type:
  * @value: the GValue object.

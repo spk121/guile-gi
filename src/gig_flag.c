@@ -57,15 +57,6 @@ gig_uint_to_flags(guint v, GType gtype)
     return scm_call_2(number_to_flags, type, val);
 }
 
-static gchar *
-enum_info_to_class_name(GIEnumInfo *info)
-{
-    const gchar *namespace = g_base_info_get_namespace(info);
-    const gchar *prefix = g_irepository_get_c_prefix(NULL, namespace);
-    // use '%' to avoid name clashes
-    return g_strdup_printf("<%%%s%s>", prefix, g_base_info_get_name(info));
-}
-
 SCM
 gig_int_to_enum_with_info(gint v, GIEnumInfo *info)
 {

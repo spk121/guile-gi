@@ -24,11 +24,5 @@ G_BEGIN_DECLS
 // *INDENT-ON*
 
 SCM gig_constant_define(GIConstantInfo *info, SCM defs);
-static inline void
-gig_constant_document(GString **str, const gchar *namespace_, const gchar *parent,
-                      GIConstantInfo *info)
-{
-}
-
 void gig_init_constant(void);
 #endif
