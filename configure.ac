@@ -18,7 +18,7 @@ dnl Process this file with autoconf to produce a configure script
 ################
 # Package Info
 
-AC_INIT([Guile GI], [0.1.0], [spk121@yahoo.com], [guile_gi])
+AC_INIT([Guile GI], [0.2.0], [spk121@yahoo.com], [guile_gi])
 
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_SRCDIR([src/gig.c])
@@ -32,7 +32,7 @@ AC_CONFIG_MACRO_DIR([m4])
 ################
 # Libtool versioning
 
-LIBGUILE_GI_INTERFACE="2:0:0"
+LIBGUILE_GI_INTERFACE="3:0:0"
 AC_SUBST([LIBGUILE_GI_INTERFACE])
 
 ################

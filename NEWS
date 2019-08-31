@@ -1,4 +1,4 @@
-XXXX-XX-XX: version 0.2.0
+2019-09-02: version 0.2.0
 - Improvements in SCM <-> C argument conversion
   - simplified to GType + metadata (#31)
   - more type associations (#25)

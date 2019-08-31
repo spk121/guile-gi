@@ -1,9 +1,8 @@
-Maintained (lol) by
+Maintained by
  Mike Gran
 
-Including patches from
+Contributors
  LordYuuma
+ Mike Gran
  Jan Nieuwenhuizen
 
-The original version of this code was inspired by PyGObject; however,
-I believe that none of the PyGObject code remains.
