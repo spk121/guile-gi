@@ -54,11 +54,13 @@ Next: <a href="GObject-Properties.html#GObject-Properties" accesskey="n" rel="ne
 </div>
 <hr>
 <span id="GObject-Signals-1"></span><h3 class="section">3.6 GObject Signals</h3>
+<span id="index-signals"></span>
 
 <p>GObjects have a functionality for defining and calling callback
-procedures that it calls <em>signals</em>.  Note that these signals
-have nothing to do with Unix signals like <code>SIGTERM</code>.
+procedures that it calls <em>signals</em>.  Note that these signals have
+nothing to do with Unix signals like <code>SIGTERM</code>.
 </p>
+<span id="index-connect-1"></span>
 <p>To hook a callback procedure to an object&rsquo;s signal, use the
 <code>connect</code> procedure. Consider the following example.
 </p>
@@ -86,21 +88,22 @@ This argument &ndash; <code>app</code> &ndash; is supplied by the caller, as are
 arguments to signals.
 </p>
 <dl>
-<dt id="index-connect">Procedure: <strong>connect</strong> <em>obj (signal &lt;signal&gt;) (handler &lt;procedure&gt;)</em></dt>
-<dt id="index-connect-1">Procedure: <strong>connect</strong> <em>obj (signal &lt;signal&gt;) (detail &lt;symbol&gt;) (handler &lt;procedure&gt;)</em></dt>
+<dt id="index-connect-2">Procedure: <strong>connect</strong> <em>obj (signal &lt;signal&gt;) (handler &lt;procedure&gt;)</em></dt>
+<dt id="index-connect-3">Procedure: <strong>connect</strong> <em>obj (signal &lt;signal&gt;) (detail &lt;symbol&gt;) (handler &lt;procedure&gt;)</em></dt>
 <dt id="index-connect_002dafter">Procedure: <strong>connect-after</strong> <em>obj (signal &lt;signal&gt;) (handler &lt;procedure&gt;)</em></dt>
 <dt id="index-connect_002dafter-1">Procedure: <strong>connect-after</strong> <em>obj (signal &lt;signal&gt;) (detail &lt;symbol&gt;) (handler &lt;procedure&gt;)</em></dt>
-<dd><p>Hooks <var>handler</var> to emissions of <var>signal</var>.
-If <var>detail</var> is supplied, only emissions in which the detail matches it are considered.
+<dd><p>Hooks <var>handler</var> to emissions of <var>signal</var>.  If <var>detail</var> is
+supplied, only emissions in which the detail matches it are considered.
 </p>
-<p><code>connect-after</code> works like <code>connect</code>, except that the handler is run <em>after</em>
-the main handling code.
+<p><code>connect-after</code> works like <code>connect</code>, except that the handler
+is run <em>after</em> the main handling code.
 </p></dd></dl>
 
-<p>Signal objects can also be used to emit signals. Note that you shouldn&rsquo;t normally do this when
-using objects of types, that you didn&rsquo;t define, and even when using objects of types,
-that you did define, you should only emit the signals that you defined for that object
-(and perhaps the &ldquo;notify&rdquo; signal when using explicit notification).
+<p>Signal objects can also be used to emit signals. Note that you shouldn&rsquo;t
+normally do this when using objects of types, that you didn&rsquo;t define,
+and even when using objects of types, that you did define, you should
+only emit the signals that you defined for that object (and perhaps the
+&ldquo;notify&rdquo; signal when using explicit notification).
 </p>
 <dl>
 <dt id="index-signal">Special Form: <strong>signal</strong> <em>obj [detail] [args...]</em></dt>
@@ -111,10 +114,11 @@ If it is not, it is considered the first argument and will be consed with <var>a
 an argument list.
 </p></dd></dl>
 
-<p>Signals have several slots, that can be bound on creation time
-(and reassigned freely, since they are proper GOOPS objects).
-When connecting signals, only <var>name</var> needs to be supplied.
-When using them as proper signals, at least <var>return-type</var> needs to be given as well.
+<p>Signals have several slots, that can be bound on creation time (and
+reassigned freely, since they are proper GOOPS objects).  When
+connecting signals, only <var>name</var> needs to be supplied.  When using
+them as proper signals, at least <var>return-type</var> needs to be given as
+well.
 </p>
 <dl>
 <dt id="index-name">Slot: <strong>name</strong></dt>
@@ -134,14 +138,13 @@ A list of <code>&lt;GType&gt;</code>s or integers.
 <dl>
 <dt id="index-accumulator">Slot: <strong>accumulator</strong></dt>
 <dd><p>A procedure, called with two arguments <var>seed</var> and <var>current</var> and
-produces up to two output values.
-If it produces no output value, <var>seed</var> is left unchanged and signal handling
-continues.
-If it produces one output value, <var>seed</var> is set to that value and signal handling continues.
-If it produces two output values, <var>seed</var> is set to the second output value and signal
-handling stops if the first is <code>#f</code>.
-If at any time <var>seed</var> would be set to an incorrect value or more than two values are returned
-signal handling is aborted.
+produces up to two output values.  If it produces no output value,
+<var>seed</var> is left unchanged and signal handling continues.  If it
+produces one output value, <var>seed</var> is set to that value and signal
+handling continues.  If it produces two output values, <var>seed</var> is set
+to the second output value and signal handling stops if the first is
+<code>#f</code>.  If at any time <var>seed</var> would be set to an incorrect value
+or more than two values are returned signal handling is aborted.
 </p></dd></dl>
 <dl>
 <dt id="index-flags">Slot: <strong>flags</strong></dt>

@@ -54,34 +54,37 @@ Next: <a href="Enums-and-Flags.html#Enums-and-Flags" accesskey="n" rel="next">En
 </div>
 <hr>
 <span id="Defining-new-GObject-classes"></span><h3 class="section">3.8 Defining new GObject classes</h3>
+<span id="index-GObjects"></span>
+<span id="index-classes_002c-GObject"></span>
 
+<span id="index-register_002dtype"></span>
 <p>Usually any GObjects you use will be created by procedures such as
-<code>window:new</code>, and those GObject types will have been predefined
-in the typelib. But, it is possible to make custom GObject object
-classes using the <code>register-type</code> procedure.
+<code>window:new</code>, and those GObject types will have been predefined in
+the typelib. But, it is possible to make custom GObject object classes
+using the <code>register-type</code> procedure.
 </p>
-<p>Bear in mind, that while Guile-GI internally uses GOOPS, GObjects implemented in it
-are not quite as flexible. For instance, you cannot meaningfully redefine a
-GObject-based type, which you could if you just used GOOPS types.
-On the other hand, you can make use of the features of the GObject infrastructure,
-such as signals.
+<p>Bear in mind, that while Guile-GI internally uses GOOPS, GObjects
+implemented in it are not quite as flexible. For instance, you cannot
+meaningfully redefine a GObject-based type, which you could if you just
+used GOOPS types.  On the other hand, you can make use of the features
+of the GObject infrastructure, such as signals.
 </p>
 <p>Defining a new GObject class is rather complicated.
 </p>
 <dl>
-<dt id="index-register_002dtype">Procedure: <strong>register-type</strong> <em>type-name parent-type list-of-properties list-of-signals disposer</em></dt>
+<dt id="index-register_002dtype-1">Procedure: <strong>register-type</strong> <em>type-name parent-type list-of-properties list-of-signals disposer</em></dt>
 <dd><p>This procedure creates and returns a new <code>&lt;GType&gt;</code> of a GObject
 object.
 </p>
-<p><var>type-name</var> is the string name of the new type. Note, that it will be
-turned into a symbol internally.
+<p><var>type-name</var> is the string name of the new type. Note, that it will
+be turned into a symbol internally.
 </p>
 <p><var>parent-type</var> is the <code>&lt;GType&gt;</code> of the parent class to this
-class.  The parent class needs to be <code>&lt;GObject&gt;</code> or a GObject
-class that descends from it.
+class.  The parent class needs to be <code>&lt;GObject&gt;</code> or a GObject class
+that descends from it.
 </p>
-<p><var>list-of-properties</var> is a list of parameter specifications.
-These parameter specifications can be created using the <code>param-spec-TYPE</code>
+<p><var>list-of-properties</var> is a list of parameter specifications.  These
+parameter specifications can be created using the <code>param-spec-TYPE</code>
 methods found in the <code>GObject</code> typelib.
 </p>
 <p><var>list-of-signals</var> is a list of signal specifications. See <a href="GObject-Signals.html#GObject-Signals">GObject Signals</a>.

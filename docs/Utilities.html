@@ -54,24 +54,26 @@ Next: <a href="More-Stuff.html#More-Stuff" accesskey="n" rel="next">More Stuff</
 </div>
 <hr>
 <span id="Utilities-1"></span><h3 class="section">3.10 Utilities</h3>
+<span id="index-utilities"></span>
 
 <dl>
 <dt id="index-push_002dduplicate_002dhandler_0021">Procedure: <strong>push-duplicate-handler!</strong> <em>handler</em></dt>
 <dd><p>Adds <var>handler</var> to the default duplicate handlers at the start of the list.
 </p></dd></dl>
 
+<span id="index-shrug_002dequals"></span>
 <dl>
-<dt id="index-shrug_002dequals">Duplicate handler: <strong>shrug-equals</strong></dt>
+<dt id="index-shrug_002dequals-2">Duplicate handler: <strong>shrug-equals</strong></dt>
 <dd><p>A handler, which silently accepts equal (as in <code>eq?</code>) bindings.
 </p></dd></dl>
 
 <dl>
 <dt id="index-protect">Procedure: <strong>protect</strong> <em>symbol [prefix] [suffix]</em></dt>
 <dt id="index-protect_002a">Procedure: <strong>protect*</strong> <em>symbols [prefix] [suffix]</em></dt>
-<dd><p>Returns a renamer, which &ldquo;protects&rdquo; <var>symbol</var>, a symbol or <var>symbols</var>,
-a list of symbols from being overridden, by prepending prefix and appending suffix,
-both symbols.
-If neither prefix nor suffix are given, <code>'%</code> is used as prefix.
+<dd><p>Returns a renamer, which &ldquo;protects&rdquo; <var>symbol</var>, a symbol or
+<var>symbols</var>, a list of symbols from being overridden, by prepending
+prefix and appending suffix, both symbols.  If neither prefix nor suffix
+are given, <code>'%</code> is used as prefix.
 </p></dd></dl>
 
 

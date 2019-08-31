@@ -62,6 +62,8 @@ straightforward, but, some conversions are tricky and need additional
 description.
 </p>
 <span id="Strings"></span><h4 class="subsubsection">3.11.1.1 Strings</h4>
+<span id="index-strings"></span>
+
 <p>GObject libraries usually use UTF-8 encoding for their strings, while
 Guile uses a different encoding internally for its strings.  Thus
 every time a string is parameter is passed through to a C procedure, a
@@ -75,6 +77,8 @@ procedures.  Note that this may throw an encoding error if the Guile
 string cannot be represented in the current locale.
 </p>
 <span id="C-Arrays"></span><h4 class="subsection">3.11.2 C Arrays</h4>
+<span id="index-arrays"></span>
+
 <p>There are many different types of C arrays, and the Guile types
 expected for GObject procedures that C arrays varies depending on the
 type required.
@@ -108,15 +112,18 @@ To protect your syntax (or other variables you deeply care about), use
 the <code>protect</code> or <code>protect*</code> renamer from <code>(gi util)</code>.
 </p>
 <span id="Help_0021-Guile_002dGI-bindings-conflict-with-each-other"></span><h4 class="subsection">3.11.4 Help! Guile-GI bindings conflict with each other</h4>
-<p>Most conflicts should be resolved using the <code>merge-generics</code> duplicate handler.
-However, this handler is not enabled by default, so you may want to push it to the
-default duplicate handlers. If this is still not working, you may somehow have ended up
-with &ldquo;equal&rdquo; duplicates, i.e. duplicates, whose bindings resolve to the same value.
-To silence warnings about them, use the <code>shrug-equals</code> duplicate handler
-defined in <code>(gi util)</code>.
-If the conflict is still not resolved, file a bug detailing it.
-As a workaround, you may also rename either binding, which is probably the best way
-to resolve a duplicate.
+<span id="index-merge_002dgenerics"></span>
+<span id="index-shrug_002dequals-1"></span>
+
+<p>Most conflicts should be resolved using the <code>merge-generics</code>
+duplicate handler.  However, this handler is not enabled by default, so
+you may want to push it to the default duplicate handlers. If this is
+still not working, you may somehow have ended up with &ldquo;equal&rdquo;
+duplicates, i.e. duplicates, whose bindings resolve to the same value.
+To silence warnings about them, use the <code>shrug-equals</code> duplicate
+handler defined in <code>(gi util)</code>.  If the conflict is still not
+resolved, file a bug detailing it.  As a workaround, you may also rename
+either binding, which is probably the best way to resolve a duplicate.
 </p>
 <hr>
 <div class="header">

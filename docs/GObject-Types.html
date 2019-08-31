@@ -54,12 +54,15 @@ Next: <a href="GType.html#GType" accesskey="n" rel="next">GType</a>, Previous: <
 </div>
 <hr>
 <span id="GObject-Types-1"></span><h3 class="section">3.3 GObject Types</h3>
+<span id="index-types"></span>
 
 <p>For integer and string arguments, the C to Guile conversions are the
 obvious ones. But for the specialized GObject types, things get a bit
 more complex.  GObject has three classes of custom types: structs,
 unions, and objects.
 </p>
+<span id="index-unions-1"></span>
+<span id="index-structs-1"></span>
 <p>GObject <em>unions</em> and <em>structs</em> are handled in Guile-GI by
 creating a GOOPS type that wraps a C pointer.  Typically,
 instances can be created and by GObject functions and used as
@@ -67,6 +70,7 @@ arguments, but, their contents aren&rsquo;t otherwise modifyiable.  GObject
 unions and structs may have GObject Methods, but do not have signals
 or properties. See <a href="GObject-Methods.html#GObject-Methods">GObject Methods</a> for more information.
 </p>
+<span id="index-objects-1"></span>
 <p>GObject <em>objects</em> are also stored by creating a GOOPS
 type that wraps a C pointer.  Unlike GObject structs and unions, they
 have more interactivity available at the Guile layer.  They have

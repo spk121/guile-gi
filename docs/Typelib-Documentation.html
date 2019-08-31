@@ -80,21 +80,20 @@ This parameter is actually defined in <code>(gi config)</code>.
 <dd><p>Parse <var>xml</var> into a structure suitable for post-processing.
 If <var>documentation</var> is given, use it as a base, merging the two.
 </p>
-<p><var>xml</var> is expected to be a string or port containing documentation
-in an XML format. <var>documentation</var> should either be the empty list
-(the default) or the result of a previous <code>parse</code> operation.
+<p><var>xml</var> is expected to be a string or port containing documentation in
+an XML format. <var>documentation</var> should either be the empty list (the
+default) or the result of a previous <code>parse</code> operation.
 </p>
-<p>It should be noted, that the order in which documentations are
-threaded through <code>parse</code> matters. The last <code>xml</code> &ldquo;wins&rdquo;
-in cases where multiple ones fill in the same value (e.g. attributes).
-Since GIRs has more information than typelibs, you should therefore
-handle typelibs first in most cases.
+<p>It should be noted, that the order in which documentations are threaded
+through <code>parse</code> matters. The last <code>xml</code> &ldquo;wins&rdquo; in cases
+where multiple ones fill in the same value (e.g. attributes).  Since
+GIRs has more information than typelibs, you should therefore handle
+typelibs first in most cases.
 </p>
-<p>The result is a nodeset corresponding to the (merged) XML.
-However, it is stripped down to only contain nodes relevant for
-documentation (the exact subset may be subject to change) and also
-contains the non-standard <code>scheme</code> node for bindings created
-by Guile-GI.
+<p>The result is a nodeset corresponding to the (merged) XML.  However, it
+is stripped down to only contain nodes relevant for documentation (the
+exact subset may be subject to change) and also contains the
+non-standard <code>scheme</code> node for bindings created by Guile-GI.
 </p></dd></dl>
 
 <dl>

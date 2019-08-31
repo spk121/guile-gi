@@ -57,25 +57,27 @@ Next: <a href="Custom-GObjects.html#Custom-GObjects" accesskey="n" rel="next">Cu
 
 <p>GObject objects may have one or more properties, which are variables
 attached to the object that may be gotten or set.  GObject properties
-usually have C-like types.  Remember that GObject objects are
-instances of a class that may have a parent class, and each parent
-class may one or more properties. So, for example, if the object is a
-radio button, you may get or set properties that apply specifically to
-radio buttons, or generic buttons, or generic widgets.
+usually have C-like types.  Remember that GObject objects are instances
+of a class that may have a parent class, and each parent class may one
+or more properties. So, for example, if the object is a radio button,
+you may get or set properties that apply specifically to radio buttons,
+or generic buttons, or generic widgets.
 </p>
-<p>In Guile-GI, properties come in two flavours.
-The basic building block are objects derived from <code>G_TYPE_PARAM</code> alias <code>&lt;GParam&gt;</code>.
-These can be created via introspected methods found in the <code>GObject</code> library.
-They are enhanced so that they can work as procedures with setter.
-Given an arbitrary property <code>prop</code>,
+<span id="index-_003cGParam_003e"></span>
+
+<p>In Guile-GI, properties come in two flavours.  The basic building block
+are objects derived from <code>G_TYPE_PARAM</code> alias <code>&lt;GParam&gt;</code>.
+These can be created via introspected methods found in the
+<code>GObject</code> library.  They are enhanced so that they can work as
+procedures with setter.  Given an arbitrary property <code>prop</code>,
 <code>(prop obj)</code> will fetch the corresponding property, whereas
 <code>(set! (prop obj) val)</code> will set it.
 </p>
-<p>The other flavour are GOOPS accessors.
-These are used for introspected properties, so that the name may also overlap with a
-method or a signal of a different type. Other than that, they behave no different from
-<code>&lt;GParam&gt;</code>s &ndash; in fact, they work by constructing a <code>&lt;GParam&gt;</code> and using their
-getters and setters.
+<p>The other flavour are GOOPS accessors.  These are used for introspected
+properties, so that the name may also overlap with a method or a signal
+of a different type. Other than that, they behave no different from
+<code>&lt;GParam&gt;</code>s &ndash; in fact, they work by constructing a <code>&lt;GParam&gt;</code>
+and using their getters and setters.
 </p>
 
 

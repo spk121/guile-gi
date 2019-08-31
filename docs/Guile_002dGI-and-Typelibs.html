@@ -60,48 +60,56 @@ itself and the bindings it creates.
 </p>
 <ul>
 <li> Guile-GI itself is a library that allows you to parse <code>typelib</code>
-files, which describe code modules.  It has a handful of procedures
-for inspecting <code>typelib</code> files as well as some helper procedures
-for dynamically creating procedures and types.
+files, which describe code modules.  It has a handful of procedures for
+inspecting <code>typelib</code> files as well as some helper procedures for
+dynamically creating procedures and types.
 </li><li> When Guile-GI is used, it creates procedures, variables, and types
 according to the instructions in the <code>typelib</code> files.  These are
-created <em>at runtime</em> as Guile loads them from the <code>typelib</code> file.
+created <em>at runtime</em> as Guile loads them from the <code>typelib</code>
+file.
 </li></ul>
 
-<p>In order to make use of the latter, you must load a typelib through Guile-GI in one
-form or another.  The easiest and recommended way of doing so is <code>use-typelibs</code>,
-as shown below.
+<p>In order to make use of the latter, you must load a typelib through
+Guile-GI in one form or another.  The easiest and recommended way of
+doing so is <code>use-typelibs</code>, as shown below.
 </p>
 <div class="example">
 <pre class="example">(use-modules (gi))
 (use-typelibs (&quot;GLib&quot; &quot;2.0&quot;) (&quot;Gtk&quot; &quot;3.0&quot;))
 </pre></div>
 
-<p><code>use-typelibs</code> works quite similar to <code>use-modules</code> and is in fact implemented in terms
-of it. The only difference in syntax is, that instead of a list of symbols describing a module,
-you have a list of exactly two strings, the first being the name of the typelib and the second being
-the version.
+<p><code>use-typelibs</code> works quite similar to <code>use-modules</code> and is in
+fact implemented in terms of it. The only difference in syntax is, that
+instead of a list of symbols describing a module, you have a list of
+exactly two strings, the first being the name of the typelib and the
+second being the version.
 </p>
 <p>Semantically, however, the difference to <code>use-modules</code> is bigger.
-Internally, Guile-GI creates modules for the typelibs as needed &ndash; in this example
-these modules would be <code>(%gi GLib-2.0)</code> and <code>(%gi Gtk-3.0)</code> &ndash; and loads the entire
-typelib into them. This approach has two major drawbacks.
+Internally, Guile-GI creates modules for the typelibs as needed &ndash; in
+this example these modules would be <code>(%gi GLib-2.0)</code> and <code>(%gi
+Gtk-3.0)</code> &ndash; and loads the entire typelib into them. This approach has
+two major drawbacks.
 </p><ol>
-<li> Guile-GI has to load the entire typelib. For large typelibs, such as GTK, this takes a lot
-of time.  Instead, you may want to only load parts, e.g. just GtkApplication and GtkWindow
-to significantly speed up loading.  <code>(gi repository)</code> has primitives to facilitate exactly
+<li> Guile-GI has to load the entire typelib. For large typelibs, such as
+GTK, this takes a lot of time.  Instead, you may want to only load
+parts, e.g. just GtkApplication and GtkWindow to significantly speed up
+loading.  <code>(gi repository)</code> has primitives to facilitate exactly
 that. See <a href="Typelib-Introspection.html#Typelib-Introspection">Typelib Introspection</a>.
 
-</li><li> Even though Guile-GI internally uses modules, these modules are not available to the user
-in any meaningful way.  Even another <code>use-modules</code> on them actually leads to undefined
-behaviour.  It may load the module if it has already been defined somewhere else, but it might
-also throw an error, claiming that no code for the module could be found.
-This is to be expected, given that the modules are not backed by actual files.
+</li><li> Even though Guile-GI internally uses modules, these modules are not
+available to the user in any meaningful way.  Even another
+<code>use-modules</code> on them actually leads to undefined behaviour.  It
+may load the module if it has already been defined somewhere else, but
+it might also throw an error, claiming that no code for the module could
+be found.  This is to be expected, given that the modules are not backed
+by actual files.
 
-<p>If you need to use <code>use-modules</code> (e.g. as a part of a <code>define-module</code>),
-you need to write the module yourself.  As a convenience, <code>(gi repository)</code> defines
-<code>typelib-&gt;module</code>, which loads a typelib into a module and also adds all loaded functionality
-to its public interface.  Use it as in the following example.
+<p>If you need to use <code>use-modules</code> (e.g. as a part of a
+<code>define-module</code>), you need to write the module yourself.  As a
+convenience, <code>(gi repository)</code> defines <code>typelib-&gt;module</code>,
+which loads a typelib into a module and also adds all loaded
+functionality to its public interface.  Use it as in the following
+example.
 </p><div class="example">
 <pre class="example">(define-module (gi gtk-3)
   #:use-module (gi)
@@ -113,15 +121,18 @@ to its public interface.  Use it as in the following example.
 </pre></div>
 </li></ol>
 
-<p>Loading typelibs alone might be all you need if you have perfect knowledge of all the libraries
-you are going to use and an intuitive understanding of how they are mapped to Scheme procedures.
-Chances are, however, that you do not.
-In this case, it might be useful to generate some documentation. See <a href="Typelib-Documentation.html#Typelib-Documentation">Typelib Documentation</a>.
+<p>Loading typelibs alone might be all you need if you have perfect
+knowledge of all the libraries you are going to use and an intuitive
+understanding of how they are mapped to Scheme procedures.  Chances are,
+however, that you do not.  In this case, it might be useful to generate
+some documentation. See <a href="Typelib-Documentation.html#Typelib-Documentation">Typelib Documentation</a>.
 </p>
-<p>Upon installation of Guile-GI, we install a script called <code>gi-gtkdoc</code>, that can be invoked
-through <code>guild</code>.  You may also want to create a <samp>guile-procedures.txt</samp> file for use
-in the REPL.  We currently have no script for that, but one can easily be written.
-The following for example exports all the documentation for GObject-2.0.
+<p>Upon installation of Guile-GI, we install a script called
+<code>gi-gtkdoc</code>, that can be invoked through <code>guild</code>.  You may
+also want to create a <samp>guile-procedures.txt</samp> file for use in the
+REPL.  We currently have no script for that, but one can easily be
+written.  The following for example exports all the documentation for
+GObject-2.0.
 </p>
 <div class="example">
 <pre class="example">#!/path/to/guile
@@ -138,9 +149,9 @@ The following for example exports all the documentation for GObject-2.0.
   (-&gt;guile-procedures.txt %doc))
 </pre></div>
 
-<p>Use shell pipes to redirect the output into a file, preferably one called &ldquo;guile-procedures.txt&rdquo;.
-Guile will search for documentation in such files in a few locations,
-including the current working directory.
+<p>Use shell pipes to redirect the output into a file, preferably one
+called &ldquo;guile-procedures.txt&rdquo;.  Guile will search for documentation in
+such files in a few locations, including the current working directory.
 </p>
 <hr>
 <div class="header">

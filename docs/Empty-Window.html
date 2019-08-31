@@ -54,8 +54,8 @@ Up: <a href="Sample-Applications.html#Sample-Applications" accesskey="u" rel="up
 </div>
 <hr>
 <span id="Empty-Window-1"></span><h4 class="subsection">1.3.1 Empty Window</h4>
-<p>We will skillfully demonstrate the capabilities of Guile-GI by creating an empty window with
-a title.  Are you excited?  Behold!
+<p>We will skillfully demonstrate the capabilities of Guile-GI by creating
+an empty window with a title.  Are you excited?  Behold!
 </p>
 <div class="example">
 <pre class="example">(use-modules (gi) (gi repository))
@@ -95,25 +95,30 @@ a title.  Are you excited?  Behold!
 (main)
 </pre></div>
 
-<p>As discussed in the previous section, loading the entirety of Gtk is slow, so
-we instead use primitives from <code>(gi repository)</code>.  In addition, there are some
-functions, that we didn&rsquo;t yet learn about, as well as the bindings created for
-<code>&lt;GtkApplication&gt;</code>, etc.
+<p>As discussed in the previous section, loading the entirety of Gtk is
+slow, so we instead use primitives from <code>(gi repository)</code>.  In
+addition, there are some functions, that we didn&rsquo;t yet learn about, as
+well as the bindings created for <code>&lt;GtkApplication&gt;</code>, etc.
 </p>
-<p>First is <code>make</code>, which wraps and extends the <code>make</code> procedure found in GOOPS.
-See <a href="https://www.gnu.org/software/guile/manual/html_node/GOOPS.html#GOOPS">GOOPS</a> in <cite>The Guile reference manual</cite> for infos about GOOPS.
-In short the arguments, that would normally be used for slot initialization are instead used
-to initialize properties.
-This is important, because the slots of the GOOPS object <strong>do not</strong> map to properties,
-and neither do the properties map to slots.
-<code>make</code> can also be used on some types, which do not derive from GObject, most notably
-it can be called without any arguments to allocate boxed types.
+<span id="index-make"></span>
+
+<p>First is <code>make</code>, which wraps and extends the <code>make</code> procedure
+found in GOOPS.  See <a href="https://www.gnu.org/software/guile/manual/html_node/GOOPS.html#GOOPS">GOOPS</a> in <cite>The Guile reference manual</cite> for
+infos about GOOPS.  In short the arguments, that would normally be used
+for slot initialization are instead used to initialize properties.  This
+is important, because the slots of the GOOPS object <strong>do not</strong> map
+to properties, and neither do the properties map to slots.  <code>make</code>
+can also be used on some types, which do not derive from GObject, most
+notably it can be called without any arguments to allocate boxed types.
 </p>
-<p>Next is <code>connect</code>, which connects Guile procedures as handlers to GObject signals.
-Signals are roughly equal to hooks in Guile, except that they have an invisible default
-handler and hence two <code>connect</code> methods instead of a single <code>add-hook!</code> one.
-Removing a connection also requires temporarily saving the return value (which is an integer id),
-so that it can be passed to <code>signal-handler-disconnect</code>.
+<span id="index-connect"></span>
+
+<p>Next is <code>connect</code>, which connects Guile procedures as handlers to
+GObject signals.  Signals are roughly equal to hooks in Guile, except
+that they have an invisible default handler and hence two <code>connect</code>
+methods instead of a single <code>add-hook!</code> one.  Removing a connection
+also requires temporarily saving the return value (which is an integer
+id), so that it can be passed to <code>signal-handler-disconnect</code>.
 </p>
 <p>Finally, we have the bindings themselves, as mentioned before.
 See <a href="GObject-Types.html#GObject-Types">GObject Types</a> on the mapping of types,

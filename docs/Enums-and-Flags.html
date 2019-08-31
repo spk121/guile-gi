@@ -54,23 +54,27 @@ Next: <a href="Utilities.html#Utilities" accesskey="n" rel="next">Utilities</a>,
 </div>
 <hr>
 <span id="Enums-and-Flags-1"></span><h3 class="section">3.9 Enums and Flags</h3>
-<p>While GObject is an OOP framework and as such mainly focuses on objects, there
-also exists functionality to deal with enumerated types.
-Enumerated types are a way of converting raw numbers into meaningful expressions
-and broadly fit into two categories: enumerations and flags.
-Both assign tokens to numerical values at compile time, but their xuse is different.
-Enumerations are used for equality checks only, whereas flags can be composed
-through bitwise or, tested by bitwise and, and operated on in other ways &ndash; as long
-as the basic operations are bitwise, the result will make some sense.
+<p>While GObject is an OOP framework and as such mainly focuses on objects,
+there also exists functionality to deal with enumerated types.
+Enumerated types are a way of converting raw numbers into meaningful
+expressions and broadly fit into two categories: enumerations and flags.
+Both assign tokens to numerical values at compile time, but their xuse
+is different.  Enumerations are used for equality checks only, whereas
+flags can be composed through bitwise or, tested by bitwise and, and
+operated on in other ways &ndash; as long as the basic operations are
+bitwise, the result will make some sense.
 </p>
-<p>In Scheme, the closest analogues to enumerations and flags are symbols and symbol lists.
-Symbol equality can be checked with <code>eq?</code>, symbol list equality with <code>equal?</code>
-and in Guile specifically, the other operations can be implemented based on the <code>lset-*</code>
-procedures.<a id="DOCF1" href="#FOOT1"><sup>1</sup></a>
-However, both of these lose information needed to convert them into a numerical representation.
+<p>In Scheme, the closest analogues to enumerations and flags are symbols
+and symbol lists.  Symbol equality can be checked with <code>eq?</code>,
+symbol list equality with <code>equal?</code>  and in Guile specifically, the
+other operations can be implemented based on the <code>lset-*</code>
+procedures.<a id="DOCF1" href="#FOOT1"><sup>1</sup></a>  However,
+both of these lose information needed to convert them into a numerical
+representation.
 </p>
-<p>In Guile-GI, we bind enumerations and flags to GOOPS objects as we do with every
-other object type. Specifically, enums derive from <code>&lt;GEnum&gt;</code> and flags derive from <code>&lt;GFlags&gt;</code>.
+<p>In Guile-GI, we bind enumerations and flags to GOOPS objects as we do
+with every other object type. Specifically, enums derive from
+<code>&lt;GEnum&gt;</code> and flags derive from <code>&lt;GFlags&gt;</code>.
 </p>
 <span id="Conversions"></span><h4 class="subsection">3.9.1 Conversions</h4>
 <dl>
@@ -80,13 +84,15 @@ other object type. Specifically, enums derive from <code>&lt;GEnum&gt;</code> an
 <dt id="index-number_002d_003eflags-1">Procedure: <strong>number-&gt;flags</strong> <em>(class &lt;class&gt;)</em></dt>
 <dt id="index-number_002d_003etype">Procedure: <strong>number-&gt;<var>type</var></strong> <em>(number &lt;number&gt;)</em></dt>
 <dd><p>Converts <var>number</var> into an enum or flags of class <var>class</var>.
-Called with just <var>class</var>, produces a procedure, that can be used
-to call itself with just <var>number</var>.This is often referred to as currying.
+Called with just <var>class</var>, produces a procedure, that can be used to
+call itself with just <var>number</var>.This is often referred to as
+currying.
 </p>
-<p>number-&gt;<var>type</var> calls the appropriate constructor for the given type. Note, that this
-type is shortened to its name without any prefixes.
-For instance, a <code>GtkOrientation</code> may be created using <code>number-&gt;orientation</code>.
-We will henceforth refer to this construction as &ldquo;binding <var>class</var> on <var>type</var>&rdquo;
+<p>number-&gt;<var>type</var> calls the appropriate constructor for the given
+type. Note, that this type is shortened to its name without any
+prefixes.  For instance, a <code>GtkOrientation</code> may be created using
+<code>number-&gt;orientation</code>.  We will henceforth refer to this
+construction as &ldquo;binding <var>class</var> on <var>type</var>&rdquo;
 </p></dd></dl>
 
 <dl>
@@ -158,27 +164,29 @@ Curries. Binds <var>flags</var> on <var>type</var>.
 </p></dd></dl>
 
 <span id="Standard-Procedure-overrides"></span><h4 class="subsection">3.9.2 Standard Procedure overrides</h4>
-<p><code>&lt;GEnum&gt;</code> and <code>&lt;GFlags&gt;</code> display as their symbolic/list representation
-and also use them in write in lieu of their addresses.
-Enumerations can be numerically compared to enumerations and numbers using <code>=</code>.
-Flags can be numerically compared to flags and numbers using <code>=</code>.
-Enumerations and flags can be compared to enumerations and flags of the same type using
-<code>equal?</code>.
+<p><code>&lt;GEnum&gt;</code> and <code>&lt;GFlags&gt;</code> display as their symbolic/list
+representation and also use them in write in lieu of their addresses.
+Enumerations can be numerically compared to enumerations and numbers
+using <code>=</code>.  Flags can be numerically compared to flags and numbers
+using <code>=</code>.  Enumerations and flags can be compared to enumerations
+and flags of the same type using <code>equal?</code>.
 </p>
 <span id="R6RS_002desque-flag-operations"></span><h4 class="subsection">3.9.3 R6RS-esque flag operations</h4>
-<p>Some would certainly like to see an equivalence the enumerated types discussed above and
-R6RS enum sets. However, it turns out, that they are not compatible.
-Enumerations are not enum sets, because they are not sets &ndash; they are atoms.
-Flags are not enum sets, because they don&rsquo;t have a universe.
-Instead, they have a numerical mask.
-In an enum universe, each value is distinct from any other. GObject flags can however
-be combinations of other flags.
-A commonly found pattern is <code>SOME_READWRITE = SOME_READ | SOME_WRITE</code> for example.
-Hiding <code>'readwrite</code> would take a lot of work just so we can explicitly go against the
-design of the library writer, which is not a good idea at all.
+<p>Some would certainly like to see an equivalence the enumerated types
+discussed above and R6RS enum sets. However, it turns out, that they are
+not compatible.  Enumerations are not enum sets, because they are not
+sets &ndash; they are atoms.  Flags are not enum sets, because they don&rsquo;t
+have a universe.  Instead, they have a numerical mask.  In an enum
+universe, each value is distinct from any other. GObject flags can
+however be combinations of other flags.  A commonly found pattern is
+<code>SOME_READWRITE = SOME_READ | SOME_WRITE</code> for example.  Hiding
+<code>'readwrite</code> would take a lot of work just so we can explicitly go
+against the design of the library writer, which is not a good idea at
+all.
 </p>
-<p>To cope with this fact, we implement our own &ndash; similar, albeit somewhat different &ndash;
-set of functions, that aim to be close to what you see in R6RS.
+<p>To cope with this fact, we implement our own &ndash; similar, albeit somewhat
+different &ndash; set of functions, that aim to be close to what you see in
+R6RS.
 </p>
 <dl>
 <dt id="index-flags_002dmask">Procedure: <strong>flags-mask</strong> <em>(class &lt;class&gt;)</em></dt>
@@ -226,10 +234,10 @@ or <var>list</var> are set.
 <dt id="index-flags_002dprojection_002fnumber-1">Procedure: <strong>flags-projection/number</strong> <em>(flags &lt;GFlags&gt;) (flags2 &lt;GFlags&gt;)</em></dt>
 <dd><p>Project <var>flags</var> onto class <var>class</var>. (<var>class</var> is inferred from <var>flags2</var>).
 </p>
-<p><code>flags-projection/list</code> constructs flags from all symbols in <code>(flags-&gt;symbol flags)</code>,
-that are valid in <code>class</code>.
-<code>flags-projection/number</code> constructs flags, that have the same bits set with respect to
-<code>(flags-mask class)</code>.
+<p><code>flags-projection/list</code> constructs flags from all symbols in
+<code>(flags-&gt;symbol flags)</code>, that are valid in <code>class</code>.
+<code>flags-projection/number</code> constructs flags, that have the same bits
+set with respect to <code>(flags-mask class)</code>.
 </p>
 <p><code>flags-projection</code> is an alias for <code>flags-projection/list</code>.
 </p></dd></dl>
@@ -239,8 +247,8 @@ that are valid in <code>class</code>.
 <h4 class="footnotes-heading">Footnotes</h4>
 
 <h3><a id="FOOT1" href="#DOCF1">(1)</a></h3>
-<p>Other implementations may offer similar functions &ndash; otherwise they
-can be implemented by the user themselves.</p>
+<p>Other implementations may offer similar functions
+&ndash; otherwise they can be implemented by the user themselves.</p>
 </div>
 <hr>
 <div class="header">

@@ -54,19 +54,21 @@ Next: <a href="GObject-Signals.html#GObject-Signals" accesskey="n" rel="next">GO
 </div>
 <hr>
 <span id="GObject-Methods-1"></span><h3 class="section">3.5 GObject Methods</h3>
+<span id="index-methods"></span>
 
 <p>Guile-GI exports object methods as GOOPS methods in the formats
-<code>type:method</code> and <code>method</code>, where <var>type</var> is the
-type of an object sans namespace translated into <code>kebab-case</code> and
-<var>method</var> is the name of the method translated into
-<code>kebab-case</code>. For instance <code>gtk_widget_show</code>
-is bound to both <code>widget:show</code> and <code>show</code>.
+<code>type:method</code> and <code>method</code>, where <var>type</var> is the type of an
+object sans namespace translated into <code>kebab-case</code> and <var>method</var>
+is the name of the method translated into <code>kebab-case</code>. For
+instance <code>gtk_widget_show</code> is bound to both <code>widget:show</code> and
+<code>show</code>.
 </p>
 <p>Use whichever bindings you prefer or alternatively rename them using the
-<code>#:rename</code> argument to <code>use-modules</code> or
-<code>use-typelibs</code> respectively. Note that Guile currently warns if a binding
-is imported from multiple libraries (e.g. both GLib and Gtk), but this should
-not concern you in most cases, as both internally specialize the same generic method.
+<code>#:rename</code> argument to <code>use-modules</code> or <code>use-typelibs</code>
+respectively. Note that Guile currently warns if a binding is imported
+from multiple libraries (e.g. both GLib and Gtk), but this should not
+concern you in most cases, as both internally specialize the same
+generic method.
 </p>
 
 

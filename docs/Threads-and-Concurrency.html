@@ -54,12 +54,13 @@ Next: <a href="Debugging-and-Profiling.html#Debugging-and-Profiling" accesskey="
 </div>
 <hr>
 <span id="Threads-and-Concurrency-1"></span><h3 class="section">2.2 Threads and Concurrency</h3>
+<span id="index-threads"></span>
+<span id="index-concurrency"></span>
 
-<p>While Guile is multi-threaded, applications using Guile-GI are not
-fully thread-safe.  Notably, applications using GTK or GLib&rsquo;s mainloop
-need all rendering and mainloop activities to occur in one thread.
-Also, all calls to <code>typelib-load</code> need to be made from the same
-thread.
+<p>While Guile is multi-threaded, applications using Guile-GI are not fully
+thread-safe.  Notably, applications using GTK or GLib&rsquo;s mainloop need
+all rendering and mainloop activities to occur in one thread.  Also, all
+calls to <code>typelib-load</code> need to be made from the same thread.
 </p>
 
 

@@ -54,11 +54,13 @@ Next: <a href="Testing-and-Continuous-Integration.html#Testing-and-Continuous-In
 </div>
 <hr>
 <span id="Application-Deployment-1"></span><h3 class="section">2.4 Application Deployment</h3>
+<span id="index-deployment"></span>
 
-<p>If you write a program in Guile-GI and wish to share it
-with the world, you will need to ensure your users have
-all the prerequisites.
+<p>If you write a program in Guile-GI and wish to share it with the world,
+you will need to ensure your users have all the prerequisites.
 </p>
+<span id="index-prerequisites"></span>
+
 <p>At a minimum, Guile-GI scripts will require that users have the
 following packages.
 </p><ul>
@@ -69,10 +71,12 @@ following packages.
 </li><li> GObject-Introspection aka GIRepository
 </li></ul>
 
-<p>And then, of course, a Guile-GI program will additionally
-require whatever libraries its uses (GTK, WebKit2) as well
-as their associated typelib files.
+<p>And then, of course, a Guile-GI program will additionally require
+whatever libraries its uses (GTK, WebKit2) as well as their associated
+typelib files.
 </p>
+<span id="index-directory-structure"></span>
+
 <p>A good layout for an application might be the following, though we can&rsquo;t
 discourage you from using any other.
 </p><div class="example">
@@ -94,10 +98,11 @@ discourage you from using any other.
 </pre></div>
 
 <p>You should be able to make use of most &ldquo;data APIs&rdquo; (such as GSettings,
-GResource, GtkBuilder...), as long as the data files don&rsquo;t need to reference
-functionality implemented in your Scheme code.  If you do find yourself needing
-some of that, e.g. if you want to write a GtkBuilder file for a custom class,
-consider implementing this functionality in C and exporting it as a typelib instead.
+GResource, GtkBuilder...), as long as the data files don&rsquo;t need to
+reference functionality implemented in your Scheme code.  If you do find
+yourself needing some of that, e.g. if you want to write a GtkBuilder
+file for a custom class, consider implementing this functionality in C
+and exporting it as a typelib instead.
 </p>
 
 

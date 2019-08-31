@@ -64,9 +64,13 @@ GLib&rsquo;s <code>GDate</code> &ndash; a Guile object needs to be converted int
 structure.  Hopefully, in normal circumstances, this conversion will
 happen automatically without difficulty.
 </p>
-<p>GObject types have different categories.  Some are simple C structs
-and unions.  Others are <em>objects</em>, which is GObject&rsquo;s class
-hierarchy upon which the windowing library GTK is built.
+<span id="index-structs"></span>
+<span id="index-unions"></span>
+<span id="index-objects"></span>
+
+<p>GObject types have different categories.  Some are simple C structs and
+unions.  Others are <em>objects</em>, which is GObject&rsquo;s class hierarchy
+upon which the windowing library GTK is built.
 </p>
 <p>Explaining how Guile-to-C type conversion is accomplished under the
 hood can be slightly confusing because there are several different
@@ -84,8 +88,8 @@ of the associated C structure
 about a calendar date.  The <code>GDate *</code> typedef has an associated
 <code>GType</code> integer ID.  The Guile class <code>&lt;Date&gt;</code> is created to
 hold structures with that <code>GType</code>.  When using GLib&rsquo;s date
-functions from Guile, instances of <code>GDate *</code> are held by
-instances of the Guile class <code>&lt;Date&gt;</code>.
+functions from Guile, instances of <code>GDate *</code> are held by instances
+of the Guile class <code>&lt;Date&gt;</code>.
 </p>
 <p>Internally to Guile-GI, all of the Guile classes for GObject structs,
 objects and unions are GOOPS types that handle managing the C pointer.
