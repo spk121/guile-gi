@@ -36,28 +36,19 @@
 ;;
 ;;; Code:
 
-(use-modules (srfi srfi-1)
-             (srfi srfi-26)
-             (ice-9 popen)
-             (ice-9 match)
-             (ice-9 rdelim)
-             (guix packages)
+(use-modules (guix packages)
              (guix licenses)
-             (guix gexp)
              (guix git-download)
+             (guix gexp)
              (guix build-system gnu)
-             ((guix build utils) #:select (with-directory-excursion))
              (gnu packages)
              (gnu packages autotools)
              (gnu packages gettext)
              (gnu packages glib)
              (gnu packages gnome)
-             (gnu packages gtk)
              (gnu packages guile)
-             (gnu packages guile-xyz)
              (gnu packages pkg-config)
-             (gnu packages texinfo)
-             (gnu packages webkit))
+             (gnu packages texinfo))
 
 (define %source-dir (dirname (current-filename)))
 
@@ -71,15 +62,12 @@
   (native-inputs `(("autoconf" ,autoconf)
                    ("automake" ,automake)
                    ("gettext" ,gnu-gettext)
+                   ("glib:bin" ,glib "bin")
                    ("libtool" ,libtool)
                    ("pkg-config" ,pkg-config)
                    ("texinfo" ,texinfo)))
   (propagated-inputs `(("glib" ,glib)
-                       ("gobject-introspection" ,gobject-introspection)
-                       ("gssettings-desktop-schemas" ,gsettings-desktop-schemas)
-                       ("gtk+" ,gtk+)
-                       ("guile-lib" ,guile-lib)
-                       ("webkitgtk" ,webkitgtk)))
+                       ("gobject-introspection" ,gobject-introspection)))
   (inputs `(("guile" ,guile-2.2)))
   (arguments
    `(#:configure-flags '("--with-gnu-filesystem-hierarchy")))
@@ -88,5 +76,5 @@
   (description
    "Guile-GI is a library for Guile that allows using GObject-based
 libraries, such as GTK+3.  Its README comes with the disclaimer: This
-is pre-alpha code.")
+is alpha code.")
   (license gpl3+))
