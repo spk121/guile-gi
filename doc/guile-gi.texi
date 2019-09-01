@@ -865,7 +865,7 @@ bitwise, the result will make some sense.
 
 In Scheme, the closest analogues to enumerations and flags are symbols
 and symbol lists.  Symbol equality can be checked with @code{eq?},
-symbol list equality with @code{equal?}  and in Guile specifically, the
+symbol list equality with @code{equal?} and in Guile specifically, the
 other operations can be implemented based on the @code{lset-*}
 procedures.@footnote{Other implementations may offer similar functions
 -- otherwise they can be implemented by the user themselves.}  However,
@@ -877,6 +877,8 @@ with every other object type. Specifically, enums derive from
 @code{<GEnum>} and flags derive from @code{<GFlags>}.
 
 @subsection Conversions
+These procedures are defined in @code{(gi types)}.
+
 @deffn Procedure number->enum (class <class>) (number <number>)
 @deffnx Procedure number->enum (class <class>)
 @deffnx Procedure number->flags (class <class>) (number <number>)
@@ -892,6 +894,11 @@ type. Note, that this type is shortened to its name without any
 prefixes.  For instance, a @code{GtkOrientation} may be created using
 @code{number->orientation}.  We will henceforth refer to this
 construction as ``binding @var{class} on @var{type}''
+@end deffn
+
+@deffn Procedure enum-set->list (class <class>)
+Returns a list of symbols that can be converted into enums of class
+@var{class}.
 @end deffn
 
 @deffn Procedure symbol->enum (class <class>) (symbol <symbol>)
@@ -945,6 +952,11 @@ If both @var{flags} and @var{class} are given, raises an error
 if @var{flags} is not of type @var{class}.
 
 Curries. Binds @var{class} on @var{type}.
+@end deffn
+
+@deffn Procedure flags-set->list (class <class>)
+Returns a list of symbols that could represent flags of class
+@var{class}.
 @end deffn
 
 @deffn Procedure flags->list (enum <GEnum>)

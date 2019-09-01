@@ -27,7 +27,9 @@
             <GValue> transform
             <GClosure> procedure->closure
             <GEnum> <GFlags>
+            enum-set->list
             enum->number enum->symbol number->enum symbol->enum
+            flags-set->list
             flags->number flags->list number->flags list->flags flags-set?
             flags-mask flags-union flags-intersection flags-difference
             flags-complement flags-projection flags-projection/list
@@ -69,6 +71,13 @@
   (slot-set! closure 'procedure (lambda (type . args) (%invoke-closure closure type args))))
 
 ;;; Enum conversions
+
+(define-method (enum-set->list (class <class>))
+  (let ((hsh (class-slot-ref class 'obarray)))
+    (hash-fold (lambda (key value prev)
+                 (cons key prev))
+               '()
+               hsh)))
 
 (define-method (enum->symbol (enum <GEnum>))
   (let ((expected (slot-ref enum 'value)))
@@ -128,6 +137,13 @@
   (lambda (number) (number->enum class number)))
 
 ;;; Flag conversions
+
+(define-method (flags-set->list (class <class>))
+  (let ((hsh (class-slot-ref class 'obarray)))
+    (hash-fold (lambda (key value prev)
+                 (cons key prev))
+               '()
+               hsh)))
 
 (define-method (flags->number (number <number>))
   (format (current-error-port) "WARNING: passing number ~a as flags~%" number)
