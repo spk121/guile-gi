@@ -59,19 +59,6 @@ AC_PATH_PROG([GLIB_COMPILE_RESOURCES],[glib-compile-resources])
 
 GOBJECT_INTROSPECTION_CHECK([1.46.0])
 
-AC_EGREP_CPP(XOPEN_700_SUPPORT,
-             [#define _XOPEN_SOURCE 700
-              #include <unistd.h>
-              #ifdef _XOPEN_VERSION
-              /* allow 7 or later */
-              #if _XOPEN_VERSION >= 700
-              XOPEN_700_SUPPORT
-              #endif
-              #endif
-              ],
-              [AC_DEFINE([_XOPEN_SOURCE], [700], [X/Open version to use])],
-              [AC_MSG_FAILURE([Implementation does not conform to X/Open 7])])
-
 ################
 # Guile has three directories that don't follow the GNU File System
 # Heirarchy Standards.  If one follows the GNU FHS, files get installed

@@ -13,15 +13,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
 #include <girepository.h>
 #include <glib-object.h>
 #include <glib.h>
 #include <libguile.h>
-#include <stdio.h>
-#include <time.h>
 #include "gig_argument.h"
 #include "gig_callback.h"
 #include "gig_constant.h"
@@ -117,7 +112,10 @@ gig_log_writer(GLogLevelFlags flags, const GLogField *fields, gsize n_fields, gp
         gint fd = scm_to_int(scm_fileno(port));
         gchar *colored_prefix =
             g_strdup_printf(g_log_writer_supports_color(fd) ? color : "%s", prefix);
-        dprintf(fd, "%s: %s\n", colored_prefix, (const gchar *)message->value);
+        scm_c_write(port, colored_prefix, strlen(colored_prefix));
+        scm_c_write(port, ": ", 2);
+        scm_c_write(port, message->value, strlen(message->value));
+        scm_newline(port);
         g_free(colored_prefix);
     }
     else
