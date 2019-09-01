@@ -65,7 +65,7 @@ GOBJECT_INTROSPECTION_CHECK([1.46.0])
 # in directories in which Guile does not search for them by default.
 AC_ARG_WITH([gnu-filesystem-hierarchy],
             [AS_HELP_STRING([--with-gnu-filesystem-hierarchy],
-                            [Strictly follow GNU File System Heirarchy when installing, instead of querying Guile to discover the install directories that it expects.])])
+                            [Strictly follow GNU File System Hierarchy when installing, instead of querying Guile to discover the install directories that it expects.])])
 
 AS_CASE(["x$with_gnu_filesystem_hierarchy"], [xyes],
     [
