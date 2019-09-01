@@ -29,6 +29,7 @@
             <GEnum> <GFlags>
             enum->number enum->symbol number->enum symbol->enum
             flags->number flags->list number->flags list->flags flags-set?
+            enum-universe
             flags-mask flags-union flags-intersection flags-difference
             flags-complement flags-projection flags-projection/list
             flags-projection/number))
@@ -204,6 +205,15 @@
   (lambda (list) (flags->number class list)))
 
 ;;; rnrs enums analogues
+
+(define-method (enum-universe (class <class>))
+  (hash-map->list (lambda (k v) k) (class-slot-ref class 'obarray)))
+
+(define-method (enum-universe (enum <GEnum>))
+  (enum-universe (class-of enum)))
+
+(define-method (enum-universe (flags <GFlags>))
+  (enum-universe (class-of flags)))
 
 (define-method (flags-mask (class <class>))
   (make class #:value

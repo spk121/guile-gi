@@ -865,7 +865,7 @@ bitwise, the result will make some sense.
 
 In Scheme, the closest analogues to enumerations and flags are symbols
 and symbol lists.  Symbol equality can be checked with @code{eq?},
-symbol list equality with @code{equal?}  and in Guile specifically, the
+symbol list equality with @code{equal?} and in Guile specifically, the
 other operations can be implemented based on the @code{lset-*}
 procedures.@footnote{Other implementations may offer similar functions
 -- otherwise they can be implemented by the user themselves.}  However,
@@ -980,6 +980,14 @@ all.
 To cope with this fact, we implement our own -- similar, albeit somewhat
 different -- set of functions, that aim to be close to what you see in
 R6RS.
+
+@deffn Procedure enum-universe (class <class>)
+@deffnx Procedure enum-universe (enum <GEnum>)
+@deffnx Procedure enum-universe (flags <GFlags>)
+Returns a list of meaningful symbols (i.e. those that can be used in
+@code{symbol->enum} or @code{list->flags}) for @var{class}.
+If @var{enum} @var{flags} is given, @var{class} is inferred from it.
+@end deffn
 
 @deffn Procedure flags-mask (class <class>)
 @deffnx Procedure flags-mask (flags <GFlags>)
