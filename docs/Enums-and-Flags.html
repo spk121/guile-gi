@@ -66,7 +66,7 @@ bitwise, the result will make some sense.
 </p>
 <p>In Scheme, the closest analogues to enumerations and flags are symbols
 and symbol lists.  Symbol equality can be checked with <code>eq?</code>,
-symbol list equality with <code>equal?</code>  and in Guile specifically, the
+symbol list equality with <code>equal?</code> and in Guile specifically, the
 other operations can be implemented based on the <code>lset-*</code>
 procedures.<a id="DOCF1" href="#FOOT1"><sup>1</sup></a>  However,
 both of these lose information needed to convert them into a numerical
@@ -188,6 +188,15 @@ all.
 different &ndash; set of functions, that aim to be close to what you see in
 R6RS.
 </p>
+<dl>
+<dt id="index-enum_002duniverse">Procedure: <strong>enum-universe</strong> <em>(class &lt;class&gt;)</em></dt>
+<dt id="index-enum_002duniverse-1">Procedure: <strong>enum-universe</strong> <em>(enum &lt;GEnum&gt;)</em></dt>
+<dt id="index-enum_002duniverse-2">Procedure: <strong>enum-universe</strong> <em>(flags &lt;GFlags&gt;)</em></dt>
+<dd><p>Returns a list of meaningful symbols (i.e. those that can be used in
+<code>symbol-&gt;enum</code> or <code>list-&gt;flags</code>) for <var>class</var>.
+If <var>enum</var> <var>flags</var> is given, <var>class</var> is inferred from it.
+</p></dd></dl>
+
 <dl>
 <dt id="index-flags_002dmask">Procedure: <strong>flags-mask</strong> <em>(class &lt;class&gt;)</em></dt>
 <dt id="index-flags_002dmask-1">Procedure: <strong>flags-mask</strong> <em>(flags &lt;GFlags&gt;)</em></dt>
