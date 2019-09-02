@@ -13,26 +13,17 @@
 
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https:;;www.gnu.org/licenses/>.
-(use-modules (gi) (gi repository)
-             (srfi srfi-26)
-             (oop goops)
+(use-modules (gi)
+             (gi repository)
+             (gi types)
+             (gi util)
+             (oop goops describe)
              (ice-9 receive))
 
-(map require
-     '("Gio" "Gtk" "Gdk")
-     '("2.0" "3.0" "3.0"))
-
-(load-by-name "Gdk" "Event")
-(load-by-name "Gdk" "EventMask")
-(load-by-name "Gio" "Application")
-
-(for-each
- (cute load-by-name "Gtk" <>)
- '("ApplicationWindow" "Application"
-   "Button" "VBox" "ButtonBox"
-   ;; base types that we use for some methods
-   "Container" "Window" "Widget"
-   "TextView" "TextBuffer" "TextIter"))
+(push-duplicate-handler! 'merge-generics)
+(use-typelibs (("Gio" "2.0") #:renamer (protect* '(application:new receive)))
+              ("Gtk" "3.0")
+              ("Gdk" "3.0"))
 
 (define (print-goodbye widget)
   (display "Goodbye World\n"))
@@ -45,42 +36,44 @@
 
 (define (activate app)
   (let ((window (application-window:new app))
-        (vbox (vbox:new 0 0))
+        (grid (grid:new))
         (editor (text-view:new))
-        (button-box (button-box:new 0))
+        (button-box (button-box:new (symbol->orientation 'horizontal)))
         (button (button:new-with-label "Quit"))
-        (button2 (button:new-with-label "Hello")))
-    (add-events editor EVENT_MASK_KEY_PRESS_MASK)
+        (button2 (button:new-with-label "Hello"))
+        (key-press-mask (list->event-mask '(key-press-mask))))
+    (set-vexpand editor #t)
+    (set-hexpand editor #t)
+    (add-events editor (flags->number key-press-mask))
+    (attach grid editor 0 0 1 1)
 
-    (map add
-         (list button-box button-box vbox vbox window)
-         (list button2 button editor button-box vbox))
+    (set-layout button-box (symbol->button-box-style 'end))
+    (add button-box button2)
+    (add button-box button)
+    (attach grid button-box 0 1 1 1)
 
+    (add window grid)
     (set-title window "Window")
     (set-default-size window 200 200)
 
-    (map connect
-         (list editor button button button2)
-         (list key-press-event clicked clicked clicked)
-         (list key-press
-               print-goodbye (lambda x (destroy window))
-               ;; When the 'hello' button is clicked, write the current contents
-               ;; of the editor to the console, and replace the buffer contents
-               ;; with 'Hello, world'.
-               (lambda x
-                 (let ((buffer (get-buffer editor))
-                       (iter1 (make <GtkTextIter>))
-                       (iter2 (make <GtkTextIter>)))
-                   (get-bounds buffer iter1 iter2)
-                   (write (get-text buffer iter1 iter2 #t))
-                   (newline)
-                   (set-text buffer "Hello, world" 12)))))
+    (connect editor (make <signal> #:name "key-press-event") key-press)
+    (connect button clicked print-goodbye)
+    (connect button clicked (lambda x (destroy window)))
+    (connect button2 clicked
+             (lambda x
+               (let ((buffer (get-buffer editor))
+                     (iter1 (make <GtkTextIter>))
+                     (iter2 (make <GtkTextIter>)))
+                 (get-bounds buffer iter1 iter2)
+                 (write (get-text buffer iter1 iter2 #t))
+                 (newline)
+                 (set-text buffer "Hello, world" 12))))
 
     (grab-focus editor)
     (show-all window)))
 
 (define (main)
-  (let ((app (application:new "org.gtk.example" 0)))
+  (let ((app (application:new "org.gtk.example" (number->application-flags 0))))
     (connect app application:activate activate)
     (run app (command-line))))
 

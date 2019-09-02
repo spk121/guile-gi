@@ -13,7 +13,9 @@
 
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https:;;www.gnu.org/licenses/>.
-(use-modules (gi) (gi repository)
+(use-modules (gi)
+             (gi repository)
+             (gi types)
              (srfi srfi-26)
              (oop goops))
 
@@ -22,6 +24,7 @@
      '("2.0" "3.0" "4.0"))
 
 (load-by-name "Gio" "Application")
+(load-by-name "Gio" "ApplicationFlags")
 (load-by-name "WebKit2" "WebView")
 
 (for-each
@@ -39,7 +42,7 @@
     (show-all window)))
 
 (define (main)
-  (let ((app (application:new "org.gtk.example" 0)))
+  (let ((app (application:new "org.gtk.example" (number->application-flags 0))))
     (connect app application:activate activate)
     (run app (command-line))))
 
