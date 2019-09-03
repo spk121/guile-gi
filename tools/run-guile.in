@@ -25,5 +25,5 @@ top_builddir="@abs_top_builddir@"
 XDG_CACHE_HOME=${top_builddir}/cache
 export XDG_CACHE_HOME
 exec ${top_builddir}/tools/uninstalled-env ${top_builddir}/libtool --mode=execute \
-     -dlopen ${top_builddir}/src/libguile-gi.la \
+     -dlopen ${top_builddir}/libguile-gi.la \
      "@GUILE@" "$@"

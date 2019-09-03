@@ -31,13 +31,13 @@ export GUILE_AUTO_COMPILE
 if test -e "${top_builddir}/test/libeverything-1.0.la"
 then
     exec ${top_builddir}/tools/uninstalled-test-env ${top_builddir}/libtool --mode=execute \
-         -dlopen ${top_builddir}/src/libguile-gi.la \
+         -dlopen ${top_builddir}/libguile-gi.la \
          -dlopen ${top_builddir}/test/libeverything-1.0.la \
          -dlopen ${top_builddir}/test/libmarshall-1.0.la \
          gdb --args "@GUILE@" "$1"
          "@GUILE@" "$1"
 else
     exec ${top_builddir}/tools/uninstalled-test-env ${top_builddir}/libtool --mode=execute \
-         -dlopen ${top_builddir}/src/libguile-gi.la \
+         -dlopen ${top_builddir}/libguile-gi.la \
          gdb --args "@GUILE@" "$1"
 fi
