@@ -664,6 +664,25 @@ bin_SCRIPTS = tools/guile-gi
 distclean-local: -distclean-docs
 html-local: docs
 
+CHK_SOURCES = \
+  src/gig_argument.c \
+  src/gig_closure.c \
+  src/gig_data_type.c \
+  src/gig_object.c \
+  src/gig_value.c \
+  src/gig_signal.c \
+  src/gig.c \
+  src/gig_arg_map.c \
+  src/gig_callback.c \
+  src/gig_function.c \
+  src/gig_constant.c \
+  src/gig_flag.c \
+  src/gig_repository.c \
+  src/gig_document.c \
+  src/gig_type.c \
+  src/gig_type_private.c \
+  src/gig_util.c
+
 check-syntax:
 	$(CC) -std=c11 $(GUILE_CFLAGS) $(GLIB_CFLAGS) $(GOBJECT_CFLAGS) \
 	 $(GOBJECT_INTROSPECTION_CFLAGS) $(FFI_CFLAGS) \
