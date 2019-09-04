@@ -209,17 +209,7 @@ AM_CONDITIONAL([MTRACE], [test x$mtrace = xtrue])
 
 AC_CONFIG_FILES([
  Makefile
- build-aux/Makefile
- doc/Makefile
- docs/Makefile
- examples/Makefile
- examples/resources/Makefile
- m4/Makefile
- module/Makefile
  module/gi/config.scm
- src/Makefile
- test/Makefile
- tools/Makefile
  ])
 AC_CONFIG_FILES([tools/uninstalled-env], [chmod +x tools/uninstalled-env])
 AC_CONFIG_FILES([tools/uninstalled-test-env], [chmod +x tools/uninstalled-test-env])
