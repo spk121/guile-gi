@@ -113,9 +113,7 @@ gig_type_transfer_object(GType type, gpointer ptr, GITransfer transfer)
     if (G_TYPE_IS_CLASSED(type))
         type = G_OBJECT_TYPE(ptr);
 
-#if GIG_DEBUG_TRANSFERS
-    g_debug("gig_type_transfer_object(%s, %p, %d)", g_type_name(type), ptr, transfer);
-#endif
+    gig_debug_transfer("gig_type_transfer_object(%s, %p, %d)", g_type_name(type), ptr, transfer);
 
     SCM scm_type = gig_type_get_scheme_type(type);
     g_return_val_if_fail(SCM_CLASSP(scm_type), SCM_BOOL_F);

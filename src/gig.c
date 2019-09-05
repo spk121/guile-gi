@@ -50,14 +50,15 @@ field_ref(const gchar *needle, const GLogField *fields, gsize n_fields)
 }
 
 static gboolean
-is_enabled(GLogLevelFlags flags, const GLogField *domain)
+is_enabled(const GLogField *domain, const gchar *domains, gboolean allow_empty)
 {
-    const gchar *domains = g_getenv("G_MESSAGES_DEBUG");
+    if (!domain || !domain->value)
+        return allow_empty;
     if (domains == NULL)
         return FALSE;
     if (!strcmp(domains, "all"))
         return TRUE;
-    if (domain && domain->value && strstr(domains, domain->value))
+    if (strstr(domains, domain->value))
         return TRUE;
     return FALSE;
 }
@@ -65,6 +66,9 @@ is_enabled(GLogLevelFlags flags, const GLogField *domain)
 static GLogWriterOutput
 gig_log_writer(GLogLevelFlags flags, const GLogField *fields, gsize n_fields, gpointer user_data)
 {
+#define LOG_FIELD(f) field_ref(f, fields, n_fields)
+#define ENV_MESSAGES_DEBUG (g_getenv("G_MESSAGES_DEBUG"))
+#define ENV_GIG_DEBUG (g_getenv("GIG_DEBUG"))
     const GLogField *message;
 
     const gchar *prefix, *color;
@@ -91,13 +95,15 @@ gig_log_writer(GLogLevelFlags flags, const GLogField *fields, gsize n_fields, gp
         break;
     case G_LOG_LEVEL_INFO:
         color = "\033[1;32m%s\033[0m";
-        if (!is_enabled(flags, field_ref("GLIB_DOMAIN", fields, n_fields)))
+        if (!is_enabled(LOG_FIELD("GLIB_DOMAIN"), ENV_MESSAGES_DEBUG, FALSE)
+            || !is_enabled(LOG_FIELD("GIG_DOMAIN"), ENV_GIG_DEBUG, TRUE))
             return G_LOG_WRITER_HANDLED;
         prefix = "INFO";
         break;
     case G_LOG_LEVEL_DEBUG:
         color = "\033[1;32m%s\033[0m";
-        if (!is_enabled(flags, field_ref("GLIB_DOMAIN", fields, n_fields)))
+        if (!is_enabled(LOG_FIELD("GLIB_DOMAIN"), ENV_MESSAGES_DEBUG, FALSE)
+            || !is_enabled(LOG_FIELD("GIG_DOMAIN"), ENV_GIG_DEBUG, TRUE))
             return G_LOG_WRITER_HANDLED;
         prefix = "DEBUG";
         break;
@@ -122,6 +128,9 @@ gig_log_writer(GLogLevelFlags flags, const GLogField *fields, gsize n_fields, gp
         scm_printf(port, "%s: %s\n", prefix, (const gchar *)message->value);
 
     return G_LOG_WRITER_HANDLED;
+#undef LOG_FIELD
+#undef ENV_MESSAGES_DEBUG
+#undef ENV_GIG_DEBUG
 }
 
 #ifdef ENABLE_GCOV

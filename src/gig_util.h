@@ -33,3 +33,13 @@ gchar *g_registered_type_info_get_qualified_name(GIRegisteredTypeInfo *info);
 
 G_END_DECLS
 #endif
+
+#define gig_debug_transfer(...)                                         \
+    do {                                                                \
+        g_log_structured(G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG,               \
+                         "CODE_FILE", __FILE__,                         \
+                         "CODE_LINE", __LINE__,                         \
+                         "CODE_FUNC", __func__,                         \
+                         "GIG_DOMAIN", "transfers",                     \
+                         "MESSAGE", __VA_ARGS__);                       \
+    } while (FALSE)
