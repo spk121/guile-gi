@@ -386,7 +386,22 @@ test/everything.h: $(GI_DATA_DIR)/tests/everything.h
 test/gitestmacros.h : $(GI_DATA_DIR)/tests/gitestmacros.h
 	cp $< $@
 
-BUILT_SOURCES = test/everything.c test/everything.h test/gitestmacros.h
+GI_MARSHAL_SED = sed \
+  -e "s/gimarshallingtests/marshall/" \
+  -e "s/gi_marshalling_tests/marshall/g" \
+  -e "s/GI_MARSHALLING_TESTS/MARSHALL/g" \
+  -e "s/GIMarshallingTests/Marshall/g"
+
+test/marshall.c: $(GI_DATA_DIR)/tests/gimarshallingtests.c
+	$(GI_MARSHAL_SED) $< > $@
+test/marshall.h: $(GI_DATA_DIR)/tests/gimarshallingtests.h
+	$(GI_MARSHAL_SED) $< > $@
+
+BUILT_SOURCES = \
+  test/everything.c test/everything.h \
+  test/marshall.c test/marshall.h \
+  test/gitestmacros.h
+
 INTROSPECTION_GIRS = test/Everything-1.0.gir test/Marshall-1.0.gir
 INTROSPECTION_SCANNER_ARGS = \
   -I $(abs_srcdir)/test \
@@ -401,10 +416,8 @@ if BUILDING_DLL
 test_libeverything_1_0_la_LDFLAGS += -no-undefined
 endif
 
-test_libmarshall_1_0_la_SOURCES = \
-  test/marshall.c test/marshall.h
 nodist_test_libmarshall_1_0_la_SOURCES = \
-  test/gitestmacros.h
+  test/marshall.c test/marshall.h test/gitestmacros.h
 test_libmarshall_1_0_la_CFLAGS = $(GOBJECT_CFLAGS) -I $(abs_builddir)/test
 test_libmarshall_1_0_la_LDFLAGS =
 test_libmarshall_1_0_la_LIBADD = $(GOBJECT_LIBS)
@@ -428,8 +441,6 @@ cleanpkgdata_DATA = \
   test/Everything-1.0.typelib test/Marshall-1.0.typelib
 
 EVERYTHING_TESTS = \
-  test/everything/a21.scm \
-  test/everything/callback_a21.scm \
   test/everything/nullfunc.scm \
   test/everything/const-return-gpointer.scm \
   test/everything/const-return-gintptr.scm \
