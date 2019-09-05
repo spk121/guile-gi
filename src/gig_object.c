@@ -525,18 +525,20 @@ gig_property_define(GType type, GIPropertyInfo *info, const gchar *_namespace, S
     long_name = scm_dynwind_or_bust("%gig-property-define", gig_gname_to_scm_name(long_name));
 
     prop = g_object_class_find_property(_class, name);
-    g_assert(prop != NULL);
+    if (prop != NULL) {
+        s_prop = gig_type_transfer_object(G_PARAM_SPEC_TYPE(prop), prop, GI_TRANSFER_NOTHING);
 
-    s_prop = gig_type_transfer_object(G_PARAM_SPEC_TYPE(prop), prop, GI_TRANSFER_NOTHING);
-
-    def = do_define_property(long_name, s_prop, self_type, top_type);
-    if (!SCM_UNBNDP(def))
-        defs = scm_cons(def, defs);
-    g_debug("dynamically bound %s to property %s of %s", long_name, name, g_type_name(type));
-    def = do_define_property(name, s_prop, self_type, top_type);
-    if (!SCM_UNBNDP(def))
-        defs = scm_cons(def, defs);
-    g_debug("dynamically bound %s to property %s of %s", name, name, g_type_name(type));
+        def = do_define_property(long_name, s_prop, self_type, top_type);
+        if (!SCM_UNBNDP(def))
+            defs = scm_cons(def, defs);
+        g_debug("dynamically bound %s to property %s of %s", long_name, name, g_type_name(type));
+        def = do_define_property(name, s_prop, self_type, top_type);
+        if (!SCM_UNBNDP(def))
+            defs = scm_cons(def, defs);
+        g_debug("dynamically bound %s to property %s of %s", name, name, g_type_name(type));
+    }
+    else
+        g_warning("Missing property %s", long_name);
 
     scm_dynwind_end();
     return defs;
