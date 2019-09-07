@@ -441,94 +441,7 @@ cleanpkgdata_DATA = \
   test/Everything-1.0.typelib test/Marshall-1.0.typelib
 
 EVERYTHING_TESTS = \
-  test/everything/nullfunc.scm \
-  test/everything/const-return-gpointer.scm \
-  test/everything/const-return-gintptr.scm \
-  test/everything/const-return-gboolean.scm \
-  test/everything/const-return-gint8.scm \
-  test/everything/const-return-guint8.scm \
-  test/everything/const-return-gint16.scm \
-  test/everything/const-return-guint16.scm \
-  test/everything/const-return-gint32.scm \
-  test/everything/const-return-guint32.scm \
-  test/everything/const-return-gint64.scm \
-  test/everything/const-return-guint64.scm \
-  test/everything/const-return-gchar.scm \
-  test/everything/const-return-gshort.scm \
-  test/everything/const-return-gushort.scm \
-  test/everything/const-return-gint.scm \
-  test/everything/const-return-guint.scm \
-  test/everything/const-return-glong.scm \
-  test/everything/const-return-gulong.scm \
-  test/everything/const-return-gsize.scm \
-  test/everything/const-return-gssize.scm \
-  test/everything/const-return-gfloat.scm \
-  test/everything/const-return-gdouble.scm \
-  test/everything/const-return-gunichar.scm \
-  test/everything/const-return-gtype.scm \
-  test/everything/const-return-utf8.scm \
-  test/everything/const-return-filename.scm \
-  test/everything/oneparam-gpointer.scm \
-  test/everything/oneparam-gintptr.scm \
-  test/everything/oneparam-guintptr.scm \
-  test/everything/oneparam-gboolean.scm \
-  test/everything/oneparam-gint8.scm \
-  test/everything/oneparam-guint8.scm \
-  test/everything/oneparam-gint16.scm \
-  test/everything/oneparam-guint16.scm \
-  test/everything/oneparam-gint32.scm \
-  test/everything/oneparam-guint32.scm \
-  test/everything/oneparam-gint64.scm \
-  test/everything/oneparam-guint64.scm \
-  test/everything/oneparam-gchar.scm \
-  test/everything/oneparam-gchar-char.scm \
-  test/everything/oneparam-gshort.scm \
-  test/everything/oneparam-gushort.scm \
-  test/everything/oneparam-gint.scm \
-  test/everything/oneparam-guint.scm \
-  test/everything/oneparam-glong.scm \
-  test/everything/oneparam-gulong.scm \
-  test/everything/oneparam-gsize.scm \
-  test/everything/oneparam-gssize.scm \
-  test/everything/oneparam-gfloat.scm \
-  test/everything/oneparam-gdouble.scm \
-  test/everything/oneparam-gunichar.scm \
-  test/everything/oneparam-gtype.scm \
-  test/everything/oneparam-utf8.scm \
-  test/everything/oneparam-filename.scm \
-  test/everything/one-outparam-gpointer.scm \
-  test/everything/one-outparam-gintptr.scm \
-  test/everything/one-outparam-guintptr.scm \
-  test/everything/one-outparam-gboolean.scm \
-  test/everything/one-outparam-gboolean.scm \
-  test/everything/one-outparam-gint8.scm \
-  test/everything/one-outparam-guint8.scm \
-  test/everything/one-outparam-gint16.scm \
-  test/everything/one-outparam-guint16.scm \
-  test/everything/one-outparam-gint32.scm \
-  test/everything/one-outparam-guint32.scm \
-  test/everything/one-outparam-gint64.scm \
-  test/everything/one-outparam-guint64.scm \
-  test/everything/one-outparam-gchar.scm \
-  test/everything/one-outparam-gshort.scm \
-  test/everything/one-outparam-gushort.scm \
-  test/everything/one-outparam-gint.scm \
-  test/everything/one-outparam-guint.scm \
-  test/everything/one-outparam-glong.scm \
-  test/everything/one-outparam-gulong.scm \
-  test/everything/one-outparam-gsize.scm \
-  test/everything/one-outparam-gssize.scm \
-  test/everything/one-outparam-gfloat.scm \
-  test/everything/one-outparam-gdouble.scm \
-  test/everything/one-outparam-gunichar.scm \
-  test/everything/one-outparam-gtype.scm \
-  test/everything/one-outparam-utf8.scm \
-  test/everything/one-outparam-filename.scm \
-  test/everything/passthrough-one-gpointer.scm \
-  test/everything/passthrough-one-gintptr.scm \
-  test/everything/passthrough-one-guintptr.scm \
-  test/everything/passthrough-one-utf8.scm \
-  test/everything/passthrough-one-filename.scm \
+  test/everything.scm \
   test/everything/boolean-return-true.scm \
   test/everything/boolean-return-false.scm \
   test/everything/boolean-in-true.scm \
@@ -661,10 +574,10 @@ TESTS = \
   $(EVERYTHING_TESTS)
 
 XFAIL_TESTS = \
-  test/everything/one-outparam-gchar.scm \
   test/everything/garray-utf8-full-out-caller-allocated.scm
 
 SCM_LOG_COMPILER = ${builddir}/tools/run-test
+test/everything.log: SCM_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) $(top_srcdir)/build-aux/tap-driver.sh
 
 test: check
 

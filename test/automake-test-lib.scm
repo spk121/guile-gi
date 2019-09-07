@@ -15,13 +15,19 @@
 ;; <http://www.gnu.org/licenses/>.
 
 (define-module (test automake-test-lib)
+  #:use-module (ice-9 format)
   #:use-module (srfi srfi-1)
+  #:use-module (srfi srfi-9)
   #:use-module (system foreign)
   #:replace (EXIT_SUCCESS
              EXIT_FAILURE)
   #:export (EXIT_SKIPPED
             EXIT_HARD_ERROR
+
             automake-test
+            tap:test! tap:expect-fail
+            tap:finish!
+
             maybe-sleep
             with-latin1-locale*
             with-utf8-locale*
@@ -49,22 +55,75 @@
   (syntax-rules ()
     ((hard-error-if-exception expr)
      (catch #t
-	    (lambda () expr)
-	    (lambda args EXIT_HARD_ERROR)))
+       (lambda () expr)
+       (lambda args EXIT_HARD_ERROR)))
     ((hard-error-if-exception expr #:warning template arg ...)
      (catch #t
-	    (lambda () expr)
-	    (lambda (key . args)
-	      (for-each (lambda (s)
-			  (if (not (string-null? s))
-			      (format (current-warning-port) ";;; ~a\n" s)))
-			(string-split
-			 (call-with-output-string
-			  (lambda (port)
-			    (format port template arg ...)
-			    (print-exception port #f key args)))
-			 #\newline))
-	      EXIT_HARD_ERROR)))))
+       (lambda () expr)
+       (lambda (key . args)
+         (for-each (lambda (s)
+                     (if (not (string-null? s))
+                         (format (current-warning-port) ";;; ~a\n" s)))
+                   (string-split
+                    (call-with-output-string
+                     (lambda (port)
+                       (format port template arg ...)
+                       (print-exception port #f key args)))
+                    #\newline))
+         EXIT_HARD_ERROR)))))
+
+(define tap:expect-fail (make-parameter #f (lambda (x) (not (not x)))))
+
+(define %tap-tests '())
+
+(define-record-type <tap-test>
+  (make-test name procedure expect-fail?)
+  tap-test?
+  (name test-name)
+  (procedure test-procedure)
+  (expect-fail? test-expect-fail?))
+
+(define-syntax-rule (tap:test! test body ...)
+  (set! %tap-tests
+        (cons (make-test test (lambda () body ...) (tap:expect-fail))
+              %tap-tests)))
+
+(define (tap:finish!)
+  (let ((fails #f)
+        (errors #f))
+    (format #t "1..~d~%" (length %tap-tests))
+    (for-each
+     (lambda (test)
+       (format
+        #t
+        (case (catch #t
+                (test-procedure test)
+                (const 'error))
+          ((#f)
+           (if (test-expect-fail? test)
+               "not ok ~a # TODO implement"
+               (begin
+                 (set! fails #t)
+                 "not ok ~a")))
+          ((skipped)
+           "ok ~a # SKIP this test")
+          ((error)
+           (set! errors #t)
+           "Bail out! ~a")
+          (else
+           (if (test-expect-fail? test)
+               (begin
+                 (set! fails #t)
+                 "ok ~a # TODO when was this added?")
+               "ok ~a")))
+        (test-name test))
+       (newline))
+     (reverse %tap-tests))
+    (exit
+     (cond
+      (errors EXIT_HARD_ERROR)
+      (fails EXIT_FAILURE)
+      (else EXIT_SUCCESS)))))
 
 (define (automake-test x)
   (let ((ret (hard-error-if-exception x)))
