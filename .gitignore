@@ -71,6 +71,8 @@ texinfo.tex
 module/gi/config.scm
 test/everything.c
 test/everything.h
+test/marshall.c
+test/marshall.h
 test/gitestmacros.h
 
 # Scripts

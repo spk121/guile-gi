@@ -94,40 +94,46 @@ examples/resources/test.gresource: AM_GRESOURCE_FLAGS = --sourcedir=$(abs_srcdir
 
 guileextension_LTLIBRARIES = libguile-gi.la
 
-libguile_gi_la_SOURCES = \
+libguile_gi_la_c_sources = \
   src/gig_argument.c \
-  src/gig_argument.h \
   src/gig_closure.c \
-  src/gig_closure.h \
   src/gig_data_type.c \
-  src/gig_data_type.h \
   src/gig_object.c \
-  src/gig_object.h \
   src/gig_value.c \
-  src/gig_value.h \
   src/gig_signal.c \
-  src/gig_signal.h \
   src/gig.c \
   src/gig_arg_map.c \
-  src/gig_arg_map.h \
   src/gig_callback.c \
-  src/gig_callback.h \
   src/gig_function.c \
-  src/gig_function.h \
-  src/gig_function_private.h \
   src/gig_constant.c \
-  src/gig_constant.h \
   src/gig_flag.c \
-  src/gig_flag.h \
   src/gig_repository.c \
-  src/gig_repository.h \
   src/gig_document.c \
   src/gig_type.c \
-  src/gig_type.h \
   src/gig_type_private.c \
+  src/gig_util.c
+
+libguile_gi_la_internal_headers = \
+  src/gig_argument.h \
+  src/gig_closure.h \
+  src/gig_data_type.h \
+  src/gig_object.h \
+  src/gig_value.h \
+  src/gig_signal.h \
+  src/gig_arg_map.h \
+  src/gig_callback.h \
+  src/gig_function.h \
+  src/gig_function_private.h \
+  src/gig_constant.h \
+  src/gig_flag.h \
+  src/gig_repository.h \
+  src/gig_type.h \
   src/gig_type_private.h \
-  src/gig_util.c \
   src/gig_util.h
+
+libguile_gi_la_SOURCES = \
+  $(libguile_gi_la_internal_headers) \
+  $(libguile_gi_la_c_sources)
 
 libguile_gi_la_CPPFLAGS = -DG_LOG_DOMAIN=\"GuileGI\"
 if BUILDING_DLL
@@ -380,7 +386,22 @@ test/everything.h: $(GI_DATA_DIR)/tests/everything.h
 test/gitestmacros.h : $(GI_DATA_DIR)/tests/gitestmacros.h
 	cp $< $@
 
-BUILT_SOURCES = test/everything.c test/everything.h test/gitestmacros.h
+GI_MARSHAL_SED = sed \
+  -e "s/gimarshallingtests/marshall/" \
+  -e "s/gi_marshalling_tests/marshall/g" \
+  -e "s/GI_MARSHALLING_TESTS/MARSHALL/g" \
+  -e "s/GIMarshallingTests/Marshall/g"
+
+test/marshall.c: $(GI_DATA_DIR)/tests/gimarshallingtests.c
+	$(GI_MARSHAL_SED) $< > $@
+test/marshall.h: $(GI_DATA_DIR)/tests/gimarshallingtests.h
+	$(GI_MARSHAL_SED) $< > $@
+
+BUILT_SOURCES = \
+  test/everything.c test/everything.h \
+  test/marshall.c test/marshall.h \
+  test/gitestmacros.h
+
 INTROSPECTION_GIRS = test/Everything-1.0.gir test/Marshall-1.0.gir
 INTROSPECTION_SCANNER_ARGS = \
   -I $(abs_srcdir)/test \
@@ -395,10 +416,8 @@ if BUILDING_DLL
 test_libeverything_1_0_la_LDFLAGS += -no-undefined
 endif
 
-test_libmarshall_1_0_la_SOURCES = \
-  test/marshall.c test/marshall.h
 nodist_test_libmarshall_1_0_la_SOURCES = \
-  test/gitestmacros.h
+  test/marshall.c test/marshall.h test/gitestmacros.h
 test_libmarshall_1_0_la_CFLAGS = $(GOBJECT_CFLAGS) -I $(abs_builddir)/test
 test_libmarshall_1_0_la_LDFLAGS =
 test_libmarshall_1_0_la_LIBADD = $(GOBJECT_LIBS)
@@ -422,8 +441,6 @@ cleanpkgdata_DATA = \
   test/Everything-1.0.typelib test/Marshall-1.0.typelib
 
 EVERYTHING_TESTS = \
-  test/everything/a21.scm \
-  test/everything/callback_a21.scm \
   test/everything/nullfunc.scm \
   test/everything/const-return-gpointer.scm \
   test/everything/const-return-gintptr.scm \
@@ -664,29 +681,10 @@ bin_SCRIPTS = tools/guile-gi
 distclean-local: -distclean-docs
 html-local: docs
 
-CHK_SOURCES = \
-  src/gig_argument.c \
-  src/gig_closure.c \
-  src/gig_data_type.c \
-  src/gig_object.c \
-  src/gig_value.c \
-  src/gig_signal.c \
-  src/gig.c \
-  src/gig_arg_map.c \
-  src/gig_callback.c \
-  src/gig_function.c \
-  src/gig_constant.c \
-  src/gig_flag.c \
-  src/gig_repository.c \
-  src/gig_document.c \
-  src/gig_type.c \
-  src/gig_type_private.c \
-  src/gig_util.c
-
 check-syntax:
 	$(CC) -std=c11 $(GUILE_CFLAGS) $(GLIB_CFLAGS) $(GOBJECT_CFLAGS) \
 	 $(GOBJECT_INTROSPECTION_CFLAGS) $(FFI_CFLAGS) \
-	 -DG_LOG_DOMAIN=\"GuileGI\" $(CFLAGS) -fsyntax-only $(CHK_SOURCES)
+	 -DG_LOG_DOMAIN=\"GuileGI\" $(CFLAGS) -fsyntax-only $(libguile_gi_la_c_sources)
 
 indent:
 	VERSION_CONTROL=none indent $(libguile_gi_la_SOURCES)
