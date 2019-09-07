@@ -773,7 +773,7 @@ convert_output_args(GigArgMap *amap, const gchar *func_name, GArray *out_args)
             GigArgMapEntry *size_entry = gig_amap_get_output_entry_by_c(amap, size_index);
             gig_argument_c_to_scm(func_name, size_index, &size_entry->meta, &ob[size_index], &obj,
                                   -1);
-            size = scm_to_int(obj);
+            size = scm_is_integer(obj) ? scm_to_int(obj) : 0;
         }
 
         gig_argument_c_to_scm(func_name, c_output_pos, &entry->meta, &ob[c_output_pos], &obj,
@@ -813,7 +813,7 @@ rebox_inout_args(GigArgMap *amap,
                     gig_argument_c_to_scm(func_name, size_index, &amap->pdata[size_index].meta,
                                           ob[amap->pdata[size_index].c_input_pos].v_pointer, &obj,
                                           GIG_ARRAY_SIZE_UNKNOWN);
-                    size = scm_to_size_t(obj);
+                    size = scm_is_integer(obj) ? scm_to_size_t(obj) : 0;
                 }
 
                 if (amap_entry->parent == NULL) {
