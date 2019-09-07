@@ -831,6 +831,10 @@ gig_argument_c_to_scm(C2S_ARG_DECL)
 {
     TRACE_C2S();
 
+    if (arg->v_pointer == NULL && meta->is_nullable) {
+        *object = SCM_BOOL_F;
+        return;
+    }
     GType fundamental_type = G_TYPE_FUNDAMENTAL(meta->gtype);
     TRACE_C2S();
     switch (fundamental_type) {
@@ -1426,9 +1430,7 @@ static void
 c_pointer_to_scm(C2S_ARG_DECL)
 {
     TRACE_C2S();
-    if (arg->v_pointer == NULL && meta->is_nullable)
-        *object = SCM_BOOL_F;
-    else if (meta->gtype == G_TYPE_GTYPE)
+    if (meta->gtype == G_TYPE_GTYPE)
         *object = scm_from_gtype(arg->v_size);
     else if (meta->pointer_type == GIG_DATA_CALLBACK) {
         gpointer cb = meta->is_ptr ? *(gpointer *)arg->v_pointer : arg->v_pointer;
