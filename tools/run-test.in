@@ -9,7 +9,7 @@ IFS="$(printf '\n\t')"
 set -e
 _exit() {
     retval=$?
-    if [[ $retval -gt 128 ]]; then
+    if [ $retval -gt 128 ]; then
         exit 99
     else
         exit $retval
