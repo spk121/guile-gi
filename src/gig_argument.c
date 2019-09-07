@@ -999,6 +999,12 @@ static void
 c_object_to_scm(C2S_ARG_DECL)
 {
     TRACE_C2S();
+    if (arg->v_pointer == NULL)
+        // The valid is_nullable NULL pointers should already have been handled.
+        // Any NULLs here must be an error.
+        scm_misc_error("%object-arg->scm", "cannot convert a NULL pointer to an object of type ~S",
+                       scm_list_1(scm_from_utf8_string(g_type_name(meta->gtype))));
+
     *object = gig_type_transfer_object(meta->gtype, arg->v_pointer, meta->transfer);
 }
 
