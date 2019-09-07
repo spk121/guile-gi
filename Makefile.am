@@ -695,7 +695,6 @@ indent:
 #################
 
 noinst_DATA = \
-  test/lib.scm \
   test/automake-test-lib.scm \
   test/flags/flags.scm \
   test/grilo/base.scm
