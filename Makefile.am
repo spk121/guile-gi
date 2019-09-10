@@ -442,96 +442,7 @@ cleanpkgdata_DATA = \
 
 EVERYTHING_TESTS = \
   test/everything.scm \
-  test/everything/boolean-return-true.scm \
-  test/everything/boolean-return-false.scm \
-  test/everything/boolean-in-true.scm \
-  test/everything/boolean-in-false.scm \
-  test/everything/boolean-out-true.scm \
-  test/everything/boolean-out-false.scm \
-  test/everything/boolean-inout-true-false.scm \
-  test/everything/boolean-inout-false-true.scm \
-  test/everything/intXX-out-or-return-max.scm \
-  test/everything/uintXX-out-or-return-max.scm \
-  test/everything/intXX-out-or-return-min.scm \
-  test/everything/intXX-in-max.scm \
-  test/everything/uintXX-in.scm \
-  test/everything/int8-in-max-latin1.scm \
-  test/everything/intXX-in-min.scm \
-  test/everything/intXX-inout-max-min.scm \
-  test/everything/intXX-inout-min-max.scm \
-  test/everything/uintXX-inout.scm \
-  test/everything/time-t-out.scm \
-  test/everything/utf8-none-return.scm \
-  test/everything/utf8-full-return.scm \
-  test/everything/utf8-as-uint8array-in.scm \
-  test/everything/utf8-none-out.scm \
-  test/everything/utf8-dangling-out.scm \
-  test/everything/utf8-none-inout.scm \
-  test/everything/utf8-full-inout.scm \
-  test/everything/init-function-null.scm \
-  test/everything/init-function-zero.scm \
-  test/everything/init-function-one.scm \
-  test/everything/init-function-two.scm \
-  test/everything/array-fixed-int-return.scm \
-  test/everything/array-fixed-short-return.scm \
-  test/everything/array-fixed-int-in.scm \
-  test/everything/array-fixed-short-in.scm \
-  test/everything/array-fixed-out.scm \
-  test/everything/array-fixed-inout.scm \
-  test/everything/array-return.scm \
-  test/everything/array-return-etc.scm \
-  test/everything/array-in.scm \
-  test/everything/array-in-len-before.scm \
-  test/everything/array-in-len-zero-terminated.scm \
-  test/everything/array-string-in.scm \
-  test/everything/array-uint8-in.scm \
-  test/everything/array-uint8-in-latin1.scm \
-  test/everything/array-int64-in.scm \
-  test/everything/array-uint64-in.scm \
-  test/everything/array-unichar-in.scm \
-  test/everything/array-bool-in.scm \
-  test/everything/array-enum-in.scm \
-  test/everything/array-in-guint64-len.scm \
-  test/everything/array-in-guint8-len.scm \
-  test/everything/array-out.scm \
-  test/everything/array-out-etc.scm \
-  test/everything/array-bool-out.scm \
-  test/everything/array-unichar-out.scm \
-  test/everything/array-inout.scm \
-  test/everything/array-inout-etc.scm \
-  test/everything/array-in-nonzero-nonlen.scm \
-  test/everything/array-zero-terminated-return.scm \
-  test/everything/array-zero-terminated-return-null.scm \
-  test/everything/array-zero-terminated-return-unichar.scm \
-  test/everything/array-zero-terminated-in.scm \
-  test/everything/array-zero-terminated-out.scm \
-  test/everything/array-zero-terminated-inout.scm \
-  test/everything/array-gvariant-none-in.scm \
-  test/everything/array-gvariant-container-in.scm \
-  test/everything/garray-int-none-return.scm \
-  test/everything/garray-uint64-none-return.scm \
-  test/everything/garray-utf8-none-return.scm \
-  test/everything/garray-utf8-container-return.scm \
-  test/everything/garray-utf8-full-return.scm \
-  test/everything/garray-int-none-in.scm \
-  test/everything/garray-uint64-none-in.scm \
-  test/everything/garray-utf8-none-in.scm \
-  test/everything/garray-utf8-none-out.scm \
-  test/everything/garray-utf8-container-out.scm \
-  test/everything/garray-utf8-full-out.scm \
-  test/everything/garray-utf8-full-out-caller-allocated.scm \
-  test/everything/garray-utf8-none-inout.scm \
-  test/everything/garray-utf8-container-inout.scm \
-  test/everything/garray-utf8-full-inout.scm \
-  test/everything/garray-bool-none-in.scm \
-  test/everything/garray-unichar-none-in.scm \
-  test/everything/gptrarray-utf8-none-return.scm \
-  test/everything/gptrarray-utf8-container-return.scm \
-  test/everything/gptrarray-utf8-full-return.scm \
-  test/everything/gslist-int-none-return.scm \
-  test/everything/gslist-utf8-none-return.scm \
-  test/everything/gslist-utf8-container-return.scm \
-  test/everything/gslist-utf8-full-return.scm
+  test/marshall.scm
 else
 cleanpkgdata_DATA =
 EVERYTHING_TESTS =
@@ -573,11 +484,10 @@ TESTS = \
   test/misc/interfaces.scm \
   $(EVERYTHING_TESTS)
 
-XFAIL_TESTS = \
-  test/everything/garray-utf8-full-out-caller-allocated.scm
-
 SCM_LOG_COMPILER = ${builddir}/tools/run-test
-test/everything.log: SCM_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) $(top_srcdir)/build-aux/tap-driver.sh
+_TAP_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) $(top_srcdir)/build-aux/tap-driver.sh
+
+test/everything.log test/marshall.log: SCM_LOG_DRIVER = $(_TAP_DRIVER)
 
 test: check
 
