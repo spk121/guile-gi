@@ -390,6 +390,11 @@
 (define ->docbook
   (letrec ((%scheme (xpath:sxpath `(scheme)))
            (%entry (xpath:sxpath `(refentry)))
+           (%members
+            (compose
+             (xpath:select-kids identity)
+             (xpath:node-self
+              (xpath:node-typeof? 'member))))
            (%functions
             (compose
              (xpath:select-kids identity)
@@ -469,27 +474,27 @@
             (lambda (tag . kids)
               (let ((doc (%doc (cons tag kids)))
                     (scheme (%scheme (cons tag kids)))
+                    (members (%members kids))
                     (functions (%functions kids)))
                 (cond
                  ((null? scheme)
                   '())
 
-                 ((null? doc)
-                  `(refentry
-                    (refnamediv ,@(cdar scheme))
-                    (refsect1
-                     (title "Methods")
-                     ,@functions)))
-
                  (else
-                  `(refentry
-                    (refnamediv ,@(cdar scheme))
-                    (refsect1
-                     (title "Description")
-                     ,@(markdown (string-join doc "")))
-                    (refsect1
-                     (title "Methods")
-                     ,@functions)))))))
+                  (cons
+                   'refentry
+                   (filter
+                    identity
+                    `((refnamediv ,@(cdar scheme))
+                    ,(and (not (null? doc))
+                          `(refsect1 (title "Description")
+                                     ,@(markdown (string-join doc ""))))
+                    ,(and (not (null? members))
+                          `(refsect1 (title "Members")
+                                     ,@members))
+                    ,(and (not (null? functions))
+                          `(refsect1 (title "Functions")
+                                     ,@functions))))))))))
 
            (refsect2
             (lambda (tag . kids)
@@ -549,7 +554,7 @@
                      (let ((c-id (car? (%c-id (cons tag kids)))))
                        `((title ,@(%name (cons tag kids)))
                          ,(if c-id
-                              `((subtitle "alias " (code ,c-id)))
+                              `((remark "alias " (code ,c-id)))
                               '())))))
 
         (*text* . ,(lambda (tag txt)
