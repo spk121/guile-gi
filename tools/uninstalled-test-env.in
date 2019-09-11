@@ -97,7 +97,7 @@ done
 export GI_TYPELIB_PATH
 
 # handle LTDL_LIBRARY_PATH (no clobber)
-subdirs_with_ltlibs="src libs"       # maintain me
+subdirs_with_ltlibs="."       # maintain me
 for dir in $subdirs_with_ltlibs ; do
     if test -z "$LTDL_LIBRARY_PATH"; then
         LTDL_LIBRARY_PATH="${top_builddir}/${dir}"
