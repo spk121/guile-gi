@@ -1,2 +1,6 @@
 *.scm linguist-language=Scheme
 *.sh.in linguist-language=Shell
+build-aux/* linguist-vendored
+m4/* linguist-vendored
+doc/* linguist-documentation
+docs/* linguist-documentation
