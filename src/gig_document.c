@@ -77,6 +77,14 @@ do_document(GIBaseInfo *info, const gchar *_namespace)
         else
             kind = "function";
 
+        arg_map = gig_amap_new(info);
+        if (arg_map)
+            scm_dynwind_unwind_handler((scm_t_pointer_finalizer) gig_amap_free,
+                                       arg_map, SCM_F_WIND_EXPLICITLY);
+        else
+            break;
+
+
         scm_printf(SCM_UNDEFINED, "<%s name=\"%s\">", kind, g_base_info_get_name(info));
         scheme_name = scm_dynwind_or_bust(FUNC, gig_callable_info_make_name(info, NULL));
 
@@ -89,30 +97,23 @@ do_document(GIBaseInfo *info, const gchar *_namespace)
         else
             scm_printf(SCM_UNDEFINED, "<scheme><procedure name=\"%s\">", scheme_name);
 
+        gig_amap_c_count(arg_map, &in, &out);
+        gig_amap_s_input_count(arg_map, &req, &opt);
 
-        arg_map = gig_amap_new(info);
-        if (arg_map)
-            scm_dynwind_unwind_handler((scm_t_pointer_finalizer) gig_amap_free,
-                                       arg_map, SCM_F_WIND_EXPLICITLY);
-        if (arg_map) {
-            gig_amap_c_count(arg_map, &in, &out);
-            gig_amap_s_input_count(arg_map, &req, &opt);
+        if (g_callable_info_is_method(info)) {
+            scm_printf(SCM_UNDEFINED, "<argument name=\"self\">");
+            scm_printf(SCM_UNDEFINED, "</argument>");
+        }
+        for (gint i = 0; i < req + opt; i++) {
+            GigArgMapEntry *entry = gig_amap_get_input_entry_by_s(arg_map, i);
+            document_arg_entry("argument", entry);
+        }
+        if (arg_map->return_val.meta.gtype != G_TYPE_NONE)
+            document_arg_entry("return", &arg_map->return_val);
 
-            if (g_callable_info_is_method(info)) {
-                scm_printf(SCM_UNDEFINED, "<argument name=\"self\">");
-                scm_printf(SCM_UNDEFINED, "</argument>");
-            }
-            for (gint i = 0; i < req + opt; i++) {
-                GigArgMapEntry *entry = gig_amap_get_input_entry_by_s(arg_map, i);
-                document_arg_entry("argument", entry);
-            }
-            if (arg_map->return_val.meta.gtype != G_TYPE_NONE)
-                document_arg_entry("return", &arg_map->return_val);
-
-            for (gint i = 0; i < out; i++) {
-                GigArgMapEntry *entry = gig_amap_get_output_entry_by_c(arg_map, i);
-                document_arg_entry("return", entry);
-            }
+        for (gint i = 0; i < out; i++) {
+            GigArgMapEntry *entry = gig_amap_get_output_entry_by_c(arg_map, i);
+            document_arg_entry("return", entry);
         }
         scm_printf(SCM_UNDEFINED, "</procedure></scheme></%s>", kind);
         break;
