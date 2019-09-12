@@ -204,7 +204,10 @@
 (define-peg-pattern inline-ws body (or " "))
 (define-peg-pattern any-ws body (or inline-ws "\n"))
 (define-peg-pattern wordsep body
-  (or any-ws "-" "_" "/" "+" "*" "<" ">" "=" "." ":" "," ";" "?" "!"))
+  (or any-ws
+      "-" "_" "/" "+" "*" "="
+      "(" ")" "[" "]" "{" "}" "<" ">"
+      "." ":" "," ";" "?" "!"))
 
 (define-peg-pattern listing-language none
   (and "<!--"
