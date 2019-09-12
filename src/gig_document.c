@@ -190,8 +190,16 @@ do_document(GIBaseInfo *info, const gchar *_namespace)
         break;
     case GI_INFO_TYPE_VFUNC:
     case GI_INFO_TYPE_PROPERTY:
-        scm_printf(SCM_UNDEFINED, "<property name=\"%s\" />", g_base_info_get_name(info));
+    {
+        const gchar *name = g_base_info_get_name(info);
+        GParamFlags flags = g_property_info_get_flags(info);
+        scm_printf(SCM_UNDEFINED, "<property name=\"%s\"><scheme>"
+                   "<accessor name=\"%s\" long-name=\"%s:%s\" readable=\"%d\" writable=\"%d\"/>"
+                   "</scheme></property>", name, name, _namespace, name,
+                   ((flags & G_PARAM_READABLE) != 0),
+                   ((flags & G_PARAM_WRITABLE) != 0));
         break;
+    }
     case GI_INFO_TYPE_FIELD:
         scm_printf(SCM_UNDEFINED, "<field name=\"%s\" />", g_base_info_get_name(info));
         break;

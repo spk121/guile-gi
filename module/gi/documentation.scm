@@ -45,7 +45,7 @@
          namespace
          ;; introspected types
          class record union interface enumeration bitfield
-         function method member
+         function method member property
          ;; leaves
          doc scheme)))
 
@@ -395,6 +395,11 @@
              (xpath:select-kids identity)
              (xpath:node-self
               (xpath:node-typeof? 'member))))
+           (%properties
+            (compose
+             (xpath:select-kids identity)
+             (xpath:node-self
+              (xpath:node-typeof? 'property))))
            (%functions
             (compose
              (xpath:select-kids identity)
@@ -410,15 +415,21 @@
               (string-append "“" str "”")))
 
            (ppfn
-            (lambda (port name args returns)
+            (lambda (name args returns)
               (let ((name (string->symbol name))
                     (args (map string->symbol args))
                     (returns (map string->symbol returns)))
-               (pretty-print
-               `(define-values ,returns (,name ,@args))
-               port
-               ;; allow one-liners
-               #:max-expr-width 79))))
+                (%pp `(define-values ,returns (,name ,@args))))))
+
+           (%pp
+            (lambda (obj)
+              (call-with-output-string
+               (lambda (port)
+                 (pretty-print
+                  obj
+                  port
+                  ;; allow one-liners
+                  #:max-expr-width 79)))))
 
            (markdown-1
             (lambda (str)
@@ -475,7 +486,12 @@
               (let ((doc (%doc (cons tag kids)))
                     (scheme (%scheme (cons tag kids)))
                     (members (%members kids))
-                    (functions (%functions kids)))
+                    (properties (%properties kids))
+                    (functions (%functions kids))
+                    (section (lambda (title content)
+                               (and (not (null? content))
+                                    `(refsect1 (title ,title)
+                                               ,@content)))))
                 (cond
                  ((null? scheme)
                   '())
@@ -489,12 +505,9 @@
                     ,(and (not (null? doc))
                           `(refsect1 (title "Description")
                                      ,@(markdown (string-join doc ""))))
-                    ,(and (not (null? members))
-                          `(refsect1 (title "Members")
-                                     ,@members))
-                    ,(and (not (null? functions))
-                          `(refsect1 (title "Functions")
-                                     ,@functions))))))))))
+                    ,(section "Members" members)
+                    ,(section "Properties" properties)
+                    ,(section "Functions" functions)))))))))
 
            (refsect2
             (lambda (tag . kids)
@@ -527,6 +540,7 @@
         (method . ,refsect2)
         (function . ,refsect2)
         (member . ,refsect2)
+        (property . ,refsect2)
 
         (procedure
          .
@@ -538,17 +552,41 @@
                    (lambda (ln)
                      `(informalexample
                        (programlisting
-                        ,(call-with-output-string
-                          (lambda (port)
-                            (ppfn port ln
-                                  (append-map
-                                    %name
-                                    ((xpath:sxpath `(argument)) node))
-                                  (append-map
-                                   %name
-                                   ((xpath:sxpath `(return)) node))))))))
+                        ,(ppfn ln
+                               (append-map
+                                %name
+                                ((xpath:sxpath `(argument)) node))
+                               (append-map
+                                %name
+                                ((xpath:sxpath `(return)) node))))))
                    (append (%long-name node)
                            (%name node))))))))
+        (accessor
+         .
+         ,(lambda (tag . kids)
+            (let ((node (cons tag kids))
+                  (%readable
+                   (xpath:sxpath `(@ readable *text*)))
+                  (%writable
+                   (xpath:sxpath `(@ writable *text*)))
+                  (ones? (cute every (cute string= "1" <>) <>)))
+              (filter identity
+                      `((title ,@(%name (cons tag kids)))
+                        ,(and (ones? (%readable node))
+                              `(informalexample
+                                (programlisting
+                                 ,(%pp
+                                   `(,(string->symbol (car (%long-name node)))
+                                     self)))))
+                        ,(and (ones? (%writable node))
+                              `(informalexample
+                                (programlisting
+                                 ,(%pp
+                                   `(set!
+                                     (,(string->symbol (car (%long-name node)))
+                                      self)
+                                     value))))))))))
+
         (type . ,refname)
         (symbol . ,(lambda (tag . kids)
                      (let ((c-id (car? (%c-id (cons tag kids)))))
