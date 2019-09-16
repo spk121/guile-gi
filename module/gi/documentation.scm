@@ -45,7 +45,7 @@
          namespace
          ;; introspected types
          class record union interface enumeration bitfield
-         function method member
+         function method member property
          ;; leaves
          doc scheme)))
 
@@ -204,7 +204,10 @@
 (define-peg-pattern inline-ws body (or " "))
 (define-peg-pattern any-ws body (or inline-ws "\n"))
 (define-peg-pattern wordsep body
-  (or any-ws "-" "_" "/" "+" "*" "<" ">" "=" "." ":" "," ";" "?" "!"))
+  (or any-ws
+      "-" "_" "/" "+" "*" "="
+      "(" ")" "[" "]" "{" "}" "<" ">"
+      "." ":" "," ";" "?" "!"))
 
 (define-peg-pattern listing-language none
   (and "<!--"
@@ -390,6 +393,16 @@
 (define ->docbook
   (letrec ((%scheme (xpath:sxpath `(scheme)))
            (%entry (xpath:sxpath `(refentry)))
+           (%members
+            (compose
+             (xpath:select-kids identity)
+             (xpath:node-self
+              (xpath:node-typeof? 'member))))
+           (%properties
+            (compose
+             (xpath:select-kids identity)
+             (xpath:node-self
+              (xpath:node-typeof? 'property))))
            (%functions
             (compose
              (xpath:select-kids identity)
@@ -405,15 +418,21 @@
               (string-append "“" str "”")))
 
            (ppfn
-            (lambda (port name args returns)
+            (lambda (name args returns)
               (let ((name (string->symbol name))
                     (args (map string->symbol args))
                     (returns (map string->symbol returns)))
-               (pretty-print
-               `(define-values ,returns (,name ,@args))
-               port
-               ;; allow one-liners
-               #:max-expr-width 79))))
+                (%pp `(define-values ,returns (,name ,@args))))))
+
+           (%pp
+            (lambda (obj)
+              (call-with-output-string
+               (lambda (port)
+                 (pretty-print
+                  obj
+                  port
+                  ;; allow one-liners
+                  #:max-expr-width 79)))))
 
            (markdown-1
             (lambda (str)
@@ -469,27 +488,29 @@
             (lambda (tag . kids)
               (let ((doc (%doc (cons tag kids)))
                     (scheme (%scheme (cons tag kids)))
-                    (functions (%functions kids)))
+                    (members (%members kids))
+                    (properties (%properties kids))
+                    (functions (%functions kids))
+                    (section (lambda (title content)
+                               (and (not (null? content))
+                                    `(refsect1 (title ,title)
+                                               ,@content)))))
                 (cond
                  ((null? scheme)
                   '())
 
-                 ((null? doc)
-                  `(refentry
-                    (refnamediv ,@(cdar scheme))
-                    (refsect1
-                     (title "Methods")
-                     ,@functions)))
-
                  (else
-                  `(refentry
-                    (refnamediv ,@(cdar scheme))
-                    (refsect1
-                     (title "Description")
-                     ,@(markdown (string-join doc "")))
-                    (refsect1
-                     (title "Methods")
-                     ,@functions)))))))
+                  (cons
+                   'refentry
+                   (filter
+                    identity
+                    `((refnamediv ,@(cdar scheme))
+                    ,(and (not (null? doc))
+                          `(refsect1 (title "Description")
+                                     ,@(markdown (string-join doc ""))))
+                    ,(section "Members" members)
+                    ,(section "Properties" properties)
+                    ,(section "Functions" functions)))))))))
 
            (refsect2
             (lambda (tag . kids)
@@ -522,6 +543,7 @@
         (method . ,refsect2)
         (function . ,refsect2)
         (member . ,refsect2)
+        (property . ,refsect2)
 
         (procedure
          .
@@ -533,23 +555,47 @@
                    (lambda (ln)
                      `(informalexample
                        (programlisting
-                        ,(call-with-output-string
-                          (lambda (port)
-                            (ppfn port ln
-                                  (append-map
-                                    %name
-                                    ((xpath:sxpath `(argument)) node))
-                                  (append-map
-                                   %name
-                                   ((xpath:sxpath `(return)) node))))))))
+                        ,(ppfn ln
+                               (append-map
+                                %name
+                                ((xpath:sxpath `(argument)) node))
+                               (append-map
+                                %name
+                                ((xpath:sxpath `(return)) node))))))
                    (append (%long-name node)
                            (%name node))))))))
+        (accessor
+         .
+         ,(lambda (tag . kids)
+            (let ((node (cons tag kids))
+                  (%readable
+                   (xpath:sxpath `(@ readable *text*)))
+                  (%writable
+                   (xpath:sxpath `(@ writable *text*)))
+                  (ones? (cute every (cute string= "1" <>) <>)))
+              (filter identity
+                      `((title ,@(%name (cons tag kids)))
+                        ,(and (ones? (%readable node))
+                              `(informalexample
+                                (programlisting
+                                 ,(%pp
+                                   `(,(string->symbol (car (%long-name node)))
+                                     self)))))
+                        ,(and (ones? (%writable node))
+                              `(informalexample
+                                (programlisting
+                                 ,(%pp
+                                   `(set!
+                                     (,(string->symbol (car (%long-name node)))
+                                      self)
+                                     value))))))))))
+
         (type . ,refname)
         (symbol . ,(lambda (tag . kids)
                      (let ((c-id (car? (%c-id (cons tag kids)))))
                        `((title ,@(%name (cons tag kids)))
                          ,(if c-id
-                              `((subtitle "alias " (code ,c-id)))
+                              `((remark "alias " (code ,c-id)))
                               '())))))
 
         (*text* . ,(lambda (tag txt)
