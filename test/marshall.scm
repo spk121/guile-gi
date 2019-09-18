@@ -8,7 +8,7 @@
 
              (system foreign)
 
-             (gi) (gi util))
+             (gi) (gi util) (gi types))
 
 (test-begin "marshall.scm")
 
@@ -542,5 +542,22 @@
 
 (test-assert "utf8-dangling-out"
              (string? (utf8-dangling-out)))
+
+(test-assert "ghashtable-int-none-return"
+  (let* ((H (ghashtable-int-none-return))
+         (result (map (lambda (key)
+                        (and=>
+                         (hash-table:lookup H (make-signed-pointer key))
+                         signed-pointer-address))
+                      '(-1 0 1 2))))
+    (list= eqv? result '(1 #f -1 -2))))
+
+(test-assert "ghashtable-utf8-none-return"
+  (let* ((H (ghashtable-utf8-none-return))
+         (result (map (lambda (key)
+                        (pointer->string
+                         (hash-table:lookup H (string->pointer key))))
+                      '("-1" "0" "1" "2"))))
+    (list= string=? result '("1" "0" "-1" "-2"))))
 
 (test-end "marshall.scm")
