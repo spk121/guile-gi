@@ -280,7 +280,6 @@ IO_CHANNELS_TESTS = \
   test/io/io_channel_unichar.scm
 
 MESSAGE_OUTPUT_TESTS = \
-  test/io/log_set_handler.scm \
   test/io/log_writer_is_journald.scm
 
 FILE_TESTS = \
