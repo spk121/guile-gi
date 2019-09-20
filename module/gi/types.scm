@@ -180,14 +180,14 @@
 (define-method (flags->list (class <class>))
   (lambda (flags) (flags->list class flags)))
 
-(define-method (list->flags (class <class>) (list <list>))
+(define-method (list->flags (class <class>) (lst <list>))
   (let* ((obarray (class-slot-ref class 'obarray))
          (lookup (lambda (symbol)
                    (or (hashq-ref obarray symbol)
                        (scm-error 'out-of-range "list->flags"
                                   "not defined in ~A" (list class)
                                   (list symbol))))))
-    (make class #:value (apply logior (map lookup list)))))
+    (make class #:value (apply logior (map lookup lst)))))
 
 (define-method (list->flags (class <class>))
   (lambda (flags) (list->flags class flags)))
