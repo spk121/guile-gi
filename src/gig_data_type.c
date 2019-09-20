@@ -16,6 +16,7 @@
 #include <glib-object.h>
 #include "gig_argument.h"
 #include "gig_data_type.h"
+#include "gig_arg_map.h"
 #include "gig_util.h"
 
 static void gig_type_meta_init_from_type_info(GigTypeMeta *type, GITypeInfo *ti);
@@ -239,6 +240,12 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
             meta->gtype = G_TYPE_POINTER;
             meta->pointer_type = GIG_DATA_CALLBACK;
             meta->callable_info = g_base_info_ref(referenced_base_info);
+            // TODO: Find a way to reuse this amap, so that computing it is not a waste
+            GigArgMap *_amap = gig_amap_new(meta->callable_info);
+            if (_amap == NULL)
+                meta->is_invalid = TRUE;
+            else
+                gig_amap_free(_amap);
             break;
         default:
             if (GI_IS_REGISTERED_TYPE_INFO(referenced_base_info)) {
