@@ -440,187 +440,17 @@ cleanpkgdata_DATA = \
   test/Everything-1.0.typelib test/Marshall-1.0.typelib
 
 EVERYTHING_TESTS = \
-  test/everything/nullfunc.scm \
-  test/everything/const-return-gpointer.scm \
-  test/everything/const-return-gintptr.scm \
-  test/everything/const-return-gboolean.scm \
-  test/everything/const-return-gint8.scm \
-  test/everything/const-return-guint8.scm \
-  test/everything/const-return-gint16.scm \
-  test/everything/const-return-guint16.scm \
-  test/everything/const-return-gint32.scm \
-  test/everything/const-return-guint32.scm \
-  test/everything/const-return-gint64.scm \
-  test/everything/const-return-guint64.scm \
-  test/everything/const-return-gchar.scm \
-  test/everything/const-return-gshort.scm \
-  test/everything/const-return-gushort.scm \
-  test/everything/const-return-gint.scm \
-  test/everything/const-return-guint.scm \
-  test/everything/const-return-glong.scm \
-  test/everything/const-return-gulong.scm \
-  test/everything/const-return-gsize.scm \
-  test/everything/const-return-gssize.scm \
-  test/everything/const-return-gfloat.scm \
-  test/everything/const-return-gdouble.scm \
-  test/everything/const-return-gunichar.scm \
-  test/everything/const-return-gtype.scm \
-  test/everything/const-return-utf8.scm \
-  test/everything/const-return-filename.scm \
-  test/everything/oneparam-gpointer.scm \
-  test/everything/oneparam-gintptr.scm \
-  test/everything/oneparam-guintptr.scm \
-  test/everything/oneparam-gboolean.scm \
-  test/everything/oneparam-gint8.scm \
-  test/everything/oneparam-guint8.scm \
-  test/everything/oneparam-gint16.scm \
-  test/everything/oneparam-guint16.scm \
-  test/everything/oneparam-gint32.scm \
-  test/everything/oneparam-guint32.scm \
-  test/everything/oneparam-gint64.scm \
-  test/everything/oneparam-guint64.scm \
-  test/everything/oneparam-gchar.scm \
-  test/everything/oneparam-gchar-char.scm \
-  test/everything/oneparam-gshort.scm \
-  test/everything/oneparam-gushort.scm \
-  test/everything/oneparam-gint.scm \
-  test/everything/oneparam-guint.scm \
-  test/everything/oneparam-glong.scm \
-  test/everything/oneparam-gulong.scm \
-  test/everything/oneparam-gsize.scm \
-  test/everything/oneparam-gssize.scm \
-  test/everything/oneparam-gfloat.scm \
-  test/everything/oneparam-gdouble.scm \
-  test/everything/oneparam-gunichar.scm \
-  test/everything/oneparam-gtype.scm \
-  test/everything/oneparam-utf8.scm \
-  test/everything/oneparam-filename.scm \
-  test/everything/one-outparam-gpointer.scm \
-  test/everything/one-outparam-gintptr.scm \
-  test/everything/one-outparam-guintptr.scm \
-  test/everything/one-outparam-gboolean.scm \
-  test/everything/one-outparam-gboolean.scm \
-  test/everything/one-outparam-gint8.scm \
-  test/everything/one-outparam-guint8.scm \
-  test/everything/one-outparam-gint16.scm \
-  test/everything/one-outparam-guint16.scm \
-  test/everything/one-outparam-gint32.scm \
-  test/everything/one-outparam-guint32.scm \
-  test/everything/one-outparam-gint64.scm \
-  test/everything/one-outparam-guint64.scm \
-  test/everything/one-outparam-gchar.scm \
-  test/everything/one-outparam-gshort.scm \
-  test/everything/one-outparam-gushort.scm \
-  test/everything/one-outparam-gint.scm \
-  test/everything/one-outparam-guint.scm \
-  test/everything/one-outparam-glong.scm \
-  test/everything/one-outparam-gulong.scm \
-  test/everything/one-outparam-gsize.scm \
-  test/everything/one-outparam-gssize.scm \
-  test/everything/one-outparam-gfloat.scm \
-  test/everything/one-outparam-gdouble.scm \
-  test/everything/one-outparam-gunichar.scm \
-  test/everything/one-outparam-gtype.scm \
-  test/everything/one-outparam-utf8.scm \
-  test/everything/one-outparam-filename.scm \
-  test/everything/passthrough-one-gpointer.scm \
-  test/everything/passthrough-one-gintptr.scm \
-  test/everything/passthrough-one-guintptr.scm \
-  test/everything/passthrough-one-utf8.scm \
-  test/everything/passthrough-one-filename.scm \
-  test/everything/boolean-return-true.scm \
-  test/everything/boolean-return-false.scm \
-  test/everything/boolean-in-true.scm \
-  test/everything/boolean-in-false.scm \
-  test/everything/boolean-out-true.scm \
-  test/everything/boolean-out-false.scm \
-  test/everything/boolean-inout-true-false.scm \
-  test/everything/boolean-inout-false-true.scm \
-  test/everything/intXX-out-or-return-max.scm \
-  test/everything/uintXX-out-or-return-max.scm \
-  test/everything/intXX-out-or-return-min.scm \
-  test/everything/intXX-in-max.scm \
-  test/everything/uintXX-in.scm \
-  test/everything/int8-in-max-latin1.scm \
-  test/everything/intXX-in-min.scm \
-  test/everything/intXX-inout-max-min.scm \
-  test/everything/intXX-inout-min-max.scm \
-  test/everything/uintXX-inout.scm \
-  test/everything/time-t-out.scm \
-  test/everything/utf8-none-return.scm \
-  test/everything/utf8-full-return.scm \
-  test/everything/utf8-as-uint8array-in.scm \
-  test/everything/utf8-none-out.scm \
-  test/everything/utf8-dangling-out.scm \
-  test/everything/utf8-none-inout.scm \
-  test/everything/utf8-full-inout.scm \
-  test/everything/init-function-null.scm \
-  test/everything/init-function-zero.scm \
-  test/everything/init-function-one.scm \
-  test/everything/init-function-two.scm \
-  test/everything/array-fixed-int-return.scm \
-  test/everything/array-fixed-short-return.scm \
-  test/everything/array-fixed-int-in.scm \
-  test/everything/array-fixed-short-in.scm \
-  test/everything/array-fixed-out.scm \
-  test/everything/array-fixed-inout.scm \
-  test/everything/array-return.scm \
-  test/everything/array-return-etc.scm \
-  test/everything/array-in.scm \
-  test/everything/array-in-len-before.scm \
-  test/everything/array-in-len-zero-terminated.scm \
-  test/everything/array-string-in.scm \
-  test/everything/array-uint8-in.scm \
-  test/everything/array-uint8-in-latin1.scm \
-  test/everything/array-int64-in.scm \
-  test/everything/array-uint64-in.scm \
-  test/everything/array-unichar-in.scm \
-  test/everything/array-bool-in.scm \
-  test/everything/array-enum-in.scm \
-  test/everything/array-in-guint64-len.scm \
-  test/everything/array-in-guint8-len.scm \
-  test/everything/array-out.scm \
-  test/everything/array-out-etc.scm \
-  test/everything/array-bool-out.scm \
-  test/everything/array-unichar-out.scm \
-  test/everything/array-inout.scm \
-  test/everything/array-inout-etc.scm \
-  test/everything/array-in-nonzero-nonlen.scm \
-  test/everything/array-zero-terminated-return.scm \
-  test/everything/array-zero-terminated-return-null.scm \
-  test/everything/array-zero-terminated-return-unichar.scm \
-  test/everything/array-zero-terminated-in.scm \
-  test/everything/array-zero-terminated-out.scm \
-  test/everything/array-zero-terminated-inout.scm \
-  test/everything/array-gvariant-none-in.scm \
-  test/everything/array-gvariant-container-in.scm \
-  test/everything/garray-int-none-return.scm \
-  test/everything/garray-uint64-none-return.scm \
-  test/everything/garray-utf8-none-return.scm \
-  test/everything/garray-utf8-container-return.scm \
-  test/everything/garray-utf8-full-return.scm \
-  test/everything/garray-int-none-in.scm \
-  test/everything/garray-uint64-none-in.scm \
-  test/everything/garray-utf8-none-in.scm \
-  test/everything/garray-utf8-none-out.scm \
-  test/everything/garray-utf8-container-out.scm \
-  test/everything/garray-utf8-full-out.scm \
-  test/everything/garray-utf8-full-out-caller-allocated.scm \
-  test/everything/garray-utf8-none-inout.scm \
-  test/everything/garray-utf8-container-inout.scm \
-  test/everything/garray-utf8-full-inout.scm \
-  test/everything/garray-bool-none-in.scm \
-  test/everything/garray-unichar-none-in.scm \
-  test/everything/gptrarray-utf8-none-return.scm \
-  test/everything/gptrarray-utf8-container-return.scm \
-  test/everything/gptrarray-utf8-full-return.scm \
-  test/everything/gslist-int-none-return.scm \
-  test/everything/gslist-utf8-none-return.scm \
-  test/everything/gslist-utf8-container-return.scm \
-  test/everything/gslist-utf8-full-return.scm
+  test/everything.scm \
+  test/marshall.scm
+
+TESTS_LTDLOPEN = \
+  -dlopen ${top_builddir}/libguile-gi.la \
+  -dlopen ${top_builddir}/test/libeverything-1.0.la \
+  -dlopen ${top_builddir}/test/libmarshall-1.0.la
 else
 cleanpkgdata_DATA =
 EVERYTHING_TESTS =
+TESTS_LTDLOPEN = -dlopen ${top_builddir}/libguile-gi.la
 endif
 
 TESTS = \
@@ -659,11 +489,17 @@ TESTS = \
   test/misc/interfaces.scm \
   $(EVERYTHING_TESTS)
 
-XFAIL_TESTS = \
-  test/everything/one-outparam-gchar.scm \
-  test/everything/garray-utf8-full-out-caller-allocated.scm
+XFAIL_TESTS =
 
 SCM_LOG_COMPILER = ${builddir}/tools/run-test
+_SRFI64_DRIVER = \
+  $(top_srcdir)/tools/uninstalled-test-env \
+  $(top_builddir)/libtool --mode=execute $(TESTS_LTDLOPEN) \
+  $(GUILE) --no-auto-compile $(top_srcdir)/build-aux/test-driver.scm
+_SRFI64_COMPILER =
+
+test/everything.log test/marshall.log: SCM_LOG_DRIVER = $(_SRFI64_DRIVER)
+test/everything.log test/marshall.log: SCM_LOG_COMPILER = $(_SRFI64_COMPILER)
 
 test: check
 
