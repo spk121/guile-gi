@@ -493,7 +493,7 @@ XFAIL_TESTS =
 
 SCM_LOG_COMPILER = ${builddir}/tools/run-test
 _SRFI64_DRIVER = \
-  $(top_srcdir)/tools/uninstalled-test-env \
+  $(top_builddir)/tools/uninstalled-test-env \
   $(top_builddir)/libtool --mode=execute $(TESTS_LTDLOPEN) \
   $(GUILE) --no-auto-compile $(top_srcdir)/build-aux/test-driver.scm
 _SRFI64_COMPILER =
