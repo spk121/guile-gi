@@ -468,7 +468,7 @@ TESTS = \
   $(IO_CHANNELS_TESTS) \
   $(FILE_TESTS) \
   $(MEMORY_OUTPUT_TESTS) \
-  $(STRING_UTILITY_TESTS) \
+  test/string.scm \
   $(CHARACTER_SET_CONVERSION_TESTS) \
   $(BASE64_ENCODING_TESTS) \
   $(UNICODE_MANIPULATION_TESTS) \
@@ -498,7 +498,7 @@ _SRFI64_DRIVER = \
   $(top_builddir)/libtool --mode=execute $(TESTS_LTDLOPEN) \
   $(GUILE) --no-auto-compile $(top_srcdir)/build-aux/test-driver.scm
 _SRFI64_COMPILER =
-_SRFI64_TESTS = test/flags.scm $(EVERYTHING_TESTS)
+_SRFI64_TESTS = test/string.scm test/flags.scm $(EVERYTHING_TESTS)
 
 $(_SRFI64_TESTS:%.scm=%.log): SCM_LOG_DRIVER = $(_SRFI64_DRIVER)
 $(_SRFI64_TESTS:%.scm=%.log): SCM_LOG_COMPILER = $(_SRFI64_COMPILER)
