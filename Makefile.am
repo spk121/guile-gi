@@ -483,7 +483,7 @@ TESTS = \
   $(GRILO_TESTS) \
   $(OOP_TESTS) \
   $(VALUE_TESTS) \
-  $(FLAGS_TESTS) \
+  test/flags.scm \
   test/misc/softerror_create.scm \
   test/misc/use-typelibs.scm \
   test/misc/interfaces.scm \
@@ -492,14 +492,16 @@ TESTS = \
 XFAIL_TESTS =
 
 SCM_LOG_COMPILER = ${builddir}/tools/run-test
+
 _SRFI64_DRIVER = \
   $(top_builddir)/tools/uninstalled-test-env \
   $(top_builddir)/libtool --mode=execute $(TESTS_LTDLOPEN) \
   $(GUILE) --no-auto-compile $(top_srcdir)/build-aux/test-driver.scm
 _SRFI64_COMPILER =
+_SRFI64_TESTS = test/flags.scm $(EVERYTHING_TESTS)
 
-test/everything.log test/marshall.log: SCM_LOG_DRIVER = $(_SRFI64_DRIVER)
-test/everything.log test/marshall.log: SCM_LOG_COMPILER = $(_SRFI64_COMPILER)
+$(_SRFI64_TESTS:%.scm=%.log): SCM_LOG_DRIVER = $(_SRFI64_DRIVER)
+$(_SRFI64_TESTS:%.scm=%.log): SCM_LOG_COMPILER = $(_SRFI64_COMPILER)
 
 test: check
 
@@ -532,7 +534,6 @@ indent:
 
 noinst_DATA = \
   test/automake-test-lib.scm \
-  test/flags/flags.scm \
   test/grilo/base.scm
 
 CLEANFILES = \
