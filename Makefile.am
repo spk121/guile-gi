@@ -308,13 +308,6 @@ SECURE_HMAC_DIGESTS_TESTS = \
   test/hmac/data.scm \
   test/hmac/bytes.scm
 
-DATE_AND_TIME_FUNCTIONS_TESTS = \
-  test/datetime/get_monotonic_time.scm \
-  test/datetime/get_real_time.scm \
-  test/datetime/date_new.scm \
-  test/datetime/date_copy.scm \
-  test/datetime/date_clear.scm
-
 MEMCHK_TESTS = \
   test/mem/memchk_1.scm \
   test/mem/memchk_2.scm
@@ -461,7 +454,7 @@ TESTS = \
   $(BASE64_ENCODING_TESTS) \
   $(DATA_CHECKSUM_TESTS) \
   $(SECURE_HMAC_DIGESTS_TESTS) \
-  $(DATE_AND_TIME_FUNCTIONS_TESTS) \
+  test/datetime.scm \
   $(MEMCHK_TESTS) \
   $(BYTE_ARRAY_TESTS) \
   $(GAPPLICATION_TESTS) \
@@ -485,7 +478,11 @@ _SRFI64_DRIVER = \
   $(top_builddir)/libtool --mode=execute $(TESTS_LTDLOPEN) \
   $(GUILE) --no-auto-compile $(top_srcdir)/build-aux/test-driver.scm
 _SRFI64_COMPILER =
-_SRFI64_TESTS = test/string.scm test/flags.scm $(EVERYTHING_TESTS)
+_SRFI64_TESTS = \
+  test/datetime.scm \
+  test/string.scm \
+  test/flags.scm \
+  $(EVERYTHING_TESTS)
 
 $(_SRFI64_TESTS:%.scm=%.log): SCM_LOG_DRIVER = $(_SRFI64_DRIVER)
 $(_SRFI64_TESTS:%.scm=%.log): SCM_LOG_COMPILER = $(_SRFI64_COMPILER)
