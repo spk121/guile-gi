@@ -297,17 +297,6 @@ STRING_UTILITY_TESTS = \
   test/string/str_has_prefix.scm \
   test/string/str_tokenize_and_fold.scm
 
-CHARACTER_SET_CONVERSION_TESTS = \
-  test/convert/ascii.scm \
-  test/convert/latin1.scm
-
-UNICODE_MANIPULATION_TESTS = \
-  test/unichar/validate_zero.scm \
-  test/unichar/isalpha.scm \
-  test/unichar/compose.scm \
-  test/unichar/combining_class.scm \
-  test/misc/unicode_canonical_ordering.scm
-
 BASE64_ENCODING_TESTS = \
   test/misc/base64_encode.scm
 
@@ -469,9 +458,7 @@ TESTS = \
   $(FILE_TESTS) \
   $(MEMORY_OUTPUT_TESTS) \
   test/string.scm \
-  $(CHARACTER_SET_CONVERSION_TESTS) \
   $(BASE64_ENCODING_TESTS) \
-  $(UNICODE_MANIPULATION_TESTS) \
   $(DATA_CHECKSUM_TESTS) \
   $(SECURE_HMAC_DIGESTS_TESTS) \
   $(DATE_AND_TIME_FUNCTIONS_TESTS) \
