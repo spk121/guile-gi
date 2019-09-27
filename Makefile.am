@@ -325,13 +325,6 @@ GAPPLICATION_TESTS = \
   test/gapplication/make.scm \
   test/gapplication/set_resource_path.scm
 
-GTK_ENTRY_TESTS = \
-  test/gtk_entry/set_alignment.scm \
-  test/gtk_entry/set_alignment_zero.scm
-
-GTK_LAYOUT_TESTS = \
-  test/gtk_layout/create_box.scm
-
 GRILO_TESTS = \
   test/grilo/audio_simple.scm \
   test/grilo/audio_multiple_artists.scm \
@@ -458,8 +451,7 @@ TESTS = \
   $(MEMCHK_TESTS) \
   $(BYTE_ARRAY_TESTS) \
   $(GAPPLICATION_TESTS) \
-  $(GTK_ENTRY_TESTS) \
-  $(GTK_LAYOUT_TESTS) \
+  test/gtk.scm \
   $(GRILO_TESTS) \
   $(OOP_TESTS) \
   $(VALUE_TESTS) \
@@ -480,6 +472,7 @@ _SRFI64_DRIVER = \
 _SRFI64_COMPILER =
 _SRFI64_TESTS = \
   test/datetime.scm \
+  test/gtk.scm \
   test/string.scm \
   test/flags.scm \
   $(EVERYTHING_TESTS)
