@@ -220,4 +220,6 @@ AC_CONFIG_FILES([tools/gdb-test], [chmod +x tools/gdb-test])
 AC_CONFIG_FILES([tools/guile-gi], [chmod +x tools/guile-gi])
 AC_CONFIG_FILES([tools/lcov.sh], [chmod +x tools/lcov.sh])
 AC_CONFIG_FILES([tools/valgrind.sh], [chmod +x tools/valgrind.sh])
+AC_CONFIG_LINKS([examples/resources/builder.ui:examples/resources/builder.ui])
+
 AC_OUTPUT

@@ -83,7 +83,7 @@ dist_resources_DATA = \
 nodist_resources_DATA = \
   examples/resources/test.gresource
 
-examples/resources/test.gresource: AM_GRESOURCE_FLAGS = --sourcedir=$(abs_srcdir)/examples/resources
+examples/resources/test.gresource: AM_GRESOURCE_FLAGS = --sourcedir=$(abs_builddir)/examples/resources
 
 .gresource.xml.gresource:
 	$(GLIB_COMPILE_RESOURCES) $(AM_GRESOURCE_FLAGS) $(GRESOURCE_FLAGS) --target=$@ $<
