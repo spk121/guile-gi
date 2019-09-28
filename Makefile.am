@@ -233,13 +233,6 @@ TYPELIB_TESTS = \
   test/typelib/document.scm \
   test/typelib/to-module.scm
 
-MEMORY_ALLOCATION_TESTS = \
-  test/mem/malloc.scm \
-  test/mem/try_malloc0.scm
-
-MEMORY_SLICES_TESTS = \
-  test/mem/slice_alloc.scm
-
 IO_CHANNELS_TESTS = \
   test/io/io_channel_pipe.scm \
   test/io/io_channel_new_file.scm \
@@ -253,10 +246,6 @@ FILE_TESTS = \
   test/file/get_parent.scm \
   test/file/has_parent.scm \
   test/file/get_child.scm
-
-MEMCHK_TESTS = \
-  test/mem/memchk_1.scm \
-  test/mem/memchk_2.scm
 
 BYTE_ARRAY_TESTS = \
   test/byte_array/byte_array_new.scm \
@@ -281,12 +270,6 @@ VALUE_TESTS = \
   test/value/getset.scm \
   test/value/transform.scm \
   test/closure/simple.scm
-
-FLAGS_TESTS = \
-  test/flags/complement.scm \
-  test/flags/difference.scm \
-  test/flags/projection.scm \
-  test/flags/union.scm
 
 -include $(INTROSPECTION_MAKEFILE)
 if HAVE_INTROSPECTION
@@ -370,17 +353,14 @@ endif
 TESTS = \
   $(TYPELIB_TESTS) \
   test/constants.scm \
+  test/mem.scm \
   $(ATOMIC_OPERATIONS_TESTS) \
   $(MESSAGE_OUTPUT_TESTS) \
-  $(MEMORY_ALLOCATION_TESTS) \
-  $(MEMORY_SLICES_TESTS) \
   $(IO_CHANNELS_TESTS) \
   $(FILE_TESTS) \
-  $(MEMORY_OUTPUT_TESTS) \
   test/string.scm \
   test/bash-the-hash.scm \
   test/datetime.scm \
-  $(MEMCHK_TESTS) \
   $(BYTE_ARRAY_TESTS) \
   test/application.scm \
   test/gtk.scm \
@@ -408,6 +388,7 @@ _SRFI64_TESTS = \
   test/constants.scm \
   test/datetime.scm \
   test/gtk.scm \
+  test/mem.scm \
   test/string.scm \
   test/flags.scm \
   $(EVERYTHING_TESTS)
