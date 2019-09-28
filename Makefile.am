@@ -253,11 +253,6 @@ BYTE_ARRAY_TESTS = \
   test/byte_array/bytes_new_null_size.scm \
   test/byte_array/bytes_new_null_contents.scm
 
-GRILO_TESTS = \
-  test/grilo/audio_simple.scm \
-  test/grilo/audio_multiple_artists.scm \
-  test/grilo/init_commandline.scm
-
 OOP_TESTS = \
   test/oop/property-basics.scm \
   test/oop/guile-types.scm \
@@ -364,7 +359,7 @@ TESTS = \
   $(BYTE_ARRAY_TESTS) \
   test/application.scm \
   test/gtk.scm \
-  $(GRILO_TESTS) \
+  test/grilo.scm \
   $(OOP_TESTS) \
   $(VALUE_TESTS) \
   test/flags.scm \
@@ -389,7 +384,6 @@ _OLD_SCHOOL_TESTS = \
   $(IO_CHANNELS_TESTS) \
   $(FILE_TESTS) \
   $(BYTE_ARRAY_TESTS) \
-  $(GRILO_TESTS) \
   $(OOP_TESTS) \
   $(VALUE_TESTS) \
   test/misc/softerror_create.scm \
@@ -429,8 +423,7 @@ indent:
 #################
 
 noinst_DATA = \
-  test/automake-test-lib.scm \
-  test/grilo/base.scm
+  test/automake-test-lib.scm
 
 CLEANFILES = \
   ChangeLog README \
