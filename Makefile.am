@@ -233,32 +233,6 @@ TYPELIB_TESTS = \
   test/typelib/document.scm \
   test/typelib/to-module.scm
 
-VERSION_INFORMATION_TESTS = \
-  test/version_info/MAJOR_VERSION.scm \
-  test/version_info/MINOR_VERSION.scm \
-  test/version_info/MICRO_VERSION.scm \
-  test/version_info/VERSION_MIN_REQUIRED.scm
-
-BASIC_TYPE_TESTS = \
-  test/basic_types/MAXINT16.scm \
-  test/basic_types/MAXUINT64.scm \
-  test/basic_types/GINT32_FORMAT.scm
-
-STANDARD_MACROS_TESTS = \
-  test/std_macros/DIR_SEPARATOR_S.scm \
-  test/std_macros/DIR_SEPARATOR.scm \
-  test/std_macros/SEARCHPATH_SEPARATOR.scm \
-  test/std_macros/SEARCHPATH_SEPARATOR_S.scm
-
-BYTE_ORDER_MACROS_TESTS = \
-  test/byte_order/BIG_ENDIAN.scm \
-  test/byte_order/LITTLE_ENDIAN.scm
-
-NUMERICAL_DEFINITIONS_TESTS = \
-  test/basic_types/IEEE754_FLOAT_BIAS.scm \
-  test/basic_types/E.scm \
-  test/basic_types/PI.scm
-
 MAIN_EVENT_LOOP_TESTS = \
   test/main_loop/new.scm \
   test/main_loop/runs.scm \
@@ -430,11 +404,7 @@ endif
 
 TESTS = \
   $(TYPELIB_TESTS) \
-  $(VERSION_INFORMATION_TESTS) \
-  $(BASIC_TYPE_TESTS) \
-  $(STANDARD_MACROS_TESTS) \
-  $(BYTE_ORDER_MACROS_TESTS) \
-  $(NUMERICAL_DEFINITIONS_TESTS) \
+  test/constants.scm \
   $(ATOMIC_OPERATIONS_TESTS) \
   $(MESSAGE_OUTPUT_TESTS) \
   $(MAIN_EVENT_LOOP_TESTS) \
@@ -471,6 +441,7 @@ _SRFI64_DRIVER = \
   $(GUILE) --no-auto-compile $(top_srcdir)/build-aux/test-driver.scm
 _SRFI64_COMPILER =
 _SRFI64_TESTS = \
+  test/constants.scm \
   test/datetime.scm \
   test/gtk.scm \
   test/string.scm \
