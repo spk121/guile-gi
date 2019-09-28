@@ -254,26 +254,6 @@ FILE_TESTS = \
   test/file/has_parent.scm \
   test/file/get_child.scm
 
-STRING_UTILITY_TESTS = \
-  test/string/strdup.scm \
-  test/string/strndup.scm \
-  test/string/strnfill.scm \
-  test/string/stpcpy.scm \
-  test/string/strstr_len.scm \
-  test/string/str_has_prefix.scm \
-  test/string/str_tokenize_and_fold.scm
-
-BASE64_ENCODING_TESTS = \
-  test/misc/base64_encode.scm
-
-DATA_CHECKSUM_TESTS = \
-  test/misc/checksum.scm
-
-SECURE_HMAC_DIGESTS_TESTS = \
-  test/hmac/string.scm \
-  test/hmac/data.scm \
-  test/hmac/bytes.scm
-
 MEMCHK_TESTS = \
   test/mem/memchk_1.scm \
   test/mem/memchk_2.scm
@@ -398,9 +378,7 @@ TESTS = \
   $(FILE_TESTS) \
   $(MEMORY_OUTPUT_TESTS) \
   test/string.scm \
-  $(BASE64_ENCODING_TESTS) \
-  $(DATA_CHECKSUM_TESTS) \
-  $(SECURE_HMAC_DIGESTS_TESTS) \
+  test/bash-the-hash.scm \
   test/datetime.scm \
   $(MEMCHK_TESTS) \
   $(BYTE_ARRAY_TESTS) \
@@ -426,6 +404,7 @@ _SRFI64_DRIVER = \
 _SRFI64_COMPILER =
 _SRFI64_TESTS = \
   test/application.scm \
+  test/bash-the-hash.scm \
   test/constants.scm \
   test/datetime.scm \
   test/gtk.scm \
