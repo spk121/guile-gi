@@ -375,26 +375,29 @@ TESTS = \
 
 XFAIL_TESTS =
 
-SCM_LOG_COMPILER = ${builddir}/tools/run-test
-
-_SRFI64_DRIVER = \
+SCM_LOG_DRIVER = \
   $(top_builddir)/tools/uninstalled-test-env \
   $(top_builddir)/libtool --mode=execute $(TESTS_LTDLOPEN) \
   $(GUILE) --no-auto-compile $(top_srcdir)/build-aux/test-driver.scm
-_SRFI64_COMPILER =
-_SRFI64_TESTS = \
-  test/application.scm \
-  test/bash-the-hash.scm \
-  test/constants.scm \
-  test/datetime.scm \
-  test/gtk.scm \
-  test/mem.scm \
-  test/string.scm \
-  test/flags.scm \
-  $(EVERYTHING_TESTS)
 
-$(_SRFI64_TESTS:%.scm=%.log): SCM_LOG_DRIVER = $(_SRFI64_DRIVER)
-$(_SRFI64_TESTS:%.scm=%.log): SCM_LOG_COMPILER = $(_SRFI64_COMPILER)
+_OLD_SCHOOL_DRIVER = $(SHELL) $(top_srcdir)/build-aux/test-driver
+_OLD_SCHOOL_COMPILER = ${builddir}/tools/run-test
+_OLD_SCHOOL_TESTS = \
+  $(TYPELIB_TESTS) \
+  $(ATOMIC_OPERATIONS_TESTS) \
+  $(MESSAGE_OUTPUT_TESTS) \
+  $(IO_CHANNELS_TESTS) \
+  $(FILE_TESTS) \
+  $(BYTE_ARRAY_TESTS) \
+  $(GRILO_TESTS) \
+  $(OOP_TESTS) \
+  $(VALUE_TESTS) \
+  test/misc/softerror_create.scm \
+  test/misc/use-typelibs.scm \
+  test/misc/interfaces.scm 
+
+$(_OLD_SCHOOL_TESTS:%.scm=%.log): SCM_LOG_DRIVER = $(_OLD_SCHOOL_DRIVER)
+$(_OLD_SCHOOL_TESTS:%.scm=%.log): SCM_LOG_COMPILER = $(_OLD_SCHOOL_COMPILER)
 
 test: check
 
