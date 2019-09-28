@@ -155,7 +155,7 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
         break;
     case GI_INFO_TYPE_PROPERTY:
         g_assert(G_TYPE_IS_CLASSED(parent_gtype));
-        gig_property_define(parent_gtype, info, parent_name, defs);
+        defs = gig_property_define(parent_gtype, info, parent_name, defs);
         break;
     case GI_INFO_TYPE_STRUCT:
     {
