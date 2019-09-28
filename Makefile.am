@@ -233,14 +233,6 @@ TYPELIB_TESTS = \
   test/typelib/document.scm \
   test/typelib/to-module.scm
 
-MAIN_EVENT_LOOP_TESTS = \
-  test/main_loop/new.scm \
-  test/main_loop/runs.scm \
-  test/main_loop/quit.scm \
-  test/main_loop/get_context.scm \
-  test/main_loop/timeout.scm \
-  test/main_loop/idle.scm
-
 MEMORY_ALLOCATION_TESTS = \
   test/mem/malloc.scm \
   test/mem/try_malloc0.scm
@@ -291,13 +283,6 @@ BYTE_ARRAY_TESTS = \
   test/byte_array/byte_array_new_take.scm \
   test/byte_array/bytes_new_null_size.scm \
   test/byte_array/bytes_new_null_contents.scm
-
-GAPPLICATION_TESTS = \
-  test/gapplication/activate_order.scm \
-  test/gapplication/command-line.scm \
-  test/gapplication/command-line-options.scm \
-  test/gapplication/make.scm \
-  test/gapplication/set_resource_path.scm
 
 GRILO_TESTS = \
   test/grilo/audio_simple.scm \
@@ -407,7 +392,6 @@ TESTS = \
   test/constants.scm \
   $(ATOMIC_OPERATIONS_TESTS) \
   $(MESSAGE_OUTPUT_TESTS) \
-  $(MAIN_EVENT_LOOP_TESTS) \
   $(MEMORY_ALLOCATION_TESTS) \
   $(MEMORY_SLICES_TESTS) \
   $(IO_CHANNELS_TESTS) \
@@ -420,7 +404,7 @@ TESTS = \
   test/datetime.scm \
   $(MEMCHK_TESTS) \
   $(BYTE_ARRAY_TESTS) \
-  $(GAPPLICATION_TESTS) \
+  test/application.scm \
   test/gtk.scm \
   $(GRILO_TESTS) \
   $(OOP_TESTS) \
@@ -441,6 +425,7 @@ _SRFI64_DRIVER = \
   $(GUILE) --no-auto-compile $(top_srcdir)/build-aux/test-driver.scm
 _SRFI64_COMPILER =
 _SRFI64_TESTS = \
+  test/application.scm \
   test/constants.scm \
   test/datetime.scm \
   test/gtk.scm \
