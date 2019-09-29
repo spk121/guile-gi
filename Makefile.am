@@ -335,7 +335,6 @@ TESTS = \
   $(TYPELIB_TESTS) \
   test/constants.scm \
   test/mem.scm \
-  $(ATOMIC_OPERATIONS_TESTS) \
   $(MESSAGE_OUTPUT_TESTS) \
   $(IO_CHANNELS_TESTS) \
   $(FILE_TESTS) \
@@ -365,7 +364,6 @@ _OLD_SCHOOL_DRIVER = $(SHELL) $(top_srcdir)/build-aux/test-driver
 _OLD_SCHOOL_COMPILER = ${builddir}/tools/run-test
 _OLD_SCHOOL_TESTS = \
   $(TYPELIB_TESTS) \
-  $(ATOMIC_OPERATIONS_TESTS) \
   $(MESSAGE_OUTPUT_TESTS) \
   $(IO_CHANNELS_TESTS) \
   $(FILE_TESTS) \
