@@ -233,14 +233,6 @@ TYPELIB_TESTS = \
   test/typelib/document.scm \
   test/typelib/to-module.scm
 
-IO_CHANNELS_TESTS = \
-  test/io/io_channel_pipe.scm \
-  test/io/io_channel_new_file.scm \
-  test/io/io_channel_unichar.scm
-
-MESSAGE_OUTPUT_TESTS = \
-  test/io/log_writer_is_journald.scm
-
 FILE_TESTS = \
   test/file/new_for_path.scm \
   test/file/get_parent.scm \
@@ -335,8 +327,7 @@ TESTS = \
   $(TYPELIB_TESTS) \
   test/constants.scm \
   test/mem.scm \
-  $(MESSAGE_OUTPUT_TESTS) \
-  $(IO_CHANNELS_TESTS) \
+  test/io.scm \
   $(FILE_TESTS) \
   test/string.scm \
   test/bash-the-hash.scm \
@@ -363,8 +354,6 @@ _OLD_SCHOOL_DRIVER = $(SHELL) $(top_srcdir)/build-aux/test-driver
 _OLD_SCHOOL_COMPILER = ${builddir}/tools/run-test
 _OLD_SCHOOL_TESTS = \
   $(TYPELIB_TESTS) \
-  $(MESSAGE_OUTPUT_TESTS) \
-  $(IO_CHANNELS_TESTS) \
   $(FILE_TESTS) \
   $(VALUE_TESTS) \
   test/misc/use-typelibs.scm \
@@ -410,7 +399,6 @@ CLEANFILES = \
   doc/guile-gi.dvi \
   examples/resources/test.gresource \
   $(guileobject_DATA) $(pkgguileobject_DATA) $(scriptguileobject_DATA) \
-  tmp.txt \
   $(BUILT_SOURCES) \
   $(cleanpkgdata_DATA)
 
