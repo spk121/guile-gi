@@ -348,7 +348,6 @@ TESTS = \
   test/oop.scm \
   $(VALUE_TESTS) \
   test/flags.scm \
-  test/misc/softerror_create.scm \
   test/misc/use-typelibs.scm \
   test/misc/interfaces.scm \
   $(EVERYTHING_TESTS)
@@ -368,7 +367,6 @@ _OLD_SCHOOL_TESTS = \
   $(IO_CHANNELS_TESTS) \
   $(FILE_TESTS) \
   $(VALUE_TESTS) \
-  test/misc/softerror_create.scm \
   test/misc/use-typelibs.scm \
   test/misc/interfaces.scm 
 
