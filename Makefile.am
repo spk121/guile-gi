@@ -247,12 +247,6 @@ FILE_TESTS = \
   test/file/has_parent.scm \
   test/file/get_child.scm
 
-BYTE_ARRAY_TESTS = \
-  test/byte_array/byte_array_new.scm \
-  test/byte_array/byte_array_new_take.scm \
-  test/byte_array/bytes_new_null_size.scm \
-  test/byte_array/bytes_new_null_contents.scm
-
 VALUE_TESTS = \
   test/value/getset.scm \
   test/value/transform.scm \
@@ -348,7 +342,7 @@ TESTS = \
   test/string.scm \
   test/bash-the-hash.scm \
   test/datetime.scm \
-  $(BYTE_ARRAY_TESTS) \
+  test/byte-array.scm \
   test/application.scm \
   test/gtk.scm \
   test/grilo.scm \
@@ -375,7 +369,6 @@ _OLD_SCHOOL_TESTS = \
   $(MESSAGE_OUTPUT_TESTS) \
   $(IO_CHANNELS_TESTS) \
   $(FILE_TESTS) \
-  $(BYTE_ARRAY_TESTS) \
   $(VALUE_TESTS) \
   test/misc/softerror_create.scm \
   test/misc/use-typelibs.scm \
