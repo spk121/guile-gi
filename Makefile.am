@@ -253,14 +253,6 @@ BYTE_ARRAY_TESTS = \
   test/byte_array/bytes_new_null_size.scm \
   test/byte_array/bytes_new_null_contents.scm
 
-OOP_TESTS = \
-  test/oop/property-basics.scm \
-  test/oop/guile-types.scm \
-  test/oop/signal-simple.scm \
-  test/oop/signal-detailed.scm \
-  test/oop/signal-accumulator.scm \
-  test/oop/signal-block.scm
-
 VALUE_TESTS = \
   test/value/getset.scm \
   test/value/transform.scm \
@@ -360,7 +352,7 @@ TESTS = \
   test/application.scm \
   test/gtk.scm \
   test/grilo.scm \
-  $(OOP_TESTS) \
+  test/oop.scm \
   $(VALUE_TESTS) \
   test/flags.scm \
   test/misc/softerror_create.scm \
@@ -384,7 +376,6 @@ _OLD_SCHOOL_TESTS = \
   $(IO_CHANNELS_TESTS) \
   $(FILE_TESTS) \
   $(BYTE_ARRAY_TESTS) \
-  $(OOP_TESTS) \
   $(VALUE_TESTS) \
   test/misc/softerror_create.scm \
   test/misc/use-typelibs.scm \
