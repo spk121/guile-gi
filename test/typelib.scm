@@ -12,9 +12,6 @@
          (iface (module-public-interface module)))
     (module-defined? iface %test-symbol)))
 
-;; Something in our "cache" goes wrong, causing the values of symbols to get
-;; exported rather than the symbols themselves.
-(test-expect-fail "use-typelibs")
 (test-assert "use-typelibs"
   (begin
     (save-module-excursion
