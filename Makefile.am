@@ -233,12 +233,6 @@ TYPELIB_TESTS = \
   test/typelib/document.scm \
   test/typelib/to-module.scm
 
-FILE_TESTS = \
-  test/file/new_for_path.scm \
-  test/file/get_parent.scm \
-  test/file/has_parent.scm \
-  test/file/get_child.scm
-
 VALUE_TESTS = \
   test/value/getset.scm \
   test/value/transform.scm \
@@ -328,7 +322,7 @@ TESTS = \
   test/constants.scm \
   test/mem.scm \
   test/io.scm \
-  $(FILE_TESTS) \
+  test/file.scm \
   test/string.scm \
   test/bash-the-hash.scm \
   test/datetime.scm \
@@ -354,10 +348,9 @@ _OLD_SCHOOL_DRIVER = $(SHELL) $(top_srcdir)/build-aux/test-driver
 _OLD_SCHOOL_COMPILER = ${builddir}/tools/run-test
 _OLD_SCHOOL_TESTS = \
   $(TYPELIB_TESTS) \
-  $(FILE_TESTS) \
   $(VALUE_TESTS) \
   test/misc/use-typelibs.scm \
-  test/misc/interfaces.scm 
+  test/misc/interfaces.scm
 
 $(_OLD_SCHOOL_TESTS:%.scm=%.log): SCM_LOG_DRIVER = $(_OLD_SCHOOL_DRIVER)
 $(_OLD_SCHOOL_TESTS:%.scm=%.log): SCM_LOG_COMPILER = $(_OLD_SCHOOL_COMPILER)
