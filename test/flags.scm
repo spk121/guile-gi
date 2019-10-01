@@ -1,6 +1,4 @@
-(use-modules (test automake-test-lib)
-
-             (gi types)
+(use-modules (gi types)
              (oop goops)
              (ice-9 hash-table)
 

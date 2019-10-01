@@ -8,13 +8,69 @@
 
              (system foreign)
 
-             (gi) (gi util)
-             (test automake-test-lib))
+             (gi) (gi util))
 
 (test-begin "marshall.scm")
 
-(typelib-require (("Marshall" "1.0") #:renamer (protect* '(sizeof short int long size_t)))
-                 ("GLib" "2.0"))
+(define (short-vector->list x)
+  (cond
+   ((= (sizeof short) 2)
+    (s16vector->list x))
+   ((= (sizeof short) 4)
+    (s32vector->list x))
+   (else
+    (error "unknown short size"))))
+
+(define (list->short-vector x)
+  (cond
+   ((= (sizeof short) 2)
+    (list->s16vector x))
+   ((= (sizeof short) 4)
+    (list->s32vector x))
+   (else
+    (error "unknown short size"))))
+
+(define (int-vector->list x)
+  (cond
+   ((= (sizeof int) 4)
+    (s32vector->list x))
+   ((= (sizeof int) 8)
+    (s64vector->list x))
+   (else
+    (error "unknown int size"))))
+
+(define (list->int-vector x)
+  (cond
+   ((= (sizeof int) 4)
+    (list->s32vector x))
+   ((= (sizeof int) 8)
+    (list->s64vector x))
+   (else
+    (error "unknown int size"))))
+
+(define (long-vector->list x)
+  (cond
+   ((= (sizeof long) 4)
+    (s32vector->list x))
+   ((= (sizeof long) 8)
+    (s64vector->list x))
+   (else
+    (error "unknown long int size"))))
+
+(define (list->long-vector x)
+  (cond
+   ((= (sizeof long) 4)
+    (list->s32vector x))
+   ((= (sizeof long) 8)
+    (list->s64vector x))
+   (else
+    (error "unknown long int size"))))
+
+;; We know, that this Marshall exists, because we don't run the test
+;; if it does not. GLib is an explicit dependency, so it too always exists
+(use-typelibs (("Marshall" "1.0")
+               #:renamer (protect* '(sizeof short int long size_t)))
+              ("GLib" "2.0"))
 
 (define-syntax-rule (boolarray-input f)
   (test-assert (symbol->string (quote f))

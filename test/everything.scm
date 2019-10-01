@@ -1,13 +1,14 @@
 (use-modules (gi)
              (rnrs bytevectors)
              (system foreign)
-             (test automake-test-lib)
 
              (srfi srfi-64))
 
 (test-begin "everything.scm")
 
-(typelib-require ("Everything" "1.0"))
+;; We know, that this typelib exists, because we don't run the test
+;; if it does not
+(use-typelibs ("Everything" "1.0"))
 
 (test-assert "nullfunc" (begin (nullfunc) #t))
 

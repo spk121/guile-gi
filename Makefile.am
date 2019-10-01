@@ -371,9 +371,6 @@ indent:
 #   Variables   #
 #################
 
-noinst_DATA = \
-  test/automake-test-lib.scm
-
 CLEANFILES = \
   ChangeLog README \
   doc/guile-gi.dvi \
