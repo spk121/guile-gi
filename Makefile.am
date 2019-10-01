@@ -318,7 +318,7 @@ TESTS_LTDLOPEN = -dlopen ${top_builddir}/libguile-gi.la
 endif
 
 TESTS = \
-  $(TYPELIB_TESTS) \
+  test/typelib.scm \
   test/constants.scm \
   test/mem.scm \
   test/io.scm \
@@ -333,7 +333,6 @@ TESTS = \
   test/oop.scm \
   test/value.scm \
   test/flags.scm \
-  test/misc/use-typelibs.scm \
   $(EVERYTHING_TESTS)
 
 XFAIL_TESTS =
@@ -342,15 +341,6 @@ SCM_LOG_DRIVER = \
   $(top_builddir)/tools/uninstalled-test-env \
   $(top_builddir)/libtool --mode=execute $(TESTS_LTDLOPEN) \
   $(GUILE) --no-auto-compile $(top_srcdir)/build-aux/test-driver.scm
-
-_OLD_SCHOOL_DRIVER = $(SHELL) $(top_srcdir)/build-aux/test-driver
-_OLD_SCHOOL_COMPILER = ${builddir}/tools/run-test
-_OLD_SCHOOL_TESTS = \
-  $(TYPELIB_TESTS) \
-  test/misc/use-typelibs.scm
-
-$(_OLD_SCHOOL_TESTS:%.scm=%.log): SCM_LOG_DRIVER = $(_OLD_SCHOOL_DRIVER)
-$(_OLD_SCHOOL_TESTS:%.scm=%.log): SCM_LOG_COMPILER = $(_OLD_SCHOOL_COMPILER)
 
 test: check
 
