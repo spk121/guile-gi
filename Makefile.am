@@ -334,7 +334,6 @@ TESTS = \
   $(VALUE_TESTS) \
   test/flags.scm \
   test/misc/use-typelibs.scm \
-  test/misc/interfaces.scm \
   $(EVERYTHING_TESTS)
 
 XFAIL_TESTS =
@@ -349,8 +348,7 @@ _OLD_SCHOOL_COMPILER = ${builddir}/tools/run-test
 _OLD_SCHOOL_TESTS = \
   $(TYPELIB_TESTS) \
   $(VALUE_TESTS) \
-  test/misc/use-typelibs.scm \
-  test/misc/interfaces.scm
+  test/misc/use-typelibs.scm
 
 $(_OLD_SCHOOL_TESTS:%.scm=%.log): SCM_LOG_DRIVER = $(_OLD_SCHOOL_DRIVER)
 $(_OLD_SCHOOL_TESTS:%.scm=%.log): SCM_LOG_COMPILER = $(_OLD_SCHOOL_COMPILER)

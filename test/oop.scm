@@ -1,4 +1,5 @@
-(use-modules (gi) (gi util)
+(use-modules (gi) (gi repository) (gi util)
+             (oop goops)
              (srfi srfi-64))
 
 (test-begin "oop")
@@ -82,7 +83,7 @@
 
   (unless (test-passed?)
     (test-skip 2))
-  
+
   (test-equal "detail fired"
     #t detail-fired)
 
@@ -98,9 +99,16 @@
       (test-signal object)
       blocked)))
 
+(if (false-if-exception (require "Gio" "2.0"))
+    (begin
+      (test-assert "interface"
+        (begin
+          ;; Test that Applications are ActionMaps, which they should be
+          (load-by-name "Gio" "ActionMap")
+          (load-by-name "Gio" "Application")
+          (memq <GActionMap> (class-precedence-list <GApplication>)))))
+    (begin
+      (test-skip "interface")
+      (test-assert "interface" #f)))
+
 (test-end "oop")
-
-
-
-
-
