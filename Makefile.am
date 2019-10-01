@@ -331,7 +331,7 @@ TESTS = \
   test/gtk.scm \
   test/grilo.scm \
   test/oop.scm \
-  $(VALUE_TESTS) \
+  test/value.scm \
   test/flags.scm \
   test/misc/use-typelibs.scm \
   $(EVERYTHING_TESTS)
@@ -347,7 +347,6 @@ _OLD_SCHOOL_DRIVER = $(SHELL) $(top_srcdir)/build-aux/test-driver
 _OLD_SCHOOL_COMPILER = ${builddir}/tools/run-test
 _OLD_SCHOOL_TESTS = \
   $(TYPELIB_TESTS) \
-  $(VALUE_TESTS) \
   test/misc/use-typelibs.scm
 
 $(_OLD_SCHOOL_TESTS:%.scm=%.log): SCM_LOG_DRIVER = $(_OLD_SCHOOL_DRIVER)
