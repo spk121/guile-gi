@@ -222,4 +222,7 @@ AC_CONFIG_FILES([tools/lcov.sh], [chmod +x tools/lcov.sh])
 AC_CONFIG_FILES([tools/valgrind.sh], [chmod +x tools/valgrind.sh])
 AC_CONFIG_LINKS([examples/resources/builder.ui:examples/resources/builder.ui])
 
+AC_REQUIRE_AUX_FILE([test-driver])
+AC_REQUIRE_AUX_FILE([test-driver.scm])
+
 AC_OUTPUT

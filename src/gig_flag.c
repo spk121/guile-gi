@@ -162,7 +162,7 @@ gig_define_enum(GIEnumInfo *info, SCM defs)
 
     SCM existing = gig_type_get_scheme_type_with_info(info);
     if (!SCM_UNBNDP(existing))
-        return scm_cons(existing, defs);
+        return scm_cons(scm_class_name(existing), defs);
 
     switch (t) {
     case GI_INFO_TYPE_ENUM:
