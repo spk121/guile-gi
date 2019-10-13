@@ -9,7 +9,7 @@
    (negate null?)
    load-by-name))
 
-(if (false-if-exception (require "Gtk" "3.0"))                        
+(if (false-if-exception (require "Gtk" "3.0"))
     (test-assert "init"
       (and (load-by-name? "Gtk" "init_check")
            (init-check)))
@@ -27,12 +27,12 @@
   (if (test-passed?)
       (set! entry (entry:new))
       (test-skip 3))
-  
+
   (test-assert "entry alignment 0"
     (begin
       (set-alignment entry 0)
       (= (get-alignment entry) 0)))
-  
+
   (test-assert "entry alignment 0.5"
     (begin
       (set-alignment entry 0.5)
@@ -53,7 +53,7 @@
   (let ((box (box:new (symbol->orientation 'vertical) 1)))
     (and (is-a? box <GtkBox>)
          (= 1 (spacing box)))))
-  
+
 (test-assert "make box"
   (let ((box (make <GtkBox> #:orientation 'vertical #:spacing 2)))
     (and (is-a? box <GtkBox>)
