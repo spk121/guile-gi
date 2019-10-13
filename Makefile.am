@@ -229,15 +229,6 @@ $(guileobject_DATA) $(pkgguileobject_DATA) $(scriptguileobject_DATA): $(guileext
 
 TEST_EXTENSIONS = .scm
 
-TYPELIB_TESTS = \
-  test/typelib/document.scm \
-  test/typelib/to-module.scm
-
-VALUE_TESTS = \
-  test/value/getset.scm \
-  test/value/transform.scm \
-  test/closure/simple.scm
-
 -include $(INTROSPECTION_MAKEFILE)
 if HAVE_INTROSPECTION
 pkglib_LTLIBRARIES = test/libeverything-1.0.la test/libmarshall-1.0.la
