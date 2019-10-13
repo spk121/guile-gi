@@ -291,6 +291,9 @@
 (stringarray-output gptrarray-utf8-none-return)
 (stringarray-output gptrarray-utf8-container-return)
 (stringarray-output gptrarray-utf8-full-return)
+(stringarray-output gptrarray-utf8-none-out)
+(stringarray-output gptrarray-utf8-container-out)
+(stringarray-output gptrarray-utf8-full-out)
 
 (define-syntax-rule (stringlist-output f)
   (test-assert (symbol->string (quote f))
