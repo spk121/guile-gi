@@ -1058,6 +1058,25 @@ prefix and appending suffix, both symbols.  If neither prefix nor suffix
 are given, @code{'%} is used as prefix.
 @end deffn
 
+@subsection Utilities for Vectors
+
+In the @code{(gi util)} library, the following helper procedures are provided
+for use with SRFI-4-type uniform numeric vectors.
+
+@deffn Procedure short-vector->list vec
+@deffnx Procedure int-vector->list vec
+@deffnx Procedure long-vector->list vec
+Converts a SRFI-4 uniform numeric vector of signed integers into an
+integer list.
+@end deffn
+
+@deffn Procedure list->short-vector lst
+@deffnx Procedure list->int-vector lst
+@deffnx Procedure list->long-vector lst
+Converts a list of integers into an SRFI-4 uniform numeric vector of
+signed integers.
+@end deffn
+
 @c ----------------------------------------------------------------
 @node More Stuff
 @section More Stuff
