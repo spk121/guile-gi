@@ -216,6 +216,7 @@ GObject-2.0.
 
 @example
 #!/path/to/guile
+!#
 (use-modules (gi documentation))
 
 (let ((%typelib (typelib "GObject" "2.0"))
@@ -258,12 +259,12 @@ well as the bindings created for @code{<GtkApplication>}, etc.
 
 First is @code{make}, which wraps and extends the @code{make} procedure
 found in GOOPS.  @xref{GOOPS,,,guile,The Guile reference manual} for
-infos about GOOPS.  In short the arguments, that would normally be used
-for slot initialization are instead used to initialize properties.  This
-is important, because the slots of the GOOPS object @strong{do not} map
-to properties, and neither do the properties map to slots.  @code{make}
-can also be used on some types, which do not derive from GObject, most
-notably it can be called without any arguments to allocate boxed types.
+info about GOOPS.  In short, the arguments -- normally used for slot
+initialization -- are used to initialize properties.  This is important,
+because the slots of the GOOPS object @strong{do not} map to properties,
+and neither do the properties map to slots.  @code{make} can also be
+used on some types, which do not derive from GObject, most notably it
+can be called without any arguments to allocate boxed types.
 
 @findex connect
 
@@ -343,8 +344,8 @@ The C pointer is ``hidden'' in the @code{ptr} slot of an object.
 @cindex concurrency
 
 While Guile is multi-threaded, applications using Guile-GI are not fully
-thread-safe.  Notably, applications using GTK or GLib's mainloop need
-all rendering and mainloop activities to occur in one thread.  Also, all
+thread-safe.  Notably, applications using GTK or GLib's main loop need
+all rendering and main loop activities to occur in one thread.  Also, all
 calls to @code{typelib-load} need to be made from the same thread.
 
 @node Debugging and Profiling
@@ -452,7 +453,7 @@ their @file{.typelib} files.
 
 A GObject typelib file contains information on the public classes,
 functions, and variables in a GObject-based library, and most
-GObject-complient libraries, such as GLib and GTK, provide one.  Usually
+GObject-compliant libraries, such as GLib and GTK, provide one.  Usually
 these files are on the file system in a single directory location.  On
 Fedora, for example, these files may be stored in
 @file{/var/lib64/girepository-1.0}.
@@ -575,7 +576,7 @@ Display @var{documentation} as DocBook XML.
 @quotation Warning
 The standard DocBook tools installable through most distributions do
 not handle XML, but rather SGML.
-Trying to postprocess the results of this function with them will
+Trying to post-process the results of this function with them will
 only end up in weird results, (potentially lots of) errors and user frustration.
 Use GTK-Doc instead, either directly or through @code{xsltproc},
 or use your own XSLT stylesheets.
@@ -598,7 +599,7 @@ unions, and objects.
 GObject @emph{unions} and @emph{structs} are handled in Guile-GI by
 creating a GOOPS type that wraps a C pointer.  Typically,
 instances can be created and by GObject functions and used as
-arguments, but, their contents aren't otherwise modifyiable.  GObject
+arguments, but, their contents aren't otherwise modifiable.  GObject
 unions and structs may have GObject Methods, but do not have signals
 or properties. @xref{GObject Methods} for more information.
 
@@ -640,6 +641,8 @@ that GObject uses to identify a type.
 GObject has its own custom class structure.  The following procedures
 provide information about how a @code{<GType>} forms part of that
 class structure.
+
+The following procedures are in the @code{(gi types)} module.
 
 @deffn Procedure get-gtype object
 Given @var{object}, a GObject struct, union, or object, this procedure
@@ -739,12 +742,13 @@ and even when using objects of types, that you did define, you should
 only emit the signals that you defined for that object (and perhaps the
 ``notify'' signal when using explicit notification).
 
-@defspec signal obj [detail] [args...]
-Emits the @var{signal} signal of @var{obj} with @var{detail} and @var{args}.
-Note, that the interpretation of @var{detail} depends on whether or not @var{signal} is detailed.
-If it is, @var{detail} needs to be a symbol, that will be translated to the detail of the emission.
-If it is not, it is considered the first argument and will be consed with @var{args} to form
-an argument list.
+@defspec @emph{(signal <signal>)} obj [detail] [args...]
+Emits the @var{signal} signal of @var{obj} with @var{detail} and
+@var{args}.  Note, that the interpretation of @var{detail} depends on
+whether or not @var{signal} is detailed.  If it is, @var{detail} needs
+to be a symbol, that will be translated to the detail of the emission.
+If it is not, it is considered the first argument and will be consed
+with @var{args} to form an argument list.
 @end defspec
 
 Signals have several slots, that can be bound on creation time (and
@@ -857,7 +861,7 @@ While GObject is an OOP framework and as such mainly focuses on objects,
 there also exists functionality to deal with enumerated types.
 Enumerated types are a way of converting raw numbers into meaningful
 expressions and broadly fit into two categories: enumerations and flags.
-Both assign tokens to numerical values at compile time, but their xuse
+Both assign tokens to numerical values at compile time, but their use
 is different.  Enumerations are used for equality checks only, whereas
 flags can be composed through bitwise or, tested by bitwise and, and
 operated on in other ways -- as long as the basic operations are
@@ -1039,16 +1043,53 @@ set with respect to @code{(flags-mask class)}.
 @c ----------------------------------------------------------------
 @node Utilities
 @section Utilities
-@cindex utilities
+@cindex Utilities
+
+The following procedures are in the @code{(gi util)} library.
+
+@subsection Utilities for Guile Modules
+
+@findex default-duplicate-binding-handler
+@cindex Guile modules, defining
+
+In core Guile, there are options to tailor handling of
+same-named procedures imported into the same module
+(@pxref{Creating Guile Modules, ,Creating Guile Modules, guile, Guile Reference Manual}).
+The @code{default-duplicate-binding-handler} procedure and the
+@code{#:duplicates} option to @code{define-module} can be used to tailor
+the strategy.  Choosing a correct behaviour may become important
+important when using GObject introspection when many methods,
+procedures, and signals may have the same name.
+
+In the @code{(gi util)} library, the following additional helper
+procedures are provided.
 
 @deffn Procedure push-duplicate-handler! handler
-Adds @var{handler} to the default duplicate handlers at the start of the list.
+This utility procedure adds the symbol @var{handler} to the list of
+default duplicate handlers. @var{handler} will be placed at the start of
+the list, giving it highest priority.
 @end deffn
 
 @findex shrug-equals
 @defvr {Duplicate handler} shrug-equals
-A handler, which silently accepts equal (as in @code{eq?}) bindings.
+This is duplicate binding handler.  In the case of duplicate bindings
+whose values are equal (as in @code{eq?}), they are accepted without
+raising a warning.
 @end defvr
+
+@findex use-modules
+@findex use-typelibs
+@findex symbol-prefix-proc
+
+Another strategy to mitigate the problems posed by same-named
+methods, procedures, and variables is to use the @code{#:renamer} option
+of @code{use-modules} or @code{use-typelibs}.  Core Guile provides the
+@code{symbol-prefix-proc} renamer procedure, which can be used to apply
+a prefix to the name of all imported procedures and variables.
+
+This module provides the @code{protect*} renamer.  It is more targeted
+than @code{symbol-prefix-proc}; it applies a prefix and/or suffix to
+those imports whose names are in a list of provided symbols.
 
 @deffn Procedure protect symbol [prefix] [suffix]
 @deffnx Procedure protect* symbols [prefix] [suffix]
@@ -1057,6 +1098,32 @@ Returns a renamer, which ``protects'' @var{symbol}, a symbol or
 prefix and appending suffix, both symbols.  If neither prefix nor suffix
 are given, @code{'%} is used as prefix.
 @end deffn
+
+@defvr Variable %rnrs-syntax
+@defvrx Variable %safe-r5rs
+The @code{%rnrs-syntax} variable contains a list of R5RS syntax
+keywords.  The @code{%safe-r5rs} variable contains a list of the names
+of common R5RS procedures that Guile always provides.  They might be of
+use as the @code{symbols} list in the @code{protect*} renamer.
+@end defvr
+
+These could be used together as in the example below, which will prepend
+@code{gtk::} to the names of imported GObject procedures that match
+common R5RS procedures.
+@lisp
+(use-modules (gi)
+             (gi util))
+(use-typelibs (("Gtk" "3.0")
+               #:renamer (protect*
+                           (append %rnrs-syntax %safe-r5rs)
+                           'gtk::)))
+@end lisp
+While importing procedures or methods with the same names a Scheme
+@emph{syntax} may cause confusion, importing procedures or methods with
+the same name as Guile @emph{procedures} is usually not a problem, since
+the GOOPS classes should do the right thing.  It is a better strategy to
+include only what you need from a GObject library than instead trying to
+import everything and then struggle with any renaming shenanigans.
 
 @subsection Utilities for Vectors
 
@@ -1130,6 +1197,9 @@ procedures will likely fail to do anything sensible.
 @end quotation
 
 @subsection Help! Guile-GI overrides core binding X
+@findex protect*
+@cindex Overrides
+
 In most cases this is nothing to worry about. Guile-GI ensures, that
 the core binding is used as the default behaviour when the signature
 does not accidentally match that of a function in some typelib.
