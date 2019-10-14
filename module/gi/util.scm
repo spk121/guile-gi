@@ -4,6 +4,7 @@
   #:use-module (system foreign)
   #:export (push-duplicate-handler!
             protect protect* %rnrs-syntax
+            %safe-r5rs
             short-vector->list
             int-vector->list
             long-vector->list
@@ -32,6 +33,97 @@
      syntax define-syntax let-syntax letrec-syntax
      syntax-rules syntax-case
      with-syntax quasisyntax unsyntax unsyntax-splicing syntax-violation)))
+
+(define %safe-r5rs
+  (cdr
+   '(<>
+     eqv? eq? equal?
+     number?	complex? real? rational? integer?
+     exact? inexact?
+     zero? positive?	negative? odd? even?
+     max min
+     + * - /
+     abs
+     quotient remainder modulo
+     gcd lcm
+     numerator denominator
+     rationalize
+     floor ceiling truncate round
+     exp log sin cos tan asin acos atan
+     sqrt
+     expt
+     make-rectangular make-polar real-part imag-part magnitude angle
+     exact->inexact inexact->exact
+     number->string string->number
+     boolean?
+     not
+     pair?
+     cons car cdr
+     set-car! set-cdr!
+     caar cadr cdar cddr
+     caaar caadr cadar caddr cdaar cdadr cddar cdddr
+     caaaar caaadr caadar caaddr cadaar cadadr caddar cadddr
+     cdaaar cdaadr cdadar cdaddr cddaar cddadr cdddar cddddr
+     null?
+     list?
+     list
+     length
+     append
+     reverse
+     list-tail list-ref
+     memq memv member
+     assq assv assoc
+     symbol?
+     symbol->string string->symbol
+     char?
+     char=? char<? char>? char<=? char>=?
+     char-ci=? char-ci<? char-ci>? char-ci<=? char-ci>=?
+     char-alphabetic? char-numeric? char-whitespace?
+     char-upper-case? char-lower-case?
+     char->integer integer->char
+     char-upcase
+     char-downcase
+     string?
+     make-string
+     string
+     string-length
+     string-ref string-set!
+     string=? string-ci=?
+     string<? string>? string<=? string>=?
+     string-ci<? string-ci>? string-ci<=? string-ci>=?
+     substring
+     string-length
+     string-append
+     string->list list->string
+     string-copy string-fill!
+     vector?
+     make-vector
+     vector
+     vector-length
+     vector-ref vector-set!
+     vector->list list->vector
+     vector-fill!
+     procedure?
+     apply
+     map
+     for-each
+     force
+     call-with-current-continuation
+     values
+     call-with-values
+     dynamic-wind
+     eval
+     input-port? output-port?
+     current-input-port current-output-port
+     read
+     read-char
+     peek-char
+     eof-object?
+     char-ready?
+     write
+     display
+     newline
+     write-char)))
 
 (define epsilon '#{}#)
 (define (symbol-empty? symbol) (equal? symbol epsilon))
