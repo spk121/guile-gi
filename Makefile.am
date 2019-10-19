@@ -318,6 +318,7 @@ TESTS = \
   test/bash-the-hash.scm \
   test/datetime.scm \
   test/byte-array.scm \
+  test/main-loop.scm \
   test/application.scm \
   test/gtk.scm \
   test/grilo.scm \
