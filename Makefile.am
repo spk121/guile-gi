@@ -357,7 +357,7 @@ check-syntax:
 indent:
 	VERSION_CONTROL=none indent $(libguile_gi_la_SOURCES)
 
-.PHONY: check-syntax indent test
+.PHONY: check-syntax docs indent test
 
 #################
 #   Variables   #

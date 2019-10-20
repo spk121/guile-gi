@@ -42,7 +42,7 @@ span.sansserif {font-family: sans-serif; font-weight: normal}
 ul.no-bullet {list-style: none}
 -->
 </style>
-<link rel="stylesheet" type="text/css" href="document-1.0.1.css">
+<link rel="stylesheet" type="text/css" href="docs/document-1.0.1.css">
 
 
 </head>
@@ -106,12 +106,13 @@ only emit the signals that you defined for that object (and perhaps the
 &ldquo;notify&rdquo; signal when using explicit notification).
 </p>
 <dl>
-<dt id="index-signal">Special Form: <strong>signal</strong> <em>obj [detail] [args...]</em></dt>
-<dd><p>Emits the <var>signal</var> signal of <var>obj</var> with <var>detail</var> and <var>args</var>.
-Note, that the interpretation of <var>detail</var> depends on whether or not <var>signal</var> is detailed.
-If it is, <var>detail</var> needs to be a symbol, that will be translated to the detail of the emission.
-If it is not, it is considered the first argument and will be consed with <var>args</var> to form
-an argument list.
+<dt id="index-_0028signal-_003csignal_003e_0029">Special Form: <strong><em>(signal &lt;signal&gt;)</em></strong> <em>obj [detail] [args...]</em></dt>
+<dd><p>Emits the <var>signal</var> signal of <var>obj</var> with <var>detail</var> and
+<var>args</var>.  Note, that the interpretation of <var>detail</var> depends on
+whether or not <var>signal</var> is detailed.  If it is, <var>detail</var> needs
+to be a symbol, that will be translated to the detail of the emission.
+If it is not, it is considered the first argument and will be consed
+with <var>args</var> to form an argument list.
 </p></dd></dl>
 
 <p>Signals have several slots, that can be bound on creation time (and

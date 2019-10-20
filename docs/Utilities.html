@@ -42,7 +42,7 @@ span.sansserif {font-family: sans-serif; font-weight: normal}
 ul.no-bullet {list-style: none}
 -->
 </style>
-<link rel="stylesheet" type="text/css" href="document-1.0.1.css">
+<link rel="stylesheet" type="text/css" href="docs/document-1.0.1.css">
 
 
 </head>
@@ -54,19 +54,54 @@ Next: <a href="More-Stuff.html#More-Stuff" accesskey="n" rel="next">More Stuff</
 </div>
 <hr>
 <span id="Utilities-1"></span><h3 class="section">3.10 Utilities</h3>
-<span id="index-utilities"></span>
+<span id="index-Utilities"></span>
 
+<p>The following procedures are in the <code>(gi util)</code> library.
+</p>
+<span id="Utilities-for-Guile-Modules"></span><h4 class="subsection">3.10.1 Utilities for Guile Modules</h4>
+
+<span id="index-default_002dduplicate_002dbinding_002dhandler"></span>
+<span id="index-Guile-modules_002c-defining"></span>
+
+<p>In core Guile, there are options to tailor handling of
+same-named procedures imported into the same module
+(see <a href="https://www.gnu.org/software/guile/manual/html_node/Creating-Guile-Modules.html#Creating-Guile-Modules">Creating Guile Modules</a> in <cite>Guile Reference Manual</cite>).
+The <code>default-duplicate-binding-handler</code> procedure and the
+<code>#:duplicates</code> option to <code>define-module</code> can be used to tailor
+the strategy.  Choosing a correct behaviour may become important
+important when using GObject introspection when many methods,
+procedures, and signals may have the same name.
+</p>
+<p>In the <code>(gi util)</code> library, the following additional helper
+procedures are provided.
+</p>
 <dl>
 <dt id="index-push_002dduplicate_002dhandler_0021">Procedure: <strong>push-duplicate-handler!</strong> <em>handler</em></dt>
-<dd><p>Adds <var>handler</var> to the default duplicate handlers at the start of the list.
+<dd><p>This utility procedure adds the symbol <var>handler</var> to the list of
+default duplicate handlers. <var>handler</var> will be placed at the start of
+the list, giving it highest priority.
 </p></dd></dl>
 
 <span id="index-shrug_002dequals"></span>
 <dl>
 <dt id="index-shrug_002dequals-2">Duplicate handler: <strong>shrug-equals</strong></dt>
-<dd><p>A handler, which silently accepts equal (as in <code>eq?</code>) bindings.
+<dd><p>In the case of duplicate bindings whose values are equal (as in <code>eq?</code>), they are accepted without raising a warning.
 </p></dd></dl>
 
+<span id="index-use_002dmodules"></span>
+<span id="index-use_002dtypelibs"></span>
+<span id="index-symbol_002dprefix_002dproc"></span>
+
+<p>Another strategy to mitigate the problems posed by same-named
+methods, procedures, and variables is to use the <code>#:renamer</code> option
+of <code>use-modules</code> or <code>use-typelibs</code>.  Core Guile provides the
+<code>symbol-prefix-proc</code> renamer procedure, which can be used to apply
+a prefix to the name of all imported procedures and variables.
+</p>
+<p>This module provides the <code>protect*</code> renamer.  It is more targeted
+than <code>symbol-prefix-proc</code>; it applies a prefix and/or suffix to
+those imports whose names are in a list of provided symbols.
+</p>
 <dl>
 <dt id="index-protect">Procedure: <strong>protect</strong> <em>symbol [prefix] [suffix]</em></dt>
 <dt id="index-protect_002a">Procedure: <strong>protect*</strong> <em>symbols [prefix] [suffix]</em></dt>
@@ -76,6 +111,64 @@ prefix and appending suffix, both symbols.  If neither prefix nor suffix
 are given, <code>'%</code> is used as prefix.
 </p></dd></dl>
 
+<dl>
+<dt id="index-_0025rnrs_002dsyntax">Variable: <strong>%rnrs-syntax</strong></dt>
+<dt id="index-_0025r5rs_002dprocedures">Variable: <strong>%r5rs-procedures</strong></dt>
+<dd><p>Constants, which can be applied to <code>protect*</code>.
+</p>
+<p><code>%rnrs-syntax</code> contains R6RS syntax keywords from the
+<code>(rnrs syntax)</code> module. Most of these are also very important to R5RS.
+</p>
+<p><code>%r5rs-procedures</code> contains the names of common R5RS procedures that
+Guile always provides.
+</p></dd></dl>
+
+<p>These can be used alone or together to protect important names in Scheme
+code.  The following example, for instance, prepends <code>gtk::</code> to imported
+GObject procedures which match R6RS syntax or R5RS procedures.
+</p><div class="lisp">
+<pre class="lisp">(use-modules (gi)
+             (gi util))
+(use-typelibs ((&quot;Gtk&quot; &quot;3.0&quot;)
+               #:renamer (protect*
+                           (append %rnrs-syntax %safe-r5rs)
+                           'gtk::)))
+</pre></div>
+<p>While importing procedures or methods with the same names a Scheme
+<em>syntax</em> may cause confusion, importing procedures or methods with
+the same name as Guile <em>procedures</em> is usually not a problem due to
+method overloading via GOOPS.
+</p>
+<blockquote>
+<p><b>Note:</b> While this can prevent you from accidentally messing up important procedures, it is usually a better strategy to only include what you need.
+</p></blockquote>
+
+<span id="Utilities-for-Vectors"></span><h4 class="subsection">3.10.2 Utilities for Vectors</h4>
+
+<p>In the <code>(gi util)</code> library, the following helper procedures are provided
+for use with SRFI-4-type uniform numeric vectors.
+</p>
+<dl>
+<dt id="index-short_002dvector_002d_003elist">Procedure: <strong>short-vector-&gt;list</strong> <em>vec</em></dt>
+<dt id="index-int_002dvector_002d_003elist">Procedure: <strong>int-vector-&gt;list</strong> <em>vec</em></dt>
+<dt id="index-long_002dvector_002d_003elist">Procedure: <strong>long-vector-&gt;list</strong> <em>vec</em></dt>
+<dd><p>Converts a SRFI-4 uniform numeric vector of signed integers into an
+integer list.
+</p></dd></dl>
+
+<dl>
+<dt id="index-list_002d_003eshort_002dvector">Procedure: <strong>list-&gt;short-vector</strong> <em>lst</em></dt>
+<dt id="index-list_002d_003eint_002dvector">Procedure: <strong>list-&gt;int-vector</strong> <em>lst</em></dt>
+<dt id="index-list_002d_003elong_002dvector">Procedure: <strong>list-&gt;long-vector</strong> <em>lst</em></dt>
+<dd><p>Converts a list of integers into an SRFI-4 uniform numeric vector of
+signed integers.
+</p></dd></dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="More-Stuff.html#More-Stuff" accesskey="n" rel="next">More Stuff</a>, Previous: <a href="Enums-and-Flags.html#Enums-and-Flags" accesskey="p" rel="prev">Enums and Flags</a>, Up: <a href="Reference-Guide.html#Reference-Guide" accesskey="u" rel="up">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index.html#Index" title="Index" rel="index">Index</a>]</p>
+</div>
 
 
 

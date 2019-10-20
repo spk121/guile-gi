@@ -42,7 +42,7 @@ span.sansserif {font-family: sans-serif; font-weight: normal}
 ul.no-bullet {list-style: none}
 -->
 </style>
-<link rel="stylesheet" type="text/css" href="document-1.0.1.css">
+<link rel="stylesheet" type="text/css" href="docs/document-1.0.1.css">
 
 
 </head>
@@ -58,8 +58,8 @@ Next: <a href="Debugging-and-Profiling.html#Debugging-and-Profiling" accesskey="
 <span id="index-concurrency"></span>
 
 <p>While Guile is multi-threaded, applications using Guile-GI are not fully
-thread-safe.  Notably, applications using GTK or GLib&rsquo;s mainloop need
-all rendering and mainloop activities to occur in one thread.  Also, all
+thread-safe.  Notably, applications using GTK or GLib&rsquo;s main loop need
+all rendering and main loop activities to occur in one thread.  Also, all
 calls to <code>typelib-load</code> need to be made from the same thread.
 </p>
 

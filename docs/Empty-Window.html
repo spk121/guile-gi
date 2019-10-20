@@ -42,7 +42,7 @@ span.sansserif {font-family: sans-serif; font-weight: normal}
 ul.no-bullet {list-style: none}
 -->
 </style>
-<link rel="stylesheet" type="text/css" href="document-1.0.1.css">
+<link rel="stylesheet" type="text/css" href="docs/document-1.0.1.css">
 
 
 </head>
@@ -104,12 +104,12 @@ well as the bindings created for <code>&lt;GtkApplication&gt;</code>, etc.
 
 <p>First is <code>make</code>, which wraps and extends the <code>make</code> procedure
 found in GOOPS.  See <a href="https://www.gnu.org/software/guile/manual/html_node/GOOPS.html#GOOPS">GOOPS</a> in <cite>The Guile reference manual</cite> for
-infos about GOOPS.  In short the arguments, that would normally be used
-for slot initialization are instead used to initialize properties.  This
-is important, because the slots of the GOOPS object <strong>do not</strong> map
-to properties, and neither do the properties map to slots.  <code>make</code>
-can also be used on some types, which do not derive from GObject, most
-notably it can be called without any arguments to allocate boxed types.
+info about GOOPS.  In short, the arguments &ndash; normally used for slot
+initialization &ndash; are used to initialize properties.  This is important,
+because the slots of the GOOPS object <strong>do not</strong> map to properties,
+and neither do the properties map to slots.  <code>make</code> can also be
+used on some types, which do not derive from GObject, most notably it
+can be called without any arguments to allocate boxed types.
 </p>
 <span id="index-connect"></span>
 
