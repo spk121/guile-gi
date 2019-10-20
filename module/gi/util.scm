@@ -3,8 +3,9 @@
   #:use-module (srfi srfi-4)
   #:use-module (system foreign)
   #:export (push-duplicate-handler!
-            protect protect* %rnrs-syntax
-            %safe-r5rs
+            protect protect*
+            %rnrs-syntax
+            %r5rs-procedures
             short-vector->list
             int-vector->list
             long-vector->list
@@ -34,13 +35,13 @@
      syntax-rules syntax-case
      with-syntax quasisyntax unsyntax unsyntax-splicing syntax-violation)))
 
-(define %safe-r5rs
+(define %r5rs-procedures
   (cdr
    '(<>
      eqv? eq? equal?
-     number?	complex? real? rational? integer?
+     number? complex? real? rational? integer?
      exact? inexact?
-     zero? positive?	negative? odd? even?
+     zero? positive? negative? odd? even?
      max min
      + * - /
      abs

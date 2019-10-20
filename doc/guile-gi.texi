@@ -1072,9 +1072,7 @@ the list, giving it highest priority.
 
 @findex shrug-equals
 @defvr {Duplicate handler} shrug-equals
-This is duplicate binding handler.  In the case of duplicate bindings
-whose values are equal (as in @code{eq?}), they are accepted without
-raising a warning.
+In the case of duplicate bindings whose values are equal (as in @code{eq?}), they are accepted without raising a warning.
 @end defvr
 
 @findex use-modules
@@ -1100,16 +1098,19 @@ are given, @code{'%} is used as prefix.
 @end deffn
 
 @defvr Variable %rnrs-syntax
-@defvrx Variable %safe-r5rs
-The @code{%rnrs-syntax} variable contains a list of R5RS syntax
-keywords.  The @code{%safe-r5rs} variable contains a list of the names
-of common R5RS procedures that Guile always provides.  They might be of
-use as the @code{symbols} list in the @code{protect*} renamer.
+@defvrx Variable %r5rs-procedures
+Constants, which can be applied to @code{protect*}.
+
+@code{%rnrs-syntax} contains R6RS syntax keywords from the
+@code{(rnrs syntax)} module. Most of these are also very important to R5RS.
+
+@code{%r5rs-procedures} contains the names of common R5RS procedures that
+Guile always provides.
 @end defvr
 
-These could be used together as in the example below, which will prepend
-@code{gtk::} to the names of imported GObject procedures that match
-common R5RS procedures.
+These can be used alone or together to protect important names in Scheme
+code.  The following example, for instance, prepends @code{gtk::} to imported
+GObject procedures which match R6RS syntax or R5RS procedures.
 @lisp
 (use-modules (gi)
              (gi util))
@@ -1120,10 +1121,12 @@ common R5RS procedures.
 @end lisp
 While importing procedures or methods with the same names a Scheme
 @emph{syntax} may cause confusion, importing procedures or methods with
-the same name as Guile @emph{procedures} is usually not a problem, since
-the GOOPS classes should do the right thing.  It is a better strategy to
-include only what you need from a GObject library than instead trying to
-import everything and then struggle with any renaming shenanigans.
+the same name as Guile @emph{procedures} is usually not a problem due to
+method overloading via GOOPS.
+
+@quotation Note
+While this can prevent you from accidentally messing up important procedures, it is usually a better strategy to only include what you need.
+@end quotation
 
 @subsection Utilities for Vectors
 
