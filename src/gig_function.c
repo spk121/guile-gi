@@ -508,8 +508,6 @@ gig_function_invoke(GIFunctionInfo *func_info, GigArgMap *amap, const gchar *nam
     GPtrArray *cinvoke_free_array;
     GArray *cinvoke_output_arg_array;
     GIArgument *out_args, *out_boxes;
-    GIArgument return_arg;
-    gboolean ok;
 
     gig_callable_prepare_invoke(amap, name, self, args,
                                 &cinvoke_input_arg_array,
@@ -522,11 +520,12 @@ gig_function_invoke(GIFunctionInfo *func_info, GigArgMap *amap, const gchar *nam
             name, cinvoke_input_arg_array->len, cinvoke_output_arg_array->len);
     gig_amap_dump(amap);
 
-    ok = g_function_info_invoke(func_info, (GIArgument *)(cinvoke_input_arg_array->data),
-                                cinvoke_input_arg_array->len,
-                                (GIArgument *)(cinvoke_output_arg_array->data),
-                                cinvoke_output_arg_array->len, &return_arg, error);
-
+    GIArgument return_arg;
+    return_arg.v_pointer = NULL;
+    gboolean ok = g_function_info_invoke(func_info, (GIArgument *)(cinvoke_input_arg_array->data),
+                                         cinvoke_input_arg_array->len,
+                                         (GIArgument *)(cinvoke_output_arg_array->data),
+                                         cinvoke_output_arg_array->len, &return_arg, error);
     return gig_callable_return_value(amap, name, args, ok, &return_arg,
                                      cinvoke_input_arg_array, cinvoke_output_arg_array,
                                      cinvoke_free_array, out_args, out_boxes);

@@ -854,13 +854,20 @@ void
 gig_argument_c_to_scm(C2S_ARG_DECL)
 {
     TRACE_C2S();
+    GType fundamental_type = G_TYPE_FUNDAMENTAL(meta->gtype);
+
+    // Check this up front because arg may be unitialized when
+    // returning void.
+    if (fundamental_type == G_TYPE_NONE) {
+        *object = SCM_UNSPECIFIED;
+        return;
+    }
 
     if (arg->v_pointer == NULL && meta->is_nullable) {
         *object = SCM_BOOL_F;
         return;
     }
-    GType fundamental_type = G_TYPE_FUNDAMENTAL(meta->gtype);
-    TRACE_C2S();
+
     switch (fundamental_type) {
     case G_TYPE_NONE:
         *object = SCM_UNSPECIFIED;
