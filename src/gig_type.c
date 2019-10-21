@@ -734,8 +734,6 @@ gig_type_define_fundamental(GType type, SCM extra_supers,
     scm_dynwind_end();
 }
 
-static SCM make_fundamental_proc;
-
 static void
 gig_init_types_once(void)
 {
