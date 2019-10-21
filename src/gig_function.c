@@ -44,7 +44,8 @@ static GigGsubr *create_gsubr(GIFunctionInfo *function_info, const gchar *name, 
 static void make_formals(GICallableInfo *, GigArgMap *, gint n_inputs, SCM self_type,
                          SCM *formals, SCM *specializers);
 static void function_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_data);
-
+static SCM function_invoke(GIFunctionInfo *info, GigArgMap *amap, const gchar *name, GObject *object,
+                           SCM args, GError **error);
 static SCM convert_output_args(GigArgMap *amap, const gchar *name, GArray *out_args);
 static void object_list_to_c_args(GigArgMap *amap, const gchar *subr,
                                   SCM s_args, GArray *in_args, GPtrArray *cinvoke_free_array,
@@ -500,9 +501,9 @@ gig_callable_return_value(GigArgMap *amap,
     }
 }
 
-SCM
-gig_function_invoke(GIFunctionInfo *func_info, GigArgMap *amap, const gchar *name, GObject *self,
-                    SCM args, GError **error)
+static SCM
+function_invoke(GIFunctionInfo *func_info, GigArgMap *amap, const gchar *name, GObject *self,
+                SCM args, GError **error)
 {
     GArray *cinvoke_input_arg_array;
     GPtrArray *cinvoke_free_array;
@@ -604,7 +605,7 @@ function_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
 
     // Then invoke the actual function
     GError *err = NULL;
-    SCM output = gig_function_invoke(gfn->function_info, gfn->amap, gfn->name, self, s_args, &err);
+    SCM output = function_invoke(gfn->function_info, gfn->amap, gfn->name, self, s_args, &err);
 
     // If there is a GError, write an error and exit.
     if (err) {
