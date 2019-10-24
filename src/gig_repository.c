@@ -261,14 +261,14 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
         } while (0)
 
         gint n_methods, n_properties, n_signals, n_fields;
-        GigRepositoryNested method, property, signal, field;
+        GigRepositoryNested method, property, nested_signal, field;
 
         gig_repository_nested_infos(info, &n_methods, &method, &n_properties, &property,
-                                    &n_signals, &signal, &n_fields, &field);
+                                    &n_signals, &nested_signal, &n_fields, &field);
 
         LOAD_NESTED(LOAD_METHODS, n_methods, method);
         LOAD_NESTED(LOAD_PROPERTIES, n_properties, property);
-        LOAD_NESTED(LOAD_SIGNALS, n_signals, signal);
+        LOAD_NESTED(LOAD_SIGNALS, n_signals, nested_signal);
         LOAD_NESTED(LOAD_FIELDS, n_fields, field);
 #undef LOAD_NESTED
         goto end;

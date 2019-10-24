@@ -37,14 +37,14 @@ document_nested(GIBaseInfo *parent)
     scm_dynwind_free(_namespace);
 
     gint n_methods, n_properties, n_signals, n_fields;
-    GigRepositoryNested method, property, signal, field;
+    GigRepositoryNested method, property, nested_signal, field;
 
     gig_repository_nested_infos(parent, &n_methods, &method, &n_properties, &property,
-                                &n_signals, &signal, &n_fields, &field);
+                                &n_signals, &nested_signal, &n_fields, &field);
 
     DOCUMENT_NESTED(n_methods, method);
     DOCUMENT_NESTED(n_properties, property);
-    DOCUMENT_NESTED(n_signals, signal);
+    DOCUMENT_NESTED(n_signals, nested_signal);
     DOCUMENT_NESTED(n_fields, field);
 
 #undef DOCUMENT_NESTED
