@@ -197,8 +197,7 @@ do_document(GIBaseInfo *info, const gchar *_namespace)
         scm_printf(SCM_UNDEFINED, "<property name=\"%s\"><scheme>"
                    "<accessor name=\"%s\" long-name=\"%s:%s\" readable=\"%d\" writable=\"%d\"/>"
                    "</scheme></property>", name, name, _namespace, name,
-                   ((flags & G_PARAM_READABLE) != 0),
-                   ((flags & G_PARAM_WRITABLE) != 0));
+                   ((flags & G_PARAM_READABLE) != 0), ((flags & G_PARAM_WRITABLE) != 0));
         break;
     }
     case GI_INFO_TYPE_FIELD:
