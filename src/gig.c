@@ -71,7 +71,7 @@ gig_log_writer(GLogLevelFlags flags, const GLogField *fields, gsize n_fields, gp
 #define ENV_GIG_DEBUG (g_getenv("GIG_DEBUG"))
     const GLogField *message;
 
-    const gchar *prefix, *color;
+    const gchar *prefix = NULL, *color = NULL;
     if (!logger_initialized) {
         scm_init_guile();
         logger_initialized = 1;
