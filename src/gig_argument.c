@@ -95,58 +95,53 @@ later_free(GPtrArray *must_free, GigTypeMeta *meta, gpointer ptr)
 
 #define LATER_FREE(_ptr) later_free(must_free, meta, _ptr)
 
+// This returns the number of elements (not necessarily bytes) in ARG.
 static gsize
-array_length(GigTypeMeta *meta, GIArgument *arg)
+zero_terminated_array_length(GigTypeMeta *meta, GIArgument *arg)
 {
-    if (meta->length != GIG_ARRAY_SIZE_UNKNOWN)
-        return meta->length;
+    g_assert_nonnull(meta);
+    g_assert_nonnull(arg);
 
-    else if (meta->is_zero_terminated) {
-        gpointer array = arg->v_pointer;
-        if (array == NULL)
-            return 0;
-
-        gsize length = 0;
-
-        if (G_TYPE_FUNDAMENTAL(meta->params[0].gtype) == G_TYPE_STRING) {
-            gchar **ptr = array;
-            while (ptr[length] != NULL)
-                length++;
-            return length;
-        }
-
+    if (arg->v_pointer == NULL)
+        return 0;
+    else if (G_TYPE_FUNDAMENTAL(meta->params[0].gtype) == G_TYPE_STRING)
+        return g_strv_length(arg->v_pointer);
+    else {
         gsize item_size = gig_meta_real_item_size(&meta->params[0]);
         switch (item_size) {
         case 0:
             g_assert_not_reached();
         case 1:
-            return strlen(array);
+            return strlen(arg->v_pointer);
         case 2:
         {
-            gint16 *ptr = array;
+            gint16 *ptr = arg->v_pointer;
+            gsize length = 0;
             while (*ptr++ != 0)
                 length++;
             return length;
         }
         case 4:
         {
-            gint32 *ptr = array;
+            gint32 *ptr = arg->v_pointer;
+            gsize length = 0;
             while (*ptr++ != 0)
                 length++;
             return length;
         }
         case 8:
         {
-            gint64 *ptr = array;
+            gint64 *ptr = arg->v_pointer;
+            gsize length = 0;
             while (*ptr++ != 0)
                 length++;
             return length;
         }
         default:
         {
-            gchar *ptr = array;
+            gchar *ptr = arg->v_pointer;
             gboolean non_null;
-            length = -1;
+            gsize length = -1;
             do {
                 length++;
                 non_null = FALSE;
@@ -162,8 +157,7 @@ array_length(GigTypeMeta *meta, GIArgument *arg)
         }
         }
     }
-
-    return GIG_ARRAY_SIZE_UNKNOWN;
+    g_return_val_if_reached(GIG_ARRAY_SIZE_UNKNOWN);
 }
 
 //////////////////////////////////////////////////////////
@@ -1129,10 +1123,14 @@ static void
 c_native_array_to_scm(C2S_ARG_DECL)
 {
     TRACE_C2S();
-    gsize length = array_length(meta, arg);
-    if (length == GIG_ARRAY_SIZE_UNKNOWN) {
+    gsize length;
+
+    if (meta->length != GIG_ARRAY_SIZE_UNKNOWN)
+        length = meta->length;
+    else if (meta->is_zero_terminated)
+        length = zero_terminated_array_length(meta, arg);
+    else
         length = size;
-    }
     if (length == 0 && meta->is_nullable) {
         *object = SCM_BOOL_F;
         return;
@@ -1353,7 +1351,7 @@ c_gptrarray_to_scm(C2S_ARG_DECL)
     c_native_array_to_scm(subr, argpos, &_meta, &_arg, object, size);
 
     // Free the GPtrArray without deleting the contents
-    g_ptr_array_free(arg->v_pointer, FALSE);
+    g_ptr_array_free(array, FALSE);
 }
 
 static void
