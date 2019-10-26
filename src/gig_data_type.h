@@ -24,8 +24,7 @@ G_BEGIN_DECLS
 
 #define GIG_ARRAY_SIZE_UNKNOWN ((gsize)-1)
 
-typedef enum _GigPointerType GigPointerType;
-enum _GigPointerType
+typedef enum _GigPointerType
 {
     GIG_DATA_VOID = 0,
     GIG_DATA_UTF8_STRING,
@@ -33,7 +32,7 @@ enum _GigPointerType
     GIG_DATA_LIST,
     GIG_DATA_SLIST,
     GIG_DATA_CALLBACK
-};
+} GigPointerType;
 
 typedef struct _GigTypeMeta GigTypeMeta;
 struct _GigTypeMeta
