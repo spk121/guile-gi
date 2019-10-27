@@ -40,7 +40,8 @@
              (guix licenses)
              (guix git-download)
              (guix gexp)
-             (guix build-system gnu)
+             (guix build-system glib-or-gtk)
+             (guix utils)
              (gnu packages)
              (gnu packages autotools)
              (gnu packages gettext)
@@ -58,7 +59,7 @@
   (source (local-file %source-dir
                       #:recursive? #t
                       #:select? (git-predicate %source-dir)))
-  (build-system gnu-build-system)
+  (build-system glib-or-gtk-build-system)
   (native-inputs `(("autoconf" ,autoconf)
                    ("automake" ,automake)
                    ("gettext" ,gnu-gettext)
@@ -66,11 +67,38 @@
                    ("libtool" ,libtool)
                    ("pkg-config" ,pkg-config)
                    ("texinfo" ,texinfo)))
-  (propagated-inputs `(("glib" ,glib)
-                       ("gobject-introspection" ,gobject-introspection)))
-  (inputs `(("guile" ,guile-2.2)))
+  (inputs `(("guile" ,guile-2.2)
+            ("glib" ,glib)
+            ("gobject-introspection" ,gobject-introspection)))
+  (outputs '("out" "bin"))
   (arguments
-   `(#:configure-flags '("--with-gnu-filesystem-hierarchy")))
+   `(#:configure-flags '("--with-gnu-filesystem-hierarchy"
+                         "--enable-hardening")
+     #:phases
+     (modify-phases %standard-phases
+       (add-after 'install 'install-guile-gi
+         (lambda* (#:key inputs outputs #:allow-other-keys)
+           (let ((guile (assoc-ref inputs "guile"))
+                 (bin (assoc-ref outputs "bin")))
+             (mkdir-p (string-append bin "/bin"))
+             (symlink (string-append guile "/bin/guile")
+                      (string-append bin "/bin/guile-gi"))
+             #t)))
+       (add-after 'glib-or-gtk-wrap 'wrap-additional-paths
+         (lambda* (#:key inputs outputs #:allow-other-keys)
+           (let ((guile (assoc-ref inputs "guile"))
+                 (out (assoc-ref outputs "out"))
+                 (bin (assoc-ref outputs "bin")))
+             (wrap-program (string-append bin "/bin/guile-gi")
+               `("GI_TYPELIB_PATH" prefix
+                 ,(search-path-as-string->list (getenv "GI_TYPELIB_PATH")))
+               `("GUILE_LOAD_PATH" prefix
+                 (,(string-append out "/share/guile")))
+               `("GUILE_LOAD_COMPILED_PATH" prefix
+                 (,(string-append out "/lib/guile/site-ccache")))
+               `("LD_LIBRARY_PATH" prefix
+                 (,(string-append out "/lib/guile/"))))
+             #t))))))
   (home-page "https://github.com/spk121/guile-gi")
   (synopsis "GObject bindings for Guile")
   (description
