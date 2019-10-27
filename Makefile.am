@@ -337,12 +337,6 @@ SCM_LOG_DRIVER = \
 test: check
 
 #################
-#     Tools     #
-#################
-
-bin_SCRIPTS = tools/guile-gi
-
-#################
 #  Local rules  #
 #################
 
@@ -384,7 +378,6 @@ EXTRA_DIST = \
   tools/run-test.in \
   tools/gdb-guile.in \
   tools/gdb-test.in \
-  tools/guile-gi.in \
   tools/lcov.sh.in \
   tools/valgrind.sh.in \
   tools/valgrind.supp \
