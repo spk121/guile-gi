@@ -92,7 +92,7 @@ gig_type_register(GType gtype, SCM stype)
     if (!g_hash_table_contains(gig_type_gtype_hash, GSIZE_TO_POINTER(gtype))) {
         g_hash_table_insert(gig_type_gtype_hash, GSIZE_TO_POINTER(gtype),
                             SCM_UNPACK_POINTER(stype));
-        g_debug("Registering a new GType: %zu -> %s", gtype, g_type_name(gtype));
+        gig_debug_load("Registering a new GType: %zu -> %s", gtype, g_type_name(gtype));
     }
 }
 
@@ -213,17 +213,13 @@ SCM
 gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
 {
     g_assert(GSIZE_TO_POINTER(gtype) != NULL);
-    // Make a foreign object type for instances of this GType.
-    // All of our custom introspected foreign object types will
-    // have the same slots.
-    // ob_type,ob_refcnt,obj,inst_dict,weakreflist,flags
 
     gboolean newkey;
     gpointer orig_key, orig_value;
     newkey = g_hash_table_lookup_extended(gig_type_gtype_hash,
                                           GSIZE_TO_POINTER(gtype), &orig_key, &orig_value);
     if (newkey == FALSE) {
-        g_debug("trying to define %s", g_type_name(gtype));
+        gig_debug_load("trying to define %s", g_type_name(gtype));
         GType parent = g_type_parent(gtype), fundamental = G_TYPE_FUNDAMENTAL(parent);
 
         gchar *_type_class_name = gig_type_class_name_from_gtype(gtype);
@@ -337,20 +333,20 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
 
         g_return_val_if_fail(!SCM_UNBNDP(new_type), defs);
 
-        g_debug("Creating a new GigType: %zu -> %s aka %s", gtype,
-                _type_class_name, g_type_name(gtype));
+        gig_debug_load("Creating a new GigType: %zu -> %s aka %s", gtype,
+                       _type_class_name, g_type_name(gtype));
 
         SCM key = gig_type_associate(gtype, new_type);
         if (!SCM_UNBNDP(defs)) {
             scm_define(key, new_type);
             defs = scm_cons(key, defs);
         }
-        g_debug("Hash table sizes %d %d", g_hash_table_size(gig_type_gtype_hash),
-                g_hash_table_size(gig_type_scm_hash));
+        gig_debug_load("Hash table sizes %d %d", g_hash_table_size(gig_type_gtype_hash),
+                       g_hash_table_size(gig_type_scm_hash));
         g_free(_type_class_name);
     }
     else {
-        g_debug("<GType> already exists for: %zu -> %s", gtype, g_type_name(gtype));
+        gig_debug_load("<GType> already exists for: %zu -> %s", gtype, g_type_name(gtype));
         g_return_val_if_fail(orig_value != NULL, defs);
         SCM val = SCM_PACK_POINTER(orig_value);
 
@@ -761,10 +757,10 @@ gig_init_types_once(void)
     gig_type_name_hash = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
     gig_type_scm_hash = g_hash_table_new(g_direct_hash, g_direct_equal);
 
-#define A(G,S)                                                      \
-    do {                                                            \
-        SCM key = gig_type_associate(G, S);                         \
-        scm_define(key, S);                                         \
+#define A(G,S)                                  \
+    do {                                        \
+        SCM key = gig_type_associate(G, S);     \
+        scm_define(key, S);                     \
     } while (0)
 
     // fundamental types

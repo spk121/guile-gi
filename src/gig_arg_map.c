@@ -17,6 +17,9 @@
 #include <string.h>
 #include "gig_arg_map.h"
 #include "gig_data_type.h"
+#include "gig_util.h"
+
+#define gig_debug_amap(...) gig_debug_internal(G_LOG_LEVEL_DEBUG, "amap", __VA_ARGS__);
 
 const gchar dir_strings[GIG_ARG_DIRECTION_COUNT][9] = {
     [GIG_ARG_DIRECTION_VOID] = "void",
@@ -286,10 +289,10 @@ gig_amap_free(GigArgMap *amap)
 void
 gig_amap_dump(const GigArgMap *amap)
 {
-    g_debug("Arg map for '%s'", amap->name);
-    g_debug(" SCM inputs required: %d, optional: %d, outputs: %d", amap->s_input_req,
-            amap->s_input_opt, amap->s_output_len);
-    g_debug(" C inputs: %d, outputs: %d", amap->c_input_len, amap->c_output_len);
+    gig_debug_amap("Arg map for '%s'", amap->name);
+    gig_debug_amap(" SCM inputs required: %d, optional: %d, outputs: %d", amap->s_input_req,
+                   amap->s_input_opt, amap->s_output_len);
+    gig_debug_amap(" C inputs: %d, outputs: %d", amap->c_input_len, amap->c_output_len);
     for (gint i = 0; i < amap->len; i++) {
         const GigArgMapEntry *entry = &amap->pdata[i];
         GString *s = g_string_new(NULL);
@@ -306,14 +309,14 @@ gig_amap_dump(const GigArgMap *amap)
             g_string_append_printf(s, ", SCM input %d", entry->s_input_pos);
         if (entry->is_s_output)
             g_string_append_printf(s, ", S output %d", entry->c_output_pos);
-        g_debug("%s", s->str);
+        gig_debug_amap("%s", s->str);
         g_string_free(s, TRUE);
 
         if (amap->pdata[i].meta.n_params > 0) {
             GigTypeMeta *m2 = &amap->pdata[i].meta.params[0];
             s = g_string_new(NULL);
             g_string_append_printf(s, "    Item Type: %s", gig_type_meta_describe(m2));
-            g_debug("%s", s->str);
+            gig_debug_amap("%s", s->str);
             g_string_free(s, TRUE);
         }
     }
@@ -325,13 +328,13 @@ gig_amap_dump(const GigArgMap *amap)
         g_string_append_printf(s, ", %s, %s, %s",
                                dir_strings[entry->s_direction],
                                tuple_strings[entry->tuple], presence_strings[entry->presence]);
-        g_debug("%s", s->str);
+        gig_debug_amap("%s", s->str);
         g_string_free(s, TRUE);
         if (amap->return_val.meta.n_params > 0) {
             GigTypeMeta *m2 = &amap->return_val.meta.params[0];
             s = g_string_new(NULL);
             g_string_append_printf(s, "    Item Type: %s", gig_type_meta_describe(m2));
-            g_debug("%s", s->str);
+            gig_debug_amap("%s", s->str);
             g_string_free(s, TRUE);
         }
     }

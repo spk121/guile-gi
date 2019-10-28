@@ -35,7 +35,7 @@ require(SCM lib, SCM version)
     if (!SCM_UNBNDP(version) && scm_is_true(version))
         _version = scm_dynwind_or_bust("require", scm_to_utf8_string(version));
 
-    g_debug("requiring %s-%s", _lib, _version != NULL ? _version : "latest");
+    gig_debug_load("requiring %s-%s", _lib, _version != NULL ? _version : "latest");
     tl = g_irepository_require(NULL, _lib, _version, 0, &error);
 
     if (tl == NULL) {
@@ -147,7 +147,7 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
 
     switch (g_base_info_get_type(info)) {
     case GI_INFO_TYPE_CALLBACK:
-        g_debug("Unsupported irepository type 'CALLBACK'");
+        gig_debug_load("Unsupported irepository type 'CALLBACK'");
         break;
     case GI_INFO_TYPE_FUNCTION:
     case GI_INFO_TYPE_SIGNAL:
@@ -161,8 +161,8 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
     {
         GType gtype = g_registered_type_info_get_g_type(info);
         if (gtype == G_TYPE_NONE) {
-            g_debug("Not loading struct type '%s' because is has no GType",
-                    g_base_info_get_name(info));
+            gig_debug_load("Not loading struct type '%s' because is has no GType",
+                           g_base_info_get_name(info));
             break;
         }
         defs = gig_type_define(gtype, defs);
@@ -188,7 +188,7 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
         GType gtype = g_registered_type_info_get_g_type(info);
         const gchar *_namespace = g_base_info_get_name(info);
         if (gtype == G_TYPE_NONE) {
-            g_debug("Not loading object type '%s' because is has no GType", _namespace);
+            gig_debug_load("Not loading object type '%s' because is has no GType", _namespace);
             break;
         }
         defs = gig_type_define(gtype, defs);
@@ -198,8 +198,8 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
     {
         GType gtype = g_registered_type_info_get_g_type(info);
         if (gtype == G_TYPE_NONE) {
-            g_debug("Not loading interface type '%s' because is has no GType",
-                    g_base_info_get_name(info));
+            gig_debug_load("Not loading interface type '%s' because is has no GType",
+                           g_base_info_get_name(info));
             break;
         }
         defs = gig_type_define(gtype, defs);
@@ -212,8 +212,8 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
     {
         GType gtype = g_registered_type_info_get_g_type(info);
         if (gtype == G_TYPE_NONE) {
-            g_debug("Not loading union type '%s' because is has no GType",
-                    g_base_info_get_name(info));
+            gig_debug_load("Not loading union type '%s' because is has no GType",
+                           g_base_info_get_name(info));
             break;
         }
         defs = gig_type_define(gtype, defs);
@@ -224,24 +224,24 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
         goto recursion;
     }
     case GI_INFO_TYPE_VALUE:
-        g_critical("Unsupported irepository type 'VALUE'");
+        gig_critical_load("Unsupported irepository type 'VALUE'");
         break;
     case GI_INFO_TYPE_VFUNC:
-        g_critical("Unsupported irepository type 'VFUNC'");
+        gig_critical_load("Unsupported irepository type 'VFUNC'");
         break;
     case GI_INFO_TYPE_FIELD:
-        g_critical("Unsupported irepository type 'FIELD'");
+        gig_critical_load("Unsupported irepository type 'FIELD'");
         break;
     case GI_INFO_TYPE_ARG:
-        g_critical("Unsupported irepository type 'ARG'");
+        gig_critical_load("Unsupported irepository type 'ARG'");
         break;
     case GI_INFO_TYPE_TYPE:
-        g_critical("Unsupported irepository type 'TYPE'");
+        gig_critical_load("Unsupported irepository type 'TYPE'");
         break;
     case GI_INFO_TYPE_INVALID:
     case GI_INFO_TYPE_INVALID_0:
     default:
-        g_critical("Unsupported irepository type %d", g_base_info_get_type(info));
+        gig_critical_load("Unsupported irepository type %d", g_base_info_get_type(info));
         break;
     }
 

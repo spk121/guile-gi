@@ -97,7 +97,7 @@ gig_function_define(GType type, GICallableInfo *info, const gchar *_namespace, S
     SCM def;
     gboolean is_method = g_callable_info_is_method(info);
 
-    gchar *function_name, *method_name;
+    gchar *function_name, *method_name = NULL;
     function_name = scm_dynwind_or_bust("%gig-function-define",
                                         gig_callable_info_make_name(info, _namespace));
 
@@ -128,16 +128,16 @@ gig_function_define(GType type, GICallableInfo *info, const gchar *_namespace, S
     def = gig_function_define1(function_name, proc, optional_input_count, formals, specializers);
     if (!SCM_UNBNDP(def))
         defs = scm_cons(def, defs);
-    g_debug("dynamically bound %s to %s with %d required and %d optional arguments",
-            function_name, g_base_info_get_name(info), required_input_count, optional_input_count);
+    gig_debug_load("dynamically bound %s to %s with %d required and %d optional arguments",
+                   function_name, g_base_info_get_name(info), required_input_count, optional_input_count);
 
     if (is_method) {
         def = gig_function_define1(method_name, proc, optional_input_count, formals, specializers);
         if (!SCM_UNBNDP(def))
             defs = scm_cons(def, defs);
-        g_debug("dynamically bound %s to %s with %d required and %d optional arguments",
-                function_name, g_base_info_get_name(info), required_input_count,
-                optional_input_count);
+        gig_debug_load("dynamically bound %s to %s with %d required and %d optional arguments",
+                       function_name, g_base_info_get_name(info), required_input_count,
+                       optional_input_count);
     }
 
   end:
@@ -190,7 +190,7 @@ proc4function(GIFunctionInfo *info, const gchar *name, SCM self_type,
         func_gsubr = create_gsubr(info, name, self_type, req, opt, formals, specializers);
 
     if (!func_gsubr) {
-        g_debug("Could not create a gsubr for %s", name);
+        gig_debug_load("Could not create a gsubr for %s", name);
         return SCM_UNDEFINED;
     }
 
@@ -335,7 +335,7 @@ create_gsubr(GIFunctionInfo *function_info, const gchar *name, SCM self_type,
 
     amap = gig_amap_new(function_info);
     if (amap == NULL) {
-        g_debug("Cannot create gsubr for %s: is has invalid types", name);
+        gig_debug_load("Cannot create gsubr for %s: invalid argument map", name);
         return NULL;
     }
 

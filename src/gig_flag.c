@@ -177,6 +177,10 @@ gig_define_enum(GIEnumInfo *info, SCM defs)
 
     SCM obarray = scm_make_hash_table(scm_from_int(n_values));
 
+    gchar* _class_name = scm_to_utf8_string(scm_symbol_to_string(scm_class_name(_class)));
+    gig_debug_load("filling obarray of %s", _class_name);
+    g_free(_class_name);
+
     while (i < n_values) {
         vi = g_enum_info_get_value(info, i);
         _key = gig_gname_to_scm_name(g_base_info_get_name(vi));
@@ -186,16 +190,17 @@ gig_define_enum(GIEnumInfo *info, SCM defs)
 
         switch (t) {
         case GI_INFO_TYPE_ENUM:
+            gig_debug_load("defining enum value %s as %" PRId64, _key, _val);
             val = scm_from_int(_val);
             break;
         case GI_INFO_TYPE_FLAGS:
+            gig_debug_load("defining flag value %s as %" PRId64, _key, _val);
             val = scm_from_uint(_val);
             break;
         default:
             g_assert_not_reached();
         }
 
-        g_debug("defining flag/enum %s and %" PRId64, _key, _val);
         scm_hashq_set_x(obarray, key, val);
 
         g_base_info_unref(vi);

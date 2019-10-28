@@ -33,12 +33,16 @@ gchar *g_registered_type_info_get_qualified_name(GIRegisteredTypeInfo *info);
 
 G_END_DECLS
 #endif
-#define gig_debug_transfer(...)                                         \
-    do {                                                                \
-        g_log_structured(G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG,               \
-                         "CODE_FILE", __FILE__,                         \
-                         "CODE_LINE", __LINE__,                         \
-                         "CODE_FUNC", __func__,                         \
-                         "GIG_DOMAIN", "transfers",                     \
-                         "MESSAGE", __VA_ARGS__);                       \
+#define gig_debug_internal(level,domain,...)            \
+    do {                                                \
+        g_log_structured(G_LOG_DOMAIN, level,           \
+                         "CODE_FILE", __FILE__,         \
+                         "CODE_LINE", __LINE__,         \
+                         "CODE_FUNC", __func__,         \
+                         "GIG_DOMAIN", domain,          \
+                         "MESSAGE", __VA_ARGS__);       \
     } while (FALSE)
+#define gig_debug_transfer(...) gig_debug_internal(G_LOG_LEVEL_DEBUG, "transfers", __VA_ARGS__)
+#define gig_debug_load(...)     gig_debug_internal(G_LOG_LEVEL_DEBUG, "load", __VA_ARGS__)
+#define gig_warning_load(...)   gig_debug_internal(G_LOG_LEVEL_WARNING, "load", __VA_ARGS__)
+#define gig_critical_load(...)  gig_debug_internal(G_LOG_LEVEL_CRITICAL, "load", __VA_ARGS__)
