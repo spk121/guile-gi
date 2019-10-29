@@ -72,19 +72,19 @@ AS_CASE(["x$with_gnu_filesystem_hierarchy"], [xyes],
     # Follow the GNU File System Hierarchy Standard correctly
     # Installed .scm scheme libraries go here
     AC_MSG_CHECKING([Guile site directory])
-    guilesitedir="\${datadir}/guile/site/$guile_effective_version"
+    guilesitedir="\${datadir}/guile/site/$GUILE_EFFECTIVE_VERSION"
     AC_MSG_RESULT([$guilesitedir])
     AC_SUBST(guilesitedir)
 
     # Compiled libguile-*.so extension libraries go here
     AC_MSG_CHECKING([Guile extension directory])
-    guileextensiondir="$libdir/guile/$guile_effective_version"
+    guileextensiondir="\${libdir}/guile/$GUILE_EFFECTIVE_VERSION"
     AC_MSG_RESULT([$guileextensiondir])
     AC_SUBST(guileextensiondir)
 
     # Compiled .go scheme libraries go here
     AC_MSG_CHECKING([Guile object directory])
-    guileobjectdir="$libdir/guile/$guile_effective_version/site-ccache"
+    guileobjectdir="\${libdir}/guile/$GUILE_EFFECTIVE_VERSION/site-ccache"
     AC_MSG_RESULT([$guileobjectdir])
     AC_SUBST(guileobjectdir)],
     [
