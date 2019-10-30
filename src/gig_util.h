@@ -22,6 +22,7 @@ SCM scm_c_reexport(const gchar *name, ...);
 void scm_printf(SCM port, const gchar *fmt, ...);
 const gchar *g_base_info_get_name_safe(GIBaseInfo *info);
 gchar *g_registered_type_info_get_qualified_name(GIRegisteredTypeInfo *info);
+const gchar *_itoa(int i);
 
 #define scm_is_equal(a,b) scm_is_true(scm_equal_p(a,b))
 
@@ -37,7 +38,7 @@ G_END_DECLS
     do {                                                \
         g_log_structured(G_LOG_DOMAIN, level,           \
                          "CODE_FILE", __FILE__,         \
-                         "CODE_LINE", __LINE__,         \
+                         "CODE_LINE", _itoa(__LINE__),  \
                          "CODE_FUNC", __func__,         \
                          "GIG_DOMAIN", domain,          \
                          "MESSAGE", __VA_ARGS__);       \
