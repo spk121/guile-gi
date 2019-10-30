@@ -34,14 +34,14 @@ const gchar *_itoa(int i);
 
 G_END_DECLS
 #endif
-#define gig_debug_internal(level,domain,...)            \
-    do {                                                \
-        g_log_structured(G_LOG_DOMAIN, level,           \
-                         "CODE_FILE", __FILE__,         \
-                         "CODE_LINE", _itoa(__LINE__),  \
-                         "CODE_FUNC", __func__,         \
-                         "GIG_DOMAIN", domain,          \
-                         "MESSAGE", __VA_ARGS__);       \
+#define gig_debug_internal(level,domain,...)                  \
+    do {                                                      \
+        g_log_structured(G_LOG_DOMAIN, level,                 \
+                         "CODE_FILE", __FILE__,               \
+                         "CODE_LINE", G_STRINGIFY(__LINE__),  \
+                         "CODE_FUNC", __func__,               \
+                         "GIG_DOMAIN", domain,                \
+                         "MESSAGE", __VA_ARGS__);             \
     } while (FALSE)
 #define gig_debug_transfer(...) gig_debug_internal(G_LOG_LEVEL_DEBUG, "transfers", __VA_ARGS__)
 #define gig_debug_load(...)     gig_debug_internal(G_LOG_LEVEL_DEBUG, "load", __VA_ARGS__)

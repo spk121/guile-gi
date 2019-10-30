@@ -300,12 +300,3 @@ g_registered_type_info_get_qualified_name(GIRegisteredTypeInfo *info)
     // add initial % to ensure that the name is private
     return g_strdup_printf("%%%s%s", prefix, g_base_info_get_name(info));
 }
-
-const gchar *
-_itoa(int i)
-{
-    // Maximum of 19 digits in 8-byte integer, plus minus sign.
-    static gchar buf[21];
-    snprintf(buf, 21, "%d", i);
-    return buf;
-}
