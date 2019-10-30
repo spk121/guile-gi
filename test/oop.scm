@@ -90,14 +90,13 @@
   (test-equal "wrong detail not fired"
     #f wrong-detail-fired))
 
-(let ((blocked #t))
-  (test-assert "blocked signal"
-    (begin
-      (signal-handler-block
-       object
-       (connect object test-signal (lambda _ (set! blocked #f))))
-      (test-signal object)
-      blocked)))
+(test-assert "blocked signal"
+             (let ((blocked #t))
+               (signal-handler-block
+                object
+                (connect object test-signal (lambda _ (set! blocked #f))))
+               (test-signal object)
+               blocked))
 
 (if (false-if-exception (require "Gio" "2.0"))
     (begin
