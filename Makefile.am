@@ -145,6 +145,9 @@ endif
 if MTRACE
 libguile_gi_la_CPPFLAGS += -DMTRACE
 endif
+if JOURNALD
+libguile_gi_la_CPPFLAGS += -DG_LOG_USE_STRUCTURED
+endif
 
 libguile_gi_la_CFLAGS = \
   -std=c11 \

@@ -423,6 +423,11 @@ Since the default logger prints to Guile's current error port, you can
 redirect the output by using @code{set-current-error-port}.  Note that
 there is a different default error port for each thread.
 
+@quotation Note
+If the library was built using the @env{--with-journald} configure option,
+the logging output will be sent to the @command{systemd} journal instead.
+@end quotation
+
 @node Application Deployment
 @section Application Deployment
 @cindex deployment

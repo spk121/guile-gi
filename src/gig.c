@@ -153,7 +153,11 @@ scm_gcov_dump(void)
 void
 gig_init_logging()
 {
+#ifdef G_LOG_USE_STRUCTURED
+    g_log_set_writer_func(g_log_writer_journald, NULL, NULL);
+#else
     g_log_set_writer_func(gig_log_writer, NULL, NULL);
+#endif
 }
 
 void

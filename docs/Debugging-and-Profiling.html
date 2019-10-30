@@ -120,6 +120,11 @@ Guile objects and vice versa.
 redirect the output by using <code>set-current-error-port</code>.  Note that
 there is a different default error port for each thread.
 </p>
+<blockquote>
+<p><b>Note:</b> If the library was built using the <code>--with-journald</code> configure option,
+the logging output will be sent to the <code>systemd</code> journal instead.
+</p></blockquote>
+
 <hr>
 <div class="header">
 <p>
