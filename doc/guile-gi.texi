@@ -353,11 +353,75 @@ calls to @code{typelib-load} need to be made from the same thread.
 @cindex debugging
 @cindex profiling
 
-Guile-GI makes use of GLib's debug logging.  Running a program with the
-@env{G_MESSAGES_DEBUG} environment variable set to @code{all} will
-provide a full trace of the function calls in Guile-GI.  For more
-information on how to take advantage of this logging, see
+Debugging a program that makes use of Guile-GI bindings has some
+challenges.  A few notable one are these:
+@itemize
+@item
+When parsing a typelib file to generate a binding, some C procedures
+and structures will be bound while others lack sufficient information
+to be properly bound.
+@item
+For a given function call, the type and number of arguments in the
+Guile binding may differ from the type and number of arguments in the
+underlying C call.
+@item
+For a given function call, the stack will include a mix of
+Guile-managed frames, @code{libffi}-generated frames, and an
+application's C stack.
+@end itemize
+
+To add some insight about what is happening in the introspection
+layer, Guile-GI makes use of GLib's debug logging functionality.  GLib
+provides a logging library whose behavior can be tailored using
+envirnoment variables.  GLib's logging library has a concept of
+@emph{log levels}: critical, error, warning, message, info, and debug.
+
+@subsection Using the Default Logger
+
+Guile-GI's logging output will be printed using its included logging
+function.  Its default behavior is to print critical, error, and
+warning messages to Guile's current output port.  Message, info, and
+debug messages will be dropped.  This default behavior can be tailored
+by setting environment variables.
+
+Log messages with a log level of message, info, or debug are not
+output by default, since running a program that uses Guile-GI with
+debug messages enabled will create a verbose output.  If you want to
+receive these messages, you need to set two environment varabiles:
+@env{G_MESSAGES_DEBUG} and @env{GIG_DEBUG}.
+
+The @env{G_MESSAGES_DEBUG} environment variable should be set to a
+space-separated list of @emph{log domains} for which debug messages
+should be printed. Some useful log domains are @env{GuileGI} for
+Guile-GI messages, @env{dconf}, @env{GLib}, @env{GLib-GIO}, @env{Gdk},
+and @env{Gtk}.  Also, the special log domain @env{all} will print
+debug messages from all domains. For more information on how to take
+advantage of this logging, see
 @uref{https://developer.gnome.org/glib/stable/glib-running.html}.
+
+When @env{G_MESSAGES_DEBUG} is set to @env{GuileGI} or @env{all},
+debug information about function calls will be printed.
+
+For even more lower-level information about the workings of Guile-GI,
+further debug messages are revealed by setting @env{GIG_DEBUG}
+environment variable to a space-separated list of topics.
+@itemize
+@item
+@env{amap} prints information about the mapping of function arguments.
+@item
+@env{load} prints information -- when libraries are loaded -- on how C
+procedures, structs, unions, and objects are bound to Guile.
+@item
+@env{transfers} prints information on how C arguments are converted to
+Guile objects and vice versa.
+@item
+@env{all} prints all the debug information.
+@end itemize
+
+@findex set-current-error-port
+Since the default logger prints to Guile's current error port, you can
+redirect the output by using @code{set-current-error-port}.  Note that
+there is a different default error port for each thread.
 
 @node Application Deployment
 @section Application Deployment
