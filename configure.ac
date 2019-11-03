@@ -197,17 +197,6 @@ AC_ARG_ENABLE([mtrace],
               [mtrace=false])
 AM_CONDITIONAL([MTRACE], [test x$mtrace = xtrue])
 
-AC_ARG_ENABLE([journald],
-              [AS_HELP_STRING([--enable-journald],
-                              [use the systemd journal for logging])],
-              [AS_CASE(["${enableval}"],
-                       [yes], [journald=true],
-                       [no], [journald=false],
-                       [AC_MSG_ERROR([bad value ${enableval} for --enable-journald])])],
-              [journald=false])
-AM_CONDITIONAL([JOURNALD], [test x$journald = xtrue])
-
-
 ################
 # Check for C library functions
 

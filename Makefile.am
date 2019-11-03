@@ -111,7 +111,8 @@ libguile_gi_la_c_sources = \
   src/gig_document.c \
   src/gig_type.c \
   src/gig_type_private.c \
-  src/gig_util.c
+  src/gig_util.c \
+  src/gig_logging.c
 
 libguile_gi_la_internal_headers = \
   src/gig_argument.h \
@@ -129,13 +130,17 @@ libguile_gi_la_internal_headers = \
   src/gig_repository.h \
   src/gig_type.h \
   src/gig_type_private.h \
-  src/gig_util.h
+  src/gig_util.h \
+  src/gig_logging.h
 
 libguile_gi_la_SOURCES = \
   $(libguile_gi_la_internal_headers) \
   $(libguile_gi_la_c_sources)
 
-libguile_gi_la_CPPFLAGS = -DG_LOG_DOMAIN=\"GuileGI\"
+libguile_gi_la_CPPFLAGS = \
+  -DG_LOG_DOMAIN=\"GuileGI\" \
+  -DG_LOG_USE_STRUCTURED
+
 if BUILDING_DLL
 libguile_gi_la_CPPFLAGS += -DGIR_DLL -DGIR_DLL_EXPORTS
 endif
@@ -144,9 +149,6 @@ libguile_gi_la_CPPFLAGS += -DENABLE_GCOV --coverage
 endif
 if MTRACE
 libguile_gi_la_CPPFLAGS += -DMTRACE
-endif
-if JOURNALD
-libguile_gi_la_CPPFLAGS += -DG_LOG_USE_STRUCTURED
 endif
 
 libguile_gi_la_CFLAGS = \

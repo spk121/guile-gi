@@ -40,7 +40,6 @@
   ;; The only GI module, that is loaded prior to this one is (gi oop), which
   ;; does not need logging for the few functions it has to load from the
   ;; extension.
-  (load-extension "libguile-gi" "gig_init_logging")
   (load-extension "libguile-gi" "gig_init_types")
   (load-extension "libguile-gi" "gig_init_value")
   (load-extension "libguile-gi" "gig_init_closure"))

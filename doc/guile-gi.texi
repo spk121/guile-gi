@@ -123,8 +123,7 @@ If you are trying to build this from the Git repository, use
 the repository, you need to run @command{autoreconf} to generate a
 @file{configure} file.
 
-If you are building from a @file{guile-gi.zip} file or a
-@file{guile-gi.tar.gz}, unpack the file.
+If you are building from a @file{guile-gi.tar.gz}, unpack the file.
 
 From there, running @command{configure}, then @command{make}, then
 @command{sudo make install} will give you a running system.
@@ -376,21 +375,7 @@ provides a logging library whose behavior can be tailored using
 envirnoment variables.  GLib's logging library has a concept of
 @emph{log levels}: critical, error, warning, message, info, and debug.
 
-@subsection Using the Default Logger
-
-Guile-GI's logging output will be printed using its included logging
-function.  Its default behavior is to print critical, error, and
-warning messages to Guile's current output port.  Message, info, and
-debug messages will be dropped.  This default behavior can be tailored
-by setting environment variables.
-
-Log messages with a log level of message, info, or debug are not
-output by default, since running a program that uses Guile-GI with
-debug messages enabled will create a verbose output.  If you want to
-receive these messages, you need to set two environment varabiles:
-@env{G_MESSAGES_DEBUG} and @env{GIG_DEBUG}.
-
-The @env{G_MESSAGES_DEBUG} environment variable should be set to a
+The @env{G_MESSAGES_DEBUG} environment variable may be set to a
 space-separated list of @emph{log domains} for which debug messages
 should be printed. Some useful log domains are @env{GuileGI} for
 Guile-GI messages, @env{dconf}, @env{GLib}, @env{GLib-GIO}, @env{Gdk},
@@ -399,11 +384,29 @@ debug messages from all domains. For more information on how to take
 advantage of this logging, see
 @uref{https://developer.gnome.org/glib/stable/glib-running.html}.
 
-When @env{G_MESSAGES_DEBUG} is set to @env{GuileGI} or @env{all},
-debug information about function calls will be printed.
+When @env{G_MESSAGES_DEBUG} is set to @env{GuileGI} or @env{all}, you
+will receive @emph{a lot} of debugging information from any Guile-GI
+libraries being used.  To help better filter through all this, a
+@code{(gi logging)} library provides a pair of alternative loggers.
 
-For even more lower-level information about the workings of Guile-GI,
-further debug messages are revealed by setting @env{GIG_DEBUG}
+@subsection Using the Port Logger
+
+The @code{(gi logging)} library provides the @code{log-to-port}
+procedure that sends logging output to a Scheme port and provides
+functionality to target specific categories of debug information
+
+@deffn Procedure log-to-port port
+Given @var{port}, an output port, this procedure installs a GLib
+log writer function that outputs to @var{port}.
+
+The default behavior of this GLib log writer is to print critical,
+error, and warning messages to the port.  Message-level, info, and debug
+messages will be dropped.  If you want to receive these message-level,
+info, and debug messages with this logger, you need to set the
+@env{G_MESSAGES_DEBUG} as described above.  Also, you need to set
+@env{GIG_DEBUG} to the category of debug information desired.
+
+Set the @env{GIG_DEBUG}
 environment variable to a space-separated list of topics.
 @itemize
 @item
@@ -418,15 +421,24 @@ Guile objects and vice versa.
 @env{all} prints all the debug information.
 @end itemize
 
-@findex set-current-error-port
-Since the default logger prints to Guile's current error port, you can
-redirect the output by using @code{set-current-error-port}.  Note that
-there is a different default error port for each thread.
+If @env{GIG_DEBUG} is not set, only information about function calls
+will be output.
+@end deffn
 
-@quotation Note
-If the library was built using the @env{--with-journald} configure option,
-the logging output will be sent to the @command{systemd} journal instead.
-@end quotation
+@subsection Using the systemd journal Logger
+
+The @code{(gi logging)} library provides the @code{log-to-journal}
+procedure.
+
+@deffn Procedure log-to-journal
+This procedure sets GLib's @code{g_log_writer_journald} function
+as the current GLib log writer function.
+@end deffn
+
+For distributions that use systemd's journal, the @command{journalctl}
+command can help filter debug output.  Guile-GI's debug messages
+have the message key @env{GIG_DOMAIN} which can be used to filter
+debug info into general categories.
 
 @node Application Deployment
 @section Application Deployment
