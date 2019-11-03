@@ -1317,8 +1317,8 @@ Maybe the Guile mailing list?
 
 @include fdl-1.3.texi
 
-@node Index
-@unnumbered Index
+@node The Index
+@unnumbered The Index
 
 @printindex cp
 
