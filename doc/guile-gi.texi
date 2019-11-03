@@ -41,7 +41,7 @@ This manual is for Guile GI @value{VERSION}.
 * Reference Guide::
 * Further Resources and Contact Info::
 * GNU Free Documentation License::
-* Index::
+* The Index::
 
 @detailmenu
 --- The Detailed Node Listing ---

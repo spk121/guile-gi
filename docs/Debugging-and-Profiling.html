@@ -19,7 +19,7 @@ Free Documentation License". -->
 <meta name="distribution" content="global">
 <meta name="Generator" content="makeinfo">
 <link href="index.html#Top" rel="start" title="Top">
-<link href="Index.html#Index" rel="index" title="Index">
+<link href="The-Index.html#The-Index" rel="index" title="The Index">
 <link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
 <link href="Tutorials.html#Tutorials" rel="up" title="Tutorials">
 <link href="Application-Deployment.html#Application-Deployment" rel="next" title="Application Deployment">
@@ -42,7 +42,7 @@ span.sansserif {font-family: sans-serif; font-weight: normal}
 ul.no-bullet {list-style: none}
 -->
 </style>
-<link rel="stylesheet" type="text/css" href="docs/document-1.0.1.css">
+<link rel="stylesheet" type="text/css" href="document-1.0.1.css">
 
 
 </head>
@@ -50,7 +50,7 @@ ul.no-bullet {list-style: none}
 <body lang="en">
 <span id="Debugging-and-Profiling"></span><div class="header">
 <p>
-Next: <a href="Application-Deployment.html#Application-Deployment" accesskey="n" rel="next">Application Deployment</a>, Previous: <a href="Threads-and-Concurrency.html#Threads-and-Concurrency" accesskey="p" rel="prev">Threads and Concurrency</a>, Up: <a href="Tutorials.html#Tutorials" accesskey="u" rel="up">Tutorials</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index.html#Index" title="Index" rel="index">Index</a>]</p>
+Next: <a href="Application-Deployment.html#Application-Deployment" accesskey="n" rel="next">Application Deployment</a>, Previous: <a href="Threads-and-Concurrency.html#Threads-and-Concurrency" accesskey="p" rel="prev">Threads and Concurrency</a>, Up: <a href="Tutorials.html#Tutorials" accesskey="u" rel="up">Tutorials</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html#The-Index" title="Index" rel="index">Index</a>]</p>
 </div>
 <hr>
 <span id="Debugging-and-Profiling-1"></span><h3 class="section">2.3 Debugging and Profiling</h3>
@@ -77,21 +77,7 @@ provides a logging library whose behavior can be tailored using
 envirnoment variables.  GLib&rsquo;s logging library has a concept of
 <em>log levels</em>: critical, error, warning, message, info, and debug.
 </p>
-<span id="Using-the-Default-Logger"></span><h4 class="subsection">2.3.1 Using the Default Logger</h4>
-
-<p>Guile-GI&rsquo;s logging output will be printed using its included logging
-function.  Its default behavior is to print critical, error, and
-warning messages to Guile&rsquo;s current output port.  Message, info, and
-debug messages will be dropped.  This default behavior can be tailored
-by setting environment variables.
-</p>
-<p>Log messages with a log level of message, info, or debug are not
-output by default, since running a program that uses Guile-GI with
-debug messages enabled will create a verbose output.  If you want to
-receive these messages, you need to set two environment varabiles:
-<code>G_MESSAGES_DEBUG</code> and <code>GIG_DEBUG</code>.
-</p>
-<p>The <code>G_MESSAGES_DEBUG</code> environment variable should be set to a
+<p>The <code>G_MESSAGES_DEBUG</code> environment variable may be set to a
 space-separated list of <em>log domains</em> for which debug messages
 should be printed. Some useful log domains are <code>GuileGI</code> for
 Guile-GI messages, <code>dconf</code>, <code>GLib</code>, <code>GLib-GIO</code>, <code>Gdk</code>,
@@ -100,11 +86,30 @@ debug messages from all domains. For more information on how to take
 advantage of this logging, see
 <a href="https://developer.gnome.org/glib/stable/glib-running.html">https://developer.gnome.org/glib/stable/glib-running.html</a>.
 </p>
-<p>When <code>G_MESSAGES_DEBUG</code> is set to <code>GuileGI</code> or <code>all</code>,
-debug information about function calls will be printed.
+<p>When <code>G_MESSAGES_DEBUG</code> is set to <code>GuileGI</code> or <code>all</code>, you
+will receive <em>a lot</em> of debugging information from any Guile-GI
+libraries being used.  To help better filter through all this, a
+<code>(gi logging)</code> library provides a pair of alternative loggers.
 </p>
-<p>For even more lower-level information about the workings of Guile-GI,
-further debug messages are revealed by setting <code>GIG_DEBUG</code>
+<span id="Using-the-Port-Logger"></span><h4 class="subsection">2.3.1 Using the Port Logger</h4>
+
+<p>The <code>(gi logging)</code> library provides the <code>log-to-port</code>
+procedure that sends logging output to a Scheme port and provides
+functionality to target specific categories of debug information
+</p>
+<dl>
+<dt id="index-log_002dto_002dport">Procedure: <strong>log-to-port</strong> <em>port</em></dt>
+<dd><p>Given <var>port</var>, an output port, this procedure installs a GLib
+log writer function that outputs to <var>port</var>.
+</p>
+<p>The default behavior of this GLib log writer is to print critical,
+error, and warning messages to the port.  Message-level, info, and debug
+messages will be dropped.  If you want to receive these message-level,
+info, and debug messages with this logger, you need to set the
+<code>G_MESSAGES_DEBUG</code> as described above.  Also, you need to set
+<code>GIG_DEBUG</code> to the category of debug information desired.
+</p>
+<p>Set the <code>GIG_DEBUG</code>
 environment variable to a space-separated list of topics.
 </p><ul>
 <li> <code>amap</code> prints information about the mapping of function arguments.
@@ -115,20 +120,30 @@ Guile objects and vice versa.
 </li><li> <code>all</code> prints all the debug information.
 </li></ul>
 
-<span id="index-set_002dcurrent_002derror_002dport"></span>
-<p>Since the default logger prints to Guile&rsquo;s current error port, you can
-redirect the output by using <code>set-current-error-port</code>.  Note that
-there is a different default error port for each thread.
-</p>
-<blockquote>
-<p><b>Note:</b> If the library was built using the <code>--with-journald</code> configure option,
-the logging output will be sent to the <code>systemd</code> journal instead.
-</p></blockquote>
+<p>If <code>GIG_DEBUG</code> is not set, only information about function calls
+will be output.
+</p></dd></dl>
 
+<span id="Using-the-systemd-journal-Logger"></span><h4 class="subsection">2.3.2 Using the systemd journal Logger</h4>
+
+<p>The <code>(gi logging)</code> library provides the <code>log-to-journal</code>
+procedure.
+</p>
+<dl>
+<dt id="index-log_002dto_002djournal">Procedure: <strong>log-to-journal</strong></dt>
+<dd><p>This procedure sets GLib&rsquo;s <code>g_log_writer_journald</code> function
+as the current GLib log writer function.
+</p></dd></dl>
+
+<p>For distributions that use systemd&rsquo;s journal, the <code>journalctl</code>
+command can help filter debug output.  Guile-GI&rsquo;s debug messages
+have the message key <code>GIG_DOMAIN</code> which can be used to filter
+debug info into general categories.
+</p>
 <hr>
 <div class="header">
 <p>
-Next: <a href="Application-Deployment.html#Application-Deployment" accesskey="n" rel="next">Application Deployment</a>, Previous: <a href="Threads-and-Concurrency.html#Threads-and-Concurrency" accesskey="p" rel="prev">Threads and Concurrency</a>, Up: <a href="Tutorials.html#Tutorials" accesskey="u" rel="up">Tutorials</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index.html#Index" title="Index" rel="index">Index</a>]</p>
+Next: <a href="Application-Deployment.html#Application-Deployment" accesskey="n" rel="next">Application Deployment</a>, Previous: <a href="Threads-and-Concurrency.html#Threads-and-Concurrency" accesskey="p" rel="prev">Threads and Concurrency</a>, Up: <a href="Tutorials.html#Tutorials" accesskey="u" rel="up">Tutorials</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html#The-Index" title="Index" rel="index">Index</a>]</p>
 </div>
 
 
