@@ -53,7 +53,7 @@ README: README.md
 info_TEXINFOS = doc/guile-gi.texi
 
 docs:
-	makeinfo $(info_TEXINFOS) --css-ref=docs/document-1.0.1.css --html --output=$(abs_srcdir)/docs
+	makeinfo $(info_TEXINFOS) --css-ref=document-1.0.1.css --html --output=$(abs_srcdir)/docs
 
 -distclean-docs:
 	-rm -rf docs/*.html
