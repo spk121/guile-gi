@@ -1,3 +1,14 @@
+2019-11-01: version 0.2.1
+- Improved efficiency in build and test
+  - Non-recursive make
+  - SRFI-64-based tests (#63)
+  - Use system's gimarshallingtests
+- Better support for GArray, GPtrArray, and GByteArray (#54)
+- Improve generation of documentation for properties and enums
+- Add subcategories to GLib-based logging
+- More general documentation
+- Bug fixes
+
 2019-09-02: version 0.2.0
 - Improvements in SCM <-> C argument conversion
   - simplified to GType + metadata (#31)
