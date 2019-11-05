@@ -58,7 +58,7 @@
 (define-class <signal> (<applicable-struct>)
   (name #:init-keyword #:name)
   (flags #:init-keyword #:flags
-         #:init-value 0)
+         #:init-value #f)
   (accumulator #:init-keyword #:accumulator
                #:init-value #f)
   (return-type #:init-keyword #:return-type

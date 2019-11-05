@@ -53,7 +53,7 @@ gig_signalspec_from_obj(SCM obj)
     guint n_params;
     GType *params;
     SCM sparams, saccu;
-    GSignalFlags flags;
+    GSignalFlags flags = 0;
     GigSignalSpec *spec = NULL;
 
     SCM_ASSERT_TYPE(SCM_IS_A_P(obj, gig_signal_type), obj, SCM_ARG1, "%scm->signalspec", "signal");
@@ -68,7 +68,13 @@ gig_signalspec_from_obj(SCM obj)
     for (guint i = 0; i < n_params; i++, sparams = scm_cdr(sparams))
         params[i] = scm_to_gtype(scm_car(sparams));
 
-    flags = gig_flags_to_uint(gig_signal_ref(obj, GIG_SIGNAL_SLOT_FLAGS));
+    do
+    {
+        SCM _flags = gig_signal_ref(obj, GIG_SIGNAL_SLOT_FLAGS);
+        // accept #f as 0, otherwise use flags->number
+        if (scm_is_true(_flags))
+            flags = gig_flags_to_uint(_flags);
+    } while (0);
 
     spec = g_new0(GigSignalSpec, 1);
     spec->signal_name = name;
