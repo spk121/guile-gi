@@ -28,7 +28,7 @@
 
             get-search-path prepend-search-path!
 
-            LOAD_METHODS LOAD_PROPERTIES LOAD_SIGNALS LOAD_FIELDS
+            LOAD_METHODS LOAD_PROPERTIES LOAD_SIGNALS
             LOAD_EVERYTHING LOAD_INFO_ONLY))
 
 (eval-when (expand load eval)
