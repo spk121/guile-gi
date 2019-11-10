@@ -579,15 +579,15 @@ Throws an error, if @var{name} could not be found.
 @deffnx Procedure load (info <GBaseInfo>) flags
 Generates bindings for @var{info}.
 
-@var{flags} is a logical or of @code{LOAD_METHODS}, @code{LOAD_SIGNALS},
-@code{LOAD_PROPERTIES} and @code{LOAD_FIELDS}
-and may be 0 or @code{LOAD_INFO_ONLY} tells @code{load}, how to handle
-infos with nested information, such as structs and objects.
+@var{flags} is a logical or of @code{LOAD_METHODS}, @code{LOAD_SIGNALS} and
+@code{LOAD_PROPERTIES}, and may be 0 or @code{LOAD_INFO_ONLY} tells @code{load},
+how to handle infos with nested information, such as structs and objects.
 They enable loading of methods, signals, properties and fields respectively.
 By default, all of them are loaded.
 
 @quotation Warning
-@code{LOAD_FIELDS} currently does nothing, as fields are not yet supported.
+Previous versions also documented @code{LOAD_FIELDS}, which was never actually supported.
+This flag is removed in current builds and will remain removed in upcoming versions.
 @end quotation
 @end deffn
 
