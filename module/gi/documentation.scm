@@ -40,17 +40,22 @@
 
 ;;; XML Parsing
 
-(define documentation-specials
+(define documentation-special-leaves
+  '(doc scheme parameters))
+
+(define documentation-special-nodes
   (cdr '(%
          namespace
          ;; introspected types
          class record union interface enumeration bitfield
-         function method member property
-         ;; leaves
-         doc scheme)))
+         function method member property)))
 
 (define (documentation-special? sym)
-  (member sym documentation-specials))
+  (or (member sym documentation-special-nodes)
+      (member sym documentation-special-leaves)))
+
+(define (documentation-leaf? path)
+  (any (cute member <> path) documentation-special-leaves))
 
 (define gi-namespaces
   '((c ."http://www.gtk.org/introspection/c/1.0")
@@ -97,8 +102,15 @@
                (let ((name (assq-ref attrs 'name))
                      (%path (or (assq-ref seed '%path) '()))
                      (existing '()))
-                 (if name
-                     (set! existing ((%existing elem-gi name) seed)))
+                 ;; the *single* link to the already existing element
+                 ;; documenting the same data
+                 (set! existing
+                   (cond
+                    ((member (res-name->sxml elem-gi)
+                             '(parameters instance-parameter))
+                     ((%existing elem-gi) seed))
+                    (name
+                     ((%existing elem-gi name) seed))))
 
                  (cons*
                   ;; the current path in tags
@@ -111,14 +123,19 @@
                     ;; seed because of some oddities regarding the <repository> tag
                     (let ((existing-ns ((%existing elem-gi name) documentation)))
                       (if (pair? existing-ns)
+                          ;; take the children of the element, remove its attrs
                           (cddar existing-ns)
                           '())))
                    (name
                     (if (pair? existing)
+                        ;; take the children of the element, remove its attrs
                         (cddar existing)
                         '()))
                    (else
-                    '())))))
+                    (if (pair? existing)
+                        ;; take the children of the element
+                        (cdar existing)
+                        '()))))))
 
              FINISH-ELEMENT
              (lambda (elem-gi attributes namespaces parent-seed seed)
@@ -133,8 +150,7 @@
                                       (cons (list (res-name->sxml (car attr)) (cdr attr))
                                             accum))
                                     '() attributes)))
-                 (let ((seed (if (or (member 'scheme path)
-                                     (member 'doc path))
+                 (let ((seed (if (documentation-leaf? path)
                                  seed
                                  (filter
                                   (compose documentation-special? car?)
