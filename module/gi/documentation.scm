@@ -408,6 +408,7 @@
 
 (define ->docbook
   (letrec ((%scheme (xpath:sxpath `(scheme)))
+           (%parameters (xpath:sxpath `(parameters)))
            (%entry (xpath:sxpath `(refentry)))
            (%members
             (compose
@@ -488,6 +489,27 @@
               `(refname
                 ,@(%name (cons tag kids)))))
 
+           (parameter
+            (lambda (tag . kids)
+              (let* ((node (cons tag kids))
+                     (name (%name node))
+                     (doc (%doc node))
+                     (parent ((xpath:sxpath '(inferred @ parent *text*))
+                              node))
+                     (argument ((xpath:sxpath '(inferred @ argument *text*))
+                                node)))
+                `(tr
+                  (td (@ (class "parameter_name"))
+                      (para ,@name))
+                  (td (@ (class "parameter_description"))
+                      ,@(markdown (string-join doc " "))
+                      ,@(map (lambda (p)
+                               `(para "Inferred from " (code ,p)))
+                             parent)
+                      ,@(map (lambda (p)
+                               `(para "Passed as " (code ,p)))
+                             argument))))))
+
            (chapter
             (lambda (tag . kids)
               (let ((functions (%functions kids))
@@ -531,15 +553,20 @@
            (refsect2
             (lambda (tag . kids)
               (let ((doc (%doc (cons tag kids)))
-                    (scheme (%scheme (cons tag kids))))
+                    (scheme (%scheme (cons tag kids)))
+                    (params (let ((%params (%parameters (cons tag kids))))
+                              (if (null? %params) %params (cdar %params)))))
                 (list
                  tag
                  (cond
                   ((null? scheme) '())
                   ((null? doc)
                    `(refsect2 ,@(cadar scheme)
-                              (para "Undocumented")))
-                  (else `(refsect2 ,@(cadar scheme) ,@(markdown (string-join doc ""))))))))))
+                              (para "Undocumented")
+                              ,@params))
+                  (else `(refsect2 ,@(cadar scheme)
+                                   ,@(markdown (string-join doc ""))
+                                   ,@params))))))))
 
     (compose
      sxml->xml
@@ -560,6 +587,16 @@
         (function . ,refsect2)
         (member . ,refsect2)
         (property . ,refsect2)
+
+        (parameter . ,parameter)
+        (instance-parameter . ,parameter)
+        (parameters . ,(lambda (tag . kids)
+                         (if (null? kids)
+                             '()
+                             `(parameters
+                               (refsect3
+                                (title "Parameters")
+                                (informaltable ,@kids))))))
 
         (procedure
          .
