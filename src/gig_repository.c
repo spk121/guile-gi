@@ -76,8 +76,7 @@ typedef enum _LoadFlags
     LOAD_METHODS = 1 << 0,
     LOAD_PROPERTIES = 1 << 1,
     LOAD_SIGNALS = 1 << 2,
-    LOAD_FIELDS = 1 << 3,
-    LOAD_EVERYTHING = LOAD_METHODS | LOAD_PROPERTIES | LOAD_SIGNALS | LOAD_FIELDS
+    LOAD_EVERYTHING = LOAD_METHODS | LOAD_PROPERTIES | LOAD_SIGNALS
 } LoadFlags;
 
 void
@@ -87,34 +86,33 @@ gig_repository_nested_infos(GIBaseInfo *base,
                             gint *n_properties,
                             GigRepositoryNested *property,
                             gint *n_signals,
-                            GigRepositoryNested *signal,
-                            gint *n_fields, GigRepositoryNested *field)
+                            GigRepositoryNested *signal)
 {
     switch (g_base_info_get_type(base)) {
     case GI_INFO_TYPE_STRUCT:
         *n_methods = g_struct_info_get_n_methods(base);
         *method = (GigRepositoryNested)g_struct_info_get_method;
-        *n_properties = *n_signals = *n_fields = 0;
-        *property = *signal = *field = NULL;
+        *n_properties = *n_signals = 0;
+        *property = *signal = NULL;
         break;
     case GI_INFO_TYPE_UNION:
         *n_methods = g_union_info_get_n_methods(base);
         *method = (GigRepositoryNested)g_union_info_get_method;
-        *n_properties = *n_signals = *n_fields = 0;
-        *property = *signal = *field = NULL;
+        *n_properties = *n_signals = 0;
+        *property = *signal = NULL;
         break;
     case GI_INFO_TYPE_ENUM:
     case GI_INFO_TYPE_FLAGS:
         *n_methods = g_enum_info_get_n_methods(base);
         *method = (GigRepositoryNested)g_enum_info_get_method;
-        *n_properties = *n_signals = *n_fields = 0;
-        *property = *signal = *field = NULL;
+        *n_properties = *n_signals = 0;
+        *property = *signal = NULL;
         break;
     case GI_INFO_TYPE_INTERFACE:
         *n_methods = g_interface_info_get_n_methods(base);
         *method = (GigRepositoryNested)g_interface_info_get_method;
-        *n_properties = *n_signals = *n_fields = 0;
-        *property = *signal = *field = NULL;
+        *n_properties = *n_signals = 0;
+        *property = *signal = NULL;
         break;
     case GI_INFO_TYPE_OBJECT:
         *n_methods = g_object_info_get_n_methods(base);
@@ -123,12 +121,10 @@ gig_repository_nested_infos(GIBaseInfo *base,
         *property = (GigRepositoryNested)g_object_info_get_property;
         *n_signals = g_object_info_get_n_signals(base);
         *signal = (GigRepositoryNested)g_object_info_get_signal;
-        *n_fields = 0;
-        *field = NULL;
         break;
     default:
-        *n_methods = *n_properties = *n_signals = *n_fields = 0;
-        *method = *property = *signal = *field = NULL;
+        *n_methods = *n_properties = *n_signals = 0;
+        *method = *property = *signal = NULL;
     }
 }
 
@@ -260,16 +256,15 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
                 }                                               \
         } while (0)
 
-        gint n_methods, n_properties, n_signals, n_fields;
-        GigRepositoryNested method, property, nested_signal, field;
+        gint n_methods, n_properties, n_signals;
+        GigRepositoryNested method, property, nested_signal;
 
         gig_repository_nested_infos(info, &n_methods, &method, &n_properties, &property,
-                                    &n_signals, &nested_signal, &n_fields, &field);
+                                    &n_signals, &nested_signal);
 
         LOAD_NESTED(LOAD_METHODS, n_methods, method);
         LOAD_NESTED(LOAD_PROPERTIES, n_properties, property);
         LOAD_NESTED(LOAD_SIGNALS, n_signals, nested_signal);
-        LOAD_NESTED(LOAD_FIELDS, n_fields, field);
 #undef LOAD_NESTED
         goto end;
     }
@@ -356,6 +351,5 @@ gig_init_repository()
     D(LOAD_METHODS);
     D(LOAD_PROPERTIES);
     D(LOAD_SIGNALS);
-    D(LOAD_FIELDS);
     D(LOAD_EVERYTHING);
 }

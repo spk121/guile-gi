@@ -36,16 +36,15 @@ document_nested(GIBaseInfo *parent)
     gchar *_namespace = gig_gname_to_scm_name(g_base_info_get_name(parent));
     scm_dynwind_free(_namespace);
 
-    gint n_methods, n_properties, n_signals, n_fields;
-    GigRepositoryNested method, property, nested_signal, field;
+    gint n_methods, n_properties, n_signals;
+    GigRepositoryNested method, property, nested_signal;
 
     gig_repository_nested_infos(parent, &n_methods, &method, &n_properties, &property,
-                                &n_signals, &nested_signal, &n_fields, &field);
+                                &n_signals, &nested_signal);
 
     DOCUMENT_NESTED(n_methods, method);
     DOCUMENT_NESTED(n_properties, property);
     DOCUMENT_NESTED(n_signals, nested_signal);
-    DOCUMENT_NESTED(n_fields, field);
 
 #undef DOCUMENT_NESTED
 }
@@ -200,10 +199,6 @@ do_document(GIBaseInfo *info, const gchar *_namespace)
                    ((flags & G_PARAM_READABLE) != 0), ((flags & G_PARAM_WRITABLE) != 0));
         break;
     }
-    case GI_INFO_TYPE_FIELD:
-        scm_printf(SCM_UNDEFINED, "<field name=\"%s\" />", g_base_info_get_name(info));
-        break;
-
     case GI_INFO_TYPE_VALUE:
     {
         scheme_name = scm_dynwind_or_bust("%document",
@@ -217,6 +212,7 @@ do_document(GIBaseInfo *info, const gchar *_namespace)
         scm_printf(SCM_UNDEFINED, "/></scheme></member>", scheme_name);
     }
         break;
+    case GI_INFO_TYPE_FIELD:
     case GI_INFO_TYPE_CONSTANT:
     case GI_INFO_TYPE_CALLBACK:
     case GI_INFO_TYPE_ARG:
