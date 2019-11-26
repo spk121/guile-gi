@@ -187,7 +187,7 @@ callback_handler_proc(gpointer user_data, SCM key, SCM params)
     gchar *trace = scm_to_utf8_string(scm_get_output_string(port));
     scm_close(port);
 
-    g_info("%s", trace);
+    g_critical("%s", trace);
     g_free(trace);
     return SCM_BOOL_F;
 }
