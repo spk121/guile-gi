@@ -54,7 +54,7 @@ gig_closure_new(SCM callback)
     g_closure_add_invalidate_notifier(closure, NULL, _gig_closure_invalidate);
     g_closure_set_marshal(closure, _gig_closure_marshal);
     // FIXME: what about garbage collection?
-    gig_closure->callback = callback;
+    gig_closure->callback = scm_gc_protect_object(callback);
     return closure;
 }
 
