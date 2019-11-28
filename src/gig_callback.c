@@ -48,6 +48,7 @@ callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
     g_debug("in callback C->SCM binding");
     guint n_args = cif->nargs;
 
+    g_assert(scm_is_true(scm_procedure_p(gcb->s_func)));
     g_assert_cmpint(n_args, ==, g_callable_info_get_n_args(gcb->callback_info));
     g_assert(gcb->amap != NULL);
     GigArgMap *amap = gcb->amap;
@@ -197,6 +198,8 @@ callback_handler_proc(gpointer user_data, SCM key, SCM params)
 GigCallback *
 gig_callback_new(GICallbackInfo *callback_info, SCM s_func)
 {
+    g_assert(scm_is_true(scm_procedure_p(s_func)));
+
     GigCallback *gcb = g_new0(GigCallback, 1);
     ffi_type **ffi_args = NULL;
     ffi_type *ffi_ret_type;
@@ -322,6 +325,7 @@ gig_callback_to_c(GICallbackInfo *cb_info, SCM s_func)
     }
 
     // Create a new entry if necessary.
+    scm_gc_protect_object(s_func);
     gcb = gig_callback_new(cb_info, s_func);
     callback_list = g_slist_prepend(callback_list, gcb);
     return gcb->callback_ptr;
