@@ -18,7 +18,9 @@ static void
 _gig_closure_invalidate(gpointer data, GClosure *closure)
 {
     GigClosure *pc = (GigClosure *)closure;
+    SCM old_callback = pc->callback;
     pc->callback = SCM_BOOL_F;
+    scm_gc_unprotect_object(old_callback);
 }
 
 static void

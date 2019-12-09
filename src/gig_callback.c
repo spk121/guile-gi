@@ -129,7 +129,7 @@ c_callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user
     g_assert(user_data != NULL);
 
     guint n_args = cif->nargs;
-    g_debug("Invoking callback %s with %d args", gcb->name, n_args);
+    g_debug("Invoking C callback with %d args", n_args);
 
     // we have either 0 args or 1 args, which is the already packed list
     g_assert(n_args <= 1);
@@ -146,7 +146,7 @@ c_callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user
     if (error != NULL) {
         SCM err = scm_from_utf8_string(error->message);
         g_error_free(error);
-        scm_misc_error(gcb->name, "~A", scm_list_1(err));
+        scm_misc_error("gi:c-callback", "~A", scm_list_1(err));
     }
 
     *(ffi_arg *)ret = SCM_UNPACK(output);
@@ -281,7 +281,7 @@ gig_callback_new_for_callback(GICallbackInfo *info, gpointer c_func)
 
     GigCallback *gcb = g_new0(GigCallback, 1);
 
-    gcb->name = g_strdup("(anonymous)");
+    gcb->name = NULL;
 
     gcb->c_func = c_func;
     gcb->callback_info = g_base_info_ref(info);
@@ -492,9 +492,6 @@ gig_init_callback(void)
 static void
 callback_free(GigCallback *gcb)
 {
-    g_free(gcb->name);
-    gcb->name = NULL;
-
     ffi_closure_free(gcb->closure);
     gcb->closure = NULL;
 
@@ -502,6 +499,14 @@ callback_free(GigCallback *gcb)
     g_base_info_unref(gcb->callback_info);
     g_free(gcb->atypes);
     gcb->atypes = NULL;
+
+    if (gcb->name) {
+        g_free(gcb->name);
+        gcb->name = NULL;
+        // only Scheme callbacks have names and those callbacks need to
+        // be GC'd.
+        scm_gc_unprotect_object(gcb->s_func);
+    }
 
     g_free(gcb);
 }
