@@ -543,4 +543,12 @@
 (test-assert "utf8-dangling-out"
              (string? (utf8-dangling-out)))
 
+(test-assert "callback-return-value-only"
+  (equal? 123
+          ;; This procedure 'callback-return-value-only' returns the
+          ;; value returned by the callback.
+          (callback-return-value-only
+           (lambda ()
+             123))))
+
 (test-end "marshall.scm")
