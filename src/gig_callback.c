@@ -65,23 +65,25 @@ callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
         else if (cif->arg_types[i] == &ffi_type_void)
             giarg.v_pointer = ffi_args[i];
         else if (cif->arg_types[i] == &ffi_type_sint)
-            giarg.v_int = (int)ffi_args[i];
+            giarg.v_int = *(int *)ffi_args[i];
+        else if (cif->arg_types[i] == &ffi_type_uint)
+            giarg.v_uint = *(unsigned *)ffi_args[i];
         else if (cif->arg_types[i] == &ffi_type_sint8)
-            giarg.v_int8 = (gint8)ffi_args[i];
+            giarg.v_int8 = *(gint8 *)ffi_args[i];
         else if (cif->arg_types[i] == &ffi_type_uint8)
-            giarg.v_uint8 = (guint8)ffi_args[i];
+            giarg.v_uint8 = *(guint8 *)ffi_args[i];
         else if (cif->arg_types[i] == &ffi_type_sint16)
-            giarg.v_int16 = (gint16)ffi_args[i];
+            giarg.v_int16 = *(gint16 *)ffi_args[i];
         else if (cif->arg_types[i] == &ffi_type_uint16)
-            giarg.v_uint16 = (guint16)ffi_args[i];
+            giarg.v_uint16 = *(guint16 *)ffi_args[i];
         else if (cif->arg_types[i] == &ffi_type_sint32)
-            giarg.v_int32 = (gint32)ffi_args[i];
+            giarg.v_int32 = *(gint32 *)ffi_args[i];
         else if (cif->arg_types[i] == &ffi_type_uint32)
-            giarg.v_uint32 = (guint32)ffi_args[i];
+            giarg.v_uint32 = *(guint32 *)ffi_args[i];
         else if (cif->arg_types[i] == &ffi_type_sint64)
-            giarg.v_int64 = (gint64)ffi_args[i];
+            giarg.v_int64 = *(gint64 *)ffi_args[i];
         else if (cif->arg_types[i] == &ffi_type_uint64)
-            giarg.v_uint64 = (guint64)ffi_args[i];
+            giarg.v_uint64 = *(guint64 *)ffi_args[i];
         else if (cif->arg_types[i] == &ffi_type_float) {
             gfloat val;
             val = *(gfloat *)ffi_args[i];
