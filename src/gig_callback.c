@@ -26,7 +26,7 @@ GSList *callback_list = NULL;
 static SCM callback_call_proc(gpointer user_data);
 static SCM callback_handler_proc(gpointer user_data, SCM key, SCM params);
 static SCM callback_handler_pre_proc(gpointer user_data, SCM key, SCM params);
-static ffi_type *type_info_to_ffi_type(GITypeInfo *type_info);
+static ffi_type *amap_entry_to_ffi_type(GigArgMapEntry *entry);
 static void callback_free(GigCallback *gcb);
 static void gig_fini_callback(void);
 
@@ -238,16 +238,11 @@ gig_callback_new(GICallbackInfo *callback_info, SCM s_func)
         gcb->atypes = ffi_args;
     }
 
-    for (gint i = 0; i < n_args; i++) {
-        GIArgInfo *cb_arg_info = g_callable_info_get_arg(callback_info, i);
-        GITypeInfo *cb_type_info = g_arg_info_get_type(cb_arg_info);
-        ffi_args[i] = type_info_to_ffi_type(cb_type_info);
-        g_base_info_unref(cb_arg_info);
-        g_base_info_unref(cb_type_info);
-    }
+    for (gint i = 0; i < n_args; i++)
+        ffi_args[i] = amap_entry_to_ffi_type(&gcb->amap->pdata[i]);
 
     GITypeInfo *ret_type_info = g_callable_info_get_return_type(callback_info);
-    ffi_ret_type = type_info_to_ffi_type(ret_type_info);
+    ffi_ret_type = amap_entry_to_ffi_type(&gcb->amap->return_val);
     g_base_info_unref(ret_type_info);
 
     // Initialize the CIF Call Interface Struct.
@@ -343,101 +338,41 @@ gig_callback_to_scm(GICallbackInfo *info, gpointer callback)
 }
 
 static ffi_type *
-type_info_to_ffi_type(GITypeInfo *type_info)
+amap_entry_to_ffi_type(GigArgMapEntry *entry)
 {
-    GITypeTag type_tag = g_type_info_get_tag(type_info);
-    gboolean is_ptr = g_type_info_is_pointer(type_info);
-
-    ffi_type *rettype = NULL;
-    if (is_ptr)
+    if (entry->meta.is_ptr)
         return &ffi_type_pointer;
     else {
-        switch (type_tag) {
-        case GI_TYPE_TAG_VOID:
-            rettype = &ffi_type_void;
-            break;
-        case GI_TYPE_TAG_BOOLEAN:
-            rettype = &ffi_type_sint;
-            break;
-        case GI_TYPE_TAG_INT8:
-            rettype = &ffi_type_sint8;
-            break;
-        case GI_TYPE_TAG_UINT8:
-            rettype = &ffi_type_uint8;
-            break;
-        case GI_TYPE_TAG_INT16:
-            rettype = &ffi_type_sint16;
-            break;
-        case GI_TYPE_TAG_UINT16:
-            rettype = &ffi_type_uint16;
-            break;
-        case GI_TYPE_TAG_INT32:
-            rettype = &ffi_type_sint32;
-            break;
-        case GI_TYPE_TAG_UINT32:
-            rettype = &ffi_type_uint32;
-            break;
-        case GI_TYPE_TAG_INT64:
-            rettype = &ffi_type_sint64;
-            break;
-        case GI_TYPE_TAG_UINT64:
-            rettype = &ffi_type_uint64;
-            break;
-        case GI_TYPE_TAG_FLOAT:
-            rettype = &ffi_type_float;
-            break;
-        case GI_TYPE_TAG_DOUBLE:
-            rettype = &ffi_type_double;
-            break;
-        case GI_TYPE_TAG_GTYPE:
-            if (sizeof(GType) == sizeof(guint32))
-                rettype = &ffi_type_sint32;
-            else
-                rettype = &ffi_type_sint64;
-            break;
-        case GI_TYPE_TAG_UTF8:
-        case GI_TYPE_TAG_FILENAME:
-        case GI_TYPE_TAG_ARRAY:
-            g_critical("Unhandled FFI type in %s: %d", __FILE__, __LINE__);
-            g_abort();
-            break;
-        case GI_TYPE_TAG_INTERFACE:
-        {
-            GIBaseInfo *base_info = g_type_info_get_interface(type_info);
-            GIInfoType base_info_type = g_base_info_get_type(base_info);
-            if (base_info_type == GI_INFO_TYPE_ENUM)
-                rettype = &ffi_type_sint;
-            else if (base_info_type == GI_INFO_TYPE_FLAGS)
-                rettype = &ffi_type_uint;
-            else {
-                g_critical("Unhandled FFI type in %s: %d", __FILE__, __LINE__);
-                g_abort();
+        if (entry->meta.gtype == G_TYPE_NONE) return &ffi_type_void;
+        else if (entry->meta.gtype == G_TYPE_BOOLEAN) return &ffi_type_sint;
+        else if (entry->meta.gtype == G_TYPE_INT)
+            switch(entry->meta.item_size) {
+            case 1: return &ffi_type_sint8;
+            case 2: return &ffi_type_sint16;
+            case 4: return &ffi_type_sint32;
+            case 8: return &ffi_type_sint64;
+            default: g_assert_not_reached();
             }
-            g_base_info_unref(base_info);
-            break;
-        }
-        case GI_TYPE_TAG_GLIST:
-        case GI_TYPE_TAG_GSLIST:
-        case GI_TYPE_TAG_GHASH:
-        case GI_TYPE_TAG_ERROR:
-            g_critical("Unhandled FFI type in %s: %d", __FILE__, __LINE__);
-            g_abort();
-            break;
-        case GI_TYPE_TAG_UNICHAR:
-            if (sizeof(gunichar) == sizeof(guint32))
-                rettype = &ffi_type_uint32;
-            else {
-                g_critical("Unhandled FFI type in %s: %d", __FILE__, __LINE__);
-                g_abort();
+        else if (entry->meta.gtype == G_TYPE_UINT)
+            switch(entry->meta.item_size) {
+            case 1: return &ffi_type_uint8;
+            case 2: return &ffi_type_uint16;
+            case 4: return &ffi_type_uint32;
+            case 8: return &ffi_type_uint64;
+            default: g_assert_not_reached();
             }
-            break;
-        default:
-            g_critical("Unhandled FFI type in %s: %d", __FILE__, __LINE__);
-            g_abort();
-        }
+        else if (entry->meta.gtype == G_TYPE_INT64) return &ffi_type_sint64;
+        else if (entry->meta.gtype == G_TYPE_UINT64) return &ffi_type_uint64;
+        else if (entry->meta.gtype == G_TYPE_FLOAT) return &ffi_type_float;
+        else if (entry->meta.gtype == G_TYPE_DOUBLE) return &ffi_type_double;
+        else if (entry->meta.gtype == G_TYPE_GTYPE)
+            switch (entry->meta.item_size) {
+            case 4: return &ffi_type_sint32;
+            case 8: return &ffi_type_sint64;
+            default: g_assert_not_reached();
+            }
+        else g_assert_not_reached();
     }
-
-    return rettype;
 }
 
 static SCM
