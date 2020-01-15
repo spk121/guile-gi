@@ -551,4 +551,37 @@
            (lambda ()
              123))))
 
+(test-equal "callback-one-out-parameter"
+            1234.5
+            (callback-one-out-parameter
+             (lambda ()
+               1234.5)))
+
+(test-equal "callback-one-out-parameter"
+            1234.5
+            (callback-one-out-parameter
+             (lambda ()
+               1234.5)))
+
+(test-equal "callback-mutiple-out-parameters"
+            '(1.5 2.5)
+            ((compose
+              list
+              callback-multiple-out-parameters)
+             (lambda () (values 1.5 2.5))))
+
+(test-equal "callback-return-value-and-one-out-parameter"
+            '(1 2)
+            ((compose
+              list
+              callback-return-value-and-one-out-parameter)
+             (lambda () (values 1 2))))
+
+(test-equal "callback-return-value-and-multiple-out-parameters"
+            '(1 2 3)
+            ((compose
+              list
+              callback-return-value-and-multiple-out-parameters)
+             (lambda () (values 1 2 3))))
+
 (test-end "marshall.scm")

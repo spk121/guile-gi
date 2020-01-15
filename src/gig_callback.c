@@ -30,6 +30,63 @@ static ffi_type *amap_entry_to_ffi_type(GigArgMapEntry *entry);
 static void callback_free(GigCallback *gcb);
 static void gig_fini_callback(void);
 
+void
+store_output(GigArgMapEntry* entry, gpointer **ffi_arg, GIArgument* value)
+{
+    if (entry->meta.gtype == G_TYPE_BOOLEAN)
+        **(gint **)ffi_arg = value->v_int;
+    else if (entry->meta.gtype == G_TYPE_INT)
+        switch(entry->meta.item_size) {
+        case 1:
+            **(gint8 **)ffi_arg = value->v_int8;
+            break;
+        case 2:
+            **(gint16 **)ffi_arg = value->v_int16;
+            break;
+        case 4:
+            **(gint32 **)ffi_arg = value->v_int32;
+            break;
+        case 8:
+            **(gint64 **)ffi_arg = value->v_int64;
+            break;
+        default: g_assert_not_reached();
+        }
+    else if (entry->meta.gtype == G_TYPE_UINT)
+        switch(entry->meta.item_size) {
+        case 1:
+            **(guint8 **)ffi_arg = value->v_uint8;
+            break;
+        case 2:
+            **(guint16 **)ffi_arg = value->v_uint16;
+            break;
+        case 4:
+            **(guint32 **)ffi_arg = value->v_uint32;
+            break;
+        case 8:
+            **(guint64 **)ffi_arg = value->v_uint64;
+            break;
+        default: g_assert_not_reached();
+        }
+    else if (entry->meta.gtype == G_TYPE_INT64)
+        **(gint64 **)ffi_arg = value->v_int64;
+    else if (entry->meta.gtype == G_TYPE_UINT64)
+        **(guint64 **)ffi_arg = value->v_uint64;
+    else if (entry->meta.gtype == G_TYPE_FLOAT)
+        **(float **)ffi_arg = value->v_float;
+    else if (entry->meta.gtype == G_TYPE_DOUBLE)
+        **(float **)ffi_arg = value->v_double;
+    else if (entry->meta.gtype == G_TYPE_GTYPE)
+        switch (entry->meta.item_size) {
+        case 4:
+            **(gint32 **)ffi_arg = value->v_int32;
+            break;
+        case 8:
+            **(gint64 **)ffi_arg = value->v_int64;
+            break;
+        default: g_assert_not_reached();
+        }
+}
+
 // This is the core of a dynamically generated callback funcion.
 // It converts FFI arguments to SCM arguments, calls a SCM function
 // and then returns the result.
@@ -54,6 +111,9 @@ callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
     GigArgMap *amap = gcb->amap;
 
     for (guint i = 0; i < n_args; i++) {
+        if (!amap->pdata[i].is_s_input)
+            continue;
+
         SCM s_entry = SCM_BOOL_F;
         GIArgument giarg;
 
@@ -100,8 +160,10 @@ callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
         }
 
         gig_argument_c_to_scm("callback", i, &amap->pdata[i].meta, &giarg, &s_entry, -1);
-        s_args = scm_append(scm_list_2(s_args, scm_list_1(s_entry)));
+        s_args = scm_cons(s_entry, s_args);
     }
+
+    s_args = scm_reverse_x(s_args, SCM_EOL);
 
     SCM stack;
     s_ret = scm_c_catch(SCM_BOOL_T,
@@ -112,10 +174,47 @@ callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
     else {
         GIArgument giarg;
         gsize size;
-        gig_argument_scm_to_c("callback", 0, &amap->return_val.meta, s_ret, NULL, &giarg, &size);
-        // I'm pretty sure I don't need a big type case/switch block here.
-        // I'll try brutally coercing the data, and see what happens.
-        *(ffi_arg *)ret = giarg.v_uint64;
+        gint start = 0;
+
+        gsize n_values_ = scm_c_nvalues(s_ret);
+        g_assert_cmpint(n_values_, <, G_MAXINT32);
+        gint in, out, n_values = (gint)n_values_;
+        gig_amap_c_count(amap, &in, &out);
+
+        if (amap->return_val.meta.gtype != G_TYPE_NONE) {
+            start = 1;
+            SCM real_ret = scm_c_value_ref(s_ret, 0);
+            gig_argument_scm_to_c("callback", 0, &amap->return_val.meta, real_ret, NULL, &giarg, &size);
+            // I'm pretty sure I don't need a big type case/switch block here.
+            // I'll try brutally coercing the data, and see what happens.
+            *(ffi_arg *)ret = giarg.v_uint64;
+
+            gint return_child_i;
+            if (amap->return_val.meta.has_size) {
+                gsize c_output_pos = amap->return_val.child->c_output_pos;
+                GIArgument tmp;
+                tmp.v_int64 = size;
+                store_output(amap->return_val.child, ffi_args[c_output_pos], &tmp);
+            }
+        }
+
+        for (gint c_output_pos = 0; c_output_pos < out; c_output_pos++) {
+            GigArgMapEntry *entry = gig_amap_get_output_entry_by_c(amap, c_output_pos);
+            if (!entry->is_s_output)
+                continue;
+            gint real_cpos = entry - amap->pdata;
+            g_return_if_fail(entry->s_output_pos < n_values);
+            SCM real_value = scm_c_value_ref(s_ret, entry->s_output_pos + start);
+            gig_argument_scm_to_c("callback", real_cpos, &entry->meta, real_value, NULL, &giarg, &size);
+            store_output(entry, ffi_args[c_output_pos], &giarg);
+
+            if (amap->return_val.meta.has_size) {
+                gsize size_pos = entry->child->c_output_pos;
+                GIArgument tmp;
+                tmp.v_int64 = size;
+                store_output(entry->child, ffi_args[size_pos], &tmp);
+            }
+        }
     }
 }
 
@@ -340,6 +439,14 @@ gig_callback_to_scm(GICallbackInfo *info, gpointer callback)
 static ffi_type *
 amap_entry_to_ffi_type(GigArgMapEntry *entry)
 {
+    switch (entry->s_direction) {
+    case GIG_ARG_DIRECTION_INOUT:
+    case GIG_ARG_DIRECTION_OUTPUT:
+    case GIG_ARG_DIRECTION_PREALLOCATED_OUTPUT:
+        return &ffi_type_pointer;
+    default: break;
+    }
+
     if (entry->meta.is_ptr)
         return &ffi_type_pointer;
     else {
