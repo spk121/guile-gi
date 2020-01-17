@@ -1,13 +1,16 @@
-(use-modules (gi) (gi repository)
+(use-modules (gi) (gi types) (gi repository)
+             (ice-9 textual-ports)
              (srfi srfi-1)
              (srfi srfi-64))
 
 (require "GLib" "2.0")
+(load-by-name "GLib" "IOCondition")
 (load-by-name "GLib" "MainLoop")
 (load-by-name "GLib" "MainContext")
 (load-by-name "GLib" "PRIORITY_DEFAULT")
 (load-by-name "GLib" "idle_add")
 (load-by-name "GLib" "timeout_add")
+(load-by-name "GLib" "unix_fd_add_full")
 
 (define loop #f)
 
@@ -61,6 +64,34 @@
     (set! %idle-counter (1+ %idle-counter))
     (test-expect-fail "timeout ran 5 times"))
 
+(define unix-fd-sample-text "Lorem ipsum dolor sit amet")
+(define unix-fd-result #f)
+
+(test-assert "add unix-fd callback"
+             (< 0
+                (let* ((ports (pipe))
+                       (in-port (car ports))
+                       (out-port (cdr ports)))
+                  (display unix-fd-sample-text out-port)
+                  (newline out-port)
+                  (close out-port)
+                  (unix-fd-add-full PRIORITY_DEFAULT
+                                    (port->fdes in-port)
+                                    (list->iocondition '(hup in))
+                                    (lambda (fd condition dummy)
+                                      (cond
+                                       ((flags-set? condition 'in)
+                                        (let* ((port (dup->inport fd))
+                                               (line (get-line port)))
+                                          (set! unix-fd-result line)
+                                          #t))
+                                       ((flags-set? condition 'hup)
+                                        ;; close in-port on SIGHUP
+                                        (close in-port)
+                                        #f)))
+                                    #f
+                                    (const #f)))))
+
 (test-assert "run mainloop"
   (begin
     (run loop)
@@ -68,5 +99,9 @@
 
 (test-equal "idle ran 5 times" 5 n-idle)
 (test-equal "timeout ran 5 times" 5 n-timeout)
+
+(test-equal "unix-fd callback ran"
+            unix-fd-sample-text
+            unix-fd-result)
 
 (test-end "main-loop")
