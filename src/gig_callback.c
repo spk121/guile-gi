@@ -455,11 +455,12 @@ amap_entry_to_ffi_type(GigArgMapEntry *entry)
     if (entry->meta.is_ptr)
         return &ffi_type_pointer;
     else {
-        if (entry->meta.gtype == G_TYPE_NONE)
+        GType fundamental_type = G_TYPE_FUNDAMENTAL(entry->meta.gtype);
+        if (fundamental_type == G_TYPE_NONE)
             return &ffi_type_void;
-        else if (entry->meta.gtype == G_TYPE_BOOLEAN)
+        else if (fundamental_type == G_TYPE_BOOLEAN)
             return &ffi_type_sint;
-        else if (entry->meta.gtype == G_TYPE_INT)
+        else if (fundamental_type == G_TYPE_INT)
             switch (entry->meta.item_size) {
             case 1:
                 return &ffi_type_sint8;
@@ -472,7 +473,7 @@ amap_entry_to_ffi_type(GigArgMapEntry *entry)
             default:
                 g_assert_not_reached();
             }
-        else if (entry->meta.gtype == G_TYPE_UINT)
+        else if (fundamental_type == G_TYPE_UINT)
             switch (entry->meta.item_size) {
             case 1:
                 return &ffi_type_uint8;
@@ -485,15 +486,15 @@ amap_entry_to_ffi_type(GigArgMapEntry *entry)
             default:
                 g_assert_not_reached();
             }
-        else if (entry->meta.gtype == G_TYPE_INT64)
+        else if (fundamental_type == G_TYPE_INT64)
             return &ffi_type_sint64;
-        else if (entry->meta.gtype == G_TYPE_UINT64)
+        else if (fundamental_type == G_TYPE_UINT64)
             return &ffi_type_uint64;
-        else if (entry->meta.gtype == G_TYPE_FLOAT)
+        else if (fundamental_type == G_TYPE_FLOAT)
             return &ffi_type_float;
-        else if (entry->meta.gtype == G_TYPE_DOUBLE)
+        else if (fundamental_type == G_TYPE_DOUBLE)
             return &ffi_type_double;
-        else if (entry->meta.gtype == G_TYPE_GTYPE)
+        else if (fundamental_type == G_TYPE_GTYPE)
             switch (entry->meta.item_size) {
             case 4:
                 return &ffi_type_sint32;
@@ -502,6 +503,10 @@ amap_entry_to_ffi_type(GigArgMapEntry *entry)
             default:
                 g_assert_not_reached();
             }
+        else if (fundamental_type == G_TYPE_FLAGS)
+            return &ffi_type_uint32;
+        else if (fundamental_type == G_TYPE_ENUM)
+            return &ffi_type_sint32;
         else
             g_assert_not_reached();
     }
