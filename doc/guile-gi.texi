@@ -7,7 +7,7 @@
 @include version.texi
 
 @copying
-Copyright @copyright{} 2018, 2019 Michael L. Gran
+Copyright @copyright{} 2018, 2019, 2020 Michael L. Gran
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3
@@ -42,43 +42,6 @@ This manual is for Guile GI @value{VERSION}.
 * Further Resources and Contact Info::
 * GNU Free Documentation License::
 * The Index::
-
-@detailmenu
---- The Detailed Node Listing ---
-
-Getting Started
-
-* Installation::
-* Guile-GI and Typelibs::
-* Sample Applications::
-
-Sample Applications
-
-* Empty Window::
-
-Tutorials
-
-* GObject Types and Guile Types::
-* Threads and Concurrency::
-* Debugging and Profiling::
-* Application Deployment::
-* Testing and Continuous Integration::
-
-Reference Guide
-
-* Typelib Introspection::
-* Typelib Documentation::
-* GObject Types::
-* GType::
-* GObject Methods::
-* GObject Signals::
-* GObject Properties::
-* Custom GObjects::              Defining new GObject classes
-* Enums and Flags::
-* Utilities::
-* More Stuff::
-
-@end detailmenu
 @end menu
 
 @node Preface
@@ -108,7 +71,7 @@ to writing applications.
 
 @menu
 * Installation::
-* Guile-GI and Typelibs:: How to load libraries through GI
+* Guile-GI and Typelibs::       How to load libraries through GI
 * Sample Applications::
 @end menu
 
@@ -285,6 +248,7 @@ Finally, we have the bindings themselves, as mentioned before.
 
 @menu
 * GObject Types and Guile Types::
+* Function Parameters Arity and Return Values::
 * Threads and Concurrency::
 * Debugging and Profiling::
 * Application Deployment::
@@ -337,6 +301,52 @@ Internally to Guile-GI, all of the Guile classes for GObject structs,
 objects and unions are GOOPS types that handle managing the C pointer.
 The C pointer is ``hidden'' in the @code{ptr} slot of an object.
 
+@node Function Parameters Arity and Return Values
+@section Function Parameters, Arity, and Return Values
+@cindex arity
+@cindex return values
+@cindex function parameters
+
+When using Guile-GI, the Scheme versions of introspected C functions and
+callbacks will not always have the same number of input, output, and
+return parameters as the C functions do.  The GObject Introspection
+information designates the parameters to C functions as either
+@emph{in}, @emph{in/out} or @emph{out} parameters. The @emph{in/out} and
+@emph{out} parameters are C pointers, so that the C function may return
+data by reference.  To understand how they will appear in the Scheme
+mapping, a few rules must be understood.
+
+The basic rules as follows:
+@itemize @bullet
+@item
+If the C function has an input parameter, the Scheme binding will have
+an input parameter.
+@item
+If the C function has a return value that is not @code{void}, the Scheme
+binding will return a value.
+@item
+If the C function has an in/out parameter, the Scheme binding will take
+an input parameter and return the output value.
+@item
+If the C function has an out parameter, the Scheme binding will not have
+it as an input parameter but will return it as an output value.
+@end itemize
+
+By these rules, if the C function returns @code{void} and has no
+@emph{out} or @emph{in/out} parameters, the return value of the Scheme
+procedure is @code{*unspecified*}.
+
+If a C function returns a non-void value and has zero @emph{out} or
+@emph{in/out} parameters, or if a C function returns @code{void} and has
+a single @emph{out} or @emph{in/out} parameter, the Scheme binding will
+return a value.
+
+Otherwise, the Scheme binding will return multiple values, as with the
+Guile procedures @code{values} and @code{receive}.
+
+@findex values
+@findex receive
+
 @node Threads and Concurrency
 @section Threads and Concurrency
 @cindex threads
@@ -372,7 +382,7 @@ application's C stack.
 To add some insight about what is happening in the introspection
 layer, Guile-GI makes use of GLib's debug logging functionality.  GLib
 provides a logging library whose behavior can be tailored using
-envirnoment variables.  GLib's logging library has a concept of
+environment variables.  GLib's logging library has a concept of
 @emph{log levels}: critical, error, warning, message, info, and debug.
 
 The @env{G_MESSAGES_DEBUG} environment variable may be set to a
@@ -520,7 +530,7 @@ their @file{.typelib} files.
 * GObject Methods::
 * GObject Signals::
 * GObject Properties::
-* Custom GObjects::              Defining new GObject classes
+* Custom GObjects::             Defining new GObject classes
 * Enums and Flags::
 * Utilities::
 * More Stuff::
