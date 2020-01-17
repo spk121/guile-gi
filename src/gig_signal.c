@@ -68,8 +68,7 @@ gig_signalspec_from_obj(SCM obj)
     for (guint i = 0; i < n_params; i++, sparams = scm_cdr(sparams))
         params[i] = scm_to_gtype(scm_car(sparams));
 
-    do
-    {
+    do {
         SCM _flags = gig_signal_ref(obj, GIG_SIGNAL_SLOT_FLAGS);
         // accept #f as 0, otherwise use flags->number
         if (scm_is_true(_flags))

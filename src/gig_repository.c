@@ -85,8 +85,7 @@ gig_repository_nested_infos(GIBaseInfo *base,
                             GigRepositoryNested *method,
                             gint *n_properties,
                             GigRepositoryNested *property,
-                            gint *n_signals,
-                            GigRepositoryNested *signal)
+                            gint *n_signals, GigRepositoryNested *signal)
 {
     switch (g_base_info_get_type(base)) {
     case GI_INFO_TYPE_STRUCT:

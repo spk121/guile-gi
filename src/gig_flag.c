@@ -177,7 +177,7 @@ gig_define_enum(GIEnumInfo *info, SCM defs)
 
     SCM obarray = scm_make_hash_table(scm_from_int(n_values));
 
-    gchar* _class_name = scm_to_utf8_string(scm_symbol_to_string(scm_class_name(_class)));
+    gchar *_class_name = scm_to_utf8_string(scm_symbol_to_string(scm_class_name(_class)));
     gig_debug_load("filling obarray of %s", _class_name);
     g_free(_class_name);
 

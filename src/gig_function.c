@@ -129,7 +129,8 @@ gig_function_define(GType type, GICallableInfo *info, const gchar *_namespace, S
     if (!SCM_UNBNDP(def))
         defs = scm_cons(def, defs);
     gig_debug_load("dynamically bound %s to %s with %d required and %d optional arguments",
-                   function_name, g_base_info_get_name(info), required_input_count, optional_input_count);
+                   function_name, g_base_info_get_name(info), required_input_count,
+                   optional_input_count);
 
     if (is_method) {
         def = gig_function_define1(method_name, proc, optional_input_count, formals, specializers);

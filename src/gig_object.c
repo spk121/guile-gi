@@ -531,7 +531,8 @@ gig_property_define(GType type, GIPropertyInfo *info, const gchar *_namespace, S
         def = do_define_property(long_name, s_prop, self_type, top_type);
         if (!SCM_UNBNDP(def))
             defs = scm_cons(def, defs);
-        gig_debug_load("dynamically bound %s to property %s of %s", long_name, name, g_type_name(type));
+        gig_debug_load("dynamically bound %s to property %s of %s", long_name, name,
+                       g_type_name(type));
         def = do_define_property(name, s_prop, self_type, top_type);
         if (!SCM_UNBNDP(def))
             defs = scm_cons(def, defs);

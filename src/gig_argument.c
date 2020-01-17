@@ -105,14 +105,14 @@ zero_terminated_array_length(GigTypeMeta *meta, GIArgument *arg)
     if (arg->v_pointer == NULL)
         return 0;
     else if (G_TYPE_FUNDAMENTAL(meta->params[0].gtype) == G_TYPE_STRING)
-        return g_strv_length(arg->v_pointer);
+        return g_strv_length((gchar **)arg->v_pointer);
     else {
         gsize item_size = gig_meta_real_item_size(&meta->params[0]);
         switch (item_size) {
         case 0:
             g_assert_not_reached();
         case 1:
-            return strlen(arg->v_pointer);
+            return strlen(arg->v_string);
         case 2:
         {
             gint16 *ptr = arg->v_pointer;
@@ -286,7 +286,7 @@ scm_to_c_boolean(S2C_ARG_DECL)
     TRACE_S2C();
 
     if (!scm_is_eq(object, SCM_BOOL_T) && !scm_is_eq(object, SCM_BOOL_F))
-        return scm_wrong_type_arg_msg(subr, argpos, object, "boolean");
+        scm_wrong_type_arg_msg(subr, argpos, object, "boolean");
     arg->v_boolean = scm_is_true(object);
 }
 
@@ -663,7 +663,7 @@ scm_to_c_ptr_array(S2C_ARG_DECL)
 
     // Move the pointers inside of the C array into a GPtrArray.
     GPtrArray *ptrarray = g_ptr_array_new();
-    for (int i = 0; i < *size; i++)
+    for (gsize i = 0; i < *size; i++)
         g_ptr_array_add(ptrarray, ((gpointer *)(_arg.v_pointer))[i]);
     arg->v_pointer = ptrarray;
     g_assert_nonnull(arg->v_pointer);

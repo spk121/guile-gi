@@ -237,6 +237,7 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
                 meta->is_invalid = TRUE;
             break;
         case GI_INFO_TYPE_CALLBACK:
+        {
             meta->gtype = G_TYPE_POINTER;
             meta->pointer_type = GIG_DATA_CALLBACK;
             meta->callable_info = g_base_info_ref(referenced_base_info);
@@ -246,6 +247,7 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
                 meta->is_invalid = TRUE;
             else
                 gig_amap_free(_amap);
+        }
             break;
         default:
             if (GI_IS_REGISTERED_TYPE_INFO(referenced_base_info)) {

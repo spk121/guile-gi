@@ -31,12 +31,12 @@ static void callback_free(GigCallback *gcb);
 static void gig_fini_callback(void);
 
 void
-store_output(GigArgMapEntry* entry, gpointer **ffi_arg, GIArgument* value)
+store_output(GigArgMapEntry *entry, gpointer **ffi_arg, GIArgument *value)
 {
     if (entry->meta.gtype == G_TYPE_BOOLEAN)
         **(gint **)ffi_arg = value->v_int;
     else if (entry->meta.gtype == G_TYPE_INT)
-        switch(entry->meta.item_size) {
+        switch (entry->meta.item_size) {
         case 1:
             **(gint8 **)ffi_arg = value->v_int8;
             break;
@@ -49,10 +49,11 @@ store_output(GigArgMapEntry* entry, gpointer **ffi_arg, GIArgument* value)
         case 8:
             **(gint64 **)ffi_arg = value->v_int64;
             break;
-        default: g_assert_not_reached();
+        default:
+            g_assert_not_reached();
         }
     else if (entry->meta.gtype == G_TYPE_UINT)
-        switch(entry->meta.item_size) {
+        switch (entry->meta.item_size) {
         case 1:
             **(guint8 **)ffi_arg = value->v_uint8;
             break;
@@ -65,7 +66,8 @@ store_output(GigArgMapEntry* entry, gpointer **ffi_arg, GIArgument* value)
         case 8:
             **(guint64 **)ffi_arg = value->v_uint64;
             break;
-        default: g_assert_not_reached();
+        default:
+            g_assert_not_reached();
         }
     else if (entry->meta.gtype == G_TYPE_INT64)
         **(gint64 **)ffi_arg = value->v_int64;
@@ -83,7 +85,8 @@ store_output(GigArgMapEntry* entry, gpointer **ffi_arg, GIArgument* value)
         case 8:
             **(gint64 **)ffi_arg = value->v_int64;
             break;
-        default: g_assert_not_reached();
+        default:
+            g_assert_not_reached();
         }
 }
 
@@ -184,12 +187,12 @@ callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
         if (amap->return_val.meta.gtype != G_TYPE_NONE) {
             start = 1;
             SCM real_ret = scm_c_value_ref(s_ret, 0);
-            gig_argument_scm_to_c("callback", 0, &amap->return_val.meta, real_ret, NULL, &giarg, &size);
+            gig_argument_scm_to_c("callback", 0, &amap->return_val.meta, real_ret, NULL, &giarg,
+                                  &size);
             // I'm pretty sure I don't need a big type case/switch block here.
             // I'll try brutally coercing the data, and see what happens.
             *(ffi_arg *)ret = giarg.v_uint64;
 
-            gint return_child_i;
             if (amap->return_val.meta.has_size) {
                 gsize c_output_pos = amap->return_val.child->c_output_pos;
                 GIArgument tmp;
@@ -205,7 +208,8 @@ callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
             gint real_cpos = entry - amap->pdata;
             g_return_if_fail(entry->s_output_pos < n_values);
             SCM real_value = scm_c_value_ref(s_ret, entry->s_output_pos + start);
-            gig_argument_scm_to_c("callback", real_cpos, &entry->meta, real_value, NULL, &giarg, &size);
+            gig_argument_scm_to_c("callback", real_cpos, &entry->meta, real_value, NULL, &giarg,
+                                  &size);
             store_output(entry, ffi_args[c_output_pos], &giarg);
 
             if (amap->return_val.meta.has_size) {
@@ -444,41 +448,62 @@ amap_entry_to_ffi_type(GigArgMapEntry *entry)
     case GIG_ARG_DIRECTION_OUTPUT:
     case GIG_ARG_DIRECTION_PREALLOCATED_OUTPUT:
         return &ffi_type_pointer;
-    default: break;
+    default:
+        break;
     }
 
     if (entry->meta.is_ptr)
         return &ffi_type_pointer;
     else {
-        if (entry->meta.gtype == G_TYPE_NONE) return &ffi_type_void;
-        else if (entry->meta.gtype == G_TYPE_BOOLEAN) return &ffi_type_sint;
+        if (entry->meta.gtype == G_TYPE_NONE)
+            return &ffi_type_void;
+        else if (entry->meta.gtype == G_TYPE_BOOLEAN)
+            return &ffi_type_sint;
         else if (entry->meta.gtype == G_TYPE_INT)
-            switch(entry->meta.item_size) {
-            case 1: return &ffi_type_sint8;
-            case 2: return &ffi_type_sint16;
-            case 4: return &ffi_type_sint32;
-            case 8: return &ffi_type_sint64;
-            default: g_assert_not_reached();
+            switch (entry->meta.item_size) {
+            case 1:
+                return &ffi_type_sint8;
+            case 2:
+                return &ffi_type_sint16;
+            case 4:
+                return &ffi_type_sint32;
+            case 8:
+                return &ffi_type_sint64;
+            default:
+                g_assert_not_reached();
             }
         else if (entry->meta.gtype == G_TYPE_UINT)
-            switch(entry->meta.item_size) {
-            case 1: return &ffi_type_uint8;
-            case 2: return &ffi_type_uint16;
-            case 4: return &ffi_type_uint32;
-            case 8: return &ffi_type_uint64;
-            default: g_assert_not_reached();
+            switch (entry->meta.item_size) {
+            case 1:
+                return &ffi_type_uint8;
+            case 2:
+                return &ffi_type_uint16;
+            case 4:
+                return &ffi_type_uint32;
+            case 8:
+                return &ffi_type_uint64;
+            default:
+                g_assert_not_reached();
             }
-        else if (entry->meta.gtype == G_TYPE_INT64) return &ffi_type_sint64;
-        else if (entry->meta.gtype == G_TYPE_UINT64) return &ffi_type_uint64;
-        else if (entry->meta.gtype == G_TYPE_FLOAT) return &ffi_type_float;
-        else if (entry->meta.gtype == G_TYPE_DOUBLE) return &ffi_type_double;
+        else if (entry->meta.gtype == G_TYPE_INT64)
+            return &ffi_type_sint64;
+        else if (entry->meta.gtype == G_TYPE_UINT64)
+            return &ffi_type_uint64;
+        else if (entry->meta.gtype == G_TYPE_FLOAT)
+            return &ffi_type_float;
+        else if (entry->meta.gtype == G_TYPE_DOUBLE)
+            return &ffi_type_double;
         else if (entry->meta.gtype == G_TYPE_GTYPE)
             switch (entry->meta.item_size) {
-            case 4: return &ffi_type_sint32;
-            case 8: return &ffi_type_sint64;
-            default: g_assert_not_reached();
+            case 4:
+                return &ffi_type_sint32;
+            case 8:
+                return &ffi_type_sint64;
+            default:
+                g_assert_not_reached();
             }
-        else g_assert_not_reached();
+        else
+            g_assert_not_reached();
     }
 }
 
