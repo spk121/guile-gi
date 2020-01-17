@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2019 Michael L. Gran
+// Copyright (C) 2018, 2019, 2020 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -72,6 +72,18 @@ GHashTable *gig_type_gtype_hash = NULL;
 GHashTable *gig_type_name_hash = NULL;
 // Maps SCM to GType
 GHashTable *gig_type_scm_hash = NULL;
+
+SCM gig_enum_type;
+SCM gig_flags_type;
+SCM gig_object_type;
+SCM gig_interface_type;
+SCM gig_paramspec_type;
+SCM gig_value_type;
+SCM gig_closure_type;
+
+static SCM make_class_proc;
+static SCM kwd_name;
+SCM sym_obarray;
 
 gchar *
 gig_type_class_name_from_gtype(GType gtype)

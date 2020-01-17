@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2019 Michael L. Gran
+// Copyright (C) 2018, 2019, 2020 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -34,6 +34,19 @@ typedef struct _GigFunction
 } GigFunction;
 
 GHashTable *function_cache;
+SCM ensure_generic_proc;
+SCM make_proc;
+SCM add_method_proc;
+
+SCM top_type;
+SCM method_type;
+
+SCM kwd_specializers;
+SCM kwd_formals;
+SCM kwd_procedure;
+
+SCM sym_self;
+
 
 static GigGsubr *check_gsubr_cache(GICallableInfo *function_info, SCM self_type,
                                    gint *required_input_count, gint *optional_input_count,

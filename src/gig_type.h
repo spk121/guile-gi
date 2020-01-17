@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2019 Michael L. Gran
+// Copyright (C) 2018, 2019, 2020 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,13 +22,13 @@
 G_BEGIN_DECLS
 // *INDENT-ON*
 
-SCM gig_enum_type;
-SCM gig_flags_type;
-SCM gig_object_type;
-SCM gig_interface_type;
-SCM gig_paramspec_type;
-SCM gig_value_type;
-SCM gig_closure_type;
+extern SCM gig_enum_type;
+extern SCM gig_flags_type;
+extern SCM gig_object_type;
+extern SCM gig_interface_type;
+extern SCM gig_paramspec_type;
+extern SCM gig_value_type;
+extern SCM gig_closure_type;
 
 G_GNUC_MALLOC gchar *gig_type_class_name_from_gtype(GType gtype);
 
