@@ -81,7 +81,7 @@ add_child_params(GigTypeMeta *meta, GITypeInfo *type_info, gint n)
 
     for (int i = 0; i < n; i++) {
         param_type = g_type_info_get_param_type((GITypeInfo *)type_info, i);
-        gig_type_meta_init_from_type_info(meta->params, param_type);
+        gig_type_meta_init_from_type_info(&meta->params[i], param_type);
         g_base_info_unref(param_type);
 
         if (meta->transfer == GI_TRANSFER_EVERYTHING)
