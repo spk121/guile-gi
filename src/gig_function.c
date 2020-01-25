@@ -276,12 +276,15 @@ SCM char_type;
 SCM list_type;
 SCM string_type;
 SCM applicable_type;
+SCM hashtable_type;
 
+// These type specializers are used in a method definition to specify
+// the types of argument to which a procedure is applicable.
 static SCM
 type_specializer(GigTypeMeta *meta)
 {
-    switch (meta->gtype) {
-    case G_TYPE_POINTER:
+    // For some gtypes, we're converting from native Guile types.
+    if (meta->gtype == G_TYPE_POINTER) {
         switch (meta->pointer_type) {
         case GIG_DATA_UTF8_STRING:
         case GIG_DATA_LOCALE_STRING:
@@ -294,13 +297,15 @@ type_specializer(GigTypeMeta *meta)
         default:
             return SCM_UNDEFINED;
         }
-    case G_TYPE_UINT:
-        if (meta->is_unichar)
-            return char_type;
-        /* fall through */
-    default:
-        return gig_type_get_scheme_type(meta->gtype);
     }
+    else if (meta->gtype == G_TYPE_HASH_TABLE)
+        return hashtable_type;
+    else if (meta->gtype == G_TYPE_UINT && meta->is_unichar)
+        return char_type;
+    else
+        // If no applicable Guile native types are found, we use a
+        // type created by introspection.
+        return gig_type_get_scheme_type(meta->gtype);
 }
 
 static void
@@ -327,7 +332,7 @@ make_formals(GICallableInfo *callable,
         gchar *formal = scm_dynwind_or_bust("%make-formals",
                                             gig_gname_to_scm_name(entry->name));
         scm_set_car_x(i_formal, scm_from_utf8_symbol(formal));
-        // don't force types on nullable input, as #f can also be used to represent
+        // Don't force types on nullable input, as #f can also be used to represent
         // NULL.
         if (entry->meta.is_nullable)
             continue;
@@ -853,6 +858,7 @@ gig_init_function(void)
     char_type = scm_c_public_ref("oop goops", "<char>");
     list_type = scm_c_public_ref("oop goops", "<list>");
     string_type = scm_c_public_ref("oop goops", "<string>");
+    hashtable_type = scm_c_public_ref("oop goops", "<hashtable>");
     applicable_type = scm_c_public_ref("oop goops", "<applicable>");
 
     ensure_generic_proc = scm_c_public_ref("oop goops", "ensure-generic");
