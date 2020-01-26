@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script
 
-#    Copyright (C) 2018, 2019 Michael L. Gran
+#    Copyright (C) 2018, 2019, 2020 Michael L. Gran
 
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@ dnl Process this file with autoconf to produce a configure script
 ################
 # Package Info
 
-AC_INIT([Guile GI], [0.2.1], [spk121@yahoo.com], [guile_gi])
+AC_INIT([Guile GI], [0.2.2], [spk121@yahoo.com], [guile_gi])
 
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_SRCDIR([src/gig.c])
