@@ -1,4 +1,5 @@
 (use-modules (ice-9 receive)
+             (ice-9 hash-table)
 
              (rnrs bytevectors)
              (srfi srfi-1)
@@ -583,5 +584,110 @@
               list
               callback-return-value-and-multiple-out-parameters)
              (lambda () (values 1 2 3))))
+
+(define (hash-contains? hash key-list val-list)
+  (and (= (length key-list) (hash-count (const #t) hash))
+       (every
+        (lambda (key val)
+          (equal? (hash-ref hash key) val))
+        key-list
+        val-list)))
+
+(define (hash-contains-strings? hash)
+  (hash-contains? hash '("-1" "0" "1" "2") '("1" "0" "-1" "-2")))
+
+(test-assert "ghashtable-int-none-return"
+  (hash-contains? (ghashtable-int-none-return) '(-1 0 1 2) '(1 0 -1 -2)))
+
+(test-assert "ghashtable-utf8-none-return"
+  (hash-contains-strings? (ghashtable-utf8-none-return)))
+
+(test-assert "ghashtable-utf8-container-return"
+  (hash-contains-strings? (ghashtable-utf8-container-return)))
+
+(test-assert "ghashtable-utf8-full-return-return"
+  (hash-contains-strings? (ghashtable-utf8-container-return)))
+
+(test-assert "ghashtable-int-none-in"
+  (let ((H (alist->hash-table
+            '((-1 . 1)
+              (0 . 0)
+              (1 . -1)
+              (2 . -2)))))
+    (ghashtable-int-none-in H)
+    #t))
+
+(test-assert "ghashtable-utf8-none-in"
+  (let ((H (alist->hash-table
+            '(("-1" . "1")
+              ("0" . "0")
+              ("1" . "-1")
+              ("2" . "-2")))))
+    (ghashtable-utf8-none-in H)
+    #t))
+
+(test-assert "ghashtable-double-in"
+  (let ((H (alist->hash-table
+            '(("-1" . -0.1)
+              ("0" . 0.0)
+              ("1" . 0.1)
+              ("2" . 0.2)))))
+    (ghashtable-double-in H)
+    #t))
+
+(test-assert "ghashtable-float-in"
+  (let ((H (alist->hash-table
+            '(("-1" . -0.1)
+              ("0" . 0.0)
+              ("1" . 0.1)
+              ("2" . 0.2)))))
+    (ghashtable-float-in H)
+    #t))
+
+(test-assert "ghashtable-int64-in"
+  (let ((H (alist->hash-table
+            '(("-1" . -1)
+              ("0" . 0)
+              ("1" . 1)
+              ("2" . #x100000000)))))
+    (ghashtable-int64-in H)
+    #t))
+
+(test-assert "ghashtable-uint64-in"
+  (let ((H (alist->hash-table
+            '(("-1" . #x100000000)
+              ("0" . 0)
+              ("1" . 1)
+              ("2" . 2)))))
+    (ghashtable-uint64-in H)
+    #t))
+
+(test-assert "ghashtable-utf8-none-out"
+  (hash-contains-strings? (ghashtable-utf8-none-out)))
+
+(test-assert "ghashtable-utf8-container-out"
+  (hash-contains-strings? (ghashtable-utf8-container-out)))
+
+(test-assert "ghashtable-utf8-full-out"
+  (hash-contains-strings? (ghashtable-utf8-full-out)))
+
+(define (hash-utf8-inout? proc)
+  (let* ((H-in (alist->hash-table
+                '(("-1" . "1")
+                  ("0" . "0")
+                  ("1" . "-1")
+                  ("2" . "-2"))))
+         (H-out (proc H-in)))
+    (hash-contains? H-out
+                    '("-1" "0" "1") '("1" "0" "1"))))
+
+(test-assert "ghashtable-utf8-full-inout"
+  (hash-utf8-inout? ghashtable-utf8-full-inout))
+
+(test-assert "ghashtable-utf8-container-inout"
+  (hash-utf8-inout? ghashtable-utf8-container-inout))
+
+(test-assert "ghashtable-utf8-none-inout"
+  (hash-utf8-inout? ghashtable-utf8-none-inout))
 
 (test-end "marshall.scm")

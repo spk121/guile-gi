@@ -62,6 +62,7 @@ static void scm_to_c_native_interface_array(S2C_ARG_DECL);
 static void scm_to_c_garray(S2C_ARG_DECL);
 static void scm_to_c_byte_array(S2C_ARG_DECL);
 static void scm_to_c_ptr_array(S2C_ARG_DECL);
+static void scm_to_c_ghashtable(S2C_ARG_DECL);
 
 // Fundamental types
 static void c_interface_to_scm(C2S_ARG_DECL);
@@ -82,6 +83,7 @@ static void c_byte_array_to_scm(C2S_ARG_DECL);
 static void c_native_array_to_scm(C2S_ARG_DECL);
 static void c_garray_to_scm(C2S_ARG_DECL);
 static void c_gptrarray_to_scm(C2S_ARG_DECL);
+static void c_ghashtable_to_scm(C2S_ARG_DECL);
 static void c_list_to_scm(C2S_ARG_DECL);
 
 // Use this to register allocated data to be freed after use.
@@ -170,6 +172,7 @@ void
 gig_argument_scm_to_c(S2C_ARG_DECL)
 {
     TRACE_S2C();
+    arg->v_pointer = NULL;
     if (size)
         *size = 0;
 
@@ -494,6 +497,8 @@ scm_to_c_boxed(S2C_ARG_DECL)
         scm_to_c_byte_array(S2C_ARGS);
     else if (t == G_TYPE_PTR_ARRAY)
         scm_to_c_ptr_array(S2C_ARGS);
+    else if (t == G_TYPE_HASH_TABLE)
+        scm_to_c_ghashtable(S2C_ARGS);
     else
         arg->v_pointer = gig_type_peek_object(object);
 }
@@ -673,6 +678,227 @@ scm_to_c_ptr_array(S2C_ARG_DECL)
     free(_arg.v_pointer);
 }
 
+typedef enum _gig_hash_key_type
+{
+    GIG_HASH_INVALID,
+    GIG_HASH_INT,
+    GIG_HASH_INT64,
+    GIG_HASH_REAL,
+    GIG_HASH_STRING,
+    GIG_HASH_POINTER
+} GigHashKeyType;
+
+// This procedure converts a GHashTable's key or value to a
+// GIArgument.
+static void
+c_hash_pointer_to_arg(GigTypeMeta *meta, gpointer *p, GIArgument *arg)
+{
+    if (!meta->is_ptr) {
+        if (meta->gtype == G_TYPE_INT && meta->item_size <= 4) {
+            // 4-byte INT types are packed into the pointer storage,
+            // but with intptr_t sign extension.
+            gint x = GPOINTER_TO_INT(p);
+            if (meta->item_size == 1)
+                arg->v_int8 = x;
+            else if (meta->item_size == 2)
+                arg->v_int16 = x;
+            else if (meta->item_size == 4)
+                arg->v_int32 = x;
+            else
+                g_assert_not_reached();
+        }
+        // 8-byte INT, INT64, DOUBLE and FLOAT are stored by
+        // reference, even if they would fit in a pointer.
+        else if (meta->gtype == G_TYPE_INT || meta->gtype == G_TYPE_INT64)
+            arg->v_int64 = *(gint64 *)p;
+        else if (meta->gtype == G_TYPE_UINT || meta->gtype == G_TYPE_UINT64)
+            arg->v_uint64 = *(guint64 *)p;
+        else if (meta->gtype == G_TYPE_FLOAT)
+            arg->v_float = *(gfloat *)p;
+        else if (meta->gtype == G_TYPE_DOUBLE)
+            arg->v_double = *(gdouble *)p;
+    }
+    else {
+        if (meta->gtype == G_TYPE_STRING)
+            arg->v_string = (gchar *)p;
+        else
+            arg->v_pointer = p;
+    }
+}
+
+// This procedure converts a GIArgument to a gpointer to be used as a
+// GHashTable's key or value.
+static gpointer
+arg_to_c_hash_pointer(GigTypeMeta *meta, GigHashKeyType key_type, GIArgument *arg)
+{
+    if (key_type == GIG_HASH_INT) {
+        // GHashTables apparently expect that negative integers have
+        // intptr_t sign extension.
+        if (meta->item_size == 1)
+            return GINT_TO_POINTER(arg->v_int8);
+        else if (meta->item_size == 2)
+            return GINT_TO_POINTER(arg->v_int16);
+        else if (meta->item_size == 4)
+            return GINT_TO_POINTER(arg->v_int32);
+        else
+            g_assert_not_reached();
+    }
+    else if (key_type == GIG_HASH_INT64) {
+        // GHashTables expect gint64 to be passed by reference, even
+        // if they fit in a pointer.
+        if (meta->gtype == G_TYPE_INT || meta->gtype == G_TYPE_INT64) {
+            gint64 *p = g_malloc(sizeof(gint64));
+            *p = arg->v_int64;
+            return p;
+        }
+        else if (meta->gtype == G_TYPE_UINT || meta->gtype == G_TYPE_UINT64) {
+            guint64 *p = g_malloc(sizeof(guint64));
+            *p = arg->v_uint64;
+            return p;
+        }
+    }
+    else if (key_type == GIG_HASH_REAL) {
+        // GHashTables expect double and float to be passed by
+        // reference, even if they fit in a pointer.
+        if (meta->gtype == G_TYPE_DOUBLE) {
+            gdouble *p = g_malloc(sizeof(double));
+            *p = arg->v_double;
+            return p;
+        }
+        else if (meta->gtype == G_TYPE_FLOAT) {
+            gfloat *p = g_malloc(sizeof(double));
+            *p = arg->v_float;
+            return p;
+        }
+        else
+            g_assert_not_reached();
+    }
+    // else is GIG_HASH_STRING or GIG_HASH_POINTER which don't require
+    // special handling.
+    return arg->v_pointer;
+}
+
+static void
+scm_to_c_ghashtable(S2C_ARG_DECL)
+{
+    TRACE_S2C();
+    gboolean is_ptr;
+    GType type;
+    gsize siz;
+    GHashFunc hash_func;
+    GEqualFunc equal_func;
+    GigHashKeyType key_type = GIG_HASH_INVALID;
+    GigHashKeyType val_type = GIG_HASH_INVALID;
+    GDestroyNotify key_destroy_func = NULL;
+    GDestroyNotify val_destroy_func = NULL;
+
+    is_ptr = meta->params[0].is_ptr;
+    type = meta->params[0].gtype;
+    siz = meta->params[0].item_size;
+    if (!is_ptr) {
+        if (type == G_TYPE_INT && siz <= 4) {
+            // INT types are packed into the pointer storage
+            key_type = GIG_HASH_INT;
+            hash_func = g_direct_hash;
+            equal_func = g_direct_equal;
+        }
+        // INT64, DOUBLE are stored by reference, even if they would
+        // fit in a pointer.
+        else if (type == G_TYPE_INT || type == G_TYPE_INT64) {
+            key_type = GIG_HASH_INT64;
+            hash_func = g_int64_hash;
+            equal_func = g_int64_equal;
+            key_destroy_func = g_free;
+        }
+        else if (type == G_TYPE_DOUBLE || type == G_TYPE_FLOAT) {
+            key_type = GIG_HASH_REAL;
+            hash_func = g_double_hash;
+            equal_func = g_double_equal;
+            key_destroy_func = g_free;
+        }
+    }
+    else {
+        // POINTER TYPES
+        // For pointer types, strings are special because they have their own
+        // comparison function
+        if (meta->params[0].gtype == G_TYPE_STRING) {
+            key_type = GIG_HASH_STRING;
+            hash_func = g_str_hash;
+            equal_func = g_str_equal;
+            key_destroy_func = g_free;
+        }
+        else {
+            // All other pointer type are a straight pointer comparison
+            key_type = GIG_HASH_POINTER;
+            hash_func = NULL;
+            equal_func = NULL;
+        }
+    }
+    if (key_type == GIG_HASH_INVALID)
+        scm_misc_error("object->hashtable", "unsupported key type ~S",
+                       scm_list_1(scm_from_utf8_string(g_type_name(type))));
+
+    is_ptr = meta->params[1].is_ptr;
+    type = meta->params[1].gtype;
+    siz = meta->params[1].item_size;
+    if (!is_ptr) {
+        if ((type == G_TYPE_INT || type == G_TYPE_UINT) && siz <= 4)
+            val_type = GIG_HASH_INT;
+        else if (type == G_TYPE_INT || type == G_TYPE_UINT || type == G_TYPE_INT64 ||
+                 type == G_TYPE_UINT64) {
+            val_type = GIG_HASH_INT64;
+            val_destroy_func = g_free;
+        }
+        else if (type == G_TYPE_DOUBLE || type == G_TYPE_FLOAT) {
+            val_type = GIG_HASH_REAL;
+            val_destroy_func = g_free;
+        }
+    }
+    else {
+        if (type == G_TYPE_STRING) {
+            val_type = GIG_HASH_STRING;
+            val_destroy_func = g_free;
+        }
+        else
+            val_type = GIG_HASH_POINTER;
+    }
+    if (val_type == GIG_HASH_INVALID)
+        scm_misc_error("object->hashtable", "unsupported value type ~S",
+                       scm_list_1(scm_from_utf8_string(g_type_name(type))));
+
+    GHashTable *hash =
+        g_hash_table_new_full(hash_func, equal_func, key_destroy_func, val_destroy_func);
+
+    SCM buckets = SCM_HASHTABLE_VECTOR(object);
+    long n = SCM_SIMPLE_VECTOR_LENGTH(buckets);
+    for (long i = 0; i < n; ++i) {
+        SCM ls, handle;
+
+        for (ls = SCM_SIMPLE_VECTOR_REF(buckets, i); !scm_is_null(ls); ls = SCM_CDR(ls)) {
+            handle = scm_car(ls);
+            GIArgument _keyval[2];
+            SCM keyval[2];
+            keyval[0] = scm_car(handle);
+            keyval[1] = scm_cdr(handle);
+
+            for (int j = 0; j < 2; j++) {
+                gsize _size = GIG_ARRAY_SIZE_UNKNOWN;
+                GigTypeMeta _meta = meta->params[j];
+                _meta.transfer = GI_TRANSFER_EVERYTHING;
+
+                gig_argument_scm_to_c(subr, argpos, &_meta, keyval[j], must_free, &_keyval[j],
+                                      &_size);
+                _keyval[j].v_pointer =
+                    arg_to_c_hash_pointer(&_meta, ((j == 0) ? key_type : val_type), &_keyval[j]);
+            }
+            g_hash_table_insert(hash, _keyval[0].v_pointer, _keyval[1].v_pointer);
+        }
+    }
+    if (meta->transfer == GI_TRANSFER_NOTHING)
+        // Later free the hash table
+        ;
+    arg->v_pointer = hash;
+}
 
 static void
 scm_to_c_garray(S2C_ARG_DECL)
@@ -1009,6 +1235,8 @@ c_boxed_to_scm(C2S_ARG_DECL)
     }
     else if (meta->gtype == G_TYPE_PTR_ARRAY)
         c_gptrarray_to_scm(C2S_ARGS);
+    else if (meta->gtype == G_TYPE_HASH_TABLE)
+        c_ghashtable_to_scm(C2S_ARGS);
     else
         *object = gig_type_transfer_object(meta->gtype, arg->v_pointer, meta->transfer);
 }
@@ -1352,6 +1580,35 @@ c_gptrarray_to_scm(C2S_ARG_DECL)
 
     // Free the GPtrArray without deleting the contents
     g_ptr_array_free(array, FALSE);
+}
+
+static void
+c_ghashtable_to_scm(C2S_ARG_DECL)
+{
+    TRACE_C2S();
+    GHashTable *hash = arg->v_pointer;
+    GHashTableIter iter;
+    gpointer key, value;
+
+    *object = scm_c_make_hash_table(g_hash_table_size(hash));
+
+    g_hash_table_iter_init(&iter, hash);
+    while (g_hash_table_iter_next(&iter, &key, &value)) {
+        SCM keyval[2];
+        for (int i = 0; i < 2; i++) {
+            GigTypeMeta _meta = meta->params[i];
+            GIArgument _arg;
+            gpointer p = ((i == 0) ? key : value);
+
+            c_hash_pointer_to_arg(&_meta, p, &_arg);
+
+            gsize _size = GIG_ARRAY_SIZE_UNKNOWN;
+            gig_argument_c_to_scm(subr, argpos, &_meta, &_arg, &keyval[i], _size);
+        }
+        scm_hash_set_x(*object, keyval[0], keyval[1]);
+    }
+    if (meta->transfer != GI_TRANSFER_NOTHING)
+        g_hash_table_unref(hash);
 }
 
 static void

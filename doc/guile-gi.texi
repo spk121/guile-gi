@@ -301,6 +301,24 @@ Internally to Guile-GI, all of the Guile classes for GObject structs,
 objects and unions are GOOPS types that handle managing the C pointer.
 The C pointer is ``hidden'' in the @code{ptr} slot of an object.
 
+@subsection Hash Tables and GHashTable Types
+
+One special case is that of GLib's @code{GHashTable} types.  The
+guile-gi library converts native Guile hash tables to @code{GHashTable}
+types as necessary when calling introspected C functions.  However,
+marshalling Guile hash tables into @code{GHashTable} types and back
+again has limitations.
+
+First, the keys of instances of @code{GHashTable} have a C type, and
+only a few common key types are handled by guile-gi: integers, real
+numbers, and strings can be converted.  All other types are treated as a
+pointer, which may not be what is intended.
+
+Second, some introspected C functions modify instances of
+@code{GHashTable} that are passed in as input arguments. The
+modifications to an instance of @code{GHashTable} input will not be
+reflected in the Guile hash tables from which is was created.
+
 @node Function Parameters Arity and Return Values
 @section Function Parameters, Arity, and Return Values
 @cindex arity
