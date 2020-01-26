@@ -95,6 +95,24 @@ of the Guile class <code>&lt;Date&gt;</code>.
 objects and unions are GOOPS types that handle managing the C pointer.
 The C pointer is &ldquo;hidden&rdquo; in the <code>ptr</code> slot of an object.
 </p>
+<span id="Hash-Tables-and-GHashTable-Types"></span><h4 class="subsection">2.1.1 Hash Tables and GHashTable Types</h4>
+
+<p>One special case is that of GLib&rsquo;s <code>GHashTable</code> types.  The
+guile-gi library converts native Guile hash tables to <code>GHashTable</code>
+types as necessary when calling introspected C functions.  However,
+marshalling Guile hash tables into <code>GHashTable</code> types and back
+again has limitations.
+</p>
+<p>First, the keys of instances of <code>GHashTable</code> have a C type, and
+only a few common key types are handled by guile-gi: integers, real
+numbers, and strings can be converted.  All other types are treated as a
+pointer, which may not be what is intended.
+</p>
+<p>Second, some introspected C functions modify instances of
+<code>GHashTable</code> that are passed in as input arguments. The
+modifications to an instance of <code>GHashTable</code> input will not be
+reflected in the Guile hash tables from which is was created.
+</p>
 <hr>
 <div class="header">
 <p>
