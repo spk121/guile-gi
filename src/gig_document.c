@@ -114,7 +114,32 @@ do_document(GIBaseInfo *info, const gchar *_namespace)
             GigArgMapEntry *entry = gig_amap_get_output_entry_by_c(arg_map, i);
             document_arg_entry("return", entry);
         }
-        scm_printf(SCM_UNDEFINED, "</procedure></scheme></%s>", kind);
+        scm_printf(SCM_UNDEFINED, "</procedure></scheme>");
+
+        scm_printf(SCM_UNDEFINED, "<parameters>");
+        if (g_callable_info_is_method(info))
+            scm_printf(SCM_UNDEFINED, "<instance-parameter name=\"self\">" // name will be dropped
+                       "<inferred argument=\"self\" />"
+                       "</instance-parameter>");
+
+        for (int i = 0; i < arg_map->len; i++) {
+            GigArgMapEntry *entry = arg_map->pdata + i;
+            scm_printf(SCM_UNDEFINED, "<parameter name=\"%s\">", entry->name);
+            if (entry->parent) {
+                gchar *parent = gig_gname_to_scm_name(entry->parent->name);
+                scm_printf(SCM_UNDEFINED, "<inferred parent=\"%s\"/>", parent);
+                g_free(parent);
+            }
+            else {
+                gchar *arg = gig_gname_to_scm_name(entry->name);
+                scm_printf(SCM_UNDEFINED, "<inferred argument=\"%s\"/>", arg);
+                g_free(arg);
+            }
+            scm_printf(SCM_UNDEFINED, "</parameter>");
+        }
+        scm_printf(SCM_UNDEFINED, "</parameters>");
+        scm_printf(SCM_UNDEFINED, "</%s>", kind);
+
         break;
 
     case GI_INFO_TYPE_STRUCT:
