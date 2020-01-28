@@ -812,6 +812,7 @@ gig_init_types_once(void)
     gig_type_associate(G_TYPE_STRING, scm_c_public_ref("oop goops", "<string>"));
     SCM _scm_real = scm_c_public_ref("oop goops", "<real>");
     SCM _scm_integer = scm_c_public_ref("oop goops", "<integer>");
+    SCM _scm_hashtable = scm_c_public_ref("oop goops", "<hashtable>");
     gig_type_register(G_TYPE_INT, _scm_integer);
     gig_type_register(G_TYPE_UINT, _scm_integer);
     gig_type_register(G_TYPE_LONG, _scm_integer);
@@ -822,9 +823,12 @@ gig_init_types_once(void)
     gig_type_register(G_TYPE_FLOAT, _scm_real);
     gig_type_register(G_TYPE_DOUBLE, _scm_real);
 
+    // there is no base type for string, array and all the other accepted array conversions
     gig_type_register(G_TYPE_BYTE_ARRAY, SCM_UNDEFINED);
     gig_type_register(G_TYPE_ARRAY, SCM_UNDEFINED);
     gig_type_register(G_TYPE_PTR_ARRAY, SCM_UNDEFINED);
+
+    gig_type_register(G_TYPE_HASH_TABLE, _scm_hashtable);
 
     atexit(gig_type_free_types);
 

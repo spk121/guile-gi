@@ -276,15 +276,13 @@ SCM char_type;
 SCM list_type;
 SCM string_type;
 SCM applicable_type;
-SCM hashtable_type;
 
-// These type specializers are used in a method definition to specify
-// the types of argument to which a procedure is applicable.
 static SCM
 type_specializer(GigTypeMeta *meta)
 {
-    // For some gtypes, we're converting from native Guile types.
-    if (meta->gtype == G_TYPE_POINTER) {
+    switch (meta->gtype) {
+    case G_TYPE_POINTER:
+        // special case: POINTER can also mean string, list or callback
         switch (meta->pointer_type) {
         case GIG_DATA_UTF8_STRING:
         case GIG_DATA_LOCALE_STRING:
@@ -297,15 +295,15 @@ type_specializer(GigTypeMeta *meta)
         default:
             return SCM_UNDEFINED;
         }
-    }
-    else if (meta->gtype == G_TYPE_HASH_TABLE)
-        return hashtable_type;
-    else if (meta->gtype == G_TYPE_UINT && meta->is_unichar)
-        return char_type;
-    else
-        // If no applicable Guile native types are found, we use a
-        // type created by introspection.
+    case G_TYPE_UINT:
+        // special case: Unicode characters
+        if (meta->is_unichar)
+            return char_type;
+        /* fall through */
+    default:
+        // usual case: refer to the already existing mapping of GType to scheme type
         return gig_type_get_scheme_type(meta->gtype);
+    }
 }
 
 static void
@@ -858,7 +856,6 @@ gig_init_function(void)
     char_type = scm_c_public_ref("oop goops", "<char>");
     list_type = scm_c_public_ref("oop goops", "<list>");
     string_type = scm_c_public_ref("oop goops", "<string>");
-    hashtable_type = scm_c_public_ref("oop goops", "<hashtable>");
     applicable_type = scm_c_public_ref("oop goops", "<applicable>");
 
     ensure_generic_proc = scm_c_public_ref("oop goops", "ensure-generic");
