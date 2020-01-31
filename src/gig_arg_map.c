@@ -241,27 +241,34 @@ arg_map_compute_s_call_positions(GigArgMap *amap)
     // call.
     for (i = 0; i < n; i++) {
         entry = &amap->pdata[i];
-        if (entry->s_direction == GIG_ARG_DIRECTION_INPUT ||
-            entry->s_direction == GIG_ARG_DIRECTION_INOUT ||
-            entry->s_direction == GIG_ARG_DIRECTION_PREALLOCATED_OUTPUT) {
-            if (entry->tuple == GIG_ARG_TUPLE_SINGLETON || entry->tuple == GIG_ARG_TUPLE_ARRAY) {
-                entry->is_s_input = 1;
-                entry->s_input_pos = s_input_pos++;
-                if (entry->presence == GIG_ARG_PRESENCE_REQUIRED)
-                    amap->s_input_req++;
-                else if (entry->presence == GIG_ARG_PRESENCE_OPTIONAL)
-                    amap->s_input_opt++;
-            }
-        }
-        else if (entry->s_direction == GIG_ARG_DIRECTION_OUTPUT) {
-            if ((entry->tuple == GIG_ARG_TUPLE_SINGLETON) || (entry->tuple == GIG_ARG_TUPLE_ARRAY)) {
-                entry->is_s_output = 1;
-                entry->s_output_pos = s_output_pos++;
-            }
-        }
-        else
-            g_assert_not_reached();
 
+        // TODO: Why check entry->tuple instead of entry->presence?
+        //       The latter appears to be buggy in some way.
+        if (entry->tuple == GIG_ARG_TUPLE_ARRAY_SIZE)
+            continue;
+
+        switch (entry->s_direction) {
+        case GIG_ARG_DIRECTION_INPUT:
+        case GIG_ARG_DIRECTION_INOUT:
+        case GIG_ARG_DIRECTION_PREALLOCATED_OUTPUT:
+            entry->is_s_input = 1;
+            entry->s_input_pos = s_input_pos++;
+            if (entry->presence == GIG_ARG_PRESENCE_REQUIRED)
+                amap->s_input_req++;
+            else if (entry->presence == GIG_ARG_PRESENCE_OPTIONAL)
+                amap->s_input_opt++;
+
+            // TODO: mark as output
+            // if (entry->s_direction == GIG_ARG_DIRECTION_INPUT)
+                break;
+            /* fallthrough */
+        case GIG_ARG_DIRECTION_OUTPUT:
+            entry->is_s_output = 1;
+            entry->s_output_pos = s_output_pos++;
+            break;
+        default:
+            g_assert_not_reached ();
+        }
     }
 
     amap->s_output_len = s_output_pos;
