@@ -31,23 +31,23 @@ static void callback_free(GigCallback *gcb);
 static void gig_fini_callback(void);
 
 void
-store_output(GigArgMapEntry *entry, gpointer **ffi_arg, GIArgument *value)
+store_output(GigArgMapEntry *entry, gpointer **arg, GIArgument *value)
 {
     if (entry->meta.gtype == G_TYPE_BOOLEAN)
-        **(gint **)ffi_arg = value->v_int;
+        **(gint **)arg = value->v_int;
     else if (entry->meta.gtype == G_TYPE_INT)
         switch (entry->meta.item_size) {
         case 1:
-            **(gint8 **)ffi_arg = value->v_int8;
+            **(gint8 **)arg = value->v_int8;
             break;
         case 2:
-            **(gint16 **)ffi_arg = value->v_int16;
+            **(gint16 **)arg = value->v_int16;
             break;
         case 4:
-            **(gint32 **)ffi_arg = value->v_int32;
+            **(gint32 **)arg = value->v_int32;
             break;
         case 8:
-            **(gint64 **)ffi_arg = value->v_int64;
+            **(gint64 **)arg = value->v_int64;
             break;
         default:
             g_assert_not_reached();
@@ -55,35 +55,35 @@ store_output(GigArgMapEntry *entry, gpointer **ffi_arg, GIArgument *value)
     else if (entry->meta.gtype == G_TYPE_UINT)
         switch (entry->meta.item_size) {
         case 1:
-            **(guint8 **)ffi_arg = value->v_uint8;
+            **(guint8 **)arg = value->v_uint8;
             break;
         case 2:
-            **(guint16 **)ffi_arg = value->v_uint16;
+            **(guint16 **)arg = value->v_uint16;
             break;
         case 4:
-            **(guint32 **)ffi_arg = value->v_uint32;
+            **(guint32 **)arg = value->v_uint32;
             break;
         case 8:
-            **(guint64 **)ffi_arg = value->v_uint64;
+            **(guint64 **)arg = value->v_uint64;
             break;
         default:
             g_assert_not_reached();
         }
     else if (entry->meta.gtype == G_TYPE_INT64)
-        **(gint64 **)ffi_arg = value->v_int64;
+        **(gint64 **)arg = value->v_int64;
     else if (entry->meta.gtype == G_TYPE_UINT64)
-        **(guint64 **)ffi_arg = value->v_uint64;
+        **(guint64 **)arg = value->v_uint64;
     else if (entry->meta.gtype == G_TYPE_FLOAT)
-        **(float **)ffi_arg = value->v_float;
+        **(float **)arg = value->v_float;
     else if (entry->meta.gtype == G_TYPE_DOUBLE)
-        **(float **)ffi_arg = value->v_double;
+        **(float **)arg = value->v_double;
     else if (entry->meta.gtype == G_TYPE_GTYPE)
         switch (entry->meta.item_size) {
         case 4:
-            **(gint32 **)ffi_arg = value->v_int32;
+            **(gint32 **)arg = value->v_int32;
             break;
         case 8:
-            **(gint64 **)ffi_arg = value->v_int64;
+            **(gint64 **)arg = value->v_int64;
             break;
         default:
             g_assert_not_reached();
