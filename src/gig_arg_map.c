@@ -258,8 +258,7 @@ arg_map_compute_s_call_positions(GigArgMap *amap)
             else if (entry->presence == GIG_ARG_PRESENCE_OPTIONAL)
                 amap->s_input_opt++;
 
-            // TODO: mark as output
-            // if (entry->s_direction == GIG_ARG_DIRECTION_INPUT)
+            if (entry->s_direction == GIG_ARG_DIRECTION_INPUT)
                 break;
             /* fallthrough */
         case GIG_ARG_DIRECTION_OUTPUT:

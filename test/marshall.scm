@@ -132,7 +132,7 @@
           (array-inout (list->int-vector '(-1 0 1 2))))))
 
 (test-assert "array-inout-etc"
-  (receive (sum vals)
+  (receive (vals sum)
       (array-inout-etc -3 (list->int-vector '(-1 0 1 2)) 4)
     (and (= sum 1)
          (list= eqv? '(-3 -1 0 1 4) (int-vector->list vals)))))
@@ -224,11 +224,14 @@
 ;; gets created from the vector. For caller-allocates, out GArray
 ;; arguments, there needs to be an additional step that modifies
 ;; the input vector.
+;; 01Feb20 - This crashes even harder when we try to process
+;; the resulting GArray.
 (test-expect-fail "garray-utf8-full-out-caller-allocated")
-(test-assert "garray-utf8-full-out-caller-allocated"
-  (let ((x #("A" "B" "C")))
-    (garray-utf8-full-out-caller-allocated x)
-    (vector= string=? #("0" "1" "2") x)))
+(test-assert "garray-utf8-full-out-caller-allocated" #f
+  ;; (let ((x #("A" "B" "C")))
+  ;;   (garray-utf8-full-out-caller-allocated x)
+  ;;   (vector= string=? #("0" "1" "2") x))
+  )
 
 (stringarray-output array-zero-terminated-out)
 (stringarray-output array-zero-terminated-return)
