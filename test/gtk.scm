@@ -12,7 +12,7 @@
 (if (false-if-exception (require "Gtk" "3.0"))
     (test-assert "init"
       (and (load-by-name? "Gtk" "init_check")
-           (init-check)))
+           (init-check!)))
     (begin
       (test-expect-fail "init")
       (test-assert "init" #f)))
