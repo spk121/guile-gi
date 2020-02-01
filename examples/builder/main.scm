@@ -3,12 +3,11 @@
              (gi)
              (gi repository))
 
-(require "Gtk" "3.0")
+(eval-when (compile load eval)
+  (require "Gtk" "3.0")
 
-(map (lambda (n) (load-by-name "Gtk" n))
-     '("Builder" "Widget" "Button" "init" "main_quit" "main"))
-
-;; (use-typelibs (("Gtk" "3.0") #:renamer (protect* %rnrs-syntax)))
+  (for-each (lambda (n) (load-by-name "Gtk" n))
+            '("Builder" "Widget" "Button" "init" "main_quit" "main")))
 
 (define (print-hello button)
   (display "Hello World")
@@ -28,7 +27,7 @@
 
 (define (go)
   ;; Initialize GTK
-  (init)
+  (init!)
 
   ;; Construct a GtkBuilder instance and load our UI description.
   (let ((builder (builder:new-from-file (find-file "builder.ui"))))
