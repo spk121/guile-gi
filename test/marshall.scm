@@ -733,9 +733,10 @@
 (test-assert "gvalue-flat-array"
   (begin
     (gvalue-flat-array
-     (map make-value
-          (list G_TYPE_INT G_TYPE_STRING G_TYPE_BOOLEAN)
-          '(42 "42" #t)))
+     (list->vector
+      (map make-value
+          (list G_TYPE_INT <string> G_TYPE_BOOLEAN)
+          '(42 "42" #t))))
     #t))
 
 (test-end "marshall.scm")
