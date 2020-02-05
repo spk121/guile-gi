@@ -9,7 +9,8 @@
 
              (system foreign)
 
-             (gi) (gi util))
+             (gi)
+             (gi util))
 
 (test-begin "marshall.scm")
 
@@ -18,7 +19,8 @@
 ;; if it does not. GLib is an explicit dependency, so it too always exists
 (use-typelibs (("Marshall" "1.0")
                #:renamer (protect* '(sizeof short int long size_t)))
-              ("GLib" "2.0"))
+              ("GLib" "2.0")
+              ("GObject" "2.0"))
 
 (define-syntax-rule (boolarray-input f)
   (test-assert (symbol->string (quote f))
@@ -689,5 +691,51 @@
 
 (test-assert "ghashtable-utf8-none-inout"
   (hash-utf8-inout? ghashtable-utf8-none-inout))
+
+(define (make-value type value)
+  (let ((v (make <GValue>)))
+    (set! (v type) value)
+    v))
+
+(test-equal "gvalue-return"
+  42
+  ((gvalue-return)))
+
+(test-equal "gvalue-out"
+  42
+  ((gvalue-out)))
+
+(test-equal "gvalue-inout"
+  "42"
+  ((gvalue-inout (make-value G_TYPE_INT 42))))
+
+(test-assert "gvalue-in"
+  (begin
+    (gvalue-in (make-value G_TYPE_INT 42))
+    #t))
+
+(test-assert "gvalue-in-with-type"
+  (begin
+    (gvalue-in-with-type (make-value G_TYPE_INT 42) G_TYPE_INT)
+    #t))
+
+(test-equal "gvalue-in-with-modification"
+  24
+  (let ((v (make-value G_TYPE_INT 42)))
+    (gvalue-in-with-modification v)
+    (v)))
+
+(test-assert "gvalue-int64-in"
+  (begin
+    (gvalue-int64-in (make-value G_TYPE_INT64 (1- (expt 2 63))))
+    #t))
+
+(test-assert "gvalue-flat-array"
+  (begin
+    (gvalue-flat-array
+     (map make-value
+          (list G_TYPE_INT G_TYPE_STRING G_TYPE_BOOLEAN)
+          '(42 "42" #t)))
+    #t))
 
 (test-end "marshall.scm")
