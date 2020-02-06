@@ -705,6 +705,12 @@
   42
   ((gvalue-out)))
 
+;; TODO: Expected a <GValue>, but got *unspecified*
+(test-expect-fail "gvalue-out-caller-allocates")
+(test-equal "gvalue-out-caller-allocates"
+  42
+  ((gvalue-out-caller-allocates (make <GValue>))))
+
 (test-equal "gvalue-inout"
   "42"
   ((gvalue-inout (make-value G_TYPE_INT 42))))
@@ -729,6 +735,10 @@
   (begin
     (gvalue-int64-in (make-value G_TYPE_INT64 (1- (expt 2 63))))
     #t))
+
+(test-equal "gvalue-int64-out"
+  (1- (expt 2 63))
+  ((gvalue-int64-out)))
 
 (test-assert "gvalue-flat-array"
   (begin
