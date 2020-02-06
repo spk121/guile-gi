@@ -1450,6 +1450,22 @@ c_native_array_to_scm(C2S_ARG_DECL)
             arg->v_pointer = 0;
         }
     }
+    else if (item_type == G_TYPE_VALUE) {
+        *object = scm_c_make_vector(length, SCM_BOOL_F);
+        scm_t_array_handle handle;
+        size_t len;
+        ssize_t inc;
+        SCM *elt;
+        elt = scm_vector_writable_elements(*object, &handle, &len, &inc);
+        g_assert_nonnull(arg->v_pointer);
+
+        GIArgument _arg = *arg;
+        GigTypeMeta _meta = meta->params[0];
+        g_assert(meta->is_ptr);
+
+        for (gsize k = 0; k < len; k++, _arg.v_pointer += sizeof (GValue), elt += inc)
+            gig_argument_c_to_scm(subr, argpos, &_meta, &_arg, elt, -1);
+    }
     else if (item_type == G_TYPE_VARIANT) {
         *object = scm_c_make_vector(length, SCM_BOOL_F);
         scm_t_array_handle handle;

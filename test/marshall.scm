@@ -749,6 +749,10 @@
           '(42 "42" #t))))
     #t))
 
+(test-equal "return-gvalue-flat-array"
+  '(42 "42" #t)
+  (map (cute <>) (vector->list (return-gvalue-flat-array))))
+
 (test-assert "multi-array-key-value-in"
   (begin
     (multi-array-key-value-in
