@@ -19,7 +19,8 @@
 ;; if it does not. GLib is an explicit dependency, so it too always exists
 (use-typelibs (("Marshall" "1.0")
                #:renamer (protect* '(sizeof short int long size_t)))
-              ("GLib" "2.0")
+              (("GLib" "2.0")
+               #:renamer (protect* '(test-equal test-assert test-skip)))
               ("GObject" "2.0"))
 
 (define-syntax-rule (boolarray-input f)
@@ -752,6 +753,17 @@
 (test-equal "return-gvalue-flat-array"
   '(42 "42" #t)
   (map (cute <>) (vector->list (return-gvalue-flat-array))))
+
+;; There seems to be a bug in libmarshall and/or GI itself, which basically
+;; makes this test unusable.  In our case, trying to interpret the result as
+;; a GValue crashes everything.
+(test-skip "gvalue-flat-array-round-trip")
+(test-equal "gvalue-flat-array-round-trip"
+  '(42 "42" #t)
+  (map (cute <>) (vector->list (gvalue-flat-array-round-trip
+                                (make-value G_TYPE_INT 42)
+                                (make-value <string> "42")
+                                (make-value G_TYPE_BOOLEAN #t)))))
 
 (test-assert "multi-array-key-value-in"
   (begin
