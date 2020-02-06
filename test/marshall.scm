@@ -739,4 +739,11 @@
           '(42 "42" #t))))
     #t))
 
+(test-assert "multi-array-key-value-in"
+  (begin
+    (multi-array-key-value-in
+     #("one" "two" "three")
+     (list->vector (map (cute make-value G_TYPE_INT <>) '(1 2 3))))
+    #t))
+
 (test-end "marshall.scm")
