@@ -772,4 +772,19 @@
      (list->vector (map (cute make-value G_TYPE_INT <>) '(1 2 3))))
     #t))
 
+(test-assert "gclosure-in"
+  (begin
+    (gclosure-in (procedure->closure (const 42)))
+    #t))
+
+(test-equal "gclosure-return"
+  42
+  (((gclosure-return) G_TYPE_INT)))
+
+(test-assert "gclosure-return->in"
+  (begin
+    (gclosure-in (gclosure-return))
+    #t))
+
+
 (test-end "marshall.scm")
