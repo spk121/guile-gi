@@ -118,9 +118,8 @@ do_document(GIBaseInfo *info, const gchar *_namespace)
 
         scm_printf(SCM_UNDEFINED, "<parameters>");
         if (g_callable_info_is_method(info))
-            scm_printf(SCM_UNDEFINED, "<instance-parameter name=\"self\">" // name will be dropped
-                       "<inferred argument=\"self\" />"
-                       "</instance-parameter>");
+            scm_printf(SCM_UNDEFINED, "<instance-parameter name=\"self\">"      // name will be dropped
+                       "<inferred argument=\"self\" />" "</instance-parameter>");
 
         for (int i = 0; i < arg_map->len; i++) {
             GigArgMapEntry *entry = arg_map->pdata + i;

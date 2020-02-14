@@ -1463,7 +1463,7 @@ c_native_array_to_scm(C2S_ARG_DECL)
         GigTypeMeta _meta = meta->params[0];
         g_assert(meta->is_ptr);
 
-        for (gsize k = 0; k < len; k++, _arg.v_pointer += sizeof (GValue), elt += inc)
+        for (gsize k = 0; k < len; k++, _arg.v_pointer += sizeof(GValue), elt += inc)
             gig_argument_c_to_scm(subr, argpos, &_meta, &_arg, elt, -1);
     }
     else if (item_type == G_TYPE_VARIANT) {
