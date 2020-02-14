@@ -246,6 +246,20 @@
 (stringarray-output gptrarray-utf8-container-out)
 (stringarray-output gptrarray-utf8-full-out)
 
+(test-assert "bytearray-none-in"
+  (bytearray-none-in #vu8(0 49 255 51)))
+
+(test-assert "gbytes-none-in"
+  (gbytes-none-in (bytes:new-take #vu8(0 49 255 51))))
+
+(test-equal "bytearray-full-return"
+  #vu8(0 49 255 51)
+  (bytearray-full-return))
+
+(test-equal "gbytes-full-return"
+  #vu8(0 49 255 51)
+  (bytes:unref-to-array (gbytes-full-return)))
+
 (define-syntax-rule (stringlist-output f)
   (test-assert (symbol->string (quote f))
                (list= string=? (f) '("0" "1" "2"))))
