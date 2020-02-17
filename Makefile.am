@@ -236,7 +236,10 @@ TEST_EXTENSIONS = .scm
 
 -include $(INTROSPECTION_MAKEFILE)
 if HAVE_INTROSPECTION
-pkglib_LTLIBRARIES = test/libeverything-1.0.la test/libmarshall-1.0.la
+pkglib_LTLIBRARIES = \
+  test/libeverything-1.0.la \
+  test/libmarshall-1.0.la \
+  test/libextra-1.0.la
 
 test/everything.c: $(GI_DATA_DIR)/tests/everything.c
 	cp $< $@
@@ -261,7 +264,10 @@ BUILT_SOURCES = \
   test/marshall.c test/marshall.h \
   test/gitestmacros.h
 
-INTROSPECTION_GIRS = test/Everything-1.0.gir test/Marshall-1.0.gir
+INTROSPECTION_GIRS = \
+  test/Everything-1.0.gir \
+  test/Marshall-1.0.gir \
+  test/Extra-1.0.gir
 INTROSPECTION_SCANNER_ARGS = \
   -I $(abs_srcdir)/test \
   -I $(abs_builddir)/test \
@@ -284,6 +290,15 @@ if BUILDING_DLL
 test_libmarshall_1_0_la_LDFLAGS += -no-undefined
 endif
 
+nodist_test_libextra_1_0_la_SOURCES = \
+  test/extra.c test/extra.h test/gitestmacros.h
+test_libextra_1_0_la_CFLAGS = $(GOBJECT_CFLAGS) -I $(abs_builddir)/test
+test_libextra_1_0_la_LDFLAGS =
+test_libextra_1_0_la_LIBADD = $(GOBJECT_LIBS)
+if BUILDING_DLL
+test_libextra_1_0_la_LDFLAGS += -no-undefined
+endif
+
 test/Everything-1.0.gir: test/libeverything-1.0.la
 test_Everything_1_0_gir_LIBS = test/libeverything-1.0.la
 test_Everything_1_0_gir_INCLUDES = GObject-2.0
@@ -295,18 +310,27 @@ test_Marshall_1_0_gir_LIBS = test/libmarshall-1.0.la
 test_Marshall_1_0_gir_INCLUDES = GObject-2.0
 test_Marshall_1_0_gir_FILES = test/marshall.c test/marshall.h
 
+test/Extra-1.0.gir: test/libextra-1.0.la
+test_Extra_1_0_gir_NAMESPACE = Extra
+test_Extra_1_0_gir_LIBS = test/libextra-1.0.la
+test_Extra_1_0_gir_INCLUDES = GObject-2.0
+test_Extra_1_0_gir_FILES = test/extra.c test/extra.h
+
 cleanpkgdata_DATA = \
   test/Everything-1.0.gir test/Marshall-1.0.gir \
-  test/Everything-1.0.typelib test/Marshall-1.0.typelib
+  test/Everything-1.0.typelib test/Marshall-1.0.typelib \
+  test/Extra-1.0.gir test/Extra-1.0.typelib
 
 EVERYTHING_TESTS = \
   test/everything.scm \
-  test/marshall.scm
+  test/marshall.scm \
+  test/extra.scm
 
 TESTS_LTDLOPEN = \
   -dlopen ${top_builddir}/libguile-gi.la \
   -dlopen ${top_builddir}/test/libeverything-1.0.la \
-  -dlopen ${top_builddir}/test/libmarshall-1.0.la
+  -dlopen ${top_builddir}/test/libmarshall-1.0.la \
+  -dlopen ${top_builddir}/test/libextra-1.0.la
 else
 cleanpkgdata_DATA =
 EVERYTHING_TESTS =
