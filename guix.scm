@@ -42,7 +42,6 @@
              (guix gexp)
              (guix build-system glib-or-gtk)
              (guix utils)
-             (ice-9 textual-ports)
              (gnu packages)
              (gnu packages autotools)
              (gnu packages gettext)
