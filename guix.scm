@@ -95,9 +95,9 @@
                `("GUILE_LOAD_PATH" prefix
                  (,(string-append out "/share/guile")))
                `("GUILE_LOAD_COMPILED_PATH" prefix
-                 (,(string-append out "/lib/guile/site-ccache")))
+                 (,(string-append out "/lib/guile/2.2/site-ccache")))
                `("LD_LIBRARY_PATH" prefix
-                 (,(string-append out "/lib/guile/"))))
+                 (,(string-append out "/lib/guile/2.2/extensions"))))
              #t))))))
   (home-page "https://github.com/spk121/guile-gi")
   (synopsis "GObject bindings for Guile")
