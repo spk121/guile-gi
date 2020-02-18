@@ -78,7 +78,7 @@ AS_CASE(["x$with_gnu_filesystem_hierarchy"], [xyes],
 
     # Compiled libguile-*.so extension libraries go here
     AC_MSG_CHECKING([Guile extension directory])
-    guileextensiondir="\${libdir}/guile/$GUILE_EFFECTIVE_VERSION"
+    guileextensiondir="\${libdir}/guile/$GUILE_EFFECTIVE_VERSION/extensions"
     AC_MSG_RESULT([$guileextensiondir])
     AC_SUBST(guileextensiondir)
 
