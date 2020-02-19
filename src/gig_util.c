@@ -1,7 +1,8 @@
+#include <errno.h>
+#include <string.h>
 #include <libguile.h>
 #include <glib.h>
 #include <glib-object.h>
-#include <errno.h>
 #include "gig_util.h"
 
 static gboolean is_predicate(GIFunctionInfo *info);

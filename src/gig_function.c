@@ -13,6 +13,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#include <string.h>
 #include <ffi.h>
 #include "gig_argument.h"
 #include "gig_util.h"
