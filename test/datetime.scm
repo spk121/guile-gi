@@ -20,23 +20,26 @@
          (= (get-month date) 12)
          (equal? (get-year date) 1990)))
 
-  (let ((date2 (copy date)))
-    (test-equal "copy-dates-equal"
-      (get-day date)
-      (get-day date2))
-    (test-equal "copy-months-equal"
-      (get-month date)
-      (get-month date2))
-    (test-equal "copy-years-equal"
-      (get-year date)
-      (get-year date2))
+  ;; g_date_copy requires GLib 2.56 or greater
+  (when (or (> MAJOR_VERSION 2)
+            (and (= MAJOR_VERSION 2) (>= MINOR_VERSION 56)))
+    (let ((date2 (copy date)))
+      (test-equal "copy-dates-equal"
+        (get-day date)
+        (get-day date2))
+      (test-equal "copy-months-equal"
+        (get-month date)
+        (get-month date2))
+      (test-equal "copy-years-equal"
+        (get-year date)
+        (get-year date2))
 
-    (clear date2 1)
-    (test-assert "clear-invalidates"
-      (not (valid? date2)))
+      (clear date2 1)
+      (test-assert "clear-invalidates"
+        (not (valid? date2)))
     
-    (test-assert "clear-original-unaffected"
-      (valid? date))))
+      (test-assert "clear-original-unaffected"
+        (valid? date)))))
 
 (test-end "date")
 
