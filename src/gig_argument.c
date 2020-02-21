@@ -500,6 +500,11 @@ scm_to_c_boxed(S2C_ARG_DECL)
         scm_to_c_ptr_array(S2C_ARGS);
     else if (t == G_TYPE_HASH_TABLE)
         scm_to_c_ghashtable(S2C_ARGS);
+    else if (!meta->is_ptr)
+        scm_misc_error("object->boxed",
+                       "passing object ~S by value to a c function is not supported",
+                       scm_list_1(scm_from_utf8_string(g_type_name(meta->gtype))));
+
     else
         arg->v_pointer = gig_type_peek_object(object);
 }

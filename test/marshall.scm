@@ -768,9 +768,8 @@
   '(42 "42" #t)
   (map (cute <>) (vector->list (return-gvalue-flat-array))))
 
-;; There seems to be a bug in libmarshall and/or GI itself, which basically
-;; makes this test unusable.  In our case, trying to interpret the result as
-;; a GValue crashes everything.
+;; This test requires GValues to be passed by value on the C stack, which is not
+;; supported.
 (test-skip "gvalue-flat-array-round-trip")
 (test-equal "gvalue-flat-array-round-trip"
   '(42 "42" #t)
