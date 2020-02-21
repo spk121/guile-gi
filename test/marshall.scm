@@ -770,7 +770,7 @@
 
 ;; This test requires GValues to be passed by value on the C stack, which is not
 ;; supported.
-(test-skip "gvalue-flat-array-round-trip")
+(test-expect-fail "gvalue-flat-array-round-trip")
 (test-equal "gvalue-flat-array-round-trip"
   '(42 "42" #t)
   (map (cute <>) (vector->list (gvalue-flat-array-round-trip
