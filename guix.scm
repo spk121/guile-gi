@@ -71,35 +71,29 @@
    (inputs `(("guile" ,guile-2.2)
              ("glib" ,glib)
              ("gobject-introspection" ,gobject-introspection)))
-   (outputs '("out" "bin"))
    (arguments
     `(#:configure-flags '("--with-gnu-filesystem-hierarchy"
                           "--enable-hardening")
       #:phases
       (modify-phases %standard-phases
-        (add-after 'install 'install-guile-gi
+        (delete 'check)
+        (add-after 'install 'hardcode-extensions
           (lambda* (#:key inputs outputs #:allow-other-keys)
-            (let ((guile (assoc-ref inputs "guile"))
-                  (bin (assoc-ref outputs "bin")))
-              (mkdir-p (string-append bin "/bin"))
-              (symlink (string-append guile "/bin/guile")
-                       (string-append bin "/bin/guile-gi"))
-              #t)))
-        (add-after 'glib-or-gtk-wrap 'wrap-additional-paths
-          (lambda* (#:key inputs outputs #:allow-other-keys)
-            (let ((guile (assoc-ref inputs "guile"))
-                  (out (assoc-ref outputs "out"))
-                  (bin (assoc-ref outputs "bin")))
-              (wrap-program (string-append bin "/bin/guile-gi")
-                            `("GI_TYPELIB_PATH" prefix
-                              ,(search-path-as-string->list (getenv "GI_TYPELIB_PATH")))
-                            `("GUILE_LOAD_PATH" prefix
-                              (,(string-append out "/share/guile")))
-                            `("GUILE_LOAD_COMPILED_PATH" prefix
-                              (,(string-append out "/lib/guile/2.2/site-ccache")))
-                            `("LD_LIBRARY_PATH" prefix
-                              (,(string-append out "/lib/guile/2.2/extensions"))))
-              #t))))))
+           (substitute* (find-files "module" ".*\\.scm")
+             (("libguile-gi")
+              (string-append (assoc-ref outputs "out")
+                             "/lib/guile/"
+                             ,(match (assoc "guile" (package-inputs this-package))
+                                (("guile" guile)
+                                 (version-major+minor (package-version guile))))
+                             "/extensions/libguile-gi.so")))
+           #t))
+        (add-after 'hardcode-extensions 'rebuild
+          (assoc-ref %standard-phases 'build))
+        (add-after 'rebuild 'check
+          (assoc-ref %standard-phases 'check))
+        (add-after 'check 'reinstall
+          (assoc-ref %standard-phases 'install)))))
    (home-page "https://github.com/spk121/guile-gi")
    (synopsis "GObject bindings for Guile")
    (description
@@ -114,26 +108,7 @@ is alpha code.")
    (name "guile-next-gi")
    (inputs `(("guile" ,guile-3.0)
              ("glib" ,glib)
-             ("gobject-introspection" ,gobject-introspection)))
-   (arguments
-    (substitute-keyword-arguments (package-arguments guile-gi)
-      ((#:phases phases)
-       `(modify-phases ,phases
-          (replace 'wrap-additional-paths
-            (lambda* (#:key inputs outputs #:allow-other-keys)
-              (let ((guile (assoc-ref inputs "guile"))
-                    (out (assoc-ref outputs "out"))
-                    (bin (assoc-ref outputs "bin")))
-                (wrap-program (string-append bin "/bin/guile-gi")
-                              `("GI_TYPELIB_PATH" prefix
-                                ,(search-path-as-string->list (getenv "GI_TYPELIB_PATH")))
-                              `("GUILE_LOAD_PATH" prefix
-                                (,(string-append out "/share/guile")))
-                              `("GUILE_LOAD_COMPILED_PATH" prefix
-                                (,(string-append out "/lib/guile/3.0/site-ccache")))
-                              `("LD_LIBRARY_PATH" prefix
-                                (,(string-append out "/lib/guile/3.0/extensions")))))
-              #t))))))))
+             ("gobject-introspection" ,gobject-introspection)))))
 
 (case (and (file-exists? ".guile-version")
            (call-with-input-file ".guile-version" read))
