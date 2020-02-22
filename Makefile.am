@@ -201,6 +201,7 @@ dist_pkgguilesite_DATA = \
 dist_scriptguilesite_DATA = \
   module/scripts/gi-gtkdoc.scm
 
+if GUILD
 guileobject_DATA = \
   $(dist_guilesite_DATA:%.scm=%.go)
 
@@ -227,6 +228,7 @@ GUILEC_FLAGS = \
 	-o "$@" "$<"
 
 $(guileobject_DATA) $(pkgguileobject_DATA) $(scriptguileobject_DATA): $(guileextension_LTLIBRARIES)
+endif
 
 #################
 #     Tests     #
