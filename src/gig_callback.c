@@ -35,6 +35,10 @@ store_output(GigArgMapEntry *entry, gpointer **arg, GIArgument *value)
 {
     if (entry->meta.gtype == G_TYPE_BOOLEAN)
         **(gint **)arg = value->v_int;
+    else if (entry->meta.gtype == G_TYPE_CHAR)
+        **(gchar **)arg = value->v_int8;
+    else if (entry->meta.gtype == G_TYPE_UCHAR)
+        **(guchar **) arg = value->v_uint8;
     else if (entry->meta.gtype == G_TYPE_INT)
         switch (entry->meta.item_size) {
         case 1:
@@ -189,9 +193,7 @@ callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
             SCM real_ret = scm_c_value_ref(s_ret, 0);
             gig_argument_scm_to_c("callback", 0, &amap->return_val.meta, real_ret, NULL, &giarg,
                                   &size);
-            // I'm pretty sure I don't need a big type case/switch block here.
-            // I'll try brutally coercing the data, and see what happens.
-            *(ffi_arg *)ret = giarg.v_uint64;
+            store_output(&(amap->return_val), (gpointer **)&ret, &giarg);
 
             if (amap->return_val.meta.has_size) {
                 gsize c_output_pos = amap->return_val.child->c_output_pos;
@@ -460,6 +462,10 @@ amap_entry_to_ffi_type(GigArgMapEntry *entry)
             return &ffi_type_void;
         else if (fundamental_type == G_TYPE_BOOLEAN)
             return &ffi_type_sint;
+        else if (fundamental_type == G_TYPE_CHAR)
+            return &ffi_type_sint8;
+        else if (fundamental_type == G_TYPE_UCHAR)
+            return &ffi_type_uint8;
         else if (fundamental_type == G_TYPE_INT)
             switch (entry->meta.item_size) {
             case 1:
