@@ -32,12 +32,15 @@
             enum-universe
             flags-mask flags-union flags-intersection flags-difference
             flags-complement flags-projection flags-projection/list
-            flags-projection/number))
+            flags-projection/number
+            is-registered-callback?
+            get-registered-callback-closure-pointer))
 
 (eval-when (expand load eval)
   (load-extension "libguile-gi" "gig_init_types")
   (load-extension "libguile-gi" "gig_init_value")
-  (load-extension "libguile-gi" "gig_init_closure"))
+  (load-extension "libguile-gi" "gig_init_closure")
+  (load-extension "libguile-gi" "gig_init_callback"))
 
 ;;; Values and Params
 

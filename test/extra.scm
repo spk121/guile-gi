@@ -1,7 +1,8 @@
-(use-modules (gi) (gi util)
+(use-modules (gi) (gi util) (gi types)
              (rnrs bytevectors)
              (srfi srfi-64)
-             (ice-9 receive))
+             (ice-9 receive)
+             (system foreign))
 
 (use-typelibs ("Extra" "1.0")
               (("GLib" "2.0")
@@ -132,5 +133,18 @@
    (lambda (c)
      c)
    #\x))
+
+(define (cb-return-uints)
+  (values 1 2 3 4))
+
+(test-assert "test that callbacks are registered"
+  (begin
+    (call-callback-out-unsigned-ints cb-return-uints)
+    (is-registered-callback? cb-return-uints)))
+
+(test-assert "test that callbacks have closure pointers"
+  (begin
+    (call-callback-out-unsigned-ints cb-return-uints)
+    (pointer? (get-registered-callback-closure-pointer cb-return-uints))))
 
 (test-end "extra")
