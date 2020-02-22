@@ -76,3 +76,83 @@ extra_zero_terminated_int16_array_output_full (gint16 **v)
     for (gint16 i = 0; i < 9; i ++)
         (*v)[i] = 9 - i;
 }
+
+/**
+ * extra_call_callback_chars:
+ * @func: (scope call):
+ */
+gboolean
+extra_call_callback_chars(ExtraCallbackChars func, gchar s8, guchar u8, gunichar u32)
+{
+    return func(s8, u8, u32);
+}
+
+/**
+ * extra_call_callback_signed_ints:
+ * @func: (scope call):
+ */
+gboolean
+extra_call_callback_signed_ints(ExtraCallbackSignedInts func, gint8 x8, gint16 x16, gint32 x32, gint64 x64)
+{
+    return func(x8, x16, x32, x64);
+}
+
+/**
+ * extra_call_callback_unsigned_ints:
+ * @func: (scope call):
+ */
+gboolean
+extra_call_callback_unsigned_ints(ExtraCallbackUnsignedInts func, guint8 x8, guint16 x16, guint32 x32, guint64 x64)
+{
+    return func(x8, x16, x32, x64);
+}
+
+/**
+ * extra_call_callback_floats:
+ * @func: (scope call):
+ */
+gboolean
+extra_call_callback_floats(ExtraCallbackFloats func, float f32, double f64)
+{
+    return func(f32, f64);
+}
+
+/**
+ * extra_call_callback_out_signed_ints:
+ * @func: (scope call):
+ */
+gint64
+extra_call_callback_out_signed_ints(ExtraCallbackOutSignedInts func)
+{
+    gint8 s8;
+    gint16 s16;
+    gint32 s32;
+    gint64 s64;
+    func(&s8, &s16, &s32, &s64);
+    return s8 + s16 + s32 + s64;
+}
+
+/**
+ * extra_call_callback_out_unsigned_ints:
+ * @func: (scope call):
+ */
+guint64
+extra_call_callback_out_unsigned_ints(ExtraCallbackOutUnsignedInts func)
+{
+    guint8 u8;
+    guint16 u16;
+    guint32 u32;
+    guint64 u64;
+    func(&u8, &u16, &u32, &u64);
+    return u8 + u16 + u32 + u64;
+}
+
+/**
+ * extra_call_callback_char_passthrough:
+ * @func: (scope call):
+ */
+gchar
+extra_call_callback_char_passthrough(ExtraCharCallbackChar func, gchar c)
+{
+    return func(c);
+}

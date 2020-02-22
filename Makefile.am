@@ -290,8 +290,8 @@ if BUILDING_DLL
 test_libmarshall_1_0_la_LDFLAGS += -no-undefined
 endif
 
-nodist_test_libextra_1_0_la_SOURCES = \
-  test/extra.c test/extra.h test/gitestmacros.h
+test_libextra_1_0_la_SOURCES = \
+  test/extra.c test/extra.h
 test_libextra_1_0_la_CFLAGS = $(GOBJECT_CFLAGS) -I $(abs_builddir)/test
 test_libextra_1_0_la_LDFLAGS =
 test_libextra_1_0_la_LIBADD = $(GOBJECT_LIBS)
