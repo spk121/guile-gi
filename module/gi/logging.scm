@@ -17,4 +17,5 @@
   #:export (log-to-port
             log-to-journal))
 
-(load-extension "libguile-gi" "gig_init_logging")
+(eval-when (expand load eval)
+  (load-extension "libguile-gi" "gig_init_logging"))

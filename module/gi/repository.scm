@@ -31,7 +31,8 @@
             LOAD_METHODS LOAD_PROPERTIES LOAD_SIGNALS
             LOAD_EVERYTHING LOAD_INFO_ONLY))
 
-(load-extension "libguile-gi" "gig_init_repository")
+(eval-when (expand load eval)
+  (load-extension "libguile-gi" "gig_init_repository"))
 
 (define-method (load (info <GIBaseInfo>))
   (%load-info info LOAD_EVERYTHING))

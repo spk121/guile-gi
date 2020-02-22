@@ -35,7 +35,8 @@
             ->guile-procedures.txt
             ->docbook))
 
-(load-extension "libguile-gi" "gig_init_document")
+(eval-when (expand load eval)
+  (load-extension "libguile-gi" "gig_init_document"))
 
 ;;; XML Parsing
 

@@ -23,7 +23,8 @@
             connect-after)
   #:re-export (connect))
 
-(load-extension "libguile-gi" "gig_init_object")
+(eval-when (expand load eval)
+  (load-extension "libguile-gi" "gig_init_object"))
 
 (define-class <GFundamental> ()
   (value #:class <scm-slot>

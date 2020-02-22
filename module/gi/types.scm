@@ -34,9 +34,15 @@
             flags-complement flags-projection flags-projection/list
             flags-projection/number))
 
-(load-extension "libguile-gi" "gig_init_types")
-(load-extension "libguile-gi" "gig_init_value")
-(load-extension "libguile-gi" "gig_init_closure")
+(eval-when (expand load eval)
+  ;; This module is loaded before most others and indeed most of the library
+  ;; as well, but also shortly before the first logging is done.
+  ;; The only GI module, that is loaded prior to this one is (gi oop), which
+  ;; does not need logging for the few functions it has to load from the
+  ;; extension.
+  (load-extension "libguile-gi" "gig_init_types")
+  (load-extension "libguile-gi" "gig_init_value")
+  (load-extension "libguile-gi" "gig_init_closure"))
 
 ;;; Values and Params
 
