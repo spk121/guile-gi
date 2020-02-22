@@ -49,7 +49,8 @@
              (gnu packages gnome)
              (gnu packages guile)
              (gnu packages pkg-config)
-             (gnu packages texinfo))
+             (gnu packages texinfo)
+             (ice-9 match))
 
 (define %source-dir (dirname (current-filename)))
 
