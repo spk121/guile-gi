@@ -238,6 +238,10 @@ TEST_EXTENSIONS = .scm
 
 -include $(INTROSPECTION_MAKEFILE)
 if HAVE_INTROSPECTION
+# FIXME: These libraries are installed despite them only serving test purposes
+#        There seems to be an issue with libtool not generating shared objects
+#        when using check_LTLIBRARIES or noinst_, which in turn are needed for
+#        introspection.
 pkglib_LTLIBRARIES = \
   test/libeverything-1.0.la \
   test/libmarshall-1.0.la \
