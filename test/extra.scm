@@ -6,7 +6,7 @@
 
 (use-typelibs ("Extra" "1.0")
               (("GLib" "2.0")
-               #:renamer (protect* '(test-equal test-assert test-skip format)))
+               #:renamer (protect* '(test-equal test-assert test-expect-fail format)))
               ("GObject" "2.0"))
 
 (test-begin "extra")
@@ -31,7 +31,7 @@
   #s16(9 8 7 6 5 4 3 2 1)
   (zero-terminated-int16-array-output-full))
 
-(test-skip   "callback-char")
+(test-expect-fail "callback-char")
 (test-assert "callback-char"
   (call-callback-chars?
    (lambda (s8 u8 u32)
@@ -68,14 +68,14 @@
           (= f64 1.0)))
    0.0 1.0))
 
-(test-skip  "callback-unsigned-ints arity too low")
+(test-expect-fail "callback-unsigned-ints arity too low")
 (test-error "callback-unsigned-ints arity too low"
             #t
   (call-callback-unsigned-ints?
    (lambda (u8 u16 u32) #t)
    1 2 3 4))
 
-(test-skip  "callback-unsigned-ints arity too high")
+(test-expect-fail "callback-unsigned-ints arity too high")
 (test-error "callback-unsigned-ints arity too high"
             #t
   (call-callback-unsigned-ints?
@@ -108,14 +108,14 @@
    (lambda ()
      (values 1 2 3 4))))
 
-(test-skip 1)
+(test-expect-fail "callback-out-unsigned-ints too few output args")
 (test-error "callback-out-unsigned-ints too few output args"
             #t
   (call-callback-out-unsigned-ints
    (lambda ()
      (values 1 2 3))))
 
-(test-skip 1)
+(test-expect-fail "callback-out-unsigned-ints too many output args")
 (test-error "callback-out-unsigned-ints too many output args"
             #t
   (call-callback-out-unsigned-ints
@@ -134,7 +134,7 @@
    (lambda ()
      (values #t "hello" 0.0 #\x))))
 
-(test-skip  "call-callback-char-passthrough")
+(test-expect-fail "call-callback-char-passthrough")
 (test-equal "call-callback-char-passthrough"
   #\x
   (call-callback-char-passthrough
