@@ -27,14 +27,14 @@
 #define TRACE_C2S() gig_debug_transfer("[C2S] On line %d while handing %s of %s.", __LINE__, gig_type_meta_describe(meta), subr)
 #define TRACE_S2C() gig_debug_transfer("[S2C] On line %d while handing %s of %s.", __LINE__, gig_type_meta_describe(meta), subr)
 
-#define SURPRISING \
-    do { \
-    g_warning("Unusual argument type '%s' %s:%d", gig_type_meta_describe(meta), __FILE__, __LINE__); \
+#define SURPRISING                                                      \
+    do {                                                                \
+        g_warning("Unusual argument type '%s' %s:%d", gig_type_meta_describe(meta), __FILE__, __LINE__); \
     } while(FALSE)
 
-#define UNHANDLED                               \
-    do { \
-    g_error("unhandled argument type '%s' %s:%d", gig_type_meta_describe(meta), __FILE__, __LINE__); \
+#define UNHANDLED                                                       \
+    do {                                                                \
+        g_error("unhandled argument type '%s' %s:%d", gig_type_meta_describe(meta), __FILE__, __LINE__); \
     } while(FALSE)
 
 static gpointer later_free(GPtrArray *must_free, GigTypeMeta *meta, gpointer ptr);
@@ -300,12 +300,12 @@ scm_to_c_integer(S2C_ARG_DECL)
     TRACE_S2C();
     GType t = meta->gtype;
     if (t == G_TYPE_INT) {
-#define T(t,min,max)                                                \
-        do {                                                        \
-            if (!scm_is_signed_integer(object, min, max))           \
-                scm_wrong_type_arg_msg(subr, argpos, object, #t);   \
-            arg->v_ ## t = scm_to_ ## t(object);                    \
-        } while (0)                                                 \
+#define T(t,min,max)                                                    \
+        do {                                                            \
+            if (!scm_is_signed_integer(object, min, max))               \
+                scm_wrong_type_arg_msg(subr, argpos, object, #t);       \
+            arg->v_ ## t = scm_to_ ## t(object);                        \
+        } while (0)                                                     \
 
         switch (meta->item_size) {
         case 1:
@@ -326,12 +326,12 @@ scm_to_c_integer(S2C_ARG_DECL)
     }
 
     else if (t == G_TYPE_UINT) {
-#define T(t,min,max)                                                  \
-        do {                                                          \
-            if (!scm_is_unsigned_integer(object, min, max))           \
-                scm_wrong_type_arg_msg(subr, argpos, object, #t);     \
-            arg->v_ ## t = scm_to_ ## t(object);                      \
-        } while (0)                                                   \
+#define T(t,min,max)                                                    \
+        do {                                                            \
+            if (!scm_is_unsigned_integer(object, min, max))             \
+                scm_wrong_type_arg_msg(subr, argpos, object, #t);       \
+            arg->v_ ## t = scm_to_ ## t(object);                        \
+        } while (0)                                                     \
 
         if (meta->is_unichar) {
             if (SCM_CHARP(object))
@@ -1374,10 +1374,10 @@ c_native_array_to_scm(C2S_ARG_DECL)
     do {                                                                \
         gsize sz;                                                       \
         if (!g_size_checked_mul(&sz, length, gig_meta_real_item_size(&meta->params[0])) || sz == G_MAXSIZE) \
-            scm_misc_error(subr, "array size overflow", SCM_EOL);               \
-        if (sz == 0) \
+            scm_misc_error(subr, "array size overflow", SCM_EOL);       \
+        if (sz == 0)                                                    \
             *object = scm_make_ ## _short_type ## vector (scm_from_int(0), scm_from_int(0)); \
-        else if (meta->transfer == GI_TRANSFER_EVERYTHING) \
+        else if (meta->transfer == GI_TRANSFER_EVERYTHING)              \
             *object = scm_take_ ## _short_type ## vector((_type *)(arg->v_pointer), length); \
         else                                                            \
             *object = scm_take_ ## _short_type ## vector((_type *)g_memdup(arg->v_pointer, sz), length); \
@@ -1389,9 +1389,9 @@ c_native_array_to_scm(C2S_ARG_DECL)
     else if (item_type == G_TYPE_UCHAR)
         TRANSFER(guint8, u8);
     else if (item_type == G_TYPE_INT) {
-#define DO_TRANSFER(n, m)                \
-        case n:                          \
-            TRANSFER(gint ## m, s ## m); \
+#define DO_TRANSFER(n, m)                       \
+        case n:                                 \
+            TRANSFER(gint ## m, s ## m);        \
             break;
 
         switch (meta->params[0].item_size) {
@@ -1405,10 +1405,10 @@ c_native_array_to_scm(C2S_ARG_DECL)
 #undef DO_TRANSFER
     }
     else if (item_type == G_TYPE_UINT) {
-#define DO_TRANSFER(n, m)                        \
-        case n:                                  \
-            TRANSFER(guint ## m, u ## m);        \
-            break;
+#define DO_TRANSFER(n, m)                       \
+     case n:                                    \
+         TRANSFER(guint ## m, u ## m);          \
+         break;
 
         if (meta->params[0].is_unichar) {
             *object = scm_c_make_string(length, SCM_MAKE_CHAR(0));

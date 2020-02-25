@@ -2,9 +2,7 @@
              (srfi srfi-64))
 
 (use-typelibs (("GLib" "2.0")
-               #:renamer (protect* '(test-equal
-                                     test-assert
-                                     test-skip))))
+               #:renamer (protect* '(test-equal test-assert test-skip))))
 
 (define years-since-1970
   (compose
@@ -37,7 +35,7 @@
       (clear date2 1)
       (test-assert "clear-invalidates"
         (not (valid? date2)))
-    
+
       (test-assert "clear-original-unaffected"
         (valid? date)))))
 

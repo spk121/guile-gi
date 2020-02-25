@@ -121,10 +121,10 @@ gig_define_enum_conversions(GIEnumInfo *info, GType type, SCM defs)
     else
         _class = gig_type_get_scheme_type_with_info(info);
 
-#define C(fmt, proc) \
+#define C(fmt, proc)                                                    \
     do {                                                                \
         defs = scm_cons(define_conversion(fmt, cls,                     \
-                                          scm_call_1(proc, _class)),     \
+                                          scm_call_1(proc, _class)),    \
                         defs);                                          \
     } while (0)
 

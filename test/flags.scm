@@ -26,35 +26,35 @@
 (test-begin "flags.scm")
 
 (test-equal "complement"
-            (list->flags <Flags> '(c d))
-            (flags-complement (list->flags <Flags> '(ab))))
+  (list->flags <Flags> '(c d))
+  (flags-complement (list->flags <Flags> '(ab))))
 
 (test-equal "difference"
-            (list->flags <Flags> '(a))
-            (flags-difference (list->flags <Flags> '(ab))
-                              (list->flags <Flags> '(b))))
+  (list->flags <Flags> '(a))
+  (flags-difference (list->flags <Flags> '(ab))
+                    (list->flags <Flags> '(b))))
 
 (test-assert "union"
-             (flags-set?
-              (flags-union (list->flags <Flags> '(a))
-                           (list->flags <Flags> '(b)))
-              '(a b ab)))
+  (flags-set?
+   (flags-union (list->flags <Flags> '(a))
+                (list->flags <Flags> '(b)))
+   '(a b ab)))
 
 (let ((f1 (list->flags <Flags> '(ab)))
       (f2 (list->flags <OtherFlags> '(a b))))
   (test-assert "numerical-projection"
-               (= (flags-projection/number f1 f2) f1))
+    (= (flags-projection/number f1 f2) f1))
   (test-assert "numerical-projection-outside-mask"
-               (not (= (flags-projection/number f2 f1) f1)))
+    (not (= (flags-projection/number f2 f1) f1)))
   (test-assert "projection-breaks-equal"
-               (not (equal? (flags-projection/number f1 f2) f1)))
+    (not (equal? (flags-projection/number f1 f2) f1)))
   (test-assert "list-projection-preserves-flags"
-               (and
-                (flags-set? (flags-projection/list f1 f2) '(a b))
-                (flags-set? (flags-projection/list f2 f1) '(ab))
-                (flags-set? (flags-projection/list
-                             (list->flags <OtherFlags> '(cd))
-                             <Flags>)
-                            '(c d)))))
+    (and
+     (flags-set? (flags-projection/list f1 f2) '(a b))
+     (flags-set? (flags-projection/list f2 f1) '(ab))
+     (flags-set? (flags-projection/list
+                  (list->flags <OtherFlags> '(cd))
+                  <Flags>)
+                 '(c d)))))
 
 (test-end "flags.scm")

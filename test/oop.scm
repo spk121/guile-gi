@@ -14,30 +14,30 @@
 (test-assert "register-type"
   (begin
     (set! test-signal
-      (make-signal
-       #:name "test-signal"
-       #:return-type G_TYPE_NONE))
+          (make-signal
+           #:name "test-signal"
+           #:return-type G_TYPE_NONE))
 
     (set! test-detailed-signal
-      (make-signal
-       #:name "test-detailed-signal"
-       #:flags (list->signal-flags '(detailed))
-       #:return-type G_TYPE_NONE))
+          (make-signal
+           #:name "test-detailed-signal"
+           #:flags (list->signal-flags '(detailed))
+           #:return-type G_TYPE_NONE))
 
     (set! test-param
-      (param-spec-int
-       "test-param"
-       "test-param"
-       "This is a test parameter"
-       -200 200 0
-       (list->param-flags '(readwrite))))
+          (param-spec-int
+           "test-param"
+           "test-param"
+           "This is a test parameter"
+           -200 200 0
+           (list->param-flags '(readwrite))))
 
     (set! <TestClass>
-      (register-type
-       "TestClass"
-       <GObject>
-       (list test-param)
-       (list test-signal test-detailed-signal)))))
+          (register-type
+           "TestClass"
+           <GObject>
+           (list test-param)
+           (list test-signal test-detailed-signal)))))
 
 (unless (test-passed?)
   (test-skip most-positive-fixnum))
@@ -91,12 +91,12 @@
     #f wrong-detail-fired))
 
 (test-assert "blocked signal"
-             (let ((blocked #t))
-               (signal-handler-block
-                object
-                (connect object test-signal (lambda _ (set! blocked #f))))
-               (test-signal object)
-               blocked))
+  (let ((blocked #t))
+    (signal-handler-block
+     object
+     (connect object test-signal (lambda _ (set! blocked #f))))
+    (test-signal object)
+    blocked))
 
 (if (false-if-exception (require "Gio" "2.0"))
     (begin

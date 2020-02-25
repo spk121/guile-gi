@@ -52,13 +52,13 @@
 
 (test-assert "add timeout"
   (timeout-add PRIORITY_DEFAULT
-              100
-              (lambda _
-                (if (= n-timeout 5)
-                    #f
-                    (begin (set! n-timeout (1+ n-timeout)) #t)))
-              #f
-              on-idle-quit))
+               100
+               (lambda _
+                 (if (= n-timeout 5)
+                     #f
+                     (begin (set! n-timeout (1+ n-timeout)) #t)))
+               #f
+               on-idle-quit))
 
 (if (test-passed?)
     (set! %idle-counter (1+ %idle-counter))
@@ -68,29 +68,29 @@
 (define unix-fd-result #f)
 
 (test-assert "add unix-fd callback"
-             (< 0
-                (let* ((ports (pipe))
-                       (in-port (car ports))
-                       (out-port (cdr ports)))
-                  (display unix-fd-sample-text out-port)
-                  (newline out-port)
-                  (close out-port)
-                  (unix-fd-add-full PRIORITY_DEFAULT
-                                    (port->fdes in-port)
-                                    (list->iocondition '(hup in))
-                                    (lambda (fd condition dummy)
-                                      (cond
-                                       ((flags-set? condition 'in)
-                                        (let* ((port (dup->inport fd))
-                                               (line (get-line port)))
-                                          (set! unix-fd-result line)
-                                          #t))
-                                       ((flags-set? condition 'hup)
-                                        ;; close in-port on SIGHUP
-                                        (close in-port)
-                                        #f)))
-                                    #f
-                                    (const #f)))))
+  (< 0
+     (let* ((ports (pipe))
+            (in-port (car ports))
+            (out-port (cdr ports)))
+       (display unix-fd-sample-text out-port)
+       (newline out-port)
+       (close out-port)
+       (unix-fd-add-full PRIORITY_DEFAULT
+                         (port->fdes in-port)
+                         (list->iocondition '(hup in))
+                         (lambda (fd condition dummy)
+                           (cond
+                            ((flags-set? condition 'in)
+                             (let* ((port (dup->inport fd))
+                                    (line (get-line port)))
+                               (set! unix-fd-result line)
+                               #t))
+                            ((flags-set? condition 'hup)
+                             ;; close in-port on SIGHUP
+                             (close in-port)
+                             #f)))
+                         #f
+                         (const #f)))))
 
 (test-assert "run mainloop"
   (begin
@@ -101,7 +101,7 @@
 (test-equal "timeout ran 5 times" 5 n-timeout)
 
 (test-equal "unix-fd callback ran"
-            unix-fd-sample-text
-            unix-fd-result)
+  unix-fd-sample-text
+  unix-fd-result)
 
 (test-end "main-loop")

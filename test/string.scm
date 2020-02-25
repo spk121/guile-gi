@@ -4,9 +4,7 @@
              (srfi srfi-64))
 
 (use-typelibs (("GLib" "2.0")
-               #:renamer (protect* '(test-equal
-                                     test-assert
-                                     test-skip))))
+               #:renamer (protect* '(test-equal test-assert test-skip))))
 (test-begin "strings")
 
 (let* ((str1 "hello")
@@ -28,20 +26,20 @@
 ;; C string.
 (test-skip "strstr-len")
 (test-equal "strstr-len"
-            "llo, world"
-            (strstr-len "hello, world" -1 "l"))
+  "llo, world"
+  (strstr-len "hello, world" -1 "l"))
 
 (test-assert "has-prefix"
-             (str-has-prefix? "ABCDEFG" "ABC"))
+  (str-has-prefix? "ABCDEFG" "ABC"))
 
 (receive (tokens ascii-alternates)
     (str-tokenize-and-fold "Les pâtes françaises" "fr_FR")
   (test-assert
-   "tokenize-and-fold tokens"
-   (vector= string-ci=? #("Les" "pâtes" "françaises") tokens))
+      "tokenize-and-fold tokens"
+    (vector= string-ci=? #("Les" "pâtes" "françaises") tokens))
   (test-assert
-   "tokenize-and-fold ascii-alternates"
-   (vector= string-ci=? #("pates" "francaises") ascii-alternates)))
+      "tokenize-and-fold ascii-alternates"
+    (vector= string-ci=? #("pates" "francaises") ascii-alternates)))
 
 (test-end "strings")
 
@@ -69,10 +67,10 @@
   #f)
 
 (test-assert "unichar-isalpha"
- (unichar-isalpha? #\と))
+  (unichar-isalpha? #\と))
 
 (test-assert "unichar-validate-zero"
- (unichar-validate? #\x0000))
+  (unichar-validate? #\x0000))
 
 (test-end "unichar")
 
@@ -86,5 +84,5 @@
   (test-equal "convert-ascii"
     #u8(65 66 67 68 69)
     (convert #u8(65 66 67 68 69) "UTF-8" "US-ASCII"))
-  
+
   (test-end "conversions"))

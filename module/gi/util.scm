@@ -22,8 +22,8 @@
 
 (define (push-duplicate-handler! handler)
   (default-duplicate-binding-handler
-   (cons handler
-         (default-duplicate-binding-handler))))
+    (cons handler
+          (default-duplicate-binding-handler))))
 
 (define %rnrs-syntax
   (cdr

@@ -14,15 +14,15 @@
 
 (define-syntax-rule (const-ireturn type f)
   (test-eqv (string-append "const-return-" type)
-            0 (f)))
+    0 (f)))
 
 (define-syntax-rule (const-freturn type f)
   (test-eqv (string-append "const-return-" type)
-            0.0 (f)))
+    0.0 (f)))
 
 (define-syntax-rule (const-sreturn type f)
   (test-assert (string-append "const-return-" type)
-               (string-null? (f))))
+    (string-null? (f))))
 
 (const-ireturn "gchar" const-return-gchar)
 (const-ireturn "gshort" const-return-gshort)
@@ -52,40 +52,40 @@
 (const-sreturn "filename" const-return-filename)
 
 (test-assert "const-return-gboolean"
-             (not (const-return-gboolean?)))
+  (not (const-return-gboolean?)))
 
 (test-assert "const-return-gpointer"
-             (not (const-return-gpointer)))
+  (not (const-return-gpointer)))
 
 (test-eq "const-return-gunichar"
-         #\null (const-return-gunichar))
+  #\null (const-return-gunichar))
 
 (test-eq "const-return-gtype"
-         <GObject> (const-return-gtype))
+  <GObject> (const-return-gtype))
 
 (define-syntax-rule (one-iparam type f)
   (test-assert (string-append "oneparam-" type)
-               (begin
-                 (f 1)
-                 #t)))
+    (begin
+      (f 1)
+      #t)))
 
 (define-syntax-rule (one-fparam type f)
   (test-assert (string-append "oneparam-" type)
-               (begin
-                 (f 1.0)
-                 #t)))
+    (begin
+      (f 1.0)
+      #t)))
 
 (define-syntax-rule (one-sparam type f)
   (test-assert (string-append "oneparam-" type)
-               (begin
-                 (f "hello")
-                 #t)))
+    (begin
+      (f "hello")
+      #t)))
 
 (one-iparam "gchar" oneparam-gchar)
 (test-assert "oneparam-gchar-from-char"
-             (begin
-               (oneparam-gchar #\A)
-               #t))
+  (begin
+    (oneparam-gchar #\A)
+    #t))
 
 (one-iparam "gshort" oneparam-gshort)
 (one-iparam "gint" oneparam-gint)
@@ -115,45 +115,45 @@
 (one-sparam "utf8" oneparam-utf8)
 
 (test-assert "oneparam-gboolean"
-             (begin
-               (oneparam-gboolean #t)
-               #t))
+  (begin
+    (oneparam-gboolean #t)
+    #t))
 
 (test-assert "oneparam-gpointer"
-           (let ((bv (make-bytevector 1 0)))
-             (oneparam-gpointer (bytevector->pointer bv))
-             #t))
+  (let ((bv (make-bytevector 1 0)))
+    (oneparam-gpointer (bytevector->pointer bv))
+    #t))
 
 (test-assert "oneparam-gtype"
-             (begin
-               (oneparam-gtype G_TYPE_OBJECT)
-               #t))
+  (begin
+    (oneparam-gtype G_TYPE_OBJECT)
+    #t))
 
 (test-assert "oneparam-gtype-from-class"
-             (begin
-               (oneparam-gtype <GObject>)
-               #t))
+  (begin
+    (oneparam-gtype <GObject>)
+    #t))
 
 (test-assert "oneparam-gunichar"
-             (begin
-               (oneparam-gunichar #\あ)
-               #t))
+  (begin
+    (oneparam-gunichar #\あ)
+    #t))
 
 (define-syntax-rule (oneout-iparam type f)
   (test-eqv (string-append "one-outparam-" type)
-            0 (f)))
+    0 (f)))
 
 (define-syntax-rule (oneout-fparam type f)
   (test-eqv (string-append "one-outparam-" type)
-            0.0 (f)))
+    0.0 (f)))
 
 (define-syntax-rule (oneout-sparam type f)
   (test-assert (string-append "one-outparam-" type)
-             (string-null? (f))))
+    (string-null? (f))))
 
 (test-expect-fail "one-outparam-gchar-as-char")
 (test-assert "one-outparam-gchar-as-char"
-             (char=? #\null (one-outparam-gchar)))
+  (char=? #\null (one-outparam-gchar)))
 
 (oneout-iparam "gshort" one-outparam-gshort)
 (oneout-iparam "gint" one-outparam-gint)
@@ -183,32 +183,32 @@
 (oneout-sparam "utf8" one-outparam-utf8)
 
 (test-assert "one-outparam-gboolean"
-             (not (one-outparam-gboolean)))
+  (not (one-outparam-gboolean)))
 
 (test-assert "one-outparam-gpointer"
-             (not (one-outparam-gpointer)))
+  (not (one-outparam-gpointer)))
 
 (test-eqv "passthrough-one-gintptr"
-          1 (passthrough-one-gintptr 1))
+  1 (passthrough-one-gintptr 1))
 
 (test-eqv "passthrough-one-guintptr"
-          1 (passthrough-one-guintptr 1))
+  1 (passthrough-one-guintptr 1))
 
 (test-eq "one-outparam-gunichar"
-         #\null (one-outparam-gunichar))
+  #\null (one-outparam-gunichar))
 
 (test-assert "passthrough-one-filename"
-           (let ((fn "temp.txt"))
-             (string=? fn (passthrough-one-filename (string-copy fn)))))
+  (let ((fn "temp.txt"))
+    (string=? fn (passthrough-one-filename (string-copy fn)))))
 
 (test-assert "passthrough-one-utf8"
-           (let ((str "Việt Nam"))
-             (string=? str (passthrough-one-utf8 (string-copy str)))))
+  (let ((str "Việt Nam"))
+    (string=? str (passthrough-one-utf8 (string-copy str)))))
 
 (test-assert "passthrough-one-gpointer"
-           (let* ((bv (make-bytevector 1))
-                  (inptr (bytevector->pointer bv))
-                  (outptr (passthrough-one-gpointer inptr)))
-             (equal? inptr outptr)))
+  (let* ((bv (make-bytevector 1))
+         (inptr (bytevector->pointer bv))
+         (outptr (passthrough-one-gpointer inptr)))
+    (equal? inptr outptr)))
 
 (test-end "everything.scm")

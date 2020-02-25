@@ -70,26 +70,26 @@
 
 (test-expect-fail "callback-unsigned-ints arity too low")
 (test-error "callback-unsigned-ints arity too low"
-            #t
+  #t
   (call-callback-unsigned-ints?
    (lambda (u8 u16 u32) #t)
    1 2 3 4))
 
 (test-expect-fail "callback-unsigned-ints arity too high")
 (test-error "callback-unsigned-ints arity too high"
-            #t
+  #t
   (call-callback-unsigned-ints?
    (lambda (u8 u16 u32 u64 u128) #t)
    1 2 3 4))
 
 (test-error "callback-unsigned-ints out of range"
-            #t
+  #t
   (call-callback-unsigned-ints?
    (lambda (u8 u16 u32 u64) #t)
    #xFFFF #xFFFF #xFFFF #xFFFF))
 
 (test-error "callback-unsigned-ints wrong type"
-            #t
+  #t
   (call-callback-unsigned-ints?
    (lambda (u8 u16 u32 u64) #t)
    #t "hello" 1.0 #\x))
@@ -110,26 +110,26 @@
 
 (test-expect-fail "callback-out-unsigned-ints too few output args")
 (test-error "callback-out-unsigned-ints too few output args"
-            #t
+  #t
   (call-callback-out-unsigned-ints
    (lambda ()
      (values 1 2 3))))
 
 (test-expect-fail "callback-out-unsigned-ints too many output args")
 (test-error "callback-out-unsigned-ints too many output args"
-            #t
+  #t
   (call-callback-out-unsigned-ints
    (lambda ()
      (values 1 2 3 4 5))))
 
 (test-error "callback-out-unsigned-ints out of range"
-            #t
+  #t
   (call-callback-out-unsigned-ints
    (lambda ()
      (values #xFFFF #xFFFF #xFFFF #xFFFF))))
 
 (test-error "callback-out-unsigned-ints wrong type"
-            #t
+  #t
   (call-callback-out-unsigned-ints
    (lambda ()
      (values #t "hello" 0.0 #\x))))

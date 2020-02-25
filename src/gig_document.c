@@ -27,10 +27,10 @@ static void do_document(GIBaseInfo *info, const gchar *parent);
 static void
 document_nested(GIBaseInfo *parent)
 {
-#define DOCUMENT_NESTED(N, I)                               \
-    do {                                                    \
-        for (gint i = 0; i < N; i++)                        \
-            do_document(I(parent, i), _namespace);           \
+#define DOCUMENT_NESTED(N, I)                           \
+    do {                                                \
+        for (gint i = 0; i < N; i++)                    \
+            do_document(I(parent, i), _namespace);      \
     } while (0)
 
     gchar *_namespace = gig_gname_to_scm_name(g_base_info_get_name(parent));

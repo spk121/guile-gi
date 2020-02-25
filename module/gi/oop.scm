@@ -81,15 +81,15 @@
     (and (not (null? signals))
          (method-procedure
           (car (sort signals
-                    (lambda (a b)
-                      (let ((a-type (car (method-specializers a)))
-                            (b-type (car (method-specializers b))))
-                        (let lp ((cpl (class-precedence-list type)))
-                          (let ((elt (car cpl)))
-                            (cond
-                             ((eq? a-type elt) #t)
-                             ((eq? b-type elt) #f)
-                             (else (lp (cdr cpl))))))))))))))
+                     (lambda (a b)
+                       (let ((a-type (car (method-specializers a)))
+                             (b-type (car (method-specializers b))))
+                         (let lp ((cpl (class-precedence-list type)))
+                           (let ((elt (car cpl)))
+                             (cond
+                              ((eq? a-type elt) #t)
+                              ((eq? b-type elt) #f)
+                              (else (lp (cdr cpl))))))))))))))
 
 (define (%connect-generic obj signal detail handler after)
   (let ((real-signal (%find-signal signal (class-of obj))))

@@ -3,9 +3,7 @@
              (rnrs bytevectors))
 
 (use-typelibs (("GLib" "2.0")
-               #:renamer (protect* '(test-equal
-                                     test-assert
-                                     test-skip))))
+               #:renamer (protect* '(test-equal test-assert test-skip))))
 
 (test-begin "byte-array")
 
@@ -33,7 +31,7 @@
   (test-eqv "size is 0"
     0
     (get-size bytes))
-  
+
   (test-eq "data is #f"
     #f
     (get-data bytes)))

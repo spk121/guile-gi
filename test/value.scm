@@ -22,7 +22,7 @@
 (test-equal "simple-closure"
   42
   ((apply (procedure->closure *)
-         G_TYPE_INT
-         (map int->value '(21 2)))))
+          G_TYPE_INT
+          (map int->value '(21 2)))))
 
 (test-end "value")

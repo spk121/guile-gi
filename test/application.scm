@@ -11,7 +11,7 @@
    (negate null?)
    load-by-name))
 
-(if (false-if-exception (require "Gio" "2.0"))                        
+(if (false-if-exception (require "Gio" "2.0"))
     (test-assert "load Application"
       (load-by-name? "Gio" "Application"))
     (begin
@@ -68,8 +68,8 @@
 (define (do-command-line app command-line)
   (set! %command-line-args (get-arguments command-line))
   (set! %command-line-options
-    (variant:get-strv
-     (lookup-value (get-options-dict command-line) "option" #f)))
+        (variant:get-strv
+         (lookup-value (get-options-dict command-line) "option" #f)))
   (activate app)
   (quit app)
   0)

@@ -2,9 +2,7 @@
              (srfi srfi-64))
 
 (use-typelibs (("GLib" "2.0")
-               #:renamer (protect* '(test-equal
-                                     test-assert
-                                     test-skip))))
+               #:renamer (protect* '(test-equal test-assert test-skip))))
 
 (test-begin "version")
 

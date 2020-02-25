@@ -4,9 +4,7 @@
              (srfi srfi-64))
 
 (use-typelibs (("GLib" "2.0")
-               #:renamer (protect* '(test-equal
-                                     test-assert
-                                     test-skip))))
+               #:renamer (protect* '(test-equal test-assert test-skip))))
 
 (define (subbytevector bv start end)
   (let ((bv2 (make-bytevector (- end start))))
@@ -49,8 +47,8 @@
          (alpha (second-value (read-unichar channel)))
          (beta  (second-value (read-unichar channel))))
     (and
-      (equal? alpha #\α)
-      (equal? beta #\β))))
+     (equal? alpha #\α)
+     (equal? beta #\β))))
 
 (test-assert "unichar cleanup"
   (delete-file "tmp.txt"))

@@ -81,10 +81,10 @@
             (case-lambda
              ((elem-gi)
               (xpath:node-or
-                (xpath:select-kids
-                 (xpath:node-typeof? (res-name->sxml elem-gi)))
-                (xpath:node-self
-                 (xpath:node-typeof? (res-name->sxml elem-gi)))))
+               (xpath:select-kids
+                (xpath:node-typeof? (res-name->sxml elem-gi)))
+               (xpath:node-self
+                (xpath:node-typeof? (res-name->sxml elem-gi)))))
              ((elem-gi name)
               (compose
                (xpath:filter
@@ -105,12 +105,12 @@
                  ;; the *single* link to the already existing element
                  ;; documenting the same data
                  (set! existing
-                   (cond
-                    ((member (res-name->sxml elem-gi)
-                             '(parameters instance-parameter))
-                     ((%existing elem-gi) seed))
-                    (name
-                     ((%existing elem-gi name) seed))))
+                       (cond
+                        ((member (res-name->sxml elem-gi)
+                                 '(parameters instance-parameter))
+                         ((%existing elem-gi) seed))
+                        (name
+                         ((%existing elem-gi name) seed))))
 
                  (cons*
                   ;; the current path in tags
@@ -520,7 +520,7 @@
                   (refentry
                    (refnamediv (refname "Functions"))
                    (refsect1 (title "Functions")
-                    ,@functions))))))
+                             ,@functions))))))
 
            (entry
             (lambda (tag . kids)
@@ -543,12 +543,12 @@
                    (filter
                     identity
                     `((refnamediv ,@(cdar scheme))
-                    ,(and (not (null? doc))
-                          `(refsect1 (title "Description")
-                                     ,@(markdown (string-join doc ""))))
-                    ,(section "Members" members)
-                    ,(section "Properties" properties)
-                    ,(section "Functions" functions)))))))))
+                      ,(and (not (null? doc))
+                            `(refsect1 (title "Description")
+                                       ,@(markdown (string-join doc ""))))
+                      ,(section "Members" members)
+                      ,(section "Properties" properties)
+                      ,(section "Functions" functions)))))))))
 
            (refsect2
             (lambda (tag . kids)

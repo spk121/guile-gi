@@ -97,13 +97,13 @@ add_child_params(GigTypeMeta *meta, GITypeInfo *type_info, gint n)
 static void
 gig_type_meta_init_from_basic_type_tag(GigTypeMeta *meta, GITypeTag tag)
 {
-#define T(TYPETAG,GTYPE,CTYPE)                                          \
-    do {                                                                \
-        if (tag == TYPETAG) {                                           \
-            meta->gtype = GTYPE;                                        \
-            meta->item_size = sizeof (CTYPE);                           \
-            return;                                                     \
-        }                                                               \
+#define T(TYPETAG,GTYPE,CTYPE)                  \
+    do {                                        \
+        if (tag == TYPETAG) {                   \
+            meta->gtype = GTYPE;                \
+            meta->item_size = sizeof (CTYPE);   \
+            return;                             \
+        }                                       \
     } while(FALSE)
 
     T(GI_TYPE_TAG_BOOLEAN, G_TYPE_BOOLEAN, gboolean);
