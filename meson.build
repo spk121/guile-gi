@@ -71,9 +71,30 @@ endif
 
 if get_option('use_guile_site')
   extensiondir = guile_dep.get_pkgconfig_variable('extensiondir')
+  sitedir = guile_dep.get_pkgconfig_variable('sitedir')
 else
   extensiondir = get_option('prefix') / get_option('libdir') / 'guile' / guile_version / 'extensions'
+  sitedir = get_option('prefix') / get_option('datadir') / 'guile' / 'site' / guile_version
 endif
+
+conf_data = configuration_data({'abs_top_builddir': meson.current_build_dir(),
+                                'abs_top_srcdir': meson.current_source_dir(),
+                                'GI_GIR_DIR': gobject_introspection_dep.get_pkgconfig_variable('girdir'),
+                                'GUILE': guile_dep.get_pkgconfig_variable('guile'),
+                                'SHELL': '/bin/sh',
+                               })
+
+configure_file(input: 'module' / 'gi' / 'config.scm.in',
+               output: 'config.scm',
+               configuration: conf_data)
+foreach tool: ['gdb-guile', 'gdb-test', 'lcov.sh', 'run-guile',
+               'run-test', 'uninstalled-env', 'uninstalled-test-env',
+               'valgrind.sh']
+  configure_file(input: 'tools' / tool + '.in',
+                 output: tool,
+                 configuration: conf_data)
+endforeach
+meson.add_postconf_script('meson_postconf.sh')
 
 shared_library('guile-gi',
                'src/gig_argument.c',
@@ -98,3 +119,18 @@ shared_library('guile-gi',
                               guile_dep, libffi_dep],
                install: true,
                install_dir: extensiondir)
+
+gi_modules = ['module/gi/config.scm',
+              'module/gi/core-generics.scm',
+              'module/gi/documentation.scm',
+              'module/gi/logging.scm',
+              'module/gi/oop.scm',
+              'module/gi/repository.scm',
+              'module/gi/types.scm',
+              'module/gi/util.scm']
+script_modules = ['module/scripts/gi-gtkdoc.scm']
+top_modules = ['module/gi.scm']
+
+install_data(gi_modules, install_dir: sitedir / 'gi')
+install_data(script_modules, install_dir: sitedir / 'scripts')
+install_data(top_modules, install_dir: sitedir)

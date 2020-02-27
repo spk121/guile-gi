@@ -1,0 +1,1 @@
+option('use_guile_site', type: 'boolean', value: true, description: 'infer installation paths from guile pkgconfig')
