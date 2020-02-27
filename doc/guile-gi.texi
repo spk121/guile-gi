@@ -828,7 +828,7 @@ In that example, the caller is attaching a procedure named
 the gobject object calls all the callback procedures attached to its
 ``activate'' signal it will call this @code{activate} procedure.
 
-When a callback procedure is called it may receives some arguments
+When a callback procedure is called it may receive some arguments
 from the caller and some from user data.  In the example, @code{activate}
 is supposed to take a single argument.
 This argument -- @code{app} -- is supplied by the caller, as are all
@@ -846,10 +846,10 @@ is run @emph{after} the main handling code.
 @end deffn
 
 Signal objects can also be used to emit signals. Note that you shouldn't
-normally do this when using objects of types, that you didn't define,
-and even when using objects of types, that you did define, you should
-only emit the signals that you defined for that object (and perhaps the
-``notify'' signal when using explicit notification).
+normally do this when using objects of types that you did not define.
+When using objects of types that you did define, you should only emit
+the signals that you defined for that object (and perhaps the ``notify''
+signal when using explicit notification).
 
 @defspec @emph{(signal <signal>)} obj [detail] [args...]
 Emits the @var{signal} signal of @var{obj} with @var{detail} and
@@ -872,28 +872,56 @@ A string.
 @end defvr
 @defvr Slot return-type
 The return type of the signal.
-A @code{<GType>} or integer.
+A @code{<GType>} or integer, such as @code{G_TYPE_INT}.
 @end defvr
 @defvr Slot param-types
 The parameter types of the signal.
 A list of @code{<GType>}s or integers.
 @end defvr
 @defvr Slot accumulator
-A procedure, called with two arguments @var{seed} and @var{current} and
-produces up to two output values.  If it produces no output value,
-@var{seed} is left unchanged and signal handling continues.  If it
-produces one output value, @var{seed} is set to that value and signal
-handling continues.  If it produces two output values, @var{seed} is set
-to the second output value and signal handling stops if the first is
-@code{#f}.  If at any time @var{seed} would be set to an incorrect value
-or more than two values are returned signal handling is aborted.
+An optional signal accumulator procedure. @xref{Signal Accumulators}.
 @end defvr
 @defvr Slot flags
-Signal flags, a logical or of  one or more of
+Signal flags, a logical or of one or more of
 @code{SIGNAL_RUN_FIRST}, @code{SIGNAL_RUN_LAST},
 @code{SIGNAL_RUN_CLEANUP}, @code{SIGNAL_NO_RECURSE}, etc.
 @c TODO: refer to the GObject manual
 @end defvr
+
+@node Signal Accumulators
+@subsection Signal Accumulators
+The signal accumulator is a special callback procedure that gets called
+during a signal emission.  The ``accumulator'' nomenclature comes from
+the common case where one wants to collect the return values of signal
+emissions.  In Scheme terms, the accumulator can be compared to a
+@code{fold} procedure that gets called on signal emission results.
+
+When specified, the signal accumulator is a procedure with two
+input arguments: @var{seed} and @var{current}. The input value
+@var{seed} is a value created by the previous call to the accumulator.
+The first time the accumulator is called, @var{seed} will zero for
+signals that return numeric types. The input value @var{current} is the
+return value of the just emitted signal.
+
+The accumulator procedure should return zero, one, or two values.
+@itemize @bullet
+@item
+If it produces no output value, signal handling continues for this
+signal, and @var{seed} is left unchanged for the next call to the
+accumulator.
+@item
+If it produces one output value, signal handling continues for this
+signal, and, for the next call to the accumulator, the @var{seed} value
+will be this output value.  Note that the output value must have the
+same type as specified for the signal output value: @code{G_TYPE_INT},
+@code{G_TYPE_FLOAT}, etc.
+@item
+If it produces two output values, @var{seed} is set to the second output
+value, and signal handling stops for this signal if the first output
+value is @code{#f}.
+@end itemize
+If at any time @var{seed} would be set to an incorrect value or more
+than two values are returned signal handling is aborted.
 
 @c -----------------------------------------------------------------
 @node GObject Properties
