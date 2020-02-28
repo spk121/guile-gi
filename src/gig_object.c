@@ -77,7 +77,8 @@ gig_i_scm_make_gobject(SCM s_gtype, SCM s_prop_keylist)
 
     scm_dynwind_begin(0);
 
-    if (scm_is_true(scm_list_p(s_prop_keylist))) {
+    if (scm_is_true(scm_list_p(s_prop_keylist)) &&
+        scm_is_false(scm_zero_p(scm_length(s_prop_keylist)))) {
         _class = g_type_class_ref(type);
         scm_dynwind_unwind_handler(g_type_class_unref, _class, SCM_F_WIND_EXPLICITLY);
 
