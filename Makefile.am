@@ -361,6 +361,7 @@ TESTS = \
   test/value.scm \
   test/flags.scm \
   test/type.scm \
+  test/signals.scm \
   $(EVERYTHING_TESTS)
 
 XFAIL_TESTS =

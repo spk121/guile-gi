@@ -392,14 +392,15 @@ gig_i_scm_define_type(SCM s_type_name, SCM s_parent_type, SCM s_properties, SCM 
     if (scm_is_list(s_signals)) {
         n_signals = scm_to_size_t(scm_length(s_signals));
         for (gsize i = 0; i < n_signals; i++) {
-            GigSignalSpec *sspec;
+            GigSignalSpec *sspec = NULL;
             sspec = gig_signalspec_from_obj(scm_list_ref(s_signals, scm_from_size_t(i)));
-            g_ptr_array_add(signals, sspec);
+            if (sspec != NULL)
+                g_ptr_array_add(signals, sspec);
         }
     }
 
     new_type = gig_user_object_define(type_name, parent_type, properties, signals);
-
+    free(type_name);
     gig_type_define(new_type, SCM_UNDEFINED);
     return gig_type_get_scheme_type(new_type);
 }
@@ -494,6 +495,7 @@ gig_i_scm_emit(SCM self, SCM signal, SCM s_detail, SCM args)
     if (query_info.return_type != G_TYPE_NONE)
         g_value_init(&retval, query_info.return_type);
     g_signal_emitv(values, sigid, detail, &retval);
+    g_free(values);
 
     if (query_info.return_type != G_TYPE_NONE)
         return gig_value_as_scm(&retval, FALSE);

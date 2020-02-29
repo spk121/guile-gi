@@ -39,11 +39,15 @@ _gig_closure_marshal(GClosure *closure, GValue *ret, guint n_params, const GValu
         GType ret_type = G_VALUE_TYPE(ret);
 
         if (ret_type == G_TYPE_INVALID)
-            g_warning("failed to convert return value to invalid type");
+            scm_misc_error(NULL, "failed to convert return value to invalid type", SCM_EOL);
         else {
             const gchar *type_name = g_type_name(ret_type);
-            g_warning("failed to convert return value to %s",
-                      type_name ? type_name : "bizarre unnamed type");
+            if (type_name)
+                scm_misc_error(NULL, "failed to convert value to ~S",
+                               scm_list_1(scm_from_utf8_string(type_name)));
+            else
+                scm_misc_error(NULL, "failed to convert return value to bizarre unnamed type",
+                               SCM_EOL);
         }
     }
 }

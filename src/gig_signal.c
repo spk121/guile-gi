@@ -47,7 +47,7 @@ scm_signal_accu(GSignalInvocationHint * ihint,
     case 0:
         return TRUE;
     case 1:
-        if (!scm_is_eq (result, SCM_UNSPECIFIED))
+        if (!scm_is_eq(result, SCM_UNSPECIFIED))
             g_return_val_if_fail(!gig_value_from_scm(seed, result), FALSE);
         return TRUE;
     case 2:
@@ -58,15 +58,25 @@ scm_signal_accu(GSignalInvocationHint * ihint,
         return ret;
     }
     default:
-        g_return_val_if_reached(FALSE);
+    {
+        SCM name = scm_procedure_name(SCM_PACK_POINTER(procedure));
+        char *_name = NULL;
+        scm_dynwind_begin(0);
+        if (scm_is_true(scm_symbol_p(name))) {
+            _name = scm_to_utf8_string(scm_symbol_to_string(name));
+            scm_dynwind_unwind_handler(g_free, _name, SCM_F_WIND_EXPLICITLY);
+        }
+        scm_misc_error(_name,
+                       "callback accumulator returned ~S when 0, 1, or 2 values were expected",
+                       scm_list_1(result));
+        scm_dynwind_end();
+    }
     }
 }
 
 GigSignalSpec *
 gig_signalspec_from_obj(SCM obj)
 {
-    gchar *name;
-    GType return_type;
     guint n_params;
     GType *params;
     SCM sparams, saccu;
@@ -75,8 +85,15 @@ gig_signalspec_from_obj(SCM obj)
 
     SCM_ASSERT_TYPE(SCM_IS_A_P(obj, gig_signal_type), obj, SCM_ARG1, "%scm->signalspec", "signal");
 
-    name = scm_to_utf8_string(gig_signal_ref(obj, GIG_SIGNAL_SLOT_NAME));
-    return_type = scm_to_gtype(gig_signal_ref(obj, GIG_SIGNAL_SLOT_RETURN_TYPE));
+    scm_dynwind_begin(0);
+    spec = g_new0(GigSignalSpec, 1);
+    scm_dynwind_unwind_handler(gig_free_signalspec, spec, 0);
+    spec->return_type = scm_to_gtype(gig_signal_ref(obj, GIG_SIGNAL_SLOT_RETURN_TYPE));
+    if (spec->return_type == G_TYPE_INVALID)
+        scm_misc_error("%scm->signalspec", "signal ~A has no return type",
+                       scm_list_1(gig_signal_ref(obj, GIG_SIGNAL_SLOT_NAME)));
+    spec->signal_name = scm_to_utf8_string(gig_signal_ref(obj, GIG_SIGNAL_SLOT_NAME));
+
     sparams = gig_signal_ref(obj, GIG_SIGNAL_SLOT_PARAM_TYPES);
     saccu = gig_signal_ref(obj, GIG_SIGNAL_SLOT_ACCUMULATOR);
     n_params = scm_to_uint(scm_length(sparams));
@@ -92,28 +109,39 @@ gig_signalspec_from_obj(SCM obj)
             flags = gig_flags_to_uint(_flags);
     } while (0);
 
-    spec = g_new0(GigSignalSpec, 1);
-    spec->signal_name = name;
     spec->signal_flags = flags;
     if (SCM_UNBNDP(saccu) || scm_is_false(saccu)) {
         spec->accumulator = NULL;
         spec->accu_data = NULL;
     }
     else if (scm_is_eq(saccu, signal_accu_first_wins)) {
+        if (spec->return_type == G_TYPE_NONE)
+            scm_misc_error("%scm->signalspec",
+                           "signal ~A must return a value to use the first-wins accumulator",
+                           scm_list_1(scm_from_utf8_string(spec->signal_name)));
         spec->accumulator = g_signal_accumulator_first_wins;
         spec->accu_data = NULL;
     }
     else if (scm_is_eq(saccu, signal_accu_true_handled)) {
+        if (spec->return_type != G_TYPE_BOOLEAN)
+            scm_misc_error("%scm->signalspec",
+                           "signal ~A must have a boolean return type to use the true-handled accumulator",
+                           scm_list_1(scm_from_utf8_string(spec->signal_name)));
         spec->accumulator = g_signal_accumulator_true_handled;
         spec->accu_data = NULL;
     }
     else if (scm_is_true(scm_procedure_p(saccu))) {
+        if (spec->return_type == G_TYPE_NONE)
+            scm_misc_error("%scm->signalspec",
+                           "signal ~A must return a value to use an accumulator",
+                           scm_list_1(scm_from_utf8_string(spec->signal_name)));
         spec->accumulator = scm_signal_accu;
         spec->accu_data = SCM_UNPACK_POINTER(saccu);
     }
-    spec->return_type = return_type;
     spec->n_params = n_params;
     spec->param_types = params;
+
+    scm_dynwind_end();
     return spec;
 }
 
@@ -125,8 +153,10 @@ gig_free_signalspec(GigSignalSpec *spec)
             g_free(spec->param_types);
             spec->param_types = NULL;
         }
-        g_free(spec);
+        g_free(spec->signal_name);
+        spec->signal_name = NULL;
     }
+    g_free(spec);
 }
 
 SCM
