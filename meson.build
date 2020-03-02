@@ -1,5 +1,6 @@
 project('guile-gi', 'c',
         license: 'gpl3+',
+        version: '0.2.2',
         default_options: ['debug=true',
                           'optimization=2',
                           'warning_level=2'])
@@ -76,6 +77,7 @@ else
   extensiondir = get_option('prefix') / get_option('libdir') / 'guile' / guile_version / 'extensions'
   sitedir = get_option('prefix') / get_option('datadir') / 'guile' / 'site' / guile_version
 endif
+gitestdir = gobject_introspection_dep.get_pkgconfig_variable('gidatadir') / 'tests'
 
 conf_data = configuration_data({'abs_top_builddir': meson.current_build_dir(),
                                 'abs_top_srcdir': meson.current_source_dir(),
@@ -94,6 +96,12 @@ foreach tool: ['gdb-guile', 'gdb-test', 'lcov.sh', 'run-guile',
                  output: tool,
                  configuration: conf_data)
 endforeach
+configure_file(output: 'config.h',
+               configuration: {'VERSION': meson.project_version()})
+configure_file(input: gitestdir / 'gitestmacros.h',
+               output: 'gitestmacros.h',
+               copy: true)
+
 meson.add_postconf_script('meson_postconf.sh')
 
 shared_library('guile-gi',
@@ -134,3 +142,28 @@ top_modules = ['module/gi.scm']
 install_data(gi_modules, install_dir: sitedir / 'gi')
 install_data(script_modules, install_dir: sitedir / 'scripts')
 install_data(top_modules, install_dir: sitedir)
+
+test_deps = [glib_dep, gobject_dep]
+test_cargs = ['-Wno-unused-parameter', '-Wno-suggest-attribute=malloc']
+marshall_sed = [find_program('sed'),
+                '-e', 's/gimarshallingtests/marshall/',
+                '-e', 's/gi_marshalling_tests/marshall/g',
+                '-e', 's/GI_MARSHALLING_TESTS/MARSHALL/g',
+                '-e', 's/GIMarshallingTests/Marshall/g',
+                '@INPUT@']
+
+marshall_sources = [custom_target('marshall.c',
+                                  input: gitestdir / 'gimarshallingtests.c',
+                                  output: 'marshall.c',
+                                  capture: true,
+                                  command: marshall_sed),
+                    custom_target('marshall.h',
+                                  input: gitestdir / 'gimarshallingtests.h',
+                                  output: 'marshall.h',
+                                  capture: true,
+                                  command: marshall_sed)]
+
+shared_library('marshall', marshall_sources,
+               dependencies: test_deps, c_args: test_cargs)
+shared_library('everything', gitestdir / 'everything.c',
+               dependencies: test_deps, c_args: test_cargs)
