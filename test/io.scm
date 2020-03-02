@@ -26,9 +26,9 @@
 (test-assert "read chars content"
   (let ((channel (iochannel:new-file "tmp.txt" "r"))
         (buf (make-bytevector 10 0)))
-    (call-with-values (lambda () (read-chars channel buf))
-      (lambda (status nbytes)
-        (let ((content (subbytevector buf 0 nbytes)))
+    (call-with-values (lambda () (read-chars! channel buf))
+      (lambda (status out nbytes)
+        (let ((content (subbytevector out 0 nbytes)))
           (and (equal? status (symbol->iostatus 'normal))
                (= nbytes 6)
                (string=? (utf8->string content) "foobar")))))))
@@ -64,11 +64,13 @@
   (test-assert "channel-read from pipe"
     (let ((channel (iochannel:unix-new (port->fdes in-port)))
           (buf (make-bytevector 10 0)))
-      (call-with-values (lambda () (read-chars channel buf))
-        (lambda (status nbytes)
-          (let ((content (subbytevector buf 0 nbytes)))
+      (call-with-values (lambda () (read-chars! channel buf))
+        (lambda (status out nbytes)
+          (let ((content (subbytevector buf 0 nbytes))
+                (out (subbytevector out 0 nbytes)))
             (and (equal? status (symbol->iostatus 'normal))
                  (= nbytes 5)
-                 (string=? (utf8->string content) "hello"))))))))
+                 (string=? (utf8->string content) "hello"
+                           (utf8->string out)))))))))
 
 (test-end "io")

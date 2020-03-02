@@ -32,6 +32,49 @@ is_predicate(GICallableInfo *info)
     return predicate;
 }
 
+static gboolean
+is_destructive(GICallableInfo *info)
+{
+    gboolean destructive = FALSE;
+    gint n_args = g_callable_info_get_n_args(info);
+
+    for (int i = 0; i < n_args; i++) {
+        GIArgInfo *ai = g_callable_info_get_arg(info, i);
+        GITypeInfo *ti = g_arg_info_get_type(ai);
+        gboolean is_trivial;
+
+        switch (g_type_info_get_tag(ti))
+        {
+        case GI_TYPE_TAG_BOOLEAN:
+        case GI_TYPE_TAG_DOUBLE:
+        case GI_TYPE_TAG_FLOAT:
+        case GI_TYPE_TAG_GTYPE:
+        case GI_TYPE_TAG_INT8:
+        case GI_TYPE_TAG_INT16:
+        case GI_TYPE_TAG_INT32:
+        case GI_TYPE_TAG_INT64:
+        case GI_TYPE_TAG_UINT8:
+        case GI_TYPE_TAG_UINT16:
+        case GI_TYPE_TAG_UINT32:
+        case GI_TYPE_TAG_UINT64:
+        case GI_TYPE_TAG_UNICHAR:
+            is_trivial = TRUE;
+            break;
+        default:
+            is_trivial = FALSE;
+        }
+        g_base_info_unref(ti);
+
+        if (is_trivial)
+            continue;
+        destructive |= g_arg_info_is_caller_allocates(ai);
+        destructive |= (g_arg_info_get_direction(ai) == GI_DIRECTION_INOUT);
+        g_base_info_unref(ai);
+    }
+
+    return destructive;
+}
+
 // This procedure counts the number of arguments that the
 // GObject Introspection FFI call is expecting.
 static void
@@ -67,20 +110,31 @@ gchar *
 gig_callable_info_make_name(GICallableInfo *info, const gchar *prefix)
 {
     gchar *name, *str1 = NULL, *str2 = NULL;
-    gboolean predicate;
+    gboolean predicate, destructive;
 
     predicate = is_predicate(info);
+    destructive = is_destructive(info);
     if (prefix)
         str1 = gig_gname_to_scm_name(prefix);
     str2 = gig_gname_to_scm_name(g_base_info_get_name(info));
-    if (!prefix && !predicate)
-        return str2;
-    else if (!prefix && predicate)
-        name = g_strdup_printf("%s?", str2);
-    else if (prefix && !predicate)
-        name = g_strdup_printf("%s:%s", str1, str2);
+    if (!prefix)
+    {
+        if (destructive)
+            name = g_strdup_printf("%s!", str2);
+        else if (predicate)
+            name = g_strdup_printf("%s?", str2);
+        else
+            return str2;
+    }
     else
-        name = g_strdup_printf("%s:%s?", str1, str2);
+    {
+        if (destructive)
+            name = g_strdup_printf("%s:%s!", str1, str2);
+        else if (predicate)
+            name = g_strdup_printf("%s:%s?", str1, str2);
+        else
+            name = g_strdup_printf("%s:%s", str1, str2);
+    }
     g_free(str1);
     g_free(str2);
     return name;

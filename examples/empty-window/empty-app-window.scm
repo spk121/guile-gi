@@ -3,8 +3,9 @@
   #:use-module (gi repository)
   #:export (empty-app-window-new))
 
-(require "Gtk" "3.0")
-(load-by-name "Gtk" "ApplicationWindow" LOAD_INFO_ONLY)
+(eval-when (compile load eval)
+ (require "Gtk" "3.0")
+ (load-by-name "Gtk" "ApplicationWindow" LOAD_INFO_ONLY))
 
 (define <EmptyAppWindow>
   (register-type

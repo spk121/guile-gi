@@ -19,17 +19,18 @@
              (srfi srfi-26)
              (oop goops))
 
-(map require
-     '("Gio" "Gtk" "WebKit2")
-     '("2.0" "3.0" "4.0"))
+(eval-when (compile load eval)
+  (for-each require
+            '("Gio" "Gtk" "WebKit2")
+            '("2.0" "3.0" "4.0"))
 
-(load-by-name "Gio" "Application")
-(load-by-name "Gio" "ApplicationFlags")
-(load-by-name "WebKit2" "WebView")
+  (load-by-name "Gio" "Application")
+  (load-by-name "Gio" "ApplicationFlags")
+  (load-by-name "WebKit2" "WebView")
 
-(for-each
- (cute load-by-name "Gtk" <>)
- '("ApplicationWindow" "Application" "Container" "Window" "Widget"))
+  (for-each
+   (cute load-by-name "Gtk" <>)
+   '("ApplicationWindow" "Application" "Container" "Window" "Widget")))
 
 (define (activate app)
   (let ((window (application-window:new app))

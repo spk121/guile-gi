@@ -48,7 +48,7 @@
   ((compose
     (cute list= eqv? '(2 1 0 -1) <>)
     int-vector->list
-    array-fixed-inout
+    array-fixed-inout!
     list->int-vector)
    '(-1 0 1 2)))
 
@@ -129,11 +129,11 @@
 (test-assert "array-inout"
   (list= eqv? '(-2 -1 0 1 2)
          (int-vector->list
-          (array-inout (list->int-vector '(-1 0 1 2))))))
+          (array-inout! (list->int-vector '(-1 0 1 2))))))
 
 (test-assert "array-inout-etc"
-  (receive (sum vals)
-      (array-inout-etc -3 (list->int-vector '(-1 0 1 2)) 4)
+  (receive (vals sum)
+      (array-inout-etc! -3 (list->int-vector '(-1 0 1 2)) 4)
     (and (= sum 1)
          (list= eqv? '(-3 -1 0 1 4) (int-vector->list vals)))))
 
@@ -181,8 +181,8 @@
 (utf8-input array-unichar-in)
 (utf8-input garray-unichar-none-in)
 
-(utf8-inout utf8-none-inout)
-(utf8-inout utf8-full-inout)
+(utf8-inout utf8-none-inout!)
+(utf8-inout utf8-full-inout!)
 
 (utf8-output array-unichar-out)
 (utf8-output array-zero-terminated-return-unichar)
@@ -214,21 +214,24 @@
 (stringarray-input array-zero-terminated-in)
 (stringarray-input garray-utf8-none-in)
 
-(stringarray-inout array-zero-terminated-inout)
-(stringarray-inout* garray-utf8-none-inout)
-(stringarray-inout* garray-utf8-container-inout)
-(stringarray-inout* garray-utf8-full-inout)
+(stringarray-inout array-zero-terminated-inout!)
+(stringarray-inout* garray-utf8-none-inout!)
+(stringarray-inout* garray-utf8-container-inout!)
+(stringarray-inout* garray-utf8-full-inout!)
 
 ;; 01Aug19 - This doesn't work.  The unit test modifies the GArray
 ;; in place, but, the GArray here is just a temp variable that
 ;; gets created from the vector. For caller-allocates, out GArray
 ;; arguments, there needs to be an additional step that modifies
 ;; the input vector.
+;; 01Feb20 - This crashes even harder when we try to process
+;; the resulting GArray.
 (test-expect-fail "garray-utf8-full-out-caller-allocated")
-(test-assert "garray-utf8-full-out-caller-allocated"
-  (let ((x #("A" "B" "C")))
-    (garray-utf8-full-out-caller-allocated x)
-    (vector= string=? #("0" "1" "2") x)))
+(test-assert "garray-utf8-full-out-caller-allocated" #f
+  ;; (let ((x #("A" "B" "C")))
+  ;;   (garray-utf8-full-out-caller-allocated x)
+  ;;   (vector= string=? #("0" "1" "2") x))
+  )
 
 (stringarray-output array-zero-terminated-out)
 (stringarray-output array-zero-terminated-return)
@@ -300,16 +303,16 @@
   (not (boolean-inout-true-false #t)))
 
 (test-assert "init-function-null"
-  (init-function))
+  (init-function!))
 
 (test-assert "init-function-one"
   (receive (ret butlast)
-      (init-function #("--help"))
+      (init-function! #("--help"))
     (and ret (not butlast))))
 
 (test-assert "init-function-two"
   (receive (ret butlast)
-      (init-function #("--help" "--verbose"))
+      (init-function! #("--help" "--verbose"))
     (and (vector= string= butlast #("--help"))
          ret)))
 
@@ -699,13 +702,13 @@
                     '("-1" "0" "1") '("1" "0" "1"))))
 
 (test-assert "ghashtable-utf8-full-inout"
-  (hash-utf8-inout? ghashtable-utf8-full-inout))
+  (hash-utf8-inout? ghashtable-utf8-full-inout!))
 
 (test-assert "ghashtable-utf8-container-inout"
-  (hash-utf8-inout? ghashtable-utf8-container-inout))
+  (hash-utf8-inout? ghashtable-utf8-container-inout!))
 
 (test-assert "ghashtable-utf8-none-inout"
-  (hash-utf8-inout? ghashtable-utf8-none-inout))
+  (hash-utf8-inout? ghashtable-utf8-none-inout!))
 
 (define (make-value type value)
   (let ((v (make <GValue>)))
@@ -728,7 +731,7 @@
 
 (test-equal "gvalue-inout"
   "42"
-  ((gvalue-inout (make-value G_TYPE_INT 42))))
+  ((gvalue-inout! (make-value G_TYPE_INT 42))))
 
 (test-assert "gvalue-in"
   (begin

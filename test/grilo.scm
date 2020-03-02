@@ -8,7 +8,7 @@
 
 (test-equal "init"
   #("grilo.scm" "--no-grilo-option" "value")
-  (grl::init #("grilo.scm" "--no-grilo-option" "value")))
+  (grl::init! #("grilo.scm" "--no-grilo-option" "value")))
 
 (define data #f)
 
