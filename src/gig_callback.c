@@ -30,17 +30,24 @@ static ffi_type *amap_entry_to_ffi_type(GigArgMapEntry *entry);
 static void callback_free(GigCallback *gcb);
 static void gig_fini_callback(void);
 
-void
+static void
 store_output(GigArgMapEntry *entry, gpointer **arg, GIArgument *value)
 {
-    if (entry->meta.gtype == G_TYPE_BOOLEAN)
+    GType gtype = G_TYPE_FUNDAMENTAL(entry->meta.gtype);
+    gsize item_size = entry->meta.item_size;
+    switch(gtype) {
+    case G_TYPE_BOOLEAN:
         **(gint **)arg = value->v_int;
-    else if (entry->meta.gtype == G_TYPE_CHAR)
+        break;
+    case G_TYPE_CHAR:
         **(gchar **)arg = value->v_int8;
-    else if (entry->meta.gtype == G_TYPE_UCHAR)
+        break;
+    case G_TYPE_UCHAR:
         **(guchar **) arg = value->v_uint8;
-    else if (entry->meta.gtype == G_TYPE_INT)
-        switch (entry->meta.item_size) {
+        break;
+    case G_TYPE_INT:
+    {
+        switch (item_size) {
         case 1:
             **(gint8 **)arg = value->v_int8;
             break;
@@ -56,7 +63,10 @@ store_output(GigArgMapEntry *entry, gpointer **arg, GIArgument *value)
         default:
             g_assert_not_reached();
         }
-    else if (entry->meta.gtype == G_TYPE_UINT)
+        break;
+    }
+    case G_TYPE_UINT:
+    {
         switch (entry->meta.item_size) {
         case 1:
             **(guint8 **)arg = value->v_uint8;
@@ -73,25 +83,33 @@ store_output(GigArgMapEntry *entry, gpointer **arg, GIArgument *value)
         default:
             g_assert_not_reached();
         }
-    else if (entry->meta.gtype == G_TYPE_INT64)
+        break;
+    }
+    case G_TYPE_INT64:
         **(gint64 **)arg = value->v_int64;
-    else if (entry->meta.gtype == G_TYPE_UINT64)
+        break;
+    case G_TYPE_UINT64:
         **(guint64 **)arg = value->v_uint64;
-    else if (entry->meta.gtype == G_TYPE_FLOAT)
+        break;
+    case G_TYPE_FLOAT:
         **(float **)arg = value->v_float;
-    else if (entry->meta.gtype == G_TYPE_DOUBLE)
-        **(float **)arg = value->v_double;
-    else if (entry->meta.gtype == G_TYPE_GTYPE)
-        switch (entry->meta.item_size) {
-        case 4:
-            **(gint32 **)arg = value->v_int32;
-            break;
-        case 8:
-            **(gint64 **)arg = value->v_int64;
-            break;
-        default:
-            g_assert_not_reached();
-        }
+        break;
+    case G_TYPE_DOUBLE:
+        **(double **)arg = value->v_double;
+        break;
+    case G_TYPE_STRING:
+        **(gchar ***)arg = value->v_string;
+        break;
+    case G_TYPE_POINTER:
+    case G_TYPE_BOXED:
+    case G_TYPE_OBJECT:
+        **(gchar ***)arg = value->v_pointer;
+        break;
+    default:
+        g_critical("Unhandled FFI type in %s: %d", __FILE__, __LINE__);
+        **(gchar ***)arg = value->v_pointer;
+        break;
+    }
 }
 
 // This is the core of a dynamically generated callback funcion.
