@@ -516,7 +516,7 @@ gig_callable_return_value(GigArgMap *amap,
     if (!ok)
         return SCM_UNDEFINED;
 
-    switch (scm_to_int(scm_length(output))) {
+    switch (scm_c_length(output)) {
     case 0:
         return SCM_UNSPECIFIED;
     case 1:
@@ -756,7 +756,7 @@ object_list_to_c_args(GigArgMap *amap,
     if (SCM_UNBNDP(s_args))
         args_count = 0;
     else
-        args_count = scm_to_int(scm_length(s_args));
+        args_count = scm_c_length(s_args);
     gig_amap_s_input_count(amap, &required, &optional);
     if (args_count < required || args_count > required + optional)
         scm_error_num_args_subr(subr);
@@ -768,7 +768,7 @@ object_list_to_c_args(GigArgMap *amap,
     g_array_set_size(cinvoke_output_arg_array, output_len);
 
     for (gint i = 0; i < args_count; i++) {
-        SCM obj = scm_list_ref(s_args, scm_from_int(i));
+        SCM obj = scm_c_list_ref(s_args, i);
         object_to_c_arg(amap, i, subr, obj, cinvoke_input_arg_array, cinvoke_free_array,
                         cinvoke_output_arg_array);
 

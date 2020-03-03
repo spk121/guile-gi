@@ -12,8 +12,9 @@ G_BEGIN_DECLS
 G_GNUC_MALLOC gchar *gig_callable_info_make_name(GICallableInfo *info, const gchar *prefix);
 const gchar *gig_constant_strip_prefix(const gchar *name, const gchar *strip_prefix);
 gchar *gig_gname_to_scm_name(const gchar *gname);
-SCM scm_c_list_ref(SCM list, gsize k);
-gboolean scm_is_list(SCM obj);
+G_GNUC_INTERNAL SCM scm_c_list_ref(SCM list, gsize k);
+G_GNUC_INTERNAL gboolean scm_is_list(SCM obj);
+G_GNUC_INTERNAL gsize scm_c_length(SCM list);
 gpointer scm_dynwind_or_bust(const gchar *subr, gpointer mem);
 SCM scm_class_ref(SCM cls, SCM slot);
 SCM scm_class_set_x(SCM cls, SCM slot, SCM val);

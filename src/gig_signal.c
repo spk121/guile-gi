@@ -96,7 +96,7 @@ gig_signalspec_from_obj(SCM obj)
 
     sparams = gig_signal_ref(obj, GIG_SIGNAL_SLOT_PARAM_TYPES);
     saccu = gig_signal_ref(obj, GIG_SIGNAL_SLOT_ACCUMULATOR);
-    n_params = scm_to_uint(scm_length(sparams));
+    n_params = scm_c_length(sparams);
     params = g_new0(GType, n_params);
 
     for (guint i = 0; i < n_params; i++, sparams = scm_cdr(sparams))

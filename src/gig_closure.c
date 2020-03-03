@@ -72,7 +72,7 @@ invoke_closure(SCM closure, SCM return_type, SCM args)
     GClosure *real_closure = gig_type_peek_typed_object(closure, gig_closure_type);
     SCM_ASSERT_TYPE(scm_is_list(args), args, SCM_ARG2, "%invoke-closure", "list");
 
-    gsize nargs = scm_to_size_t(scm_length(args));
+    gsize nargs = scm_c_length(args);
     GValue *params = g_new0(GValue, nargs);
     GValue *retval = g_new0(GValue, 1);
     SCM ret = SCM_UNDEFINED;

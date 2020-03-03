@@ -985,8 +985,8 @@ scm_to_c_native_interface_array(S2C_ARG_DECL)
     }
     else if (fundamental_item_type == G_TYPE_ENUM || fundamental_item_type == G_TYPE_FLAGS) {
         // TODO: coerce to vector as above?
-        if (scm_is_true(scm_list_p(object))) {
-            gsize length = scm_to_size_t(scm_length(object));
+        if (scm_is_list(object)) {
+            gsize length = scm_c_length(object);
             *size = length;
             gint *ptr;
             if (meta->is_zero_terminated)
@@ -1049,8 +1049,8 @@ scm_to_c_native_string_array(S2C_ARG_DECL)
 
         scm_array_handle_release(&handle);
     }
-    else if (scm_is_true(scm_list_p(object))) {
-        gsize len = scm_to_size_t(scm_length(object));
+    else if (scm_is_list(object)) {
+        gsize len = scm_c_length(object);
         *size = len;
         gchar **strv = g_new0(gchar *, len + 1);
         LATER_FREE(strv);

@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2019 Michael L. Gran
+// Copyright (C) 2018, 2019, 2020 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,6 +17,7 @@
 #include "gig_type.h"
 #include "gig_object.h"
 #include "gig_flag.h"
+#include "gig_util.h"
 
 #ifndef FLT_MAX
 #define FLT_MAX 3.402823466e+38F
@@ -160,7 +161,7 @@ gig_value_from_scm(GValue *value, SCM obj)
     {
         if (SCM_IS_A_P(obj, gig_flags_type))
             g_value_set_flags(value, gig_flags_to_uint(obj));
-        else if (scm_is_true(scm_list_p(obj))) {
+        else if (scm_is_list(obj)) {
             SCM type = gig_type_get_scheme_type(value_type);
             obj = gig_list_to_flags(type, obj);
             g_value_set_flags(value, gig_flags_to_uint(obj));

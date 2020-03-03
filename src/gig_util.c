@@ -222,6 +222,12 @@ scm_c_list_ref(SCM list, gsize k)
     return scm_list_ref(list, scm_from_size_t(k));
 }
 
+gsize
+scm_c_length(SCM list)
+{
+    return scm_to_size_t(scm_length(list));
+}
+
 int
 scm_is_list(SCM obj)
 {

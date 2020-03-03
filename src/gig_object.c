@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2019 Michael L. Gran
+// Copyright (C) 2018, 2019, 2020 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -77,12 +77,11 @@ gig_i_scm_make_gobject(SCM s_gtype, SCM s_prop_keylist)
 
     scm_dynwind_begin(0);
 
-    if (scm_is_true(scm_list_p(s_prop_keylist)) &&
-        scm_is_false(scm_zero_p(scm_length(s_prop_keylist)))) {
+    if (scm_is_list(s_prop_keylist) && (scm_c_length(s_prop_keylist) != 0)) {
         _class = g_type_class_ref(type);
         scm_dynwind_unwind_handler(g_type_class_unref, _class, SCM_F_WIND_EXPLICITLY);
 
-        n_prop = scm_to_size_t(scm_length(s_prop_keylist)) / 2;
+        n_prop = scm_c_length(s_prop_keylist) / 2;
         keys = scm_dynwind_or_bust(FUNC, calloc(n_prop, sizeof(char *)));
         values = scm_dynwind_or_bust(FUNC, calloc(n_prop, sizeof(GValue)));
 
@@ -380,7 +379,7 @@ gig_i_scm_define_type(SCM s_type_name, SCM s_parent_type, SCM s_properties, SCM 
     signals = g_ptr_array_new_with_free_func((GDestroyNotify)gig_free_signalspec);
 
     if (scm_is_list(s_properties)) {
-        n_properties = scm_to_size_t(scm_length(s_properties));
+        n_properties = scm_c_length(s_properties);
         SCM iter = s_properties;
         for (gsize i = 0; i < n_properties; i++) {
             GParamSpec *pspec = gig_paramspec_peek(scm_car(iter));
@@ -390,10 +389,10 @@ gig_i_scm_define_type(SCM s_type_name, SCM s_parent_type, SCM s_properties, SCM 
     }
 
     if (scm_is_list(s_signals)) {
-        n_signals = scm_to_size_t(scm_length(s_signals));
+        n_signals = scm_c_length(s_signals);
         for (gsize i = 0; i < n_signals; i++) {
             GigSignalSpec *sspec = NULL;
-            sspec = gig_signalspec_from_obj(scm_list_ref(s_signals, scm_from_size_t(i)));
+            sspec = gig_signalspec_from_obj(scm_c_list_ref(s_signals, i));;
             if (sspec != NULL)
                 g_ptr_array_add(signals, sspec);
         }
@@ -478,7 +477,7 @@ gig_i_scm_emit(SCM self, SCM signal, SCM s_detail, SCM args)
     if (!(query_info.signal_flags & G_SIGNAL_DETAILED || SCM_UNBNDP(s_detail)))
         args = scm_cons(s_detail, args);
 
-    if (scm_to_uint(scm_length(args)) != query_info.n_params)
+    if (scm_c_length(args) != query_info.n_params)
         scm_misc_error("%emit", "~A: signal ~A has ~d params, but ~d were supplied",
                        scm_list_4(self, signal, scm_from_uint32(query_info.n_params),
                                   scm_length(args)));
