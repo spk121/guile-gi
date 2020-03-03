@@ -439,7 +439,7 @@ gig_callback_to_scm(GICallbackInfo *info, gpointer callback)
     // we probably shouldn't cache this, because C callbacks can be
     // invalidated
     GigCallback *gcb = gig_callback_new_for_callback(info, callback);
-    return scm_c_make_gsubr("(anonymous)", 0, 0, 1, gcb->closure);
+    return scm_c_make_gsubr("(anonymous)", 0, 0, 1, gcb->callback_ptr);
 }
 
 static ffi_type *
