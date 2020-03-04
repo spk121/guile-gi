@@ -7,6 +7,7 @@ project('guile-gi', 'c',
 
 top_source = meson.current_source_dir()
 top_build = meson.current_build_dir()
+gnome = import('gnome')
 
 cc = meson.get_compiler('c')
 
@@ -165,13 +166,16 @@ marshall_sources = [custom_target('marshall.c',
                                   output: 'marshall.h',
                                   capture: true,
                                   command: marshall_sed)]
+everything_sources = [gitestdir / 'everything.c', gitestdir / 'everything.h']
 
-shared_library('marshall', marshall_sources,
-               dependencies: test_deps, c_args: test_cargs)
-shared_library('everything', gitestdir / 'everything.c',
-               dependencies: test_deps, c_args: test_cargs)
+libmarshall = shared_library('marshall', marshall_sources,
+                             dependencies: test_deps, c_args: test_cargs)
+libeverything = shared_library('everything', everything_sources,
+                               dependencies: test_deps, c_args: test_cargs)
 
 guile_bin = find_program(guile_dep.get_pkgconfig_variable('guile'))
+
+test_args = ['--no-auto-compile', top_source / 'tools' / 'test-runner.scm']
 
 test_env = environment()
 test_env.prepend('LD_LIBRARY_PATH', top_build)
@@ -183,9 +187,23 @@ tests = ['typelib', 'constants', 'mem', 'io', 'file', 'string',
          'application', 'gtk', 'grilo', 'oop', 'value', 'flags']
 foreach t: tests
   test(t, guile_bin,
-       args: ['--no-auto-compile',
-              top_source / 'tools' / 'test-runner.scm',
-              top_source / 'test' / t + '.scm'],
+       args: test_args + [top_source / 'test' / t + '.scm'],
        env: test_env,
        workdir: top_build / 'test')
+endforeach
+
+foreach t: [['marshall', 'Marshall', libmarshall, marshall_sources],
+            ['everything', 'Everything', libeverything, everything_sources]]
+  test(t[0], guile_bin,
+      args: test_args +  [top_source / 'test' / t[0] + '.scm'],
+      env: test_env,
+      depends: gnome.generate_gir(t[2],
+                                  sources: t[3],
+                                  namespace: t[1],
+                                  nsversion: '1.0',
+                                  identifier_prefix: t[1],
+                                  symbol_prefix: t[0],
+                                  includes: ['GObject-2.0'],
+                                  dependencies: [gobject_dep]),
+      workdir: top_build / 'test')
 endforeach
