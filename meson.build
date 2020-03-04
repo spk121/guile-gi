@@ -167,11 +167,14 @@ marshall_sources = [custom_target('marshall.c',
                                   capture: true,
                                   command: marshall_sed)]
 everything_sources = [gitestdir / 'everything.c', gitestdir / 'everything.h']
+extra_sources = ['test' / 'extra.c', 'test' / 'extra.h']
 
 libmarshall = shared_library('marshall', marshall_sources,
                              dependencies: test_deps, c_args: test_cargs)
 libeverything = shared_library('everything', everything_sources,
                                dependencies: test_deps, c_args: test_cargs)
+libextra = shared_library('extra', extra_sources,
+                          dependencies: test_deps, c_args: test_cargs)
 
 guile_bin = find_program(guile_dep.get_pkgconfig_variable('guile'))
 
@@ -193,7 +196,8 @@ foreach t: tests
 endforeach
 
 foreach t: [['marshall', 'Marshall', libmarshall, marshall_sources],
-            ['everything', 'Everything', libeverything, everything_sources]]
+            ['everything', 'Everything', libeverything, everything_sources],
+            ['extra', 'Extra', libextra, extra_sources]]
   test(t[0], guile_bin,
       args: test_args +  [top_source / 'test' / t[0] + '.scm'],
       env: test_env,
