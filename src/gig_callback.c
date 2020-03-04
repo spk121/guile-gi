@@ -188,9 +188,13 @@ callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
         s_args = scm_cons(s_entry, s_args);
     }
     s_args = scm_reverse_x(s_args, SCM_EOL);
+    gsize length = scm_c_length(s_args);
 
     // The actual call of the Scheme callback happens here.
-    s_ret = scm_apply_0(gcb->s_func, s_args);
+    if (length < amap->s_input_req || length > amap->s_input_req + amap->s_input_opt)
+        scm_wrong_num_args(gcb->s_func);
+    else
+        s_ret = scm_apply_0(gcb->s_func, s_args);
 
     // Return values and output arguments start here.
     if (scm_is_false(s_ret))
@@ -225,7 +229,8 @@ callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
             if (!entry->is_s_output)
                 continue;
             gint real_cpos = entry - amap->pdata;
-            g_return_if_fail(entry->s_output_pos < n_values);
+            if (entry->s_output_pos >= n_values)
+                scm_misc_error("callback", "too few return values", SCM_EOL);
             SCM real_value = scm_c_value_ref(s_ret, entry->s_output_pos + start);
             gig_argument_scm_to_c("callback", real_cpos, &entry->meta, real_value, NULL, &giarg,
                                   &size);
