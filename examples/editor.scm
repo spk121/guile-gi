@@ -64,7 +64,7 @@
                (let ((buffer (get-buffer editor))
                      (iter1 (make <GtkTextIter>))
                      (iter2 (make <GtkTextIter>)))
-                 (get-bounds buffer iter1 iter2)
+                 (get-bounds! buffer iter1 iter2)
                  (write (get-text buffer iter1 iter2 #t))
                  (newline)
                  (set-text buffer "Hello, world" 12))))
