@@ -5,7 +5,6 @@
 #include "extra.h"
 
 #include <string.h>
-#include <stdlib.h>
 
 /**
  * extra_zero_terminated_uint8_array_input
@@ -93,9 +92,9 @@ extra_call_callback_chars(ExtraCallbackChars func, gchar s8, guchar u8, gunichar
  * @func: (scope call):
  */
 gboolean
-extra_call_callback_signed_ints(ExtraCallbackSignedInts func, gint8 x8, gint16 x16, gint32 x32, gint64 x64)
+extra_call_callback_signed_ints(ExtraCallbackSignedInts func, gint x, gshort sx, glong lx, gint8 x8, gint16 x16, gint32 x32, gint64 x64)
 {
-    return func(x8, x16, x32, x64);
+    return func(x, sx, lx, x8, x16, x32, x64);
 }
 
 /**
@@ -103,9 +102,9 @@ extra_call_callback_signed_ints(ExtraCallbackSignedInts func, gint8 x8, gint16 x
  * @func: (scope call):
  */
 gboolean
-extra_call_callback_unsigned_ints(ExtraCallbackUnsignedInts func, guint8 x8, guint16 x16, guint32 x32, guint64 x64)
+extra_call_callback_unsigned_ints(ExtraCallbackUnsignedInts func, guint x, gushort sx, gulong lx, guint8 x8, guint16 x16, guint32 x32, guint64 x64)
 {
-    return func(x8, x16, x32, x64);
+    return func(x, sx, lx, x8, x16, x32, x64);
 }
 
 /**
@@ -119,18 +118,56 @@ extra_call_callback_floats(ExtraCallbackFloats func, float f32, double f64)
 }
 
 /**
+ * extra_call_callback_const_strings_const:
+ * @func: (scope call)
+ * @utf8string: (type utf8)
+ * @localestring: (type filename)
+ */
+gboolean
+extra_call_callback_const_strings_const(ExtraCallbackConstStrings func, const gchar *utf8string, const gchar *localestring)
+{
+    return func(utf8string, localestring);
+}
+
+/**
+ * extra_call_callback_const_strings:
+ * @func: (scope call)
+ * @utf8string: (type utf8)
+ * @localestring: (type filename)
+ */
+gboolean
+extra_call_callback_const_strings(ExtraCallbackConstStrings func, gchar *utf8string, gchar *localestring)
+{
+    return func(utf8string, localestring);
+}
+/**
+ * extra_call_callback_strings:
+ * @func: (scope call)
+ * @utf8string: (type utf8)
+ * @localestring: (type filename)
+ */
+gboolean
+extra_call_callback_strings(ExtraCallbackStrings func, gchar *utf8string, gchar *localestring)
+{
+    return func(utf8string, localestring);
+}
+
+/**
  * extra_call_callback_out_signed_ints:
  * @func: (scope call):
  */
 gint64
 extra_call_callback_out_signed_ints(ExtraCallbackOutSignedInts func)
 {
+    gint s;
+    gshort ss;
+    glong ls;
     gint8 s8;
     gint16 s16;
     gint32 s32;
     gint64 s64;
-    func(&s8, &s16, &s32, &s64);
-    return s8 + s16 + s32 + s64;
+    func(&s, &ss, &ls, &s8, &s16, &s32, &s64);
+    return s + ss + ls + s8 + s16 + s32 + s64;
 }
 
 /**
@@ -149,6 +186,54 @@ extra_call_callback_out_unsigned_ints(ExtraCallbackOutUnsignedInts func)
 }
 
 /**
+ * extra_call_callback_out_floats:
+ * @func: (scope call):
+ */
+gdouble
+extra_call_callback_out_floats(ExtraCallbackOutFloats func)
+{
+    gfloat f32;
+    gdouble f64;
+    func(&f32, &f64);
+    return f32 + f64;
+}
+
+/**
+ * extra_call_callback_out_strings:
+ * @func: (scope call):
+ */
+gboolean
+extra_call_callback_out_strings(ExtraCallbackOutStrings func)
+{
+    gchar *utf8;
+    gchar *locale;
+    func(&utf8, &locale);
+    if (strcmp(utf8, "foo") == 0 && strcmp(locale, "bar") == 0)
+        return TRUE;
+    return FALSE;
+}
+
+/**
+ * extra_call_callback_pointers:
+ * @func: (scope call):
+ */
+gboolean
+extra_call_callback_pointers(ExtraCallbackPointers func, GObject *obj, gpointer ptr)
+{
+    return func(obj, ptr);
+}
+
+/**
+ * extra_call_callback_pointer_passthrough:
+ * @func: (scope call):
+ */
+gpointer
+extra_call_callback_pointer_passthrough(ExtraCallbackPointerPassthrough func, gpointer ptr)
+{
+    return func(ptr);
+}
+
+/**
  * extra_call_callback_char_passthrough:
  * @func: (scope call):
  */
@@ -156,4 +241,20 @@ gchar
 extra_call_callback_char_passthrough(ExtraCharCallbackChar func, gchar c)
 {
     return func(c);
+}
+
+gint
+integer_passthrough(gint x)
+{
+    return x;
+}
+
+/**
+ * extra_return_callback:
+ * @func: (out) (scope local):
+ */
+void
+extra_return_callback(ExtraIntCallbackInt *func)
+{
+    *func = integer_passthrough;
 }
