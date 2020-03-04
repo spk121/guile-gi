@@ -2,6 +2,7 @@
  (scheme-mode
   (eval . (put 'and-let* 'scheme-indent-function 1))
   (eval . (put 'eval-when 'scheme-indent-function 1))
+  (eval . (put 'match 'scheme-indent-function 1))
 
   (eval . (put 'test-assert 'scheme-indent-function 1))
   (eval . (put 'test-equal 'scheme-indent-function 1))

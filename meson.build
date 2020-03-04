@@ -5,6 +5,9 @@ project('guile-gi', 'c',
                           'optimization=2',
                           'warning_level=2'])
 
+top_source = meson.current_source_dir()
+top_build = meson.current_build_dir()
+
 cc = meson.get_compiler('c')
 
 _cargs = ['-D_FORTIFY_SOURCE=2',
@@ -79,8 +82,8 @@ else
 endif
 gitestdir = gobject_introspection_dep.get_pkgconfig_variable('gidatadir') / 'tests'
 
-conf_data = configuration_data({'abs_top_builddir': meson.current_build_dir(),
-                                'abs_top_srcdir': meson.current_source_dir(),
+conf_data = configuration_data({'abs_top_builddir': top_build,
+                                'abs_top_srcdir': top_source,
                                 'GI_GIR_DIR': gobject_introspection_dep.get_pkgconfig_variable('girdir'),
                                 'GUILE': guile_dep.get_pkgconfig_variable('guile'),
                                 'SHELL': '/bin/sh',
@@ -167,3 +170,22 @@ shared_library('marshall', marshall_sources,
                dependencies: test_deps, c_args: test_cargs)
 shared_library('everything', gitestdir / 'everything.c',
                dependencies: test_deps, c_args: test_cargs)
+
+guile_bin = find_program(guile_dep.get_pkgconfig_variable('guile'))
+
+test_env = environment()
+test_env.prepend('LD_LIBRARY_PATH', top_build)
+test_env.prepend('GI_TYPELIB_PATH', top_build)
+test_env.prepend('GUILE_LOAD_PATH', top_source / 'module')
+
+tests = ['typelib', 'constants', 'mem', 'io', 'file', 'string',
+         'bash-the-hash', 'datetime', 'byte-array', 'main-loop',
+         'application', 'gtk', 'grilo', 'oop', 'value', 'flags']
+foreach t: tests
+  test(t, guile_bin,
+       args: ['--no-auto-compile',
+              top_source / 'tools' / 'test-runner.scm',
+              top_source / 'test' / t + '.scm'],
+       env: test_env,
+       workdir: top_build / 'test')
+endforeach
