@@ -3,6 +3,7 @@
 #include "gig_argument.h"
 #include "gig_callback.h"
 #include "gig_function.h"
+#include "gig_util.h"
 
 typedef struct _GigCallback GigCallback;
 struct _GigCallback
@@ -28,43 +29,43 @@ static void callback_free(GigCallback *gcb);
 static void gig_fini_callback(void);
 
 static void
-convert_ffi_arg_to_giargument(gpointer ffi_arg, ffi_type * arg_type, gboolean unpack,
+convert_ffi_arg_to_giargument(gpointer _ffi_arg, ffi_type * arg_type, gboolean unpack,
                               GIArgument *giarg)
 {
     if (unpack)
-        ffi_arg = ((gpointer *)ffi_arg)[0];
+        _ffi_arg = ((gpointer *)_ffi_arg)[0];
 
     if (arg_type == &ffi_type_pointer)
-        giarg->v_pointer = ffi_arg;
+        giarg->v_pointer = _ffi_arg;
     else if (arg_type == &ffi_type_void)
-        giarg->v_pointer = ffi_arg;
+        giarg->v_pointer = _ffi_arg;
     else if (arg_type == &ffi_type_sint)
-        giarg->v_int = *(int *)ffi_arg;
+        giarg->v_int = *(int *)_ffi_arg;
     else if (arg_type == &ffi_type_uint)
-        giarg->v_uint = *(unsigned *)ffi_arg;
+        giarg->v_uint = *(unsigned *)_ffi_arg;
     else if (arg_type == &ffi_type_sint8)
-        giarg->v_int8 = *(gint8 *)ffi_arg;
+        giarg->v_int8 = *(gint8 *)_ffi_arg;
     else if (arg_type == &ffi_type_uint8)
-        giarg->v_uint8 = *(guint8 *)ffi_arg;
+        giarg->v_uint8 = *(guint8 *)_ffi_arg;
     else if (arg_type == &ffi_type_sint16)
-        giarg->v_int16 = *(gint16 *)ffi_arg;
+        giarg->v_int16 = *(gint16 *)_ffi_arg;
     else if (arg_type == &ffi_type_uint16)
-        giarg->v_uint16 = *(guint16 *)ffi_arg;
+        giarg->v_uint16 = *(guint16 *)_ffi_arg;
     else if (arg_type == &ffi_type_sint32)
-        giarg->v_int32 = *(gint32 *)ffi_arg;
+        giarg->v_int32 = *(gint32 *)_ffi_arg;
     else if (arg_type == &ffi_type_uint32)
-        giarg->v_uint32 = *(guint32 *)ffi_arg;
+        giarg->v_uint32 = *(guint32 *)_ffi_arg;
     else if (arg_type == &ffi_type_sint64)
-        giarg->v_int64 = *(gint64 *)ffi_arg;
+        giarg->v_int64 = *(gint64 *)_ffi_arg;
     else if (arg_type == &ffi_type_uint64)
-        giarg->v_uint64 = *(guint64 *)ffi_arg;
+        giarg->v_uint64 = *(guint64 *)_ffi_arg;
     else if (arg_type == &ffi_type_float)
-        giarg->v_float = *(gfloat *)ffi_arg;
+        giarg->v_float = *(gfloat *)_ffi_arg;
     else if (arg_type == &ffi_type_double)
-        giarg->v_double = *(gdouble *)ffi_arg;
+        giarg->v_double = *(gdouble *)_ffi_arg;
     else {
         g_critical("Unhandled FFI type in %s: %d", __FILE__, __LINE__);
-        giarg->v_pointer = ffi_arg;
+        giarg->v_pointer = _ffi_arg;
     }
 }
 
