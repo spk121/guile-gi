@@ -31,11 +31,52 @@ static void callback_free(GigCallback *gcb);
 static void gig_fini_callback(void);
 
 static void
+convert_ffi_arg_to_giargument(gpointer ffi_arg, ffi_type * arg_type, gboolean unpack,
+                              GIArgument *giarg)
+{
+    if (unpack)
+        ffi_arg = ((gpointer *)ffi_arg)[0];
+
+    if (arg_type == &ffi_type_pointer)
+        giarg->v_pointer = ffi_arg;
+    else if (arg_type == &ffi_type_void)
+        giarg->v_pointer = ffi_arg;
+    else if (arg_type == &ffi_type_sint)
+        giarg->v_int = *(int *)ffi_arg;
+    else if (arg_type == &ffi_type_uint)
+        giarg->v_uint = *(unsigned *)ffi_arg;
+    else if (arg_type == &ffi_type_sint8)
+        giarg->v_int8 = *(gint8 *)ffi_arg;
+    else if (arg_type == &ffi_type_uint8)
+        giarg->v_uint8 = *(guint8 *)ffi_arg;
+    else if (arg_type == &ffi_type_sint16)
+        giarg->v_int16 = *(gint16 *)ffi_arg;
+    else if (arg_type == &ffi_type_uint16)
+        giarg->v_uint16 = *(guint16 *)ffi_arg;
+    else if (arg_type == &ffi_type_sint32)
+        giarg->v_int32 = *(gint32 *)ffi_arg;
+    else if (arg_type == &ffi_type_uint32)
+        giarg->v_uint32 = *(guint32 *)ffi_arg;
+    else if (arg_type == &ffi_type_sint64)
+        giarg->v_int64 = *(gint64 *)ffi_arg;
+    else if (arg_type == &ffi_type_uint64)
+        giarg->v_uint64 = *(guint64 *)ffi_arg;
+    else if (arg_type == &ffi_type_float)
+        giarg->v_float = *(gfloat *)ffi_arg;
+    else if (arg_type == &ffi_type_double)
+        giarg->v_double = *(gdouble *)ffi_arg;
+    else {
+        g_critical("Unhandled FFI type in %s: %d", __FILE__, __LINE__);
+        giarg->v_pointer = ffi_arg;
+    }
+}
+
+static void
 store_output(GigArgMapEntry *entry, gpointer **arg, GIArgument *value)
 {
     GType gtype = G_TYPE_FUNDAMENTAL(entry->meta.gtype);
     gsize item_size = entry->meta.item_size;
-    switch(gtype) {
+    switch (gtype) {
     case G_TYPE_BOOLEAN:
         **(gint **)arg = value->v_int;
         break;
@@ -135,59 +176,20 @@ callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
     g_assert(gcb->amap != NULL);
     GigArgMap *amap = gcb->amap;
 
+    // Do the two-step conversion from libffi arguments to GIArgument
+    // to SCM arguments.
     for (guint i = 0; i < n_args; i++) {
-        if (!amap->pdata[i].is_s_input)
-            continue;
-
         SCM s_entry = SCM_BOOL_F;
         GIArgument giarg;
 
-        // Did I need this block? Or can I just
-        // do giarg.v_pointer = ffi_args[i] for all cases?
+        if (!amap->pdata[i].is_s_input)
+            continue;
 
-        if (cif->arg_types[i] == &ffi_type_pointer)
-            giarg.v_pointer = ffi_args[i];
-        else if (cif->arg_types[i] == &ffi_type_void)
-            giarg.v_pointer = ffi_args[i];
-        else if (cif->arg_types[i] == &ffi_type_sint)
-            giarg.v_int = *(int *)ffi_args[i];
-        else if (cif->arg_types[i] == &ffi_type_uint)
-            giarg.v_uint = *(unsigned *)ffi_args[i];
-        else if (cif->arg_types[i] == &ffi_type_sint8)
-            giarg.v_int8 = *(gint8 *)ffi_args[i];
-        else if (cif->arg_types[i] == &ffi_type_uint8)
-            giarg.v_uint8 = *(guint8 *)ffi_args[i];
-        else if (cif->arg_types[i] == &ffi_type_sint16)
-            giarg.v_int16 = *(gint16 *)ffi_args[i];
-        else if (cif->arg_types[i] == &ffi_type_uint16)
-            giarg.v_uint16 = *(guint16 *)ffi_args[i];
-        else if (cif->arg_types[i] == &ffi_type_sint32)
-            giarg.v_int32 = *(gint32 *)ffi_args[i];
-        else if (cif->arg_types[i] == &ffi_type_uint32)
-            giarg.v_uint32 = *(guint32 *)ffi_args[i];
-        else if (cif->arg_types[i] == &ffi_type_sint64)
-            giarg.v_int64 = *(gint64 *)ffi_args[i];
-        else if (cif->arg_types[i] == &ffi_type_uint64)
-            giarg.v_uint64 = *(guint64 *)ffi_args[i];
-        else if (cif->arg_types[i] == &ffi_type_float) {
-            gfloat val;
-            val = *(gfloat *)ffi_args[i];
-            giarg.v_float = val;
-        }
-        else if (cif->arg_types[i] == &ffi_type_double) {
-            gdouble val;
-            val = *(gdouble *)ffi_args[i];
-            giarg.v_double = val;
-        }
-        else {
-            g_critical("Unhandled FFI type in %s: %d", __FILE__, __LINE__);
-            giarg.v_pointer = ffi_args[i];
-        }
-
+        convert_ffi_arg_to_giargument(ffi_args[i], cif->arg_types[i], amap->pdata[i].meta.is_ptr,
+                                      &giarg);
         gig_argument_c_to_scm("callback", i, &amap->pdata[i].meta, &giarg, &s_entry, -1);
         s_args = scm_cons(s_entry, s_args);
     }
-
     s_args = scm_reverse_x(s_args, SCM_EOL);
 
     SCM stack;
