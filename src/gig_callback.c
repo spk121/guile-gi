@@ -333,7 +333,7 @@ gig_callback_new(GICallbackInfo *callback_info, SCM s_func)
     gint n_args = g_callable_info_get_n_args(callback_info);
 
     SCM s_name = scm_procedure_name(s_func);
-    if (scm_is_string(s_name)) {
+    if (scm_is_symbol(s_name)) {
         gcb->name = scm_to_utf8_string(scm_symbol_to_string(s_name));
         g_debug("Constructing C callback for %s", gcb->name);
     }
