@@ -245,6 +245,7 @@ callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
 void
 c_callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_data)
 {
+    const gchar *name = "c callback";
     GigCallback *gcb = user_data;
     SCM s_args = SCM_UNDEFINED;
 
@@ -265,7 +266,8 @@ c_callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user
         s_args = SCM_EOL;
 
     GError *error = NULL;
-    SCM output = gig_callable_invoke(gcb->callback_info, gcb->c_func, gcb->amap, gcb->name, NULL,
+    // Use 'name' instead of gcb->name, which is NULL for C callbacks.
+    SCM output = gig_callable_invoke(gcb->callback_info, gcb->c_func, gcb->amap, name, NULL,
                                      s_args, &error);
 
     if (error != NULL) {
