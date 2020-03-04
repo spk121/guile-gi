@@ -23,9 +23,6 @@ struct _GigCallback
 
 GSList *callback_list = NULL;
 
-static SCM callback_call_proc(gpointer user_data);
-static SCM callback_handler_proc(gpointer user_data, SCM key, SCM params);
-static SCM callback_handler_pre_proc(gpointer user_data, SCM key, SCM params);
 static ffi_type *amap_entry_to_ffi_type(GigArgMapEntry *entry);
 static void callback_free(GigCallback *gcb);
 static void gig_fini_callback(void);
@@ -192,10 +189,10 @@ callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
     }
     s_args = scm_reverse_x(s_args, SCM_EOL);
 
-    SCM stack;
-    s_ret = scm_c_catch(SCM_BOOL_T,
-                        callback_call_proc, SCM_UNPACK_POINTER(scm_cons(gcb->s_func, s_args)),
-                        callback_handler_proc, &stack, callback_handler_pre_proc, &stack);
+    // The actual call of the Scheme callback happens here.
+    s_ret = scm_apply_0(gcb->s_func, s_args);
+
+    // Return values and output arguments start here.
     if (scm_is_false(s_ret))
         *(ffi_arg *)ret = FALSE;
     else {
@@ -279,47 +276,6 @@ c_callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user
     }
 
     *(ffi_arg *)ret = SCM_UNPACK(output);
-}
-
-static SCM
-callback_call_proc(gpointer user_data)
-{
-    SCM func_args_pair = SCM_PACK_POINTER(user_data);
-    return scm_apply_0(scm_car(func_args_pair), scm_cdr(func_args_pair));
-}
-
-static SCM
-callback_handler_pre_proc(gpointer user_data, SCM key, SCM params)
-{
-    // cuts away exception handler frames, stack looks kinda like this:
-    //   3 the procedure that threw the error
-    //   2 (error ...) <- we want this frame to included in the backtrace
-    //   1 (dispatch-exception ...)
-    //   0 this handler
-    SCM cut = scm_list_2(scm_from_uint(2), scm_from_uint(0));
-    *(SCM *)user_data = scm_make_stack(SCM_BOOL_T, cut);
-    return SCM_BOOL_F;
-}
-
-static SCM
-callback_handler_proc(gpointer user_data, SCM key, SCM params)
-{
-    g_critical("scheme procedure threw error in C callback");
-
-    SCM port = scm_open_output_string();
-    SCM stack = *(SCM *)user_data;
-    SCM frame = SCM_STACK_FRAME(stack);
-    SCM pre_error_frame = scm_frame_previous(frame);
-    scm_display_error(pre_error_frame, port, scm_frame_procedure_name(pre_error_frame),
-                      scm_from_utf8_string("throw to key ~A with ~A~%"),
-                      scm_list_2(key, params), SCM_UNDEFINED);
-    scm_display_backtrace(stack, port, SCM_BOOL_F, SCM_BOOL_F);
-    gchar *trace = scm_to_utf8_string(scm_get_output_string(port));
-    scm_close(port);
-
-    g_critical("%s", trace);
-    g_free(trace);
-    return SCM_BOOL_F;
 }
 
 // This procedure uses CALLBACK_INFO to create a dynamic FFI C closure
@@ -427,7 +383,6 @@ gig_callback_new_for_callback(GICallbackInfo *info, gpointer c_func)
 
     return gcb;
 }
-
 
 gpointer
 gig_callback_to_c(GICallbackInfo *cb_info, SCM s_func)
