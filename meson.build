@@ -9,6 +9,10 @@ top_source = meson.current_source_dir()
 top_build = meson.current_build_dir()
 gnome = import('gnome')
 
+##################
+# Compiler Flags #
+##################
+
 cc = meson.get_compiler('c')
 
 _cargs = ['-D_FORTIFY_SOURCE=2',
@@ -54,6 +58,10 @@ endforeach
 add_project_arguments(cargs, language: 'c')
 add_project_link_arguments(ldargs, language: 'c')
 
+##################
+#  Dependencies  #
+##################
+
 glib_dep = dependency('glib-2.0', version: '>=2.48')
 gobject_dep = dependency('gobject-2.0')
 gobject_introspection_dep = dependency('gobject-introspection-1.0')
@@ -87,6 +95,10 @@ else
 endif
 gitestdir = gobject_introspection_dep.get_pkgconfig_variable('gidatadir') / 'tests'
 
+##################
+# Configuration  #
+##################
+
 conf_data = configuration_data({'abs_top_builddir': top_build,
                                 'abs_top_srcdir': top_source,
                                 'GI_GIR_DIR': gobject_introspection_dep.get_pkgconfig_variable('girdir'),
@@ -112,6 +124,10 @@ configure_file(input: gitestdir / 'gitestmacros.h',
 
 meson.add_postconf_script('meson_postconf.sh')
 
+##################
+#    Library     #
+##################
+
 libguile_gi = shared_library('guile-gi',
                              'src/gig_argument.c',
                              'src/gig_closure.c',
@@ -136,6 +152,10 @@ libguile_gi = shared_library('guile-gi',
                                             guile_dep, libffi_dep],
                              install: true,
                              install_dir: extensiondir)
+
+##################
+# Scheme modules #
+##################
 
 gi_modules = ['module/gi/config.scm',
               'module/gi/core-generics.scm',
@@ -179,6 +199,10 @@ if get_option('compile_modules')
     endforeach
   endforeach
 endif
+
+##################
+#     Tests      #
+##################
 
 test_deps = [glib_dep, gobject_dep]
 test_cargs = ['-Wno-unused-parameter', '-Wno-suggest-attribute=malloc']
