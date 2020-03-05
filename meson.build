@@ -122,7 +122,7 @@ configure_file(input: gitestdir / 'gitestmacros.h',
                output: 'gitestmacros.h',
                copy: true)
 
-meson.add_postconf_script('meson_postconf.sh')
+meson.add_postconf_script('meson' / 'postconf.sh')
 
 ##################
 #    Library     #
@@ -233,7 +233,7 @@ libeverything = shared_library('everything', everything_sources,
 libextra = shared_library('extra', extra_sources,
                           dependencies: test_deps, c_args: test_cargs)
 
-test_args = ['--no-auto-compile', top_source / 'tools' / 'test-runner.scm']
+test_args = ['--no-auto-compile', top_source / 'meson' / 'test-runner.scm']
 
 test_env = environment()
 test_env.prepend('LD_LIBRARY_PATH', top_build)
@@ -275,7 +275,7 @@ makeinfo = find_program('makeinfo')
 version_texi = custom_target('version.texi',
                              output: 'version.texi',
                              input: 'doc' / 'guile-gi.texi',
-                             command: [top_source / 'tools' / 'mdate-texi.sh',
+                             command: [top_source / 'meson' / 'mdate-texi.sh',
                                        '@INPUT@', meson.project_version()],
                              capture: true)
 makeinfo = [find_program('makeinfo'), '-I', top_source / 'doc', '-I', top_build,
