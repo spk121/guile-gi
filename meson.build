@@ -74,12 +74,16 @@ else
   endif
 endif
 
+guile_bin = find_program(guile_dep.get_pkgconfig_variable('guile'))
+guild_bin = find_program(guile_dep.get_pkgconfig_variable('guild'))
 if get_option('use_guile_site')
   extensiondir = guile_dep.get_pkgconfig_variable('extensiondir')
   sitedir = guile_dep.get_pkgconfig_variable('sitedir')
+  ccachedir = guile_dep.get_pkgconfig_variable('siteccachedir')
 else
   extensiondir = get_option('prefix') / get_option('libdir') / 'guile' / guile_version / 'extensions'
   sitedir = get_option('prefix') / get_option('datadir') / 'guile' / 'site' / guile_version
+  ccachedir = get_option('prefix') / get_option('libdir') / 'guile' / guile_version / 'ccache'
 endif
 gitestdir = gobject_introspection_dep.get_pkgconfig_variable('gidatadir') / 'tests'
 
@@ -108,29 +112,30 @@ configure_file(input: gitestdir / 'gitestmacros.h',
 
 meson.add_postconf_script('meson_postconf.sh')
 
-shared_library('guile-gi',
-               'src/gig_argument.c',
-               'src/gig_closure.c',
-               'src/gig_data_type.c',
-               'src/gig_object.c',
-               'src/gig_value.c',
-               'src/gig_signal.c',
-               'src/gig.c',
-               'src/gig_arg_map.c',
-               'src/gig_callback.c',
-               'src/gig_function.c',
-               'src/gig_constant.c',
-               'src/gig_flag.c',
-               'src/gig_repository.c',
-               'src/gig_document.c',
-               'src/gig_type.c',
-               'src/gig_type_private.c',
-               'src/gig_util.c',
-               'src/gig_logging.c',
-               dependencies: [glib_dep, gobject_dep, gobject_introspection_dep,
-                              guile_dep, libffi_dep],
-               install: true,
-               install_dir: extensiondir)
+libguile_gi = shared_library('guile-gi',
+                             'src/gig_argument.c',
+                             'src/gig_closure.c',
+                             'src/gig_data_type.c',
+                             'src/gig_object.c',
+                             'src/gig_value.c',
+                             'src/gig_signal.c',
+                             'src/gig.c',
+                             'src/gig_arg_map.c',
+                             'src/gig_callback.c',
+                             'src/gig_function.c',
+                             'src/gig_constant.c',
+                             'src/gig_flag.c',
+                             'src/gig_repository.c',
+                             'src/gig_document.c',
+                             'src/gig_type.c',
+                             'src/gig_type_private.c',
+                             'src/gig_util.c',
+                             'src/gig_logging.c',
+                             dependencies: [glib_dep, gobject_dep,
+                                            gobject_introspection_dep,
+                                            guile_dep, libffi_dep],
+                             install: true,
+                             install_dir: extensiondir)
 
 gi_modules = ['module/gi/config.scm',
               'module/gi/core-generics.scm',
@@ -146,6 +151,34 @@ top_modules = ['module/gi.scm']
 install_data(gi_modules, install_dir: sitedir / 'gi')
 install_data(script_modules, install_dir: sitedir / 'scripts')
 install_data(top_modules, install_dir: sitedir)
+
+if get_option('compile_modules')
+  guild_command = [find_program('env'),
+                   'LD_LIBRARY_PATH=' + top_build,
+                   'GUILE_AUTO_COMPILE=0',
+                   guild_bin, 'compile', '--output=@OUTPUT@',
+                   '-O2', '-Warity-mismatch', '-Wformat',
+                   '-Wmacro-use-before-definition',
+                   '-Wunbound-variable',
+                   '--load-path=' + top_source / 'module',
+                   '@INPUT@']
+  foreach m : [[ccachedir / 'gi', gi_modules],
+               [ccachedir / 'script', script_modules],
+               [ccachedir, top_modules]]
+    dir = m[0]
+    modules = m[1]
+    foreach module: modules
+      basename = module.split('/')[-1].split('.')[0]
+      custom_target(basename + '.go',
+                    input: module,
+                    output: '@BASENAME@.go',
+                    command: guild_command,
+                    install: true,
+                    install_dir: dir,
+                    depends: libguile_gi)
+    endforeach
+  endforeach
+endif
 
 test_deps = [glib_dep, gobject_dep]
 test_cargs = ['-Wno-unused-parameter', '-Wno-suggest-attribute=malloc']
@@ -175,8 +208,6 @@ libeverything = shared_library('everything', everything_sources,
                                dependencies: test_deps, c_args: test_cargs)
 libextra = shared_library('extra', extra_sources,
                           dependencies: test_deps, c_args: test_cargs)
-
-guile_bin = find_program(guile_dep.get_pkgconfig_variable('guile'))
 
 test_args = ['--no-auto-compile', top_source / 'tools' / 'test-runner.scm']
 
