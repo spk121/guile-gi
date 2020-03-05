@@ -266,3 +266,25 @@ foreach t: [['marshall', 'Marshall', libmarshall, marshall_sources],
                                   dependencies: [gobject_dep]),
       workdir: top_build / 'test')
 endforeach
+
+##################
+# Documentation  #
+##################
+
+makeinfo = find_program('makeinfo')
+version_texi = custom_target('version.texi',
+                             output: 'version.texi',
+                             input: 'doc' / 'guile-gi.texi',
+                             command: [top_source / 'tools' / 'mdate-texi.sh',
+                                       '@INPUT@', meson.project_version()],
+                             capture: true)
+makeinfo = [find_program('makeinfo'), '-I', top_source / 'doc', '-I', top_build,
+            '@INPUT@']
+
+custom_target('guile-gi.info',
+              output: 'guile-gi.info',
+              input: 'doc' / 'guile-gi.texi',
+              depends: version_texi,
+              command: makeinfo + ['--output=@OUTPUT@'],
+              install: true,
+              install_dir: get_option('infodir'))
