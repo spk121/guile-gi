@@ -85,6 +85,7 @@ endif
 guile_bin = find_program(guile_dep.get_pkgconfig_variable('guile'))
 guild_bin = find_program(guile_dep.get_pkgconfig_variable('guild'))
 env_bin = find_program('env')
+valgrind_bin = find_program('valgrind', required: false)
 
 if get_option('use_guile_site')
   extensiondir = guile_dep.get_pkgconfig_variable('extensiondir')
@@ -274,6 +275,16 @@ foreach t: [['marshall', 'Marshall', libmarshall, marshall_sources],
                                   dependencies: [gobject_dep]),
       workdir: top_build / 'test')
 endforeach
+
+if valgrind_bin.found()
+  add_test_setup('valgrind',
+                 exe_wrapper: [valgrind_bin,
+                               '--leak-check=full',
+                               '--show-possibly-lost=no',
+                               '--track-origins=yes',
+                               '--log-file=valgrind.out',
+                               '--suppressions=' + top_source / 'meson' / 'valgrind.supp'])
+endif
 
 ##################
 # Documentation  #
