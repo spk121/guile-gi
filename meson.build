@@ -84,6 +84,8 @@ endif
 
 guile_bin = find_program(guile_dep.get_pkgconfig_variable('guile'))
 guild_bin = find_program(guile_dep.get_pkgconfig_variable('guild'))
+env_bin = find_program('env')
+
 if get_option('use_guile_site')
   extensiondir = guile_dep.get_pkgconfig_variable('extensiondir')
   sitedir = guile_dep.get_pkgconfig_variable('sitedir')
@@ -153,6 +155,12 @@ libguile_gi = shared_library('guile-gi',
                              install: true,
                              install_dir: extensiondir)
 
+run_target('run-guile',
+           command: [env_bin, 'LD_LIBRARY_PATH=' + top_build,
+                     guile_bin.path(), '--no-auto-compile',
+                     '-L', top_source / 'module'],
+           depends: libguile_gi)
+
 ##################
 # Scheme modules #
 ##################
@@ -173,7 +181,7 @@ install_data(script_modules, install_dir: sitedir / 'scripts')
 install_data(top_modules, install_dir: sitedir)
 
 if get_option('compile_modules')
-  guild_command = [find_program('env'),
+  guild_command = [env_bin,
                    'LD_LIBRARY_PATH=' + top_build,
                    'GUILE_AUTO_COMPILE=0',
                    guild_bin, 'compile', '--output=@OUTPUT@',
