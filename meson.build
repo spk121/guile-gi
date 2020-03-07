@@ -55,8 +55,9 @@ foreach arg: _ldargs
   endif
 endforeach
 
-add_project_arguments(cargs, language: 'c')
-add_project_link_arguments(ldargs, language: 'c')
+if get_option('mtrace')
+  cargs += 'mtrace'
+endif
 
 ##################
 #  Dependencies  #
@@ -153,8 +154,8 @@ libguile_gi = shared_library('guile-gi',
                              dependencies: [glib_dep, gobject_dep,
                                             gobject_introspection_dep,
                                             guile_dep, libffi_dep],
-                             install: true,
-                             install_dir: extensiondir)
+                             c_args: cargs, link_args: ldargs,
+                             install: true, install_dir: extensiondir)
 
 run_target('run-guile',
            command: [env_bin, 'LD_LIBRARY_PATH=' + top_build,
@@ -214,7 +215,7 @@ endif
 ##################
 
 test_deps = [glib_dep, gobject_dep]
-test_cargs = ['-Wno-unused-parameter', '-Wno-suggest-attribute=malloc']
+test_cargs = ['-Wno-unused-parameter']
 marshall_sed = [find_program('sed'),
                 '-e', 's/gimarshallingtests/marshall/',
                 '-e', 's/gi_marshalling_tests/marshall/g',
@@ -284,6 +285,13 @@ if valgrind_bin.found()
                                '--track-origins=yes',
                                '--log-file=valgrind.out',
                                '--suppressions=' + top_source / 'meson' / 'valgrind.supp'])
+endif
+
+if get_option('b_coverage')
+  # meson does not seem to set base-directory correctly, so let's do that on our own
+  run_target('lcov',
+             command: [top_source / 'meson' / 'lcov.sh'],
+             depends: libguile_gi)
 endif
 
 ##################
