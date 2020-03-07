@@ -68,7 +68,6 @@ texinfo.tex
 /Debug/
 
 # Generated sources
-module/gi/config.scm
 test/everything.c
 test/everything.h
 test/marshall.c
