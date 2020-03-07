@@ -274,8 +274,9 @@ if valgrind_bin.found()
                                '--suppressions=' + top_source / 'meson' / 'valgrind.supp'])
 endif
 
+# FIXME: ninja coverage works fine on Guix, but some tests fail due to broken environment
+#        test whether coverage target works on other distros and perhaps remove this target
 if get_option('b_coverage')
-  # meson does not seem to set base-directory correctly, so let's do that on our own
   run_target('lcov',
              command: [top_source / 'meson' / 'lcov.sh'],
              depends: libguile_gi)
