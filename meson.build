@@ -270,7 +270,6 @@ if valgrind_bin.found()
                                '--leak-check=full',
                                '--show-possibly-lost=no',
                                '--track-origins=yes',
-                               '--log-file=valgrind.out',
                                '--suppressions=' + top_source / 'meson' / 'valgrind.supp'])
 endif
 
