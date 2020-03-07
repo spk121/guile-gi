@@ -1,4 +1,4 @@
-FROM ubuntu:latest
+FROM ubuntu:eoan
 
 WORKDIR /app
 
@@ -11,7 +11,7 @@ ENV VERBOSE true
 
 RUN apt-get update \
   && apt-get install -y libffi-dev gir1.2-glib-2.0 libgirepository1.0-dev \
-  guile-2.2-dev libtool texinfo autoconf automake gnulib git \
+  guile-2.2-dev meson texinfo gnulib git \
   texlive-base texlive-generic-recommended texlive-latex-base
 
 
