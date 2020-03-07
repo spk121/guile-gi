@@ -339,6 +339,7 @@ TESTS_LTDLOPEN = -dlopen ${top_builddir}/libguile-gi.la
 endif
 
 TESTS = \
+  test/_setup.scm \
   test/typelib.scm \
   test/constants.scm \
   test/mem.scm \
