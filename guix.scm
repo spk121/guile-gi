@@ -40,8 +40,7 @@
              (guix licenses)
              (guix git-download)
              (guix gexp)
-             (guix build-system gnu)
-             (guix build-system glib-or-gtk)
+             (guix build-system meson)
              (guix utils)
              (gnu packages)
              (gnu packages autotools)
@@ -62,7 +61,7 @@
    (source (local-file %source-dir
                        #:recursive? #t
                        #:select? (git-predicate %source-dir)))
-   (build-system glib-or-gtk-build-system)
+   (build-system meson-build-system)
    (native-inputs `(("autoconf" ,autoconf)
                     ("automake" ,automake)
                     ("gettext" ,gnu-gettext)
@@ -74,18 +73,16 @@
              ("glib" ,glib)
              ("gobject-introspection" ,gobject-introspection)))
    (arguments
-    `(;; gnu-build-system
-      #:configure-flags '("--with-gnu-filesystem-hierarchy"
-                          "--enable-hardening"
-                          "--disable-guild")
+    `(#:glib-or-gtk? #t
+      #:configure-flags '("-Duse_guile_site=false"
+                          "-Dcompile_modules=false")
       #:modules
       (((guix build guile-build-system) #:prefix guile:)
-       (guix build glib-or-gtk-build-system)
+       (guix build meson-build-system)
        (guix build utils))
       #:imported-modules
       ((guix build guile-build-system)
-       (guix build glib-or-gtk-build-system)
-       ,@%gnu-build-system-modules)
+       ,@%meson-build-system-modules)
       #:phases
       (modify-phases %standard-phases
         (delete 'check)
@@ -100,10 +97,10 @@
                                  (version-major+minor (package-version guile))))
                              "/extensions/libguile-gi.so")))
            #t))
-        (add-after 'install 'install-modules
+        (add-after 'shrink-runpath 'install-modules
           (lambda args
             (apply (assoc-ref guile:%standard-phases 'build)
-                   #:source-directory "module"
+                   #:source-directory "../source/module"
                    #:compile-flags '("-O2" "-Warity-mismatch" "-Wformat"
                                      "-Wmacro-use-before-definition"
                                      "-Wunbound-variable")
