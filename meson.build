@@ -103,23 +103,10 @@ gitestdir = gobject_introspection_dep.get_pkgconfig_variable('gidatadir') / 'tes
 # Configuration  #
 ##################
 
-conf_data = configuration_data({'abs_top_builddir': top_build,
-                                'abs_top_srcdir': top_source,
-                                'GI_GIR_DIR': gobject_introspection_dep.get_pkgconfig_variable('girdir'),
-                                'GUILE': guile_dep.get_pkgconfig_variable('guile'),
-                                'SHELL': '/bin/sh',
-                               })
-
+gi_gir_dir = gobject_introspection_dep.get_pkgconfig_variable('girdir')
 configure_file(input: 'module' / 'gi' / 'config.scm.in',
                output: 'config.scm',
-               configuration: conf_data)
-foreach tool: ['gdb-guile', 'gdb-test', 'lcov.sh', 'run-guile',
-               'run-test', 'uninstalled-env', 'uninstalled-test-env',
-               'valgrind.sh']
-  configure_file(input: 'tools' / tool + '.in',
-                 output: tool,
-                 configuration: conf_data)
-endforeach
+               configuration: {'GI_GIR_DIR': gi_gir_dir})
 configure_file(output: 'config.h',
                configuration: {'VERSION': meson.project_version()})
 configure_file(input: gitestdir / 'gitestmacros.h',
