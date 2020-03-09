@@ -156,7 +156,7 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
     {
         GType gtype = g_registered_type_info_get_g_type(info);
         if (gtype == G_TYPE_NONE) {
-            gig_debug_load("Not loading struct type '%s' because is has no GType",
+            gig_debug_load("%s - not loading struct type because is has no GType",
                            g_base_info_get_name(info));
             break;
         }
@@ -183,7 +183,7 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
         GType gtype = g_registered_type_info_get_g_type(info);
         const gchar *_namespace = g_base_info_get_name(info);
         if (gtype == G_TYPE_NONE) {
-            gig_debug_load("Not loading object type '%s' because is has no GType", _namespace);
+            gig_debug_load("%s - not loading object type because is has no GType", _namespace);
             break;
         }
         defs = gig_type_define(gtype, defs);
@@ -193,7 +193,7 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
     {
         GType gtype = g_registered_type_info_get_g_type(info);
         if (gtype == G_TYPE_NONE) {
-            gig_debug_load("Not loading interface type '%s' because is has no GType",
+            gig_debug_load("%s - not loading interface type because is has no GType",
                            g_base_info_get_name(info));
             break;
         }
@@ -207,7 +207,7 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
     {
         GType gtype = g_registered_type_info_get_g_type(info);
         if (gtype == G_TYPE_NONE) {
-            gig_debug_load("Not loading union type '%s' because is has no GType",
+            gig_debug_load("%s - not loading union type because is has no GType",
                            g_base_info_get_name(info));
             break;
         }

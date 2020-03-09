@@ -117,11 +117,20 @@ gig_function_define(GType type, GICallableInfo *info, const gchar *_namespace, S
     gint required_input_count, optional_input_count;
     SCM formals, specializers, self_type = SCM_UNDEFINED;
 
+    gig_debug_load("%s - %sfunction bound to %s %s",
+                   function_name,
+                   (GI_IS_SIGNAL_INFO(info) ? "signal " : ""),
+                   (_namespace ? _namespace : ""), g_base_info_get_name(info));
+
     if (is_method) {
         self_type = gig_type_get_scheme_type(type);
         g_return_val_if_fail(!SCM_UNBNDP(self_type), defs);
         method_name = scm_dynwind_or_bust("%gig-function-define",
                                           gig_callable_info_make_name(info, NULL));
+        gig_debug_load("%s - %smethod bound to %s %s",
+                       method_name,
+                       (GI_IS_SIGNAL_INFO(info) ? "signal " : ""),
+                       _namespace, g_base_info_get_name(info));
     }
 
     SCM proc = SCM_UNDEFINED;
@@ -141,17 +150,10 @@ gig_function_define(GType type, GICallableInfo *info, const gchar *_namespace, S
     def = gig_function_define1(function_name, proc, optional_input_count, formals, specializers);
     if (!SCM_UNBNDP(def))
         defs = scm_cons(def, defs);
-    gig_debug_load("dynamically bound %s to %s with %d required and %d optional arguments",
-                   function_name, g_base_info_get_name(info), required_input_count,
-                   optional_input_count);
-
     if (is_method) {
         def = gig_function_define1(method_name, proc, optional_input_count, formals, specializers);
         if (!SCM_UNBNDP(def))
             defs = scm_cons(def, defs);
-        gig_debug_load("dynamically bound %s to %s with %d required and %d optional arguments",
-                       function_name, g_base_info_get_name(info), required_input_count,
-                       optional_input_count);
     }
 
   end:
@@ -204,7 +206,7 @@ proc4function(GIFunctionInfo *info, const gchar *name, SCM self_type,
         func_gsubr = create_gsubr(info, name, self_type, req, opt, formals, specializers);
 
     if (!func_gsubr) {
-        gig_debug_load("Could not create a gsubr for %s", name);
+        gig_debug_load("%s - could not create a gsubr", name);
         return SCM_UNDEFINED;
     }
 
@@ -217,7 +219,7 @@ proc4signal(GISignalInfo *info, const gchar *name, SCM self_type, int *req, int 
 {
     GigArgMap *amap;
 
-    amap = gig_amap_new(info);
+    amap = gig_amap_new(name, info);
     if (amap == NULL)
         return SCM_UNDEFINED;
 
@@ -350,9 +352,9 @@ create_gsubr(GIFunctionInfo *function_info, const gchar *name, SCM self_type,
     ffi_type *ffi_ret_type;
     GigArgMap *amap;
 
-    amap = gig_amap_new(function_info);
+    amap = gig_amap_new(name, function_info);
     if (amap == NULL) {
-        gig_debug_load("Cannot create gsubr for %s: invalid argument map", name);
+        gig_debug_load("%s - invalid argument map", name);
         return NULL;
     }
 
@@ -499,14 +501,12 @@ gig_callable_return_value(GigArgMap *amap,
 
         if (self)
             output = convert_output_args(amap, name,
-                                         (GIArgument*)cinvoke_input_arg_array->data + 1,
-                                         (GIArgument*)cinvoke_output_arg_array->data,
-                                         output);
+                                         (GIArgument *)cinvoke_input_arg_array->data + 1,
+                                         (GIArgument *)cinvoke_output_arg_array->data, output);
         else
             output = convert_output_args(amap, name,
-                                         (GIArgument*)cinvoke_input_arg_array->data,
-                                         (GIArgument*)cinvoke_output_arg_array->data,
-                                         output);
+                                         (GIArgument *)cinvoke_input_arg_array->data,
+                                         (GIArgument *)cinvoke_output_arg_array->data, output);
     }
 
     g_array_free(cinvoke_input_arg_array, TRUE);
@@ -542,9 +542,9 @@ function_invoke(GIFunctionInfo *func_info, GigArgMap *amap, const gchar *name, G
 
     // Make the actual call.
     // Use GObject's ffi to call the C function.
-    g_debug("Calling %s with %d input and %d output arguments",
+    g_debug("%s - calling with %d input and %d output arguments",
             name, cinvoke_input_arg_array->len, cinvoke_output_arg_array->len);
-    gig_amap_dump(amap);
+    gig_amap_dump(name, amap);
 
     GIArgument return_arg;
     return_arg.v_pointer = NULL;
@@ -575,9 +575,9 @@ gig_callable_invoke(GICallableInfo *callable_info, gpointer callable, GigArgMap 
 
     // Make the actual call.
     // Use GObject's ffi to call the C function.
-    g_debug("Calling %s with %d input and %d output arguments",
+    g_debug("%s - calling with %d input and %d output arguments",
             name, cinvoke_input_arg_array->len, cinvoke_output_arg_array->len);
-    gig_amap_dump(amap);
+    gig_amap_dump(name, amap);
 
     ok = g_callable_info_invoke(callable_info, callable,
                                 (GIArgument *)(cinvoke_input_arg_array->data),
@@ -611,8 +611,6 @@ function_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
     g_assert(user_data != NULL);
 
     guint n_args = cif->nargs;
-    g_debug("Binding C function %s as %s with %d args", g_base_info_get_name(gfn->function_info),
-            gfn->name, n_args);
 
     // we have either 0 args or 1 args, which is the already packed list
     g_assert(n_args <= 1);
@@ -622,6 +620,11 @@ function_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
 
     if (SCM_UNBNDP(s_args))
         s_args = SCM_EOL;
+
+    gchar *args_c_str = scm_write_to_utf8_stringn(scm_list_1(s_args), 1024);
+    g_debug("%s - preparing to invoke %s with %s", gfn->name,
+            g_base_info_get_name(gfn->function_info), args_c_str);
+    free(args_c_str);
 
     if (g_callable_info_is_method(gfn->function_info)) {
         self = gig_type_peek_object(scm_car(s_args));
@@ -776,11 +779,11 @@ object_list_to_c_args(GigArgMap *amap,
     return;
 }
 
-GIArgument *find_output_arg(GigArgMapEntry *entry, GIArgument *in, GIArgument *out)
+GIArgument *
+find_output_arg(GigArgMapEntry *entry, GIArgument *in, GIArgument *out)
 {
-    switch (entry->s_direction)
-    {
-    case GIG_ARG_DIRECTION_INPUT: // may happen with sizes of preallocated outputs
+    switch (entry->s_direction) {
+    case GIG_ARG_DIRECTION_INPUT:      // may happen with sizes of preallocated outputs
         return in + entry->c_input_pos;
     case GIG_ARG_DIRECTION_INOUT:
         return (in + entry->c_input_pos)->v_pointer;
@@ -793,7 +796,8 @@ GIArgument *find_output_arg(GigArgMapEntry *entry, GIArgument *in, GIArgument *o
 }
 
 static SCM
-convert_output_args(GigArgMap *amap, const gchar *func_name, GIArgument *in, GIArgument *out, SCM output)
+convert_output_args(GigArgMap *amap, const gchar *func_name, GIArgument *in, GIArgument *out,
+                    SCM output)
 {
     gig_debug_transfer("convert_output_args(%s)", func_name);
     gint s_output_pos, cin, cout;
@@ -806,7 +810,7 @@ convert_output_args(GigArgMap *amap, const gchar *func_name, GIArgument *in, GIA
 
         GIArgument *arg;
         arg = find_output_arg(entry, in, out);
-        if (arg == NULL) // an INOUT argument has been eaten
+        if (arg == NULL)        // an INOUT argument has been eaten
         {
             output = scm_cons(SCM_UNSPECIFIED, output);
             continue;

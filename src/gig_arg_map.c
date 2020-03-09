@@ -57,7 +57,7 @@ arg_map_entry_init(GigArgMapEntry *entry)
 
 // Gather information on how to map Scheme arguments to C arguments.
 GigArgMap *
-gig_amap_new(GICallableInfo *function_info)
+gig_amap_new(const gchar *name, GICallableInfo *function_info)
 {
     GigArgMap *amap;
     gsize n;
@@ -74,7 +74,7 @@ gig_amap_new(GICallableInfo *function_info)
     arg_map_determine_argument_presence(amap, function_info);
     arg_map_compute_c_invoke_positions(amap);
     arg_map_compute_s_call_positions(amap);
-    gig_amap_dump(amap);
+    gig_amap_dump(name, amap);
     return amap;
 }
 
@@ -266,7 +266,7 @@ arg_map_compute_s_call_positions(GigArgMap *amap)
             entry->s_output_pos = s_output_pos++;
             break;
         default:
-            g_assert_not_reached ();
+            g_assert_not_reached();
         }
     }
 
@@ -293,9 +293,9 @@ gig_amap_free(GigArgMap *amap)
 }
 
 void
-gig_amap_dump(const GigArgMap *amap)
+gig_amap_dump(const gchar *name, const GigArgMap *amap)
 {
-    gig_debug_amap("Arg map for '%s'", amap->name);
+    gig_debug_amap("%s - argument mapping", name ? name : amap->name);
     gig_debug_amap(" SCM inputs required: %d, optional: %d, outputs: %d", amap->s_input_req,
                    amap->s_input_opt, amap->s_output_len);
     gig_debug_amap(" C inputs: %d, outputs: %d", amap->c_input_len, amap->c_output_len);

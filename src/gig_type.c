@@ -104,7 +104,11 @@ gig_type_register(GType gtype, SCM stype)
     if (!g_hash_table_contains(gig_type_gtype_hash, GSIZE_TO_POINTER(gtype))) {
         g_hash_table_insert(gig_type_gtype_hash, GSIZE_TO_POINTER(gtype),
                             SCM_UNPACK_POINTER(stype));
-        gig_debug_load("Registering a new GType: %zu -> %s", gtype, g_type_name(gtype));
+        if (parent)
+            gig_debug_load("%s - registering a new %s type for %zu", g_type_name(gtype),
+                           g_type_name(parent), gtype);
+        else
+            gig_debug_load("%s - registering a new type for %zu", g_type_name(gtype), gtype);
     }
 }
 
@@ -210,9 +214,10 @@ gig_type_define_with_info(GIRegisteredTypeInfo *info, SCM dsupers, SCM slots)
     else {
         gchar *name = g_strdup_printf("<%s>", _name);
         SCM class_name = scm_from_utf8_symbol(name);
-        g_free(name);
         cls = scm_call_4(make_class_proc, dsupers, slots, kwd_name, class_name);
+        gig_debug_load("%s - creating new type", name);
         g_hash_table_insert(gig_type_name_hash, _name, SCM_UNPACK_POINTER(cls));
+        g_free(name);
     }
 
     return cls;
@@ -228,13 +233,15 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
 
     gboolean newkey;
     gpointer orig_key, orig_value;
+    GType parent = g_type_parent(gtype), fundamental = G_TYPE_FUNDAMENTAL(parent);
+    gchar *_type_class_name = gig_type_class_name_from_gtype(gtype);
+
     newkey = g_hash_table_lookup_extended(gig_type_gtype_hash,
                                           GSIZE_TO_POINTER(gtype), &orig_key, &orig_value);
     if (newkey == FALSE) {
-        gig_debug_load("trying to define %s", g_type_name(gtype));
-        GType parent = g_type_parent(gtype), fundamental = G_TYPE_FUNDAMENTAL(parent);
+        gig_debug_load("%s - creating new %s type for %zu %s",
+                       _type_class_name, g_type_name(fundamental), gtype, g_type_name(gtype));
 
-        gchar *_type_class_name = gig_type_class_name_from_gtype(gtype);
         SCM type_class_name = scm_from_utf8_symbol(_type_class_name);
 
         g_return_val_if_fail(parent != G_TYPE_INVALID, defs);
@@ -255,6 +262,9 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
             for (guint i = 0; i < _class->n_values; i++) {
                 SCM key = scm_from_utf8_symbol(_class->values[i].value_nick);
                 SCM value = scm_from_int(_class->values[i].value);
+                gig_debug_load("%s - add enum %s %d",
+                               _type_class_name, _class->values[i].value_nick,
+                               _class->values[i].value);
                 scm_hashq_set_x(obarray, key, value);
             }
             g_type_class_unref(_class);
@@ -275,6 +285,9 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
             for (guint i = 0; i < _class->n_values; i++) {
                 SCM key = scm_from_utf8_symbol(_class->values[i].value_nick);
                 SCM value = scm_from_int(_class->values[i].value);
+                gig_debug_load("%s - add flag %s %u",
+                               _type_class_name, _class->values[i].value_nick,
+                               _class->values[i].value);
                 scm_hashq_set_x(obarray, key, value);
             }
             g_type_class_unref(_class);
@@ -345,9 +358,6 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
 
         g_return_val_if_fail(!SCM_UNBNDP(new_type), defs);
 
-        gig_debug_load("Creating a new GigType: %zu -> %s aka %s", gtype,
-                       _type_class_name, g_type_name(gtype));
-
         SCM key = gig_type_associate(gtype, new_type);
         if (!SCM_UNBNDP(defs)) {
             scm_define(key, new_type);
@@ -355,10 +365,10 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
         }
         gig_debug_load("Hash table sizes %d %d", g_hash_table_size(gig_type_gtype_hash),
                        g_hash_table_size(gig_type_scm_hash));
-        g_free(_type_class_name);
     }
     else {
-        gig_debug_load("<GType> already exists for: %zu -> %s", gtype, g_type_name(gtype));
+        gig_debug_load("%s - type already exists for %zu %s",
+                       _type_class_name, gtype, g_type_name(gtype));
         g_return_val_if_fail(orig_value != NULL, defs);
         SCM val = SCM_PACK_POINTER(orig_value);
 
@@ -373,6 +383,7 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
         }
     }
 
+    g_free(_type_class_name);
     return defs;
 }
 

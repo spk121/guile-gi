@@ -166,7 +166,6 @@ callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
     g_assert(ffi_args != NULL);
     g_assert(user_data != NULL);
 
-    g_debug("in callback C->SCM binding");
     guint n_args = cif->nargs;
 
     g_assert(scm_is_true(scm_procedure_p(gcb->s_func)));
@@ -190,6 +189,11 @@ callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
     }
     s_args = scm_reverse_x(s_args, SCM_EOL);
     gsize length = scm_c_length(s_args);
+
+    gchar *args_c_str = scm_write_to_utf8_stringn(scm_list_1(s_args), 1024);
+    g_debug("%s - preparing to invoke callback %s with %s", gcb->name,
+            g_base_info_get_name(gcb->callback_info), args_c_str);
+    free(args_c_str);
 
     // The actual call of the Scheme callback happens here.
     if (length < amap->s_input_req || length > amap->s_input_req + amap->s_input_opt)
@@ -260,7 +264,6 @@ c_callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user
     g_assert(user_data != NULL);
 
     guint n_args = cif->nargs;
-    g_debug("Invoking C callback with %d args", n_args);
 
     // we have either 0 args or 1 args, which is the already packed list
     g_assert(n_args <= 1);
@@ -270,8 +273,14 @@ c_callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user
     if (SCM_UNBNDP(s_args))
         s_args = SCM_EOL;
 
-    GError *error = NULL;
     // Use 'name' instead of gcb->name, which is NULL for C callbacks.
+
+    gchar *args_c_str = scm_write_to_utf8_stringn(scm_list_1(s_args), 1024);
+    g_debug("%s - preparing to invoke C callback %s with %s", name,
+            g_base_info_get_name(gcb->callback_info), args_c_str);
+    free(args_c_str);
+
+    GError *error = NULL;
     SCM output = gig_callable_invoke(gcb->callback_info, gcb->c_func, gcb->amap, name, NULL,
                                      s_args, &error);
 
@@ -308,7 +317,7 @@ gig_callback_new(GICallbackInfo *callback_info, SCM s_func)
 
     gcb->s_func = s_func;
     gcb->callback_info = g_base_info_ref(callback_info);
-    gcb->amap = gig_amap_new(gcb->callback_info);
+    gcb->amap = gig_amap_new(gcb->name, gcb->callback_info);
 
     // STEP 1
     // Allocate the block of memory that FFI uses to hold a closure object,
@@ -371,7 +380,7 @@ gig_callback_new_for_callback(GICallbackInfo *info, gpointer c_func)
 
     gcb->c_func = c_func;
     gcb->callback_info = g_base_info_ref(info);
-    gcb->amap = gig_amap_new(gcb->callback_info);
+    gcb->amap = gig_amap_new(gcb->name, gcb->callback_info);
 
     if (n_args > 0) {
         gcb->atypes = g_new0(ffi_type *, 1);

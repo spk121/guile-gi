@@ -43,8 +43,7 @@ is_destructive(GICallableInfo *info)
         GITypeInfo *ti = g_arg_info_get_type(ai);
         gboolean is_trivial;
 
-        switch (g_type_info_get_tag(ti))
-        {
+        switch (g_type_info_get_tag(ti)) {
         case GI_TYPE_TAG_BOOLEAN:
         case GI_TYPE_TAG_DOUBLE:
         case GI_TYPE_TAG_FLOAT:
@@ -117,8 +116,7 @@ gig_callable_info_make_name(GICallableInfo *info, const gchar *prefix)
     if (prefix)
         str1 = gig_gname_to_scm_name(prefix);
     str2 = gig_gname_to_scm_name(g_base_info_get_name(info));
-    if (!prefix)
-    {
+    if (!prefix) {
         if (destructive)
             name = g_strdup_printf("%s!", str2);
         else if (predicate)
@@ -126,8 +124,7 @@ gig_callable_info_make_name(GICallableInfo *info, const gchar *prefix)
         else
             return str2;
     }
-    else
-    {
+    else {
         if (destructive)
             name = g_strdup_printf("%s:%s!", str1, str2);
         else if (predicate)
@@ -360,4 +357,29 @@ g_registered_type_info_get_qualified_name(GIRegisteredTypeInfo *info)
 
     // add initial % to ensure that the name is private
     return g_strdup_printf("%%%s%s", prefix, g_base_info_get_name(info));
+}
+
+gchar *
+scm_write_to_utf8_stringn(SCM x, gsize max_len)
+{
+    static int first = 1;
+    static SCM format;
+    static SCM ellipses;
+    if (first) {
+        format = scm_from_utf8_string("~S");
+        ellipses = scm_from_utf8_string("...");
+        first = 0;
+    }
+
+    SCM args_str = scm_simple_format(SCM_BOOL_F, format, x);
+    gchar *cstr;
+    if (scm_c_string_length(args_str) > max_len) {
+        SCM truncated_args_str =
+            scm_string_append(scm_list_2(scm_c_substring(args_str, 0, max_len), ellipses));
+        cstr = scm_to_utf8_string(truncated_args_str);
+    }
+    else
+        cstr = scm_to_utf8_string(args_str);
+
+    return cstr;
 }
