@@ -785,11 +785,24 @@ Returns @code{#t} of @var{object} is an instance of a @var{type}.
 @cindex methods
 
 Guile-GI exports object methods as GOOPS methods in the formats
-@code{type:method} and @code{method}, where @var{type} is the type of an
-object sans namespace translated into @code{kebab-case} and @var{method}
-is the name of the method translated into @code{kebab-case}. For
-instance @code{gtk_widget_show} is bound to both @code{widget:show} and
-@code{show}.
+@code{type:method} and @code{method}, where @var{type} is the
+class on which the method is defined and @var{method} is its
+name.  Unbound methods (i.e. functions) are only bound to @code{method}.
+
+In either case, the following transformations are made to @var{type}
+and @var{method}:
+@enumerate
+@item
+Both @var{type} and @var{method} are converted to @code{kebab-case}.
+@item
+If the method returns a boolean value and has no output arguments,
+a @code{?} is appended to its name.
+@item
+If the method has an input, that is also marked as an output,
+or a pre-allocated output, a @code{!} is appended to its name.
+This comes from a Scheme naming convention for ``destructive'' functions --
+i.e. functions, which may modify their inputs in-place.
+@end enumerate
 
 Use whichever bindings you prefer or alternatively rename them using the
 @code{#:rename} argument to @code{use-modules} or @code{use-typelibs}
