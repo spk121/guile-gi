@@ -22,7 +22,6 @@ AM_DISTCHECK_CONFIGURE_FLAGS = --with-gnu-filesystem-hierarchy --enable-introspe
 #  Directories  #
 #################
 
-cleanpkgdatadir = $(pkgdatadir)
 exampledir = $(datadir)/doc/guile-gi
 emptywindowdir = $(datadir)/doc/guile-gi/empty-window
 builderdir = $(datadir)/doc/guile-gi/builder
@@ -236,13 +235,19 @@ endif
 
 TEST_EXTENSIONS = .scm
 
--include $(INTROSPECTION_MAKEFILE)
 if HAVE_INTROSPECTION
-# FIXME: These libraries are installed despite them only serving test purposes
-#        There seems to be an issue with libtool not generating shared objects
-#        when using check_LTLIBRARIES or noinst_, which in turn are needed for
-#        introspection.
-pkglib_LTLIBRARIES = \
+.gir.typelib:
+	$(INTROSPECTION_COMPILER) $< -o $@
+
+check_DATA = \
+  test/Everything-1.0.typelib \
+  test/Marshall-1.0.typelib \
+  test/Extra-1.0.typelib \
+  test/Everything-1.0.gir \
+  test/Marshall-1.0.gir \
+  test/Extra-1.0.gir
+
+check_LTLIBRARIES = \
   test/libeverything-1.0.la \
   test/libmarshall-1.0.la \
   test/libextra-1.0.la
@@ -270,62 +275,53 @@ BUILT_SOURCES = \
   test/marshall.c test/marshall.h \
   test/gitestmacros.h
 
-INTROSPECTION_GIRS = \
-  test/Everything-1.0.gir \
-  test/Marshall-1.0.gir \
-  test/Extra-1.0.gir
 INTROSPECTION_SCANNER_ARGS = \
   -I $(abs_srcdir)/test \
   -I $(abs_builddir)/test \
   --warn-all
-INTROSPECTION_COMPILER_ARGS =
-nodist_test_libeverything_1_0_la_SOURCES = test/everything.c test/everything.h
+
+TEST_SCANNER = \
+  $(INTROSPECTION_SCANNER) $(INTROSPECTION_SCANNER_ARGS) \
+  --libtool="$(LIBTOOL)" --include=GObject-2.0
+
+test_libeverything_1_0_la_SOURCES = test/everything.c test/everything.h test/gitestmacros.h
 test_libeverything_1_0_la_CFLAGS = $(GOBJECT_CFLAGS)
-test_libeverything_1_0_la_LDFLAGS =
+test_libeverything_1_0_la_LDFLAGS = -rpath '$(abs_builddir)/test'
 test_libeverything_1_0_la_LIBADD = $(GOBJECT_LIBS)
 if BUILDING_DLL
 test_libeverything_1_0_la_LDFLAGS += -no-undefined
 endif
 
-nodist_test_libmarshall_1_0_la_SOURCES = \
-  test/marshall.c test/marshall.h test/gitestmacros.h
-test_libmarshall_1_0_la_CFLAGS = $(GOBJECT_CFLAGS) -I $(abs_builddir)/test
-test_libmarshall_1_0_la_LDFLAGS =
+test_libmarshall_1_0_la_SOURCES = test/marshall.c test/marshall.h test/gitestmacros.h
+test_libmarshall_1_0_la_CFLAGS = $(GOBJECT_CFLAGS)
+test_libmarshall_1_0_la_LDFLAGS = -rpath '$(abs_builddir)/test'
 test_libmarshall_1_0_la_LIBADD = $(GOBJECT_LIBS)
 if BUILDING_DLL
 test_libmarshall_1_0_la_LDFLAGS += -no-undefined
 endif
 
-test_libextra_1_0_la_SOURCES = \
-  test/extra.c test/extra.h
+test_libextra_1_0_la_SOURCES = test/extra.c test/extra.h
 test_libextra_1_0_la_CFLAGS = $(GOBJECT_CFLAGS) -I $(abs_builddir)/test
-test_libextra_1_0_la_LDFLAGS =
+test_libextra_1_0_la_LDFLAGS = -rpath '$(abs_builddir)/test'
 test_libextra_1_0_la_LIBADD = $(GOBJECT_LIBS)
 if BUILDING_DLL
 test_libextra_1_0_la_LDFLAGS += -no-undefined
 endif
 
-test/Everything-1.0.gir: test/libeverything-1.0.la
-test_Everything_1_0_gir_LIBS = test/libeverything-1.0.la
-test_Everything_1_0_gir_INCLUDES = GObject-2.0
-test_Everything_1_0_gir_FILES = test/everything.c test/everything.h
+test/Everything-1.0.gir: test/libeverything-1.0.la $(test_libeverything_1_0_la_SOURCES)
+	$(TEST_SCANNER) -n Everything --nsversion=1.0 -l $<				\
+	--cflags-begin $(test_libeverything_1_0_la_CFLAGS) --cflags-end	\
+	$^ --output $@
 
-test/Marshall-1.0.gir: test/libmarshall-1.0.la
-test_Marshall_1_0_gir_NAMESPACE = Marshall
-test_Marshall_1_0_gir_LIBS = test/libmarshall-1.0.la
-test_Marshall_1_0_gir_INCLUDES = GObject-2.0
-test_Marshall_1_0_gir_FILES = test/marshall.c test/marshall.h
+test/Marshall-1.0.gir: test/libmarshall-1.0.la $(test_libmarshall_1_0_la_SOURCES)
+	$(TEST_SCANNER) -n Marshall --nsversion=1.0 -l $<				\
+	--cflags-begin $(test_libmarshall_1_0_la_CFLAGS) --cflags-end	\
+	$^ --output $@
 
-test/Extra-1.0.gir: test/libextra-1.0.la
-test_Extra_1_0_gir_NAMESPACE = Extra
-test_Extra_1_0_gir_LIBS = test/libextra-1.0.la
-test_Extra_1_0_gir_INCLUDES = GObject-2.0
-test_Extra_1_0_gir_FILES = test/extra.c test/extra.h
-
-cleanpkgdata_DATA = \
-  test/Everything-1.0.gir test/Marshall-1.0.gir \
-  test/Everything-1.0.typelib test/Marshall-1.0.typelib \
-  test/Extra-1.0.gir test/Extra-1.0.typelib
+test/Extra-1.0.gir: test/libextra-1.0.la $(test_libextra_1_0_la_SOURCES)
+	$(TEST_SCANNER) -n Extra --nsversion=1.0 -l $<				\
+	--cflags-begin $(test_libextra_1_0_la_CFLAGS) --cflags-end	\
+	$^ --output $@
 
 EVERYTHING_TESTS = \
   test/everything.scm \
@@ -338,12 +334,12 @@ TESTS_LTDLOPEN = \
   -dlopen ${top_builddir}/test/libmarshall-1.0.la \
   -dlopen ${top_builddir}/test/libextra-1.0.la
 else
-cleanpkgdata_DATA =
 EVERYTHING_TESTS =
 TESTS_LTDLOPEN = -dlopen ${top_builddir}/libguile-gi.la
 endif
 
 TESTS = \
+  test/_setup.scm \
   test/typelib.scm \
   test/constants.scm \
   test/mem.scm \
@@ -368,7 +364,7 @@ XFAIL_TESTS =
 
 SCM_LOG_DRIVER = \
   $(top_builddir)/tools/uninstalled-test-env \
-  $(top_builddir)/libtool --mode=execute $(TESTS_LTDLOPEN) \
+  $(top_builddir)/libtool $(TESTS_LTDLOPEN) --mode=execute \
   $(GUILE) --no-auto-compile $(top_srcdir)/build-aux/test-driver.scm
 
 test: check
@@ -400,7 +396,7 @@ CLEANFILES = \
   examples/resources/test.gresource \
   $(guileobject_DATA) $(pkgguileobject_DATA) $(scriptguileobject_DATA) \
   $(BUILT_SOURCES) \
-  $(cleanpkgdata_DATA)
+  $(check_DATA)
 
 EXTRA_DIST = \
   README.md \
@@ -421,4 +417,4 @@ EXTRA_DIST = \
   $(TESTS) \
   $(noinst_DATA)
 
-SUFFIXES = .gresource .gresource.xml
+SUFFIXES = .gresource .gresource.xml .gir .typeinfo
