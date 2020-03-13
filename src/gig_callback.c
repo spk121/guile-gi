@@ -24,6 +24,9 @@ struct _GigCallback
 
 GSList *callback_list = NULL;
 
+SCM gig_before_c_callback_hook;
+SCM gig_before_callback_hook;
+
 static ffi_type *amap_entry_to_ffi_type(GigArgMapEntry *entry);
 static void callback_free(GigCallback *gcb);
 static void gig_fini_callback(void);
@@ -190,10 +193,10 @@ callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
     s_args = scm_reverse_x(s_args, SCM_EOL);
     gsize length = scm_c_length(s_args);
 
-    gchar *args_c_str = scm_write_to_utf8_stringn(scm_list_1(s_args), 1024);
-    g_debug("%s - preparing to invoke callback %s with %s", gcb->name,
-            g_base_info_get_name(gcb->callback_info), args_c_str);
-    free(args_c_str);
+    if (scm_is_true(scm_procedure_p(scm_variable_ref(gig_before_callback_hook))))
+        scm_call_3(scm_variable_ref(gig_before_callback_hook),
+                   scm_from_utf8_string(g_base_info_get_name(gcb->callback_info)),
+                   gcb->s_func, s_args);
 
     // The actual call of the Scheme callback happens here.
     if (length < amap->s_input_req || length > amap->s_input_req + amap->s_input_opt)
@@ -273,13 +276,12 @@ c_callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user
     if (SCM_UNBNDP(s_args))
         s_args = SCM_EOL;
 
+    if (scm_is_true(scm_procedure_p(scm_variable_ref(gig_before_c_callback_hook))))
+        scm_call_3(scm_variable_ref(gig_before_c_callback_hook),
+                   scm_from_utf8_string(g_base_info_get_name(gcb->callback_info)),
+                   scm_from_pointer(gcb->c_func, NULL), s_args);
+
     // Use 'name' instead of gcb->name, which is NULL for C callbacks.
-
-    gchar *args_c_str = scm_write_to_utf8_stringn(scm_list_1(s_args), 1024);
-    g_debug("%s - preparing to invoke C callback %s with %s", name,
-            g_base_info_get_name(gcb->callback_info), args_c_str);
-    free(args_c_str);
-
     GError *error = NULL;
     SCM output = gig_callable_invoke(gcb->callback_info, gcb->c_func, gcb->amap, name, NULL,
                                      s_args, &error);
@@ -555,6 +557,11 @@ void
 gig_init_callback(void)
 {
     atexit(gig_fini_callback);
+
+    gig_before_c_callback_hook =
+        scm_permanent_object(scm_c_define("%before-c-callback-hook", SCM_BOOL_F));
+    gig_before_callback_hook =
+        scm_permanent_object(scm_c_define("%before-callback-hook", SCM_BOOL_F));
 
     scm_c_define_gsubr("is-registered-callback?", 1, 0, 0, scm_is_registered_callback_p);
     scm_c_define_gsubr("get-registered-callback-closure-pointer", 1, 0, 0,

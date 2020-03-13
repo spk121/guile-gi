@@ -398,8 +398,65 @@ application's C stack.
 @end itemize
 
 To add some insight about what is happening in the introspection
-layer, Guile-GI makes use of GLib's debug logging functionality.  GLib
-provides a logging library whose behavior can be tailored using
+layer, Guile-GI provides some hook functions for the purposes
+of debugging and makes use of GLib's debug logging functionality.
+
+@node Debugging Hooks
+@subsection Debugging Hooks
+
+Since most GObject-based libraries use an event and callback model,
+debugging can be challenging. Guile-GI's provides the ability for the
+user to set hooks to be called at particular events that happen in the
+introspection layer.  Assigning procedures to these hook variables will
+cause them to be called before these events.
+
+@defvar %before-function-hook
+This variable can be set to a procedure taking two arguments: a string,
+and a list.
+
+If this variable is set, it will be called just before Guile-GI's FFI
+calls an introspected C function.  The first argument will be the name
+of the C function as a string.  The second argument will be a list of
+the Scheme arguments that are to be converted and passed to the C
+function.
+@end defvar
+
+Since the @code{%before-function-hook} procedure is called just before
+the FFI calls a C function, it would be called within the procedure call
+of any procedure created by GObject introspection.
+
+@defvar %before-callback-hook
+This variable can be set to a procedure taking three arguments: a
+string, a procedure, and a list.
+
+If this variable is set, it will be called just before Guile-GI's FFI
+calls Scheme callback procedure.  The first argument will be the type of
+the callback procedure to be called, as a string.  The second argument
+will be the procedure, and the last argument will be a list of the
+arguments to be passed to the procedure.
+@end defvar
+
+@defvar %before-c-callback-hook
+This variable can be set to a procedure taking three arguments: a
+string, a pointer, and a list.
+
+If this variable is set, it will be called just before Guile-GI's FFI
+calls a C callback procedure.  The first argument will be the type of
+callback procedure to be called, as a string.  The second argument will
+be a pointer to that C function, and the last argument will be a list of
+the Scheme arguments to be converted and passed to the C function.
+@end defvar
+
+Callbacks are usually called as the result of signals, and the
+procedures to be called are expected to match the type of information
+the signal emits.  Setting @code{%before-callback-hook} and
+@code{%before-c-callback-hook} may provide clues when debugging signal
+events.
+
+@node GLib Logging
+@subsection GLib Logging
+
+GLib provides a logging library whose behavior can be tailored using
 environment variables.  GLib's logging library has a concept of
 @emph{log levels}: critical, error, warning, message, info, and debug.
 
@@ -417,7 +474,7 @@ will receive @emph{a lot} of debugging information from any Guile-GI
 libraries being used.  To help better filter through all this, a
 @code{(gi logging)} library provides a pair of alternative loggers.
 
-@subsection Using the Port Logger
+@subsubsection Using the Port Logger
 
 The @code{(gi logging)} library provides the @code{log-to-port}
 procedure that sends logging output to a Scheme port and provides
@@ -453,7 +510,7 @@ If @env{GIG_DEBUG} is not set, only information about function calls
 will be output.
 @end deffn
 
-@subsection Using the systemd journal Logger
+@subsubsection Using the systemd journal Logger
 
 The @code{(gi logging)} library provides the @code{log-to-journal}
 procedure.

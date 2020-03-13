@@ -44,7 +44,10 @@
                transform procedure->closure)
   #:replace ((%new . make))
   #:export (use-typelibs
-            register-type))
+            register-type
+            %before-function-hook
+            %before-callback-hook
+            %before-c-callback-hook))
 
 (define (subclass? type-a type-b)
   (memq type-b (class-precedence-list type-a)))

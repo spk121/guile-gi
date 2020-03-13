@@ -48,6 +48,7 @@ SCM kwd_procedure;
 
 SCM sym_self;
 
+SCM gig_before_function_hook;
 
 static GigGsubr *check_gsubr_cache(GICallableInfo *function_info, SCM self_type,
                                    gint *required_input_count, gint *optional_input_count,
@@ -619,10 +620,9 @@ function_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
     if (SCM_UNBNDP(s_args))
         s_args = SCM_EOL;
 
-    gchar *args_c_str = scm_write_to_utf8_stringn(scm_list_1(s_args), 1024);
-    g_debug("%s - preparing to invoke %s with %s", gfn->name,
-            g_base_info_get_name(gfn->function_info), args_c_str);
-    free(args_c_str);
+    if (scm_is_true(scm_procedure_p(scm_variable_ref(gig_before_function_hook))))
+        scm_call_2(scm_variable_ref(gig_before_function_hook),
+                   scm_from_utf8_string(gfn->name), s_args);
 
     if (g_callable_info_is_method(gfn->function_info)) {
         self = gig_type_peek_object(scm_car(s_args));
@@ -855,6 +855,8 @@ gig_init_function(void)
 
     sym_self = scm_from_utf8_symbol("self");
 
+    gig_before_function_hook =
+        scm_permanent_object(scm_c_define("%before-function-hook", SCM_BOOL_F));
     atexit(gig_fini_function);
 }
 
