@@ -188,11 +188,11 @@ gig_define_enum(GIEnumInfo *info, SCM defs)
 
         switch (t) {
         case GI_INFO_TYPE_ENUM:
-            gig_debug_load("%s add enum %s %d", _class_name, _key, _val);
+            gig_debug_load("%s - add enum %s %d", _class_name, _key, _val);
             val = scm_from_int(_val);
             break;
         case GI_INFO_TYPE_FLAGS:
-            gig_debug_load("%s add flag %s as %u", _class_name, _key, _val);
+            gig_debug_load("%s - add flag %s %u", _class_name, _key, _val);
             val = scm_from_uint(_val);
             break;
         default:

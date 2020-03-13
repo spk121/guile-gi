@@ -493,6 +493,7 @@ gig_i_scm_emit(SCM self, SCM signal, SCM s_detail, SCM args)
 
     if (query_info.return_type != G_TYPE_NONE)
         g_value_init(&retval, query_info.return_type);
+    g_debug("%s - emitting signal", g_signal_name(sigid));
     g_signal_emitv(values, sigid, detail, &retval);
     g_free(values);
 
@@ -534,12 +535,11 @@ gig_property_define(GType type, GIPropertyInfo *info, const gchar *_namespace, S
         def = do_define_property(long_name, s_prop, self_type, top_type);
         if (!SCM_UNBNDP(def))
             defs = scm_cons(def, defs);
-        gig_debug_load("dynamically bound %s to property %s of %s", long_name, name,
-                       g_type_name(type));
+        gig_debug_load("%s - bound to property %s.%s", long_name, g_type_name(type), name);
         def = do_define_property(name, s_prop, self_type, top_type);
         if (!SCM_UNBNDP(def))
             defs = scm_cons(def, defs);
-        gig_debug_load("dynamically bound %s to property %s of %s", name, name, g_type_name(type));
+        gig_debug_load("%s - shorthand for %s", name, long_name);
     }
     else
         gig_warning_load("Missing property %s", long_name);

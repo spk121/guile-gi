@@ -117,20 +117,18 @@ gig_function_define(GType type, GICallableInfo *info, const gchar *_namespace, S
     gint required_input_count, optional_input_count;
     SCM formals, specializers, self_type = SCM_UNDEFINED;
 
-    gig_debug_load("%s - %sfunction bound to %s %s",
+    gig_debug_load("%s - bound to %s %s%s%s",
                    function_name,
-                   (GI_IS_SIGNAL_INFO(info) ? "signal " : ""),
-                   (_namespace ? _namespace : ""), g_base_info_get_name(info));
+                   (GI_IS_SIGNAL_INFO(info) ? "signal" : "function"),
+                   (_namespace ? _namespace : ""), (_namespace ? "." : ""),
+                   g_base_info_get_name(info));
 
     if (is_method) {
         self_type = gig_type_get_scheme_type(type);
         g_return_val_if_fail(!SCM_UNBNDP(self_type), defs);
         method_name = scm_dynwind_or_bust("%gig-function-define",
                                           gig_callable_info_make_name(info, NULL));
-        gig_debug_load("%s - %smethod bound to %s %s",
-                       method_name,
-                       (GI_IS_SIGNAL_INFO(info) ? "signal " : ""),
-                       _namespace, g_base_info_get_name(info));
+        gig_debug_load("%s - shorthand for %s", method_name, function_name);
     }
 
     SCM proc = SCM_UNDEFINED;
@@ -799,7 +797,7 @@ static SCM
 convert_output_args(GigArgMap *amap, const gchar *func_name, GIArgument *in, GIArgument *out,
                     SCM output)
 {
-    gig_debug_transfer("convert_output_args(%s)", func_name);
+    gig_debug_transfer("%s - convert_output_args", func_name);
     gint s_output_pos, cin, cout;
 
     for (guint c_output_pos = 0; c_output_pos < amap->c_output_len; c_output_pos++) {
