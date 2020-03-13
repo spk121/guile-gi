@@ -1,3 +1,18 @@
+2020-03-20: version 0.3.0
+- Handle mutation operations of caller-allocated function arguments (#39)
+  - Some procedures with preallocated in/out arguments will now bear the
+    mutation sigil `!'
+- Clean up output argument processing (#39)
+  - This may re-order the output arguments of some procedures
+- Use conventional installation directory for binary guile extensions (#72)
+- Improve Guix build and install
+- Stricter errors for callbacks and signals
+- Don't prematurely catch errors thrown by callbacks in the callback handler
+- Better tests for callback, signals, arrays (#54, #57)
+- Clean up debug info (#77)
+- Updated docs (#76)
+- Bug fixes
+
 2020-01-27: version 0.2.2
 - Add Guile 3.0 to configure
 - Callback fixes (#68, #70)

@@ -10,7 +10,7 @@ This library allows Guile to use GObject-based libraries -- such as GTK+3,
 GLib, and WebKit2 -- by generating a Scheme API from the GObject Introspection
 information provided by those libraries.
 
-This is alpha code.  It is lightly documented.  The API is
+This is beta code.  It is only partially documented.  The API is
 stabilizing, but may still be subject to change.
 
 Guile GI has two primary components.
