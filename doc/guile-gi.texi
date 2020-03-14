@@ -405,20 +405,16 @@ of debugging and makes use of GLib's debug logging functionality.
 @subsection Debugging Hooks
 
 Since most GObject-based libraries use an event and callback model,
-debugging can be challenging. Guile-GI's provides the ability for the
-user to set hooks to be called at particular events that happen in the
-introspection layer.  Assigning procedures to these hook variables will
-cause them to be called before these events.
+debugging can be challenging.  Guile-GI provides the ability for the
+user to hook into particular events in the introspection layer.
+@xref{Hooks,,,guile,The Guile reference manual} to see how to
+operate on them.
 
+The following hooks are defined
 @defvar %before-function-hook
-This variable can be set to a procedure taking two arguments: a string,
-and a list.
-
-If this variable is set, it will be called just before Guile-GI's FFI
-calls an introspected C function.  The first argument will be the name
-of the C function as a string.  The second argument will be a list of
-the Scheme arguments that are to be converted and passed to the C
-function.
+Will be emitted before calling a function with two arguments:
+@var{name}, a string denoting the name of the called function,
+and @var{args}, a list of Scheme variables passed to that function.
 @end defvar
 
 Since the @code{%before-function-hook} procedure is called just before
@@ -426,25 +422,17 @@ the FFI calls a C function, it would be called within the procedure call
 of any procedure created by GObject introspection.
 
 @defvar %before-callback-hook
-This variable can be set to a procedure taking three arguments: a
-string, a procedure, and a list.
-
-If this variable is set, it will be called just before Guile-GI's FFI
-calls Scheme callback procedure.  The first argument will be the type of
-the callback procedure to be called, as a string.  The second argument
-will be the procedure, and the last argument will be a list of the
-arguments to be passed to the procedure.
+Will be emitted before invoking a callback with three arguments:
+@var{name}, a string denoting the name of the callback,
+@var{proc}, the Scheme procedure that will be called,
+and @var{args}, a list of Scheme variables passed to that function.
 @end defvar
 
 @defvar %before-c-callback-hook
-This variable can be set to a procedure taking three arguments: a
-string, a pointer, and a list.
-
-If this variable is set, it will be called just before Guile-GI's FFI
-calls a C callback procedure.  The first argument will be the type of
-callback procedure to be called, as a string.  The second argument will
-be a pointer to that C function, and the last argument will be a list of
-the Scheme arguments to be converted and passed to the C function.
+Will be emitted before invoking a C callback with three arguments:
+@var{name}, a string denoting the name of the callback,
+@var{ptr}, a pointer to the C function that will be called,
+and @var{args}, a list of Scheme variables passed to that function.
 @end defvar
 
 Callbacks are usually called as the result of signals, and the

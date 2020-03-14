@@ -620,9 +620,10 @@ function_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
     if (SCM_UNBNDP(s_args))
         s_args = SCM_EOL;
 
-    if (scm_is_true(scm_procedure_p(scm_variable_ref(gig_before_function_hook))))
-        scm_call_2(scm_variable_ref(gig_before_function_hook),
-                   scm_from_utf8_string(gfn->name), s_args);
+    if (scm_is_false(scm_hook_empty_p(gig_before_function_hook)))
+        scm_c_run_hook(gig_before_function_hook,
+                       scm_list_2(scm_from_utf8_string(gfn->name),
+                                  s_args));
 
     if (g_callable_info_is_method(gfn->function_info)) {
         self = gig_type_peek_object(scm_car(s_args));
@@ -855,8 +856,8 @@ gig_init_function(void)
 
     sym_self = scm_from_utf8_symbol("self");
 
-    gig_before_function_hook =
-        scm_permanent_object(scm_c_define("%before-function-hook", SCM_BOOL_F));
+    gig_before_function_hook = scm_permanent_object(scm_make_hook(scm_from_size_t(2)));
+    scm_c_define("%before-function-hook", gig_before_function_hook);
     atexit(gig_fini_function);
 }
 
