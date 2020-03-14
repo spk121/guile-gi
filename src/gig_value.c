@@ -310,7 +310,6 @@ gig_value_to_scm_basic_type(const GValue *value, GType fundamental, gboolean *ha
     case G_TYPE_STRING:
     {
         const gchar *str = g_value_get_string(value);
-        g_debug("%s", str);
         if (str)
             return scm_from_utf8_string(str);
         else
