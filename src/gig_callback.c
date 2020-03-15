@@ -1,4 +1,5 @@
 #include <libguile.h>
+#include <libguile/hooks.h>
 #include <ffi.h>
 #include "gig_argument.h"
 #include "gig_callback.h"
