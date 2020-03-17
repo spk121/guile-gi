@@ -123,9 +123,9 @@ struct _GigArgMap
     GigArgMapEntry return_val;
 };
 
-GigArgMap *gig_amap_new(GICallableInfo *function_info);
+GigArgMap *gig_amap_new(const gchar *name, GICallableInfo *function_info);
 void gig_amap_free(GigArgMap *am);
-void gig_amap_dump(const GigArgMap *am);
+void gig_amap_dump(const gchar *name, const GigArgMap *am);
 
 void gig_amap_s_input_count(const GigArgMap *amap, gint *required, gint *optional);
 GigArgMapEntry *gig_amap_get_input_entry_by_s(GigArgMap *am, gint spos);

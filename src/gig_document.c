@@ -76,7 +76,7 @@ do_document(GIBaseInfo *info, const gchar *_namespace)
         else
             kind = "function";
 
-        arg_map = gig_amap_new(info);
+        arg_map = gig_amap_new(NULL, info);
         if (arg_map)
             scm_dynwind_unwind_handler((scm_t_pointer_finalizer) gig_amap_free,
                                        arg_map, SCM_F_WIND_EXPLICITLY);

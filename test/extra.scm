@@ -12,6 +12,28 @@
 
 (test-begin "extra")
 
+(define n-functions 0)
+(define n-callbacks 0)
+(define n-c-callbacks 0)
+
+(test-assert "bind %before-function-hook"
+  (begin
+    (add-hook! %before-function-hook
+               (lambda (fn args)
+                 (set! n-functions (1+ n-functions))))))
+
+(test-assert "bind %before-callback-hook"
+  (begin
+    (add-hook! %before-callback-hook
+               (lambda (cb proc args)
+                 (set! n-callbacks (1+ n-callbacks))))))
+
+(test-assert "bind %before-c-callback-hook"
+  (begin
+    (add-hook! %before-c-callback-hook
+               (lambda (cb proc args)
+                 (set! n-c-callbacks (1+ n-c-callbacks))))))
+
 (test-assert "zero-terminated-uint8-array-input bytevector"
   (zero-terminated-uint8-array-input? #vu8(1 2 3)))
 
@@ -285,5 +307,11 @@
 (test-error "call returned c callback with wrong type"
             #t
             ((return-callback) "hello"))
+
+(test-equal "hooks ran"
+  '(38 25 4)
+  (list n-functions
+        n-callbacks
+        n-c-callbacks))
 
 (test-end "extra")

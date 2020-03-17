@@ -398,8 +398,53 @@ application's C stack.
 @end itemize
 
 To add some insight about what is happening in the introspection
-layer, Guile-GI makes use of GLib's debug logging functionality.  GLib
-provides a logging library whose behavior can be tailored using
+layer, Guile-GI provides some hook functions for the purposes
+of debugging and makes use of GLib's debug logging functionality.
+
+@node Debugging Hooks
+@subsection Debugging Hooks
+
+Since most GObject-based libraries use an event and callback model,
+debugging can be challenging.  Guile-GI provides the ability for the
+user to hook into particular events in the introspection layer.
+@xref{Hooks,,,guile,The Guile reference manual} to see how to
+operate on them.
+
+The following hooks are defined
+@defvar %before-function-hook
+Will be emitted before calling a function with two arguments:
+@var{name}, a string denoting the name of the called function,
+and @var{args}, a list of Scheme variables passed to that function.
+@end defvar
+
+Since the @code{%before-function-hook} procedure is called just before
+the FFI calls a C function, it would be called within the procedure call
+of any procedure created by GObject introspection.
+
+@defvar %before-callback-hook
+Will be emitted before invoking a callback with three arguments:
+@var{name}, a string denoting the name of the callback,
+@var{proc}, the Scheme procedure that will be called,
+and @var{args}, a list of Scheme variables passed to that function.
+@end defvar
+
+@defvar %before-c-callback-hook
+Will be emitted before invoking a C callback with three arguments:
+@var{name}, a string denoting the name of the callback,
+@var{ptr}, a pointer to the C function that will be called,
+and @var{args}, a list of Scheme variables passed to that function.
+@end defvar
+
+Callbacks are usually called as the result of signals, and the
+procedures to be called are expected to match the type of information
+the signal emits.  Setting @code{%before-callback-hook} and
+@code{%before-c-callback-hook} may provide clues when debugging signal
+events.
+
+@node GLib Logging
+@subsection GLib Logging
+
+GLib provides a logging library whose behavior can be tailored using
 environment variables.  GLib's logging library has a concept of
 @emph{log levels}: critical, error, warning, message, info, and debug.
 
@@ -417,7 +462,7 @@ will receive @emph{a lot} of debugging information from any Guile-GI
 libraries being used.  To help better filter through all this, a
 @code{(gi logging)} library provides a pair of alternative loggers.
 
-@subsection Using the Port Logger
+@subsubsection Using the Port Logger
 
 The @code{(gi logging)} library provides the @code{log-to-port}
 procedure that sends logging output to a Scheme port and provides
@@ -453,7 +498,7 @@ If @env{GIG_DEBUG} is not set, only information about function calls
 will be output.
 @end deffn
 
-@subsection Using the systemd journal Logger
+@subsubsection Using the systemd journal Logger
 
 The @code{(gi logging)} library provides the @code{log-to-journal}
 procedure.
