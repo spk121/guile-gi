@@ -22,7 +22,7 @@ Free Documentation License". -->
 <link href="The-Index.html#The-Index" rel="index" title="The Index">
 <link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
 <link href="Reference-Guide.html#Reference-Guide" rel="up" title="Reference Guide">
-<link href="GObject-Properties.html#GObject-Properties" rel="next" title="GObject Properties">
+<link href="Signal-Accumulators.html#Signal-Accumulators" rel="next" title="Signal Accumulators">
 <link href="GObject-Methods.html#GObject-Methods" rel="prev" title="GObject Methods">
 <style type="text/css">
 <!--
@@ -81,7 +81,7 @@ nothing to do with Unix signals like <code>SIGTERM</code>.
 the gobject object calls all the callback procedures attached to its
 &ldquo;activate&rdquo; signal it will call this <code>activate</code> procedure.
 </p>
-<p>When a callback procedure is called it may receives some arguments
+<p>When a callback procedure is called it may receive some arguments
 from the caller and some from user data.  In the example, <code>activate</code>
 is supposed to take a single argument.
 This argument &ndash; <code>app</code> &ndash; is supplied by the caller, as are all
@@ -100,10 +100,10 @@ is run <em>after</em> the main handling code.
 </p></dd></dl>
 
 <p>Signal objects can also be used to emit signals. Note that you shouldn&rsquo;t
-normally do this when using objects of types, that you didn&rsquo;t define,
-and even when using objects of types, that you did define, you should
-only emit the signals that you defined for that object (and perhaps the
-&ldquo;notify&rdquo; signal when using explicit notification).
+normally do this when using objects of types that you did not define.
+When using objects of types that you did define, you should only emit
+the signals that you defined for that object (and perhaps the &ldquo;notify&rdquo;
+signal when using explicit notification).
 </p>
 <dl>
 <dt id="index-_0028signal-_003csignal_003e_0029">Special Form: <strong><em>(signal &lt;signal&gt;)</em></strong> <em>obj [detail] [args...]</em></dt>
@@ -129,7 +129,7 @@ A string.
 <dl>
 <dt id="index-return_002dtype">Slot: <strong>return-type</strong></dt>
 <dd><p>The return type of the signal.
-A <code>&lt;GType&gt;</code> or integer.
+A <code>&lt;GType&gt;</code> or integer, such as <code>G_TYPE_INT</code>.
 </p></dd></dl>
 <dl>
 <dt id="index-param_002dtypes">Slot: <strong>param-types</strong></dt>
@@ -138,21 +138,19 @@ A list of <code>&lt;GType&gt;</code>s or integers.
 </p></dd></dl>
 <dl>
 <dt id="index-accumulator">Slot: <strong>accumulator</strong></dt>
-<dd><p>A procedure, called with two arguments <var>seed</var> and <var>current</var> and
-produces up to two output values.  If it produces no output value,
-<var>seed</var> is left unchanged and signal handling continues.  If it
-produces one output value, <var>seed</var> is set to that value and signal
-handling continues.  If it produces two output values, <var>seed</var> is set
-to the second output value and signal handling stops if the first is
-<code>#f</code>.  If at any time <var>seed</var> would be set to an incorrect value
-or more than two values are returned signal handling is aborted.
+<dd><p>An optional signal accumulator procedure. See <a href="Signal-Accumulators.html#Signal-Accumulators">Signal Accumulators</a>.
 </p></dd></dl>
 <dl>
 <dt id="index-flags">Slot: <strong>flags</strong></dt>
-<dd><p>Signal flags, a logical or of  one or more of
+<dd><p>Signal flags, a logical or of one or more of
 <code>SIGNAL_RUN_FIRST</code>, <code>SIGNAL_RUN_LAST</code>,
 <code>SIGNAL_RUN_CLEANUP</code>, <code>SIGNAL_NO_RECURSE</code>, etc.
 </p></dd></dl>
+
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="Signal-Accumulators.html#Signal-Accumulators" accesskey="1">Signal Accumulators</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+</table>
 
 <hr>
 <div class="header">

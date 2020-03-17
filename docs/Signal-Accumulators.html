@@ -1,0 +1,91 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 2018, 2019, 2020 Michael L. Gran
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, no Front-Cover Texts, and no Back-Cover
+Texts.  A copy of the license is included in the section entitled "GNU
+Free Documentation License". -->
+<!-- Created by GNU Texinfo 6.6, http://www.gnu.org/software/texinfo/ -->
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Signal Accumulators (Guile GI)</title>
+
+<meta name="description" content="Signal Accumulators (Guile GI)">
+<meta name="keywords" content="Signal Accumulators (Guile GI)">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="The-Index.html#The-Index" rel="index" title="The Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="GObject-Signals.html#GObject-Signals" rel="up" title="GObject Signals">
+<link href="GObject-Properties.html#GObject-Properties" rel="next" title="GObject Properties">
+<link href="GObject-Signals.html#GObject-Signals" rel="prev" title="GObject Signals">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.indentedblock {margin-right: 0em}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+kbd {font-style: oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+span.nolinebreak {white-space: nowrap}
+span.roman {font-family: initial; font-weight: normal}
+span.sansserif {font-family: sans-serif; font-weight: normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+<link rel="stylesheet" type="text/css" href="document-1.0.1.css">
+
+
+</head>
+
+<body lang="en">
+<span id="Signal-Accumulators"></span><div class="header">
+<p>
+Up: <a href="GObject-Signals.html#GObject-Signals" accesskey="u" rel="up">GObject Signals</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html#The-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<span id="Signal-Accumulators-1"></span><h4 class="subsection">3.6.1 Signal Accumulators</h4>
+<p>The signal accumulator is a special callback procedure that gets called
+during a signal emission.  The &ldquo;accumulator&rdquo; nomenclature comes from
+the common case where one wants to collect the return values of signal
+emissions.  In Scheme terms, the accumulator can be compared to a
+<code>fold</code> procedure that gets called on signal emission results.
+</p>
+<p>When specified, the signal accumulator is a procedure with two
+input arguments: <var>seed</var> and <var>current</var>. The input value
+<var>seed</var> is a value created by the previous call to the accumulator.
+The first time the accumulator is called, <var>seed</var> will zero for
+signals that return numeric types. The input value <var>current</var> is the
+return value of the just emitted signal.
+</p>
+<p>The accumulator procedure should return zero, one, or two values.
+</p><ul>
+<li> If it produces no output value, signal handling continues for this
+signal, and <var>seed</var> is left unchanged for the next call to the
+accumulator.
+</li><li> If it produces one output value, signal handling continues for this
+signal, and, for the next call to the accumulator, the <var>seed</var> value
+will be this output value.  Note that the output value must have the
+same type as specified for the signal output value: <code>G_TYPE_INT</code>,
+<code>G_TYPE_FLOAT</code>, etc.
+</li><li> If it produces two output values, <var>seed</var> is set to the second output
+value, and signal handling stops for this signal if the first output
+value is <code>#f</code>.
+</li></ul>
+<p>If at any time <var>seed</var> would be set to an incorrect value or more
+than two values are returned signal handling is aborted.
+</p>
+
+
+
+</body>
+</html>

@@ -1,0 +1,134 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 2018, 2019, 2020 Michael L. Gran
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, no Front-Cover Texts, and no Back-Cover
+Texts.  A copy of the license is included in the section entitled "GNU
+Free Documentation License". -->
+<!-- Created by GNU Texinfo 6.6, http://www.gnu.org/software/texinfo/ -->
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>GLib Logging (Guile GI)</title>
+
+<meta name="description" content="GLib Logging (Guile GI)">
+<meta name="keywords" content="GLib Logging (Guile GI)">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="The-Index.html#The-Index" rel="index" title="The Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Debugging-and-Profiling.html#Debugging-and-Profiling" rel="up" title="Debugging and Profiling">
+<link href="Application-Deployment.html#Application-Deployment" rel="next" title="Application Deployment">
+<link href="Debugging-Hooks.html#Debugging-Hooks" rel="prev" title="Debugging Hooks">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.indentedblock {margin-right: 0em}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+kbd {font-style: oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+span.nolinebreak {white-space: nowrap}
+span.roman {font-family: initial; font-weight: normal}
+span.sansserif {font-family: sans-serif; font-weight: normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+<link rel="stylesheet" type="text/css" href="document-1.0.1.css">
+
+
+</head>
+
+<body lang="en">
+<span id="GLib-Logging"></span><div class="header">
+<p>
+Previous: <a href="Debugging-Hooks.html#Debugging-Hooks" accesskey="p" rel="prev">Debugging Hooks</a>, Up: <a href="Debugging-and-Profiling.html#Debugging-and-Profiling" accesskey="u" rel="up">Debugging and Profiling</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html#The-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<span id="GLib-Logging-1"></span><h4 class="subsection">2.4.2 GLib Logging</h4>
+
+<p>GLib provides a logging library whose behavior can be tailored using
+environment variables.  GLib&rsquo;s logging library has a concept of
+<em>log levels</em>: critical, error, warning, message, info, and debug.
+</p>
+<p>The <code>G_MESSAGES_DEBUG</code> environment variable may be set to a
+space-separated list of <em>log domains</em> for which debug messages
+should be printed. Some useful log domains are <code>GuileGI</code> for
+Guile-GI messages, <code>dconf</code>, <code>GLib</code>, <code>GLib-GIO</code>, <code>Gdk</code>,
+and <code>Gtk</code>.  Also, the special log domain <code>all</code> will print
+debug messages from all domains. For more information on how to take
+advantage of this logging, see
+<a href="https://developer.gnome.org/glib/stable/glib-running.html">https://developer.gnome.org/glib/stable/glib-running.html</a>.
+</p>
+<p>When <code>G_MESSAGES_DEBUG</code> is set to <code>GuileGI</code> or <code>all</code>, you
+will receive <em>a lot</em> of debugging information from any Guile-GI
+libraries being used.  To help better filter through all this, a
+<code>(gi logging)</code> library provides a pair of alternative loggers.
+</p>
+<span id="Using-the-Port-Logger"></span><h4 class="subsubsection">2.4.2.1 Using the Port Logger</h4>
+
+<p>The <code>(gi logging)</code> library provides the <code>log-to-port</code>
+procedure that sends logging output to a Scheme port and provides
+functionality to target specific categories of debug information
+</p>
+<dl>
+<dt id="index-log_002dto_002dport">Procedure: <strong>log-to-port</strong> <em>port</em></dt>
+<dd><p>Given <var>port</var>, an output port, this procedure installs a GLib
+log writer function that outputs to <var>port</var>.
+</p>
+<p>The default behavior of this GLib log writer is to print critical,
+error, and warning messages to the port.  Message-level, info, and debug
+messages will be dropped.  If you want to receive these message-level,
+info, and debug messages with this logger, you need to set the
+<code>G_MESSAGES_DEBUG</code> as described above.  Also, you need to set
+<code>GIG_DEBUG</code> to the category of debug information desired.
+</p>
+<p>Set the <code>GIG_DEBUG</code>
+environment variable to a space-separated list of topics.
+</p><ul>
+<li> <code>amap</code> prints information about the mapping of function arguments.
+</li><li> <code>load</code> prints information &ndash; when libraries are loaded &ndash; on how C
+procedures, structs, unions, and objects are bound to Guile.
+</li><li> <code>transfers</code> prints information on how C arguments are converted to
+Guile objects and vice versa.
+</li><li> <code>all</code> prints all the debug information.
+</li></ul>
+
+<p>If <code>GIG_DEBUG</code> is not set, only information about function calls
+will be output.
+</p></dd></dl>
+
+<span id="Using-the-systemd-journal-Logger"></span><h4 class="subsubsection">2.4.2.2 Using the systemd journal Logger</h4>
+
+<p>The <code>(gi logging)</code> library provides the <code>log-to-journal</code>
+procedure.
+</p>
+<dl>
+<dt id="index-log_002dto_002djournal">Procedure: <strong>log-to-journal</strong></dt>
+<dd><p>This procedure sets GLib&rsquo;s <code>g_log_writer_journald</code> function
+as the current GLib log writer function.
+</p></dd></dl>
+
+<p>For distributions that use systemd&rsquo;s journal, the <code>journalctl</code>
+command can help filter debug output.  Guile-GI&rsquo;s debug messages
+have the message key <code>GIG_DOMAIN</code> which can be used to filter
+debug info into general categories.
+</p>
+<hr>
+<div class="header">
+<p>
+Previous: <a href="Debugging-Hooks.html#Debugging-Hooks" accesskey="p" rel="prev">Debugging Hooks</a>, Up: <a href="Debugging-and-Profiling.html#Debugging-and-Profiling" accesskey="u" rel="up">Debugging and Profiling</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html#The-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

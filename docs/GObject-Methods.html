@@ -57,12 +57,22 @@ Next: <a href="GObject-Signals.html#GObject-Signals" accesskey="n" rel="next">GO
 <span id="index-methods"></span>
 
 <p>Guile-GI exports object methods as GOOPS methods in the formats
-<code>type:method</code> and <code>method</code>, where <var>type</var> is the type of an
-object sans namespace translated into <code>kebab-case</code> and <var>method</var>
-is the name of the method translated into <code>kebab-case</code>. For
-instance <code>gtk_widget_show</code> is bound to both <code>widget:show</code> and
-<code>show</code>.
+<code>type:method</code> and <code>method</code>, where <var>type</var> is the
+class on which the method is defined and <var>method</var> is its
+name.  Unbound methods (i.e. functions) are only bound to <code>method</code>.
 </p>
+<p>In either case, the following transformations are made to <var>type</var>
+and <var>method</var>:
+</p><ol>
+<li> Both <var>type</var> and <var>method</var> are converted to <code>kebab-case</code>.
+</li><li> If the method returns a boolean value and has no output arguments,
+a <code>?</code> is appended to its name.
+</li><li> If the method has an input, that is also marked as an output,
+or a pre-allocated output, a <code>!</code> is appended to its name.
+This comes from a Scheme naming convention for &ldquo;destructive&rdquo; functions &ndash;
+i.e. functions, which may modify their inputs in-place.
+</li></ol>
+
 <p>Use whichever bindings you prefer or alternatively rename them using the
 <code>#:rename</code> argument to <code>use-modules</code> or <code>use-typelibs</code>
 respectively. Note that Guile currently warns if a binding is imported
