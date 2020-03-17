@@ -36,4 +36,4 @@ Or, create and run in a development environment
 
     guix environment -l guix.scm
     ./bootstrap && ./configure && make
-    tools/uninstalled-env tools/guile-gi examples/browser.scm
+    tools/uninstalled-env tools/run-guile examples/browser.scm
