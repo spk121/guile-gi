@@ -464,7 +464,7 @@ libraries being used.  To help better filter through all this, a
 
 @subsubsection Using the Port Logger
 
-The @code{(gi logging)} library provides the @code{log-to-port}
+The @code{(gi logging)} library provides the @code{install-port-logger!}
 procedure that sends logging output to a Scheme port and provides
 functionality to target specific categories of debug information
 
@@ -503,7 +503,7 @@ will be output.
 The @code{(gi logging)} library provides the @code{install-journal-logger!}
 procedure.
 
-@deffn Procedure log-to-journal
+@deffn Procedure install-journal-logger!
 This procedure sets GLib's @code{g_log_writer_journald} function
 as the current GLib log writer function.
 @end deffn
@@ -512,6 +512,36 @@ For distributions that use systemd's journal, the @command{journalctl}
 command can help filter debug output.  Guile-GI's debug messages
 have the message key @env{GIG_DOMAIN} which can be used to filter
 debug info into general categories.
+
+@subsubsection Using a custom logger
+
+The @code{(gi logging)} library provides the @code{install-custom-logger!}
+procedure.
+
+@deffn Procedure install-custom-logger! logger
+This procedure installs a helper, which will call @var{logger}
+to do the actual logging, as the GLib log writer function.
+
+For the call to @var{logger}, the @code{GLogField} structures used
+by GLib internally are translated to keyword arguments.  For that,
+the keys are @code{kebab-cased} and the values either transformed
+into suitable scheme datatypes or left as-is and passed by pointer.
+In the latter case, another argument is added for the length of the field,
+which takes the same keyword as the first one, but with the suffix @code{-length}.
+
+The currently supported conversions are:
+@itemize
+@item
+@code{#:message}, the current message as a string,
+@item
+@code{#:g-log-domain}, the log domain as a string, and
+@item
+@code{#:gig-domain}, the Guile-GI log domain as a string.
+@end itemize
+
+In addition, log flags are passed as unsigned integers under the keyword
+@code{#:flags}.
+@end deffn
 
 @node Application Deployment
 @section Application Deployment
