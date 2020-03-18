@@ -468,30 +468,30 @@ The @code{(gi logging)} library provides the @code{log-to-port}
 procedure that sends logging output to a Scheme port and provides
 functionality to target specific categories of debug information
 
-@deffn Procedure log-to-port port
+@deffn Procedure install-port-logger! port
 Given @var{port}, an output port, this procedure installs a GLib
 log writer function that outputs to @var{port}.
 
 The default behavior of this GLib log writer is to print critical,
-error, and warning messages to the port.  Message-level, info, and debug
-messages will be dropped.  If you want to receive these message-level,
-info, and debug messages with this logger, you need to set the
-@env{G_MESSAGES_DEBUG} as described above.  Also, you need to set
-@env{GIG_DEBUG} to the category of debug information desired.
+error, and warning messages to the port.
+This logger behaves like the default GLib logger -- i.e. it respects
+@env{G_MESSAGES_DEBUG} -- but in addition to that also reads
+@env{GIG_DEBUG} for more fine-grained control over the messages
+Guile-GI prints to the port.
 
-Set the @env{GIG_DEBUG}
-environment variable to a space-separated list of topics.
+Set the @env{GIG_DEBUG} environment variable to a list of topics separated
+by any delimiter or the specific value @code{all}.
 @itemize
 @item
-@env{amap} prints information about the mapping of function arguments.
+@code{amap} prints information about the mapping of function arguments.
 @item
-@env{load} prints information -- when libraries are loaded -- on how C
+@code{load} prints information -- when libraries are loaded -- on how C
 procedures, structs, unions, and objects are bound to Guile.
 @item
-@env{transfers} prints information on how C arguments are converted to
+@code{transfers} prints information on how C arguments are converted to
 Guile objects and vice versa.
 @item
-@env{all} prints all the debug information.
+@code{all} prints all the debug information.
 @end itemize
 
 If @env{GIG_DEBUG} is not set, only information about function calls
@@ -500,7 +500,7 @@ will be output.
 
 @subsubsection Using the systemd journal Logger
 
-The @code{(gi logging)} library provides the @code{log-to-journal}
+The @code{(gi logging)} library provides the @code{install-journal-logger!}
 procedure.
 
 @deffn Procedure log-to-journal

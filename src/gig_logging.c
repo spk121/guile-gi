@@ -121,7 +121,7 @@ gig_log_writer(GLogLevelFlags flags, const GLogField *fields, gsize n_fields, gp
 SCM
 gig_log_to_port(SCM port)
 {
-    SCM_ASSERT_TYPE(SCM_OPOUTPORTP(port), port, SCM_ARG1, "log-to-port", "open output port");
+    SCM_ASSERT_TYPE(SCM_OPOUTPORTP(port), port, SCM_ARG1, "install-port-logger!", "open output port");
     g_log_set_writer_func(gig_log_writer, SCM_UNPACK_POINTER(port), NULL);
     return SCM_UNSPECIFIED;
 }
@@ -136,6 +136,6 @@ gig_log_to_journal(void)
 void
 gig_init_logging()
 {
-    scm_c_define_gsubr("log-to-port", 1, 0, 0, gig_log_to_port);
-    scm_c_define_gsubr("log-to-journal", 0, 0, 0, gig_log_to_journal);
+    scm_c_define_gsubr("install-port-logger!", 1, 0, 0, gig_log_to_port);
+    scm_c_define_gsubr("install-journal-logger!", 0, 0, 0, gig_log_to_journal);
 }

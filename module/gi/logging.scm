@@ -14,8 +14,8 @@
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 (define-module (gi logging)
-  #:export (log-to-port
-            log-to-journal))
+  #:export (install-port-logger!
+            install-journal-logger!))
 
 (eval-when (expand load eval)
   (load-extension "libguile-gi" "gig_init_logging"))
