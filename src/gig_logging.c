@@ -133,9 +133,62 @@ gig_log_to_journal(void)
     return SCM_UNSPECIFIED;
 }
 
+void gig_unprotect_func(gpointer func)
+{
+    scm_gc_unprotect_object(SCM_PACK_POINTER(func));
+}
+
+SCM kwd_flags;
+
+static GLogWriterOutput
+gig_log_custom_helper(GLogLevelFlags flags, const GLogField *fields, gsize n_fields, gpointer user_data)
+{
+    if (!logger_initialized) {
+        scm_init_guile();
+        logger_initialized = 1;
+    }
+
+    SCM args = scm_make_list(scm_from_size_t(4 * n_fields + 2), SCM_UNDEFINED);
+    SCM it = args;
+    scm_set_car_x(it, kwd_flags);
+    scm_set_car_x(scm_cdr(it), scm_from_size_t(flags));
+
+    for (gsize i = 0; i < n_fields; i++) {
+        it = scm_cddr(it);
+        gchar* key = gig_gname_to_scm_name(fields[i].key);
+        scm_set_car_x(it, scm_from_utf8_keyword(key));
+        // TODO: add more conversions
+        if (!g_strcmp0(fields[i].key, "MESSAGE") ||
+            !g_strcmp0(fields[i].key, "G_LOG_DOMAIN") ||
+            !g_strcmp0(fields[i].key, "GIG_DOMAIN"))
+            scm_set_car_x(scm_cdr(it), scm_from_utf8_string(fields[i].value));
+        else {
+            scm_set_car_x(scm_cdr(it), scm_from_pointer(fields[i].value, NULL));
+            gchar* length = g_strdup_printf("%s-length", key);
+            it = scm_cddr(it);
+            scm_set_car_x(it, scm_from_utf8_keyword(length));
+            scm_set_car_x(scm_cdr(it), scm_from_size_t(fields[i].length));
+            g_free(length);
+        }
+        g_free(key);
+    }
+    scm_set_cdr_x(scm_cdr(it), SCM_EOL);
+    scm_apply_0(SCM_PACK_POINTER(user_data), args);
+}
+
+SCM
+gig_install_custom_logger(SCM func)
+{
+    func = scm_gc_protect_object(func);
+    g_log_set_writer_func(gig_log_custom_helper, SCM_UNPACK_POINTER(func), gig_unprotect_func);
+    return SCM_UNSPECIFIED;
+}
+
 void
 gig_init_logging()
 {
+    kwd_flags = scm_from_utf8_keyword("flags");
     scm_c_define_gsubr("install-port-logger!", 1, 0, 0, gig_log_to_port);
     scm_c_define_gsubr("install-journal-logger!", 0, 0, 0, gig_log_to_journal);
+    scm_c_define_gsubr("install-custom-logger!", 1, 0, 0, gig_install_custom_logger);
 }

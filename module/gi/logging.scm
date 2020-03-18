@@ -15,7 +15,8 @@
 
 (define-module (gi logging)
   #:export (install-port-logger!
-            install-journal-logger!))
+            install-journal-logger!
+            install-custom-logger!))
 
 (eval-when (expand load eval)
   (load-extension "libguile-gi" "gig_init_logging"))
