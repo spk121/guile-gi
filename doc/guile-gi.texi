@@ -50,9 +50,9 @@ This manual is for Guile GI @value{VERSION}.
 Guile GI is a Guile package that hopes to provide access for
 GObject-based libraries such as GTK+, GLib, WebKitGTK+ and many more.
 
-It supports GNU/Linux, and has only been tested with Guile-2.2. Guile
-GI is licensed under the LGPLv2.1+. This documentation is licensed under
-the FDLv1.3+.
+It supports GNU/Linux, and has been tested with Guile-2.2 and
+Guile-3.0. Guile GI is licensed under the GPL3+. This
+documentation is licensed under the FDLv1.3+.
 
 If you want to write a Guile application for GNOME or a Guile GUI
 application using GTK+, then Guile GI (when it is finished) will be
@@ -62,21 +62,78 @@ the way to go.
 @chapter Getting Started
 
 @quotation Warning
-Guile-GI is still in its experimental phase and even so, this documentation
-describes features of vastly different age. Don't be too surprised if something breaks.
+Guile-GI is in beta testing.  Interfaces are stabilizing, but, they are not
+stable.  Please have patience and report bugs.
 @end quotation
 
 In the followings section we will walk you through all steps from installation
 to writing applications.
 
 @menu
+* The Concept of Operations::
 * Installation::
 * Guile-GI and Typelibs::       How to load libraries through GI
 * Sample Applications::
 @end menu
 
+@node The Concept of Operations
+@section The Concept of Operations
+
+GNU Guile itself does not provide its own GUI programming toolkit; it
+needs to incorporate an existing GUI toolkit.  Of the existing GUI
+toolkits, GTK has the API that is most amenable for use with Guile.
+GTK, although written in C, has been designed with the goal of making
+its use with other languages possible.  The other popular toolkit, Qt,
+is compiled from C++, which makes it API more difficult to use with
+Guile.
+
+Although GTK is written in C, GTK still has a full facility for
+object-oriented programming.  It has its own idiosyncratic class
+library it calls GObject.  GObject provides classes and methods.
+
+GTK provides an application program interface in a dynamic library.
+On Unix-like systems, the dynamic library is a shared object,
+@file{.so} file.  On Microsoft Windows, the dynamic library is a
+Dynamic Link Library, a @file{.dll} file.
+
+When using dynamic libraries, memory management is always a struggle.
+For each data structure or class instance that the library provides,
+one needs to understand how to properly initialize, own, and free it.
+Information on the proper initialization, ownership, and destruction
+of in-memory objects is not intrinsic to dynamic libraries.  Thus, to
+properly use them, you need @emph{metadata}.
+
+GTK provides metadata via a strategy it calls GObject Introspection.
+Under GObject Introspection, each dynamic library also provides a
+companion metadata file, a @file{.typelib} file.  If we can provide
+Guile with the facility to parse @file{.typelib} files, we could
+safely call the API the dynamic libraries provide.
+
+These typelib files are in a custom binary format.  They commonly
+contain the following information about a dynamic library:
+@itemize
+@item
+constants
+@item
+flags and enums
+@item
+functions and their arguments
+@item
+C structures and unions
+@item
+and GObject classes and methods
+@end itemize
+
+The task set out to Guile-GI is to parse a typelib, dynamically load a
+shared library, and generate Guile procedures, constants, and GOOPS
+types and generics that map to the contents of the shared library.
+
+Several other libraries have also adopted GObject Introspection, so if
+we can make it work for GTK, we get many other libraries for free.
+
 @node Installation
 @section Installation
+
 
 In some happy future, you might be able to get this from whatever method
 your operating system normally uses to download free software.
@@ -400,6 +457,11 @@ application's C stack.
 To add some insight about what is happening in the introspection
 layer, Guile-GI provides some hook functions for the purposes
 of debugging and makes use of GLib's debug logging functionality.
+
+@menu
+* Debugging Hooks::
+* GLib Logging::
+@end menu
 
 @node Debugging Hooks
 @subsection Debugging Hooks
@@ -975,6 +1037,10 @@ Signal flags, a logical or of one or more of
 @code{SIGNAL_RUN_CLEANUP}, @code{SIGNAL_NO_RECURSE}, etc.
 @c TODO: refer to the GObject manual
 @end defvr
+
+@menu
+* Signal Accumulators::
+@end menu
 
 @node Signal Accumulators
 @subsection Signal Accumulators
