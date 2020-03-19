@@ -57,74 +57,69 @@
 
 (define guile-gi
   (package
-   (name "guile-gi")
-   (version "git")
-   (source (local-file %source-dir
-                       #:recursive? #t
-                       #:select? (git-predicate %source-dir)))
-   (build-system glib-or-gtk-build-system)
-   (native-inputs `(("autoconf" ,autoconf)
-                    ("automake" ,automake)
-                    ("gettext" ,gnu-gettext)
-                    ("glib:bin" ,glib "bin")
-                    ("libtool" ,libtool)
-                    ("pkg-config" ,pkg-config)
-                    ("texinfo" ,texinfo)))
-   (inputs `(("guile" ,guile-2.2)
-             ("glib" ,glib)
-             ("gobject-introspection" ,gobject-introspection)))
-   (arguments
-    `(;; gnu-build-system
-      #:configure-flags '("--with-gnu-filesystem-hierarchy"
-                          "--enable-hardening"
-                          "--disable-guild")
-      #:modules
-      (((guix build guile-build-system) #:prefix guile:)
-       (guix build glib-or-gtk-build-system)
-       (guix build utils))
-      #:imported-modules
-      ((guix build guile-build-system)
-       (guix build glib-or-gtk-build-system)
-       ,@%gnu-build-system-modules)
-      #:phases
-      (modify-phases %standard-phases
-        (delete 'check)
-        (add-after 'unpack 'hardcode-extensions
-          (lambda* (#:key inputs outputs #:allow-other-keys)
-           (substitute* (find-files "module" ".*\\.scm")
-             (("libguile-gi")
-              (string-append (assoc-ref outputs "out")
-                             "/lib/guile/"
-                             ,(match (assoc "guile" (package-inputs this-package))
-                                (("guile" guile)
-                                 (version-major+minor (package-version guile))))
-                             "/extensions/libguile-gi.so")))
-           #t))
-        (add-after 'install 'install-modules
-          (lambda args
-            (apply (assoc-ref guile:%standard-phases 'build)
-                   #:source-directory "module"
-                   #:compile-flags '("-O2" "-Warity-mismatch" "-Wformat"
-                                     "-Wmacro-use-before-definition"
-                                     "-Wunbound-variable")
-                   args)))
-        (add-after 'install-modules 'check
-          (assoc-ref %standard-phases 'check)))))
-   (home-page "https://github.com/spk121/guile-gi")
-   (synopsis "GObject bindings for Guile")
-   (description
-    "Guile-GI is a library for Guile that allows using GObject-based
+    (name "guile-gi")
+    (version "git")
+    (source (local-file %source-dir
+                        #:recursive? #t
+                        #:select? (git-predicate %source-dir)))
+    (build-system glib-or-gtk-build-system)
+    (native-inputs `(("autoconf" ,autoconf)
+                     ("automake" ,automake)
+                     ("gettext" ,gnu-gettext)
+                     ("glib:bin" ,glib "bin")
+                     ("libtool" ,libtool)
+                     ("pkg-config" ,pkg-config)
+                     ("texinfo" ,texinfo)))
+    (inputs `(("guile" ,guile-2.2)
+              ("glib" ,glib)
+              ("gobject-introspection" ,gobject-introspection)))
+    (arguments
+     `(#:configure-flags '("--with-gnu-filesystem-hierarchy"
+                           "--enable-hardening")
+       #:modules ((guix build glib-or-gtk-build-system)
+                  (guix build utils)
+                  (ice-9 popen)
+                  (ice-9 rdelim))
+       #:phases
+       (modify-phases %standard-phases
+         (add-after 'unpack 'patch-references-to-extension
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let ((effective (read-line
+                               (open-pipe* OPEN_READ
+                                           "guile" "-c"
+                                           "(display (effective-version))"))))
+               (substitute* '("module/gi.scm"
+                              "module/gi/oop.scm"
+                              "module/gi/documentation.scm"
+                              "module/gi/types.scm"
+                              "module/gi/repository.scm")
+                 (("\\(load-extension \"libguile-gi\" \"(.*)\"\\)" m arg)
+                  (format #f "~s"
+                          `(load-extension
+                            (format #f "~alibguile-gi"
+                                    (if (getenv "GUILE_GI_UNINSTALLED")
+                                        ""
+                                        ,(format #f "~a/lib/guile/~a/"
+                                                 (assoc-ref outputs "out")
+                                                 effective)))
+                            ,arg)))))
+             (setenv "GUILE_GI_UNINSTALLED" "1")
+             #t)))))
+    (home-page "https://github.com/spk121/guile-gi")
+    (synopsis "GObject bindings for Guile")
+    (description
+     "Guile-GI is a library for Guile that allows using GObject-based
 libraries, such as GTK+3.  Its README comes with the disclaimer: This
 is alpha code.")
-   (license gpl3+)))
+    (license gpl3+)))
 
 (define guile-next-gi
   (package
-   (inherit guile-gi)
-   (name "guile-next-gi")
-   (inputs `(("guile" ,guile-3.0)
-             ("glib" ,glib)
-             ("gobject-introspection" ,gobject-introspection)))))
+    (inherit guile-gi)
+    (name "guile-next-gi")
+    (inputs `(("guile" ,guile-3.0)
+              ("glib" ,glib)
+              ("gobject-introspection" ,gobject-introspection)))))
 
 (case (and (file-exists? ".guile-version")
            (call-with-input-file ".guile-version" read))
