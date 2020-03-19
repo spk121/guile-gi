@@ -596,13 +596,20 @@ The currently supported conversions are:
 @item
 @code{#:message}, the current message as a string,
 @item
-@code{#:glib-domain}, the log domain as a string, and
+@code{#:priority}, a string representation of the log level,
 @item
-@code{#:gig-domain}, the Guile-GI log domain as a string.
+@code{#:glib-domain}, the log domain as a string,
+@item
+@code{#:gig-domain}, the Guile-GI log domain as a string, and
+@item
+@code{#:code-file}, @code{#:code-func} and @code{#:code-line},
+the location from which the log call was made, each as strings.
 @end itemize
 
-In addition, log flags are passed as unsigned integers under the keyword
-@code{#:flags}.
+The log level is passed as an integer under the keyword @code{#:log-level}.
+If you've loaded the GLib typelib before installing the logger, you can transform
+that into log level flags by using @code{number->log-level}.
+
 @end deffn
 
 @node Application Deployment
