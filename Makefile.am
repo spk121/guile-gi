@@ -358,7 +358,6 @@ TESTS = \
   test/flags.scm \
   test/type.scm \
   test/signals.scm \
-  test/logging.scm \
   $(EVERYTHING_TESTS)
 
 XFAIL_TESTS =
