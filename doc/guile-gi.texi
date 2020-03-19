@@ -596,7 +596,7 @@ The currently supported conversions are:
 @item
 @code{#:message}, the current message as a string,
 @item
-@code{#:g-log-domain}, the log domain as a string, and
+@code{#:glib-domain}, the log domain as a string, and
 @item
 @code{#:gig-domain}, the Guile-GI log domain as a string.
 @end itemize

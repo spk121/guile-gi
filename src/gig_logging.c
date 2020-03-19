@@ -159,7 +159,7 @@ gig_log_custom_helper(GLogLevelFlags flags, const GLogField *fields, gsize n_fie
         scm_set_car_x(it, scm_from_utf8_keyword(key));
         // TODO: add more conversions
         if (!g_strcmp0(fields[i].key, "MESSAGE") ||
-            !g_strcmp0(fields[i].key, "G_LOG_DOMAIN") ||
+            !g_strcmp0(fields[i].key, "GLIB_DOMAIN") ||
             !g_strcmp0(fields[i].key, "GIG_DOMAIN"))
             scm_set_car_x(scm_cdr(it), scm_from_utf8_string(fields[i].value));
         else {
