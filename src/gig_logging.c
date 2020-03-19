@@ -163,7 +163,7 @@ gig_log_custom_helper(GLogLevelFlags flags, const GLogField *fields, gsize n_fie
             !g_strcmp0(fields[i].key, "GIG_DOMAIN"))
             scm_set_car_x(scm_cdr(it), scm_from_utf8_string(fields[i].value));
         else {
-            scm_set_car_x(scm_cdr(it), scm_from_pointer(fields[i].value, NULL));
+            scm_set_car_x(scm_cdr(it), scm_from_pointer((gpointer)fields[i].value, NULL));
             gchar* length = g_strdup_printf("%s-length", key);
             it = scm_cddr(it);
             scm_set_car_x(it, scm_from_utf8_keyword(length));
@@ -174,6 +174,8 @@ gig_log_custom_helper(GLogLevelFlags flags, const GLogField *fields, gsize n_fie
     }
     scm_set_cdr_x(scm_cdr(it), SCM_EOL);
     scm_apply_0(SCM_PACK_POINTER(user_data), args);
+
+    return G_LOG_WRITER_HANDLED;
 }
 
 SCM
