@@ -99,7 +99,7 @@
                             (format #f "~alibguile-gi"
                                     (if (getenv "GUILE_GI_UNINSTALLED")
                                         ""
-                                        ,(format #f "~a/lib/guile/~a/"
+                                        ,(format #f "~a/lib/guile/~a/extensions/"
                                                  (assoc-ref outputs "out")
                                                  effective)))
                             ,arg)))))
