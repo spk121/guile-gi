@@ -71,8 +71,8 @@
                      ("pkg-config" ,pkg-config)
                      ("texinfo" ,texinfo)))
     (inputs `(("guile" ,guile-2.2)
-              ("glib" ,glib)
-              ("gobject-introspection" ,gobject-introspection)))
+              ("glib" ,glib)))
+    (propagated-inputs `(("gobject-introspection" ,gobject-introspection)))
     (arguments
      `(#:configure-flags '("--with-gnu-filesystem-hierarchy"
                            "--enable-hardening")
@@ -118,8 +118,7 @@ is alpha code.")
     (inherit guile-gi)
     (name "guile-next-gi")
     (inputs `(("guile" ,guile-3.0)
-              ("glib" ,glib)
-              ("gobject-introspection" ,gobject-introspection)))))
+              ("glib" ,glib)))))
 
 (case (and (file-exists? ".guile-version")
            (call-with-input-file ".guile-version" read))
