@@ -11,17 +11,17 @@ Free Documentation License". -->
 <!-- Created by GNU Texinfo 6.6, http://www.gnu.org/software/texinfo/ -->
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<title>GObject Signals (Guile GI)</title>
+<title>GObject Signals (Guile-GI)</title>
 
-<meta name="description" content="GObject Signals (Guile GI)">
-<meta name="keywords" content="GObject Signals (Guile GI)">
+<meta name="description" content="GObject Signals (Guile-GI)">
+<meta name="keywords" content="GObject Signals (Guile-GI)">
 <meta name="resource-type" content="document">
 <meta name="distribution" content="global">
 <meta name="Generator" content="makeinfo">
 <link href="index.html#Top" rel="start" title="Top">
 <link href="The-Index.html#The-Index" rel="index" title="The Index">
 <link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
-<link href="Reference-Guide.html#Reference-Guide" rel="up" title="Reference Guide">
+<link href="Working-with-GObjects.html#Working-with-GObjects" rel="up" title="Working with GObjects">
 <link href="Signal-Accumulators.html#Signal-Accumulators" rel="next" title="Signal Accumulators">
 <link href="GObject-Methods.html#GObject-Methods" rel="prev" title="GObject Methods">
 <style type="text/css">
@@ -50,17 +50,17 @@ ul.no-bullet {list-style: none}
 <body lang="en">
 <span id="GObject-Signals"></span><div class="header">
 <p>
-Next: <a href="GObject-Properties.html#GObject-Properties" accesskey="n" rel="next">GObject Properties</a>, Previous: <a href="GObject-Methods.html#GObject-Methods" accesskey="p" rel="prev">GObject Methods</a>, Up: <a href="Reference-Guide.html#Reference-Guide" accesskey="u" rel="up">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html#The-Index" title="Index" rel="index">Index</a>]</p>
+Next: <a href="GObject-Properties.html#GObject-Properties" accesskey="n" rel="next">GObject Properties</a>, Previous: <a href="GObject-Methods.html#GObject-Methods" accesskey="p" rel="prev">GObject Methods</a>, Up: <a href="Working-with-GObjects.html#Working-with-GObjects" accesskey="u" rel="up">Working with GObjects</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html#The-Index" title="Index" rel="index">Index</a>]</p>
 </div>
 <hr>
-<span id="GObject-Signals-1"></span><h3 class="section">3.6 GObject Signals</h3>
+<span id="GObject-Signals-1"></span><h4 class="subsection">2.5.3 GObject Signals</h4>
 <span id="index-signals"></span>
 
 <p>GObjects have a functionality for defining and calling callback
 procedures that it calls <em>signals</em>.  Note that these signals have
 nothing to do with Unix signals like <code>SIGTERM</code>.
 </p>
-<span id="index-connect-1"></span>
+<span id="index-connect"></span>
 <p>To hook a callback procedure to an object&rsquo;s signal, use the
 <code>connect</code> procedure. Consider the following example.
 </p>
@@ -88,8 +88,8 @@ This argument &ndash; <code>app</code> &ndash; is supplied by the caller, as are
 arguments to signals.
 </p>
 <dl>
-<dt id="index-connect-2">Procedure: <strong>connect</strong> <em>obj (signal &lt;signal&gt;) (handler &lt;procedure&gt;)</em></dt>
-<dt id="index-connect-3">Procedure: <strong>connect</strong> <em>obj (signal &lt;signal&gt;) (detail &lt;symbol&gt;) (handler &lt;procedure&gt;)</em></dt>
+<dt id="index-connect-1">Procedure: <strong>connect</strong> <em>obj (signal &lt;signal&gt;) (handler &lt;procedure&gt;)</em></dt>
+<dt id="index-connect-2">Procedure: <strong>connect</strong> <em>obj (signal &lt;signal&gt;) (detail &lt;symbol&gt;) (handler &lt;procedure&gt;)</em></dt>
 <dt id="index-connect_002dafter">Procedure: <strong>connect-after</strong> <em>obj (signal &lt;signal&gt;) (handler &lt;procedure&gt;)</em></dt>
 <dt id="index-connect_002dafter-1">Procedure: <strong>connect-after</strong> <em>obj (signal &lt;signal&gt;) (detail &lt;symbol&gt;) (handler &lt;procedure&gt;)</em></dt>
 <dd><p>Hooks <var>handler</var> to emissions of <var>signal</var>.  If <var>detail</var> is
@@ -155,7 +155,7 @@ A list of <code>&lt;GType&gt;</code>s or integers.
 <hr>
 <div class="header">
 <p>
-Next: <a href="GObject-Properties.html#GObject-Properties" accesskey="n" rel="next">GObject Properties</a>, Previous: <a href="GObject-Methods.html#GObject-Methods" accesskey="p" rel="prev">GObject Methods</a>, Up: <a href="Reference-Guide.html#Reference-Guide" accesskey="u" rel="up">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html#The-Index" title="Index" rel="index">Index</a>]</p>
+Next: <a href="GObject-Properties.html#GObject-Properties" accesskey="n" rel="next">GObject Properties</a>, Previous: <a href="GObject-Methods.html#GObject-Methods" accesskey="p" rel="prev">GObject Methods</a>, Up: <a href="Working-with-GObjects.html#Working-with-GObjects" accesskey="u" rel="up">Working with GObjects</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html#The-Index" title="Index" rel="index">Index</a>]</p>
 </div>
 
 

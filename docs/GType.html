@@ -11,19 +11,19 @@ Free Documentation License". -->
 <!-- Created by GNU Texinfo 6.6, http://www.gnu.org/software/texinfo/ -->
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<title>GType (Guile GI)</title>
+<title>GType (Guile-GI)</title>
 
-<meta name="description" content="GType (Guile GI)">
-<meta name="keywords" content="GType (Guile GI)">
+<meta name="description" content="GType (Guile-GI)">
+<meta name="keywords" content="GType (Guile-GI)">
 <meta name="resource-type" content="document">
 <meta name="distribution" content="global">
 <meta name="Generator" content="makeinfo">
 <link href="index.html#Top" rel="start" title="Top">
 <link href="The-Index.html#The-Index" rel="index" title="The Index">
 <link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
-<link href="Reference-Guide.html#Reference-Guide" rel="up" title="Reference Guide">
+<link href="Working-with-GObjects.html#Working-with-GObjects" rel="up" title="Working with GObjects">
 <link href="GObject-Methods.html#GObject-Methods" rel="next" title="GObject Methods">
-<link href="GObject-Types.html#GObject-Types" rel="prev" title="GObject Types">
+<link href="Working-with-GObjects.html#Working-with-GObjects" rel="prev" title="Working with GObjects">
 <style type="text/css">
 <!--
 a.summary-letter {text-decoration: none}
@@ -50,32 +50,59 @@ ul.no-bullet {list-style: none}
 <body lang="en">
 <span id="GType"></span><div class="header">
 <p>
-Next: <a href="GObject-Methods.html#GObject-Methods" accesskey="n" rel="next">GObject Methods</a>, Previous: <a href="GObject-Types.html#GObject-Types" accesskey="p" rel="prev">GObject Types</a>, Up: <a href="Reference-Guide.html#Reference-Guide" accesskey="u" rel="up">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html#The-Index" title="Index" rel="index">Index</a>]</p>
+Next: <a href="GObject-Methods.html#GObject-Methods" accesskey="n" rel="next">GObject Methods</a>, Up: <a href="Working-with-GObjects.html#Working-with-GObjects" accesskey="u" rel="up">Working with GObjects</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html#The-Index" title="Index" rel="index">Index</a>]</p>
 </div>
 <hr>
-<span id="GType-1"></span><h3 class="section">3.4 GType</h3>
+<span id="GType-1"></span><h4 class="subsection">2.5.1 GType</h4>
 <span id="index-GType"></span>
 
-<p>A <code>&lt;GType&gt;</code> is a Guile type, which corresponds to a <code>GType</code>.
-A <code>GType</code> is basically an integer ID (an <code>&lt;integer&gt;</code> in Scheme),
-that GObject uses to identify a type.
+<p>Every data type registered by The GLib Dynamic Type system has a unique
+integer ID.  The integer ID is called the GType.  While GTypes are
+usually a transparent detail, you will need to use them explicitly to
+define new GObject parameters and signals.
 </p>
-<p>GObject has its own custom class structure.  The following procedures
-provide information about how a <code>&lt;GType&gt;</code> forms part of that
-class structure.
+<p>Guile-GI creates a special GOOPS type <code>&lt;GType&gt;</code> to hold these
+integer IDs.  There are some function that operate on <code>&lt;GType&gt;</code>
+integers that can be used to query information about the GObject class
+structure.
 </p>
-<p>The following procedures are in the <code>(gi types)</code> module.
+<p>The <code>(gi types)</code> module provides these variables and procedures.
 </p>
 <dl>
+<dt id="index-G_005fTYPE_005fNONE">Variable: <strong>G_TYPE_NONE</strong></dt>
+<dt id="index-G_005fTYPE_005fCHAR">Variable: <strong>G_TYPE_CHAR</strong></dt>
+<dt id="index-G_005fTYPE_005fUCHAR">Variable: <strong>G_TYPE_UCHAR</strong></dt>
+<dt id="index-G_005fTYPE_005fBOOLEAN">Variable: <strong>G_TYPE_BOOLEAN</strong></dt>
+<dt id="index-G_005fTYPE_005fINT">Variable: <strong>G_TYPE_INT</strong></dt>
+<dt id="index-G_005fTYPE_005fUINT">Variable: <strong>G_TYPE_UINT</strong></dt>
+<dt id="index-G_005fTYPE_005fINT64">Variable: <strong>G_TYPE_INT64</strong></dt>
+<dt id="index-G_005fTYPE_005fUINT64">Variable: <strong>G_TYPE_UINT64</strong></dt>
+<dt id="index-G_005fTYPE_005fFLOAT">Variable: <strong>G_TYPE_FLOAT</strong></dt>
+<dt id="index-G_005fTYPE_005fDOUBLE">Variable: <strong>G_TYPE_DOUBLE</strong></dt>
+<dd><p>These variables hold the GType integer values for the fundamental types.
+</p></dd></dl>
+
+<dl>
+<dt id="index-G_005fTYPE_005fENUM">Variable: <strong>G_TYPE_ENUM</strong></dt>
+<dt id="index-G_005fTYPE_005fFLAGS">Variable: <strong>G_TYPE_FLAGS</strong></dt>
+<dt id="index-G_005fTYPE_005fSTRUCT">Variable: <strong>G_TYPE_STRUCT</strong></dt>
+<dt id="index-G_005fTYPE_005fOBJECT">Variable: <strong>G_TYPE_OBJECT</strong></dt>
+<dd><p>These variables hold the GType integer values of the enum, flags,
+struct, and object base classes respectively.
+</p></dd></dl>
+
+<dl>
 <dt id="index-get_002dgtype">Procedure: <strong>get-gtype</strong> <em>object</em></dt>
-<dd><p>Given <var>object</var>, a GObject struct, union, or object, this procedure
-returns its GObject type as an <code>&lt;integer&gt;</code>, otherwise it returns <code>#f</code>.
+<dd><p>Given <var>object</var>, this procedure returns its GType as an integer. It
+returns <code>#f</code> if the object does not have a type registered in The
+GLib Dynamic Type System.
 </p></dd></dl>
 
 <dl>
 <dt id="index-gtype_002dget_002dscheme_002dtype">Procedure: <strong>gtype-get-scheme-type</strong> <em>gtype</em></dt>
-<dd><p>Given <var>gtype</var> of type <code>&lt;integer&gt;</code>, this procedure will return
-the Scheme type that holds instances of that type.
+<dd><p>Given <var>gtype</var>, a GType integer ID, this procedure will return the
+associated GOOPS class that holds instances of that type, of <code>#f</code>
+if there is no GOOPS class for that <var>gtype</var>.
 </p></dd></dl>
 
 <dl>
@@ -89,7 +116,7 @@ slightly from the name that Guile-GI gives to the type.
 <dt id="index-gtype_002dget_002dparent">Procedure: <strong>gtype-get-parent</strong> <em>gtype</em></dt>
 <dt id="index-gtype_002dget_002dchildren">Procedure: <strong>gtype-get-children</strong> <em>gtype</em></dt>
 <dd><p>These procedures return the parent type and the child types of a
-specified <var>gtype</var>.
+specified <var>gtype</var> as GType integers.
 </p></dd></dl>
 
 <dl>
@@ -97,6 +124,12 @@ specified <var>gtype</var>.
 <dd><p>Returns <code>#t</code> of <var>object</var> is an instance of a <var>type</var>.
 </p></dd></dl>
 
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="GObject-Methods.html#GObject-Methods" accesskey="n" rel="next">GObject Methods</a>, Up: <a href="Working-with-GObjects.html#Working-with-GObjects" accesskey="u" rel="up">Working with GObjects</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html#The-Index" title="Index" rel="index">Index</a>]</p>
+</div>
 
 
 

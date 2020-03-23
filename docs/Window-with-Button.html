@@ -11,10 +11,10 @@ Free Documentation License". -->
 <!-- Created by GNU Texinfo 6.6, http://www.gnu.org/software/texinfo/ -->
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<title>Empty Window (Guile GI)</title>
+<title>Window with Button (Guile-GI)</title>
 
-<meta name="description" content="Empty Window (Guile GI)">
-<meta name="keywords" content="Empty Window (Guile GI)">
+<meta name="description" content="Window with Button (Guile-GI)">
+<meta name="keywords" content="Window with Button (Guile-GI)">
 <meta name="resource-type" content="document">
 <meta name="distribution" content="global">
 <meta name="Generator" content="makeinfo">
@@ -22,7 +22,7 @@ Free Documentation License". -->
 <link href="The-Index.html#The-Index" rel="index" title="The Index">
 <link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
 <link href="Sample-Applications.html#Sample-Applications" rel="up" title="Sample Applications">
-<link href="Tutorials.html#Tutorials" rel="next" title="Tutorials">
+<link href="Threads-and-Concurrency.html#Threads-and-Concurrency" rel="next" title="Threads and Concurrency">
 <link href="Sample-Applications.html#Sample-Applications" rel="prev" title="Sample Applications">
 <style type="text/css">
 <!--
@@ -48,14 +48,99 @@ ul.no-bullet {list-style: none}
 </head>
 
 <body lang="en">
-<span id="Empty-Window"></span><div class="header">
+<span id="Window-with-Button"></span><div class="header">
 <p>
 Up: <a href="Sample-Applications.html#Sample-Applications" accesskey="u" rel="up">Sample Applications</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html#The-Index" title="Index" rel="index">Index</a>]</p>
 </div>
 <hr>
-<span id="Empty-Window-1"></span><h4 class="subsection">1.3.1 Empty Window</h4>
-<p>We will skillfully demonstrate the capabilities of Guile-GI by creating
-an empty window with a title.  Are you excited?  Behold!
+<span id="Window-with-Button-1"></span><h4 class="subsection">2.6.1 Window with Button</h4>
+<p>We will demonstrate the capabilities of Guile-GI by creating
+a window with a button.  There are two version of the same script, so
+that we can demonstrate different ways of doing things.
+</p>
+<p>In this first version, we use <code>use-typelibs</code> to load the bindings,
+and we largely stick to using methods.
+</p>
+<div class="example">
+<pre class="example">(use-modules (gi) (gi types) (gi util))
+
+;; We're going to be creating many GOOPS generic functions
+;; once we load up the typelibs.  We want the same-named
+;; GOOPS generic functions to merge: we don't want the
+;; generic functions from one type to overwrite a previous
+;; class's generic functions.
+(push-duplicate-handler! 'merge-generics)
+
+;; Here we parse the typelib files to dynamically create our
+;; types, classes and procedures.
+;; Gio's application:new and Gtk's application:new take the
+;; same argument types, so their GOOPS generics are easy to
+;; confuse. We rename Gio's application:new for safety.
+(use-typelibs ((&quot;Gio&quot; &quot;2.0&quot;) #:renamer (protect 'application:new))
+              (&quot;Gtk&quot; &quot;3.0&quot;))
+
+;; This is a callback we install to print a console message on the
+;; receipt of the `clicked' signal.
+(define (print-hello widget)
+  (display &quot;Hello World\n&quot;))
+
+;; This is the callback we install to handle the `activate'
+;; signal that a &lt;GApplication&gt; may receive.
+(define (activate-callback app)
+
+  ;; Create a &lt;GtkApplicationWindow&gt; for this
+  ;; &lt;GtkApplication&gt;, plus a button.
+  (let* ((window (application-window:new app))
+         (button-box (button-box:new
+                      (symbol-&gt;orientation 'vertical)))
+         (button (button:new-with-label &quot;Hello World&quot;)))
+
+    ;; Connect and decorate the window and button.
+    (set-title window &quot;Window&quot;)
+    (set-default-size window 200 200)
+    (add window button-box)
+    (add button-box button)
+
+    ;; Register a procedure as a signal handler to the
+    ;; &lt;GtkButton&gt;'s `clicked' signal.
+    (connect button print-hello)
+
+    ;; Register a lambda as the signal handler of the
+    ;; &lt;GtkButton&gt;'s `clicked' signal.
+    (connect button clicked (lambda args (destroy window)))
+
+    ;; Make everything visible.
+    (show-all window))
+
+  ;; Note that the `activate' signal callback requires no
+  ;; return value.
+  )
+
+(define (main)
+  ;; Call Gtk's application:new to create a new
+  ;; &lt;GtkApplication&gt;
+  (let ((app (application:new
+              &quot;org.gtk.example&quot;
+              ;; Pick a flag from the set of GApplicationFlags
+              (list-&gt;application-flags '(flags-none)))))
+    ;; Register the procedure `activate-callback' as the
+    ;; signal handler for the `activate' signal that the
+    ;; &lt;GtkApplication&gt; handles.
+    (connect app activate activate-callback)
+
+    ;; Call application:run.  If there are no arguments in
+    ;; the command line args, this will send the `activate'
+    ;; signal.
+    (run app (command-line))))
+
+;; Run the script
+(main)
+</pre></div>
+
+<p>In the second version, the script is made faster by using <code>require</code>
+and <code>load-by-name</code> instead of <code>use-typelibs</code>.  It also prefers
+the <code>make</code> syntax to set properties directly, rather than calling
+methods one-by-one.
 </p>
 <div class="example">
 <pre class="example">(use-modules (gi) (gi repository))
@@ -111,7 +196,7 @@ and neither do the properties map to slots.  <code>make</code> can also be
 used on some types, which do not derive from GObject, most notably it
 can be called without any arguments to allocate boxed types.
 </p>
-<span id="index-connect"></span>
+<span id="index-connect-3"></span>
 
 <p>Next is <code>connect</code>, which connects Guile procedures as handlers to
 GObject signals.  Signals are roughly equal to hooks in Guile, except
@@ -121,7 +206,6 @@ also requires temporarily saving the return value (which is an integer
 id), so that it can be passed to <code>signal-handler-disconnect</code>.
 </p>
 <p>Finally, we have the bindings themselves, as mentioned before.
-See <a href="GObject-Types.html#GObject-Types">GObject Types</a> on the mapping of types,
 <a href="GObject-Methods.html#GObject-Methods">GObject Methods</a> on how to use methods,
 <a href="GObject-Signals.html#GObject-Signals">GObject Signals</a> on how to use signals and
 <a href="GObject-Properties.html#GObject-Properties">GObject Properties</a> on how to use properties.

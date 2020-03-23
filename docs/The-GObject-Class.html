@@ -1,0 +1,99 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 2018, 2019, 2020 Michael L. Gran
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, no Front-Cover Texts, and no Back-Cover
+Texts.  A copy of the license is included in the section entitled "GNU
+Free Documentation License". -->
+<!-- Created by GNU Texinfo 6.6, http://www.gnu.org/software/texinfo/ -->
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>The GObject Class (Guile-GI)</title>
+
+<meta name="description" content="The GObject Class (Guile-GI)">
+<meta name="keywords" content="The GObject Class (Guile-GI)">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="The-Index.html#The-Index" rel="index" title="The Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="The-Concept-of-Operations.html#The-Concept-of-Operations" rel="up" title="The Concept of Operations">
+<link href="The-GObject-Introspection-Repository-Manager.html#The-GObject-Introspection-Repository-Manager" rel="next" title="The GObject Introspection Repository Manager">
+<link href="The-GLib-Dynamic-Type-System.html#The-GLib-Dynamic-Type-System" rel="prev" title="The GLib Dynamic Type System">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.indentedblock {margin-right: 0em}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+kbd {font-style: oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+span.nolinebreak {white-space: nowrap}
+span.roman {font-family: initial; font-weight: normal}
+span.sansserif {font-family: sans-serif; font-weight: normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+<link rel="stylesheet" type="text/css" href="document-1.0.1.css">
+
+
+</head>
+
+<body lang="en">
+<span id="The-GObject-Class"></span><div class="header">
+<p>
+Next: <a href="The-GObject-Introspection-Repository-Manager.html#The-GObject-Introspection-Repository-Manager" accesskey="n" rel="next">The GObject Introspection Repository Manager</a>, Previous: <a href="The-GLib-Dynamic-Type-System.html#The-GLib-Dynamic-Type-System" accesskey="p" rel="prev">The GLib Dynamic Type System</a>, Up: <a href="The-Concept-of-Operations.html#The-Concept-of-Operations" accesskey="u" rel="up">The Concept of Operations</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html#The-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<span id="The-GObject-Class-1"></span><h4 class="subsection">1.1.2 The GObject Class</h4>
+
+<p>For GTK, the most important fundamental type is <code>G_TYPE_OBJECT</code>.
+GObject is the house of cards upon which GTK is built.  GObject is the
+base class for an object-oriented class system that provides specific
+facilities for object-oriented programming in the context of GUIs.
+</p>
+<p><em>Inheritance</em> - GObject classes are arranged in a hierarchy.  Each
+class has the fundamental GObject class as its base class.  This
+hierarchy is single-inheritance: each class has zero or more subclasses
+and only one superclass.
+</p>
+<p><em>Properties</em> - Each instance of a GObject class has a set of zero
+or more typed parameters.  Subclasses have access to the parameters of
+the parent, and subclasses may add additional parameters.  These are
+like slots in GOOPS, except they are strongly typed.
+</p>
+<p><em>Methods</em> - Each GObject class may define a set of methods or
+generic functions that operate on that type.  A subclass inherits all
+the methods of its superclass and may define additional methods.
+</p>
+<p><em>Signals</em> - GObject classes define a general purpose notification
+mechanism it calls <em>signals</em> which are messages an instance can
+transmit and receive<a id="DOCF2" href="#FOOT2"><sup>2</sup></a>  For each instance, a callback function can be defined
+that is executed on the receipt of a given signal.  Signals are also
+inherited: an instance of a subclass can catch all of the signals its
+parent class can catch, plus it can define new signals.
+</p>
+<p>In our binding, we do our best to express GObject and subclasses to
+GObject in the context of GOOPS classes, but, there is some mismatch.
+</p>
+<div class="footnote">
+<hr>
+<h4 class="footnotes-heading">Footnotes</h4>
+
+<h3><a id="FOOT2" href="#DOCF2">(2)</a></h3>
+<p>GObject signals are not UNIX signals, like
+<code>SIGINT</code>.</p>
+</div>
+
+
+
+</body>
+</html>

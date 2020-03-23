@@ -11,10 +11,10 @@ Free Documentation License". -->
 <!-- Created by GNU Texinfo 6.6, http://www.gnu.org/software/texinfo/ -->
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<title>Top (Guile GI)</title>
+<title>Top (Guile-GI)</title>
 
-<meta name="description" content="Top (Guile GI)">
-<meta name="keywords" content="Top (Guile GI)">
+<meta name="description" content="Top (Guile-GI)">
+<meta name="keywords" content="Top (Guile-GI)">
 <meta name="resource-type" content="document">
 <meta name="distribution" content="global">
 <meta name="Generator" content="makeinfo">
@@ -22,7 +22,7 @@ Free Documentation License". -->
 <link href="The-Index.html#The-Index" rel="index" title="The Index">
 <link href="#SEC_Contents" rel="contents" title="Table of Contents">
 <link href="../dir/index.html" rel="up" title="(dir)">
-<link href="Preface.html#Preface" rel="next" title="Preface">
+<link href="Abstract.html#Abstract" rel="next" title="Abstract">
 <style type="text/css">
 <!--
 a.summary-letter {text-decoration: none}
@@ -47,7 +47,7 @@ ul.no-bullet {list-style: none}
 </head>
 
 <body lang="en">
-<h1 class="settitle" align="center">Guile GI</h1>
+<h1 class="settitle" align="center">Guile-GI</h1>
 
 
 
@@ -57,69 +57,95 @@ ul.no-bullet {list-style: none}
 <div class="contents">
 
 <ul class="no-bullet">
-  <li><a id="toc-Preface-1" href="Preface.html#Preface">Preface</a></li>
-  <li><a id="toc-Getting-Started-1" href="Getting-Started.html#Getting-Started">1 Getting Started</a>
+  <li><a id="toc-Abstract-1" href="Abstract.html#Abstract">Abstract</a></li>
+  <li><a id="toc-Introduction-1" href="Introduction.html#Introduction">1 Introduction</a>
   <ul class="no-bullet">
-    <li><a id="toc-Installation-1" href="Installation.html#Installation">1.1 Installation</a></li>
-    <li><a id="toc-Guile_002dGI-and-Typelibs-1" href="Guile_002dGI-and-Typelibs.html#Guile_002dGI-and-Typelibs">1.2 Guile-GI and Typelibs</a></li>
-    <li><a id="toc-Sample-Applications-1" href="Sample-Applications.html#Sample-Applications">1.3 Sample Applications</a>
+    <li><a id="toc-The-Concept-of-Operations-1" href="The-Concept-of-Operations.html#The-Concept-of-Operations">1.1 The Concept of Operations</a>
     <ul class="no-bullet">
-      <li><a id="toc-Empty-Window-1" href="Empty-Window.html#Empty-Window">1.3.1 Empty Window</a></li>
+      <li><a id="toc-The-GLib-Dynamic-Type-System-1" href="The-GLib-Dynamic-Type-System.html#The-GLib-Dynamic-Type-System">1.1.1 The GLib Dynamic Type System</a></li>
+      <li><a id="toc-The-GObject-Class-1" href="The-GObject-Class.html#The-GObject-Class">1.1.2 The GObject Class</a></li>
+      <li><a id="toc-The-GObject-Introspection-Repository-Manager-1" href="The-GObject-Introspection-Repository-Manager.html#The-GObject-Introspection-Repository-Manager">1.1.3 The GObject Introspection Repository Manager</a></li>
     </ul></li>
+    <li><a id="toc-Installation-1" href="Installation.html#Installation">1.2 Installation</a></li>
   </ul></li>
-  <li><a id="toc-Tutorials-1" href="Tutorials.html#Tutorials">2 Tutorials</a>
+  <li><a id="toc-Tutorial-1" href="Tutorial.html#Tutorial">2 Tutorial</a>
   <ul class="no-bullet">
-    <li><a id="toc-GObject-Types-and-Guile-Types-1" href="GObject-Types-and-Guile-Types.html#GObject-Types-and-Guile-Types">2.1 GObject Types and Guile Types</a>
+    <li><a id="toc-Parsing-Typelibs-and-Creating-Bindings-1" href="Parsing-Typelibs-and-Creating-Bindings.html#Parsing-Typelibs-and-Creating-Bindings">2.1 Parsing Typelibs and Creating Bindings</a>
     <ul class="no-bullet">
-      <li><a id="toc-Hash-Tables-and-GHashTable-Types" href="GObject-Types-and-Guile-Types.html#Hash-Tables-and-GHashTable-Types">2.1.1 Hash Tables and GHashTable Types</a></li>
+      <li><a id="toc-use_002dtypelibs" href="Parsing-Typelibs-and-Creating-Bindings.html#use_002dtypelibs">2.1.1 <code>use-typelibs</code></a></li>
+      <li><a id="toc-typelib_002d_003emodule" href="Parsing-Typelibs-and-Creating-Bindings.html#typelib_002d_003emodule">2.1.2 <code>typelib-&gt;module</code></a></li>
+      <li><a id="toc-require-and-load_002dby_002dname" href="Parsing-Typelibs-and-Creating-Bindings.html#require-and-load_002dby_002dname">2.1.3 <code>require</code> and <code>load-by-name</code></a></li>
     </ul></li>
-    <li><a id="toc-Function-Parameters_002c-Arity_002c-and-Return-Values" href="Function-Parameters-Arity-and-Return-Values.html#Function-Parameters-Arity-and-Return-Values">2.2 Function Parameters, Arity, and Return Values</a></li>
-    <li><a id="toc-Threads-and-Concurrency-1" href="Threads-and-Concurrency.html#Threads-and-Concurrency">2.3 Threads and Concurrency</a></li>
-    <li><a id="toc-Debugging-and-Profiling-1" href="Debugging-and-Profiling.html#Debugging-and-Profiling">2.4 Debugging and Profiling</a>
+    <li><a id="toc-Generating-Documentation-from-Typelibs-1" href="Generating-Documentation-from-Typelibs.html#Generating-Documentation-from-Typelibs">2.2 Generating Documentation from Typelibs</a></li>
+    <li><a id="toc-Categories-of-Typelib-Bindings-1" href="Categories-of-Typelib-Bindings.html#Categories-of-Typelib-Bindings">2.3 Categories of Typelib Bindings</a>
     <ul class="no-bullet">
-      <li><a id="toc-Debugging-Hooks-1" href="Debugging-Hooks.html#Debugging-Hooks">2.4.1 Debugging Hooks</a></li>
-      <li><a id="toc-GLib-Logging-1" href="GLib-Logging.html#GLib-Logging">2.4.2 GLib Logging</a>
+      <li><a id="toc-Constants-1" href="Constants.html#Constants">2.3.1 Constants</a></li>
+      <li><a id="toc-Flags-and-Enums-1" href="Flags-and-Enums.html#Flags-and-Enums">2.3.2 Flags and Enums</a></li>
+      <li><a id="toc-Structs-and-Unions-1" href="Structs-and-Unions.html#Structs-and-Unions">2.3.3 Structs and Unions</a></li>
+      <li><a id="toc-GObjects-1" href="GObjects.html#GObjects">2.3.4 GObjects</a></li>
+      <li><a id="toc-Procedures-and-Methods-1" href="Procedures-and-Methods.html#Procedures-and-Methods">2.3.5 Procedures and Methods</a></li>
+    </ul></li>
+    <li><a id="toc-Argument-Conversion-1" href="Argument-Conversion.html#Argument-Conversion">2.4 Argument Conversion</a>
+    <ul class="no-bullet">
+      <li><a id="toc-Function-Parameters_002c-Arity_002c-and-Return-Values" href="Function-Parameters-Arity-and-Return-Values.html#Function-Parameters-Arity-and-Return-Values">2.4.1 Function Parameters, Arity, and Return Values</a></li>
+      <li><a id="toc-Booleans-1" href="Booleans.html#Booleans">2.4.2 Booleans</a></li>
+      <li><a id="toc-Characters-1" href="Characters.html#Characters">2.4.3 Characters</a></li>
+      <li><a id="toc-Numbers-1" href="Numbers.html#Numbers">2.4.4 Numbers</a></li>
+      <li><a id="toc-Strings-1" href="Strings.html#Strings">2.4.5 Strings</a></li>
+      <li><a id="toc-Structs_002c-Unions_002c-and-Objects" href="Structs-Unions-and-Objects.html#Structs-Unions-and-Objects">2.4.6 Structs, Unions, and Objects</a></li>
+      <li><a id="toc-Native-Pointers-1" href="Native-Pointers.html#Native-Pointers">2.4.7 Native Pointers</a></li>
+      <li><a id="toc-Arrays-1" href="Arrays.html#Arrays">2.4.8 Arrays</a></li>
+      <li><a id="toc-Null-Pointers-and-Optional-Arguments-1" href="Null-Pointers-and-Optional-Arguments.html#Null-Pointers-and-Optional-Arguments">2.4.9 Null Pointers and Optional Arguments</a></li>
+      <li><a id="toc-Hash-Tables-and-GHashTable-Types-1" href="Hash-Tables-and-GHashTable-Types.html#Hash-Tables-and-GHashTable-Types">2.4.10 Hash Tables and GHashTable Types</a></li>
+    </ul></li>
+    <li><a id="toc-Working-with-GObjects-1" href="Working-with-GObjects.html#Working-with-GObjects">2.5 Working with GObjects</a>
+    <ul class="no-bullet">
+      <li><a id="toc-GType-1" href="GType.html#GType">2.5.1 GType</a></li>
+      <li><a id="toc-GObject-Methods-1" href="GObject-Methods.html#GObject-Methods">2.5.2 GObject Methods</a></li>
+      <li><a id="toc-GObject-Signals-1" href="GObject-Signals.html#GObject-Signals">2.5.3 GObject Signals</a>
       <ul class="no-bullet">
-        <li><a id="toc-Using-the-Port-Logger" href="GLib-Logging.html#Using-the-Port-Logger">2.4.2.1 Using the Port Logger</a></li>
-        <li><a id="toc-Using-the-systemd-journal-Logger" href="GLib-Logging.html#Using-the-systemd-journal-Logger">2.4.2.2 Using the systemd journal Logger</a></li>
+        <li><a id="toc-Signal-Accumulators-1" href="Signal-Accumulators.html#Signal-Accumulators">2.5.3.1 Signal Accumulators</a></li>
+      </ul></li>
+      <li><a id="toc-GObject-Properties-1" href="GObject-Properties.html#GObject-Properties">2.5.4 GObject Properties</a></li>
+      <li><a id="toc-Defining-new-GObject-classes" href="Custom-GObjects.html#Custom-GObjects">2.5.5 Defining new GObject classes</a></li>
+    </ul></li>
+    <li><a id="toc-Sample-Applications-1" href="Sample-Applications.html#Sample-Applications">2.6 Sample Applications</a>
+    <ul class="no-bullet">
+      <li><a id="toc-Window-with-Button-1" href="Window-with-Button.html#Window-with-Button">2.6.1 Window with Button</a></li>
+    </ul></li>
+    <li><a id="toc-Threads-and-Concurrency-1" href="Threads-and-Concurrency.html#Threads-and-Concurrency">2.7 Threads and Concurrency</a></li>
+    <li><a id="toc-Debugging-and-Profiling-1" href="Debugging-and-Profiling.html#Debugging-and-Profiling">2.8 Debugging and Profiling</a>
+    <ul class="no-bullet">
+      <li><a id="toc-Debugging-Hooks-1" href="Debugging-Hooks.html#Debugging-Hooks">2.8.1 Debugging Hooks</a></li>
+      <li><a id="toc-GLib-Logging-1" href="GLib-Logging.html#GLib-Logging">2.8.2 GLib Logging</a>
+      <ul class="no-bullet">
+        <li><a id="toc-Using-the-Port-Logger" href="GLib-Logging.html#Using-the-Port-Logger">2.8.2.1 Using the Port Logger</a></li>
+        <li><a id="toc-Using-the-systemd-journal-Logger" href="GLib-Logging.html#Using-the-systemd-journal-Logger">2.8.2.2 Using the systemd journal Logger</a></li>
+        <li><a id="toc-Using-a-custom-logger" href="GLib-Logging.html#Using-a-custom-logger">2.8.2.3 Using a custom logger</a></li>
       </ul></li>
     </ul></li>
-    <li><a id="toc-Application-Deployment-1" href="Application-Deployment.html#Application-Deployment">2.5 Application Deployment</a></li>
-    <li><a id="toc-Testing-and-Continuous-Integration-1" href="Testing-and-Continuous-Integration.html#Testing-and-Continuous-Integration">2.6 Testing and Continuous Integration</a></li>
+    <li><a id="toc-Application-Deployment-1" href="Application-Deployment.html#Application-Deployment">2.9 Application Deployment</a></li>
+    <li><a id="toc-Testing-and-Continuous-Integration-1" href="Testing-and-Continuous-Integration.html#Testing-and-Continuous-Integration">2.10 Testing and Continuous Integration</a></li>
   </ul></li>
   <li><a id="toc-Reference-Guide-1" href="Reference-Guide.html#Reference-Guide">3 Reference Guide</a>
   <ul class="no-bullet">
     <li><a id="toc-Typelib-Introspection-1" href="Typelib-Introspection.html#Typelib-Introspection">3.1 Typelib Introspection</a></li>
     <li><a id="toc-Typelib-Documentation-1" href="Typelib-Documentation.html#Typelib-Documentation">3.2 Typelib Documentation</a></li>
-    <li><a id="toc-GObject-Types-1" href="GObject-Types.html#GObject-Types">3.3 GObject Types</a></li>
-    <li><a id="toc-GType-1" href="GType.html#GType">3.4 GType</a></li>
-    <li><a id="toc-GObject-Methods-1" href="GObject-Methods.html#GObject-Methods">3.5 GObject Methods</a></li>
-    <li><a id="toc-GObject-Signals-1" href="GObject-Signals.html#GObject-Signals">3.6 GObject Signals</a>
+    <li><a id="toc-Enums-and-Flags-1" href="Enums-and-Flags.html#Enums-and-Flags">3.3 Enums and Flags</a>
     <ul class="no-bullet">
-      <li><a id="toc-Signal-Accumulators-1" href="Signal-Accumulators.html#Signal-Accumulators">3.6.1 Signal Accumulators</a></li>
+      <li><a id="toc-Conversions" href="Enums-and-Flags.html#Conversions">3.3.1 Conversions</a></li>
+      <li><a id="toc-Standard-Procedure-overrides" href="Enums-and-Flags.html#Standard-Procedure-overrides">3.3.2 Standard Procedure overrides</a></li>
+      <li><a id="toc-R6RS_002desque-flag-operations" href="Enums-and-Flags.html#R6RS_002desque-flag-operations">3.3.3 R6RS-esque flag operations</a></li>
     </ul></li>
-    <li><a id="toc-GObject-Properties-1" href="GObject-Properties.html#GObject-Properties">3.7 GObject Properties</a></li>
-    <li><a id="toc-Defining-new-GObject-classes" href="Custom-GObjects.html#Custom-GObjects">3.8 Defining new GObject classes</a></li>
-    <li><a id="toc-Enums-and-Flags-1" href="Enums-and-Flags.html#Enums-and-Flags">3.9 Enums and Flags</a>
+    <li><a id="toc-Utilities-1" href="Utilities.html#Utilities">3.4 Utilities</a>
     <ul class="no-bullet">
-      <li><a id="toc-Conversions" href="Enums-and-Flags.html#Conversions">3.9.1 Conversions</a></li>
-      <li><a id="toc-Standard-Procedure-overrides" href="Enums-and-Flags.html#Standard-Procedure-overrides">3.9.2 Standard Procedure overrides</a></li>
-      <li><a id="toc-R6RS_002desque-flag-operations" href="Enums-and-Flags.html#R6RS_002desque-flag-operations">3.9.3 R6RS-esque flag operations</a></li>
+      <li><a id="toc-Utilities-for-Guile-Modules" href="Utilities.html#Utilities-for-Guile-Modules">3.4.1 Utilities for Guile Modules</a></li>
+      <li><a id="toc-Utilities-for-Vectors" href="Utilities.html#Utilities-for-Vectors">3.4.2 Utilities for Vectors</a></li>
     </ul></li>
-    <li><a id="toc-Utilities-1" href="Utilities.html#Utilities">3.10 Utilities</a>
+    <li><a id="toc-More-Stuff-1" href="More-Stuff.html#More-Stuff">3.5 More Stuff</a>
     <ul class="no-bullet">
-      <li><a id="toc-Utilities-for-Guile-Modules" href="Utilities.html#Utilities-for-Guile-Modules">3.10.1 Utilities for Guile Modules</a></li>
-      <li><a id="toc-Utilities-for-Vectors" href="Utilities.html#Utilities-for-Vectors">3.10.2 Utilities for Vectors</a></li>
-    </ul></li>
-    <li><a id="toc-More-Stuff-1" href="More-Stuff.html#More-Stuff">3.11 More Stuff</a>
-    <ul class="no-bullet">
-      <li><a id="toc-On-Guile-to-C-Type-Conversions" href="More-Stuff.html#On-Guile-to-C-Type-Conversions">3.11.1 On Guile to C Type Conversions</a>
-      <ul class="no-bullet">
-        <li><a id="toc-Strings" href="More-Stuff.html#Strings">3.11.1.1 Strings</a></li>
-      </ul></li>
-      <li><a id="toc-C-Arrays" href="More-Stuff.html#C-Arrays">3.11.2 C Arrays</a></li>
-      <li><a id="toc-Help_0021-Guile_002dGI-overrides-core-binding-X" href="More-Stuff.html#Help_0021-Guile_002dGI-overrides-core-binding-X">3.11.3 Help! Guile-GI overrides core binding X</a></li>
-      <li><a id="toc-Help_0021-Guile_002dGI-bindings-conflict-with-each-other" href="More-Stuff.html#Help_0021-Guile_002dGI-bindings-conflict-with-each-other">3.11.4 Help! Guile-GI bindings conflict with each other</a></li>
+      <li><a id="toc-Help_0021-Guile_002dGI-overrides-core-binding-X" href="More-Stuff.html#Help_0021-Guile_002dGI-overrides-core-binding-X">3.5.1 Help! Guile-GI overrides core binding X</a></li>
+      <li><a id="toc-Help_0021-Guile_002dGI-bindings-conflict-with-each-other" href="More-Stuff.html#Help_0021-Guile_002dGI-bindings-conflict-with-each-other">3.5.2 Help! Guile-GI bindings conflict with each other</a></li>
     </ul></li>
   </ul></li>
   <li><a id="toc-Further-Resources-and-Contact-Info-1" href="Further-Resources-and-Contact-Info.html#Further-Resources-and-Contact-Info">4 Further Resources and Contact Info</a></li>
@@ -131,19 +157,19 @@ ul.no-bullet {list-style: none}
 
 <span id="Top"></span><div class="header">
 <p>
-Next: <a href="Preface.html#Preface" accesskey="n" rel="next">Preface</a>, Up: <a href="../dir/index.html" accesskey="u" rel="up">(dir)</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html#The-Index" title="Index" rel="index">Index</a>]</p>
+Next: <a href="Abstract.html#Abstract" accesskey="n" rel="next">Abstract</a>, Up: <a href="../dir/index.html" accesskey="u" rel="up">(dir)</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html#The-Index" title="Index" rel="index">Index</a>]</p>
 </div>
 <hr>
-<span id="Guile-GI"></span><h1 class="top">Guile GI</h1>
+<span id="Guile_002dGI"></span><h1 class="top">Guile-GI</h1>
 
-<p>This manual is for Guile GI 0.3.0.
+<p>This manual is for Guile-GI 0.3.0.
 </p>
 <table class="menu" border="0" cellspacing="0">
-<tr><td align="left" valign="top">&bull; <a href="Preface.html#Preface" accesskey="1">Preface</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+<tr><td align="left" valign="top">&bull; <a href="Abstract.html#Abstract" accesskey="1">Abstract</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
-<tr><td align="left" valign="top">&bull; <a href="Getting-Started.html#Getting-Started" accesskey="2">Getting Started</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+<tr><td align="left" valign="top">&bull; <a href="Introduction.html#Introduction" accesskey="2">Introduction</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
-<tr><td align="left" valign="top">&bull; <a href="Tutorials.html#Tutorials" accesskey="3">Tutorials</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+<tr><td align="left" valign="top">&bull; <a href="Tutorial.html#Tutorial" accesskey="3">Tutorial</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
 <tr><td align="left" valign="top">&bull; <a href="Reference-Guide.html#Reference-Guide" accesskey="4">Reference Guide</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
@@ -158,7 +184,7 @@ Next: <a href="Preface.html#Preface" accesskey="n" rel="next">Preface</a>, Up: <
 <hr>
 <div class="header">
 <p>
-Next: <a href="Preface.html#Preface" accesskey="n" rel="next">Preface</a>, Up: <a href="../dir/index.html" accesskey="u" rel="up">(dir)</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html#The-Index" title="Index" rel="index">Index</a>]</p>
+Next: <a href="Abstract.html#Abstract" accesskey="n" rel="next">Abstract</a>, Up: <a href="../dir/index.html" accesskey="u" rel="up">(dir)</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html#The-Index" title="Index" rel="index">Index</a>]</p>
 </div>
 
 

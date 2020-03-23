@@ -1,0 +1,104 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 2018, 2019, 2020 Michael L. Gran
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, no Front-Cover Texts, and no Back-Cover
+Texts.  A copy of the license is included in the section entitled "GNU
+Free Documentation License". -->
+<!-- Created by GNU Texinfo 6.6, http://www.gnu.org/software/texinfo/ -->
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>The Concept of Operations (Guile-GI)</title>
+
+<meta name="description" content="The Concept of Operations (Guile-GI)">
+<meta name="keywords" content="The Concept of Operations (Guile-GI)">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="The-Index.html#The-Index" rel="index" title="The Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Introduction.html#Introduction" rel="up" title="Introduction">
+<link href="The-GLib-Dynamic-Type-System.html#The-GLib-Dynamic-Type-System" rel="next" title="The GLib Dynamic Type System">
+<link href="Introduction.html#Introduction" rel="prev" title="Introduction">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.indentedblock {margin-right: 0em}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+kbd {font-style: oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+span.nolinebreak {white-space: nowrap}
+span.roman {font-family: initial; font-weight: normal}
+span.sansserif {font-family: sans-serif; font-weight: normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+<link rel="stylesheet" type="text/css" href="document-1.0.1.css">
+
+
+</head>
+
+<body lang="en">
+<span id="The-Concept-of-Operations"></span><div class="header">
+<p>
+Next: <a href="Installation.html#Installation" accesskey="n" rel="next">Installation</a>, Up: <a href="Introduction.html#Introduction" accesskey="u" rel="up">Introduction</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html#The-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<span id="The-Concept-of-Operations-1"></span><h3 class="section">1.1 The Concept of Operations</h3>
+
+<p>GNU Guile itself does not provide its own graphical user interface (GUI)
+programming toolkit; it needs to incorporate an existing GUI toolkit.
+Of the existing GUI toolkits, GTK has been designed with the goal of
+being language agnostic, usable with any programming language.
+</p>
+<p>The application program interface (API) for GTK is large, with dozens of
+classes and hundreds of functions.  It consist of several sub-projects:
+GTK+, GDK, Pango, GLib and many others.  These APIs change from version
+to version.  Creating a binding by hand &ndash; wrapping each type and
+function for use with Guile and then keeping it up do date &ndash; would be a
+laborious task.  Knowing this, GTK provides a way to query information
+about the classes and functions it provides so that a binding may be
+generated programmatically.  Instead of creating a Guile binding for all
+of GTK and it subprojects, we create a Guile binding for its
+introspection layer, and then use that information to make a Guile
+binding for all of GTK.
+</p>
+<p>To make a Guile binding for the introspection layer, we need to wrap
+three application program interfaces.
+</p><ol>
+<li> The GLib Dynamic Type System
+</li><li> GObject - the fundamental base class for all object types in GTK+
+</li><li> GIRepository - the GObject introspection repository manager
+</li></ol>
+<p>Then, using information queried from these 3 API, a binding for GTK can
+be made programmatically.  As a bonus, a binding to any project that
+adheres to GObject standards can be created as well.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="The-GLib-Dynamic-Type-System.html#The-GLib-Dynamic-Type-System" accesskey="1">The GLib Dynamic Type System</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="The-GObject-Class.html#The-GObject-Class" accesskey="2">The GObject Class</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="The-GObject-Introspection-Repository-Manager.html#The-GObject-Introspection-Repository-Manager" accesskey="3">The GObject Introspection Repository Manager</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+</table>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Installation.html#Installation" accesskey="n" rel="next">Installation</a>, Up: <a href="Introduction.html#Introduction" accesskey="u" rel="up">Introduction</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html#The-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,97 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 2018, 2019, 2020 Michael L. Gran
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, no Front-Cover Texts, and no Back-Cover
+Texts.  A copy of the license is included in the section entitled "GNU
+Free Documentation License". -->
+<!-- Created by GNU Texinfo 6.6, http://www.gnu.org/software/texinfo/ -->
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>The GObject Introspection Repository Manager (Guile-GI)</title>
+
+<meta name="description" content="The GObject Introspection Repository Manager (Guile-GI)">
+<meta name="keywords" content="The GObject Introspection Repository Manager (Guile-GI)">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="The-Index.html#The-Index" rel="index" title="The Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="The-Concept-of-Operations.html#The-Concept-of-Operations" rel="up" title="The Concept of Operations">
+<link href="Installation.html#Installation" rel="next" title="Installation">
+<link href="The-GObject-Class.html#The-GObject-Class" rel="prev" title="The GObject Class">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.indentedblock {margin-right: 0em}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+kbd {font-style: oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+span.nolinebreak {white-space: nowrap}
+span.roman {font-family: initial; font-weight: normal}
+span.sansserif {font-family: sans-serif; font-weight: normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+<link rel="stylesheet" type="text/css" href="document-1.0.1.css">
+
+
+</head>
+
+<body lang="en">
+<span id="The-GObject-Introspection-Repository-Manager"></span><div class="header">
+<p>
+Previous: <a href="The-GObject-Class.html#The-GObject-Class" accesskey="p" rel="prev">The GObject Class</a>, Up: <a href="The-Concept-of-Operations.html#The-Concept-of-Operations" accesskey="u" rel="up">The Concept of Operations</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html#The-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<span id="The-GObject-Introspection-Repository-Manager-1"></span><h4 class="subsection">1.1.3 The GObject Introspection Repository Manager</h4>
+
+<p>The GObject Introspection Repository Manager, or GIRepository for short,
+is the API through which you can query all the available types, methods
+and functions a library provides.
+</p>
+<p>GTK provides an application program interface in a dynamic library.  On
+Unix-like systems, the dynamic library is a shared object, <samp>.so</samp>
+file.  On Microsoft Windows, the dynamic library is a Dynamic Link
+Library, a <samp>.dll</samp> file.  Information on the proper initialization,
+ownership, and destruction of in-memory objects is not intrinsic to
+dynamic libraries.  Thus, to properly use them, you need
+<em>metadata</em>.
+</p>
+<p>GTK provides metadata via The GObject Introspection Repository Manager.
+Under GIRepository, each dynamic library also provides a companion
+metadata file, a <samp>.typelib</samp> file.  If we can provide Guile with the
+facility to parse <samp>.typelib</samp> files, we could safely call the API
+the dynamic libraries provide.
+</p>
+<p>These typelib files are in a custom binary format.  They commonly
+contain the following information about a dynamic library:
+</p><ul>
+<li> constants
+</li><li> flags and enums
+</li><li> functions and their arguments
+</li><li> structures and unions
+</li><li> classes and methods
+</li></ul>
+
+<p>The task set out to Guile-GI is to parse a typelib, dynamically load a
+shared library, and generate Guile procedures, constants, and GOOPS
+types and generics that map to the contents of the shared library.
+</p>
+<p>Several other libraries have also adopted GObject Introspection, so if
+we can make it work for GTK, we get many other libraries for free.
+</p>
+
+
+
+</body>
+</html>

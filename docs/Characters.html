@@ -1,0 +1,80 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 2018, 2019, 2020 Michael L. Gran
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, no Front-Cover Texts, and no Back-Cover
+Texts.  A copy of the license is included in the section entitled "GNU
+Free Documentation License". -->
+<!-- Created by GNU Texinfo 6.6, http://www.gnu.org/software/texinfo/ -->
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Characters (Guile-GI)</title>
+
+<meta name="description" content="Characters (Guile-GI)">
+<meta name="keywords" content="Characters (Guile-GI)">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="The-Index.html#The-Index" rel="index" title="The Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Argument-Conversion.html#Argument-Conversion" rel="up" title="Argument Conversion">
+<link href="Numbers.html#Numbers" rel="next" title="Numbers">
+<link href="Booleans.html#Booleans" rel="prev" title="Booleans">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.indentedblock {margin-right: 0em}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+kbd {font-style: oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+span.nolinebreak {white-space: nowrap}
+span.roman {font-family: initial; font-weight: normal}
+span.sansserif {font-family: sans-serif; font-weight: normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+<link rel="stylesheet" type="text/css" href="document-1.0.1.css">
+
+
+</head>
+
+<body lang="en">
+<span id="Characters"></span><div class="header">
+<p>
+Next: <a href="Numbers.html#Numbers" accesskey="n" rel="next">Numbers</a>, Previous: <a href="Booleans.html#Booleans" accesskey="p" rel="prev">Booleans</a>, Up: <a href="Argument-Conversion.html#Argument-Conversion" accesskey="u" rel="up">Argument Conversion</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html#The-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<span id="Characters-1"></span><h4 class="subsection">2.4.3 Characters</h4>
+
+<p>There are two native character types, the 1-byte <code>gchar</code> and the
+4-byte <code>gunichar</code>.  The native 1-byte <code>gchar</code> character type
+can represent many types of data, so understanding what a function wants
+depends on context.  It could be a single-byte character in a specific
+character encoding, a binary byte with no specific encoding, or an 8-bit
+integer.  The native <code>gunichar</code> type always represents a Unicode
+codepoint.
+</p>
+<p>When a 1-byte <code>gchar</code> is expected, if you pass a Guile character,
+the presumption is that Latin-1 encoding is correct, e.g. if a Guile
+character has codepoints U+0000 to U+00FF, it will be converted to a
+1-byte integer and passed to the <code>gchar</code>.  A Guile integer can also
+be passed when a native <code>gchar</code> is expected.
+</p>
+<p>When <code>gchar</code> is an output or return value, it is returned as an
+integer because it is not possible to know what it is meant to
+represent.
+</p>
+
+
+
+</body>
+</html>

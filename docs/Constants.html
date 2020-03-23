@@ -11,19 +11,19 @@ Free Documentation License". -->
 <!-- Created by GNU Texinfo 6.6, http://www.gnu.org/software/texinfo/ -->
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<title>Sample Applications (Guile-GI)</title>
+<title>Constants (Guile-GI)</title>
 
-<meta name="description" content="Sample Applications (Guile-GI)">
-<meta name="keywords" content="Sample Applications (Guile-GI)">
+<meta name="description" content="Constants (Guile-GI)">
+<meta name="keywords" content="Constants (Guile-GI)">
 <meta name="resource-type" content="document">
 <meta name="distribution" content="global">
 <meta name="Generator" content="makeinfo">
 <link href="index.html#Top" rel="start" title="Top">
 <link href="The-Index.html#The-Index" rel="index" title="The Index">
 <link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
-<link href="Tutorial.html#Tutorial" rel="up" title="Tutorial">
-<link href="Window-with-Button.html#Window-with-Button" rel="next" title="Window with Button">
-<link href="Custom-GObjects.html#Custom-GObjects" rel="prev" title="Custom GObjects">
+<link href="Categories-of-Typelib-Bindings.html#Categories-of-Typelib-Bindings" rel="up" title="Categories of Typelib Bindings">
+<link href="Flags-and-Enums.html#Flags-and-Enums" rel="next" title="Flags and Enums">
+<link href="Categories-of-Typelib-Bindings.html#Categories-of-Typelib-Bindings" rel="prev" title="Categories of Typelib Bindings">
 <style type="text/css">
 <!--
 a.summary-letter {text-decoration: none}
@@ -48,21 +48,25 @@ ul.no-bullet {list-style: none}
 </head>
 
 <body lang="en">
-<span id="Sample-Applications"></span><div class="header">
+<span id="Constants"></span><div class="header">
 <p>
-Next: <a href="Threads-and-Concurrency.html#Threads-and-Concurrency" accesskey="n" rel="next">Threads and Concurrency</a>, Previous: <a href="Working-with-GObjects.html#Working-with-GObjects" accesskey="p" rel="prev">Working with GObjects</a>, Up: <a href="Tutorial.html#Tutorial" accesskey="u" rel="up">Tutorial</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html#The-Index" title="Index" rel="index">Index</a>]</p>
+Next: <a href="Flags-and-Enums.html#Flags-and-Enums" accesskey="n" rel="next">Flags and Enums</a>, Up: <a href="Categories-of-Typelib-Bindings.html#Categories-of-Typelib-Bindings" accesskey="u" rel="up">Categories of Typelib Bindings</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html#The-Index" title="Index" rel="index">Index</a>]</p>
 </div>
 <hr>
-<span id="Sample-Applications-1"></span><h3 class="section">2.6 Sample Applications</h3>
+<span id="Constants-1"></span><h4 class="subsection">2.3.1 Constants</h4>
 
-<p>If you&rsquo;ve managed to survive the tutorial thus far, you know should know
-everything you need to start programming with Guile-GI.  Let&rsquo;s throw
-down some examples.
+<p>On introspection, when a typelib file defines a constant, Guile-GI
+creates a variable.  The variable name is in <code>MACRO_CASE</code>, capital
+letters separated by underscores.  Note that the variables created are
+not themselves constants: one could <code>set!</code> them to another value,
+with likely detrimental effects.
 </p>
-<table class="menu" border="0" cellspacing="0">
-<tr><td align="left" valign="top">&bull; <a href="Window-with-Button.html#Window-with-Button" accesskey="1">Window with Button</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
-</td></tr>
-</table>
+<p>The names of the variables created will be the same as the native API,
+with the namespace removed.
+</p><div class="example">
+<pre class="example">;; In C, the constant G_BIG_ENDIAN
+BIG_ENDIAN
+</pre></div>
 
 
 

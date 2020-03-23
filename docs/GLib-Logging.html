@@ -11,10 +11,10 @@ Free Documentation License". -->
 <!-- Created by GNU Texinfo 6.6, http://www.gnu.org/software/texinfo/ -->
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<title>GLib Logging (Guile GI)</title>
+<title>GLib Logging (Guile-GI)</title>
 
-<meta name="description" content="GLib Logging (Guile GI)">
-<meta name="keywords" content="GLib Logging (Guile GI)">
+<meta name="description" content="GLib Logging (Guile-GI)">
+<meta name="keywords" content="GLib Logging (Guile-GI)">
 <meta name="resource-type" content="document">
 <meta name="distribution" content="global">
 <meta name="Generator" content="makeinfo">
@@ -53,7 +53,7 @@ ul.no-bullet {list-style: none}
 Previous: <a href="Debugging-Hooks.html#Debugging-Hooks" accesskey="p" rel="prev">Debugging Hooks</a>, Up: <a href="Debugging-and-Profiling.html#Debugging-and-Profiling" accesskey="u" rel="up">Debugging and Profiling</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html#The-Index" title="Index" rel="index">Index</a>]</p>
 </div>
 <hr>
-<span id="GLib-Logging-1"></span><h4 class="subsection">2.4.2 GLib Logging</h4>
+<span id="GLib-Logging-1"></span><h4 class="subsection">2.8.2 GLib Logging</h4>
 
 <p>GLib provides a logging library whose behavior can be tailored using
 environment variables.  GLib&rsquo;s logging library has a concept of
@@ -73,26 +73,26 @@ will receive <em>a lot</em> of debugging information from any Guile-GI
 libraries being used.  To help better filter through all this, a
 <code>(gi logging)</code> library provides a pair of alternative loggers.
 </p>
-<span id="Using-the-Port-Logger"></span><h4 class="subsubsection">2.4.2.1 Using the Port Logger</h4>
+<span id="Using-the-Port-Logger"></span><h4 class="subsubsection">2.8.2.1 Using the Port Logger</h4>
 
-<p>The <code>(gi logging)</code> library provides the <code>log-to-port</code>
+<p>The <code>(gi logging)</code> library provides the <code>install-port-logger!</code>
 procedure that sends logging output to a Scheme port and provides
 functionality to target specific categories of debug information
 </p>
 <dl>
-<dt id="index-log_002dto_002dport">Procedure: <strong>log-to-port</strong> <em>port</em></dt>
+<dt id="index-install_002dport_002dlogger_0021">Procedure: <strong>install-port-logger!</strong> <em>port</em></dt>
 <dd><p>Given <var>port</var>, an output port, this procedure installs a GLib
 log writer function that outputs to <var>port</var>.
 </p>
 <p>The default behavior of this GLib log writer is to print critical,
-error, and warning messages to the port.  Message-level, info, and debug
-messages will be dropped.  If you want to receive these message-level,
-info, and debug messages with this logger, you need to set the
-<code>G_MESSAGES_DEBUG</code> as described above.  Also, you need to set
-<code>GIG_DEBUG</code> to the category of debug information desired.
+error, and warning messages to the port.
+This logger behaves like the default GLib logger &ndash; i.e. it respects
+<code>G_MESSAGES_DEBUG</code> &ndash; but in addition to that also reads
+<code>GIG_DEBUG</code> for more fine-grained control over the messages
+Guile-GI prints to the port.
 </p>
-<p>Set the <code>GIG_DEBUG</code>
-environment variable to a space-separated list of topics.
+<p>Set the <code>GIG_DEBUG</code> environment variable to a list of topics separated
+by any delimiter or the specific value <code>all</code>.
 </p><ul>
 <li> <code>amap</code> prints information about the mapping of function arguments.
 </li><li> <code>load</code> prints information &ndash; when libraries are loaded &ndash; on how C
@@ -106,13 +106,13 @@ Guile objects and vice versa.
 will be output.
 </p></dd></dl>
 
-<span id="Using-the-systemd-journal-Logger"></span><h4 class="subsubsection">2.4.2.2 Using the systemd journal Logger</h4>
+<span id="Using-the-systemd-journal-Logger"></span><h4 class="subsubsection">2.8.2.2 Using the systemd journal Logger</h4>
 
-<p>The <code>(gi logging)</code> library provides the <code>log-to-journal</code>
+<p>The <code>(gi logging)</code> library provides the <code>install-journal-logger!</code>
 procedure.
 </p>
 <dl>
-<dt id="index-log_002dto_002djournal">Procedure: <strong>log-to-journal</strong></dt>
+<dt id="index-install_002djournal_002dlogger_0021">Procedure: <strong>install-journal-logger!</strong></dt>
 <dd><p>This procedure sets GLib&rsquo;s <code>g_log_writer_journald</code> function
 as the current GLib log writer function.
 </p></dd></dl>
@@ -122,6 +122,39 @@ command can help filter debug output.  Guile-GI&rsquo;s debug messages
 have the message key <code>GIG_DOMAIN</code> which can be used to filter
 debug info into general categories.
 </p>
+<span id="Using-a-custom-logger"></span><h4 class="subsubsection">2.8.2.3 Using a custom logger</h4>
+
+<p>The <code>(gi logging)</code> library provides the <code>install-custom-logger!</code>
+procedure.
+</p>
+<dl>
+<dt id="index-install_002dcustom_002dlogger_0021">Procedure: <strong>install-custom-logger!</strong> <em>logger</em></dt>
+<dd><p>This procedure installs a helper, which will call <var>logger</var>
+to do the actual logging, as the GLib log writer function.
+</p>
+<p>For the call to <var>logger</var>, the <code>GLogField</code> structures used
+by GLib internally are translated to keyword arguments.  For that,
+the keys are <code>kebab-cased</code> and the values either transformed
+into suitable scheme datatypes or left as-is and passed by pointer.
+In the latter case, another argument is added for the length of the field,
+which takes the same keyword as the first one, but with the suffix <code>-length</code>.
+</p>
+<p>The currently supported conversions are:
+</p><ul>
+<li> <code>#:message</code>, the current message as a string,
+</li><li> <code>#:priority</code>, a string representation of the log level,
+</li><li> <code>#:glib-domain</code>, the log domain as a string,
+</li><li> <code>#:gig-domain</code>, the Guile-GI log domain as a string, and
+</li><li> <code>#:code-file</code>, <code>#:code-func</code> and <code>#:code-line</code>,
+the location from which the log call was made, each as strings.
+</li></ul>
+
+<p>The log level is passed as an integer under the keyword <code>#:log-level</code>.
+If you&rsquo;ve loaded the GLib typelib before installing the logger, you can transform
+that into log level flags by using <code>number-&gt;log-level</code>.
+</p>
+</dd></dl>
+
 <hr>
 <div class="header">
 <p>
