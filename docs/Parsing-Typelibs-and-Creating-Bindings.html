@@ -100,32 +100,7 @@ by actual files.
 <p><code>use-typelibs</code> is a simple interface for Guile scripts not broken
 into multiple modules.
 </p>
-<span id="typelib_002d_003emodule"></span><h4 class="subsection">2.1.2 <code>typelib-&gt;module</code></h4>
-
-<p>For Guile programs that consist of multiple modules, you should create a
-specific module to provide introspected bindings.
-</p>
-<p>If you need to use <code>use-modules</code> (e.g. as a part of a
-<code>define-module</code>), you need to write the module yourself.  As a
-convenience, <code>(gi repository)</code> defines <code>typelib-&gt;module</code>,
-which loads a typelib into a module and also adds all loaded
-functionality to its public interface.  Use it as in the following
-example.
-</p><div class="example">
-<pre class="example">(define-module (gi gtk-3)
-  #:use-module (gi)
-  #:use-module (gi repository))
-
-(typelib-&gt;module (current-module) &quot;Gtk&quot; &quot;3.0&quot;)
-
-;; additional code you might want to add and export
-</pre></div>
-
-<p>For multi-module programs, create a specific module to contain all your
-typelib bindings and use that module to provide functionality to other
-modules.
-</p>
-<span id="require-and-load_002dby_002dname"></span><h4 class="subsection">2.1.3 <code>require</code> and <code>load-by-name</code></h4>
+<span id="require-and-load_002dby_002dname"></span><h4 class="subsection">2.1.2 <code>require</code> and <code>load-by-name</code></h4>
 
 <p>For efficiency&rsquo;s sake, you may want to only load parts, e.g. just
 GtkApplication and GtkWindow to significantly speed up loading.  By
@@ -146,6 +121,33 @@ primitives to facilitate exactly that. See <a href="Typelib-Introspection.html#T
         get-context)
 </pre></div>
 
+<span id="typelib_002d_003emodule"></span><h4 class="subsection">2.1.3 <code>typelib-&gt;module</code></h4>
+
+<p>If you don&rsquo;t care much about waiting times &ndash; perhaps you only have
+a set of small dependencies, or you really need everything from a library &ndash;
+but you need the ability to refer to a module specifically through
+<code>use-modules</code>, you will have to provide your own module.
+However, writing all the <code>require</code> and <code>load-by-name</code>s when you
+don&rsquo;t care about granularity is tedious and error-prone.
+</p>
+<p>As a convenience <code>(gi repository)</code> also contains <code>typelib-&gt;module</code>.
+This procedure loads a typelib into the current module and also adds all
+functionality loaded in the process to the public inferface.
+</p><div class="example">
+<pre class="example">(define-module (gi gtk-3)
+  #:use-module (gi)
+  #:use-module (gi repository))
+
+(typelib-&gt;module (current-module) &quot;Gtk&quot; &quot;3.0&quot;)
+
+;; additional code you might want to add and export
+</pre></div>
+<p>You may use it to create one such module per dependency, or one module for all
+dependencies.  Together with Guile&rsquo;s module system, you can even do some
+advanced operations, like loading all of Gtk under the prefix <code>gtk::</code>
+together with all of Gstreamer under the prefix <code>gst::</code>.
+See <a href="https://www.gnu.org/software/guile/manual/html_node/Modules.html#Modules">Modules</a> in <cite>The Guile reference manual</cite>.
+</p>
 <hr>
 <div class="header">
 <p>
