@@ -329,27 +329,6 @@ by actual files.
 @code{use-typelibs} is a simple interface for Guile scripts not broken
 into multiple modules.
 
-@subsection @code{typelib->module}
-
-For Guile programs that consist of multiple modules, you should create a
-specific module to provide introspected bindings.
-
-If you need to use @code{use-modules} (e.g. as a part of a
-@code{define-module}), you need to write the module yourself.  As a
-convenience, @code{(gi repository)} defines @code{typelib->module},
-which loads a typelib into a module and also adds all loaded
-functionality to its public interface.  Use it as in the following
-example.
-@example
-@include gtk-3.scm
-
-;; additional code you might want to add and export
-@end example
-
-For multi-module programs, create a specific module to contain all your
-typelib bindings and use that module to provide functionality to other
-modules.
-
 @subsection @code{require} and @code{load-by-name}
 
 For efficiency's sake, you may want to only load parts, e.g. just
@@ -360,6 +339,29 @@ primitives to facilitate exactly that. @xref{Typelib Introspection}.
 @example
 @include ex-load-by-name.scm
 @end example
+
+@subsection @code{typelib->module}
+
+If you don't care much about waiting times -- perhaps you only have
+a set of small dependencies, or you really need everything from a library --
+but you need the ability to refer to a module specifically through
+@code{use-modules}, you will have to provide your own module.
+However, writing all the @code{require} and @code{load-by-name}s when you
+don't care about granularity is tedious and error-prone.
+
+As a convenience @code{(gi repository)} also contains @code{typelib->module}.
+This procedure loads a typelib into the current module and also adds all
+functionality loaded in the process to the public inferface.
+@example
+@include gtk-3.scm
+
+;; additional code you might want to add and export
+@end example
+You may use it to create one such module per dependency, or one module for all
+dependencies.  Together with Guile's module system, you can even do some
+advanced operations, like loading all of Gtk under the prefix @code{gtk::}
+together with all of Gstreamer under the prefix @code{gst::}.
+@xref{Modules,,,guile,The Guile reference manual}.
 
 @node Generating Documentation from Typelibs
 @section Generating Documentation from Typelibs
