@@ -402,6 +402,8 @@ EXTRA_DIST = \
   README.md \
   build-aux/config.rpath \
   doc/example-1.scm doc/gtk-3.scm doc/fdl-1.3.texi \
+  doc/ex-date.scm doc/ex-gapplication.scm doc/ex-load-by-name.scm \
+  doc/ex-button.scm \
   docs/document-1.0.1.css docs/README \
   examples/resources/test.gresource \
   m4/attributes.m4 \
