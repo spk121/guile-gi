@@ -27,13 +27,18 @@ library.
 For the moment, the docs are at
 [spk121.github.io/guile-gi](https://spk121.github.io/guile-gi/)
 
-Try:
+If you're using GNOME on Guix, try:
 
-    guix environment --ad-hoc -l guix.scm guile
-    guile-gi examples/browser.scm
+    $ guix environment --ad-hoc -l guix.scm guile webkitgtk -- guile examples/browser.scm
 
-Or, create and run in a development environment
+If you're using another desktop environment or prefer pure environments, try:
 
-    guix environment -l guix.scm
-    ./bootstrap && ./configure && make
-    tools/uninstalled-env tools/run-guile examples/browser.scm
+    $ guix environment [--pure -E XAUTHORITY -E 'XDG_.*'] --ad-hoc -l guix.scm guile gtk+ webkitgtk -- guile examples/browser.scm
+
+Alternatively, to use `guix environment` for developing:
+
+    $ guix environment -l guix.scm [--ad-hoc gtk+ webkitgtk]
+    $ ./bootstrap && ./configure && make
+    $ tools/uninstalled-env tools/run-guile examples/browser.scm
+
+For other examples on how to use guile-gi, check out the examples directory.
