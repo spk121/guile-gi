@@ -1,4 +1,4 @@
-2020-03-20: version 0.3.0
+2020-03-24: version 0.3.0
 - Handle mutation operations of caller-allocated function arguments (#39)
   - Some procedures with preallocated in/out arguments will now bear the
     mutation sigil `!'
@@ -8,6 +8,8 @@
 - Improve Guix build and install
 - Stricter errors for callbacks and signals
 - Don't prematurely catch errors thrown by callbacks in the callback handler
+- New custom logger
+- New hook procedures for inspecting FFI calls
 - Better tests for callback, signals, arrays (#54, #57)
 - Clean up debug info (#77)
 - Updated docs (#76)
