@@ -138,10 +138,10 @@ void gig_unprotect_func(gpointer func)
     scm_gc_unprotect_object(SCM_PACK_POINTER(func));
 }
 
-SCM kwd_flags;
+SCM kwd_log_level;
 
 static GLogWriterOutput
-gig_log_custom_helper(GLogLevelFlags flags, const GLogField *fields, gsize n_fields, gpointer user_data)
+gig_log_custom_helper(GLogLevelFlags log_level, const GLogField *fields, gsize n_fields, gpointer user_data)
 {
     if (!logger_initialized) {
         scm_init_guile();
@@ -150,20 +150,30 @@ gig_log_custom_helper(GLogLevelFlags flags, const GLogField *fields, gsize n_fie
 
     SCM args = scm_make_list(scm_from_size_t(4 * n_fields + 2), SCM_UNDEFINED);
     SCM it = args;
-    scm_set_car_x(it, kwd_flags);
-    scm_set_car_x(scm_cdr(it), scm_from_size_t(flags));
+    scm_set_car_x(it, kwd_log_level);
+    scm_set_car_x(scm_cdr(it), scm_from_size_t(log_level));
 
     for (gsize i = 0; i < n_fields; i++) {
         it = scm_cddr(it);
         gchar* key = gig_gname_to_scm_name(fields[i].key);
         scm_set_car_x(it, scm_from_utf8_keyword(key));
         // TODO: add more conversions
-        if (!g_strcmp0(fields[i].key, "MESSAGE") ||
-            !g_strcmp0(fields[i].key, "G_LOG_DOMAIN") ||
-            !g_strcmp0(fields[i].key, "GIG_DOMAIN"))
+        if (/* the message itself is a string */
+            !g_strcmp0(fields[i].key, "MESSAGE") ||
+            /* log level as string */
+            !g_strcmp0(fields[i].key, "PRIORITY") ||
+            /* domains */
+            !g_strcmp0(fields[i].key, "GLIB_DOMAIN") ||
+            !g_strcmp0(fields[i].key, "GIG_DOMAIN") ||
+            /* source information inserted by g_debug, etc */
+            !g_strcmp0(fields[i].key, "CODE_FILE") ||
+            !g_strcmp0(fields[i].key, "CODE_FUNC") ||
+            !g_strcmp0(fields[i].key, "CODE_LINE") ||
+            /* end on a false statement  */
+            0)
             scm_set_car_x(scm_cdr(it), scm_from_utf8_string(fields[i].value));
         else {
-            scm_set_car_x(scm_cdr(it), scm_from_pointer(fields[i].value, NULL));
+            scm_set_car_x(scm_cdr(it), scm_from_pointer((gpointer)fields[i].value, NULL));
             gchar* length = g_strdup_printf("%s-length", key);
             it = scm_cddr(it);
             scm_set_car_x(it, scm_from_utf8_keyword(length));
@@ -174,6 +184,8 @@ gig_log_custom_helper(GLogLevelFlags flags, const GLogField *fields, gsize n_fie
     }
     scm_set_cdr_x(scm_cdr(it), SCM_EOL);
     scm_apply_0(SCM_PACK_POINTER(user_data), args);
+
+    return G_LOG_WRITER_HANDLED;
 }
 
 SCM
@@ -187,7 +199,7 @@ gig_install_custom_logger(SCM func)
 void
 gig_init_logging()
 {
-    kwd_flags = scm_from_utf8_keyword("flags");
+    kwd_log_level = scm_from_utf8_keyword("log-level");
     scm_c_define_gsubr("install-port-logger!", 1, 0, 0, gig_log_to_port);
     scm_c_define_gsubr("install-journal-logger!", 0, 0, 0, gig_log_to_journal);
     scm_c_define_gsubr("install-custom-logger!", 1, 0, 0, gig_install_custom_logger);

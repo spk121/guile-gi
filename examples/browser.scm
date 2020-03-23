@@ -26,11 +26,12 @@
 
   (load-by-name "Gio" "Application")
   (load-by-name "Gio" "ApplicationFlags")
-  (load-by-name "WebKit2" "WebView")
 
   (for-each
    (cute load-by-name "Gtk" <>)
-   '("ApplicationWindow" "Application" "Container" "Window" "Widget")))
+   '("ApplicationWindow" "Application" "Container" "Window" "Widget"))
+
+  (load-by-name "WebKit2" "WebView"))
 
 (define (activate app)
   (let ((window (application-window:new app))

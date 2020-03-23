@@ -199,13 +199,13 @@ AM_CONDITIONAL([MTRACE], [test x$mtrace = xtrue])
 
 AC_ARG_ENABLE([guild],
               [AS_HELP_STRING([--disable-guild],
-                              [don't compile guile sources])]
+                              [don't compile guile sources])],
               [AS_CASE(["${enableval}"],
                        [yes], [guild=true],
                        [no], [guild=false],
-                       [AC_MSG_ERROR([bad value ${enableval} for --enable-coverage])])],
+                       [AC_MSG_ERROR([bad value ${enableval} for --enable-guild])])],
               [guild=true])
-AM_CONDITIONAL([GUILD], [test x$guild = true])
+AM_CONDITIONAL([GUILD], [test x$guild = xtrue])
 
 ################
 # Check for C library functions
