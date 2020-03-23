@@ -513,8 +513,9 @@ When Guile-GI provides a binding for a method, it creates a GOOPS
 generic function.  The function name is of the form
 @code{type:method-name}.  It also provides an alias of the form
 @code{method-name}.  Often, the generic functions using the shorter
-method names end up overloaded; hopefully GOOPS can disambiguate based
-on the argument types.
+method names end up overloaded; however, as they are bound to classes
+they can usually be disambiguated based on their first arguments,
+which are the object instances.
 @example
 ;; In C, the GDate* method g_date_add_days
 ;; The type:method form
@@ -522,6 +523,20 @@ on the argument types.
 ;; The method-only form
 (add-days date 1)
 @end example
+
+@quotation Caveat
+When loading multiple typelibs, it may happen, that the two define
+classes with an identical name modulo namespace and a similar API.
+We have already seen such an example with Gio and Gtk, both of which
+have an application class.  Usually, though not always, one inherits from
+the other.
+
+Even in this case, most methods can be disambiguated based on the object
+instances.  The exception to this rule are static methods -- like constructors --
+which not only share the same name but often enough also have the same signature.
+Such conflicts require manual resolution.
+@end quotation
+
 
 @node Argument Conversion
 @section Argument Conversion
