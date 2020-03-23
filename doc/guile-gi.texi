@@ -1054,7 +1054,7 @@ of the GObject infrastructure, such as signals.
 
 Defining a new GObject class is rather complicated.
 
-@deffn Procedure register-type type-name parent-type list-of-properties list-of-signals disposer
+@deffn Procedure register-type type-name parent-type [list-of-properties] [list-of-signals]
 This procedure creates and returns a new @code{<GType>} of a GObject
 object.
 
