@@ -224,13 +224,10 @@ gig_value_from_scm(GValue *value, SCM obj)
                 return 0;
             }
         }
-        else
-            return GIG_VALUE_WRONG_TYPE;
-        break;
+        return GIG_VALUE_WRONG_TYPE;
     default:
         g_critical("unhandled value type");
         return GIG_VALUE_WRONG_TYPE;
-        break;
     }
 
     return 0;
@@ -245,7 +242,6 @@ gig_value_from_scm_with_error(GValue *value, SCM obj, const gchar *subr, gint po
         return;
     case GIG_VALUE_WRONG_TYPE:
         scm_wrong_type_arg(subr, pos, obj);
-        break;
     case GIG_VALUE_OUT_OF_RANGE:
         scm_out_of_range_pos(subr, obj, scm_from_int(pos));
     }

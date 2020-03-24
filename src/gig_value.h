@@ -16,6 +16,12 @@ SCM gig_value_to_scm_basic_type(const GValue *value, GType fundamental, gboolean
 SCM gig_value_param_as_scm(const GValue *gvalue, gboolean copy_boxed, const GParamSpec *pspec);
 
 SCM gig_value_as_scm(const GValue *value, gboolean copy_boxed);
+SCM gig_value_get(SCM value);
+SCM gig_value_get_type(SCM value);
+SCM gig_value_set(SCM where, SCM what);
+SCM gig_value_set_type(SCM where, SCM what);
+SCM gig_value_transform(SCM val, SCM type);
+
 void gig_value_from_scm_with_error(GValue *value, SCM obj, const gchar *subr, gint pos);
 int gig_value_from_scm(GValue *value, SCM obj);
 

@@ -53,7 +53,7 @@ SCM gig_make_signal(gsize n_slots, GigSignalSlot *slots, SCM *slot_values);
 GClosure *gig_signal_closure_new(SCM instance, GType g_type, const gchar *signal_name,
                                  SCM callback);
 
-void gig_init_signal();
+void gig_init_signal(void);
 
 G_END_DECLS
 #endif

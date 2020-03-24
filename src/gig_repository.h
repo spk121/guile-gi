@@ -25,4 +25,6 @@ void gig_repository_nested_infos(GIBaseInfo *base,
                                  gint *n_signals, GigRepositoryNested *signal);
 
 
+void gig_init_repository(void);
+
 #endif

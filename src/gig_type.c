@@ -68,10 +68,10 @@
  */
 
 // Maps GType to SCM (pointer)
-GHashTable *gig_type_gtype_hash = NULL;
-GHashTable *gig_type_name_hash = NULL;
+static GHashTable *gig_type_gtype_hash = NULL;
+static GHashTable *gig_type_name_hash = NULL;
 // Maps SCM to GType
-GHashTable *gig_type_scm_hash = NULL;
+static GHashTable *gig_type_scm_hash = NULL;
 
 SCM gig_enum_type;
 SCM gig_flags_type;

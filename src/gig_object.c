@@ -392,7 +392,7 @@ gig_i_scm_define_type(SCM s_type_name, SCM s_parent_type, SCM s_properties, SCM 
         n_signals = scm_c_length(s_signals);
         for (gsize i = 0; i < n_signals; i++) {
             GigSignalSpec *sspec = NULL;
-            sspec = gig_signalspec_from_obj(scm_c_list_ref(s_signals, i));;
+            sspec = gig_signalspec_from_obj(scm_c_list_ref(s_signals, i));
             if (sspec != NULL)
                 g_ptr_array_add(signals, sspec);
         }

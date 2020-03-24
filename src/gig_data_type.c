@@ -67,7 +67,7 @@ gig_type_meta_init_from_callable_info(GigTypeMeta *meta, GICallableInfo *ci)
     g_base_info_unref(type_info);
 }
 
-void
+static void
 add_params(GigTypeMeta *meta, gint n)
 {
     meta->params = g_new0(GigTypeMeta, n);

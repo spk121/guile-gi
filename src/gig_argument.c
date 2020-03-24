@@ -822,6 +822,13 @@ scm_to_c_ghashtable(S2C_ARG_DECL)
             equal_func = g_double_equal;
             key_destroy_func = g_free;
         }
+        else {
+            // Should be unreachable
+            g_warn_if_reached();
+            key_type = GIG_HASH_POINTER;
+            hash_func = NULL;
+            equal_func = NULL;
+        }
     }
     else {
         // POINTER TYPES
@@ -900,9 +907,10 @@ scm_to_c_ghashtable(S2C_ARG_DECL)
             g_hash_table_insert(hash, _keyval[0].v_pointer, _keyval[1].v_pointer);
         }
     }
-    if (meta->transfer == GI_TRANSFER_NOTHING)
+    if (meta->transfer == GI_TRANSFER_NOTHING) {
         // Later free the hash table
         ;
+    }
     arg->v_pointer = hash;
 }
 
@@ -1296,7 +1304,7 @@ c_enum_to_scm(C2S_ARG_DECL)
         if (meta->gtype == G_TYPE_FLAGS)
             *object = gig_uint_to_flags_with_info(arg->v_uint32, meta->enum_info);
         else
-            *object = gig_uint_to_flags(arg->v_int32, meta->gtype);
+            *object = gig_uint_to_flags(arg->v_uint32, meta->gtype);
         break;
     default:
         UNHANDLED;

@@ -35,7 +35,7 @@ typedef struct _GigFunction
     GigArgMap *amap;
 } GigFunction;
 
-GHashTable *function_cache;
+static GHashTable *function_cache;
 SCM ensure_generic_proc;
 SCM make_proc;
 SCM add_method_proc;
@@ -476,7 +476,7 @@ gig_callable_return_value(GigArgMap *amap,
                           GPtrArray *cinvoke_free_array,
                           GIArgument *out_args, GIArgument *out_boxes)
 {
-    SCM output;
+    SCM output = SCM_EOL;
 
     // Here is where I check to see if I used the allocated
     // output argument space created above.
@@ -623,8 +623,7 @@ function_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
 
     if (scm_is_false(scm_hook_empty_p(gig_before_function_hook)))
         scm_c_run_hook(gig_before_function_hook,
-                       scm_list_2(scm_from_utf8_string(gfn->name),
-                                  s_args));
+                       scm_list_2(scm_from_utf8_string(gfn->name), s_args));
 
     if (g_callable_info_is_method(gfn->function_info)) {
         self = gig_type_peek_object(scm_car(s_args));
