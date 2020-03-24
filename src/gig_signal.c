@@ -20,6 +20,7 @@
 #include "gig_flag.h"
 #include "gig_util.h"
 
+typedef void (*handler_func)(void *);
 static SCM signal_slot_syms[GIG_SIGNAL_SLOT_COUNT];
 
 SCM gig_signal_type;
@@ -88,7 +89,7 @@ gig_signalspec_from_obj(SCM obj)
 
     scm_dynwind_begin(0);
     spec = g_new0(GigSignalSpec, 1);
-    scm_dynwind_unwind_handler(gig_free_signalspec, spec, 0);
+    scm_dynwind_unwind_handler((handler_func) gig_free_signalspec, spec, 0);
     spec->return_type = scm_to_gtype(gig_signal_ref(obj, GIG_SIGNAL_SLOT_RETURN_TYPE));
     if (spec->return_type == G_TYPE_INVALID)
         scm_misc_error("%scm->signalspec", "signal ~A has no return type",

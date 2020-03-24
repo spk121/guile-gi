@@ -800,7 +800,7 @@ convert_output_args(GigArgMap *amap, const gchar *func_name, GIArgument *in, GIA
                     SCM output)
 {
     gig_debug_transfer("%s - convert_output_args", func_name);
-    gint s_output_pos, cin, cout;
+    gint s_output_pos;
 
     for (guint c_output_pos = 0; c_output_pos < amap->c_output_len; c_output_pos++) {
         if (!gig_amap_output_c2s(amap, c_output_pos, &s_output_pos))

@@ -23,7 +23,7 @@ G_BEGIN_DECLS
 
 typedef struct _GigSignalSpec
 {
-    const gchar *signal_name;
+    gchar *signal_name;
     GSignalFlags signal_flags;
     GSignalAccumulator accumulator;
     gpointer accu_data;

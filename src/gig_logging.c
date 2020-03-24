@@ -133,7 +133,8 @@ gig_log_to_journal(void)
     return SCM_UNSPECIFIED;
 }
 
-void gig_unprotect_func(gpointer func)
+void
+gig_unprotect_func(gpointer func)
 {
     scm_gc_unprotect_object(SCM_PACK_POINTER(func));
 }
@@ -141,7 +142,8 @@ void gig_unprotect_func(gpointer func)
 SCM kwd_log_level;
 
 static GLogWriterOutput
-gig_log_custom_helper(GLogLevelFlags log_level, const GLogField *fields, gsize n_fields, gpointer user_data)
+gig_log_custom_helper(GLogLevelFlags log_level, const GLogField *fields, gsize n_fields,
+                      gpointer user_data)
 {
     if (!logger_initialized) {
         scm_init_guile();
@@ -174,7 +176,7 @@ gig_log_custom_helper(GLogLevelFlags log_level, const GLogField *fields, gsize n
             scm_set_car_x(scm_cdr(it), scm_from_utf8_string(fields[i].value));
         else {
             scm_set_car_x(scm_cdr(it), scm_from_pointer((gpointer)fields[i].value, NULL));
-            gchar* length = g_strdup_printf("%s-length", key);
+            gchar *length = g_strdup_printf("%s-length", key);
             it = scm_cddr(it);
             scm_set_car_x(it, scm_from_utf8_keyword(length));
             scm_set_car_x(scm_cdr(it), scm_from_size_t(fields[i].length));

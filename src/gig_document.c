@@ -233,7 +233,7 @@ do_document(GIBaseInfo *info, const gchar *_namespace)
         char *name, *value;
         while (g_base_info_iterate_attributes(info, &iter, &name, &value))
             scm_printf(SCM_UNDEFINED, "%s=\"%s\"", name, value);
-        scm_printf(SCM_UNDEFINED, "/></scheme></member>", scheme_name);
+        scm_printf(SCM_UNDEFINED, "/></scheme></member>");
     }
         break;
     case GI_INFO_TYPE_FIELD:
