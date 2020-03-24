@@ -251,16 +251,16 @@ In some happy future, you might be able to get this from whatever method
 your operating system normally uses to download free software.
 
 If you are trying to build this from the Git repository, use
-@command{git clone} to copy the tree onto your computer. After closing
-the repository, you need to run @command{autoreconf} to generate a
-@file{configure} file.
+@command{git clone} to copy the tree onto your computer. After cloning
+the repository, run @command{./bootstrap} (or manually invoke @command{autoreconf})
+to create a @file{configure} file.
 
 If you are building from a @file{guile-gi.tar.gz}, unpack the file.
 
 From there, running @command{configure}, then @command{make}, then
 @command{sudo make install} will give you a running system.
 
-In the file archives, look for files named @file{INSTALL} for detailed
+In the file archives, look for a file named @file{INSTALL} for detailed
 instructions.
 
 @node Tutorial

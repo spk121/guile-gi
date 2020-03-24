@@ -59,16 +59,16 @@ Previous: <a href="The-Concept-of-Operations.html#The-Concept-of-Operations" acc
 your operating system normally uses to download free software.
 </p>
 <p>If you are trying to build this from the Git repository, use
-<code>git clone</code> to copy the tree onto your computer. After closing
-the repository, you need to run <code>autoreconf</code> to generate a
-<samp>configure</samp> file.
+<code>git clone</code> to copy the tree onto your computer. After cloning
+the repository, run <code>./bootstrap</code> (or manually invoke <code>autoreconf</code>)
+to create a <samp>configure</samp> file.
 </p>
 <p>If you are building from a <samp>guile-gi.tar.gz</samp>, unpack the file.
 </p>
 <p>From there, running <code>configure</code>, then <code>make</code>, then
 <code>sudo make install</code> will give you a running system.
 </p>
-<p>In the file archives, look for files named <samp>INSTALL</samp> for detailed
+<p>In the file archives, look for a file named <samp>INSTALL</samp> for detailed
 instructions.
 </p>
 
