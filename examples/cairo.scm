@@ -36,6 +36,7 @@
           (cairo-line-to ctx x C)
           (cairo-curve-to ctx x y x y A y)
           (cairo-fill ctx)
+          (cairo-destroy ctx)
           #t))))
 
 (let* ((window (make <GtkWindow> #:width-request 400 #:height-request 400))
