@@ -793,58 +793,12 @@ Guile-GI creates a special GOOPS type @code{<GType>} to hold these
 integer IDs.  There are some function that operate on @code{<GType>}
 integers that can be used to query information about the GObject class
 structure.
+This mapping is not complete, however.  Some datatypes on one end may have
+several (valid) representations on the other.  This includes for instance
+basic numeric types, which all map to some subtype of @code{<number>} with
+no size indicator, since Guile expands numbers as needed.
 
-The @code{(gi types)} module provides these variables and procedures.
-
-@defvar G_TYPE_NONE
-@defvarx G_TYPE_CHAR
-@defvarx G_TYPE_UCHAR
-@defvarx G_TYPE_BOOLEAN
-@defvarx G_TYPE_INT
-@defvarx G_TYPE_UINT
-@defvarx G_TYPE_INT64
-@defvarx G_TYPE_UINT64
-@defvarx G_TYPE_FLOAT
-@defvarx G_TYPE_DOUBLE
-These variables hold the GType integer values for the fundamental types.
-@end defvar
-
-@defvar G_TYPE_ENUM
-@defvarx G_TYPE_FLAGS
-@defvarx G_TYPE_STRUCT
-@defvarx G_TYPE_OBJECT
-These variables hold the GType integer values of the enum, flags,
-struct, and object base classes respectively.
-@end defvar
-
-@deffn Procedure get-gtype object
-Given @var{object}, this procedure returns its GType as an integer. It
-returns @code{#f} if the object does not have a type registered in The
-GLib Dynamic Type System.
-@end deffn
-
-@deffn Procedure gtype-get-scheme-type gtype
-Given @var{gtype}, a GType integer ID, this procedure will return the
-associated GOOPS class that holds instances of that type, of @code{#f}
-if there is no GOOPS class for that @var{gtype}.
-@end deffn
-
-@deffn Procedure gtype-get-name gtype
-Given @var{gtype} of type @code{<integer>}, this procedure returns
-a string with GObject's internal name for this type.  This may differ
-slightly from the name that Guile-GI gives to the type.
-@end deffn
-
-@deffn Procedure gtype-get-parent gtype
-@deffnx Procedure gtype-get-children gtype
-These procedures return the parent type and the child types of a
-specified @var{gtype} as GType integers.
-@end deffn
-
-@deffn Procedure gtype-is-a? object type
-Returns @code{#t} of @var{object} is an instance of a @var{type}.
-@end deffn
-
+@xref{GType Constants and Operations}
 
 @c -----------------------------------------------------------------
 @node GObject Methods
@@ -1107,37 +1061,6 @@ methods one-by-one.
 @example
 @include example-1.scm
 @end example
-
-As discussed in the previous section, loading the entirety of Gtk is
-slow, so we instead use primitives from @code{(gi repository)}.  In
-addition, there are some functions, that we didn't yet learn about, as
-well as the bindings created for @code{<GtkApplication>}, etc.
-
-@findex make
-
-First is @code{make}, which wraps and extends the @code{make} procedure
-found in GOOPS.  @xref{GOOPS,,,guile,The Guile reference manual} for
-info about GOOPS.  In short, the arguments -- normally used for slot
-initialization -- are used to initialize properties.  This is important,
-because the slots of the GOOPS object @strong{do not} map to properties,
-and neither do the properties map to slots.  @code{make} can also be
-used on some types, which do not derive from GObject, most notably it
-can be called without any arguments to allocate boxed types.
-
-@findex connect
-
-Next is @code{connect}, which connects Guile procedures as handlers to
-GObject signals.  Signals are roughly equal to hooks in Guile, except
-that they have an invisible default handler and hence two @code{connect}
-methods instead of a single @code{add-hook!} one.  Removing a connection
-also requires temporarily saving the return value (which is an integer
-id), so that it can be passed to @code{signal-handler-disconnect}.
-
-Finally, we have the bindings themselves, as mentioned before.
-@c @xref{GObject Types} on the mapping of types,
-@ref{GObject Methods} on how to use methods,
-@ref{GObject Signals} on how to use signals and
-@ref{GObject Properties} on how to use properties.
 
 @node Threads and Concurrency
 @section Threads and Concurrency
@@ -1404,6 +1327,7 @@ their @file{.typelib} files.
 @menu
 * Typelib Introspection::
 * Typelib Documentation::
+* GType Constants and Operations::
 * Enums and Flags::
 * Utilities::
 * More Stuff::
@@ -1543,6 +1467,60 @@ only end up in weird results, (potentially lots of) errors and user frustration.
 Use GTK-Doc instead, either directly or through @code{xsltproc},
 or use your own XSLT stylesheets.
 @end quotation
+@end deffn
+
+@c ----------------------------------------------------------------
+@node GType Constants and Operations
+@section GType Constants and Operations
+The @code{(gi types)} module provides these variables and procedures.
+
+@defvar G_TYPE_NONE
+@defvarx G_TYPE_CHAR
+@defvarx G_TYPE_UCHAR
+@defvarx G_TYPE_BOOLEAN
+@defvarx G_TYPE_INT
+@defvarx G_TYPE_UINT
+@defvarx G_TYPE_INT64
+@defvarx G_TYPE_UINT64
+@defvarx G_TYPE_FLOAT
+@defvarx G_TYPE_DOUBLE
+These variables hold the GType integer values for the fundamental types.
+@end defvar
+
+@defvar G_TYPE_ENUM
+@defvarx G_TYPE_FLAGS
+@defvarx G_TYPE_STRUCT
+@defvarx G_TYPE_OBJECT
+These variables hold the GType integer values of the enum, flags,
+struct, and object base classes respectively.
+@end defvar
+
+@deffn Procedure get-gtype object
+Given @var{object}, this procedure returns its GType as an integer. It
+returns @code{#f} if the object does not have a type registered in The
+GLib Dynamic Type System.
+@end deffn
+
+@deffn Procedure gtype-get-scheme-type gtype
+Given @var{gtype}, a GType integer ID, this procedure will return the
+associated GOOPS class that holds instances of that type, of @code{#f}
+if there is no GOOPS class for that @var{gtype}.
+@end deffn
+
+@deffn Procedure gtype-get-name gtype
+Given @var{gtype} of type @code{<integer>}, this procedure returns
+a string with GObject's internal name for this type.  This may differ
+slightly from the name that Guile-GI gives to the type.
+@end deffn
+
+@deffn Procedure gtype-get-parent gtype
+@deffnx Procedure gtype-get-children gtype
+These procedures return the parent type and the child types of a
+specified @var{gtype} as GType integers.
+@end deffn
+
+@deffn Procedure gtype-is-a? object type
+Returns @code{#t} of @var{object} is an instance of a @var{type}.
 @end deffn
 
 @c ----------------------------------------------------------------
