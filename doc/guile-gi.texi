@@ -767,9 +767,8 @@ Each GObject struct, union, or object has a place in the GObject
 single-inheritance class structure.  A @code{RadioButton} is a type of
 @code{Button} is a type of @code{Widget}, for example.
 
-The native pointer is ``hidden'' in the @code{ptr} slot of an
-object.
-
+The native pointer is ``hidden'' inside a slot of the object.
+If you need to access it, @pxref{Compatibility}.
 
 @c -----------------------------------------------------------------
 @menu
@@ -1330,6 +1329,7 @@ their @file{.typelib} files.
 * GType Constants and Operations::
 * Enums and Flags::
 * Utilities::
+* Compatibility::
 * More Stuff::
 @end menu
 
@@ -1814,6 +1814,48 @@ integer list.
 @deffnx Procedure list->long-vector lst
 Converts a list of integers into an SRFI-4 uniform numeric vector of
 signed integers.
+@end deffn
+
+@c ----------------------------------------------------------------
+@node Compatibility
+@section Compatibility
+@findex fiddle
+
+Guile-GI normally keeps pointers to the actual objects hidden (for valid
+concerns about reference handling), but in some instances it might be
+necessary to fiddle with them.  A procedure to do exactly that is
+defined in @code{(gi compat)}.
+@deffn Procedure fiddle (proc <procedure>) (object <GObject>)
+@deffnx Procedure fiddle (proc <procedure>) (boxed <GBoxed>)
+Apply @var{proc} on the internal pointer of @var{object} or
+@var{boxed}.
+@end deffn
+
+Oftentimes, @var{proc} is a procedure from a dynamic library, which takes
+exactly one argument (the pointer) and returns exactly one output (the
+Scheme object).  Defining many such conversions can be a bit verbose,
+so we defined a helper for that.
+@deffn Procedure dynamic-fiddler name library
+Load @var{name} from @var{library} and convert it to a function, that
+takes exactly one pointer and returns a Scheme object.
+@end deffn
+
+@cindex Guile-Cairo
+One instance, where the above are necessary, is the cairo library,
+whose lack of introspection has caused many language bindings to be written
+without it.
+When loading @code{(gi compat)} in an environment, where
+@code{(cairo)} is available, it will automatically create conversion
+functions for it.
+
+@deffn Procedure context->cairo context
+@deffnx Procedure surface->cairo surface
+@deffnx Procedure font-face->cairo font-face
+@deffnx Procedure scaled-font->cairo scaled-font
+Convert @var{context}, @var{surface}, @var{font-face} or @var{scaled-font}
+to the respective @code{(cairo)} smob type.
+The conversion adds a reference count to the object, so it should
+be freed manually using the correct @code{-destroy} function.
 @end deffn
 
 @c ----------------------------------------------------------------
