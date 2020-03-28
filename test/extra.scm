@@ -5,10 +5,10 @@
              (ice-9 receive)
              (system foreign))
 
-(use-typelibs ("Extra" "1.0")
+(use-typelibs ("GObject" "2.0")
+              ("Extra" "1.0")
               (("GLib" "2.0")
-               #:renamer (protect* '(test-equal test-assert test-skip format)))
-              ("GObject" "2.0"))
+               #:renamer (protect* '(test-equal test-assert test-skip format))))
 
 (test-begin "extra")
 
