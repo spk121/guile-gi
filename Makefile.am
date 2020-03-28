@@ -191,6 +191,7 @@ nodist_pkgguilesite_DATA = \
 
 dist_pkgguilesite_DATA = \
   module/gi/core-generics.scm \
+  module/gi/compat.scm \
   module/gi/documentation.scm \
   module/gi/logging.scm \
   module/gi/oop.scm \
