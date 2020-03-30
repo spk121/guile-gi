@@ -25,32 +25,36 @@
   (proc (slot-ref fundamental 'value)))
 
 (define-method (fiddle (proc <procedure>) (boxed <GBoxed>))
+  "Apply PROC on the raw pointer of BOXED."
   (%fiddle proc boxed))
 
 (define-method (fiddle (proc <procedure>) (object <GObject>))
+  "Apply PROC on the raw pointer of OBJECT."
   (%fiddle proc object))
 
 (define (dynamic-fiddler name lib)
+  "Load NAME from LIB and convert it into a procedure, that takes <pointer>
+and returns a generic Scheme object."
   (and lib
        (compose pointer->scm
                 (pointer->procedure '* (dynamic-func name lib) (list '*)))))
 
-(define %cairo
+(define %libcairo
   (and-let* ((module (resolve-module '(cairo config) #:ensure #f))
              (libcairo (module-ref module '*cairo-lib-path*)))
     (false-if-exception (dynamic-link libcairo))))
 
 (define context->cairo
-  (cute fiddle (dynamic-fiddler "scm_from_cairo" %cairo) <>))
+  (cute fiddle (dynamic-fiddler "scm_from_cairo" %libcairo) <>))
 
 (define surface->cairo
-  (cute fiddle (dynamic-fiddler "scm_from_cairo_surface" %cairo) <>))
+  (cute fiddle (dynamic-fiddler "scm_from_cairo_surface" %libcairo) <>))
 
 (define font-face->cairo
-  (cute fiddle (dynamic-fiddler "scm_from_cairo_font_face" %cairo) <>))
+  (cute fiddle (dynamic-fiddler "scm_from_cairo_font_face" %libcairo) <>))
 
 (define scaled-font->cairo
-  (cute fiddle (dynamic-fiddler "scm_from_cairo_scaled_font" %cairo) <>))
+  (cute fiddle (dynamic-fiddler "scm_from_cairo_scaled_font" %libcairo) <>))
 
-(when %cairo
+(when %libcairo
   (export context->cairo surace->cairo font-face->cairo scaled-font->cairo))
