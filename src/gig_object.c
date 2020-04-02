@@ -431,7 +431,7 @@ signal_lookup(const char *proc, GObject *self,
 }
 
 static SCM
-gig_i_scm_connect(SCM self, SCM signal, SCM sdetail, SCM callback, SCM s_after, SCM swap_data)
+gig_i_scm_connect(SCM self, SCM signal, SCM sdetail, SCM callback, SCM s_after, SCM inout_mask)
 {
     GObject *obj;
     gboolean after;
@@ -449,7 +449,7 @@ gig_i_scm_connect(SCM self, SCM signal, SCM sdetail, SCM callback, SCM s_after, 
     signal_lookup("%connect", obj, signal, sdetail, &sigid, &query_info, &detail);
 
     after = !SCM_UNBNDP(s_after) && scm_to_bool(s_after);
-    closure = gig_closure_new(callback, SCM_UNDEFINED);
+    closure = gig_closure_new(callback, inout_mask);
 
     handlerid = g_signal_connect_closure_by_id(obj, sigid, detail, closure, after);
 

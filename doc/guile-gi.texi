@@ -867,10 +867,10 @@ is supposed to take a single argument.
 This argument -- @code{app} -- is supplied by the caller, as are all
 arguments to signals.
 
-@deffn Procedure connect obj (signal <signal>) (handler <procedure>)
-@deffnx Procedure connect obj (signal <signal>) (detail <symbol>) (handler <procedure>)
-@deffnx Procedure connect-after obj (signal <signal>) (handler <procedure>)
-@deffnx Procedure connect-after obj (signal <signal>) (detail <symbol>) (handler <procedure>)
+@deffn Procedure connect obj (signal <signal>) (handler <procedure>) #:key after? detail inout-mask
+@deffnx Procedure connect obj (signal <signal>) (detail <symbol>) (handler <procedure>) ...
+@deffnx Procedure connect-after obj (signal <signal>) (handler <procedure>) ...
+@deffnx Procedure connect-after obj (signal <signal>) (detail <symbol>) (handler <procedure>) ...
 Hooks @var{handler} to emissions of @var{signal}.  If @var{detail} is
 supplied, only emissions in which the detail matches it are considered.
 

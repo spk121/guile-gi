@@ -100,7 +100,7 @@ gig_closure_new(SCM callback, SCM inout_mask)
     g_closure_set_marshal(closure, _gig_closure_marshal);
     // FIXME: what about garbage collection?
     gig_closure->callback = scm_gc_protect_object(callback);
-    if (SCM_UNBNDP(inout_mask))
+    if (SCM_UNBNDP(inout_mask) || scm_is_false(inout_mask))
         gig_closure->inout_mask = SCM_UNDEFINED;
     else
         gig_closure->inout_mask = scm_gc_protect_object(inout_mask);

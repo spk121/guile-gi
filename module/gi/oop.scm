@@ -15,6 +15,7 @@
 
 (define-module (gi oop)
   #:use-module ((gi core-generics) #:select (connect))
+  #:use-module (ice-9 optargs)
   #:use-module (oop goops)
   #:use-module (srfi srfi-26)
   #:use-module (system foreign)
@@ -91,31 +92,34 @@
                               ((eq? b-type elt) #f)
                               (else (lp (cdr cpl))))))))))))))
 
-(define (%connect-generic obj signal detail handler after)
-  (let ((real-signal (%find-signal signal (class-of obj))))
-    (if real-signal (%connect obj real-signal detail handler after)
+(define* (connect-1 obj signal handler #:key after? detail inout-mask)
+  (let ((real-signal (if (is-a? signal <signal>)
+                         signal
+                         (%find-signal signal (class-of obj)))))
+    (if real-signal
+        (%connect obj real-signal detail handler after? inout-mask)
         (error "~S has no signal in ~S" obj signal))))
 
-(define-method (connect obj (signal <generic>) (handler <procedure>))
-  (%connect-generic obj signal #f handler #f))
+(define-method (connect obj (signal <generic>) (handler <procedure>) . rest)
+  (apply connect-1 obj signal handler rest))
 
-(define-method (connect obj (signal <generic>) (detail <symbol>) (handler <procedure>))
-  (%connect-generic obj signal detail handler #f))
+(define-method (connect obj (signal <generic>) (detail <symbol>) (handler <procedure>) . rest)
+  (apply connect-1 obj signal handler #:detail detail rest))
 
-(define-method (connect obj (signal <signal>) (handler <procedure>))
-  (%connect obj signal #f handler))
+(define-method (connect obj (signal <signal>) (handler <procedure>) . rest)
+  (apply connect-1 obj signal handler rest))
 
-(define-method (connect obj (signal <signal>) (detail <symbol>) (handler <procedure>))
-  (%connect obj signal detail handler))
+(define-method (connect obj (signal <signal>) (detail <symbol>) (handler <procedure>) . rest)
+  (apply connect-1 obj signal handler #:detail detail rest))
 
-(define-method (connect-after obj (signal <generic>) (handler <procedure>))
-  (%connect-generic obj signal #f handler #t))
+(define-method (connect-after obj (signal <generic>) (handler <procedure>) . rest)
+  (apply connect-1 obj signal handler #:after? #t rest))
 
-(define-method (connect-after obj (signal <generic>) (detail <symbol>) (handler <procedure>))
-  (%connect-generic obj signal detail handler #t))
+(define-method (connect-after obj (signal <generic>) (detail <symbol>) (handler <procedure>) . rest)
+  (apply connect-1 obj signal handler #:after? #t #:detail detail rest))
 
-(define-method (connect-after obj (signal <signal>) (handler <procedure>))
-  (%connect obj signal #f handler #t))
+(define-method (connect-after obj (signal <signal>) (handler <procedure>) . rest)
+  (apply connect-1 obj signal handler #:after? #t rest))
 
-(define-method (connect-after obj (signal <signal>) (detail <symbol>) (handler <procedure>))
-  (%connect obj signal detail handler #t))
+(define-method (connect-after obj (signal <signal>) (detail <symbol>) (handler <procedure>) . rest)
+  (apply connect-1 obj signal handler #:after? #t #:detail detail rest))
