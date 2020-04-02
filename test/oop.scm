@@ -64,6 +64,20 @@
     (set! (test-param object) -400)
     (test-param object)))
 
+(test-equal "bind-property"
+  -100
+  (let ((object2 (make <TestClass>))
+        (transformer (procedure->closure
+                      (lambda (binding src dst) (values #t (- src)))
+                      #*001)))
+    (bind-property-full object "test-param"
+                        object2 "test-param"
+                        (list->binding-flags '(default))
+                        transformer
+                        transformer)
+    (set! (test-param object) 100)
+    (test-param object2)))
+
 (test-assert "simple signal"
   (let ((success #f))
     (connect object test-signal (lambda _ (set! success #t)))
