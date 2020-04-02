@@ -1,7 +1,8 @@
 (use-modules (gi)
              (gi types)
              (gi repository) (srfi srfi-64) (oop goops)
-             (ice-9 hash-table))
+             (ice-9 hash-table)
+             (ice-9 receive))
 
 (require "GLib" "2.0")
 (load-by-name "GLib" "MainLoop")
@@ -214,5 +215,19 @@
   ((apply (procedure->closure *)
           G_TYPE_INT
           (map int->value '(21 2)))))
+
+(test-equal "inout-closure"
+  '(42 42 42)
+  (map (cute <>)
+       (call-with-values
+           (lambda ()
+             (apply (procedure->closure
+                     (lambda (a b)
+                       (let ((c (* a b)))
+                         (values c c c)))
+                     #*11)
+                    (cons G_TYPE_INT #*11)
+                    (map int->value '(21 2))))
+         list)))
 
 (test-end "value")

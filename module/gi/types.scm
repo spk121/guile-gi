@@ -14,6 +14,7 @@
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 (define-module (gi types)
+  #:use-module (ice-9 match)
   #:use-module (oop goops)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-2)
@@ -64,7 +65,12 @@
 
 (define-method (initialize (closure <GClosure>) initargs)
   (next-method)
-  (slot-set! closure 'procedure (lambda (type . args) (%invoke-closure closure type args))))
+  (slot-set! closure 'procedure
+             (match-lambda*
+               (((type . out-mask) args ...)
+                (%invoke-closure closure type out-mask args))
+               ((type args ...)
+                (%invoke-closure closure type #f args)))))
 
 ;;; Enum conversions
 
