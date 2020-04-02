@@ -9,6 +9,7 @@ struct _GigClosure
 {
     GClosure closure;
     SCM callback;
+    SCM inout_mask;
     // potential flags if we want to use marshal_data for various purposes
     // (e.g. storing signal info)
     guint16 reserved;
@@ -21,6 +22,11 @@ _gig_closure_invalidate(gpointer data, GClosure *closure)
     SCM old_callback = pc->callback;
     pc->callback = SCM_BOOL_F;
     scm_gc_unprotect_object(old_callback);
+    if (!SCM_UNBNDP(pc->inout_mask)) {
+        SCM inout_mask = pc->inout_mask;
+        pc->inout_mask = SCM_UNDEFINED;
+        scm_gc_unprotect_object(inout_mask);
+    }
 }
 
 static void
@@ -35,7 +41,7 @@ _gig_closure_marshal(GClosure *closure, GValue *ret, guint n_params, const GValu
         scm_set_car_x(iter, gig_value_as_scm(params + i, FALSE));
     SCM _ret = scm_apply_0(pc->callback, args);
 
-    if (G_IS_VALUE(ret) && gig_value_from_scm(ret, _ret) != 0) {
+    if (G_IS_VALUE(ret) && gig_value_from_scm(ret, scm_c_value_ref(_ret, 0)) != 0) {
         GType ret_type = G_VALUE_TYPE(ret);
 
         if (ret_type == G_TYPE_INVALID)
@@ -50,10 +56,43 @@ _gig_closure_marshal(GClosure *closure, GValue *ret, guint n_params, const GValu
                                SCM_EOL);
         }
     }
+    if (!SCM_UNBNDP(pc->inout_mask)) {
+        gsize idx = 1, nvalues = scm_c_nvalues(_ret) - 1, offset, length;
+        gssize pos = 0, inc;
+        scm_t_array_handle handle;
+        const guint32 *bits;
+        int err;
+
+        if (nvalues > n_params)
+            scm_misc_error(NULL, "~S returned more values than we can unpack",
+                           scm_list_1(pc->callback));
+
+        gsize bit_count = scm_to_size_t(scm_bit_count(SCM_BOOL_T, pc->inout_mask));
+        if (bit_count < nvalues)
+            scm_misc_error(NULL, "~S returned more values than we should unpack",
+                           scm_list_1(pc->callback));
+        if (bit_count > nvalues)
+            scm_misc_error(NULL, "~S returned less values than we should unpack",
+                           scm_list_1(pc->callback));
+
+
+        bits = scm_bitvector_elements(pc->inout_mask, &handle, &offset, &length, &inc);
+        pos = offset;
+
+        for (guint i = 0; i <= n_params; i++, pos += inc) {
+            gsize word_pos = pos / 32;
+            gsize mask = 1L << (pos % 32);
+
+            if (bits[word_pos] & mask)
+                g_warn_if_fail(!gig_value_from_scm((GValue*)(params + i),
+                                                   scm_c_value_ref(_ret, idx++)));
+        }
+        scm_array_handle_release(&handle);
+    }
 }
 
 GClosure *
-gig_closure_new(SCM callback)
+gig_closure_new(SCM callback, SCM inout_mask)
 {
     GClosure *closure = g_closure_new_simple(sizeof(GigClosure), NULL);
     GigClosure *gig_closure = (GigClosure *)closure;
@@ -61,6 +100,10 @@ gig_closure_new(SCM callback)
     g_closure_set_marshal(closure, _gig_closure_marshal);
     // FIXME: what about garbage collection?
     gig_closure->callback = scm_gc_protect_object(callback);
+    if (SCM_UNBNDP(inout_mask))
+        gig_closure->inout_mask = SCM_UNDEFINED;
+    else
+        gig_closure->inout_mask = scm_gc_protect_object(inout_mask);
     return closure;
 }
 
@@ -103,11 +146,14 @@ invoke_closure(SCM closure, SCM return_type, SCM args)
 }
 
 static SCM
-procedure_to_closure(SCM procedure)
+procedure_to_closure(SCM procedure, SCM inout_mask)
 {
     SCM_ASSERT_TYPE(scm_is_true(scm_procedure_p(procedure)), procedure, SCM_ARG1,
                     "procedure->closure", "procedure");
-    GClosure *cls = gig_closure_new(procedure);
+    SCM_ASSERT_TYPE(SCM_UNBNDP(inout_mask) ||
+                    scm_is_true(scm_bitvector_p(inout_mask)), procedure, SCM_ARG2,
+                    "procedure->closure", "bitvector");
+    GClosure *cls = gig_closure_new(procedure, inout_mask);
     g_closure_ref(cls);
     g_closure_sink(cls);
     return gig_type_transfer_object(G_TYPE_CLOSURE, cls, GI_TRANSFER_EVERYTHING);
@@ -116,6 +162,6 @@ procedure_to_closure(SCM procedure)
 void
 gig_init_closure()
 {
-    scm_c_define_gsubr("procedure->closure", 1, 0, 0, procedure_to_closure);
+    scm_c_define_gsubr("procedure->closure", 1, 1, 0, procedure_to_closure);
     scm_c_define_gsubr("%invoke-closure", 3, 0, 0, invoke_closure);
 }

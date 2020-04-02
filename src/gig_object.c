@@ -449,7 +449,7 @@ gig_i_scm_connect(SCM self, SCM signal, SCM sdetail, SCM callback, SCM s_after, 
     signal_lookup("%connect", obj, signal, sdetail, &sigid, &query_info, &detail);
 
     after = !SCM_UNBNDP(s_after) && scm_to_bool(s_after);
-    closure = gig_closure_new(callback);
+    closure = gig_closure_new(callback, SCM_UNDEFINED);
 
     handlerid = g_signal_connect_closure_by_id(obj, sigid, detail, closure, after);
 
