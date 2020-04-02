@@ -208,6 +208,20 @@ gig_value_from_scm(GValue *value, SCM obj)
         else
             return GIG_VALUE_WRONG_TYPE;
     }
+    case G_TYPE_BOXED:
+    {
+        if (G_VALUE_HOLDS(value, G_TYPE_VALUE)) {
+            GValue *n_value = g_value_get_boxed(value);
+            return gig_value_from_scm(n_value, obj);
+        }
+        else if (G_VALUE_HOLDS(value, G_TYPE_GSTRING)) {
+            g_critical("unhandled value type");
+            return GIG_VALUE_WRONG_TYPE;
+        }
+        else {
+            g_value_set_boxed(value, gig_type_peek_object(obj));
+        }
+    }
 
     case G_TYPE_INTERFACE:
     case G_TYPE_OBJECT:
