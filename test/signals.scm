@@ -331,8 +331,7 @@
          (instance (make <ClassOscar>)))
     (connect-after instance signalOscar
                    (lambda (obj a b)
-                     (values 1 #t))
-                   #:inout-mask #*011)
+                     (values 1 #t)))
     (call-with-values (lambda () (signalOscar instance 0 #f)) list)))
 
 

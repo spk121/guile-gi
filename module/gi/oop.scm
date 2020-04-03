@@ -94,12 +94,12 @@
                               ((eq? b-type elt) #f)
                               (else (lp (cdr cpl))))))))))))))
 
-(define* (connect-1 obj signal handler #:key after? detail inout-mask)
+(define* (connect-1 obj signal handler #:key after? detail)
   (let ((real-signal (if (is-a? signal <signal>)
                          signal
                          (%find-signal signal (class-of obj)))))
     (if real-signal
-        (%connect obj real-signal detail handler after? inout-mask)
+        (%connect obj real-signal detail handler after?)
         (error "~S has no signal in ~S" obj signal))))
 
 (define-method (connect obj (signal <generic>) (handler <procedure>) . rest)
