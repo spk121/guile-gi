@@ -207,6 +207,7 @@ gig_value_from_scm(GValue *value, SCM obj)
             g_value_set_object(value, gig_type_peek_object(obj));
         else
             return GIG_VALUE_WRONG_TYPE;
+        break;
     }
     case G_TYPE_BOXED:
     {
@@ -218,9 +219,9 @@ gig_value_from_scm(GValue *value, SCM obj)
             g_critical("unhandled value type");
             return GIG_VALUE_WRONG_TYPE;
         }
-        else {
+        else
             g_value_set_boxed(value, gig_type_peek_object(obj));
-        }
+        break;
     }
 
     case G_TYPE_INTERFACE:
@@ -255,7 +256,13 @@ gig_value_from_scm_with_error(GValue *value, SCM obj, const gchar *subr, gint po
     case 0:
         return;
     case GIG_VALUE_WRONG_TYPE:
-        scm_wrong_type_arg(subr, pos, obj);
+    {
+        GType value_type = G_VALUE_TYPE(value);
+        if (value_type != G_TYPE_NONE)
+            scm_wrong_type_arg_msg(subr, pos, obj, g_type_name(value_type));
+        else
+            scm_wrong_type_arg(subr, pos, obj);
+    }
     case GIG_VALUE_OUT_OF_RANGE:
         scm_out_of_range_pos(subr, obj, scm_from_int(pos));
     }
