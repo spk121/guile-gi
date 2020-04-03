@@ -57,21 +57,22 @@ _gig_closure_marshal(GClosure *closure, GValue *ret, guint n_params, const GValu
         }
     }
     if (!SCM_UNBNDP(pc->inout_mask)) {
-        gsize idx = 1, nvalues = scm_c_nvalues(_ret) - 1, offset, length;
+        gsize idx, nvalues = scm_c_nvalues(_ret), offset, length;
         gssize pos = 0, inc;
         scm_t_array_handle handle;
         const guint32 *bits;
         int err;
+        idx = G_IS_VALUE(ret) ? 1 : 0;
 
-        if (nvalues > n_params)
+        if (nvalues - idx > n_params)
             scm_misc_error(NULL, "~S returned more values than we can unpack",
                            scm_list_1(pc->callback));
 
         gsize bit_count = scm_to_size_t(scm_bit_count(SCM_BOOL_T, pc->inout_mask));
-        if (bit_count < nvalues)
+        if (bit_count < nvalues - idx)
             scm_misc_error(NULL, "~S returned more values than we should unpack",
                            scm_list_1(pc->callback));
-        if (bit_count > nvalues)
+        if (bit_count > nvalues - idx)
             scm_misc_error(NULL, "~S returned less values than we should unpack",
                            scm_list_1(pc->callback));
 
