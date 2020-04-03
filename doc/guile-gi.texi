@@ -875,7 +875,16 @@ Hooks @var{handler} to emissions of @var{signal}.  If @var{detail} is
 supplied, only emissions in which the detail matches it are considered.
 
 @code{connect-after} works like @code{connect}, except that the handler
-is run @emph{after} the main handling code.
+is run @emph{after} the main handling code.  The same can be achieved by
+setting @code{after?} to @code{#t}.
+
+@code{inout-mask} is a bitmask describing which arguments will also be set
+from the outputs of the signal handler.  Counting from the left, each set
+bit takes up one value from a multi-valued return.
+For example, in a signal with a return type other than G_TYPE_NONE,
+if you set bits 1, 3 and 7 (counting from one) and return four values,
+the signal returns the first, the first parameter will be set to the second,
+the third to the third and the seventh to the fourth.
 @end deffn
 
 Signal objects can also be used to emit signals. Note that you shouldn't
@@ -918,6 +927,11 @@ An optional signal accumulator procedure. @xref{Signal Accumulators}.
 Signal flags, a logical or of one or more of
 @code{SIGNAL_RUN_FIRST}, @code{SIGNAL_RUN_LAST},
 @code{SIGNAL_RUN_CLEANUP}, @code{SIGNAL_NO_RECURSE}, etc.
+@defvr Slot output-mask
+A bitmask, describing which argument should be returned to the user when
+calling the signal as a procedure.
+Note, that to set those from a handler, you need to use the
+@code{#:inout-mask} argument.
 @c TODO: refer to the GObject manual
 @end defvr
 
