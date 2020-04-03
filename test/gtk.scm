@@ -21,12 +21,12 @@
   (test-skip most-positive-fixnum))
 
 (test-assert "load Entry"
-  (load-by-name? "Gtk" "Entry"))
+  (every load-by-name? '("Gtk" "Gtk") '("Editable" "Entry")))
 
 (let ((entry #f))
   (if (test-passed?)
       (set! entry (entry:new))
-      (test-skip 3))
+      (test-skip 4))
 
   (test-assert "entry alignment 0"
     (begin
@@ -41,7 +41,11 @@
   (test-assert "entry alignment 1"
     (begin
       (set-alignment entry 1)
-      (= (get-alignment entry) 1))))
+      (= (get-alignment entry) 1)))
+
+  (test-equal "insert"
+    5
+    (editable:insert-text entry "Lorem ipsum dolor sit amet" 5 0)))
 
 (test-assert "load Box"
   (every load-by-name? '("Gtk" "Gtk") '("Box" "Orientation")))
