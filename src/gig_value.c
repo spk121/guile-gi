@@ -258,7 +258,7 @@ gig_value_from_scm_with_error(GValue *value, SCM obj, const gchar *subr, gint po
     case GIG_VALUE_WRONG_TYPE:
     {
         GType value_type = G_VALUE_TYPE(value);
-        if (value_type != G_TYPE_NONE)
+        if (value_type != G_TYPE_NONE && g_type_name(value_type))
             scm_wrong_type_arg_msg(subr, pos, obj, g_type_name(value_type));
         else
             scm_wrong_type_arg(subr, pos, obj);
@@ -471,8 +471,10 @@ gig_value_set(SCM where, SCM what)
 SCM
 gig_value_set_type(SCM where, SCM what)
 {
-    GValue *value = gig_type_peek_typed_object(where, gig_value_type);
     GType type = scm_to_gtype(what);
+    SCM_ASSERT_TYPE(!G_TYPE_IS_ABSTRACT(type), what, SCM_ARG2,
+                    "%set-type!", "instantiable GType");
+    GValue *value = gig_type_peek_typed_object(where, gig_value_type);
     g_value_unset(value);
     g_value_init(value, type);
     return SCM_UNSPECIFIED;
