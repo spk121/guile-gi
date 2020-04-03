@@ -227,15 +227,36 @@ proc4signal(GISignalInfo *info, const gchar *name, SCM self_type, int *req, int 
     (*req)++;
 
     make_formals(info, amap, *req + *opt, self_type, formals, specializers);
-    gig_amap_free(amap);
 
-    GigSignalSlot slots[] = { GIG_SIGNAL_SLOT_NAME };
-    SCM values[1];
+    GigSignalSlot slots[] = { GIG_SIGNAL_SLOT_NAME, GIG_SIGNAL_SLOT_OUTPUT_MASK };
+    SCM values[2];
 
     // use base_info name without transformations, otherwise we could screw things up
     values[0] = scm_from_utf8_string(g_base_info_get_name(info));
+    values[1] = scm_make_bitvector(scm_from_int(*req + *opt), SCM_BOOL_F);
 
-    SCM signal = gig_make_signal(1, slots, values);
+    gsize offset, length;
+    gssize pos = 0, inc;
+    scm_t_array_handle handle;
+    guint32 *bits = scm_bitvector_writable_elements(values[1], &handle, &offset, &length, &inc);
+    pos = offset + inc;
+
+    /* Set up output mask.
+     * This does not seem to affect argument handling all that much, but
+     * we can probably take some work off the user when it comes to setting up
+     * handlers.
+     */
+    for (gint i = 1; i < *req + *opt; i++, pos += inc) {
+        gsize word_pos = pos / 32;
+        gsize mask = 1L << (pos % 32);
+        GigArgMapEntry *entry = gig_amap_get_input_entry_by_s(amap, i - 1);
+        if (entry->is_s_output)
+            bits[word_pos] |= mask;
+    }
+    scm_array_handle_release(&handle);
+    gig_amap_free(amap);
+
+    SCM signal = gig_make_signal(2, slots, values);
 
     // check for collisions
     SCM current_definition = current_module_definition(scm_from_utf8_symbol(name));
