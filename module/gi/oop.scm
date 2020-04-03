@@ -65,7 +65,9 @@
   (return-type #:init-keyword #:return-type
                #:init-value 0)
   (param-types #:init-keyword #:param-types
-               #:init-value '()))
+               #:init-value '())
+  (output-mask #:init-keyword #:output-mask
+               #:init-value #f))
 
 (define make-signal (cute make <signal> <...>))
 

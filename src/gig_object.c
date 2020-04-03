@@ -464,6 +464,7 @@ gig_i_scm_emit(SCM self, SCM signal, SCM s_detail, SCM args)
     GSignalQuery query_info;
     guint sigid;
     GQuark detail;
+    SCM ret = SCM_EOL;
 
     SCM_ASSERT(SCM_IS_A_P(self, gig_object_type), self, SCM_ARG1, "%emit");
     SCM_ASSERT(SCM_IS_A_P(signal, gig_signal_type), signal, SCM_ARG2, "%emit");
@@ -488,19 +489,50 @@ gig_i_scm_emit(SCM self, SCM signal, SCM s_detail, SCM args)
     SCM iter = args;
     for (guint i = 0; i < query_info.n_params; i++, iter = scm_cdr(iter)) {
         g_value_init(values + i + 1, query_info.param_types[i]);
-        gig_value_from_scm_with_error(values + i + 1, iter, "%emit", SCM_ARGn);
+        gig_value_from_scm_with_error(values + i + 1, scm_car(iter), "%emit", SCM_ARGn);
     }
 
     if (query_info.return_type != G_TYPE_NONE)
         g_value_init(&retval, query_info.return_type);
     g_debug("%s - emitting signal", g_signal_name(sigid));
     g_signal_emitv(values, sigid, detail, &retval);
-    g_free(values);
 
     if (query_info.return_type != G_TYPE_NONE)
-        return gig_value_as_scm(&retval, FALSE);
-    else
+        ret = scm_cons(gig_value_as_scm(&retval, FALSE), ret);
+
+    SCM output_mask = gig_signal_ref(signal, GIG_SIGNAL_SLOT_OUTPUT_MASK);
+    if (scm_is_true(scm_bitvector_p(output_mask))) {
+        gsize offset, length;
+        gssize pos = 0, inc;
+        scm_t_array_handle handle;
+        const guint32 *bits;
+        int err;
+
+        gsize bit_count = scm_to_size_t(scm_bit_count(SCM_BOOL_T, output_mask));
+        if (bit_count > query_info.n_params + 1)
+            scm_misc_error(NULL, "~S returned less values than we should unpack",
+                           scm_list_1(signal));
+
+        bits = scm_bitvector_elements(output_mask, &handle, &offset, &length, &inc);
+        pos = offset;
+
+        for (guint i = 0; i < query_info.n_params + 1; i++, pos += inc) {
+            gsize word_pos = pos / 32;
+            gsize mask = 1L << (pos % 32);
+
+            if (bits[word_pos] & mask)
+                ret = scm_cons(gig_value_as_scm(values + i, FALSE), ret);
+        }
+        scm_array_handle_release(&handle);
+        ret = scm_reverse_x(ret, SCM_EOL);
+    }
+    for (gsize narg = 0; narg < query_info.n_params + 1; narg++)
+        g_value_unset(values + narg);
+    g_free(values);
+    if (scm_is_null(ret))
         return SCM_UNSPECIFIED;
+    else
+        return scm_values(ret);
 }
 
 static SCM sym_value;

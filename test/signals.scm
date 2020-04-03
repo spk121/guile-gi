@@ -318,4 +318,22 @@
        called
        ret))))
 
+(test-equal "output signal"
+  '(1 #t)
+  (let* ((signalOscar (make-signal #:name "signal-oscar"
+                                   #:return-type G_TYPE_NONE
+                                   #:param-types (list G_TYPE_INT G_TYPE_BOOLEAN)
+                                   #:output-mask #*011))
+         (<ClassOscar> (register-type "ClassOscar"
+                                      <GObject>
+                                      #f
+                                      (list signalOscar)))
+         (instance (make <ClassOscar>)))
+    (connect-after instance signalOscar
+                   (lambda (obj a b)
+                     (values 1 #t))
+                   #:inout-mask #*011)
+    (call-with-values (lambda () (signalOscar instance 0 #f)) list)))
+
+
 (test-end "signals")

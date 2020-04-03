@@ -187,6 +187,7 @@ gig_init_signal()
     signal_slot_syms[GIG_SIGNAL_SLOT_ACCUMULATOR] = scm_from_utf8_symbol("accumulator");
     signal_slot_syms[GIG_SIGNAL_SLOT_RETURN_TYPE] = scm_from_utf8_symbol("return-type");
     signal_slot_syms[GIG_SIGNAL_SLOT_PARAM_TYPES] = scm_from_utf8_symbol("param-types");
+    signal_slot_syms[GIG_SIGNAL_SLOT_OUTPUT_MASK] = scm_from_utf8_symbol("output-mask");
 
     signal_accu_first_wins = scm_from_utf8_symbol("first-wins");
     signal_accu_true_handled = scm_from_utf8_symbol("true-handled");
