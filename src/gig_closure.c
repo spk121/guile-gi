@@ -69,13 +69,15 @@ _gig_closure_marshal(GClosure *closure, GValue *ret, guint n_params, const GValu
                            scm_list_1(pc->callback));
 
         gsize bit_count = scm_to_size_t(scm_bit_count(SCM_BOOL_T, pc->inout_mask));
+        if (bit_count == 0 && nvalues == 1)
+            /* fast path */
+            return;
         if (bit_count < nvalues - idx)
             scm_misc_error(NULL, "~S returned more values than we should unpack",
                            scm_list_1(pc->callback));
         if (bit_count > nvalues - idx)
             scm_misc_error(NULL, "~S returned less values than we should unpack",
                            scm_list_1(pc->callback));
-
 
         bits = scm_bitvector_elements(pc->inout_mask, &handle, &offset, &length, &inc);
         pos = offset;
