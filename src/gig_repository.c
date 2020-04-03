@@ -110,8 +110,10 @@ gig_repository_nested_infos(GIBaseInfo *base,
     case GI_INFO_TYPE_INTERFACE:
         *n_methods = g_interface_info_get_n_methods(base);
         *method = (GigRepositoryNested)g_interface_info_get_method;
-        *n_properties = *n_signals = 0;
-        *property = *signal = NULL;
+        *n_signals = g_interface_info_get_n_signals(base);
+        *signal = (GigRepositoryNested)g_interface_info_get_signal;
+        *n_properties = g_interface_info_get_n_properties(base);
+        *property = (GigRepositoryNested)g_interface_info_get_property;
         break;
     case GI_INFO_TYPE_OBJECT:
         *n_methods = g_object_info_get_n_methods(base);
