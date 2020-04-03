@@ -927,12 +927,13 @@ An optional signal accumulator procedure. @xref{Signal Accumulators}.
 Signal flags, a logical or of one or more of
 @code{SIGNAL_RUN_FIRST}, @code{SIGNAL_RUN_LAST},
 @code{SIGNAL_RUN_CLEANUP}, @code{SIGNAL_NO_RECURSE}, etc.
+@c TODO: refer to the GObject manual
+@end defvr
 @defvr Slot output-mask
 A bitmask, describing which argument should be returned to the user when
 calling the signal as a procedure.
 Note, that to set those from a handler, you need to use the
 @code{#:inout-mask} argument.
-@c TODO: refer to the GObject manual
 @end defvr
 
 @menu
