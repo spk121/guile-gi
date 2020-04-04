@@ -151,7 +151,8 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
         defs = gig_function_define(parent_gtype, info, parent_name, defs);
         break;
     case GI_INFO_TYPE_PROPERTY:
-        g_assert(G_TYPE_IS_CLASSED(parent_gtype));
+        // TODO: handle (unclassed?) interfaces more nicely
+        g_return_val_if_fail(G_TYPE_IS_CLASSED(parent_gtype), defs);
         defs = gig_property_define(parent_gtype, info, parent_name, defs);
         break;
     case GI_INFO_TYPE_STRUCT:
