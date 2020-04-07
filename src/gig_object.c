@@ -543,8 +543,7 @@ static SCM do_define_property(const gchar *, SCM, SCM, SCM);
 SCM
 gig_property_define(GType type, GIPropertyInfo *info, const gchar *_namespace, SCM defs)
 {
-    GObjectClass *_class;
-    GParamSpec *prop;
+    GParamSpec *prop = NULL;
     SCM s_prop, def;
 
     const gchar *name = g_base_info_get_name(info);
@@ -553,14 +552,22 @@ gig_property_define(GType type, GIPropertyInfo *info, const gchar *_namespace, S
     SCM self_type = gig_type_get_scheme_type(type);
 
     scm_dynwind_begin(0);
-
-    _class = g_type_class_ref(type);
-    scm_dynwind_unwind_handler(g_type_class_unref, _class, SCM_F_WIND_EXPLICITLY);
     long_name = scm_dynwind_or_bust("%gig-property-define",
                                     g_strdup_printf("%s:%s", _namespace, name));
     long_name = scm_dynwind_or_bust("%gig-property-define", gig_gname_to_scm_name(long_name));
 
-    prop = g_object_class_find_property(_class, name);
+    if (G_TYPE_IS_CLASSED(type)) {
+        GObjectClass *_class = g_type_class_ref(type);
+        scm_dynwind_unwind_handler(g_type_class_unref, _class, SCM_F_WIND_EXPLICITLY);
+        prop = g_object_class_find_property(_class, name);
+    }
+    else if (G_TYPE_IS_INTERFACE(type)) {
+        GTypeInterface *iface = g_type_default_interface_ref(type);
+        scm_dynwind_unwind_handler(g_type_default_interface_unref, iface, SCM_F_WIND_EXPLICITLY);
+        prop = g_object_interface_find_property(iface, name);
+    }
+    else
+        gig_critical_load("%s is neither class nor interface, but we define properties, wtf?", g_type_name(type));
     if (prop != NULL) {
         s_prop = gig_type_transfer_object(G_PARAM_SPEC_TYPE(prop), prop, GI_TRANSFER_NOTHING);
 
