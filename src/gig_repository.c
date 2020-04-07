@@ -114,6 +114,17 @@ gig_repository_nested_infos(GIBaseInfo *base,
         *signal = (GigRepositoryNested)g_interface_info_get_signal;
         *n_properties = g_interface_info_get_n_properties(base);
         *property = (GigRepositoryNested)g_interface_info_get_property;
+        {
+            GType gtype = g_registered_type_info_get_g_type(info);
+            const gchar* name = g_base_info_get_name(info);
+            if (!G_TYPE_IS_CLASSED(gtype)) {
+                if (*n_properties != 0)
+                    gig_warning_load("%s - non-Object interface wants properties", name);
+                if (*n_signals != 0)
+                    gig_warning_load("%s - non-Object interface wants signals", name);
+                *n_properties = *n_signals = 0;
+            }
+        }
         break;
     case GI_INFO_TYPE_OBJECT:
         *n_methods = g_object_info_get_n_methods(base);
@@ -151,8 +162,7 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
         defs = gig_function_define(parent_gtype, info, parent_name, defs);
         break;
     case GI_INFO_TYPE_PROPERTY:
-        // TODO: handle (unclassed?) interfaces more nicely
-        g_return_val_if_fail(G_TYPE_IS_CLASSED(parent_gtype), defs);
+        g_assert(G_TYPE_IS_CLASSED(parent_gtype));
         defs = gig_property_define(parent_gtype, info, parent_name, defs);
         break;
     case GI_INFO_TYPE_STRUCT:
