@@ -115,8 +115,8 @@ gig_repository_nested_infos(GIBaseInfo *base,
         *n_properties = g_interface_info_get_n_properties(base);
         *property = (GigRepositoryNested)g_interface_info_get_property;
         {
-            GType gtype = g_registered_type_info_get_g_type(info);
-            const gchar* name = g_base_info_get_name(info);
+            GType gtype = g_registered_type_info_get_g_type(base);
+            const gchar* name = g_base_info_get_name(base);
             if (!G_TYPE_IS_CLASSED(gtype)) {
                 if (*n_properties != 0)
                     gig_warning_load("%s - non-Object interface wants properties", name);
