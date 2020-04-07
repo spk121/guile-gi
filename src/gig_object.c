@@ -508,9 +508,8 @@ gig_i_scm_emit(SCM self, SCM signal, SCM s_detail, SCM args)
         const guint32 *bits;
         int err;
 
-        gsize bit_count = scm_to_size_t(scm_bit_count(SCM_BOOL_T, output_mask));
-        if (bit_count > query_info.n_params + 1)
-            scm_misc_error(NULL, "~S returned less values than we should unpack",
+        if (scm_c_bitvector_length(output_mask) != query_info.n_params + 1)
+            scm_misc_error(NULL, "~S has an invalid bitmask",
                            scm_list_1(signal));
 
         bits = scm_bitvector_elements(output_mask, &handle, &offset, &length, &inc);
