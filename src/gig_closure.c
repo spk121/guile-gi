@@ -61,7 +61,6 @@ _gig_closure_marshal(GClosure *closure, GValue *ret, guint n_params, const GValu
         gssize pos = 0, inc;
         scm_t_array_handle handle;
         const guint32 *bits;
-        int err;
         idx = G_IS_VALUE(ret) ? 1 : 0;
 
         if (nvalues - idx > n_params)

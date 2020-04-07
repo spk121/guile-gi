@@ -506,7 +506,6 @@ gig_i_scm_emit(SCM self, SCM signal, SCM s_detail, SCM args)
         gssize pos = 0, inc;
         scm_t_array_handle handle;
         const guint32 *bits;
-        int err;
 
         if (scm_c_bitvector_length(output_mask) != query_info.n_params + 1)
             scm_misc_error(NULL, "~S has an invalid bitmask",
