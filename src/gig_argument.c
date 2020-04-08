@@ -1392,11 +1392,15 @@ c_native_array_to_scm(C2S_ARG_DECL)
     } while(0)
 
     GType item_type = meta->params[0].gtype;
-    if (item_type == G_TYPE_CHAR)
+    switch (G_TYPE_FUNDAMENTAL(item_type))
+    {
+    case G_TYPE_CHAR:
         TRANSFER(gint8, s8);
-    else if (item_type == G_TYPE_UCHAR)
+        break;
+    case G_TYPE_UCHAR:
         TRANSFER(guint8, u8);
-    else if (item_type == G_TYPE_INT) {
+        break;
+    case G_TYPE_INT:
 #define DO_TRANSFER(n, m)                       \
         case n:                                 \
             TRANSFER(gint ## m, s ## m);        \
@@ -1411,12 +1415,12 @@ c_native_array_to_scm(C2S_ARG_DECL)
             UNHANDLED;
         }
 #undef DO_TRANSFER
-    }
-    else if (item_type == G_TYPE_UINT) {
+        break;
+    case G_TYPE_UINT:
 #define DO_TRANSFER(n, m)                       \
-     case n:                                    \
-         TRANSFER(guint ## m, u ## m);          \
-         break;
+        case n:                                 \
+            TRANSFER(guint ## m, u ## m);       \
+            break;
 
         if (meta->params[0].is_unichar) {
             *object = scm_c_make_string(length, SCM_MAKE_CHAR(0));
@@ -1427,7 +1431,6 @@ c_native_array_to_scm(C2S_ARG_DECL)
                 arg->v_pointer = 0;
             }
         }
-
         else
             switch (meta->params[0].item_size) {
                 DO_TRANSFER(1, 8);
@@ -1437,19 +1440,22 @@ c_native_array_to_scm(C2S_ARG_DECL)
             default:
                 UNHANDLED;
             }
+        break;
 #undef DO_TRANSFER
-    }
-    else if (item_type == G_TYPE_INT64)
+    case G_TYPE_INT64:
         TRANSFER(gint64, s64);
-    else if (item_type == G_TYPE_UINT64)
+        break;
+    case G_TYPE_UINT64:
         TRANSFER(guint64, u64);
-    else if (item_type == G_TYPE_FLOAT)
+        break;
+    case G_TYPE_FLOAT:
         TRANSFER(gfloat, f32);
-    else if (item_type == G_TYPE_DOUBLE)
+        break;
+    case G_TYPE_DOUBLE:
         TRANSFER(gdouble, f64);
-    else if (item_type == G_TYPE_GTYPE)
-        UNHANDLED;
-    else if (item_type == G_TYPE_BOOLEAN) {
+        break;
+    case G_TYPE_BOOLEAN:
+    {
         *object = scm_c_make_vector(length, SCM_BOOL_F);
         scm_t_array_handle handle;
         size_t len;
@@ -1463,8 +1469,11 @@ c_native_array_to_scm(C2S_ARG_DECL)
             free(arg->v_pointer);
             arg->v_pointer = 0;
         }
+        break;
     }
-    else if (item_type == G_TYPE_VALUE) {
+    case G_TYPE_BOXED:
+    case G_TYPE_VARIANT:
+    {
         *object = scm_c_make_vector(length, SCM_BOOL_F);
         scm_t_array_handle handle;
         size_t len;
@@ -1475,41 +1484,40 @@ c_native_array_to_scm(C2S_ARG_DECL)
 
         GIArgument _arg = *arg;
         GigTypeMeta _meta = meta->params[0];
-        g_assert(meta->is_ptr);
 
-        for (gsize k = 0; k < len; k++, _arg.v_pointer += sizeof(GValue), elt += inc)
-            gig_argument_c_to_scm(subr, argpos, &_meta, &_arg, elt, -1);
-    }
-    else if (item_type == G_TYPE_VARIANT) {
-        *object = scm_c_make_vector(length, SCM_BOOL_F);
-        scm_t_array_handle handle;
-        size_t len;
-        ssize_t inc;
-        SCM *elt;
-        elt = scm_vector_writable_elements(*object, &handle, &len, &inc);
-        g_assert_nonnull(arg->v_pointer);
+        if (item_type == G_TYPE_VALUE) {
+            // value arrays are weird, man
+            g_assert(meta->is_ptr);
+            for (gsize k = 0; k < len; k++, _arg.v_pointer += sizeof(GValue), elt += inc)
+                gig_argument_c_to_scm(subr, argpos, &_meta, &_arg, elt, -1);
+        }
+        else
+        {
+            // this used to be the VARIANT conversion, but it turns out, that other boxed
+            // types are packed just like this
+            gboolean is_pointer = _meta.is_ptr;
+            _meta.is_ptr = TRUE;
+            guint8 *iter = arg->v_pointer;
 
-        GIArgument _arg;
-        GigTypeMeta _meta = meta->params[0];
-        gboolean is_pointer = _meta.is_ptr;
-        _meta.is_ptr = TRUE;
-        guint8 *iter = arg->v_pointer;
-
-        for (gsize k = 0; k < len; k++, elt += inc, iter += gig_meta_real_item_size(meta)) {
-            if (is_pointer)
-                _arg.v_pointer = *(gpointer *)iter;
-            else
-                _arg.v_pointer = iter;
-            gig_argument_c_to_scm(subr, argpos, &_meta, &_arg, elt, -1);
+            for (gsize k = 0; k < len; k++, elt += inc, iter += gig_meta_real_item_size(meta)) {
+                if (is_pointer)
+                    _arg.v_pointer = *(gpointer *)iter;
+                else
+                    _arg.v_pointer = iter;
+                gig_argument_c_to_scm(subr, argpos, &_meta, &_arg, elt, -1);
+            }
         }
 
         scm_array_handle_release(&handle);
+
         if (meta->transfer == GI_TRANSFER_EVERYTHING) {
             free(arg->v_pointer);
             arg->v_pointer = 0;
         }
+        break;
     }
-    else if (item_type == G_TYPE_STRING) {
+    case G_TYPE_STRING:
+    {
         *object = scm_c_make_vector(length, SCM_BOOL_F);
         scm_t_array_handle handle;
         gsize len;
@@ -1537,9 +1545,11 @@ c_native_array_to_scm(C2S_ARG_DECL)
             arg->v_pointer = NULL;
         }
         scm_array_handle_release(&handle);
+        break;
     }
-    else
+    default:
         UNHANDLED;
+    }
     g_assert(!SCM_UNBNDP(*object));
 #undef TRANSFER
 }

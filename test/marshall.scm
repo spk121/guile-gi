@@ -139,6 +139,15 @@
     (and (= sum 1)
          (list= eqv? '(-3 -1 0 1 4) (int-vector->list vals)))))
 
+
+(test-equal "array-zero-terminated-return-struct"
+  #(42 43 44)
+  (vector-map
+   (lambda (_ s)
+     ;; parse manually without relying on fiddle
+     (car (parse-c-struct (slot-ref s 'value) (list long))))
+   (array-zero-terminated-return-struct)))
+
 (test-assert "array-gvariant-none-in"
   (let* ((v1 (variant:new-int32 27))
          (v2 (variant:new-string "Hello"))
