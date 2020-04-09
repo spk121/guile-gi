@@ -139,6 +139,28 @@
     (and (= sum 1)
          (list= eqv? '(-3 -1 0 1 4) (int-vector->list vals)))))
 
+;; do not do this in your production code
+;; it will haunt you
+(define (make-boxed-struct value)
+  (let* ((struct (make <MarshallBoxedStruct>))
+         (data (pointer->bytevector (slot-ref struct 'value)
+                                    (sizeof long))))
+    (case (sizeof long)
+      ((4)
+       (bytevector-s32-native-set! data 0 value))
+      ((8)
+       (bytevector-s64-native-set! data 0 value)))
+    struct))
+
+(test-assert "array-struct-in"
+  (array-struct-in (vector (make-boxed-struct 1)
+                           (make-boxed-struct 2)
+                           (make-boxed-struct 3))))
+
+(test-assert "array-struct-value-in"
+  (array-struct-value-in (vector (make-boxed-struct 1)
+                                 (make-boxed-struct 2)
+                                 (make-boxed-struct 3))))
 
 (test-equal "array-zero-terminated-return-struct"
   #(42 43 44)
