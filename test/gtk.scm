@@ -1,4 +1,4 @@
-(use-modules (gi) (gi repository)
+(use-modules (gi) (gi repository) (gi types)
              (srfi srfi-1)
              (srfi srfi-64))
 
@@ -62,5 +62,17 @@
   (let ((box (make <GtkBox> #:orientation 'vertical #:spacing 2)))
     (and (is-a? box <GtkBox>)
          (= 2 (spacing box)))))
+
+(test-assert "load TreeStore"
+  (every load-by-name? '("Gtk" "Gtk") '("TreeModel" "TreeStore")))
+
+(test-assert "tree-store:new (lowlevel)"
+  (let ((tree-store (tree-store:new (vector G_TYPE_LONG G_TYPE_LONG G_TYPE_LONG))))
+    (and (= 3 (tree-model:get-n-columns tree-store)))))
+
+; Not possible--because the columns are not properties:
+;(test-assert "make tree store (highlevel)"
+;  (let ((tree-store (make <GtkTreeStore> #:columns (vector G_TYPE_LONG G_TYPE_LONG G_TYPE_LONG))))
+;    (and (= 3 (get-n-columns tree-store)))))
 
 (test-end "gtk.scm")
