@@ -246,8 +246,10 @@ scm_to_c_interface(S2C_ARG_DECL)
         arg->v_pointer = NULL;
         return;
     }
-    else
-        UNHANDLED;
+    else {
+        arg->v_pointer = g_type_check_instance_cast((GTypeInstance*) gig_type_peek_object(object), meta->gtype);
+        return;
+    }
 }
 
 static void

@@ -63,12 +63,17 @@
     (and (is-a? box <GtkBox>)
          (= 2 (spacing box)))))
 
-(test-assert "load TreeStore"
-  (every load-by-name? '("Gtk" "Gtk") '("TreeModel" "TreeStore")))
+(test-assert "load TreeView"
+  (every load-by-name? '("Gtk" "Gtk" "Gtk") '("TreeModel" "TreeStore" "TreeView")))
 
 (test-assert "tree-store:new (lowlevel)"
   (let ((tree-store (tree-store:new (vector G_TYPE_LONG G_TYPE_LONG G_TYPE_LONG))))
     (and (= 3 (tree-model:get-n-columns tree-store)))))
+
+(test-assert "tree-view:set-model (lowlevel)"
+  (let ((tree-store (tree-store:new (vector G_TYPE_LONG G_TYPE_LONG G_TYPE_LONG)))
+        (tree-view (tree-view:new)))
+    (tree-view:set-model tree-view tree-store)))
 
 ; Not possible--because the columns are not properties:
 ;(test-assert "make tree store (highlevel)"
