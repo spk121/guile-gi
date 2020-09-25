@@ -64,11 +64,23 @@
          (= 2 (spacing box)))))
 
 (test-assert "load TreeStore"
-  (every load-by-name? '("Gtk" "Gtk") '("TreeModel" "TreeStore")))
+  (every load-by-name? '("Gtk" "Gtk" "Gtk") '("TreeModel" "TreeStore" "TreeIter")))
 
 (test-assert "tree-store:new (lowlevel)"
   (let ((tree-store (tree-store:new (vector G_TYPE_LONG G_TYPE_LONG G_TYPE_LONG))))
     (and (= 3 (tree-model:get-n-columns tree-store)))))
+
+(test-assert "tree-store:set-value"
+  (let* ((tree-store (tree-store:new (vector G_TYPE_LONG G_TYPE_LONG G_TYPE_LONG)))
+         (tree-iter (make <GtkTreeIter>))
+         (value (make <GValue>))
+         (value2 (make <GValue>)))
+    (begin
+      (tree-store:insert! tree-store tree-iter #f -1)
+      (set! (value G_TYPE_LONG) 1234)
+      (tree-store:set-value tree-store tree-iter 0 value)
+      (tree-model:get-value! tree-store tree-iter 0 value2)
+      (equal? (value) (value2)))))
 
 (test-assert "load TreeView"
   (every load-by-name? '("Gtk" "Gtk") '("TreeStore" "TreeView")))
