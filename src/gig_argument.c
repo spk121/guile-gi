@@ -60,6 +60,7 @@ static void scm_to_c_native_boolean_array(S2C_ARG_DECL);
 static void scm_to_c_native_immediate_array(S2C_ARG_DECL);
 static void scm_to_c_native_string_array(S2C_ARG_DECL);
 static void scm_to_c_native_interface_array(S2C_ARG_DECL);
+static void scm_to_c_native_gtype_array(S2C_ARG_DECL);
 static void scm_to_c_garray(S2C_ARG_DECL);
 static void scm_to_c_byte_array(S2C_ARG_DECL);
 static void scm_to_c_ptr_array(S2C_ARG_DECL);
@@ -546,6 +547,8 @@ scm_to_c_native_array(S2C_ARG_DECL)
              || item_type == G_TYPE_UINT64
              || item_type == G_TYPE_FLOAT || item_type == G_TYPE_DOUBLE)
         scm_to_c_native_immediate_array(S2C_ARGS);
+    else if (item_type == G_TYPE_GTYPE)
+        scm_to_c_native_gtype_array(S2C_ARGS);
     else if (item_type == G_TYPE_STRING)
         scm_to_c_native_string_array(S2C_ARGS);
     else if (fundamental_item_type == G_TYPE_BOXED || item_type == G_TYPE_VARIANT
@@ -912,6 +915,26 @@ scm_to_c_ghashtable(S2C_ARG_DECL)
         ;
     }
     arg->v_pointer = hash;
+}
+
+static void
+scm_to_c_native_gtype_array(S2C_ARG_DECL)
+{
+    TRACE_S2C();
+    if (!scm_is_vector(object))
+        scm_wrong_type_arg_msg(subr, argpos, object, "vector of gtype-ables");
+    *size = scm_c_vector_length(object);
+    if (meta->is_zero_terminated) {
+        arg->v_pointer = malloc(sizeof(GType) * (*size + 1));
+        ((GType *) arg->v_pointer)[*size] = 0;
+        LATER_FREE(arg->v_pointer);
+    }
+    else {
+        arg->v_pointer = malloc(sizeof(GType) * *size);
+        LATER_FREE(arg->v_pointer);
+    }
+    for (gsize i = 0; i < *size; i++)
+        ((GType *) (arg->v_pointer))[i] = scm_to_gtype(scm_c_vector_ref(object, i));
 }
 
 static void
@@ -1392,8 +1415,7 @@ c_native_array_to_scm(C2S_ARG_DECL)
     } while(0)
 
     GType item_type = meta->params[0].gtype;
-    switch (G_TYPE_FUNDAMENTAL(item_type))
-    {
+    switch (G_TYPE_FUNDAMENTAL(item_type)) {
     case G_TYPE_CHAR:
         TRANSFER(gint8, s8);
         break;
@@ -1491,8 +1513,7 @@ c_native_array_to_scm(C2S_ARG_DECL)
             for (gsize k = 0; k < len; k++, _arg.v_pointer += sizeof(GValue), elt += inc)
                 gig_argument_c_to_scm(subr, argpos, &_meta, &_arg, elt, -1);
         }
-        else
-        {
+        else {
             // this used to be the VARIANT conversion, but it turns out, that other boxed
             // types are packed just like this
             gboolean is_pointer = _meta.is_ptr;
