@@ -31,14 +31,14 @@
 /**
  * gig_value_from_scm:
  * @value: the GValue object to store the converted value in.
- * @obj: the Python object to convert.
+ * @obj: the Scheme object to convert.
  *
  * This function converts a generic SCM value and stores the result in a
  * GValue.  The GValue must be initialised in advance with
- * g_value_init().  If the Python object can't be converted to the
+ * g_value_init().  If the Scheme object can't be converted to the
  * type of the GValue, then an error is returned.
  *
- * Returns: 0 on success, -1 on error.
+ * Returns: 0 on success, non-zero on error.
  */
 int
 gig_value_from_scm(GValue *value, SCM obj)
@@ -199,14 +199,19 @@ gig_value_from_scm(GValue *value, SCM obj)
     }
     case G_TYPE_POINTER:
     {
-        if (SCM_POINTER_P(obj))
+        if (SCM_POINTER_P(obj)) {
             g_value_set_pointer(value, scm_to_pointer(obj));
-        else if (scm_is_true(scm_bytevector_p(obj)))
+            return 0;
+        }
+        else if (scm_is_true(scm_bytevector_p(obj))) {
             g_value_set_pointer(value, SCM_BYTEVECTOR_CONTENTS(obj));
-        else if (gig_type_get_gtype_from_obj(obj) > G_TYPE_INVALID)
+            return 0;
+        }
+        else if (gig_type_get_gtype_from_obj(obj) > G_TYPE_INVALID) {
             g_value_set_object(value, gig_type_peek_object(obj));
-        else
-            return GIG_VALUE_WRONG_TYPE;
+            return 0;
+        }
+        return GIG_VALUE_WRONG_TYPE;
         break;
     }
     case G_TYPE_BOXED:

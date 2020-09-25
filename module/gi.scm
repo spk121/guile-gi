@@ -37,6 +37,7 @@
                G_TYPE_ENUM G_TYPE_FLAGS
                G_TYPE_FLOAT G_TYPE_DOUBLE
                G_TYPE_OBJECT G_TYPE_STRING
+               G_TYPE_POINTER
                <string>
                <GObject> <GInterface> <GParam> <GBoxed> <GIBaseInfo>
                <GVariant> <GValue> <GClosure>

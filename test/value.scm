@@ -2,7 +2,8 @@
              (gi types)
              (gi repository) (srfi srfi-64) (oop goops)
              (ice-9 hash-table)
-             (ice-9 receive))
+             (ice-9 receive)
+             (system foreign))
 
 (require "GLib" "2.0")
 (load-by-name "GLib" "MainLoop")
@@ -150,6 +151,11 @@
 (test-error "getset string wrong type"
   #t
   (value-passthrough <string> 'foo))
+
+(let ((ptr (bytevector->pointer (u32vector 1 2 3))))
+  (test-equal "getset pointer"
+    ptr
+    (value-passthrough G_TYPE_POINTER ptr)))
 
 (define-class <Flags> (<GFlags>))
 (class-slot-set! <Flags> 'obarray
