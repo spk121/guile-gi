@@ -242,12 +242,12 @@ static void
 scm_to_c_interface(S2C_ARG_DECL)
 {
     TRACE_S2C();
-    if (meta->is_nullable && scm_is_false(object)) {
+    if (meta->is_nullable && scm_is_false(object))
         arg->v_pointer = NULL;
-        return;
-    }
     else
-        UNHANDLED;
+        arg->v_pointer = G_TYPE_CHECK_INSTANCE_CAST(gig_type_peek_object(object),
+                                                    meta->gtype,
+                                                    void);
 }
 
 static void

@@ -70,6 +70,14 @@
   (let ((tree-store (tree-store:new (vector G_TYPE_LONG G_TYPE_LONG G_TYPE_LONG))))
     (and (= 3 (tree-model:get-n-columns tree-store)))))
 
+(test-assert "load TreeView"
+  (every load-by-name? '("Gtk" "Gtk") '("TreeStore" "TreeView")))
+
+(test-assert "tree-view:set-model (lowlevel)"
+  (let ((tree-store (tree-store:new (vector G_TYPE_LONG G_TYPE_LONG G_TYPE_LONG)))
+        (tree-view (tree-view:new)))
+    (tree-view:set-model tree-view tree-store)))
+
 ; Not possible--because the columns are not properties:
 ;(test-assert "make tree store (highlevel)"
 ;  (let ((tree-store (make <GtkTreeStore> #:columns (vector G_TYPE_LONG G_TYPE_LONG G_TYPE_LONG))))
