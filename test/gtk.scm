@@ -1,4 +1,4 @@
-(use-modules (gi) (gi repository) (gi types)
+(use-modules (gi) (gi repository) (gi types) (gi util)
              (srfi srfi-1)
              (srfi srfi-64))
 
@@ -81,6 +81,31 @@
       (tree-store:set-value tree-store tree-iter 0 value)
       (tree-model:get-value! tree-store tree-iter 0 value2)
       (equal? (value) (value2)))))
+
+(define (long-value-vec . x)
+  (list->vector
+   (map
+    (lambda (a)
+      (let ((val (make <GValue>)))
+        (set! (val G_TYPE_LONG) a)
+        val))
+    x)))
+
+(test-assert "tree-store:set"
+  (let* ((tree-store (tree-store:new (vector G_TYPE_LONG G_TYPE_LONG G_TYPE_LONG)))
+         (tree-iter (make <GtkTreeIter>))
+         (value1 (make <GValue>))
+         (value2 (make <GValue>)))
+    (begin
+      (tree-store:insert! tree-store tree-iter #f -1)
+      (tree-store:set tree-store
+                      tree-iter
+                      (list->int-vector '(0 1 2))
+                      (long-value-vec 11 22 33))
+      (tree-model:get-value! tree-store tree-iter 0 value1)
+      (tree-model:get-value! tree-store tree-iter 1 value2)
+      (and (equal? 11 (value1))
+           (equal? 22 (value2))))))
 
 (test-assert "load TreeView"
   (every load-by-name? '("Gtk" "Gtk") '("TreeStore" "TreeView")))
