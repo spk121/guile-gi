@@ -36,7 +36,7 @@
                G_TYPE_INT64 G_TYPE_UINT64
                G_TYPE_ENUM G_TYPE_FLAGS
                G_TYPE_FLOAT G_TYPE_DOUBLE
-               G_TYPE_OBJECT
+               G_TYPE_OBJECT G_TYPE_STRING
                <string>
                <GObject> <GInterface> <GParam> <GBoxed> <GIBaseInfo>
                <GVariant> <GValue> <GClosure>

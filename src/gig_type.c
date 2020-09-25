@@ -868,6 +868,7 @@ gig_init_types_once(void)
     D(G_TYPE_DOUBLE);
     D(G_TYPE_GTYPE);
     D(G_TYPE_OBJECT);
+    D(G_TYPE_STRING);
 #undef D
 
     type_less_p_proc = scm_c_make_gsubr("type-<?", 2, 0, 0, type_less_p);
