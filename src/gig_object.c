@@ -501,7 +501,7 @@ gig_i_scm_emit(SCM self, SCM signal, SCM s_detail, SCM args)
         ret = scm_cons(gig_value_as_scm(&retval, FALSE), ret);
 
     SCM output_mask = gig_signal_ref(signal, GIG_SIGNAL_SLOT_OUTPUT_MASK);
-    if (scm_is_true(scm_bitvector_p(output_mask))) {
+    if (scm_is_bitvector(output_mask)) {
         gsize offset, length;
         gssize pos = 0, inc;
         scm_t_array_handle handle;
