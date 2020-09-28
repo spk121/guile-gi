@@ -21,9 +21,12 @@
              (ice-9 receive))
 
 (push-duplicate-handler! 'merge-generics)
-(use-typelibs (("Gio" "2.0") #:renamer (protect* '(application:new receive)))
-              ("Gtk" "3.0")
-              ("Gdk" "3.0"))
+(use-typelibs
+ ;; load GObject first to prevent warnings, even if we don't directly need it
+ (("GObject" "2.0") #:select ())
+ (("Gio" "2.0") #:renamer (protect* '(application:new receive)))
+ ("Gtk" "3.0")
+ ("Gdk" "3.0"))
 
 (define (print-goodbye widget)
   (display "Goodbye World\n"))
