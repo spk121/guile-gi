@@ -49,6 +49,31 @@ require(SCM lib, SCM version)
 }
 
 static SCM
+immediate_dependencies(SCM lib)
+{
+    gchar *_lib, **deps;
+    guint n_deps;
+    SCM ret, iter;
+
+    scm_dynwind_begin(0);
+    _lib = scm_dynwind_or_bust("immediate-dependencies", scm_to_utf8_string(lib));
+    deps = g_irepository_get_immediate_dependencies(NULL, _lib);
+    scm_dynwind_end();
+
+    if (deps == NULL)
+        scm_misc_error("immediate-dependencies", "could not find dependencies for ~A", scm_list_1(lib));
+    n_deps = g_strv_length(deps);
+
+    ret = scm_make_list(scm_from_uint(n_deps), SCM_UNDEFINED);
+    iter = ret;
+    for (guint i = 0; i < n_deps; i++, iter = scm_cdr(iter))
+        scm_set_car_x(iter, scm_from_utf8_string(deps[i]));
+    g_strfreev(deps);
+
+    return ret;
+}
+
+static SCM
 infos(SCM lib)
 {
     scm_dynwind_begin(0);
@@ -350,6 +375,7 @@ void
 gig_init_repository()
 {
     scm_c_define_gsubr("require", 1, 1, 0, require);
+    scm_c_define_gsubr("immediate-dependencies", 1, 0, 0, immediate_dependencies);
     scm_c_define_gsubr("infos", 1, 0, 0, infos);
     scm_c_define_gsubr("info", 2, 0, 0, info);
     scm_c_define_gsubr("%load-info", 1, 1, 0, load);

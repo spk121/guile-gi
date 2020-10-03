@@ -57,6 +57,17 @@
       (set-module-kind! interface 'interface)
       (set-module-public-interface! module interface)))
 
+  (for-each
+   (lambda (dep)
+     (module-use!
+      module
+      (let ((module (list 'gi (string->symbol dep)))
+           (lib+version (string-split dep #\-)))
+       (or (false-if-exception (resolve-interface module))
+           (module-public-interface
+            (apply typelib->module module lib+version))))))
+   (immediate-dependencies lib))
+
   (save-module-excursion
    (lambda ()
      (set-current-module module)
