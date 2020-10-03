@@ -23,6 +23,47 @@
 #include "gig_flag.h"
 #include "gig_repository.h"
 
+static SCM module_name_proc = SCM_UNDEFINED;
+
+static SCM
+scm_module_name(SCM module)
+{
+    if (SCM_UNBNDP(module_name_proc))
+        module_name_proc = scm_c_public_ref("guile", "module-name");
+    return scm_call_1(module_name_proc, module);
+}
+
+static SCM
+gig_duplicate_warn(SCM module, SCM name, SCM int1, SCM val1, SCM int2, SCM val2, SCM var, SCM val)
+{
+
+    SCM _module_s, _name_s, _int1_s, _int2_s, _val1_s, _val2_s;
+    gchar *module_s, *name_s, *int1_s, *int2_s, *val1_s, *val2_s;
+    scm_dynwind_begin(0);
+
+    _int1_s = scm_object_to_string(scm_module_name(int1), SCM_UNDEFINED);
+    _int2_s = scm_object_to_string(scm_module_name(int2), SCM_UNDEFINED);
+    _val1_s = scm_object_to_string(val1, SCM_UNDEFINED);
+    _val2_s = scm_object_to_string(val2, SCM_UNDEFINED);
+    _module_s = scm_object_to_string(scm_module_name(module), SCM_UNDEFINED);
+    _name_s = scm_object_to_string(name, SCM_UNDEFINED);
+
+    module_s = scm_dynwind_or_bust("%gig-duplicate-warn", scm_to_utf8_string(_module_s));
+    name_s = scm_dynwind_or_bust("%gig-duplicate-warn", scm_to_utf8_string(_name_s));
+    int1_s = scm_dynwind_or_bust("%gig-duplicate-warn", scm_to_utf8_string(_int1_s));
+    int2_s = scm_dynwind_or_bust("%gig-duplicate-warn", scm_to_utf8_string(_int2_s));
+    val1_s = scm_dynwind_or_bust("%gig-duplicate-warn", scm_to_utf8_string(_val1_s));
+    val2_s = scm_dynwind_or_bust("%gig-duplicate-warn", scm_to_utf8_string(_val2_s));
+
+    gig_warning_load("%s: `%s' imported from both %s and %s", module_s, name_s, int1_s, int2_s);
+    gig_debug_load("binding from %s: %s", int1_s, val1_s);
+    gig_debug_load("binding from %s: %s", int2_s, val2_s);
+
+    scm_dynwind_end();
+
+    return SCM_BOOL_F;
+}
+
 static SCM
 require(SCM lib, SCM version)
 {
@@ -374,6 +415,7 @@ prepend_search_path(SCM s_dir)
 void
 gig_init_repository()
 {
+    scm_c_define_gsubr("%gig-duplicate-warn", 8, 0, 0, gig_duplicate_warn);
     scm_c_define_gsubr("require", 1, 1, 0, require);
     scm_c_define_gsubr("immediate-dependencies", 1, 0, 0, immediate_dependencies);
     scm_c_define_gsubr("infos", 1, 0, 0, infos);
