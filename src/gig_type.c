@@ -243,11 +243,20 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
                        _type_class_name, g_type_name(fundamental), gtype, g_type_name(gtype));
 
         SCM type_class_name = scm_from_utf8_symbol(_type_class_name);
+        SCM new_type, dsupers, slots = SCM_EOL;
+
+        GType reserved = g_type_from_name(g_type_name(gtype));
+        if (reserved != 0 && reserved != gtype) {
+            gig_warning_load("%s - already reserved as %zu, reusing...", _type_class_name, reserved);
+            defs = gig_type_define_full(reserved, defs, extra_supers);
+            new_type = gig_type_get_scheme_type(reserved);
+            gig_type_register(gtype, new_type);
+            return defs;
+        }
 
         g_return_val_if_fail(parent != G_TYPE_INVALID, defs);
         gig_type_define(parent, defs);
 
-        SCM new_type, dsupers, slots = SCM_EOL;
         gpointer sparent = g_hash_table_lookup(gig_type_gtype_hash,
                                                GSIZE_TO_POINTER(parent));
         g_return_val_if_fail(sparent != NULL, defs);
@@ -359,6 +368,7 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
         g_return_val_if_fail(!SCM_UNBNDP(new_type), defs);
 
         SCM key = gig_type_associate(gtype, new_type);
+
         if (!SCM_UNBNDP(defs)) {
             scm_define(key, new_type);
             defs = scm_cons(key, defs);
