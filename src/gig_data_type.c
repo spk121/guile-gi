@@ -95,6 +95,25 @@ add_child_params(GigTypeMeta *meta, GITypeInfo *type_info, gint n)
 }
 
 static void
+gig_type_meta_coerce_is_ptr(GigTypeMeta *meta, const char* where)
+{
+    if (meta->is_ptr) return;
+    switch (G_TYPE_FUNDAMENTAL(meta->gtype)) {
+    case G_TYPE_INTERFACE:
+    case G_TYPE_OBJECT:
+    case G_TYPE_BOXED:
+    case G_TYPE_PARAM:
+    case G_TYPE_VARIANT:
+        g_warning("raw object type not allowed in %s, coercing to pointer",
+                  where);
+        meta->is_ptr = TRUE;
+        /* fallthrough */
+    default:
+        return;
+    }
+}
+
+static void
 gig_type_meta_init_from_basic_type_tag(GigTypeMeta *meta, GITypeTag tag)
 {
 #define T(TYPETAG,GTYPE,CTYPE)                  \
@@ -195,11 +214,13 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
         meta->gtype = G_TYPE_POINTER;
         meta->pointer_type = GIG_DATA_LIST;
         add_child_params(meta, type_info, 1);
+        gig_type_meta_coerce_is_ptr(&meta->params[0], "list");
     }
     else if (tag == GI_TYPE_TAG_GSLIST) {
         meta->gtype = G_TYPE_POINTER;
         meta->pointer_type = GIG_DATA_SLIST;
         add_child_params(meta, type_info, 1);
+        gig_type_meta_coerce_is_ptr(&meta->params[0], "list");
     }
     else if (tag == GI_TYPE_TAG_INTERFACE) {
         GIBaseInfo *referenced_base_info = g_type_info_get_interface(type_info);

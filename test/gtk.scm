@@ -4,6 +4,9 @@
 
 (test-begin "gtk.scm")
 
+(define (raw-address obj)
+  ((@ (gi compat) fiddle) (@ (system foreign) pointer-address) obj))
+
 (define load-by-name?
   (compose
    (negate null?)
@@ -48,7 +51,7 @@
     (editable:insert-text entry "Lorem ipsum dolor sit amet" 5 0)))
 
 (test-assert "load Box"
-  (every load-by-name? '("Gtk" "Gtk") '("Box" "Orientation")))
+  (every load-by-name? '("Gtk" "Gtk" "Gtk") '("Container" "Box" "Orientation")))
 
 (unless (test-passed?)
   (test-skip 2))
@@ -62,6 +65,22 @@
   (let ((box (make <GtkBox> #:orientation 'vertical #:spacing 2)))
     (and (is-a? box <GtkBox>)
          (= 2 (spacing box)))))
+
+(if (test-passed?)
+    (let ((box (make <GtkBox> #:orientation 'vertical #:spacing 2))
+          (entries
+           (map (lambda _ (entry:new)) (iota 3))))
+      (test-equal "stuff box"
+        (map raw-address entries)
+        (begin
+          (for-each
+           (lambda (entry)
+             (pack-start box entry #t #t 0))
+           entries)
+          (map raw-address (container:get-children box)))))
+    (begin
+      (test-skip "stuff box")
+      (test-assert "stuff box" #f)))
 
 (test-assert "load TreeStore"
   (every load-by-name? '("Gtk" "Gtk" "Gtk") '("TreeModel" "TreeStore" "TreeIter")))
