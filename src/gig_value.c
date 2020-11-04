@@ -349,6 +349,7 @@ gig_value_to_scm_basic_type(const GValue *value, GType fundamental, gboolean *ha
 static SCM
 gig_value_to_scm_structured_type(const GValue *value, GType fundamental, gboolean copy_boxed)
 {
+    GITransfer transfer = copy_boxed ? GI_TRANSFER_NOTHING : GI_TRANSFER_EVERYTHING;
     switch (fundamental) {
     case G_TYPE_INTERFACE:
     {
@@ -356,7 +357,7 @@ gig_value_to_scm_structured_type(const GValue *value, GType fundamental, gboolea
         if (!obj)
             return SCM_BOOL_F;
         else if (g_type_is_a(G_VALUE_TYPE(value), G_TYPE_OBJECT))
-            return gig_type_transfer_object(G_OBJECT_TYPE(obj), obj, GI_TRANSFER_NOTHING);
+            return gig_type_transfer_object(G_OBJECT_TYPE(obj), obj, transfer);
         else
             break;
     }
@@ -368,7 +369,7 @@ gig_value_to_scm_structured_type(const GValue *value, GType fundamental, gboolea
     {
         GParamSpec *pspec = g_value_get_param(value);
         if (pspec)
-            return gig_type_transfer_object(G_TYPE_PARAM, pspec, GI_TRANSFER_NOTHING);
+            return gig_type_transfer_object(G_TYPE_PARAM, pspec, transfer);
         else
             return SCM_BOOL_F;
     }
@@ -385,8 +386,7 @@ gig_value_to_scm_structured_type(const GValue *value, GType fundamental, gboolea
         }
         else {
             // if (copy_boxed) ...
-            return gig_type_transfer_object(G_VALUE_TYPE(value),
-                                            g_value_get_boxed(value), GI_TRANSFER_EVERYTHING);
+            return gig_type_transfer_object(G_VALUE_TYPE(value), g_value_get_boxed(value), transfer);
         }
     }
 
@@ -394,7 +394,7 @@ gig_value_to_scm_structured_type(const GValue *value, GType fundamental, gboolea
     {
         gpointer obj = g_value_get_object(value);
         if (obj)
-            return gig_type_transfer_object(G_OBJECT_TYPE(obj), obj, GI_TRANSFER_NOTHING);
+            return gig_type_transfer_object(G_OBJECT_TYPE(obj), obj, transfer);
         else
             return SCM_BOOL_F;
     }
