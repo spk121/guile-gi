@@ -107,6 +107,11 @@ AS_CASE(["x$with_gnu_filesystem_hierarchy"], [xyes],
     AC_MSG_RESULT([$guileobjectdir])
     AC_SUBST(guileobjectdir)])
 
+AC_ARG_WITH([gir-hacks],
+            [AS_HELP_STRING([--with-gir-hacks],
+                            [Create GIRs for linked libraries to test against.])])
+AM_CONDITIONAL([GIR_HACKS], [test x$with_gir_hacks = xyes])
+
 ################
 # Check for Libtool
 
@@ -133,6 +138,8 @@ PKG_CHECK_MODULES(GOBJECT, [gobject-2.0])
 PKG_CHECK_MODULES(GOBJECT_INTROSPECTION, [gobject-introspection-1.0])
 PKG_CHECK_MODULES(FFI, [libffi])
 
+PKG_CHECK_VAR(GOBJECT_LIB_DIR, [gobject-2.0], [libdir])
+PKG_CHECK_VAR(GLIB_LIB_DIR, [glib-2.0], [libdir])
 PKG_CHECK_VAR(GI_GIR_DIR, [gobject-introspection-1.0], [girdir])
 PKG_CHECK_VAR(GI_DATA_DIR, [gobject-introspection-1.0], [gidatadir])
 

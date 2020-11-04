@@ -254,6 +254,20 @@ check_LTLIBRARIES = \
   test/libmarshall-1.0.la \
   test/libextra-1.0.la
 
+if GIR_HACKS
+check_DATA += \
+  test/GLib-2.0.gir \
+  test/GObject-2.0.gir \
+  test/GLib-2.0.typelib \
+  test/GObject-2.0.typelib
+
+test/GObject-2.0.gir: $(GI_GIR_DIR)/GObject-2.0.gir
+	sed -e 's#shared-library=".*"#shared-library="$(GOBJECT_LIB_DIR)/libgobject-2.0.so"#' $< > $@
+
+test/GLib-2.0.gir: $(GI_GIR_DIR)/GLib-2.0.gir
+	sed -e 's#shared-library=".*"#shared-library="$(GOBJECT_LIB_DIR)/libgobject-2.0.so,$(GLIB_LIB_DIR)/libglib-2.0.so"#' $< > $@
+endif
+
 test/everything.c: $(GI_DATA_DIR)/tests/everything.c
 	cp $< $@
 test/everything.h: $(GI_DATA_DIR)/tests/everything.h
