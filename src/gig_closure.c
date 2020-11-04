@@ -38,7 +38,7 @@ _gig_closure_marshal(GClosure *closure, GValue *ret, guint n_params, const GValu
 
     SCM iter = args;
     for (guint i = 0; i < n_params; i++, iter = scm_cdr(iter))
-        scm_set_car_x(iter, gig_value_as_scm(params + i, FALSE));
+        scm_set_car_x(iter, gig_value_as_scm(params + i, TRUE));
     SCM _ret = scm_apply_0(pc->callback, args);
 
     if (G_IS_VALUE(ret) && gig_value_from_scm(ret, scm_c_value_ref(_ret, 0)) != 0) {

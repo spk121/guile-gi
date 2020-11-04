@@ -134,6 +134,28 @@
         (tree-view (tree-view:new)))
     (tree-view:set-model tree-view tree-store)))
 
+(test-assert "load DrawingArea"
+  (every load-by-name?
+         '("Gtk" "Gtk" "Gtk" "Gtk" "Gtk")
+         '("Widget" "DrawingArea" "Window" "main" "main_quit")))
+
+(test-assert "gc during draw"
+  (let* ((window (make <GtkWindow> #:visible #t))
+         (drawing-area (make <GtkDrawingArea> #:parent window #:visible #t))
+         ;; number of draw calls to check for double free, >= 2
+         (draw-to-run 2))
+    (connect drawing-area draw
+             (lambda (area %ctx)
+               (if (> draw-to-run 0)
+                   (begin
+                     (gc)
+                     (queue-draw area)
+                     (set! draw-to-run (1- draw-to-run)))
+                   (main-quit))
+               #t))
+    (main)
+    (= draw-to-run 0)))
+
 ; Not possible--because the columns are not properties:
 ;(test-assert "make tree store (highlevel)"
 ;  (let ((tree-store (make <GtkTreeStore> #:columns (vector G_TYPE_LONG G_TYPE_LONG G_TYPE_LONG))))
