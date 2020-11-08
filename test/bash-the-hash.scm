@@ -27,6 +27,11 @@
   #u8(1 2 3 4 5)
   (base64-decode "AQIDBAU="))
 
+(test-expect-fail "decode Base64 inplace")
+(test-equal "decode Base64 inplace"
+  #u8(1 2 3 4 5)
+  (base64-decode-inplace! (string->utf8 "AQIDBAU=")))
+
 (test-end "base64")
 
 (test-begin "hmac")
