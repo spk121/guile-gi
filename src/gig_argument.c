@@ -1677,104 +1677,17 @@ c_list_to_scm(C2S_ARG_DECL)
 {
     TRACE_C2S();
     // Actual conversion
-    gpointer list = arg->v_pointer, data;
-    GList *_list = NULL;
-    GSList *_slist = NULL;
-    gsize length;
-
-    // Step 1: allocate
-    if (meta->pointer_type == GIG_DATA_LIST) {
-        _list = list;
-        length = g_list_length(_list);
-    }
-    else if (meta->pointer_type == GIG_DATA_SLIST) {
-        _slist = list;
-        length = g_slist_length(_slist);
-    }
-    else
-        g_assert_not_reached();
-
+    GSList *slist = arg->v_pointer;
+    gsize length = g_slist_length(slist);
     *object = scm_make_list(scm_from_size_t(length), SCM_UNDEFINED);
 
-    SCM out_iter = *object;
-
-    // Step 2: iterate
-    while (list != NULL) {
-        if (meta->pointer_type == GIG_DATA_LIST) {
-            data = &_list->data;
-            list = _list = _list->next;
-        }
-        else {
-            data = &_slist->data;
-            list = _slist = _slist->next;
-        }
-
-        if (!meta->params[0].is_ptr) {
-            GType item_type = meta->params[0].gtype;
-#define SET_CAR_FROM_INT(i) scm_set_car_x(out_iter, scm_from_ ## i (*(g ## i *) data))
-            if (item_type == G_TYPE_CHAR)
-                SET_CAR_FROM_INT(int8);
-            else if (item_type == G_TYPE_UCHAR)
-                SET_CAR_FROM_INT(uint8);
-            else if (item_type == G_TYPE_INT) {
-                switch (meta->params[0].item_size) {
-                case 1:
-                    SET_CAR_FROM_INT(int8);
-                    break;
-                case 2:
-                    SET_CAR_FROM_INT(int16);
-                    break;
-                case 4:
-                    SET_CAR_FROM_INT(int32);
-                    break;
-                case 8:
-                    SET_CAR_FROM_INT(int64);
-                    break;
-                }
-            }
-            else if (item_type == G_TYPE_UINT) {
-                if (meta->is_unichar)
-                    scm_set_car_x(out_iter, SCM_MAKE_CHAR(*(guint32 *)data));
-                else
-                    switch (meta->params[0].item_size) {
-                    case 1:
-                        SET_CAR_FROM_INT(uint8);
-                        break;
-                    case 2:
-                        SET_CAR_FROM_INT(uint16);
-                        break;
-                    case 4:
-                        SET_CAR_FROM_INT(uint32);
-                        break;
-                    case 8:
-                        SET_CAR_FROM_INT(uint64);
-                        break;
-                    }
-            }
-            else if (item_type == G_TYPE_INT64)
-                scm_set_car_x(out_iter, scm_from_int64(*(gint64 *)data));
-            else if (item_type == G_TYPE_UINT64)
-                scm_set_car_x(out_iter, scm_from_uint64(*(guint64 *)data));
-            else if (item_type == G_TYPE_FLOAT)
-                scm_set_car_x(out_iter, scm_from_double(*(float *)data));
-            else if (item_type == G_TYPE_DOUBLE)
-                scm_set_car_x(out_iter, scm_from_double(*(double *)data));
-            else if (item_type == G_TYPE_GTYPE)
-                scm_set_car_x(out_iter, scm_from_gtype(*(gsize *)data));
-            else
-                UNHANDLED;
-        }
-        else {
-            GIArgument _arg;
-            GigTypeMeta _meta = meta->params[0];
-            SCM elt;
-            _arg.v_pointer = *(void **)data;
-
-            gig_argument_c_to_scm(subr, argpos, &_meta, &_arg, &elt, -1);
-            scm_set_car_x(out_iter, elt);
-        }
-
-        out_iter = scm_cdr(out_iter);
+    for (SCM out_iter = *object; slist != NULL; slist = g_slist_next(slist), out_iter = scm_cdr(out_iter))
+    {
+        GIArgument _arg;
+        SCM _obj;
+        _arg.v_pointer = slist->data;
+        gig_argument_c_to_scm(subr, argpos, &meta->params[0], &_arg, &_obj, GIG_ARRAY_SIZE_UNKNOWN);
+        scm_set_car_x(out_iter, _obj);
     }
     if (meta->transfer != GI_TRANSFER_NOTHING) {
         if (meta->pointer_type == GIG_DATA_LIST)
