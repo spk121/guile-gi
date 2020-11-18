@@ -145,7 +145,7 @@
     (tree-view:set-model tree-view tree-store)
     (tree-store:append! tree-store iter #f)
     (tree-model:get-value! tree-store iter 0 value)
-    (fiddle (value))))
+    (value)))
 
 (test-assert "load DrawingArea"
   (every load-by-name?

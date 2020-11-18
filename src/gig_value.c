@@ -385,8 +385,11 @@ gig_value_to_scm_structured_type(const GValue *value, GType fundamental, gboolea
             return scm_from_utf8_stringn(string->str, string->len);
         }
         else {
-            // if (copy_boxed) ...
-            return gig_type_transfer_object(G_VALUE_TYPE(value), g_value_get_boxed(value), transfer);
+            gpointer boxed = g_value_get_boxed(value);
+            if (boxed)
+                return gig_type_transfer_object(G_VALUE_TYPE(value), g_value_get_boxed(value), transfer);
+            else
+                return SCM_BOOL_F;
         }
     }
 
