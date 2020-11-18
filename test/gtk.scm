@@ -127,12 +127,25 @@
            (equal? 22 (value2))))))
 
 (test-assert "load TreeView"
-  (every load-by-name? '("Gtk" "Gtk") '("TreeStore" "TreeView")))
+  (every load-by-name?
+         '("Gtk" "Gtk" "Gtk")
+         '("TreeModel" "TreeStore" "TreeView")))
 
 (test-assert "tree-view:set-model (lowlevel)"
   (let ((tree-store (tree-store:new (vector G_TYPE_LONG G_TYPE_LONG G_TYPE_LONG)))
         (tree-view (tree-view:new)))
     (tree-view:set-model tree-view tree-store)))
+
+(test-equal "tree-store:append! (<GClosure> NULL)"
+  #f
+  (let ((tree-store (tree-store:new (vector <GClosure>)))
+        (tree-view (tree-view:new))
+        (iter (make <GtkTreeIter>))
+        (value (make <GValue>)))
+    (tree-view:set-model tree-view tree-store)
+    (tree-store:append! tree-store iter #f)
+    (tree-model:get-value! tree-store iter 0 value)
+    (fiddle (value))))
 
 (test-assert "load DrawingArea"
   (every load-by-name?
