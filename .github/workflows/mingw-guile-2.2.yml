@@ -1,0 +1,19 @@
+name: MinGW w/ Guile 2.2
+
+on:
+  push:
+    branches: [ dev-cicd ]
+  pull_request:
+    branches: [ dev-cicd ]
+
+jobs:
+  build:
+
+    runs-on: windows-2019
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: dir
+      run: Get-Childitem -Force
+    - name: install packages
+      run: C:\msys64\usr\bin\pacman.exe -S git
