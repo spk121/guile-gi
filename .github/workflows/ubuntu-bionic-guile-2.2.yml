@@ -1,4 +1,4 @@
-name: C/C++ CI
+name: Ubuntu Bionic w/ Guile 2.2
 
 on:
   push:
@@ -9,14 +9,14 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-18.04
 
     steps:
     - uses: actions/checkout@v2
     - name: env
       run: export LANG=C.UTF-8 TERM=dumb VERBOSE=true DEBIAN_FRONTEND=noninteractive TZ=America/Los_Angeles
     - name: install packages
-      run: sudo apt-get install -y libgirepository1.0-dev guile-3.0-dev gnulib texlive
+      run: sudo apt-get install -y libgirepository1.0-dev guile-2.2-dev gnulib texlive
     - name: look for guile
       run: ls -l /usr/bin/gu*
     - name: bootstrap
