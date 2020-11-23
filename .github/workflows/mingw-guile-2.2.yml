@@ -8,12 +8,24 @@ on:
 
 jobs:
   build:
-
     runs-on: windows-2019
-
+    defaults:
+      run:
+        shell: msys2 {0}
     steps:
     - uses: actions/checkout@v2
-    - name: dir
-      run: Get-Childitem -Force
-    - name: install packages
-      run: C:\msys64\usr\bin\pacman.exe -S git
+    - uses: msys2/setup-msys2@v2
+      with:
+        msystem: MINGW32
+        update: false
+        install: >-
+          base-devel
+          git
+          mingw-w64-i686-toolchain
+          mingw-w64-i686-gc
+          mingw-w64-i686-libtool
+          mingw-w64-i686-libunistring
+    - name: clone guile
+      run: git clone https://git.savannah.gnu.org/git/guile.git --depth 1 -b wip-mingw-guile-2.2
+    - name: build guile
+      run: cd guile; autoreconf -vif; ./configure; make; make install
