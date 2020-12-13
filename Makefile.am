@@ -414,7 +414,8 @@ CLEANFILES = \
   examples/resources/test.gresource \
   $(guileobject_DATA) $(pkgguileobject_DATA) $(scriptguileobject_DATA) \
   $(BUILT_SOURCES) \
-  $(check_DATA)
+  $(check_DATA) \
+  *.log
 
 EXTRA_DIST = \
   README.md \
