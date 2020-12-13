@@ -152,7 +152,7 @@ invoke_closure(SCM closure, SCM return_type, SCM inout_mask, SCM args)
 
         gsize bit_count = scm_to_size_t(scm_bit_count(SCM_BOOL_T, inout_mask));
         if (bit_count > nargs)
-            scm_misc_error(NULL, "~S returned less values than we should unpack",
+            scm_misc_error(NULL, "~S returned fewer values than we should unpack",
                            scm_list_1(closure));
         GValue *out = g_new0(GValue, bit_count);
 
