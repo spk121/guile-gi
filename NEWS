@@ -1,3 +1,26 @@
+2020-12-31: version 0.3.1
+ - Marshall GValues containing pointers
+ - Add compatibility functions for guile-cairo
+ - Marshall GValues containing boxed types
+ - Handle in/out GClosures (#82, #83)
+ - Allow the return of multiple values from signal handlers
+ - Fix errors associated with defining properties of GObject or GInterface
+   classes
+ - Fix crash caused by passing NULL values to GClosures (#102)
+ - Improve handling of the loading of shared libraries, reducing the
+   incidence of problems caused when guile-gi loads a different GLib
+   or GObject version than the one a dlopened library may depend on
+ - Handle some GInterface types
+ - Marshall arrays of GTypes
+ - Add a workaround for 'make check' failures in Guix environments
+
+ Thanks to assistance and reporting by
+ - Danny <daym>
+ - Detlev Zundel <laodzu>
+ - Danny O'Brien <dannyob>
+ - Arun Isaac <arunisaac>
+ 
+
 2020-03-24: version 0.3.0
 - Handle mutation operations of caller-allocated function arguments (#39)
   - Some procedures with preallocated in/out arguments will now bear the
