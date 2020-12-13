@@ -8,7 +8,7 @@ or any later version published by the Free Software Foundation;
 with no Invariant Sections, no Front-Cover Texts, and no Back-Cover
 Texts.  A copy of the license is included in the section entitled "GNU
 Free Documentation License". -->
-<!-- Created by GNU Texinfo 6.6, http://www.gnu.org/software/texinfo/ -->
+<!-- Created by GNU Texinfo 6.7, http://www.gnu.org/software/texinfo/ -->
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <title>Tutorial (Guile-GI)</title>
@@ -18,12 +18,12 @@ Free Documentation License". -->
 <meta name="resource-type" content="document">
 <meta name="distribution" content="global">
 <meta name="Generator" content="makeinfo">
-<link href="index.html#Top" rel="start" title="Top">
-<link href="The-Index.html#The-Index" rel="index" title="The Index">
+<link href="index.html" rel="start" title="Top">
+<link href="The-Index.html" rel="index" title="The Index">
 <link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
-<link href="index.html#Top" rel="up" title="Top">
-<link href="Parsing-Typelibs-and-Creating-Bindings.html#Parsing-Typelibs-and-Creating-Bindings" rel="next" title="Parsing Typelibs and Creating Bindings">
-<link href="Installation.html#Installation" rel="prev" title="Installation">
+<link href="index.html" rel="up" title="Top">
+<link href="Parsing-Typelibs-and-Creating-Bindings.html" rel="next" title="Parsing Typelibs and Creating Bindings">
+<link href="Installation.html" rel="prev" title="Installation">
 <style type="text/css">
 <!--
 a.summary-letter {text-decoration: none}
@@ -50,31 +50,31 @@ ul.no-bullet {list-style: none}
 <body lang="en">
 <span id="Tutorial"></span><div class="header">
 <p>
-Next: <a href="Reference-Guide.html#Reference-Guide" accesskey="n" rel="next">Reference Guide</a>, Previous: <a href="Introduction.html#Introduction" accesskey="p" rel="prev">Introduction</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html#The-Index" title="Index" rel="index">Index</a>]</p>
+Next: <a href="Reference-Guide.html" accesskey="n" rel="next">Reference Guide</a>, Previous: <a href="Introduction.html" accesskey="p" rel="prev">Introduction</a>, Up: <a href="index.html" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>
 <hr>
 <span id="Tutorial-1"></span><h2 class="chapter">2 Tutorial</h2>
 
 <table class="menu" border="0" cellspacing="0">
-<tr><td align="left" valign="top">&bull; <a href="Parsing-Typelibs-and-Creating-Bindings.html#Parsing-Typelibs-and-Creating-Bindings" accesskey="1">Parsing Typelibs and Creating Bindings</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+<tr><td align="left" valign="top">&bull; <a href="Parsing-Typelibs-and-Creating-Bindings.html" accesskey="1">Parsing Typelibs and Creating Bindings</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
-<tr><td align="left" valign="top">&bull; <a href="Generating-Documentation-from-Typelibs.html#Generating-Documentation-from-Typelibs" accesskey="2">Generating Documentation from Typelibs</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+<tr><td align="left" valign="top">&bull; <a href="Generating-Documentation-from-Typelibs.html" accesskey="2">Generating Documentation from Typelibs</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
-<tr><td align="left" valign="top">&bull; <a href="Categories-of-Typelib-Bindings.html#Categories-of-Typelib-Bindings" accesskey="3">Categories of Typelib Bindings</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+<tr><td align="left" valign="top">&bull; <a href="Categories-of-Typelib-Bindings.html" accesskey="3">Categories of Typelib Bindings</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
-<tr><td align="left" valign="top">&bull; <a href="Argument-Conversion.html#Argument-Conversion" accesskey="4">Argument Conversion</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+<tr><td align="left" valign="top">&bull; <a href="Argument-Conversion.html" accesskey="4">Argument Conversion</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
-<tr><td align="left" valign="top">&bull; <a href="Working-with-GObjects.html#Working-with-GObjects" accesskey="5">Working with GObjects</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+<tr><td align="left" valign="top">&bull; <a href="Working-with-GObjects.html" accesskey="5">Working with GObjects</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
-<tr><td align="left" valign="top">&bull; <a href="Sample-Applications.html#Sample-Applications" accesskey="6">Sample Applications</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+<tr><td align="left" valign="top">&bull; <a href="Sample-Applications.html" accesskey="6">Sample Applications</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
-<tr><td align="left" valign="top">&bull; <a href="Threads-and-Concurrency.html#Threads-and-Concurrency" accesskey="7">Threads and Concurrency</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+<tr><td align="left" valign="top">&bull; <a href="Threads-and-Concurrency.html" accesskey="7">Threads and Concurrency</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
-<tr><td align="left" valign="top">&bull; <a href="Debugging-and-Profiling.html#Debugging-and-Profiling" accesskey="8">Debugging and Profiling</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+<tr><td align="left" valign="top">&bull; <a href="Debugging-and-Profiling.html" accesskey="8">Debugging and Profiling</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
-<tr><td align="left" valign="top">&bull; <a href="Application-Deployment.html#Application-Deployment" accesskey="9">Application Deployment</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+<tr><td align="left" valign="top">&bull; <a href="Application-Deployment.html" accesskey="9">Application Deployment</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
-<tr><td align="left" valign="top">&bull; <a href="Testing-and-Continuous-Integration.html#Testing-and-Continuous-Integration">Testing and Continuous Integration</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+<tr><td align="left" valign="top">&bull; <a href="Testing-and-Continuous-Integration.html">Testing and Continuous Integration</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
 </table>
 

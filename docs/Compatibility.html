@@ -1,0 +1,103 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 2018, 2019, 2020 Michael L. Gran
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, no Front-Cover Texts, and no Back-Cover
+Texts.  A copy of the license is included in the section entitled "GNU
+Free Documentation License". -->
+<!-- Created by GNU Texinfo 6.7, http://www.gnu.org/software/texinfo/ -->
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Compatibility (Guile-GI)</title>
+
+<meta name="description" content="Compatibility (Guile-GI)">
+<meta name="keywords" content="Compatibility (Guile-GI)">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<link href="index.html" rel="start" title="Top">
+<link href="The-Index.html" rel="index" title="The Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Reference-Guide.html" rel="up" title="Reference Guide">
+<link href="More-Stuff.html" rel="next" title="More Stuff">
+<link href="Utilities.html" rel="prev" title="Utilities">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.indentedblock {margin-right: 0em}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+kbd {font-style: oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+span.nolinebreak {white-space: nowrap}
+span.roman {font-family: initial; font-weight: normal}
+span.sansserif {font-family: sans-serif; font-weight: normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+<link rel="stylesheet" type="text/css" href="document-1.0.1.css">
+
+
+</head>
+
+<body lang="en">
+<span id="Compatibility"></span><div class="header">
+<p>
+Next: <a href="More-Stuff.html" accesskey="n" rel="next">More Stuff</a>, Previous: <a href="Utilities.html" accesskey="p" rel="prev">Utilities</a>, Up: <a href="Reference-Guide.html" accesskey="u" rel="up">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<span id="Compatibility-1"></span><h3 class="section">3.6 Compatibility</h3>
+<span id="index-fiddle"></span>
+
+<p>Guile-GI normally keeps pointers to the actual objects hidden (for valid
+concerns about reference handling), but in some instances it might be
+necessary to fiddle with them.  A procedure to do exactly that is
+defined in <code>(gi compat)</code>.
+</p><dl>
+<dt id="index-fiddle-1">Procedure: <strong>fiddle</strong> <em>(proc &lt;procedure&gt;) (object &lt;GObject&gt;)</em></dt>
+<dt id="index-fiddle-2">Procedure: <strong>fiddle</strong> <em>(proc &lt;procedure&gt;) (boxed &lt;GBoxed&gt;)</em></dt>
+<dd><p>Apply <var>proc</var> on the internal pointer of <var>object</var> or
+<var>boxed</var>.
+</p></dd></dl>
+
+<p>Oftentimes, <var>proc</var> is a procedure from a dynamic library, which takes
+exactly one argument (the pointer) and returns exactly one output (the
+Scheme object).  Defining many such conversions can be a bit verbose,
+so we defined a helper for that.
+</p><dl>
+<dt id="index-dynamic_002dfiddler">Procedure: <strong>dynamic-fiddler</strong> <em>name library</em></dt>
+<dd><p>Load <var>name</var> from <var>library</var> and convert it to a function, that
+takes exactly one pointer and returns a Scheme object.
+</p></dd></dl>
+
+<span id="index-Guile_002dCairo"></span>
+<p>One instance, where the above are necessary, is the cairo library,
+whose lack of introspection has caused many language bindings to be written
+without it.
+When loading <code>(gi compat)</code> in an environment, where
+<code>(cairo)</code> is available, it will automatically create conversion
+functions for it.
+</p>
+<dl>
+<dt id="index-context_002d_003ecairo">Procedure: <strong>context-&gt;cairo</strong> <em>context</em></dt>
+<dt id="index-surface_002d_003ecairo">Procedure: <strong>surface-&gt;cairo</strong> <em>surface</em></dt>
+<dt id="index-font_002dface_002d_003ecairo">Procedure: <strong>font-face-&gt;cairo</strong> <em>font-face</em></dt>
+<dt id="index-scaled_002dfont_002d_003ecairo">Procedure: <strong>scaled-font-&gt;cairo</strong> <em>scaled-font</em></dt>
+<dd><p>Convert <var>context</var>, <var>surface</var>, <var>font-face</var> or <var>scaled-font</var>
+to the respective <code>(cairo)</code> smob type.
+The conversion adds a reference count to the object, so it should
+be freed manually using the correct <code>-destroy</code> function.
+</p></dd></dl>
+
+
+
+
+</body>
+</html>

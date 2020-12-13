@@ -8,7 +8,7 @@ or any later version published by the Free Software Foundation;
 with no Invariant Sections, no Front-Cover Texts, and no Back-Cover
 Texts.  A copy of the license is included in the section entitled "GNU
 Free Documentation License". -->
-<!-- Created by GNU Texinfo 6.6, http://www.gnu.org/software/texinfo/ -->
+<!-- Created by GNU Texinfo 6.7, http://www.gnu.org/software/texinfo/ -->
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <title>Argument Conversion (Guile-GI)</title>
@@ -18,12 +18,12 @@ Free Documentation License". -->
 <meta name="resource-type" content="document">
 <meta name="distribution" content="global">
 <meta name="Generator" content="makeinfo">
-<link href="index.html#Top" rel="start" title="Top">
-<link href="The-Index.html#The-Index" rel="index" title="The Index">
+<link href="index.html" rel="start" title="Top">
+<link href="The-Index.html" rel="index" title="The Index">
 <link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
-<link href="Tutorial.html#Tutorial" rel="up" title="Tutorial">
-<link href="Function-Parameters-Arity-and-Return-Values.html#Function-Parameters-Arity-and-Return-Values" rel="next" title="Function Parameters Arity and Return Values">
-<link href="Procedures-and-Methods.html#Procedures-and-Methods" rel="prev" title="Procedures and Methods">
+<link href="Tutorial.html" rel="up" title="Tutorial">
+<link href="Function-Parameters-Arity-and-Return-Values.html" rel="next" title="Function Parameters Arity and Return Values">
+<link href="Procedures-and-Methods.html" rel="prev" title="Procedures and Methods">
 <style type="text/css">
 <!--
 a.summary-letter {text-decoration: none}
@@ -50,7 +50,7 @@ ul.no-bullet {list-style: none}
 <body lang="en">
 <span id="Argument-Conversion"></span><div class="header">
 <p>
-Next: <a href="Working-with-GObjects.html#Working-with-GObjects" accesskey="n" rel="next">Working with GObjects</a>, Previous: <a href="Categories-of-Typelib-Bindings.html#Categories-of-Typelib-Bindings" accesskey="p" rel="prev">Categories of Typelib Bindings</a>, Up: <a href="Tutorial.html#Tutorial" accesskey="u" rel="up">Tutorial</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html#The-Index" title="Index" rel="index">Index</a>]</p>
+Next: <a href="Working-with-GObjects.html" accesskey="n" rel="next">Working with GObjects</a>, Previous: <a href="Categories-of-Typelib-Bindings.html" accesskey="p" rel="prev">Categories of Typelib Bindings</a>, Up: <a href="Tutorial.html" accesskey="u" rel="up">Tutorial</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>
 <hr>
 <span id="Argument-Conversion-1"></span><h3 class="section">2.4 Argument Conversion</h3>
@@ -61,25 +61,25 @@ expects.  Guile-GI tries to do it in a predictable and unsurprising way,
 but, the conversion from Scheme to native types has some mismatch.
 </p>
 <table class="menu" border="0" cellspacing="0">
-<tr><td align="left" valign="top">&bull; <a href="Function-Parameters-Arity-and-Return-Values.html#Function-Parameters-Arity-and-Return-Values" accesskey="1">Function Parameters Arity and Return Values</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+<tr><td align="left" valign="top">&bull; <a href="Function-Parameters-Arity-and-Return-Values.html" accesskey="1">Function Parameters Arity and Return Values</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
-<tr><td align="left" valign="top">&bull; <a href="Booleans.html#Booleans" accesskey="2">Booleans</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+<tr><td align="left" valign="top">&bull; <a href="Booleans.html" accesskey="2">Booleans</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
-<tr><td align="left" valign="top">&bull; <a href="Characters.html#Characters" accesskey="3">Characters</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+<tr><td align="left" valign="top">&bull; <a href="Characters.html" accesskey="3">Characters</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
-<tr><td align="left" valign="top">&bull; <a href="Numbers.html#Numbers" accesskey="4">Numbers</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+<tr><td align="left" valign="top">&bull; <a href="Numbers.html" accesskey="4">Numbers</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
-<tr><td align="left" valign="top">&bull; <a href="Strings.html#Strings" accesskey="5">Strings</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+<tr><td align="left" valign="top">&bull; <a href="Strings.html" accesskey="5">Strings</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
-<tr><td align="left" valign="top">&bull; <a href="Structs-Unions-and-Objects.html#Structs-Unions-and-Objects" accesskey="6">Structs Unions and Objects</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+<tr><td align="left" valign="top">&bull; <a href="Structs-Unions-and-Objects.html" accesskey="6">Structs Unions and Objects</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
-<tr><td align="left" valign="top">&bull; <a href="Native-Pointers.html#Native-Pointers" accesskey="7">Native Pointers</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+<tr><td align="left" valign="top">&bull; <a href="Native-Pointers.html" accesskey="7">Native Pointers</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
-<tr><td align="left" valign="top">&bull; <a href="Arrays.html#Arrays" accesskey="8">Arrays</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+<tr><td align="left" valign="top">&bull; <a href="Arrays.html" accesskey="8">Arrays</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
-<tr><td align="left" valign="top">&bull; <a href="Null-Pointers-and-Optional-Arguments.html#Null-Pointers-and-Optional-Arguments" accesskey="9">Null Pointers and Optional Arguments</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+<tr><td align="left" valign="top">&bull; <a href="Null-Pointers-and-Optional-Arguments.html" accesskey="9">Null Pointers and Optional Arguments</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
-<tr><td align="left" valign="top">&bull; <a href="Hash-Tables-and-GHashTable-Types.html#Hash-Tables-and-GHashTable-Types">Hash Tables and GHashTable Types</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+<tr><td align="left" valign="top">&bull; <a href="Hash-Tables-and-GHashTable-Types.html">Hash Tables and GHashTable Types</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
 </table>
 

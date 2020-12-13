@@ -8,7 +8,7 @@ or any later version published by the Free Software Foundation;
 with no Invariant Sections, no Front-Cover Texts, and no Back-Cover
 Texts.  A copy of the license is included in the section entitled "GNU
 Free Documentation License". -->
-<!-- Created by GNU Texinfo 6.6, http://www.gnu.org/software/texinfo/ -->
+<!-- Created by GNU Texinfo 6.7, http://www.gnu.org/software/texinfo/ -->
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <title>GObject Signals (Guile-GI)</title>
@@ -18,12 +18,12 @@ Free Documentation License". -->
 <meta name="resource-type" content="document">
 <meta name="distribution" content="global">
 <meta name="Generator" content="makeinfo">
-<link href="index.html#Top" rel="start" title="Top">
-<link href="The-Index.html#The-Index" rel="index" title="The Index">
+<link href="index.html" rel="start" title="Top">
+<link href="The-Index.html" rel="index" title="The Index">
 <link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
-<link href="Working-with-GObjects.html#Working-with-GObjects" rel="up" title="Working with GObjects">
-<link href="Signal-Accumulators.html#Signal-Accumulators" rel="next" title="Signal Accumulators">
-<link href="GObject-Methods.html#GObject-Methods" rel="prev" title="GObject Methods">
+<link href="Working-with-GObjects.html" rel="up" title="Working with GObjects">
+<link href="Signal-Accumulators.html" rel="next" title="Signal Accumulators">
+<link href="GObject-Methods.html" rel="prev" title="GObject Methods">
 <style type="text/css">
 <!--
 a.summary-letter {text-decoration: none}
@@ -50,7 +50,7 @@ ul.no-bullet {list-style: none}
 <body lang="en">
 <span id="GObject-Signals"></span><div class="header">
 <p>
-Next: <a href="GObject-Properties.html#GObject-Properties" accesskey="n" rel="next">GObject Properties</a>, Previous: <a href="GObject-Methods.html#GObject-Methods" accesskey="p" rel="prev">GObject Methods</a>, Up: <a href="Working-with-GObjects.html#Working-with-GObjects" accesskey="u" rel="up">Working with GObjects</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html#The-Index" title="Index" rel="index">Index</a>]</p>
+Next: <a href="GObject-Properties.html" accesskey="n" rel="next">GObject Properties</a>, Previous: <a href="GObject-Methods.html" accesskey="p" rel="prev">GObject Methods</a>, Up: <a href="Working-with-GObjects.html" accesskey="u" rel="up">Working with GObjects</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>
 <hr>
 <span id="GObject-Signals-1"></span><h4 class="subsection">2.5.3 GObject Signals</h4>
@@ -88,15 +88,24 @@ This argument &ndash; <code>app</code> &ndash; is supplied by the caller, as are
 arguments to signals.
 </p>
 <dl>
-<dt id="index-connect-1">Procedure: <strong>connect</strong> <em>obj (signal &lt;signal&gt;) (handler &lt;procedure&gt;)</em></dt>
-<dt id="index-connect-2">Procedure: <strong>connect</strong> <em>obj (signal &lt;signal&gt;) (detail &lt;symbol&gt;) (handler &lt;procedure&gt;)</em></dt>
-<dt id="index-connect_002dafter">Procedure: <strong>connect-after</strong> <em>obj (signal &lt;signal&gt;) (handler &lt;procedure&gt;)</em></dt>
-<dt id="index-connect_002dafter-1">Procedure: <strong>connect-after</strong> <em>obj (signal &lt;signal&gt;) (detail &lt;symbol&gt;) (handler &lt;procedure&gt;)</em></dt>
+<dt id="index-connect-1">Procedure: <strong>connect</strong> <em>obj (signal &lt;signal&gt;) (handler &lt;procedure&gt;) #:key after? detail</em></dt>
+<dt id="index-connect-2">Procedure: <strong>connect</strong> <em>obj (signal &lt;signal&gt;) (detail &lt;symbol&gt;) (handler &lt;procedure&gt;) ...</em></dt>
+<dt id="index-connect_002dafter">Procedure: <strong>connect-after</strong> <em>obj (signal &lt;signal&gt;) (handler &lt;procedure&gt;) ...</em></dt>
+<dt id="index-connect_002dafter-1">Procedure: <strong>connect-after</strong> <em>obj (signal &lt;signal&gt;) (detail &lt;symbol&gt;) (handler &lt;procedure&gt;) ...</em></dt>
 <dd><p>Hooks <var>handler</var> to emissions of <var>signal</var>.  If <var>detail</var> is
 supplied, only emissions in which the detail matches it are considered.
 </p>
 <p><code>connect-after</code> works like <code>connect</code>, except that the handler
-is run <em>after</em> the main handling code.
+is run <em>after</em> the main handling code.  The same can be achieved by
+setting <code>after?</code> to <code>#t</code>.
+</p>
+<p>Note, that <var>signal</var> may expect <var>handler</var> to have multiple output
+arguments.  Each bit set in its <code>output-mask</code> corresponds to
+one additional value in the output.
+If the <code>return-type</code> is <code>G_TYPE_NONE</code>, the number of expected
+outputs is the number of bits set in <code>output-mask</code>.  Otherwise,
+an additional (first) value is required for the return value of the signal
+itself.
 </p></dd></dl>
 
 <p>Signal objects can also be used to emit signals. Note that you shouldn&rsquo;t
@@ -138,7 +147,7 @@ A list of <code>&lt;GType&gt;</code>s or integers.
 </p></dd></dl>
 <dl>
 <dt id="index-accumulator">Slot: <strong>accumulator</strong></dt>
-<dd><p>An optional signal accumulator procedure. See <a href="Signal-Accumulators.html#Signal-Accumulators">Signal Accumulators</a>.
+<dd><p>An optional signal accumulator procedure. See <a href="Signal-Accumulators.html">Signal Accumulators</a>.
 </p></dd></dl>
 <dl>
 <dt id="index-flags">Slot: <strong>flags</strong></dt>
@@ -146,16 +155,21 @@ A list of <code>&lt;GType&gt;</code>s or integers.
 <code>SIGNAL_RUN_FIRST</code>, <code>SIGNAL_RUN_LAST</code>,
 <code>SIGNAL_RUN_CLEANUP</code>, <code>SIGNAL_NO_RECURSE</code>, etc.
 </p></dd></dl>
+<dl>
+<dt id="index-output_002dmask">Slot: <strong>output-mask</strong></dt>
+<dd><p>A bitmask, describing which argument should be returned to the user when
+calling the signal as a procedure.
+</p></dd></dl>
 
 <table class="menu" border="0" cellspacing="0">
-<tr><td align="left" valign="top">&bull; <a href="Signal-Accumulators.html#Signal-Accumulators" accesskey="1">Signal Accumulators</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+<tr><td align="left" valign="top">&bull; <a href="Signal-Accumulators.html" accesskey="1">Signal Accumulators</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
 </table>
 
 <hr>
 <div class="header">
 <p>
-Next: <a href="GObject-Properties.html#GObject-Properties" accesskey="n" rel="next">GObject Properties</a>, Previous: <a href="GObject-Methods.html#GObject-Methods" accesskey="p" rel="prev">GObject Methods</a>, Up: <a href="Working-with-GObjects.html#Working-with-GObjects" accesskey="u" rel="up">Working with GObjects</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html#The-Index" title="Index" rel="index">Index</a>]</p>
+Next: <a href="GObject-Properties.html" accesskey="n" rel="next">GObject Properties</a>, Previous: <a href="GObject-Methods.html" accesskey="p" rel="prev">GObject Methods</a>, Up: <a href="Working-with-GObjects.html" accesskey="u" rel="up">Working with GObjects</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>
 
 

@@ -8,7 +8,7 @@ or any later version published by the Free Software Foundation;
 with no Invariant Sections, no Front-Cover Texts, and no Back-Cover
 Texts.  A copy of the license is included in the section entitled "GNU
 Free Documentation License". -->
-<!-- Created by GNU Texinfo 6.6, http://www.gnu.org/software/texinfo/ -->
+<!-- Created by GNU Texinfo 6.7, http://www.gnu.org/software/texinfo/ -->
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <title>Window with Button (Guile-GI)</title>
@@ -18,12 +18,12 @@ Free Documentation License". -->
 <meta name="resource-type" content="document">
 <meta name="distribution" content="global">
 <meta name="Generator" content="makeinfo">
-<link href="index.html#Top" rel="start" title="Top">
-<link href="The-Index.html#The-Index" rel="index" title="The Index">
+<link href="index.html" rel="start" title="Top">
+<link href="The-Index.html" rel="index" title="The Index">
 <link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
-<link href="Sample-Applications.html#Sample-Applications" rel="up" title="Sample Applications">
-<link href="Threads-and-Concurrency.html#Threads-and-Concurrency" rel="next" title="Threads and Concurrency">
-<link href="Sample-Applications.html#Sample-Applications" rel="prev" title="Sample Applications">
+<link href="Sample-Applications.html" rel="up" title="Sample Applications">
+<link href="Threads-and-Concurrency.html" rel="next" title="Threads and Concurrency">
+<link href="Sample-Applications.html" rel="prev" title="Sample Applications">
 <style type="text/css">
 <!--
 a.summary-letter {text-decoration: none}
@@ -50,7 +50,7 @@ ul.no-bullet {list-style: none}
 <body lang="en">
 <span id="Window-with-Button"></span><div class="header">
 <p>
-Up: <a href="Sample-Applications.html#Sample-Applications" accesskey="u" rel="up">Sample Applications</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html#The-Index" title="Index" rel="index">Index</a>]</p>
+Up: <a href="Sample-Applications.html" accesskey="u" rel="up">Sample Applications</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>
 <hr>
 <span id="Window-with-Button-1"></span><h4 class="subsection">2.6.1 Window with Button</h4>
@@ -180,40 +180,10 @@ methods one-by-one.
 (main)
 </pre></div>
 
-<p>As discussed in the previous section, loading the entirety of Gtk is
-slow, so we instead use primitives from <code>(gi repository)</code>.  In
-addition, there are some functions, that we didn&rsquo;t yet learn about, as
-well as the bindings created for <code>&lt;GtkApplication&gt;</code>, etc.
-</p>
-<span id="index-make"></span>
-
-<p>First is <code>make</code>, which wraps and extends the <code>make</code> procedure
-found in GOOPS.  See <a href="https://www.gnu.org/software/guile/manual/html_node/GOOPS.html#GOOPS">GOOPS</a> in <cite>The Guile reference manual</cite> for
-info about GOOPS.  In short, the arguments &ndash; normally used for slot
-initialization &ndash; are used to initialize properties.  This is important,
-because the slots of the GOOPS object <strong>do not</strong> map to properties,
-and neither do the properties map to slots.  <code>make</code> can also be
-used on some types, which do not derive from GObject, most notably it
-can be called without any arguments to allocate boxed types.
-</p>
-<span id="index-connect-3"></span>
-
-<p>Next is <code>connect</code>, which connects Guile procedures as handlers to
-GObject signals.  Signals are roughly equal to hooks in Guile, except
-that they have an invisible default handler and hence two <code>connect</code>
-methods instead of a single <code>add-hook!</code> one.  Removing a connection
-also requires temporarily saving the return value (which is an integer
-id), so that it can be passed to <code>signal-handler-disconnect</code>.
-</p>
-<p>Finally, we have the bindings themselves, as mentioned before.
-<a href="GObject-Methods.html#GObject-Methods">GObject Methods</a> on how to use methods,
-<a href="GObject-Signals.html#GObject-Signals">GObject Signals</a> on how to use signals and
-<a href="GObject-Properties.html#GObject-Properties">GObject Properties</a> on how to use properties.
-</p>
 <hr>
 <div class="header">
 <p>
-Up: <a href="Sample-Applications.html#Sample-Applications" accesskey="u" rel="up">Sample Applications</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html#The-Index" title="Index" rel="index">Index</a>]</p>
+Up: <a href="Sample-Applications.html" accesskey="u" rel="up">Sample Applications</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>
 
 
