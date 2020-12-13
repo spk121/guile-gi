@@ -149,7 +149,6 @@ invoke_closure(SCM closure, SCM return_type, SCM inout_mask, SCM args)
         gssize pos = 0, inc;
         scm_t_array_handle handle;
         const guint32 *bits;
-        int err;
 
         gsize bit_count = scm_to_size_t(scm_bit_count(SCM_BOOL_T, inout_mask));
         if (bit_count > nargs)
