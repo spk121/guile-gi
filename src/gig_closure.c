@@ -67,7 +67,7 @@ _gig_closure_marshal(GClosure *closure, GValue *ret, guint n_params, const GValu
             scm_misc_error(NULL, "~S returned more values than we can unpack",
                            scm_list_1(pc->callback));
 
-        gsize bit_count = scm_to_size_t(scm_bit_count(SCM_BOOL_T, pc->inout_mask));
+        gsize bit_count = scm_c_bitvector_count(pc->inout_mask);
         if (bit_count == 0 && nvalues == 1)
             /* fast path */
             return;
@@ -142,7 +142,7 @@ invoke_closure(SCM closure, SCM return_type, SCM inout_mask, SCM args)
     g_closure_invoke(real_closure, retval, nargs, params, NULL);
     ret = gig_type_transfer_object(G_TYPE_VALUE, retval, GI_TRANSFER_EVERYTHING);
 
-    if (scm_is_true(scm_bitvector_p(inout_mask))) {
+    if (scm_is_bitvector(inout_mask)) {
         ret = scm_cons(ret, SCM_EOL);
 
         gsize idx = 0, offset, length;
@@ -150,7 +150,7 @@ invoke_closure(SCM closure, SCM return_type, SCM inout_mask, SCM args)
         scm_t_array_handle handle;
         const guint32 *bits;
 
-        gsize bit_count = scm_to_size_t(scm_bit_count(SCM_BOOL_T, inout_mask));
+        gsize bit_count = scm_c_bitvector_count(inout_mask);
         if (bit_count > nargs)
             scm_misc_error(NULL, "~S returned fewer values than we should unpack",
                            scm_list_1(closure));
@@ -187,7 +187,7 @@ procedure_to_closure(SCM procedure, SCM inout_mask)
     SCM_ASSERT_TYPE(scm_is_true(scm_procedure_p(procedure)), procedure, SCM_ARG1,
                     "procedure->closure", "procedure");
     SCM_ASSERT_TYPE(SCM_UNBNDP(inout_mask) ||
-                    scm_is_true(scm_bitvector_p(inout_mask)), procedure, SCM_ARG2,
+                    scm_is_bitvector(inout_mask), procedure, SCM_ARG2,
                     "procedure->closure", "bitvector");
     GClosure *cls = gig_closure_new(procedure, inout_mask);
     g_closure_ref(cls);

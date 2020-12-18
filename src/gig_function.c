@@ -233,7 +233,7 @@ proc4signal(GISignalInfo *info, const gchar *name, SCM self_type, int *req, int 
 
     // use base_info name without transformations, otherwise we could screw things up
     values[0] = scm_from_utf8_string(g_base_info_get_name(info));
-    values[1] = scm_make_bitvector(scm_from_int(*req + *opt), SCM_BOOL_F);
+    values[1] = scm_c_make_bitvector(*req + *opt, SCM_BOOL_F);
 
     gsize offset, length;
     gssize pos = 0, inc;
