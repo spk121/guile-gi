@@ -1,0 +1,52 @@
+name: Ubuntu Bionic w/ Guile 2.2
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-18.04
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: env
+      run: export LANG=C.UTF-8 TERM=dumb VERBOSE=true DEBIAN_FRONTEND=noninteractive TZ=America/Los_Angeles
+    - name: install packages
+      run: sudo apt-get install -y libgirepository1.0-dev guile-2.2-dev gnulib texlive
+    - name: look for guile
+      run: ls -l /usr/bin/gu*
+    - name: make dist directory
+      run: mkdir `pwd`/dist
+    - name: bootstrap
+      run: ./bootstrap
+    - name: configure
+      run: GUILD=/usr/bin/guild ./configure --enable-hardening --with-gnu-filesystem-hierarchy --prefix=`pwd`/dist 
+    - name: make
+      run: make
+    - name: make check
+      run: make check
+    - name: make install
+      run: make install
+    - name: make distcheck
+      run: GUILD=/usr/bin/guild make distcheck
+    - name: Archive production artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: dist
+        path: dist
+    - name: Uncompress tarballs
+      run: gunzip *.tar.gz
+    - name: Archive tarball
+      uses: actions/upload-artifact@v2
+      with:
+        name: tarball
+        path: guile_gi*tar
+    - name: Archive test logs
+      uses: actions/upload-artifact@v2
+      with:
+        name: logs
+        path: test-suite.log
