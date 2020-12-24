@@ -54,7 +54,7 @@ jobs:
     - name: bootstrap
       run: ACLOCAL_PATH=`pwd`/dist/share/aclocal ./bootstrap
     - name: configure
-      run: ACLOCAL_PATH=`pwd`/dist/share/aclocal` PKG_CONFIG_PATH=`pwd`/dist/lib/pkgconfig LD_LIBRARY_PATH=`pwd`/dist/lib:$LD_LIBRARY_PATH PATH=`pwd`/dist/bin:$PATH ./configure CPPFLAGS=-I`pwd`/dist/include --enable-hardening --with-gnu-filesystem-hierarchy --prefix=`pwd`/dist
+      run: ACLOCAL_PATH=`pwd`/dist/share/aclocal PKG_CONFIG_PATH=`pwd`/dist/lib/pkgconfig LD_LIBRARY_PATH=`pwd`/dist/lib:$LD_LIBRARY_PATH PATH=`pwd`/dist/bin:$PATH ./configure CPPFLAGS=-I`pwd`/dist/include --enable-hardening --with-gnu-filesystem-hierarchy --prefix=`pwd`/dist
     - name: make
       run: make
     - name: make check
