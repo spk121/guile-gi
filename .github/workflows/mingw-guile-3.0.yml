@@ -49,6 +49,8 @@ jobs:
       with:
         name: guile-dist
         path: dist
+    - name: Display Guile effective version
+      run: PATH=`pwd`/dist/bin:$PATH guile -c "(display (effective-version))"
     - name: get guile.m4
       run: cp guile/meta/guile.m4 m4
     - name: bootstrap
