@@ -43,7 +43,7 @@ jobs:
     - name: install guile
       run: cd guile; make install; cd ..
     - name: see what happened
-      run: ls -lR usr
+      run: ls -lR /usr
     - name: Store Guile effective version
       run: guile -c "(display (effective-version)) (newline) (exit 0)" > ver.txt
     - name: Archive version
