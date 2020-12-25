@@ -37,7 +37,7 @@ jobs:
     - name: bootstrap guile
       run: cd guile; autoreconf -vif; cd ..
     - name: configure guile
-      run: cd guile; ./configure --without-threads --enable-jit=no --prefix=`pwd`/../dist; cd ..
+      run: cd guile; ./configure --without-threads --enable-jit=no --prefix=/usr/bin; cd ..
     - name: build guile
       run: cd guile; make -j; cd ..
     - name: install guile
@@ -50,7 +50,7 @@ jobs:
         name: guile-dist
         path: dist
     - name: Store Guile effective version
-      run: PATH=`pwd`/dist/bin:$PATH guile -c "(display (effective-version)) (newline) (exit 0)" > ver.txt
+      run: guile -c "(display (effective-version)) (newline) (exit 0)" > ver.txt
     - name: Archive version
       uses: actions/upload-artifact@v2
       with:
@@ -59,9 +59,9 @@ jobs:
     - name: get guile.m4
       run: cp guile/meta/guile.m4 m4
     - name: bootstrap
-      run: ACLOCAL_PATH=`pwd`/dist/share/aclocal ./bootstrap
+      run: ./bootstrap
     - name: configure
-      run: ACLOCAL_PATH=`pwd`/dist/share/aclocal PKG_CONFIG_PATH=`pwd`/dist/lib/pkgconfig LD_LIBRARY_PATH=`pwd`/dist/lib:$LD_LIBRARY_PATH PATH=`pwd`/dist/bin:$PATH ./configure CPPFLAGS=-I`pwd`/dist/include --enable-hardening --with-gnu-filesystem-hierarchy --prefix=`pwd`/dist
+      run: ./configure --enable-hardening --with-gnu-filesystem-hierarchy --prefix=`pwd`/dist
     - name: make
       run: make
     - name: make check
@@ -69,7 +69,7 @@ jobs:
     - name: make install
       run: make install
     - name: make distcheck
-      run: PKG_CONFIG_PATH=`pwd`/dist/lib/pkgconfig make distcheck
+      run: make distcheck
     - name: Archive production artifacts
       uses: actions/upload-artifact@v2
       with:
