@@ -45,7 +45,7 @@ jobs:
     - name: see what happened
       run: ls -lR /usr
     - name: Store Guile effective version
-      run: guile -c "(display (effective-version)) (newline) (exit 0)" > ver.txt
+      run: /usr/bin/guile.exe --version
     - name: Archive version
       uses: actions/upload-artifact@v2
       with:
