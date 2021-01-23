@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2019, 2020 Michael L. Gran
+// Copyright (C) 2018, 2019, 2020, 2021 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -44,6 +44,8 @@ GType gig_type_get_gtype_from_obj(SCM x);
 SCM gig_type_get_scheme_type(GType gtype);
 SCM gig_type_get_scheme_type_with_info(GIRegisteredTypeInfo *info);
 
+gboolean gig_type_check_object(SCM obj);
+gboolean gig_type_check_typed_object(SCM obj, SCM expected_type);
 SCM gig_type_transfer_object(GType gtype, gpointer obj, GITransfer transfer);
 gpointer gig_type_peek_object(SCM obj);
 gpointer gig_type_peek_typed_object(SCM obj, SCM expected);

@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2019, 2020 Michael L. Gran
+// Copyright (C) 2018, 2019, 2020, 2021 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -155,6 +155,18 @@ gig_type_transfer_object(GType type, gpointer ptr, GITransfer transfer)
 
 static SCM gig_fundamental_type;
 static SCM gig_boxed_type;
+
+gboolean
+gig_type_check_object(SCM obj)
+{
+    return SCM_IS_A_P(obj, gig_fundamental_type);
+}
+
+gboolean
+gig_type_check_typed_object(SCM obj, SCM expected_type)
+{
+    return SCM_IS_A_P(obj, expected_type);
+}
 
 gpointer
 gig_type_peek_typed_object(SCM obj, SCM expected_type)

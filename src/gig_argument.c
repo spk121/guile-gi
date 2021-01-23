@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2019, 2020 Michael L. Gran
+// Copyright (C) 2018, 2019, 2020, 2021 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -246,8 +246,7 @@ scm_to_c_interface(S2C_ARG_DECL)
         arg->v_pointer = NULL;
     else
         arg->v_pointer = G_TYPE_CHECK_INSTANCE_CAST(gig_type_peek_object(object),
-                                                    meta->gtype,
-                                                    void);
+                                                    meta->gtype, void);
 }
 
 static void
@@ -517,8 +516,12 @@ scm_to_c_object(S2C_ARG_DECL)
     if (meta->is_nullable && scm_is_false(object)) {
         arg->v_pointer = NULL;
     }
-    else
+    else {
+        if (!gig_type_check_typed_object(object, scm_from_gtype(meta->gtype)))
+            scm_wrong_type_arg_msg(subr, argpos, object, g_type_name(meta->gtype));
+
         arg->v_pointer = gig_type_peek_object(object);
+    }
 }
 
 static void
