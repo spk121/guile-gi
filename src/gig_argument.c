@@ -480,7 +480,6 @@ scm_to_c_pointer(S2C_ARG_DECL)
         arg->v_pointer = SCM_BYTEVECTOR_CONTENTS(object);
     else
         scm_wrong_type_arg_msg(subr, argpos, object, "a pointer");
-
 }
 
 static void
@@ -1286,7 +1285,15 @@ static void
 c_interface_to_scm(C2S_ARG_DECL)
 {
     TRACE_C2S();
-    *object = gig_type_transfer_object(meta->gtype, arg->v_pointer, meta->transfer);
+
+    // If this argument self-identifies as a child type to the
+    // expected type, we should use that more specific type.
+    if (g_type_is_a(G_OBJECT_TYPE(arg->v_pointer), meta->gtype))
+        *object =
+            gig_type_transfer_object(G_OBJECT_TYPE(arg->v_pointer), arg->v_pointer,
+                                     meta->transfer);
+    else
+        *object = gig_type_transfer_object(meta->gtype, arg->v_pointer, meta->transfer);
 }
 
 static void
@@ -1299,7 +1306,14 @@ c_object_to_scm(C2S_ARG_DECL)
         scm_misc_error("%object-arg->scm", "cannot convert a NULL pointer to an object of type ~S",
                        scm_list_1(scm_from_utf8_string(g_type_name(meta->gtype))));
 
-    *object = gig_type_transfer_object(meta->gtype, arg->v_pointer, meta->transfer);
+    // If this argument self-identifies as a child type to the
+    // expected type, we should use that more specific type.
+    if (g_type_is_a(G_OBJECT_TYPE(arg->v_pointer), meta->gtype))
+        *object =
+            gig_type_transfer_object(G_OBJECT_TYPE(arg->v_pointer), arg->v_pointer,
+                                     meta->transfer);
+    else
+        *object = gig_type_transfer_object(meta->gtype, arg->v_pointer, meta->transfer);
 }
 
 static void
@@ -1685,12 +1699,13 @@ c_list_to_scm(C2S_ARG_DECL)
     gsize length = g_slist_length(slist);
     *object = scm_make_list(scm_from_size_t(length), SCM_UNDEFINED);
 
-    for (SCM out_iter = *object; slist != NULL; slist = g_slist_next(slist), out_iter = scm_cdr(out_iter))
-    {
+    for (SCM out_iter = *object; slist != NULL;
+         slist = g_slist_next(slist), out_iter = scm_cdr(out_iter)) {
         GIArgument _arg;
         SCM _obj;
         _arg.v_pointer = slist->data;
-        gig_argument_c_to_scm(subr, argpos, &meta->params[0], &_arg, &_obj, GIG_ARRAY_SIZE_UNKNOWN);
+        gig_argument_c_to_scm(subr, argpos, &meta->params[0], &_arg, &_obj,
+                              GIG_ARRAY_SIZE_UNKNOWN);
         scm_set_car_x(out_iter, _obj);
     }
     if (meta->transfer != GI_TRANSFER_NOTHING) {
