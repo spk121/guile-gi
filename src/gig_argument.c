@@ -99,6 +99,16 @@ later_free(GPtrArray *must_free, GigTypeMeta *meta, gpointer ptr)
 
 #define LATER_FREE(_ptr) later_free(must_free, meta, _ptr)
 
+static GType
+child_type(GigTypeMeta *meta, GIArgument *arg)
+{
+    if ((arg != NULL) && (arg->v_pointer != NULL) && G_IS_OBJECT(arg->v_pointer)
+        && g_type_is_a(G_OBJECT_TYPE(arg->v_pointer), meta->gtype)) {
+        return G_OBJECT_TYPE(arg->v_pointer);
+    }
+    return meta->gtype;
+}
+
 // This returns the number of elements (not necessarily bytes) in ARG.
 static gsize
 zero_terminated_array_length(GigTypeMeta *meta, GIArgument *arg)
@@ -1286,14 +1296,7 @@ c_interface_to_scm(C2S_ARG_DECL)
 {
     TRACE_C2S();
 
-    // If this argument self-identifies as a child type to the
-    // expected type, we should use that more specific type.
-    if (g_type_is_a(G_OBJECT_TYPE(arg->v_pointer), meta->gtype))
-        *object =
-            gig_type_transfer_object(G_OBJECT_TYPE(arg->v_pointer), arg->v_pointer,
-                                     meta->transfer);
-    else
-        *object = gig_type_transfer_object(meta->gtype, arg->v_pointer, meta->transfer);
+    *object = gig_type_transfer_object(child_type(meta, arg), arg->v_pointer, meta->transfer);
 }
 
 static void
@@ -1306,14 +1309,7 @@ c_object_to_scm(C2S_ARG_DECL)
         scm_misc_error("%object-arg->scm", "cannot convert a NULL pointer to an object of type ~S",
                        scm_list_1(scm_from_utf8_string(g_type_name(meta->gtype))));
 
-    // If this argument self-identifies as a child type to the
-    // expected type, we should use that more specific type.
-    if (g_type_is_a(G_OBJECT_TYPE(arg->v_pointer), meta->gtype))
-        *object =
-            gig_type_transfer_object(G_OBJECT_TYPE(arg->v_pointer), arg->v_pointer,
-                                     meta->transfer);
-    else
-        *object = gig_type_transfer_object(meta->gtype, arg->v_pointer, meta->transfer);
+    *object = gig_type_transfer_object(child_type(meta, arg), arg->v_pointer, meta->transfer);
 }
 
 static void
