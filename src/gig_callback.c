@@ -1,3 +1,18 @@
+// Copyright (C) 2019, 2020, 2021 Michael L. Gran
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 #include <libguile.h>
 #include <libguile/hooks.h>
 #include <ffi.h>
@@ -176,6 +191,11 @@ callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
     g_assert_cmpint(n_args, ==, g_callable_info_get_n_args(gcb->callback_info));
     g_assert(gcb->amap != NULL);
     GigArgMap *amap = gcb->amap;
+    char *callback_name;
+    if (amap->name)
+        callback_name = g_strdup_printf("%s callback", amap->name);
+    else
+        callback_name = g_strdup("callback");
 
     // Do the two-step conversion from libffi arguments to GIArgument
     // to SCM arguments.
@@ -188,7 +208,7 @@ callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
 
         convert_ffi_arg_to_giargument(ffi_args[i], cif->arg_types[i], amap->pdata[i].meta.is_ptr,
                                       &giarg);
-        gig_argument_c_to_scm("callback", i, &amap->pdata[i].meta, &giarg, &s_entry, -1);
+        gig_argument_c_to_scm(callback_name, i, &amap->pdata[i].meta, &giarg, &s_entry, -1);
         s_args = scm_cons(s_entry, s_args);
     }
     s_args = scm_reverse_x(s_args, SCM_EOL);
@@ -197,8 +217,7 @@ callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
     if (scm_is_false(scm_hook_empty_p(gig_before_callback_hook)))
         scm_c_run_hook(gig_before_callback_hook,
                        scm_list_3(scm_from_utf8_string(g_base_info_get_name(gcb->callback_info)),
-                                  gcb->s_func,
-                                  s_args));
+                                  gcb->s_func, s_args));
 
     // The actual call of the Scheme callback happens here.
     if (length < amap->s_input_req || length > amap->s_input_req + amap->s_input_opt)
@@ -222,7 +241,7 @@ callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
         if (amap->return_val.meta.gtype != G_TYPE_NONE) {
             start = 1;
             SCM real_ret = scm_c_value_ref(s_ret, 0);
-            gig_argument_scm_to_c("callback", 0, &amap->return_val.meta, real_ret, NULL, &giarg,
+            gig_argument_scm_to_c(callback_name, 0, &amap->return_val.meta, real_ret, NULL, &giarg,
                                   &size);
             store_output(&(amap->return_val), (gpointer **)&ret, &giarg);
 
@@ -240,9 +259,9 @@ callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
                 continue;
             gint real_cpos = entry - amap->pdata;
             if (entry->s_output_pos >= n_values)
-                scm_misc_error("callback", "too few return values", SCM_EOL);
+                scm_misc_error(callback_name, "too few return values", SCM_EOL);
             SCM real_value = scm_c_value_ref(s_ret, entry->s_output_pos + start);
-            gig_argument_scm_to_c("callback", real_cpos, &entry->meta, real_value, NULL, &giarg,
+            gig_argument_scm_to_c(callback_name, real_cpos, &entry->meta, real_value, NULL, &giarg,
                                   &size);
             store_output(entry, ffi_args[c_output_pos], &giarg);
 
@@ -254,6 +273,7 @@ callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
             }
         }
     }
+    g_free(callback_name);
 }
 
 void
@@ -281,8 +301,7 @@ c_callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user
     if (scm_is_false(scm_hook_empty_p(gig_before_c_callback_hook)))
         scm_c_run_hook(gig_before_c_callback_hook,
                        scm_list_3(scm_from_utf8_string(g_base_info_get_name(gcb->callback_info)),
-                                  scm_from_pointer(gcb->c_func, NULL),
-                                  s_args));
+                                  scm_from_pointer(gcb->c_func, NULL), s_args));
 
     // Use 'name' instead of gcb->name, which is NULL for C callbacks.
     GError *error = NULL;
