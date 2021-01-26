@@ -1,5 +1,5 @@
 # Makefile.am - top level
-# Copyright (C) 2018, 2019, 2020 Michael L. Gran
+# Copyright (C) 2018, 2019, 2020, 2021 Michael L. Gran
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -373,6 +373,7 @@ TESTS = \
   test/oop.scm \
   test/value.scm \
   test/flags.scm \
+  test/task.scm \
   test/type.scm \
   test/signals.scm \
   test/logging.scm \
