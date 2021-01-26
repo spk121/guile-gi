@@ -180,6 +180,10 @@ callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
     SCM s_args = SCM_EOL;
     SCM s_ret;
 
+    // When using GLib thread functions, this could be the entrypoint
+    // into Guile for this thread.
+    scm_init_guile();
+
     g_assert(cif != NULL);
     g_assert(ret != NULL);
     g_assert(ffi_args != NULL);

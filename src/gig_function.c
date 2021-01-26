@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2019, 2020 Michael L. Gran
+// Copyright (C) 2018, 2019, 2020, 2021 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -625,6 +625,10 @@ function_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
     GigFunction *gfn = user_data;
     GObject *self = NULL;
     SCM s_args = SCM_UNDEFINED;
+
+    // When using GLib thread functions, could this be the entrypoint
+    // into Guile for this thread?
+    scm_init_guile();
 
     g_assert(cif != NULL);
     g_assert(ret != NULL);
