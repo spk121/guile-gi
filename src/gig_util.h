@@ -23,7 +23,6 @@ SCM scm_c_reexport(const gchar *name, ...);
 void scm_printf(SCM port, const gchar *fmt, ...);
 const gchar *g_base_info_get_name_safe(GIBaseInfo *info);
 gchar *g_registered_type_info_get_qualified_name(GIRegisteredTypeInfo *info);
-const gchar *_itoa(int i);
 G_GNUC_INTERNAL gchar *scm_write_to_utf8_stringn(SCM x, gsize max_len);
 
 #define scm_is_equal(a,b) scm_is_true(scm_equal_p(a,b))
