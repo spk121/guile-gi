@@ -3,6 +3,9 @@
              (srfi srfi-1)
              (srfi srfi-64))
 
+(define mingw?
+  (string-contains %host-type "-mingw32"))
+
 (require "GLib" "2.0")
 (load-by-name "GLib" "IOCondition")
 (load-by-name "GLib" "MainLoop")
@@ -10,7 +13,8 @@
 (load-by-name "GLib" "PRIORITY_DEFAULT")
 (load-by-name "GLib" "idle_add")
 (load-by-name "GLib" "timeout_add")
-(load-by-name "GLib" "unix_fd_add_full")
+(unless mingw?
+  (load-by-name "GLib" "unix_fd_add_full"))
 
 (define loop #f)
 
@@ -66,6 +70,10 @@
 
 (define unix-fd-sample-text "Lorem ipsum dolor sit amet")
 (define unix-fd-result #f)
+
+;; No unix fd's in MinGW
+(when  mingw?
+  (test-skip 5))
 
 (test-assert "add unix-fd callback"
   (< 0
