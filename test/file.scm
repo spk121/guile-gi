@@ -20,14 +20,18 @@
 (test-assert "has-parent?"
   (file:has-parent? (file:new-for-path "/tmp")))
 
-(test-equal "get-parent"
-  "/"
-  (file:get-path
-   (file:get-parent (file:new-for-path "/tmp"))))
+(test-assert "get-parent"
+  (let ((parent-path
+	 (file:get-path
+	  (file:get-parent (file:new-for-path "/tmp")))))
+    (or (string=? "/" parent-path)
+	(string=? "\\" parent-path))))
 
-(test-equal "get-child"
-  "/tmp"
-  (file:get-path
-   (file:get-child (file:new-for-path "/") "tmp")))
+(test-assert "get-child"
+  (let ((child-path
+	 (file:get-path
+	  (file:get-child (file:new-for-path "/") "tmp"))))
+    (or (string=? "/tmp" child-path)
+	(string=? "\\tmp" child-path))))
 
 (test-end "file")
