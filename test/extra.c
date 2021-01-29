@@ -5,6 +5,7 @@
 #include "extra.h"
 
 #include <string.h>
+#include <stdlib.h>
 
 /**
  * extra_zero_terminated_uint8_array_input
