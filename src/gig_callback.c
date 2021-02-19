@@ -42,6 +42,7 @@ GSList *callback_list = NULL;
 
 SCM gig_before_c_callback_hook;
 SCM gig_before_callback_hook;
+SCM gig_callback_thread_fluid;
 
 static ffi_type *amap_entry_to_ffi_type(GigArgMapEntry *entry);
 static void callback_free(GigCallback *gcb);
@@ -170,26 +171,35 @@ store_output(GigArgMapEntry *entry, gpointer **arg, GIArgument *value)
     }
 }
 
+struct callback_binding_args
+{
+    ffi_cif *cif;
+    gpointer ret;
+    gpointer *ffi_args;
+    GigCallback *gcb;
+};
+
 // This is the core of a dynamically generated callback funcion.
 // It converts FFI arguments to SCM arguments, calls a SCM function
 // and then returns the result.
-void
-callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_data)
+static void *
+callback_binding_inner(struct callback_binding_args *args)
 {
-    GigCallback *gcb = user_data;
+    ffi_cif *cif = args->cif;
+    gpointer ret = args->ret;
+    gpointer *ffi_args = args->ffi_args;
+    GigCallback *gcb = args->gcb;
     SCM s_args = SCM_EOL;
     SCM s_ret;
-
-    // When using GLib thread functions, this could be the entrypoint
-    // into Guile for this thread.
-    scm_init_guile();
 
     g_assert(cif != NULL);
     g_assert(ret != NULL);
     g_assert(ffi_args != NULL);
-    g_assert(user_data != NULL);
+    g_assert(gcb != NULL);
 
     guint n_args = cif->nargs;
+
+    scm_load_goops();
 
     g_assert(scm_is_true(scm_procedure_p(gcb->s_func)));
     g_assert_cmpint(n_args, ==, g_callable_info_get_n_args(gcb->callback_info));
@@ -197,7 +207,7 @@ callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
     GigArgMap *amap = gcb->amap;
     char *callback_name;
     if (amap->name)
-        callback_name = g_strdup_printf("%s callback", amap->name);
+        callback_name = g_strdup_printf("callback:<%s>", amap->name);
     else
         callback_name = g_strdup("callback");
 
@@ -225,7 +235,12 @@ callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
 
     // The actual call of the Scheme callback happens here.
     if (length < amap->s_input_req || length > amap->s_input_req + amap->s_input_opt)
-        scm_wrong_num_args(gcb->s_func);
+        scm_error(scm_args_number_key,
+                  callback_name,
+                  "Wrong number of arguments to ~A, received ~A, expected ~A to ~A",
+                  scm_list_4(gcb->s_func, scm_from_int(length),
+                             scm_from_int(amap->s_input_req),
+                             scm_from_int(amap->s_input_req + amap->s_input_opt)), SCM_BOOL_F);
     else
         s_ret = scm_apply_0(gcb->s_func, s_args);
 
@@ -278,19 +293,47 @@ callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
         }
     }
     g_free(callback_name);
+    return (void *)1;
 }
 
 void
-c_callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_data)
+callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_data)
 {
+    struct callback_binding_args args;
+    args.cif = cif;
+    args.ret = ret;
+    args.ffi_args = ffi_args;
+    args.gcb = user_data;
+
+    scm_init_guile();
+
+    // If we're not in the main thread, we catch and error at this
+    // level.  But in the main thread, there is assuredly some higher
+    // level catch.
+
+    if (scm_is_true(scm_fluid_ref(gig_callback_thread_fluid)))
+        callback_binding_inner(&args);
+    else {
+        if (NULL == scm_with_guile(callback_binding_inner, &args))
+            scm_c_eval_string("(quit EXIT_FAILURE)");
+    }
+}
+
+void *
+c_callback_binding_inner(struct callback_binding_args *args)
+{
+
+    ffi_cif *cif = args->cif;
+    gpointer ret = args->ret;
+    gpointer *ffi_args = args->ffi_args;
     const gchar *name = "c callback";
-    GigCallback *gcb = user_data;
+    GigCallback *gcb = args->gcb;
     SCM s_args = SCM_UNDEFINED;
 
     g_assert(cif != NULL);
     g_assert(ret != NULL);
     g_assert(ffi_args != NULL);
-    g_assert(user_data != NULL);
+    g_assert(gcb != NULL);
 
     guint n_args = cif->nargs;
 
@@ -319,12 +362,36 @@ c_callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user
     }
 
     *(ffi_arg *)ret = SCM_UNPACK(output);
+    return (void *)1;
+}
+
+void
+c_callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_data)
+{
+    struct callback_binding_args args;
+    args.cif = cif;
+    args.ret = ret;
+    args.ffi_args = ffi_args;
+    args.gcb = user_data;
+
+    scm_init_guile();
+
+    // If we're not in the main thread, we catch and error at this
+    // level.  But in the main thread, there is assuredly some higher
+    // level catch.
+
+    if (scm_is_true(scm_fluid_ref(gig_callback_thread_fluid)))
+        c_callback_binding_inner(&args);
+    else {
+        if (NULL == scm_with_guile(c_callback_binding_inner, &args))
+            scm_c_eval_string("(quit EXIT_FAILURE)");
+    }
 }
 
 // This procedure uses CALLBACK_INFO to create a dynamic FFI C closure
 // to use as an entry point to the scheme procedure S_FUNC.
 GigCallback *
-gig_callback_new(GICallbackInfo *callback_info, SCM s_func)
+gig_callback_new(const char *name, GICallbackInfo *callback_info, SCM s_func)
 {
     g_assert(scm_is_true(scm_procedure_p(s_func)));
 
@@ -339,7 +406,7 @@ gig_callback_new(GICallbackInfo *callback_info, SCM s_func)
         g_debug("Constructing C callback for %s", gcb->name);
     }
     else {
-        gcb->name = g_strdup("(anonymous)");
+        gcb->name = g_strdup_printf("callback:%s", name);
         g_debug("Construction a C Callback for an anonymous procedure");
     }
 
@@ -428,7 +495,7 @@ gig_callback_new_for_callback(GICallbackInfo *info, gpointer c_func)
 }
 
 gpointer
-gig_callback_to_c(GICallbackInfo *cb_info, SCM s_func)
+gig_callback_to_c(const char *name, GICallbackInfo *cb_info, SCM s_func)
 {
     g_assert(cb_info != NULL);
     g_assert(scm_is_true(scm_procedure_p(s_func)));
@@ -448,20 +515,23 @@ gig_callback_to_c(GICallbackInfo *cb_info, SCM s_func)
 
     // Create a new entry if necessary.
     scm_gc_protect_object(s_func);
-    gcb = gig_callback_new(cb_info, s_func);
+    gcb = gig_callback_new(name, cb_info, s_func);
     callback_list = g_slist_prepend(callback_list, gcb);
     return gcb->callback_ptr;
 }
 
 SCM
-gig_callback_to_scm(GICallbackInfo *info, gpointer callback)
+gig_callback_to_scm(const char *name, GICallbackInfo *info, gpointer callback)
 {
     // we probably shouldn't cache this, because C callbacks can be
     // invalidated
     GigCallback *gcb = gig_callback_new_for_callback(info, callback);
     if (gcb == NULL)
         return SCM_BOOL_F;
-    return scm_c_make_gsubr("(anonymous)", 0, 0, 1, gcb->callback_ptr);
+    char *subr_name = g_strdup_printf("c-callback:%s", name);
+    SCM subr = scm_c_make_gsubr(subr_name, 0, 0, 1, gcb->callback_ptr);
+    g_free(subr_name);
+    return subr;
 }
 
 static ffi_type *
@@ -588,8 +658,12 @@ gig_init_callback(void)
 
     gig_before_c_callback_hook = scm_permanent_object(scm_make_hook(scm_from_size_t(3)));
     gig_before_callback_hook = scm_permanent_object(scm_make_hook(scm_from_size_t(3)));
+    gig_callback_thread_fluid = scm_permanent_object(scm_make_thread_local_fluid(SCM_BOOL_F));
+    scm_fluid_set_x(gig_callback_thread_fluid, SCM_BOOL_T);
+
     scm_c_define("%before-c-callback-hook", gig_before_c_callback_hook);
     scm_c_define("%before-callback-hook", gig_before_callback_hook);
+    scm_c_define("%callback-thread-fluid", gig_callback_thread_fluid);
 
     scm_c_define_gsubr("is-registered-callback?", 1, 0, 0, scm_is_registered_callback_p);
     scm_c_define_gsubr("get-registered-callback-closure-pointer", 1, 0, 0,

@@ -476,7 +476,7 @@ scm_to_c_pointer(S2C_ARG_DECL)
         arg->v_pointer = NULL;
     else if (meta->pointer_type == GIG_DATA_CALLBACK) {
         if (scm_is_true(scm_procedure_p(object))) {
-            arg->v_pointer = gig_callback_to_c(meta->callable_info, object);
+            arg->v_pointer = gig_callback_to_c(subr, meta->callable_info, object);
             g_assert(arg->v_pointer != NULL);
         }
         else
@@ -1721,7 +1721,7 @@ c_pointer_to_scm(C2S_ARG_DECL)
         *object = scm_from_gtype(arg->v_size);
     else if (meta->pointer_type == GIG_DATA_CALLBACK) {
         gpointer cb = meta->is_ptr ? *(gpointer *)arg->v_pointer : arg->v_pointer;
-        *object = gig_callback_to_scm(meta->callable_info, cb);
+        *object = gig_callback_to_scm(subr, meta->callable_info, cb);
     }
     else if (meta->pointer_type == GIG_DATA_LIST || meta->pointer_type == GIG_DATA_SLIST)
         c_list_to_scm(C2S_ARGS);
