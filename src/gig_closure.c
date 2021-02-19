@@ -86,7 +86,7 @@ _gig_closure_marshal(GClosure *closure, GValue *ret, guint n_params, const GValu
             gsize mask = 1L << (pos % 32);
 
             if (bits[word_pos] & mask)
-                g_warn_if_fail(!gig_value_from_scm((GValue*)(params + i),
+                g_warn_if_fail(!gig_value_from_scm((GValue *)(params + i),
                                                    scm_c_value_ref(_ret, idx++)));
         }
         scm_array_handle_release(&handle);
@@ -166,7 +166,9 @@ invoke_closure(SCM closure, SCM return_type, SCM inout_mask, SCM args)
             if (bits[word_pos] & mask) {
                 g_value_init(out + idx, G_VALUE_TYPE(params + i));
                 g_value_copy(params + i, out + idx);
-                ret = scm_cons(gig_type_transfer_object(G_TYPE_VALUE, out + idx, GI_TRANSFER_EVERYTHING), ret);
+                ret =
+                    scm_cons(gig_type_transfer_object
+                             (G_TYPE_VALUE, out + idx, GI_TRANSFER_EVERYTHING), ret);
                 idx++;
             }
         }

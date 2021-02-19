@@ -121,7 +121,8 @@ gig_log_writer(GLogLevelFlags flags, const GLogField *fields, gsize n_fields, gp
 SCM
 gig_log_to_port(SCM port)
 {
-    SCM_ASSERT_TYPE(SCM_OPOUTPORTP(port), port, SCM_ARG1, "install-port-logger!", "open output port");
+    SCM_ASSERT_TYPE(SCM_OPOUTPORTP(port), port, SCM_ARG1, "install-port-logger!",
+                    "open output port");
     g_log_set_writer_func(gig_log_writer, SCM_UNPACK_POINTER(port), NULL);
     return SCM_UNSPECIFIED;
 }
@@ -157,22 +158,21 @@ gig_log_custom_helper(GLogLevelFlags log_level, const GLogField *fields, gsize n
 
     for (gsize i = 0; i < n_fields; i++) {
         it = scm_cddr(it);
-        gchar* key = gig_gname_to_scm_name(fields[i].key);
+        gchar *key = gig_gname_to_scm_name(fields[i].key);
         scm_set_car_x(it, scm_from_utf8_keyword(key));
         // TODO: add more conversions
-        if (/* the message itself is a string */
-            !g_strcmp0(fields[i].key, "MESSAGE") ||
-            /* log level as string */
-            !g_strcmp0(fields[i].key, "PRIORITY") ||
-            /* domains */
-            !g_strcmp0(fields[i].key, "GLIB_DOMAIN") ||
-            !g_strcmp0(fields[i].key, "GIG_DOMAIN") ||
-            /* source information inserted by g_debug, etc */
-            !g_strcmp0(fields[i].key, "CODE_FILE") ||
-            !g_strcmp0(fields[i].key, "CODE_FUNC") ||
-            !g_strcmp0(fields[i].key, "CODE_LINE") ||
-            /* end on a false statement  */
-            0)
+        if (                    /* the message itself is a string */
+               !g_strcmp0(fields[i].key, "MESSAGE") ||
+               /* log level as string */
+               !g_strcmp0(fields[i].key, "PRIORITY") ||
+               /* domains */
+               !g_strcmp0(fields[i].key, "GLIB_DOMAIN") ||
+               !g_strcmp0(fields[i].key, "GIG_DOMAIN") ||
+               /* source information inserted by g_debug, etc */
+               !g_strcmp0(fields[i].key, "CODE_FILE") ||
+               !g_strcmp0(fields[i].key, "CODE_FUNC") || !g_strcmp0(fields[i].key, "CODE_LINE") ||
+               /* end on a false statement  */
+               0)
             scm_set_car_x(scm_cdr(it), scm_from_utf8_string(fields[i].value));
         else {
             scm_set_car_x(scm_cdr(it), scm_from_pointer((gpointer)fields[i].value, NULL));

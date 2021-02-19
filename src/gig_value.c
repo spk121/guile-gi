@@ -387,7 +387,8 @@ gig_value_to_scm_structured_type(const GValue *value, GType fundamental, gboolea
         else {
             gpointer boxed = g_value_get_boxed(value);
             if (boxed)
-                return gig_type_transfer_object(G_VALUE_TYPE(value), g_value_get_boxed(value), transfer);
+                return gig_type_transfer_object(G_VALUE_TYPE(value), g_value_get_boxed(value),
+                                                transfer);
             else
                 return SCM_BOOL_F;
         }
@@ -480,8 +481,7 @@ SCM
 gig_value_set_type(SCM where, SCM what)
 {
     GType type = scm_to_gtype(what);
-    SCM_ASSERT_TYPE(!G_TYPE_IS_ABSTRACT(type), what, SCM_ARG2,
-                    "%set-type!", "instantiable GType");
+    SCM_ASSERT_TYPE(!G_TYPE_IS_ABSTRACT(type), what, SCM_ARG2, "%set-type!", "instantiable GType");
     GValue *value = gig_type_peek_typed_object(where, gig_value_type);
     g_value_unset(value);
     g_value_init(value, type);

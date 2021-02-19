@@ -256,7 +256,8 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
 
         GType reserved = g_type_from_name(g_type_name(gtype));
         if (reserved != 0 && reserved != gtype)
-            gig_critical_load("%s - %s already has %zx as registered GType", _type_class_name, g_type_name(gtype), reserved);
+            gig_critical_load("%s - %s already has %zx as registered GType", _type_class_name,
+                              g_type_name(gtype), reserved);
 
         SCM type_class_name = scm_from_utf8_symbol(_type_class_name);
 
