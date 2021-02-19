@@ -1,10 +1,12 @@
-(use-modules (gi) (gi types) (gi repository)
+(use-modules (gi) (gi types) (gi repository) (gi util)
              (oop goops)
              (system foreign)
              (ice-9 format)
              (srfi srfi-64))
 
-(use-typelibs ("GLib" "2.0") ("Gio" "2.0"))
+(use-typelibs (("GLib" "2.0")
+               #:renamer (protect* '(test-equal test-assert test-skip)))
+              ("Gio" "2.0"))
 
 (test-begin "task")
 
