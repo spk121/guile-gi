@@ -64,25 +64,35 @@
     (main-loop:run loop)
     return-value))
 
-(unless (defined? 'run-in-thread)
-  (test-skip 1))
-
-(test-equal "return pointer from a task run in thread"
-  #x1234
-  (let ((T (task:new (make <GObject>))))
-    (run-in-thread T
-                   (lambda (task source data kancel)
-                     (return-pointer T (make-pointer #x1234))))
-    (idle-add PRIORITY_DEFAULT
-              (lambda (data)
-                (if (get-completed? T)
-                    (begin
-                      (quit loop)
-                      #f)
-                    ;; else
-                    #t)))
-    (main-loop:run loop)
-    (pointer-address (propagate-pointer T))))
+(let ((pid (and (member 'fork *features*) (primitive-fork))))
+  (cond
+   ((not pid)
+    (test-skip 1)
+    (test-assert "return pointer from a task run in thread" #f))
+   ((zero? pid) ; child
+    (let ((T (task:new (make <GObject>)))
+          (expected #x1234))
+      (run-in-thread T
+                     (lambda (task source data kancel)
+                       (return-pointer T (make-pointer expected))))
+      (idle-add PRIORITY_DEFAULT
+                (lambda (data)
+                  (if (get-completed? T)
+                      (begin
+                        (quit loop)
+                        #f)
+                      ;; else
+                      #t)))
+      (main-loop:run loop)
+      (exit (= (pointer-address (propagate-pointer T))
+               expected))))
+   ((defined? 'run-in-thread) ; parent
+    (test-assert "return pointer from a task run in thread"
+      (zero? (status:exit-val (cdr (waitpid pid))))))
+   (else
+    (waitpid pid)
+    (test-skip 1)
+    (test-assert "return pointer from a task run in thread" #f))))
 
 (test-assert "cancel task and check cancellable"
   (let* ((kancel (cancellable:new))
