@@ -28,7 +28,10 @@ jobs:
     - name: make
       run: make
     - name: make check
-      run: make check
+      run: |
+        make check
+        cat test-suite.log
+      shell: bash {0}
     - name: make install
       run: make install
     - name: make distcheck
