@@ -62,6 +62,9 @@
     (main-loop:run loop)
     return-value))
 
+(unless (defined? 'run-in-thread)
+  (test-skip 1))
+
 (test-equal "return pointer from a task run in thread"
   #x1234
   (let ((T (task:new (make <GObject>))))
