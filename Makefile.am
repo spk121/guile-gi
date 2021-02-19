@@ -35,8 +35,13 @@ scriptguileobjectdir = $(guileobjectdir)/scripts
 #   Top Level   #
 #################
 
+dist: \
+  ChangeLog \
+  README \
+  $(srcdir)/doc/guile-gi.info \
+  $(srcdir)/docs/index.html
+
 # Build ChangeLog from GIT history
-dist: ChangeLog README
 ChangeLog:
 	$(AM_V_GEN) if test -d $(top_srcdir)/.git; then \
 		GIT_DIR="$(top_srcdir)/.git" git log --stat > $@; \
@@ -51,11 +56,13 @@ README: README.md
 
 info_TEXINFOS = doc/guile-gi.texi
 
-docs:
-	makeinfo $(info_TEXINFOS) --css-ref=document-1.0.1.css --html --output=$(abs_srcdir)/docs
+docs: $(srcdir)/docs/index.html
+
+$(srcdir)/docs/index.html: $(srcdir)/doc/guile-gi.texi
+	makeinfo $(srcdir)/doc/guile-gi.texi --css-ref=document-1.0.1.css --html --output=$(srcdir)/docs
 
 -distclean-docs:
-	-rm -rf docs/*.html
+	-rm -rf $(srcdir)/docs/*.html
 
 #################
 #    Examples   #
@@ -409,6 +416,10 @@ indent:
 #   Variables   #
 #################
 
+DISTCLEANFILES = \
+  $(srcdir)/doc/*.info \
+  $(srcdir)/docs/*.html
+
 CLEANFILES = \
   ChangeLog README \
   doc/guile-gi.dvi \
@@ -437,6 +448,7 @@ EXTRA_DIST = \
   tools/valgrind.sh.in \
   tools/valgrind.supp \
   $(TESTS) \
-  $(noinst_DATA)
+  $(noinst_DATA) \
+  docs
 
 SUFFIXES = .gresource .gresource.xml .gir .typeinfo
