@@ -24,6 +24,13 @@ Guile GI has two primary components.
 To create bindings, use the `use-typelibs` syntax found in the `(gi)`
 library.
 
+To build `guile-gi`, one needs a standard build environment plus the
+development files for GObject Introspection and for Guile.  If
+building straight from a clone of the repository and not from an
+official release, Texinfo and its many dependencies are required to
+build the documentation.  To run the full test suite, one also needs
+the Gtk and its many dependencies installed, including Cairo.
+
 For the moment, the docs are at
 [spk121.github.io/guile-gi](https://spk121.github.io/guile-gi/)
 
