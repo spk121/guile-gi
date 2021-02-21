@@ -24,28 +24,44 @@ Guile GI has two primary components.
 To create bindings, use the `use-typelibs` syntax found in the `(gi)`
 library.
 
-To build `guile-gi`, one needs a standard build environment plus the
-development files for GObject Introspection and for Guile.  If
-building straight from a clone of the repository and not from an
-official release, Texinfo and its many dependencies are required to
-build the documentation.  To run the full test suite, one also needs
-the Gtk and its many dependencies installed, including Cairo.
+## Requirements
 
-For the moment, the docs are at
-[spk121.github.io/guile-gi](https://spk121.github.io/guile-gi/)
+To build `guile-gi`, one needs a fairly standard build environment,
+plus the development files for GObject Introspection and Guile.
+On Debian-based systems, this translates to
 
-If you're using GNOME on Guix, try:
+    build-essential libgirepository1.0-dev guile-3.0-dev
 
-    $ guix environment --ad-hoc -l guix.scm guile webkitgtk -- guile examples/browser.scm
+It is also possible to build Guile-GI for Guile 2.2, in which
+`guile-3.0-dev` is to be replaced by `guile-2.2-dev`.
 
-If you're using another desktop environment or prefer pure environments, try:
+When building from a git clone rather than a release tarball, Texinfo
+is required as well in order to build documentation.
 
-    $ guix environment [--pure -E XAUTHORITY -E 'XDG_.*'] --ad-hoc -l guix.scm guile gtk+ webkitgtk -- guile examples/browser.scm
+Users of GNU Guix can set up development environments through the provided `guix.scm`.
 
-Alternatively, to use `guix environment` for developing:
+## Running from source
 
-    $ guix environment -l guix.scm [--ad-hoc gtk+ webkitgtk]
-    $ ./bootstrap && ./configure && make
+To run one of the examples or your own code with Guile-GI built directly from source,
+use `tools/uninstalled-env`.  For example
+
     $ tools/uninstalled-env tools/run-guile examples/browser.scm
 
-For other examples on how to use guile-gi, check out the examples directory.
+## Testing
+
+In order to test Guile-GI itself, only the requirements above are necessary.
+Some tests further rely on the GObject Introspection files of certain libraries.
+To run the full suite, you need
+- GLib, GObject, Gio
+- Marshall, Everything (should come with gobject-instrospection)
+- Gtk
+- Grl (grilo)
+
+Users of GNU Guix will have to pass the `--with-gir-hacks` option to `./configure`;
+it will cause Guile-GI to build typelibs for the versions of its dependencies, that are
+actually found in the build environment.
+
+## Documentation
+
+Further documentation is located at
+[spk121.github.io/guile-gi](https://spk121.github.io/guile-gi/).
