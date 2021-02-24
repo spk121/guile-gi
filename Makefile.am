@@ -38,7 +38,7 @@ scriptguileobjectdir = $(guileobjectdir)/scripts
 dist: \
   ChangeLog \
   README \
-  $(srcdir)/doc/guile-gi.info \
+  $(srcdir)/docs/guile-gi.info \
   $(srcdir)/docs/index.html
 
 # Build ChangeLog from GIT history
@@ -54,12 +54,12 @@ README: README.md
 # Documentation #
 #################
 
-info_TEXINFOS = doc/guile-gi.texi
+info_TEXINFOS = docs/guile-gi.texi
 
-docs: $(srcdir)/docs/index.html
+dvi: # Don't build dvi
 
-$(srcdir)/docs/index.html: $(srcdir)/doc/guile-gi.texi
-	makeinfo $(srcdir)/doc/guile-gi.texi --css-ref=document-1.0.1.css --html --output=$(srcdir)/docs
+$(srcdir)/docs/index.html: $(srcdir)/docs/guile-gi.texi
+	makeinfo $(srcdir)/docs/guile-gi.texi --css-ref=document-1.0.1.css --html --output=$(srcdir)/docs
 
 -distclean-docs:
 	-rm -rf $(srcdir)/docs/*.html
@@ -417,12 +417,11 @@ indent:
 #################
 
 DISTCLEANFILES = \
-  $(srcdir)/doc/*.info \
+  $(srcdir)/docs/*.info \
   $(srcdir)/docs/*.html
 
 CLEANFILES = \
   ChangeLog README \
-  doc/guile-gi.dvi \
   examples/resources/test.gresource \
   $(guileobject_DATA) $(pkgguileobject_DATA) $(scriptguileobject_DATA) \
   $(BUILT_SOURCES) \
@@ -432,10 +431,10 @@ CLEANFILES = \
 EXTRA_DIST = \
   README.md \
   build-aux/config.rpath \
-  doc/example-1.scm doc/gtk-3.scm doc/fdl-1.3.texi \
-  doc/ex-date.scm doc/ex-gapplication.scm doc/ex-load-by-name.scm \
-  doc/ex-button.scm \
-  docs/document-1.0.1.css docs/README \
+  docs/example-1.scm docs/gtk-3.scm docs/fdl-1.3.texi \
+  docs/ex-date.scm docs/ex-gapplication.scm docs/ex-load-by-name.scm \
+  docs/ex-button.scm \
+  docs/document-1.0.1.css \
   examples/resources/test.gresource \
   m4/attributes.m4 \
   tools/uninstalled-env.in \
