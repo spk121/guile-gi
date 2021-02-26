@@ -36,6 +36,13 @@ void gig_type_register(GType gtype, SCM stype);
 SCM gig_type_define(GType gtype, SCM defs);
 SCM gig_type_define_full(GType gtype, SCM defs, SCM extra_supers);
 SCM gig_type_define_with_info(GIRegisteredTypeInfo *info, SCM supers, SCM slots);
+typedef gpointer (*GigTypeRefFunction)(gpointer);
+typedef void (*GigTypeUnrefFunction)(gpointer);
+
+void
+gig_type_define_fundamental(GType type, SCM extra_supers,
+                            GigTypeRefFunction ref, GigTypeUnrefFunction unref);
+
 
 GType scm_to_gtype(SCM x);
 GType scm_to_gtype_full(SCM x, const gchar *subr, gint argpos);

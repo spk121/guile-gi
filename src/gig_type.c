@@ -120,8 +120,6 @@ static SCM sym_ref;
 static SCM sym_unref;
 static SCM sym_size;
 
-typedef gpointer (*GigTypeRefFunction)(gpointer);
-typedef void (*GigTypeUnrefFunction)(gpointer);
 
 SCM
 gig_type_transfer_object(GType type, gpointer ptr, GITransfer transfer)
@@ -261,6 +259,14 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
 
         SCM type_class_name = scm_from_utf8_symbol(_type_class_name);
 
+        if (parent == G_TYPE_INVALID) {
+            gig_critical_load("%s - %s is a new fundamental type", _type_class_name,
+                              g_type_name(gtype));
+
+            gig_type_register(gtype, gig_fundamental_type);
+            return SCM_UNDEFINED;
+        }
+
         g_return_val_if_fail(parent != G_TYPE_INVALID, defs);
         gig_type_define(parent, defs);
 
@@ -369,8 +375,10 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
         }
 
         default:
-            g_error("unhandled type %s derived from %s",
-                    g_type_name(gtype), g_type_name(fundamental));
+            g_warning("unhandled type %s derived from %s",
+                      g_type_name(gtype), g_type_name(fundamental));
+            dsupers = scm_list_1(SCM_PACK_POINTER(sparent));
+            new_type = scm_call_4(make_class_proc, dsupers, slots, kwd_name, type_class_name);
         }
 
         g_return_val_if_fail(!SCM_UNBNDP(new_type), defs);

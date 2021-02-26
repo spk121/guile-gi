@@ -198,6 +198,15 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
             gig_debug_load("%s - not loading object type because is has no GType", _namespace);
             break;
         }
+        if (g_object_info_get_ref_function(info)) {
+            gig_debug_load("%s has ref/unref: %s %s",
+                           g_base_info_get_name(info),
+                           g_object_info_get_ref_function(info),
+                           g_object_info_get_unref_function(info));
+            gig_type_define_fundamental(gtype, SCM_EOL,
+                                        g_object_info_get_ref_function_pointer(info),
+                                        g_object_info_get_unref_function_pointer(info));
+        }
         defs = gig_type_define(gtype, defs);
         goto recursion;
     }
