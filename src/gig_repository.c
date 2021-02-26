@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2019 Michael L. Gran
+// Copyright (C) 2018, 2019, 2021 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -244,6 +244,10 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
         break;
     case GI_INFO_TYPE_TYPE:
         gig_critical_load("Unsupported irepository type 'TYPE'");
+        break;
+    case GI_INFO_TYPE_BOXED:
+        gig_critical_load("Unsupported irepository type 'BOXED' for %s",
+                          g_base_info_get_name(info));
         break;
     case GI_INFO_TYPE_INVALID:
     case GI_INFO_TYPE_INVALID_0:
