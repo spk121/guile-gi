@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2019, 2020 Michael L. Gran
+// Copyright (C) 2018, 2019, 2020, 2921 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -402,18 +402,14 @@ gig_value_to_scm_structured_type(const GValue *value, GType fundamental, gboolea
         else
             return SCM_BOOL_F;
     }
-
-#if 0
     case G_TYPE_VARIANT:
     {
         GVariant *v = g_value_get_variant(value);
-        if (v == NULL) {
-            Py_INCREF(Py_None);
-            return Py_None;
-        }
-        return pygi_struct_new_from_g_type(G_TYPE_VARIANT, g_variant_ref(v), FALSE);
+        if (v)
+            return gig_type_transfer_object(G_TYPE_VARIANT, g_variant_ref(v), transfer);
+        else
+            return SCM_BOOL_F;
     }
-#endif
     default:
     {
         // g_assert_not_reached ();
