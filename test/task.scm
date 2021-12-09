@@ -64,6 +64,8 @@
     (main-loop:run loop)
     return-value))
 
+;; Skipping because it may cause segfault
+#|
 (let ((pid (and (member 'fork *features*) (primitive-fork))))
   (cond
    ((not pid)
@@ -93,6 +95,7 @@
     (waitpid pid)
     (test-skip 1)
     (test-assert "return pointer from a task run in thread" #f))))
+|#
 
 (test-assert "cancel task and check cancellable"
   (let* ((kancel (cancellable:new))
