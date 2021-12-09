@@ -51,7 +51,7 @@
 
 (test-eqv "unichar-combine-above"
   230
-  (unichar-combining-class #\◌̀))
+  (unichar-combining-class #\x0300)) ;; ◌̀
 
 ;; This doesn't work because the 3rd arg of g_unichar_compose
 ;; isn't registered as OUT.  See
