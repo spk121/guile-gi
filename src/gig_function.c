@@ -746,7 +746,7 @@ store_argument(gint invoke_in, gint invoke_out, gboolean inout, gboolean inout_f
 
     if (invoke_in >= 0) {
         if (inout) {
-            gpointer *dup = g_memdup(arg, sizeof(GIArgument));
+            gpointer *dup = g_memdup2(arg, sizeof(GIArgument));
             parg = &g_array_index(cinvoke_input_arg_array, GIArgument, invoke_in);
             parg->v_pointer = dup;
 
