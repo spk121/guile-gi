@@ -419,8 +419,8 @@ gig_callback_new(const char *name, GICallbackInfo *callback_info, SCM s_func)
     // and set a pointer to the corresponding executable address.
     gcb->closure = ffi_closure_alloc(sizeof(ffi_closure), &(gcb->callback_ptr));
 
-    g_return_val_if_fail(gcb->closure != NULL, NULL);
-    g_return_val_if_fail(gcb->callback_ptr != NULL, NULL);
+    g_assert_nonnull(gcb->closure);
+    g_assert_nonnull(gcb->callback_ptr);
 
     // STEP 2
     // Next, we begin to construct an FFI_CIF to describe the function call.
@@ -429,10 +429,10 @@ gig_callback_new(const char *name, GICallbackInfo *callback_info, SCM s_func)
     if (n_args > 0) {
         ffi_args = g_new0(ffi_type *, n_args);
         gcb->atypes = ffi_args;
-    }
 
-    for (gint i = 0; i < n_args; i++)
-        ffi_args[i] = amap_entry_to_ffi_type(&gcb->amap->pdata[i]);
+        for (gint i = 0; i < n_args; i++)
+            ffi_args[i] = amap_entry_to_ffi_type(&gcb->amap->pdata[i]);
+    }
 
     GITypeInfo *ret_type_info = g_callable_info_get_return_type(callback_info);
     ffi_ret_type = amap_entry_to_ffi_type(&gcb->amap->return_val);
