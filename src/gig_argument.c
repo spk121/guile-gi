@@ -636,8 +636,8 @@ scm_to_c_native_immediate_array(S2C_ARG_DECL)
                 memcpy(arg->v_pointer, SCM_BYTEVECTOR_CONTENTS(object), len);
             }
             else {
-                arg->v_pointer = g_memdup2(SCM_BYTEVECTOR_CONTENTS(object),
-                                           SCM_BYTEVECTOR_LENGTH(object));
+                arg->v_pointer = g_memdup(SCM_BYTEVECTOR_CONTENTS(object),
+                                          SCM_BYTEVECTOR_LENGTH(object));
             }
         }
         else {
@@ -670,7 +670,7 @@ scm_to_c_byte_array(S2C_ARG_DECL)
         if (meta->transfer == GI_TRANSFER_EVERYTHING)
             arg->v_pointer = g_byte_array_new_take(contents, len);
         else
-            arg->v_pointer = g_byte_array_new_take(g_memdup2(contents, len), len);
+            arg->v_pointer = g_byte_array_new_take(g_memdup(contents, len), len);
     }
     else
         scm_wrong_type_arg_msg(subr, argpos, object, "bytevector");
@@ -995,7 +995,7 @@ scm_to_c_native_interface_array(S2C_ARG_DECL)
                 if (meta->transfer == GI_TRANSFER_EVERYTHING) {
                     if (fundamental_item_type == G_TYPE_BOXED) {
                         ((gpointer *)(arg->v_pointer))[i] =
-                            g_memdup2(p, gig_meta_real_item_size(&meta->params[0]));
+                            g_memdup(p, gig_meta_real_item_size(&meta->params[0]));
                     }
                     else if (fundamental_item_type == G_TYPE_VARIANT) {
                         ((gpointer *)(arg->v_pointer))[i] = p;
@@ -1021,7 +1021,7 @@ scm_to_c_native_interface_array(S2C_ARG_DECL)
                 gpointer p = gig_type_peek_object(scm_c_vector_ref(object, i));
                 if (meta->transfer == GI_TRANSFER_EVERYTHING)
                     memcpy((char *)(arg->v_pointer) + i * real_item_size,
-                           g_memdup2(p, real_item_size), real_item_size);
+                           g_memdup(p, real_item_size), real_item_size);
                 else
                     memcpy((char *)(arg->v_pointer) + i * real_item_size, p, real_item_size);
             }
@@ -1425,7 +1425,7 @@ c_native_array_to_scm(C2S_ARG_DECL)
         else if (meta->transfer == GI_TRANSFER_EVERYTHING)              \
             *object = scm_take_ ## _short_type ## vector((_type *)(arg->v_pointer), length); \
         else                                                            \
-            *object = scm_take_ ## _short_type ## vector((_type *)g_memdup2(arg->v_pointer, sz), length); \
+            *object = scm_take_ ## _short_type ## vector((_type *)g_memdup(arg->v_pointer, sz), length); \
     } while(0)
 
     GType item_type = meta->params[0].gtype;
@@ -1650,7 +1650,7 @@ c_gptrarray_to_scm(C2S_ARG_DECL)
     // Transfer the contents out of the GPtrArray into a
     // native C array, and then on to an SCM
     size = array->len;
-    _arg.v_pointer = g_memdup2(array->pdata, array->len * sizeof(gpointer));
+    _arg.v_pointer = g_memdup(array->pdata, array->len * sizeof(gpointer));
     c_native_array_to_scm(subr, argpos, &_meta, &_arg, object, size);
 
     // Free the GPtrArray without deleting the contents
