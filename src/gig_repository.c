@@ -248,7 +248,7 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
     case GI_INFO_TYPE_INVALID:
     case GI_INFO_TYPE_INVALID_0:
     default:
-        gig_critical_load("Unsupported irepository type %d", g_base_info_get_type(info));
+        gig_critical_load("Unsupported irepository type %d '%s'", g_base_info_get_type(info), g_base_info_get_name(info));
         break;
     }
 
