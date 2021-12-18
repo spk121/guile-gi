@@ -376,6 +376,7 @@ TESTS = \
   test/main-loop.scm \
   test/application.scm \
   test/gtk.scm \
+  test/gtk4-cclosure.scm \
   test/grilo.scm \
   test/oop.scm \
   test/value.scm \
