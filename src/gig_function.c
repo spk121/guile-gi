@@ -746,7 +746,7 @@ store_argument(gint invoke_in, gint invoke_out, gboolean inout, gboolean inout_f
 
     if (invoke_in >= 0) {
         if (inout) {
-            gpointer *dup = g_memdup(arg, sizeof(GIArgument));
+            gpointer *dup = gig_memdup(arg, sizeof(GIArgument));
             parg = &g_array_index(cinvoke_input_arg_array, GIArgument, invoke_in);
             parg->v_pointer = dup;
 
@@ -826,7 +826,7 @@ convert_output_args(GigArgMap *amap, const gchar *func_name, GIArgument *in, GIA
     gig_debug_transfer("%s - convert_output_args", func_name);
     gint s_output_pos;
 
-    for (guint c_output_pos = 0; c_output_pos < amap->c_output_len; c_output_pos++) {
+    for (gint c_output_pos = 0; c_output_pos < amap->c_output_len; c_output_pos++) {
         if (!gig_amap_output_c2s(amap, c_output_pos, &s_output_pos))
             continue;
 

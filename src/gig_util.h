@@ -1,3 +1,18 @@
+// Copyright (C) 2019, 2020, 2021 Michael L. Gran
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 #ifndef GIG_UTIL_H
 #define GIG_UTIL_H
 
@@ -12,6 +27,7 @@ G_BEGIN_DECLS
 G_GNUC_MALLOC gchar *gig_callable_info_make_name(GICallableInfo *info, const gchar *prefix);
 const gchar *gig_constant_strip_prefix(const gchar *name, const gchar *strip_prefix);
 gchar *gig_gname_to_scm_name(const gchar *gname);
+G_GNUC_INTERNAL void *gig_memdup(const void *mem, size_t len);
 G_GNUC_INTERNAL SCM scm_c_list_ref(SCM list, gsize k);
 G_GNUC_INTERNAL gboolean scm_is_list(SCM obj);
 G_GNUC_INTERNAL gsize scm_c_length(SCM list);
@@ -33,8 +49,6 @@ G_GNUC_INTERNAL gchar *scm_write_to_utf8_stringn(SCM x, gsize max_len);
             obj = SCM_BOOL_F;    \
     } while (0)                  \
 
-G_END_DECLS
-#endif
 #define gig_debug_internal(level,domain,...)                  \
     do {                                                      \
         g_log_structured(G_LOG_DOMAIN, level,                 \
@@ -50,4 +64,7 @@ G_END_DECLS
 #define gig_critical_load(...)  gig_debug_internal(G_LOG_LEVEL_CRITICAL, "load", __VA_ARGS__)
 #if (SCM_MAJOR_VERSION == 2) || (SCM_MAJOR_VERSION == 3 && SCM_MINOR_VERSION == 0 && SCM_MICRO_VERSION < 4)
 #define scm_c_bitvector_count(x) scm_to_size_t(scm_bit_count(SCM_BOOL_T, (x)))
+#endif
+
+G_END_DECLS
 #endif
