@@ -26,6 +26,10 @@
 static SCM
 require(SCM lib, SCM version)
 {
+    SCM_ASSERT_TYPE(scm_is_string(lib), lib, SCM_ARG1, "require", "string");
+    SCM_ASSERT_TYPE(SCM_UNBNDP(version) ||
+                    scm_is_string(version), version, SCM_ARG2, "require", "string");
+
     gchar *_lib, *_version = NULL;
     GITypelib *tl;
     GError *error = NULL;
@@ -51,6 +55,8 @@ require(SCM lib, SCM version)
 static SCM
 infos(SCM lib)
 {
+    SCM_ASSERT_TYPE(scm_is_string(lib), lib, SCM_ARG1, "infos", "string");
+
     scm_dynwind_begin(0);
     gchar *_lib = scm_dynwind_or_bust("infos", scm_to_utf8_string(lib));
     gint n = g_irepository_get_n_infos(NULL, _lib);
@@ -248,7 +254,8 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
     case GI_INFO_TYPE_INVALID:
     case GI_INFO_TYPE_INVALID_0:
     default:
-        gig_critical_load("Unsupported irepository type %d '%s'", g_base_info_get_type(info), g_base_info_get_name(info));
+        gig_critical_load("Unsupported irepository type %d '%s'", g_base_info_get_type(info),
+                          g_base_info_get_name(info));
         break;
     }
 
@@ -285,6 +292,10 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
 static SCM
 load(SCM info, SCM flags)
 {
+    SCM_ASSERT_TYPE(SCM_UNBNDP(flags) ||
+                    scm_is_unsigned_integer(flags, 0, LOAD_EVERYTHING), flags, SCM_ARG2, "load",
+                    "integer");
+
     LoadFlags load_flags;
     if (SCM_UNBNDP(flags))
         load_flags = LOAD_EVERYTHING;
@@ -299,6 +310,9 @@ load(SCM info, SCM flags)
 static SCM
 info(SCM lib, SCM name)
 {
+    SCM_ASSERT_TYPE(scm_is_string(lib), lib, SCM_ARG1, "info", "string");
+    SCM_ASSERT_TYPE(scm_is_string(name), name, SCM_ARG2, "info", "string");
+
     gchar *_lib, *_name;
     GIBaseInfo *info;
     scm_dynwind_begin(0);
@@ -336,8 +350,7 @@ prepend_search_path(SCM s_dir)
 {
     gchar *dir;
 
-    SCM_ASSERT_TYPE(scm_is_string(s_dir), s_dir, SCM_ARG1,
-                    "typelib-prepend-search-path", "string");
+    SCM_ASSERT_TYPE(scm_is_string(s_dir), s_dir, SCM_ARG1, "prepend-search-path!", "string");
 
     dir = scm_to_utf8_string(s_dir);
     g_irepository_prepend_search_path(dir);
