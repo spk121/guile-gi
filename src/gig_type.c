@@ -245,7 +245,8 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
 
     gboolean newkey;
     gpointer orig_key, orig_value;
-    GType parent = g_type_parent(gtype), fundamental = G_TYPE_FUNDAMENTAL(parent);
+    GType parent = g_type_parent(gtype);
+    GType fundamental = G_TYPE_FUNDAMENTAL(gtype);
     gchar *_type_class_name = gig_type_class_name_from_gtype(gtype);
 
     newkey = g_hash_table_lookup_extended(gig_type_gtype_hash,
