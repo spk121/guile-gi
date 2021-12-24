@@ -359,6 +359,32 @@ prepend_search_path(SCM s_dir)
     return SCM_UNSPECIFIED;
 }
 
+static SCM
+get_dependencies(SCM namespace)
+{
+    const gchar *_namespace;
+    gchar **_dependencies;
+    int i;
+    SCM dependencies = SCM_EOL;
+
+    SCM_ASSERT_TYPE(scm_is_string(namespace), namespace, SCM_ARG1, "get-dependencies", "string");
+    _namespace = scm_to_utf8_string(namespace);
+    _dependencies = g_irepository_get_dependencies(NULL, _namespace);
+    free(_namespace);
+    if (_dependencies == NULL)
+        return SCM_EOL;
+    i = 0;
+    while (_dependencies[i] != NULL)
+    {
+        SCM entry = scm_from_utf8_string(_dependencies[i]);
+        dependencies = scm_cons(entry, dependencies);
+        g_free(_dependencies[i]);
+        i ++;
+    }
+    g_free(_dependencies);
+    return scm_reverse_x(dependencies, SCM_EOL);
+}
+
 void
 gig_init_repository()
 {
@@ -368,6 +394,7 @@ gig_init_repository()
     scm_c_define_gsubr("%load-info", 1, 1, 0, load);
     scm_c_define_gsubr("get-search-path", 0, 0, 0, get_search_path);
     scm_c_define_gsubr("prepend-search-path!", 1, 0, 0, prepend_search_path);
+    scm_c_define_gsubr("get-dependencies", 1, 0, 0, get_dependencies);
 
 #define D(x) scm_permanent_object(scm_c_define(#x, scm_from_uint(x)))
 
