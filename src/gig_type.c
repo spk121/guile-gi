@@ -91,6 +91,51 @@ gig_type_class_name_from_gtype(GType gtype)
     return g_strdup_printf("<%s>", g_type_name(gtype));
 }
 
+// Returns TRUE if TYPE is contained in the hash table of known types.
+static gboolean
+gig_type_is_registered(GType gtype)
+{
+    return g_hash_table_contains(gig_type_gtype_hash, GSIZE_TO_POINTER(gtype));
+}
+
+static void
+gig_type_register_self(GType gtype, SCM stype)
+{
+    GType parent = g_type_parent(gtype);
+    gpointer pval;
+    gchar *stype_str = NULL, *old_stype_str = NULL;
+
+    pval = g_hash_table_lookup(gig_type_gtype_hash, GSIZE_TO_POINTER(gtype));
+
+    // #<undefined> beats NULL. Anything defined beats #<undefined>.
+
+    if (pval != NULL && scm_is_eq(stype, SCM_PACK_POINTER(pval)))
+        return;
+    if (pval != NULL && !SCM_UNBNDP(SCM_PACK_POINTER(pval)) && SCM_UNBNDP(stype))
+        return;
+    stype_str = scm_write_to_utf8_stringn(stype, 80);
+    g_hash_table_insert(gig_type_gtype_hash, GSIZE_TO_POINTER(gtype), SCM_UNPACK_POINTER(stype));
+    if (pval == NULL) {
+        if (parent)
+            gig_debug_load("%s - registering a new %s type for %zx as %s", g_type_name(gtype),
+                           g_type_name(parent), gtype, stype_str);
+        else
+            gig_debug_load("%s - registering a new type for %zx as %s", g_type_name(gtype), gtype,
+                           stype_str);
+    }
+    else {
+        old_stype_str = scm_write_to_utf8_stringn(SCM_PACK_POINTER(pval), 80);
+        if (parent)
+            gig_debug_load("%s - re-registering %s type for %zx from %s to %s", g_type_name(gtype),
+                           g_type_name(parent), gtype, old_stype_str, stype_str);
+        else
+            gig_debug_load("%s - re-registering type for %zx from %s to %s", g_type_name(gtype),
+                           gtype, old_stype_str, stype_str);
+        free(old_stype_str);
+    }
+    free(stype_str);
+}
+
 // Given a GType integer but no introspection information, this stores
 // that GType in our hash table of known types without creating an
 // associated foreign object type.
@@ -99,17 +144,8 @@ gig_type_register(GType gtype, SCM stype)
 {
     GType parent = g_type_parent(gtype);
     if (parent != 0)
-        gig_type_register(parent, SCM_UNDEFINED);
-
-    if (!g_hash_table_contains(gig_type_gtype_hash, GSIZE_TO_POINTER(gtype))) {
-        g_hash_table_insert(gig_type_gtype_hash, GSIZE_TO_POINTER(gtype),
-                            SCM_UNPACK_POINTER(stype));
-        if (parent)
-            gig_debug_load("%s - registering a new %s type for %zx", g_type_name(gtype),
-                           g_type_name(parent), gtype);
-        else
-            gig_debug_load("%s - registering a new type for %zx", g_type_name(gtype), gtype);
-    }
+        gig_type_register_self(parent, SCM_UNDEFINED);
+    gig_type_register_self(gtype, stype);
 }
 
 static SCM make_instance_proc;
@@ -197,7 +233,7 @@ type_less_p(SCM a, SCM b)
 SCM
 gig_type_associate(GType gtype, SCM stype)
 {
-    g_hash_table_insert(gig_type_gtype_hash, GSIZE_TO_POINTER(gtype), SCM_UNPACK_POINTER(stype));
+    gig_type_register_self(gtype, stype);
     scm_set_object_property_x(stype, sym_sort_key,
                               scm_from_size_t(g_hash_table_size(gig_type_gtype_hash)));
     g_hash_table_insert(gig_type_scm_hash, SCM_UNPACK_POINTER(stype), GSIZE_TO_POINTER(gtype));
@@ -538,7 +574,7 @@ scm_type_gtype_get_name(SCM s_gtype)
 {
     SCM_ASSERT_TYPE(scm_is_integer(s_gtype), s_gtype, SCM_ARG1, "gtype-get-name", "integer");
     GType type = scm_to_uintptr_t(s_gtype);
-    if (g_hash_table_contains(gig_type_gtype_hash, GSIZE_TO_POINTER(type)))
+    if (gig_type_is_registered(type))
         return scm_from_utf8_string(g_type_name(type));
 
     return scm_from_utf8_string("invalid");
@@ -552,7 +588,7 @@ scm_type_gtype_get_parent(SCM s_gtype)
     SCM_ASSERT_TYPE(scm_is_integer(s_gtype), s_gtype, SCM_ARG1, "gtype-get-parent", "integer");
     GType type = scm_to_uintptr_t(s_gtype);
 
-    if (g_hash_table_contains(gig_type_gtype_hash, GSIZE_TO_POINTER(type)))
+    if (gig_type_is_registered(type))
         return scm_from_uintptr_t(g_type_parent(type));
     return SCM_BOOL_F;
 }
@@ -566,7 +602,7 @@ scm_type_gtype_get_fundamental(SCM s_gtype)
                     "integer");
     GType type = scm_to_uintptr_t(s_gtype);
 
-    if (g_hash_table_contains(gig_type_gtype_hash, GSIZE_TO_POINTER(type)))
+    if (gig_type_is_registered(type))
         return scm_from_uintptr_t(g_type_fundamental(type));
     return SCM_BOOL_F;
 }
@@ -581,7 +617,7 @@ scm_type_gtype_get_children(SCM s_gtype)
 
     SCM ret = SCM_EOL;
 
-    if (g_hash_table_contains(gig_type_gtype_hash, GSIZE_TO_POINTER(type))) {
+    if (gig_type_is_registered(type)) {
         GType *children;
         guint n_children, i;
         SCM entry;
@@ -607,7 +643,7 @@ scm_type_gtype_get_interfaces(SCM s_gtype)
 
     SCM ret = SCM_EOL;
 
-    if (g_hash_table_contains(gig_type_gtype_hash, GSIZE_TO_POINTER(type))) {
+    if (gig_type_is_registered(type)) {
         GType *interfaces;
         guint n_interfaces, i;
         SCM entry;
@@ -631,7 +667,7 @@ scm_type_gtype_get_depth(SCM s_gtype)
     SCM_ASSERT_TYPE(scm_is_integer(s_gtype), s_gtype, SCM_ARG1, "gtype-get-depth", "integer");
     GType type = scm_to_uintptr_t(s_gtype);
 
-    if (g_hash_table_contains(gig_type_gtype_hash, GSIZE_TO_POINTER(type)))
+    if (gig_type_is_registered(type))
         return scm_from_uint(g_type_depth(type));
     return SCM_BOOL_F;
 }
@@ -644,7 +680,7 @@ scm_type_gtype_is_interface_p(SCM s_gtype)
     SCM_ASSERT_TYPE(scm_is_integer(s_gtype), s_gtype, SCM_ARG1, "gtype-is-interface?", "integer");
     GType type = scm_to_uintptr_t(s_gtype);
 
-    if (g_hash_table_contains(gig_type_gtype_hash, GSIZE_TO_POINTER(type)))
+    if (gig_type_is_registered(type))
         return scm_from_bool(G_TYPE_IS_INTERFACE(type));
     return SCM_BOOL_F;
 }
@@ -657,7 +693,7 @@ scm_type_gtype_is_classed_p(SCM s_gtype)
     SCM_ASSERT_TYPE(scm_is_integer(s_gtype), s_gtype, SCM_ARG1, "gtype-is-classed?", "integer");
     GType type = scm_to_uintptr_t(s_gtype);
 
-    if (g_hash_table_contains(gig_type_gtype_hash, GSIZE_TO_POINTER(type)))
+    if (gig_type_is_registered(type))
         return scm_from_bool(G_TYPE_IS_CLASSED(type));
     return SCM_BOOL_F;
 }
@@ -671,7 +707,7 @@ scm_type_gtype_is_instantiatable_p(SCM s_gtype)
                     "integer");
     GType type = scm_to_uintptr_t(s_gtype);
 
-    if (g_hash_table_contains(gig_type_gtype_hash, GSIZE_TO_POINTER(type)))
+    if (gig_type_is_registered(type))
         return scm_from_bool(G_TYPE_IS_INSTANTIATABLE(type));
     return SCM_BOOL_F;
 }
@@ -684,7 +720,7 @@ scm_type_gtype_is_derivable_p(SCM s_gtype)
     SCM_ASSERT_TYPE(scm_is_integer(s_gtype), s_gtype, SCM_ARG1, "gtype-is-derivable?", "integer");
     GType type = scm_to_uintptr_t(s_gtype);
 
-    if (g_hash_table_contains(gig_type_gtype_hash, GSIZE_TO_POINTER(type)))
+    if (gig_type_is_registered(type))
         return scm_from_bool(G_TYPE_IS_DERIVABLE(type));
     return SCM_BOOL_F;
 }
@@ -701,8 +737,7 @@ scm_type_gtype_is_a_p(SCM gself, SCM gparent)
     self = scm_to_uintptr_t(gself);
     parent = scm_to_uintptr_t(gparent);
 
-    if (g_hash_table_contains(gig_type_gtype_hash, GSIZE_TO_POINTER(self))
-        && g_hash_table_contains(gig_type_gtype_hash, GSIZE_TO_POINTER(parent)))
+    if (gig_type_is_registered(self) && gig_type_is_registered(parent))
         return scm_from_bool(g_type_is_a(self, parent));
     return SCM_BOOL_F;
 }
