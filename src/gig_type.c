@@ -156,9 +156,6 @@ static SCM sym_ref;
 static SCM sym_unref;
 static SCM sym_size;
 
-typedef gpointer (*GigTypeRefFunction)(gpointer);
-typedef void (*GigTypeUnrefFunction)(gpointer);
-
 SCM
 gig_type_transfer_object(GType type, gpointer ptr, GITransfer transfer)
 {
@@ -298,13 +295,13 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
 
         SCM type_class_name = scm_from_utf8_symbol(_type_class_name);
 
-        g_return_val_if_fail(parent != G_TYPE_INVALID, defs);
-        gig_type_define(parent, defs);
+        if (parent != G_TYPE_INVALID)
+            gig_type_define(parent, defs);
 
         SCM new_type, dsupers, slots = SCM_EOL;
         gpointer sparent = g_hash_table_lookup(gig_type_gtype_hash,
                                                GSIZE_TO_POINTER(parent));
-        g_return_val_if_fail(sparent != NULL, defs);
+        // g_return_val_if_fail(sparent != NULL, defs);
 
         switch (fundamental) {
         case G_TYPE_ENUM:
@@ -406,8 +403,23 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
         }
 
         default:
-            g_error("unhandled type %s derived from %s",
-                    g_type_name(gtype), g_type_name(fundamental));
+        {
+            GType *interfaces = NULL;
+            guint n_interfaces = 0;
+            interfaces = g_type_interfaces(gtype, &n_interfaces);
+            if (sparent)
+                dsupers = scm_cons(SCM_PACK_POINTER(sparent), extra_supers);
+            else
+                dsupers = scm_cons(gig_fundamental_type, extra_supers);
+
+            for (guint n = 0; n < n_interfaces; n++)
+                dsupers = scm_cons(gig_type_get_scheme_type(interfaces[n]), dsupers);
+            g_free(interfaces);
+
+            dsupers = scm_sort_x(dsupers, type_less_p_proc);
+            new_type = scm_call_4(make_class_proc, dsupers, slots, kwd_name, type_class_name);
+            break;
+        }
         }
 
         g_return_val_if_fail(!SCM_UNBNDP(new_type), defs);

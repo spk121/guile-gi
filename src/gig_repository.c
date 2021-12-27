@@ -204,6 +204,15 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
             gig_debug_load("%s - not loading object type because is has no GType", _namespace);
             break;
         }
+
+        GIObjectInfo *p = g_object_info_get_parent(info);
+        gboolean has_parent = p ? TRUE : FALSE;
+        if (p)
+            g_base_info_unref(p);
+        if (!has_parent) {
+            gig_debug_load("%s:%s - has no parent", _namespace, g_type_name(gtype));
+            gig_type_define_fundamental(gtype, SCM_EOL, g_object_ref_sink, g_object_unref);
+        }
         defs = gig_type_define(gtype, defs);
         goto recursion;
     }
@@ -374,12 +383,11 @@ get_dependencies(SCM namespace)
     if (_dependencies == NULL)
         return SCM_EOL;
     i = 0;
-    while (_dependencies[i] != NULL)
-    {
+    while (_dependencies[i] != NULL) {
         SCM entry = scm_from_utf8_string(_dependencies[i]);
         dependencies = scm_cons(entry, dependencies);
         g_free(_dependencies[i]);
-        i ++;
+        i++;
     }
     g_free(_dependencies);
     return scm_reverse_x(dependencies, SCM_EOL);
