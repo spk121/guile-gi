@@ -64,10 +64,10 @@ is_destructive(GICallableInfo *info)
         }
         g_base_info_unref(ti);
 
-        if (is_trivial)
-            continue;
-        destructive |= g_arg_info_is_caller_allocates(ai);
-        destructive |= (g_arg_info_get_direction(ai) == GI_DIRECTION_INOUT);
+        if (!is_trivial) {
+            destructive |= g_arg_info_is_caller_allocates(ai);
+            destructive |= (g_arg_info_get_direction(ai) == GI_DIRECTION_INOUT);
+        }
         g_base_info_unref(ai);
     }
 
@@ -371,7 +371,7 @@ scm_write_to_utf8_stringn(SCM x, gsize max_len)
         first = 0;
     }
 
-    SCM args_str = scm_simple_format(SCM_BOOL_F, format, x);
+    SCM args_str = scm_simple_format(SCM_BOOL_F, format, scm_list_1(x));
     gchar *cstr;
     if (scm_c_string_length(args_str) > max_len) {
         SCM truncated_args_str =
