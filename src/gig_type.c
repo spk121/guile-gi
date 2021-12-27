@@ -793,6 +793,13 @@ gig_type_define_fundamental(GType type, SCM extra_supers,
     GIRepository *repository;
     GIBaseInfo *info;
 
+    if (gig_type_is_registered(type)) {
+        g_warning("not redefining fundamental type %s", g_type_name(type));
+        return;
+    }
+
+    g_assert(scm_is_true(scm_module_public_interface(scm_current_module())));
+
     repository = g_irepository_get_default();
     info = g_irepository_find_by_gtype(repository, type);
     if (info != NULL) {
