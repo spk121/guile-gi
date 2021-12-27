@@ -211,6 +211,11 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
     {
         GType gtype = g_registered_type_info_get_g_type(info);
         const gchar *_namespace = g_base_info_get_name(info);
+        if (gtype == G_TYPE_INVALID) {
+            gig_debug_load("%s - not loading object type because its GType is invalid",
+                           _namespace);
+            break;
+        }
         if (gtype == G_TYPE_NONE) {
             gig_debug_load("%s - not loading object type because is has no GType", _namespace);
             break;
