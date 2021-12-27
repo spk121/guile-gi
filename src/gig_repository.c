@@ -170,6 +170,17 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
     case GI_INFO_TYPE_PROPERTY:
         defs = gig_property_define(parent_gtype, info, parent_name, defs);
         break;
+    case GI_INFO_TYPE_BOXED:
+    {
+        GType gtype = g_registered_type_info_get_g_type(info);
+        if (gtype == G_TYPE_NONE) {
+            gig_debug_load("%s - not loading boxed type because is has no GType",
+                           g_base_info_get_name(info));
+            break;
+        }
+        defs = gig_type_define(gtype, defs);
+        goto recursion;
+    }
     case GI_INFO_TYPE_STRUCT:
     {
         GType gtype = g_registered_type_info_get_g_type(info);
