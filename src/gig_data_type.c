@@ -173,7 +173,8 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
                 meta->is_zero_terminated = TRUE;
 
             if (len == -1 && !meta->is_zero_terminated) {
-                g_warning("no way of determining array size, coercing to pointer");
+                g_warning("no way of determining array size of %s, coercing to pointer",
+                          g_type_name(meta->gtype));
                 meta->gtype = G_TYPE_POINTER;
             }
         }
