@@ -790,6 +790,25 @@ void
 gig_type_define_fundamental(GType type, SCM extra_supers,
                             GigTypeRefFunction ref, GigTypeUnrefFunction unref)
 {
+    GIRepository *repository;
+    GIBaseInfo *info;
+
+    repository = g_irepository_get_default();
+    info = g_irepository_find_by_gtype(repository, type);
+    if (info != NULL) {
+        if (g_base_info_get_type(info) == GI_INFO_TYPE_OBJECT) {
+            GIObjectInfoRefFunction _ref;
+            GIObjectInfoUnrefFunction _unref;
+            _ref = g_object_info_get_ref_function_pointer(info);
+            _unref = g_object_info_get_unref_function_pointer(info);
+            if (_ref)
+                ref = _ref;
+            if (_unref)
+                unref = _unref;
+        }
+        g_base_info_unref(info);
+    }
+
     scm_dynwind_begin(0);
     gchar *class_name = scm_dynwind_or_bust("%define-compact-type",
                                             gig_type_class_name_from_gtype(type));
