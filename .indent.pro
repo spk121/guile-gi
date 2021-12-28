@@ -49,6 +49,7 @@
 -T ffi_arg
 -T ffi_cif
 -T ffi_closure
+-T ffi_type
 
 -T gboolean
 -T gchar

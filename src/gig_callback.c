@@ -49,7 +49,7 @@ static void callback_free(GigCallback *gcb);
 static void gig_fini_callback(void);
 
 static void
-convert_ffi_arg_to_giargument(gpointer _ffi_arg, ffi_type * arg_type, gboolean unpack,
+convert_ffi_arg_to_giargument(gpointer _ffi_arg, ffi_type *arg_type, gboolean unpack,
                               GIArgument *giarg)
 {
     if (unpack)
