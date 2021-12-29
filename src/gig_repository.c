@@ -387,7 +387,7 @@ prepend_search_path(SCM s_dir)
 static SCM
 get_dependencies(SCM namespace)
 {
-    const gchar *_namespace;
+    gchar *_namespace;
     gchar **_dependencies;
     int i;
     SCM dependencies = SCM_EOL;
