@@ -112,7 +112,8 @@ gig_function_define(GType type, GICallableInfo *info, const gchar *_namespace, S
     SCM def;
     gboolean is_method = g_callable_info_is_method(info);
 
-    gchar *function_name, *method_name = NULL;
+    gchar *function_name = NULL;
+    gchar *method_name = NULL;
     function_name = scm_dynwind_or_bust("%gig-function-define",
                                         gig_callable_info_make_name(info, _namespace));
 

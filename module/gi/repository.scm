@@ -27,6 +27,7 @@
             load-by-name typelib->module
 
             get-search-path prepend-search-path!
+            get-dependencies
 
             LOAD_METHODS LOAD_PROPERTIES LOAD_SIGNALS
             LOAD_EVERYTHING LOAD_INFO_ONLY))

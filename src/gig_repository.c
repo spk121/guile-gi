@@ -26,6 +26,10 @@
 static SCM
 require(SCM lib, SCM version)
 {
+    SCM_ASSERT_TYPE(scm_is_string(lib), lib, SCM_ARG1, "require", "string");
+    SCM_ASSERT_TYPE(SCM_UNBNDP(version) ||
+                    scm_is_string(version), version, SCM_ARG2, "require", "string");
+
     gchar *_lib, *_version = NULL;
     GITypelib *tl;
     GError *error = NULL;
@@ -51,6 +55,8 @@ require(SCM lib, SCM version)
 static SCM
 infos(SCM lib)
 {
+    SCM_ASSERT_TYPE(scm_is_string(lib), lib, SCM_ARG1, "infos", "string");
+
     scm_dynwind_begin(0);
     gchar *_lib = scm_dynwind_or_bust("infos", scm_to_utf8_string(lib));
     gint n = g_irepository_get_n_infos(NULL, _lib);
@@ -164,6 +170,17 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
     case GI_INFO_TYPE_PROPERTY:
         defs = gig_property_define(parent_gtype, info, parent_name, defs);
         break;
+    case GI_INFO_TYPE_BOXED:
+    {
+        GType gtype = g_registered_type_info_get_g_type(info);
+        if (gtype == G_TYPE_NONE) {
+            gig_debug_load("%s - not loading boxed type because is has no GType",
+                           g_base_info_get_name(info));
+            break;
+        }
+        defs = gig_type_define(gtype, defs);
+        goto recursion;
+    }
     case GI_INFO_TYPE_STRUCT:
     {
         GType gtype = g_registered_type_info_get_g_type(info);
@@ -194,9 +211,23 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
     {
         GType gtype = g_registered_type_info_get_g_type(info);
         const gchar *_namespace = g_base_info_get_name(info);
+        if (gtype == G_TYPE_INVALID) {
+            gig_debug_load("%s - not loading object type because its GType is invalid",
+                           _namespace);
+            break;
+        }
         if (gtype == G_TYPE_NONE) {
             gig_debug_load("%s - not loading object type because is has no GType", _namespace);
             break;
+        }
+
+        GIObjectInfo *p = g_object_info_get_parent(info);
+        gboolean has_parent = p ? TRUE : FALSE;
+        if (p)
+            g_base_info_unref(p);
+        if (!has_parent) {
+            gig_debug_load("%s:%s - has no parent", _namespace, g_type_name(gtype));
+            gig_type_define_fundamental(gtype, SCM_EOL, g_object_ref_sink, g_object_unref);
         }
         defs = gig_type_define(gtype, defs);
         goto recursion;
@@ -248,7 +279,8 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
     case GI_INFO_TYPE_INVALID:
     case GI_INFO_TYPE_INVALID_0:
     default:
-        gig_critical_load("Unsupported irepository type %d", g_base_info_get_type(info));
+        gig_critical_load("Unsupported irepository type %d '%s'", g_base_info_get_type(info),
+                          g_base_info_get_name(info));
         break;
     }
 
@@ -285,6 +317,10 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
 static SCM
 load(SCM info, SCM flags)
 {
+    SCM_ASSERT_TYPE(SCM_UNBNDP(flags) ||
+                    scm_is_unsigned_integer(flags, 0, LOAD_EVERYTHING), flags, SCM_ARG2, "load",
+                    "integer");
+
     LoadFlags load_flags;
     if (SCM_UNBNDP(flags))
         load_flags = LOAD_EVERYTHING;
@@ -299,6 +335,9 @@ load(SCM info, SCM flags)
 static SCM
 info(SCM lib, SCM name)
 {
+    SCM_ASSERT_TYPE(scm_is_string(lib), lib, SCM_ARG1, "info", "string");
+    SCM_ASSERT_TYPE(scm_is_string(name), name, SCM_ARG2, "info", "string");
+
     gchar *_lib, *_name;
     GIBaseInfo *info;
     scm_dynwind_begin(0);
@@ -336,14 +375,38 @@ prepend_search_path(SCM s_dir)
 {
     gchar *dir;
 
-    SCM_ASSERT_TYPE(scm_is_string(s_dir), s_dir, SCM_ARG1,
-                    "typelib-prepend-search-path", "string");
+    SCM_ASSERT_TYPE(scm_is_string(s_dir), s_dir, SCM_ARG1, "prepend-search-path!", "string");
 
     dir = scm_to_utf8_string(s_dir);
     g_irepository_prepend_search_path(dir);
     g_free(dir);
 
     return SCM_UNSPECIFIED;
+}
+
+static SCM
+get_dependencies(SCM namespace)
+{
+    gchar *_namespace;
+    gchar **_dependencies;
+    int i;
+    SCM dependencies = SCM_EOL;
+
+    SCM_ASSERT_TYPE(scm_is_string(namespace), namespace, SCM_ARG1, "get-dependencies", "string");
+    _namespace = scm_to_utf8_string(namespace);
+    _dependencies = g_irepository_get_dependencies(NULL, _namespace);
+    free(_namespace);
+    if (_dependencies == NULL)
+        return SCM_EOL;
+    i = 0;
+    while (_dependencies[i] != NULL) {
+        SCM entry = scm_from_utf8_string(_dependencies[i]);
+        dependencies = scm_cons(entry, dependencies);
+        g_free(_dependencies[i]);
+        i++;
+    }
+    g_free(_dependencies);
+    return scm_reverse_x(dependencies, SCM_EOL);
 }
 
 void
@@ -355,6 +418,7 @@ gig_init_repository()
     scm_c_define_gsubr("%load-info", 1, 1, 0, load);
     scm_c_define_gsubr("get-search-path", 0, 0, 0, get_search_path);
     scm_c_define_gsubr("prepend-search-path!", 1, 0, 0, prepend_search_path);
+    scm_c_define_gsubr("get-dependencies", 1, 0, 0, get_dependencies);
 
 #define D(x) scm_permanent_object(scm_c_define(#x, scm_from_uint(x)))
 
