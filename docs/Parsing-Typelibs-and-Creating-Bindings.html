@@ -1,5 +1,8 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
+<!-- Created by GNU Texinfo 6.8, https://www.gnu.org/software/texinfo/ -->
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <!-- Copyright (C) 2018, 2019, 2020 Michael L. Gran
 
 Permission is granted to copy, distribute and/or modify this document
@@ -8,9 +11,6 @@ or any later version published by the Free Software Foundation;
 with no Invariant Sections, no Front-Cover Texts, and no Back-Cover
 Texts.  A copy of the license is included in the section entitled "GNU
 Free Documentation License". -->
-<!-- Created by GNU Texinfo 6.7, http://www.gnu.org/software/texinfo/ -->
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <title>Parsing Typelibs and Creating Bindings (Guile-GI)</title>
 
 <meta name="description" content="Parsing Typelibs and Creating Bindings (Guile-GI)">
@@ -18,19 +18,20 @@ Free Documentation License". -->
 <meta name="resource-type" content="document">
 <meta name="distribution" content="global">
 <meta name="Generator" content="makeinfo">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
 <link href="index.html" rel="start" title="Top">
 <link href="The-Index.html" rel="index" title="The Index">
 <link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
 <link href="Tutorial.html" rel="up" title="Tutorial">
 <link href="Generating-Documentation-from-Typelibs.html" rel="next" title="Generating Documentation from Typelibs">
-<link href="Tutorial.html" rel="prev" title="Tutorial">
 <style type="text/css">
 <!--
+a.copiable-anchor {visibility: hidden; text-decoration: none; line-height: 0em}
 a.summary-letter {text-decoration: none}
 blockquote.indentedblock {margin-right: 0em}
 div.display {margin-left: 3.2em}
 div.example {margin-left: 3.2em}
-div.lisp {margin-left: 3.2em}
 kbd {font-style: oblique}
 pre.display {font-family: inherit}
 pre.format {font-family: inherit}
@@ -39,6 +40,7 @@ pre.menu-preformatted {font-family: serif}
 span.nolinebreak {white-space: nowrap}
 span.roman {font-family: initial; font-weight: normal}
 span.sansserif {font-family: sans-serif; font-weight: normal}
+span:hover a.copiable-anchor {visibility: visible}
 ul.no-bullet {list-style: none}
 -->
 </style>
@@ -48,7 +50,8 @@ ul.no-bullet {list-style: none}
 </head>
 
 <body lang="en">
-<span id="Parsing-Typelibs-and-Creating-Bindings"></span><div class="header">
+<div class="section" id="Parsing-Typelibs-and-Creating-Bindings">
+<div class="header">
 <p>
 Next: <a href="Generating-Documentation-from-Typelibs.html" accesskey="n" rel="next">Generating Documentation from Typelibs</a>, Up: <a href="Tutorial.html" accesskey="u" rel="up">Tutorial</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>
@@ -63,7 +66,13 @@ file.
 <p>To create the bindings, you must load a typelib through Guile-GI in one
 form or another.  You can choose one of three basic strategies.
 </p>
-<span id="use_002dtypelibs"></span><h4 class="subsection">2.1.1 <code>use-typelibs</code></h4>
+<ul class="section-toc">
+<li><a href="#use_002dtypelibs" accesskey="1"><code>use-typelibs</code></a></li>
+<li><a href="#require-and-load_002dby_002dname" accesskey="2"><code>require</code> and <code>load-by-name</code></a></li>
+<li><a href="#typelib_002d_003emodule" accesskey="3"><code>typelib-&gt;module</code></a></li>
+</ul>
+<div class="subsection" id="use_002dtypelibs">
+<h4 class="subsection">2.1.1 <code>use-typelibs</code></h4>
 
 <p>The easiest way of doing so is <code>use-typelibs</code>, as shown below.
 </p>
@@ -100,7 +109,9 @@ by actual files.
 <p><code>use-typelibs</code> is a simple interface for Guile scripts not broken
 into multiple modules.
 </p>
-<span id="require-and-load_002dby_002dname"></span><h4 class="subsection">2.1.2 <code>require</code> and <code>load-by-name</code></h4>
+</div>
+<div class="subsection" id="require-and-load_002dby_002dname">
+<h4 class="subsection">2.1.2 <code>require</code> and <code>load-by-name</code></h4>
 
 <p>For efficiency&rsquo;s sake, you may want to only load parts, e.g. just
 GtkApplication and GtkWindow to significantly speed up loading.  By
@@ -121,7 +132,9 @@ primitives to facilitate exactly that. See <a href="Typelib-Introspection.html">
         get-context)
 </pre></div>
 
-<span id="typelib_002d_003emodule"></span><h4 class="subsection">2.1.3 <code>typelib-&gt;module</code></h4>
+</div>
+<div class="subsection" id="typelib_002d_003emodule">
+<h4 class="subsection">2.1.3 <code>typelib-&gt;module</code></h4>
 
 <p>If you don&rsquo;t care much about waiting times &ndash; perhaps you only have
 a set of small dependencies, or you really need everything from a library &ndash;
@@ -146,12 +159,14 @@ functionality loaded in the process to the public inferface.
 dependencies.  Together with Guile&rsquo;s module system, you can even do some
 advanced operations, like loading all of Gtk under the prefix <code>gtk::</code>
 together with all of Gstreamer under the prefix <code>gst::</code>.
-See <a href="https://www.gnu.org/software/guile/manual/html_node/Modules.html#Modules">Modules</a> in <cite>The Guile reference manual</cite>.
+See <a data-manual="guile" href="https://www.gnu.org/software/guile/manual/html_node/Modules.html#Modules">Modules</a> in <cite>The Guile reference manual</cite>.
 </p>
+</div>
+</div>
 <hr>
 <div class="header">
 <p>
-Next: <a href="Generating-Documentation-from-Typelibs.html" accesskey="n" rel="next">Generating Documentation from Typelibs</a>, Up: <a href="Tutorial.html" accesskey="u" rel="up">Tutorial</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
+Next: <a href="Generating-Documentation-from-Typelibs.html">Generating Documentation from Typelibs</a>, Up: <a href="Tutorial.html">Tutorial</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>
 
 

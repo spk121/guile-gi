@@ -1,5 +1,8 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
+<!-- Created by GNU Texinfo 6.8, https://www.gnu.org/software/texinfo/ -->
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <!-- Copyright (C) 2018, 2019, 2020 Michael L. Gran
 
 Permission is granted to copy, distribute and/or modify this document
@@ -8,9 +11,6 @@ or any later version published by the Free Software Foundation;
 with no Invariant Sections, no Front-Cover Texts, and no Back-Cover
 Texts.  A copy of the license is included in the section entitled "GNU
 Free Documentation License". -->
-<!-- Created by GNU Texinfo 6.7, http://www.gnu.org/software/texinfo/ -->
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <title>Typelib Introspection (Guile-GI)</title>
 
 <meta name="description" content="Typelib Introspection (Guile-GI)">
@@ -18,19 +18,20 @@ Free Documentation License". -->
 <meta name="resource-type" content="document">
 <meta name="distribution" content="global">
 <meta name="Generator" content="makeinfo">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
 <link href="index.html" rel="start" title="Top">
 <link href="The-Index.html" rel="index" title="The Index">
 <link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
 <link href="Reference-Guide.html" rel="up" title="Reference Guide">
 <link href="Typelib-Documentation.html" rel="next" title="Typelib Documentation">
-<link href="Reference-Guide.html" rel="prev" title="Reference Guide">
 <style type="text/css">
 <!--
+a.copiable-anchor {visibility: hidden; text-decoration: none; line-height: 0em}
 a.summary-letter {text-decoration: none}
 blockquote.indentedblock {margin-right: 0em}
 div.display {margin-left: 3.2em}
 div.example {margin-left: 3.2em}
-div.lisp {margin-left: 3.2em}
 kbd {font-style: oblique}
 pre.display {font-family: inherit}
 pre.format {font-family: inherit}
@@ -39,6 +40,7 @@ pre.menu-preformatted {font-family: serif}
 span.nolinebreak {white-space: nowrap}
 span.roman {font-family: initial; font-weight: normal}
 span.sansserif {font-family: sans-serif; font-weight: normal}
+span:hover a.copiable-anchor {visibility: visible}
 ul.no-bullet {list-style: none}
 -->
 </style>
@@ -48,7 +50,8 @@ ul.no-bullet {list-style: none}
 </head>
 
 <body lang="en">
-<span id="Typelib-Introspection"></span><div class="header">
+<div class="section" id="Typelib-Introspection">
+<div class="header">
 <p>
 Next: <a href="Typelib-Documentation.html" accesskey="n" rel="next">Typelib Documentation</a>, Up: <a href="Reference-Guide.html" accesskey="u" rel="up">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>
@@ -67,8 +70,8 @@ Fedora, for example, these files may be stored in
 <p>All functions outlined in this section are part of <code>(gi
 repository)</code> and are not re-exported by <code>(gi)</code>.
 </p>
-<dl>
-<dt id="index-require">Procedure: <strong>require</strong> <em>lib [version]</em></dt>
+<dl class="def">
+<dt id="index-require"><span class="category">Procedure: </span><span><strong>require</strong> <em>lib [version]</em><a href='#index-require' class='copiable-anchor'> &para;</a></span></dt>
 <dd><p>Forces the namespace <var>lib</var> to be loaded if it isn&rsquo;t already.
 This step is required once per <var>lib</var> before any other functionality
 of this module is used.
@@ -79,8 +82,8 @@ latest available.
 <p>Throws an error, if the library could not be found or loaded.
 </p></dd></dl>
 
-<dl>
-<dt id="index-get_002dsearch_002dpath">Procedure: <strong>get-search-path</strong></dt>
+<dl class="def">
+<dt id="index-get_002dsearch_002dpath"><span class="category">Procedure: </span><span><strong>get-search-path</strong><a href='#index-get_002dsearch_002dpath' class='copiable-anchor'> &para;</a></span></dt>
 <dd><p>This returns the current search path used to find typelib files as a
 list of strings.
 </p>
@@ -88,8 +91,8 @@ list of strings.
 the default typelib directory.
 </p></dd></dl>
 
-<dl>
-<dt id="index-prepend_002dsearch_002dpath_0021">Procedure: <strong>prepend-search-path!</strong> <em>directory</em></dt>
+<dl class="def">
+<dt id="index-prepend_002dsearch_002dpath_0021"><span class="category">Procedure: </span><span><strong>prepend-search-path!</strong> <em>directory</em><a href='#index-prepend_002dsearch_002dpath_0021' class='copiable-anchor'> &para;</a></span></dt>
 <dd><p>Given <var>directory</var>, a string representation of a file system
 directory, this prepends that directory to the typelib search path.
 </p>
@@ -97,20 +100,20 @@ directory, this prepends that directory to the typelib search path.
 advisable to put such directives at the start of a script.
 </p></dd></dl>
 
-<dl>
-<dt id="index-infos">Procedure: <strong>infos</strong> <em>lib</em></dt>
+<dl class="def">
+<dt id="index-infos"><span class="category">Procedure: </span><span><strong>infos</strong> <em>lib</em><a href='#index-infos' class='copiable-anchor'> &para;</a></span></dt>
 <dd><p>Fetches all top-level metadata entries of <var>lib</var>.
 </p></dd></dl>
 
-<dl>
-<dt id="index-info">Procedure: <strong>info</strong> <em>lib name</em></dt>
+<dl class="def">
+<dt id="index-info"><span class="category">Procedure: </span><span><strong>info</strong> <em>lib name</em><a href='#index-info' class='copiable-anchor'> &para;</a></span></dt>
 <dd><p>Searches <var>lib</var> for an entry with name <var>name</var> and returns it.
 Throws an error, if <var>name</var> could not be found.
 </p></dd></dl>
 
-<dl>
-<dt id="index-load">Procedure: <strong>load</strong> <em>(info &lt;GBaseInfo&gt;)</em></dt>
-<dt id="index-load-1">Procedure: <strong>load</strong> <em>(info &lt;GBaseInfo&gt;) flags</em></dt>
+<dl class="def">
+<dt id="index-load"><span class="category">Procedure: </span><span><strong>load</strong> <em>(info &lt;GBaseInfo&gt;)</em><a href='#index-load' class='copiable-anchor'> &para;</a></span></dt>
+<dt id="index-load-1"><span class="category">Procedure: </span><span><strong>load</strong> <em>(info &lt;GBaseInfo&gt;) flags</em><a href='#index-load-1' class='copiable-anchor'> &para;</a></span></dt>
 <dd><p>Generates bindings for <var>info</var>.
 </p>
 <p><var>flags</var> is a logical or of <code>LOAD_METHODS</code>, <code>LOAD_SIGNALS</code> and
@@ -120,13 +123,13 @@ They enable loading of methods, signals, properties and fields respectively.
 By default, all of them are loaded.
 </p></dd></dl>
 
-<dl>
-<dt id="index-load_002dby_002dname">Procedure: <strong>load-by-name</strong> <em>lib name [flags]</em></dt>
+<dl class="def">
+<dt id="index-load_002dby_002dname"><span class="category">Procedure: </span><span><strong>load-by-name</strong> <em>lib name [flags]</em><a href='#index-load_002dby_002dname' class='copiable-anchor'> &para;</a></span></dt>
 <dd><p>A convenience function composing <code>info</code> and <code>load</code>.
 </p></dd></dl>
 
-<dl>
-<dt id="index-typelib_002d_003emodule">Procedure: <strong>typelib-&gt;module</strong> <em>module lib [version]</em></dt>
+<dl class="def">
+<dt id="index-typelib_002d_003emodule"><span class="category">Procedure: </span><span><strong>typelib-&gt;module</strong> <em>module lib [version]</em><a href='#index-typelib_002d_003emodule' class='copiable-anchor'> &para;</a></span></dt>
 <dd><p>Loads all infos of <var>lib</var> into <var>module</var> and adds them to its public
 interface.
 </p>
@@ -138,10 +141,11 @@ module is returned.
 Throws an error, if the library could not be found or loaded.
 </p></dd></dl>
 
+</div>
 <hr>
 <div class="header">
 <p>
-Next: <a href="Typelib-Documentation.html" accesskey="n" rel="next">Typelib Documentation</a>, Up: <a href="Reference-Guide.html" accesskey="u" rel="up">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
+Next: <a href="Typelib-Documentation.html">Typelib Documentation</a>, Up: <a href="Reference-Guide.html">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>
 
 

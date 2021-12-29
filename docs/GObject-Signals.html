@@ -1,5 +1,8 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
+<!-- Created by GNU Texinfo 6.8, https://www.gnu.org/software/texinfo/ -->
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <!-- Copyright (C) 2018, 2019, 2020 Michael L. Gran
 
 Permission is granted to copy, distribute and/or modify this document
@@ -8,9 +11,6 @@ or any later version published by the Free Software Foundation;
 with no Invariant Sections, no Front-Cover Texts, and no Back-Cover
 Texts.  A copy of the license is included in the section entitled "GNU
 Free Documentation License". -->
-<!-- Created by GNU Texinfo 6.7, http://www.gnu.org/software/texinfo/ -->
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <title>GObject Signals (Guile-GI)</title>
 
 <meta name="description" content="GObject Signals (Guile-GI)">
@@ -18,19 +18,21 @@ Free Documentation License". -->
 <meta name="resource-type" content="document">
 <meta name="distribution" content="global">
 <meta name="Generator" content="makeinfo">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
 <link href="index.html" rel="start" title="Top">
 <link href="The-Index.html" rel="index" title="The Index">
 <link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
 <link href="Working-with-GObjects.html" rel="up" title="Working with GObjects">
-<link href="Signal-Accumulators.html" rel="next" title="Signal Accumulators">
+<link href="GObject-Properties.html" rel="next" title="GObject Properties">
 <link href="GObject-Methods.html" rel="prev" title="GObject Methods">
 <style type="text/css">
 <!--
+a.copiable-anchor {visibility: hidden; text-decoration: none; line-height: 0em}
 a.summary-letter {text-decoration: none}
 blockquote.indentedblock {margin-right: 0em}
 div.display {margin-left: 3.2em}
 div.example {margin-left: 3.2em}
-div.lisp {margin-left: 3.2em}
 kbd {font-style: oblique}
 pre.display {font-family: inherit}
 pre.format {font-family: inherit}
@@ -39,6 +41,7 @@ pre.menu-preformatted {font-family: serif}
 span.nolinebreak {white-space: nowrap}
 span.roman {font-family: initial; font-weight: normal}
 span.sansserif {font-family: sans-serif; font-weight: normal}
+span:hover a.copiable-anchor {visibility: visible}
 ul.no-bullet {list-style: none}
 -->
 </style>
@@ -48,7 +51,8 @@ ul.no-bullet {list-style: none}
 </head>
 
 <body lang="en">
-<span id="GObject-Signals"></span><div class="header">
+<div class="subsection" id="GObject-Signals">
+<div class="header">
 <p>
 Next: <a href="GObject-Properties.html" accesskey="n" rel="next">GObject Properties</a>, Previous: <a href="GObject-Methods.html" accesskey="p" rel="prev">GObject Methods</a>, Up: <a href="Working-with-GObjects.html" accesskey="u" rel="up">Working with GObjects</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>
@@ -87,11 +91,11 @@ is supposed to take a single argument.
 This argument &ndash; <code>app</code> &ndash; is supplied by the caller, as are all
 arguments to signals.
 </p>
-<dl>
-<dt id="index-connect-1">Procedure: <strong>connect</strong> <em>obj (signal &lt;signal&gt;) (handler &lt;procedure&gt;) #:key after? detail</em></dt>
-<dt id="index-connect-2">Procedure: <strong>connect</strong> <em>obj (signal &lt;signal&gt;) (detail &lt;symbol&gt;) (handler &lt;procedure&gt;) ...</em></dt>
-<dt id="index-connect_002dafter">Procedure: <strong>connect-after</strong> <em>obj (signal &lt;signal&gt;) (handler &lt;procedure&gt;) ...</em></dt>
-<dt id="index-connect_002dafter-1">Procedure: <strong>connect-after</strong> <em>obj (signal &lt;signal&gt;) (detail &lt;symbol&gt;) (handler &lt;procedure&gt;) ...</em></dt>
+<dl class="def">
+<dt id="index-connect-1"><span class="category">Procedure: </span><span><strong>connect</strong> <em>obj (signal &lt;signal&gt;) (handler &lt;procedure&gt;) #:key after? detail</em><a href='#index-connect-1' class='copiable-anchor'> &para;</a></span></dt>
+<dt id="index-connect-2"><span class="category">Procedure: </span><span><strong>connect</strong> <em>obj (signal &lt;signal&gt;) (detail &lt;symbol&gt;) (handler &lt;procedure&gt;) ...</em><a href='#index-connect-2' class='copiable-anchor'> &para;</a></span></dt>
+<dt id="index-connect_002dafter"><span class="category">Procedure: </span><span><strong>connect-after</strong> <em>obj (signal &lt;signal&gt;) (handler &lt;procedure&gt;) ...</em><a href='#index-connect_002dafter' class='copiable-anchor'> &para;</a></span></dt>
+<dt id="index-connect_002dafter-1"><span class="category">Procedure: </span><span><strong>connect-after</strong> <em>obj (signal &lt;signal&gt;) (detail &lt;symbol&gt;) (handler &lt;procedure&gt;) ...</em><a href='#index-connect_002dafter-1' class='copiable-anchor'> &para;</a></span></dt>
 <dd><p>Hooks <var>handler</var> to emissions of <var>signal</var>.  If <var>detail</var> is
 supplied, only emissions in which the detail matches it are considered.
 </p>
@@ -114,8 +118,8 @@ When using objects of types that you did define, you should only emit
 the signals that you defined for that object (and perhaps the &ldquo;notify&rdquo;
 signal when using explicit notification).
 </p>
-<dl>
-<dt id="index-_0028signal-_003csignal_003e_0029">Special Form: <strong><em>(signal &lt;signal&gt;)</em></strong> <em>obj [detail] [args...]</em></dt>
+<dl class="def">
+<dt id="index-_0028signal-_003csignal_003e_0029"><span class="category">Special Form: </span><span><strong><em>(signal &lt;signal&gt;)</em></strong> <em>obj [detail] [args...]</em><a href='#index-_0028signal-_003csignal_003e_0029' class='copiable-anchor'> &para;</a></span></dt>
 <dd><p>Emits the <var>signal</var> signal of <var>obj</var> with <var>detail</var> and
 <var>args</var>.  Note, that the interpretation of <var>detail</var> depends on
 whether or not <var>signal</var> is detailed.  If it is, <var>detail</var> needs
@@ -130,46 +134,46 @@ connecting signals, only <var>name</var> needs to be supplied.  When using
 them as proper signals, at least <var>return-type</var> needs to be given as
 well.
 </p>
-<dl>
-<dt id="index-name">Slot: <strong>name</strong></dt>
+<dl class="def">
+<dt id="index-name"><span class="category">Slot: </span><span><strong>name</strong><a href='#index-name' class='copiable-anchor'> &para;</a></span></dt>
 <dd><p>The name of the signal.
 A string.
 </p></dd></dl>
-<dl>
-<dt id="index-return_002dtype">Slot: <strong>return-type</strong></dt>
+<dl class="def">
+<dt id="index-return_002dtype"><span class="category">Slot: </span><span><strong>return-type</strong><a href='#index-return_002dtype' class='copiable-anchor'> &para;</a></span></dt>
 <dd><p>The return type of the signal.
 A <code>&lt;GType&gt;</code> or integer, such as <code>G_TYPE_INT</code>.
 </p></dd></dl>
-<dl>
-<dt id="index-param_002dtypes">Slot: <strong>param-types</strong></dt>
+<dl class="def">
+<dt id="index-param_002dtypes"><span class="category">Slot: </span><span><strong>param-types</strong><a href='#index-param_002dtypes' class='copiable-anchor'> &para;</a></span></dt>
 <dd><p>The parameter types of the signal.
 A list of <code>&lt;GType&gt;</code>s or integers.
 </p></dd></dl>
-<dl>
-<dt id="index-accumulator">Slot: <strong>accumulator</strong></dt>
+<dl class="def">
+<dt id="index-accumulator"><span class="category">Slot: </span><span><strong>accumulator</strong><a href='#index-accumulator' class='copiable-anchor'> &para;</a></span></dt>
 <dd><p>An optional signal accumulator procedure. See <a href="Signal-Accumulators.html">Signal Accumulators</a>.
 </p></dd></dl>
-<dl>
-<dt id="index-flags">Slot: <strong>flags</strong></dt>
+<dl class="def">
+<dt id="index-flags"><span class="category">Slot: </span><span><strong>flags</strong><a href='#index-flags' class='copiable-anchor'> &para;</a></span></dt>
 <dd><p>Signal flags, a logical or of one or more of
 <code>SIGNAL_RUN_FIRST</code>, <code>SIGNAL_RUN_LAST</code>,
 <code>SIGNAL_RUN_CLEANUP</code>, <code>SIGNAL_NO_RECURSE</code>, etc.
 </p></dd></dl>
-<dl>
-<dt id="index-output_002dmask">Slot: <strong>output-mask</strong></dt>
+<dl class="def">
+<dt id="index-output_002dmask"><span class="category">Slot: </span><span><strong>output-mask</strong><a href='#index-output_002dmask' class='copiable-anchor'> &para;</a></span></dt>
 <dd><p>A bitmask, describing which argument should be returned to the user when
 calling the signal as a procedure.
 </p></dd></dl>
 
-<table class="menu" border="0" cellspacing="0">
-<tr><td align="left" valign="top">&bull; <a href="Signal-Accumulators.html" accesskey="1">Signal Accumulators</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
-</td></tr>
-</table>
 
+<ul class="section-toc">
+<li><a href="Signal-Accumulators.html" accesskey="1">Signal Accumulators</a></li>
+</ul>
+</div>
 <hr>
 <div class="header">
 <p>
-Next: <a href="GObject-Properties.html" accesskey="n" rel="next">GObject Properties</a>, Previous: <a href="GObject-Methods.html" accesskey="p" rel="prev">GObject Methods</a>, Up: <a href="Working-with-GObjects.html" accesskey="u" rel="up">Working with GObjects</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
+Next: <a href="GObject-Properties.html">GObject Properties</a>, Previous: <a href="GObject-Methods.html">GObject Methods</a>, Up: <a href="Working-with-GObjects.html">Working with GObjects</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>
 
 

@@ -1,5 +1,8 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
+<!-- Created by GNU Texinfo 6.8, https://www.gnu.org/software/texinfo/ -->
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <!-- Copyright (C) 2018, 2019, 2020 Michael L. Gran
 
 Permission is granted to copy, distribute and/or modify this document
@@ -8,9 +11,6 @@ or any later version published by the Free Software Foundation;
 with no Invariant Sections, no Front-Cover Texts, and no Back-Cover
 Texts.  A copy of the license is included in the section entitled "GNU
 Free Documentation License". -->
-<!-- Created by GNU Texinfo 6.7, http://www.gnu.org/software/texinfo/ -->
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <title>Enums and Flags (Guile-GI)</title>
 
 <meta name="description" content="Enums and Flags (Guile-GI)">
@@ -18,6 +18,8 @@ Free Documentation License". -->
 <meta name="resource-type" content="document">
 <meta name="distribution" content="global">
 <meta name="Generator" content="makeinfo">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
 <link href="index.html" rel="start" title="Top">
 <link href="The-Index.html" rel="index" title="The Index">
 <link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
@@ -26,11 +28,11 @@ Free Documentation License". -->
 <link href="GType-Constants-and-Operations.html" rel="prev" title="GType Constants and Operations">
 <style type="text/css">
 <!--
+a.copiable-anchor {visibility: hidden; text-decoration: none; line-height: 0em}
 a.summary-letter {text-decoration: none}
 blockquote.indentedblock {margin-right: 0em}
 div.display {margin-left: 3.2em}
 div.example {margin-left: 3.2em}
-div.lisp {margin-left: 3.2em}
 kbd {font-style: oblique}
 pre.display {font-family: inherit}
 pre.format {font-family: inherit}
@@ -39,6 +41,7 @@ pre.menu-preformatted {font-family: serif}
 span.nolinebreak {white-space: nowrap}
 span.roman {font-family: initial; font-weight: normal}
 span.sansserif {font-family: sans-serif; font-weight: normal}
+span:hover a.copiable-anchor {visibility: visible}
 ul.no-bullet {list-style: none}
 -->
 </style>
@@ -48,7 +51,8 @@ ul.no-bullet {list-style: none}
 </head>
 
 <body lang="en">
-<span id="Enums-and-Flags"></span><div class="header">
+<div class="section" id="Enums-and-Flags">
+<div class="header">
 <p>
 Next: <a href="Utilities.html" accesskey="n" rel="next">Utilities</a>, Previous: <a href="GType-Constants-and-Operations.html" accesskey="p" rel="prev">GType Constants and Operations</a>, Up: <a href="Reference-Guide.html" accesskey="u" rel="up">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>
@@ -76,13 +80,19 @@ representation.
 with every other object type. Specifically, enums derive from
 <code>&lt;GEnum&gt;</code> and flags derive from <code>&lt;GFlags&gt;</code>.
 </p>
-<span id="Conversions"></span><h4 class="subsection">3.4.1 Conversions</h4>
-<dl>
-<dt id="index-number_002d_003eenum">Procedure: <strong>number-&gt;enum</strong> <em>(class &lt;class&gt;) (number &lt;number&gt;)</em></dt>
-<dt id="index-number_002d_003eenum-1">Procedure: <strong>number-&gt;enum</strong> <em>(class &lt;class&gt;)</em></dt>
-<dt id="index-number_002d_003eflags">Procedure: <strong>number-&gt;flags</strong> <em>(class &lt;class&gt;) (number &lt;number&gt;)</em></dt>
-<dt id="index-number_002d_003eflags-1">Procedure: <strong>number-&gt;flags</strong> <em>(class &lt;class&gt;)</em></dt>
-<dt id="index-number_002d_003etype">Procedure: <strong>number-&gt;<var>type</var></strong> <em>(number &lt;number&gt;)</em></dt>
+<ul class="section-toc">
+<li><a href="#Conversions" accesskey="1">Conversions</a></li>
+<li><a href="#Standard-Procedure-overrides" accesskey="2">Standard Procedure overrides</a></li>
+<li><a href="#R6RS_002desque-flag-operations" accesskey="3">R6RS-esque flag operations</a></li>
+</ul>
+<div class="subsection" id="Conversions">
+<h4 class="subsection">3.4.1 Conversions</h4>
+<dl class="def">
+<dt id="index-number_002d_003eenum"><span class="category">Procedure: </span><span><strong>number-&gt;enum</strong> <em>(class &lt;class&gt;) (number &lt;number&gt;)</em><a href='#index-number_002d_003eenum' class='copiable-anchor'> &para;</a></span></dt>
+<dt id="index-number_002d_003eenum-1"><span class="category">Procedure: </span><span><strong>number-&gt;enum</strong> <em>(class &lt;class&gt;)</em><a href='#index-number_002d_003eenum-1' class='copiable-anchor'> &para;</a></span></dt>
+<dt id="index-number_002d_003eflags"><span class="category">Procedure: </span><span><strong>number-&gt;flags</strong> <em>(class &lt;class&gt;) (number &lt;number&gt;)</em><a href='#index-number_002d_003eflags' class='copiable-anchor'> &para;</a></span></dt>
+<dt id="index-number_002d_003eflags-1"><span class="category">Procedure: </span><span><strong>number-&gt;flags</strong> <em>(class &lt;class&gt;)</em><a href='#index-number_002d_003eflags-1' class='copiable-anchor'> &para;</a></span></dt>
+<dt id="index-number_002d_003etype"><span class="category">Procedure: </span><span><strong>number-&gt;<var>type</var></strong> <em>(number &lt;number&gt;)</em><a href='#index-number_002d_003etype' class='copiable-anchor'> &para;</a></span></dt>
 <dd><p>Converts <var>number</var> into an enum or flags of class <var>class</var>.
 Called with just <var>class</var>, produces a procedure, that can be used to
 call itself with just <var>number</var>.This is often referred to as
@@ -95,28 +105,28 @@ prefixes.  For instance, a <code>GtkOrientation</code> may be created using
 construction as &ldquo;binding <var>class</var> on <var>type</var>&rdquo;
 </p></dd></dl>
 
-<dl>
-<dt id="index-symbol_002d_003eenum">Procedure: <strong>symbol-&gt;enum</strong> <em>(class &lt;class&gt;) (symbol &lt;symbol&gt;)</em></dt>
-<dt id="index-symbol_002d_003eenum-1">Procedure: <strong>symbol-&gt;enum</strong> <em>(class &lt;class&gt;)</em></dt>
-<dt id="index-type">Procedure: <strong>type</strong> <em>(symbol &lt;symbol&gt;)</em></dt>
+<dl class="def">
+<dt id="index-symbol_002d_003eenum"><span class="category">Procedure: </span><span><strong>symbol-&gt;enum</strong> <em>(class &lt;class&gt;) (symbol &lt;symbol&gt;)</em><a href='#index-symbol_002d_003eenum' class='copiable-anchor'> &para;</a></span></dt>
+<dt id="index-symbol_002d_003eenum-1"><span class="category">Procedure: </span><span><strong>symbol-&gt;enum</strong> <em>(class &lt;class&gt;)</em><a href='#index-symbol_002d_003eenum-1' class='copiable-anchor'> &para;</a></span></dt>
+<dt id="index-type"><span class="category">Procedure: </span><span><strong>type</strong> <em>(symbol &lt;symbol&gt;)</em><a href='#index-type' class='copiable-anchor'> &para;</a></span></dt>
 <dd><p>Converts <var>symbol</var> into an enum of class <var>class</var>.
 Curries. Binds <var>class</var> on <var>type</var>.
 </p></dd></dl>
 
-<dl>
-<dt id="index-list_002d_003eflags">Procedure: <strong>list-&gt;flags</strong> <em>(class &lt;class&gt;) (list &lt;list&gt;)</em></dt>
-<dt id="index-list_002d_003eflags-1">Procedure: <strong>list-&gt;flags</strong> <em>(class &lt;class&gt;)</em></dt>
-<dt id="index-type-1">Procedure: <strong>type</strong> <em>(list &lt;list&gt;)</em></dt>
+<dl class="def">
+<dt id="index-list_002d_003eflags"><span class="category">Procedure: </span><span><strong>list-&gt;flags</strong> <em>(class &lt;class&gt;) (list &lt;list&gt;)</em><a href='#index-list_002d_003eflags' class='copiable-anchor'> &para;</a></span></dt>
+<dt id="index-list_002d_003eflags-1"><span class="category">Procedure: </span><span><strong>list-&gt;flags</strong> <em>(class &lt;class&gt;)</em><a href='#index-list_002d_003eflags-1' class='copiable-anchor'> &para;</a></span></dt>
+<dt id="index-type-1"><span class="category">Procedure: </span><span><strong>type</strong> <em>(list &lt;list&gt;)</em><a href='#index-type-1' class='copiable-anchor'> &para;</a></span></dt>
 <dd><p>Converts <var>symbol</var> into flags of class <var>class</var>.
 Curries. Binds <var>class</var> on <var>type</var>.
 </p></dd></dl>
 
-<dl>
-<dt id="index-enum_002d_003enumber">Procedure: <strong>enum-&gt;number</strong> <em>(enum &lt;GEnum&gt;)</em></dt>
-<dt id="index-enum_002d_003enumber-1">Procedure: <strong>enum-&gt;number</strong> <em>(class &lt;class&gt;) (enum &lt;GEnum&gt;)</em></dt>
-<dt id="index-enum_002d_003enumber-2">Procedure: <strong>enum-&gt;number</strong> <em>(class &lt;class&gt;) (symbol &lt;symbol&gt;)</em></dt>
-<dt id="index-enum_002d_003enumber-3">Procedure: <strong>enum-&gt;number</strong> <em>(class &lt;class&gt;)</em></dt>
-<dt id="index-type_002d_003enumber">Procedure: <strong><var>type</var>-&gt;number</strong> <em>(class &lt;class&gt;)</em></dt>
+<dl class="def">
+<dt id="index-enum_002d_003enumber"><span class="category">Procedure: </span><span><strong>enum-&gt;number</strong> <em>(enum &lt;GEnum&gt;)</em><a href='#index-enum_002d_003enumber' class='copiable-anchor'> &para;</a></span></dt>
+<dt id="index-enum_002d_003enumber-1"><span class="category">Procedure: </span><span><strong>enum-&gt;number</strong> <em>(class &lt;class&gt;) (enum &lt;GEnum&gt;)</em><a href='#index-enum_002d_003enumber-1' class='copiable-anchor'> &para;</a></span></dt>
+<dt id="index-enum_002d_003enumber-2"><span class="category">Procedure: </span><span><strong>enum-&gt;number</strong> <em>(class &lt;class&gt;) (symbol &lt;symbol&gt;)</em><a href='#index-enum_002d_003enumber-2' class='copiable-anchor'> &para;</a></span></dt>
+<dt id="index-enum_002d_003enumber-3"><span class="category">Procedure: </span><span><strong>enum-&gt;number</strong> <em>(class &lt;class&gt;)</em><a href='#index-enum_002d_003enumber-3' class='copiable-anchor'> &para;</a></span></dt>
+<dt id="index-type_002d_003enumber"><span class="category">Procedure: </span><span><strong><var>type</var>-&gt;number</strong> <em>(class &lt;class&gt;)</em><a href='#index-type_002d_003enumber' class='copiable-anchor'> &para;</a></span></dt>
 <dd><p>If <var>symbol</var> is given, returns the value represented by <var>symbol</var>
 in <var>class</var>.
 </p>
@@ -127,22 +137,22 @@ if <var>enum</var> is not of type <var>class</var>.
 <p>Curries. Binds <var>class</var> on <var>type</var>.
 </p></dd></dl>
 
-<dl>
-<dt id="index-enum_002d_003esymbol">Procedure: <strong>enum-&gt;symbol</strong> <em>(enum &lt;GEnum&gt;)</em></dt>
-<dt id="index-enum_002d_003esymbol-1">Procedure: <strong>enum-&gt;symbol</strong> <em>(class &lt;class&gt;) (enum &lt;GEnum&gt;)</em></dt>
-<dt id="index-enum_002d_003esymbol-2">Procedure: <strong>enum-&gt;symbol</strong> <em>(class &lt;class&gt;)</em></dt>
-<dt id="index-type_002d_003esymbol">Procedure: <strong><var>type</var>-&gt;symbol</strong> <em>(class &lt;class&gt;)</em></dt>
+<dl class="def">
+<dt id="index-enum_002d_003esymbol"><span class="category">Procedure: </span><span><strong>enum-&gt;symbol</strong> <em>(enum &lt;GEnum&gt;)</em><a href='#index-enum_002d_003esymbol' class='copiable-anchor'> &para;</a></span></dt>
+<dt id="index-enum_002d_003esymbol-1"><span class="category">Procedure: </span><span><strong>enum-&gt;symbol</strong> <em>(class &lt;class&gt;) (enum &lt;GEnum&gt;)</em><a href='#index-enum_002d_003esymbol-1' class='copiable-anchor'> &para;</a></span></dt>
+<dt id="index-enum_002d_003esymbol-2"><span class="category">Procedure: </span><span><strong>enum-&gt;symbol</strong> <em>(class &lt;class&gt;)</em><a href='#index-enum_002d_003esymbol-2' class='copiable-anchor'> &para;</a></span></dt>
+<dt id="index-type_002d_003esymbol"><span class="category">Procedure: </span><span><strong><var>type</var>-&gt;symbol</strong> <em>(class &lt;class&gt;)</em><a href='#index-type_002d_003esymbol' class='copiable-anchor'> &para;</a></span></dt>
 <dd><p>Converts <var>enum</var> to a symbol. If <var>class</var> is given, raises an error
 if <var>enum</var> is not of type <var>class</var>.
 Curries. Binds <var>class</var> on <var>type</var>.
 </p></dd></dl>
 
-<dl>
-<dt id="index-flags_002d_003enumber">Procedure: <strong>flags-&gt;number</strong> <em>(enum &lt;GEnum&gt;)</em></dt>
-<dt id="index-flags_002d_003enumber-1">Procedure: <strong>flags-&gt;number</strong> <em>(class &lt;class&gt;) (enum &lt;GEnum&gt;)</em></dt>
-<dt id="index-flags_002d_003enumber-2">Procedure: <strong>flags-&gt;number</strong> <em>(class &lt;class&gt;) (list &lt;list&gt;)</em></dt>
-<dt id="index-flags_002d_003enumber-3">Procedure: <strong>flags-&gt;number</strong> <em>(class &lt;class&gt;)</em></dt>
-<dt id="index-type_002d_003enumber-1">Procedure: <strong><var>type</var>-&gt;number</strong> <em>(class &lt;class&gt;)</em></dt>
+<dl class="def">
+<dt id="index-flags_002d_003enumber"><span class="category">Procedure: </span><span><strong>flags-&gt;number</strong> <em>(enum &lt;GEnum&gt;)</em><a href='#index-flags_002d_003enumber' class='copiable-anchor'> &para;</a></span></dt>
+<dt id="index-flags_002d_003enumber-1"><span class="category">Procedure: </span><span><strong>flags-&gt;number</strong> <em>(class &lt;class&gt;) (enum &lt;GEnum&gt;)</em><a href='#index-flags_002d_003enumber-1' class='copiable-anchor'> &para;</a></span></dt>
+<dt id="index-flags_002d_003enumber-2"><span class="category">Procedure: </span><span><strong>flags-&gt;number</strong> <em>(class &lt;class&gt;) (list &lt;list&gt;)</em><a href='#index-flags_002d_003enumber-2' class='copiable-anchor'> &para;</a></span></dt>
+<dt id="index-flags_002d_003enumber-3"><span class="category">Procedure: </span><span><strong>flags-&gt;number</strong> <em>(class &lt;class&gt;)</em><a href='#index-flags_002d_003enumber-3' class='copiable-anchor'> &para;</a></span></dt>
+<dt id="index-type_002d_003enumber-1"><span class="category">Procedure: </span><span><strong><var>type</var>-&gt;number</strong> <em>(class &lt;class&gt;)</em><a href='#index-type_002d_003enumber-1' class='copiable-anchor'> &para;</a></span></dt>
 <dd><p>If <var>list</var> is given, returns the value represented by <var>list</var>
 in <var>class</var>.
 </p>
@@ -153,17 +163,19 @@ if <var>flags</var> is not of type <var>class</var>.
 <p>Curries. Binds <var>class</var> on <var>type</var>.
 </p></dd></dl>
 
-<dl>
-<dt id="index-flags_002d_003elist">Procedure: <strong>flags-&gt;list</strong> <em>(enum &lt;GEnum&gt;)</em></dt>
-<dt id="index-flags_002d_003elist-1">Procedure: <strong>flags-&gt;list</strong> <em>(class &lt;class&gt;) (enum &lt;GEnum&gt;)</em></dt>
-<dt id="index-flags_002d_003elist-2">Procedure: <strong>flags-&gt;list</strong> <em>(class &lt;class&gt;)</em></dt>
-<dt id="index-type_002d_003elist">Procedure: <strong><var>type</var>-&gt;list</strong> <em>(class &lt;class&gt;)</em></dt>
+<dl class="def">
+<dt id="index-flags_002d_003elist"><span class="category">Procedure: </span><span><strong>flags-&gt;list</strong> <em>(enum &lt;GEnum&gt;)</em><a href='#index-flags_002d_003elist' class='copiable-anchor'> &para;</a></span></dt>
+<dt id="index-flags_002d_003elist-1"><span class="category">Procedure: </span><span><strong>flags-&gt;list</strong> <em>(class &lt;class&gt;) (enum &lt;GEnum&gt;)</em><a href='#index-flags_002d_003elist-1' class='copiable-anchor'> &para;</a></span></dt>
+<dt id="index-flags_002d_003elist-2"><span class="category">Procedure: </span><span><strong>flags-&gt;list</strong> <em>(class &lt;class&gt;)</em><a href='#index-flags_002d_003elist-2' class='copiable-anchor'> &para;</a></span></dt>
+<dt id="index-type_002d_003elist"><span class="category">Procedure: </span><span><strong><var>type</var>-&gt;list</strong> <em>(class &lt;class&gt;)</em><a href='#index-type_002d_003elist' class='copiable-anchor'> &para;</a></span></dt>
 <dd><p>Converts <var>flags</var> to a list of symbols. If <var>class</var> is given, raises an error
 if <var>flags</var> is not of type <var>class</var>.
 Curries. Binds <var>flags</var> on <var>type</var>.
 </p></dd></dl>
 
-<span id="Standard-Procedure-overrides"></span><h4 class="subsection">3.4.2 Standard Procedure overrides</h4>
+</div>
+<div class="subsection" id="Standard-Procedure-overrides">
+<h4 class="subsection">3.4.2 Standard Procedure overrides</h4>
 <p><code>&lt;GEnum&gt;</code> and <code>&lt;GFlags&gt;</code> display as their symbolic/list
 representation and also use them in write in lieu of their addresses.
 Enumerations can be numerically compared to enumerations and numbers
@@ -171,7 +183,9 @@ using <code>=</code>.  Flags can be numerically compared to flags and numbers
 using <code>=</code>.  Enumerations and flags can be compared to enumerations
 and flags of the same type using <code>equal?</code>.
 </p>
-<span id="R6RS_002desque-flag-operations"></span><h4 class="subsection">3.4.3 R6RS-esque flag operations</h4>
+</div>
+<div class="subsection" id="R6RS_002desque-flag-operations">
+<h4 class="subsection">3.4.3 R6RS-esque flag operations</h4>
 <p>Some would certainly like to see an equivalence the enumerated types
 discussed above and R6RS enum sets. However, it turns out, that they are
 not compatible.  Enumerations are not enum sets, because they are not
@@ -188,59 +202,59 @@ all.
 different &ndash; set of functions, that aim to be close to what you see in
 R6RS.
 </p>
-<dl>
-<dt id="index-enum_002duniverse">Procedure: <strong>enum-universe</strong> <em>(class &lt;class&gt;)</em></dt>
-<dt id="index-enum_002duniverse-1">Procedure: <strong>enum-universe</strong> <em>(enum &lt;GEnum&gt;)</em></dt>
-<dt id="index-enum_002duniverse-2">Procedure: <strong>enum-universe</strong> <em>(flags &lt;GFlags&gt;)</em></dt>
+<dl class="def">
+<dt id="index-enum_002duniverse"><span class="category">Procedure: </span><span><strong>enum-universe</strong> <em>(class &lt;class&gt;)</em><a href='#index-enum_002duniverse' class='copiable-anchor'> &para;</a></span></dt>
+<dt id="index-enum_002duniverse-1"><span class="category">Procedure: </span><span><strong>enum-universe</strong> <em>(enum &lt;GEnum&gt;)</em><a href='#index-enum_002duniverse-1' class='copiable-anchor'> &para;</a></span></dt>
+<dt id="index-enum_002duniverse-2"><span class="category">Procedure: </span><span><strong>enum-universe</strong> <em>(flags &lt;GFlags&gt;)</em><a href='#index-enum_002duniverse-2' class='copiable-anchor'> &para;</a></span></dt>
 <dd><p>Returns a list of meaningful symbols (i.e. those that can be used in
 <code>symbol-&gt;enum</code> or <code>list-&gt;flags</code>) for <var>class</var>.
 If <var>enum</var> <var>flags</var> is given, <var>class</var> is inferred from it.
 </p></dd></dl>
 
-<dl>
-<dt id="index-flags_002dmask">Procedure: <strong>flags-mask</strong> <em>(class &lt;class&gt;)</em></dt>
-<dt id="index-flags_002dmask-1">Procedure: <strong>flags-mask</strong> <em>(flags &lt;GFlags&gt;)</em></dt>
+<dl class="def">
+<dt id="index-flags_002dmask"><span class="category">Procedure: </span><span><strong>flags-mask</strong> <em>(class &lt;class&gt;)</em><a href='#index-flags_002dmask' class='copiable-anchor'> &para;</a></span></dt>
+<dt id="index-flags_002dmask-1"><span class="category">Procedure: </span><span><strong>flags-mask</strong> <em>(flags &lt;GFlags&gt;)</em><a href='#index-flags_002dmask-1' class='copiable-anchor'> &para;</a></span></dt>
 <dd><p>Returns flags of class <var>class</var>, that has all possible values set.
 If <var>flags</var> is given, <var>class</var> is inferred from it.
 </p></dd></dl>
 
-<dl>
-<dt id="index-flags_002dunion">Procedure: <strong>flags-union</strong> <em>(flags &lt;GFlags&gt;) . rest</em></dt>
+<dl class="def">
+<dt id="index-flags_002dunion"><span class="category">Procedure: </span><span><strong>flags-union</strong> <em>(flags &lt;GFlags&gt;) . rest</em><a href='#index-flags_002dunion' class='copiable-anchor'> &para;</a></span></dt>
 <dd><p>Constructs the union of all flags given by <var>flags</var> and <var>rest</var>.
 All of them must belong to the same class.
 </p></dd></dl>
 
-<dl>
-<dt id="index-flags_002dintersection">Procedure: <strong>flags-intersection</strong> <em>(flags &lt;GFlags&gt;) . rest</em></dt>
+<dl class="def">
+<dt id="index-flags_002dintersection"><span class="category">Procedure: </span><span><strong>flags-intersection</strong> <em>(flags &lt;GFlags&gt;) . rest</em><a href='#index-flags_002dintersection' class='copiable-anchor'> &para;</a></span></dt>
 <dd><p>Constructs the intersection of all flags given by <var>flags</var> and <var>rest</var>.
 All of them must belong to the same class.
 </p></dd></dl>
 
-<dl>
-<dt id="index-flags_002ddifference">Procedure: <strong>flags-difference</strong> <em>(flags1 &lt;GFlags&gt;) (flags2 &lt;GFlags&gt;)</em></dt>
+<dl class="def">
+<dt id="index-flags_002ddifference"><span class="category">Procedure: </span><span><strong>flags-difference</strong> <em>(flags1 &lt;GFlags&gt;) (flags2 &lt;GFlags&gt;)</em><a href='#index-flags_002ddifference' class='copiable-anchor'> &para;</a></span></dt>
 <dd><p>Constructs the difference of <var>flags1</var> and <var>flags2</var>.
 Both of them must belong to the same class.
 </p></dd></dl>
 
-<dl>
-<dt id="index-flags_002dcomplement">Procedure: <strong>flags-complement</strong> <em>(flags &lt;GFlags&gt;)</em></dt>
+<dl class="def">
+<dt id="index-flags_002dcomplement"><span class="category">Procedure: </span><span><strong>flags-complement</strong> <em>(flags &lt;GFlags&gt;)</em><a href='#index-flags_002dcomplement' class='copiable-anchor'> &para;</a></span></dt>
 <dd><p>Returns the flags not set in <var>flags</var>.
 </p></dd></dl>
 
-<dl>
-<dt id="index-flags_002dset_003f">Procedure: <strong>flags-set?</strong> <em>(flags &lt;GFlags&gt;) (number &lt;number&gt;)</em></dt>
-<dt id="index-flags_002dset_003f-1">Procedure: <strong>flags-set?</strong> <em>(flags &lt;GFlags&gt;) (symbol &lt;symbol&gt;)</em></dt>
-<dt id="index-flags_002dset_003f-2">Procedure: <strong>flags-set?</strong> <em>(flags &lt;GFlags&gt;) (list &lt;list&gt;)</em></dt>
+<dl class="def">
+<dt id="index-flags_002dset_003f"><span class="category">Procedure: </span><span><strong>flags-set?</strong> <em>(flags &lt;GFlags&gt;) (number &lt;number&gt;)</em><a href='#index-flags_002dset_003f' class='copiable-anchor'> &para;</a></span></dt>
+<dt id="index-flags_002dset_003f-1"><span class="category">Procedure: </span><span><strong>flags-set?</strong> <em>(flags &lt;GFlags&gt;) (symbol &lt;symbol&gt;)</em><a href='#index-flags_002dset_003f-1' class='copiable-anchor'> &para;</a></span></dt>
+<dt id="index-flags_002dset_003f-2"><span class="category">Procedure: </span><span><strong>flags-set?</strong> <em>(flags &lt;GFlags&gt;) (list &lt;list&gt;)</em><a href='#index-flags_002dset_003f-2' class='copiable-anchor'> &para;</a></span></dt>
 <dd><p>Return <var>#t</var> if and only if the flag(s) given by <var>number</var>, <var>symbol</var>
 or <var>list</var> are set.
 </p></dd></dl>
 
-<dl>
-<dt id="index-flags_002dprojection">Procedure: <strong>flags-projection</strong></dt>
-<dt id="index-flags_002dprojection_002flist">Procedure: <strong>flags-projection/list</strong> <em>(flags &lt;GFlags&gt;) (class &lt;class&gt;)</em></dt>
-<dt id="index-flags_002dprojection_002flist-1">Procedure: <strong>flags-projection/list</strong> <em>(flags &lt;GFlags&gt;) (flags2 &lt;GFlags&gt;)</em></dt>
-<dt id="index-flags_002dprojection_002fnumber">Procedure: <strong>flags-projection/number</strong> <em>(flags &lt;GFlags&gt;) (class &lt;class&gt;)</em></dt>
-<dt id="index-flags_002dprojection_002fnumber-1">Procedure: <strong>flags-projection/number</strong> <em>(flags &lt;GFlags&gt;) (flags2 &lt;GFlags&gt;)</em></dt>
+<dl class="def">
+<dt id="index-flags_002dprojection"><span class="category">Procedure: </span><span><strong>flags-projection</strong><a href='#index-flags_002dprojection' class='copiable-anchor'> &para;</a></span></dt>
+<dt id="index-flags_002dprojection_002flist"><span class="category">Procedure: </span><span><strong>flags-projection/list</strong> <em>(flags &lt;GFlags&gt;) (class &lt;class&gt;)</em><a href='#index-flags_002dprojection_002flist' class='copiable-anchor'> &para;</a></span></dt>
+<dt id="index-flags_002dprojection_002flist-1"><span class="category">Procedure: </span><span><strong>flags-projection/list</strong> <em>(flags &lt;GFlags&gt;) (flags2 &lt;GFlags&gt;)</em><a href='#index-flags_002dprojection_002flist-1' class='copiable-anchor'> &para;</a></span></dt>
+<dt id="index-flags_002dprojection_002fnumber"><span class="category">Procedure: </span><span><strong>flags-projection/number</strong> <em>(flags &lt;GFlags&gt;) (class &lt;class&gt;)</em><a href='#index-flags_002dprojection_002fnumber' class='copiable-anchor'> &para;</a></span></dt>
+<dt id="index-flags_002dprojection_002fnumber-1"><span class="category">Procedure: </span><span><strong>flags-projection/number</strong> <em>(flags &lt;GFlags&gt;) (flags2 &lt;GFlags&gt;)</em><a href='#index-flags_002dprojection_002fnumber-1' class='copiable-anchor'> &para;</a></span></dt>
 <dd><p>Project <var>flags</var> onto class <var>class</var>. (<var>class</var> is inferred from <var>flags2</var>).
 </p>
 <p><code>flags-projection/list</code> constructs flags from all symbols in
@@ -251,18 +265,20 @@ set with respect to <code>(flags-mask class)</code>.
 <p><code>flags-projection</code> is an alias for <code>flags-projection/list</code>.
 </p></dd></dl>
 
+</div>
+</div>
 <div class="footnote">
 <hr>
 <h4 class="footnotes-heading">Footnotes</h4>
 
-<h5><a id="FOOT3" href="#DOCF3">(3)</a></h3>
+<h5><a id="FOOT3" href="#DOCF3">(3)</a></h5>
 <p>Other implementations may offer similar functions
 &ndash; otherwise they can be implemented by the user themselves.</p>
 </div>
 <hr>
 <div class="header">
 <p>
-Next: <a href="Utilities.html" accesskey="n" rel="next">Utilities</a>, Previous: <a href="GType-Constants-and-Operations.html" accesskey="p" rel="prev">GType Constants and Operations</a>, Up: <a href="Reference-Guide.html" accesskey="u" rel="up">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
+Next: <a href="Utilities.html">Utilities</a>, Previous: <a href="GType-Constants-and-Operations.html">GType Constants and Operations</a>, Up: <a href="Reference-Guide.html">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>
 
 

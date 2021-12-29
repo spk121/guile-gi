@@ -1,5 +1,8 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
+<!-- Created by GNU Texinfo 6.8, https://www.gnu.org/software/texinfo/ -->
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <!-- Copyright (C) 2018, 2019, 2020 Michael L. Gran
 
 Permission is granted to copy, distribute and/or modify this document
@@ -8,9 +11,6 @@ or any later version published by the Free Software Foundation;
 with no Invariant Sections, no Front-Cover Texts, and no Back-Cover
 Texts.  A copy of the license is included in the section entitled "GNU
 Free Documentation License". -->
-<!-- Created by GNU Texinfo 6.7, http://www.gnu.org/software/texinfo/ -->
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <title>Debugging Hooks (Guile-GI)</title>
 
 <meta name="description" content="Debugging Hooks (Guile-GI)">
@@ -18,19 +18,20 @@ Free Documentation License". -->
 <meta name="resource-type" content="document">
 <meta name="distribution" content="global">
 <meta name="Generator" content="makeinfo">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
 <link href="index.html" rel="start" title="Top">
 <link href="The-Index.html" rel="index" title="The Index">
 <link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
 <link href="Debugging-and-Profiling.html" rel="up" title="Debugging and Profiling">
 <link href="GLib-Logging.html" rel="next" title="GLib Logging">
-<link href="Debugging-and-Profiling.html" rel="prev" title="Debugging and Profiling">
 <style type="text/css">
 <!--
+a.copiable-anchor {visibility: hidden; text-decoration: none; line-height: 0em}
 a.summary-letter {text-decoration: none}
 blockquote.indentedblock {margin-right: 0em}
 div.display {margin-left: 3.2em}
 div.example {margin-left: 3.2em}
-div.lisp {margin-left: 3.2em}
 kbd {font-style: oblique}
 pre.display {font-family: inherit}
 pre.format {font-family: inherit}
@@ -39,6 +40,7 @@ pre.menu-preformatted {font-family: serif}
 span.nolinebreak {white-space: nowrap}
 span.roman {font-family: initial; font-weight: normal}
 span.sansserif {font-family: sans-serif; font-weight: normal}
+span:hover a.copiable-anchor {visibility: visible}
 ul.no-bullet {list-style: none}
 -->
 </style>
@@ -48,7 +50,8 @@ ul.no-bullet {list-style: none}
 </head>
 
 <body lang="en">
-<span id="Debugging-Hooks"></span><div class="header">
+<div class="subsection" id="Debugging-Hooks">
+<div class="header">
 <p>
 Next: <a href="GLib-Logging.html" accesskey="n" rel="next">GLib Logging</a>, Up: <a href="Debugging-and-Profiling.html" accesskey="u" rel="up">Debugging and Profiling</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>
@@ -58,12 +61,12 @@ Next: <a href="GLib-Logging.html" accesskey="n" rel="next">GLib Logging</a>, Up:
 <p>Since most GObject-based libraries use an event and callback model,
 debugging can be challenging.  Guile-GI provides the ability for the
 user to hook into particular events in the introspection layer.
-See <a href="https://www.gnu.org/software/guile/manual/html_node/Hooks.html#Hooks">Hooks</a> in <cite>The Guile reference manual</cite> to see how to
+See <a data-manual="guile" href="https://www.gnu.org/software/guile/manual/html_node/Hooks.html#Hooks">Hooks</a> in <cite>The Guile reference manual</cite> to see how to
 operate on them.
 </p>
 <p>The following hooks are defined
-</p><dl>
-<dt id="index-_0025before_002dfunction_002dhook">Variable: <strong>%before-function-hook</strong></dt>
+</p><dl class="def">
+<dt id="index-_0025before_002dfunction_002dhook"><span class="category">Variable: </span><span><strong>%before-function-hook</strong><a href='#index-_0025before_002dfunction_002dhook' class='copiable-anchor'> &para;</a></span></dt>
 <dd><p>Will be emitted before calling a function with two arguments:
 <var>name</var>, a string denoting the name of the called function,
 and <var>args</var>, a list of Scheme variables passed to that function.
@@ -73,16 +76,16 @@ and <var>args</var>, a list of Scheme variables passed to that function.
 the FFI calls a C function, it would be called within the procedure call
 of any procedure created by GObject introspection.
 </p>
-<dl>
-<dt id="index-_0025before_002dcallback_002dhook">Variable: <strong>%before-callback-hook</strong></dt>
+<dl class="def">
+<dt id="index-_0025before_002dcallback_002dhook"><span class="category">Variable: </span><span><strong>%before-callback-hook</strong><a href='#index-_0025before_002dcallback_002dhook' class='copiable-anchor'> &para;</a></span></dt>
 <dd><p>Will be emitted before invoking a callback with three arguments:
 <var>name</var>, a string denoting the name of the callback,
 <var>proc</var>, the Scheme procedure that will be called,
 and <var>args</var>, a list of Scheme variables passed to that function.
 </p></dd></dl>
 
-<dl>
-<dt id="index-_0025before_002dc_002dcallback_002dhook">Variable: <strong>%before-c-callback-hook</strong></dt>
+<dl class="def">
+<dt id="index-_0025before_002dc_002dcallback_002dhook"><span class="category">Variable: </span><span><strong>%before-c-callback-hook</strong><a href='#index-_0025before_002dc_002dcallback_002dhook' class='copiable-anchor'> &para;</a></span></dt>
 <dd><p>Will be emitted before invoking a C callback with three arguments:
 <var>name</var>, a string denoting the name of the callback,
 <var>ptr</var>, a pointer to the C function that will be called,
@@ -95,6 +98,7 @@ the signal emits.  Setting <code>%before-callback-hook</code> and
 <code>%before-c-callback-hook</code> may provide clues when debugging signal
 events.
 </p>
+</div>
 
 
 

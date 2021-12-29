@@ -1,3 +1,22 @@
+2021-12-29: version 0.3.2
+ - SCM GObject arguments should better preserve their type when
+   passing through function calls, and not downgrade to the argument's
+   required type (#104)
+ - Handle GVariant arguments
+ - Handle GBoxed module variables
+ - Initial handling of Gtk4's GtkExpression and other new, fundamental
+   types
+ - More verbose warnings
+ - More stringent typechecks
+ - Avoid crashes cause by calling callbacks in non-guile mode
+ - Avoid Unicode combining character in test case
+
+Thanks to
+ - LordYuuma
+ - Bob131
+ - Danny Milosavljevic <daym>
+ - Lloyd Konneker <bootchk>
+
 2020-12-31: version 0.3.1
  - Marshall GValues containing pointers
  - Add compatibility functions for guile-cairo
@@ -19,7 +38,7 @@
  - Detlev Zundel <laodzu>
  - Danny O'Brien <dannyob>
  - Arun Isaac <arunisaac>
- 
+
 
 2020-03-24: version 0.3.0
 - Handle mutation operations of caller-allocated function arguments (#39)
