@@ -27,10 +27,10 @@ G_BEGIN_DECLS
 G_GNUC_MALLOC gchar *gig_callable_info_make_name(GICallableInfo *info, const gchar *prefix);
 const gchar *gig_constant_strip_prefix(const gchar *name, const gchar *strip_prefix);
 gchar *gig_gname_to_scm_name(const gchar *gname);
-G_GNUC_INTERNAL void *gig_memdup(const void *mem, size_t len);
-G_GNUC_INTERNAL SCM scm_c_list_ref(SCM list, gsize k);
-G_GNUC_INTERNAL gboolean scm_is_list(SCM obj);
-G_GNUC_INTERNAL gsize scm_c_length(SCM list);
+void *gig_memdup(const void *mem, size_t len);
+SCM scm_c_list_ref(SCM list, gsize k);
+gboolean scm_is_list(SCM obj);
+gsize scm_c_length(SCM list);
 gpointer scm_dynwind_or_bust(const gchar *subr, gpointer mem);
 SCM scm_class_ref(SCM cls, SCM slot);
 SCM scm_class_set_x(SCM cls, SCM slot, SCM val);
@@ -39,7 +39,7 @@ SCM scm_c_reexport(const gchar *name, ...);
 void scm_printf(SCM port, const gchar *fmt, ...);
 const gchar *g_base_info_get_name_safe(GIBaseInfo *info);
 gchar *g_registered_type_info_get_qualified_name(GIRegisteredTypeInfo *info);
-G_GNUC_INTERNAL gchar *scm_write_to_utf8_stringn(SCM x, gsize max_len);
+gchar *scm_write_to_utf8_stringn(SCM x, gsize max_len);
 
 #define scm_is_equal(a,b) scm_is_true(scm_equal_p(a,b))
 

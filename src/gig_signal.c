@@ -191,5 +191,4 @@ gig_init_signal()
 
     signal_accu_first_wins = scm_from_utf8_symbol("first-wins");
     signal_accu_true_handled = scm_from_utf8_symbol("true-handled");
-
 }

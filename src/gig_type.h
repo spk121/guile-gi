@@ -17,6 +17,7 @@
 #define GIG_TYPE_H
 
 #include <girepository.h>
+#include "gig_visibility.h"
 
 // *INDENT-OFF*
 G_BEGIN_DECLS
@@ -39,7 +40,7 @@ void gig_type_register(GType gtype, SCM stype);
 SCM gig_type_define(GType gtype, SCM defs);
 SCM gig_type_define_full(GType gtype, SCM defs, SCM extra_supers);
 SCM gig_type_define_with_info(GIRegisteredTypeInfo *info, SCM supers, SCM slots);
-G_GNUC_INTERNAL void
+void
 gig_type_define_fundamental(GType type, SCM extra_supers,
                             GigTypeRefFunction ref, GigTypeUnrefFunction unref);
 
@@ -56,7 +57,7 @@ SCM gig_type_transfer_object(GType gtype, gpointer obj, GITransfer transfer);
 gpointer gig_type_peek_object(SCM obj);
 gpointer gig_type_peek_typed_object(SCM obj, SCM expected);
 
-void gig_init_types(void);
+GIG_API void gig_init_types(void);
 
 G_END_DECLS
 #endif

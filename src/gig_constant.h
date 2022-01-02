@@ -24,7 +24,5 @@ G_BEGIN_DECLS
 // *INDENT-ON*
 
 SCM gig_constant_define(GIConstantInfo *info, SCM defs);
-void gig_init_constant(void);
-
 G_END_DECLS
 #endif

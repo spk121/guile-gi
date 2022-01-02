@@ -324,8 +324,3 @@ gig_type_meta_describe(const GigTypeMeta *meta)
 }
 
 #undef STRLEN
-
-void
-gig_init_data_type(void)
-{
-}

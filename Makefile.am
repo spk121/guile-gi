@@ -101,43 +101,46 @@ examples/resources/test.gresource: AM_GRESOURCE_FLAGS = --sourcedir=$(abs_buildd
 guileextension_LTLIBRARIES = libguile-gi.la
 
 libguile_gi_la_c_sources = \
-  src/gig_argument.c \
-  src/gig_closure.c \
-  src/gig_data_type.c \
-  src/gig_object.c \
-  src/gig_value.c \
-  src/gig_signal.c \
   src/gig.c \
   src/gig_arg_map.c \
+  src/gig_argument.c \
   src/gig_callback.c \
-  src/gig_function.c \
+  src/gig_closure.c \
   src/gig_constant.c \
-  src/gig_flag.c \
-  src/gig_repository.c \
+  src/gig_data_type.c \
   src/gig_document.c \
+  src/gig_flag.c \
+  src/gig_function.c \
+  src/gig_logging.c \
+  src/gig_object.c \
+  src/gig_repository.c \
+  src/gig_signal.c \
   src/gig_type.c \
   src/gig_type_private.c \
   src/gig_util.c \
-  src/gig_logging.c
+  src/gig_value.c
 
 libguile_gi_la_internal_headers = \
-  src/gig_argument.h \
-  src/gig_closure.h \
-  src/gig_data_type.h \
-  src/gig_object.h \
-  src/gig_value.h \
-  src/gig_signal.h \
+  src/gig.h \
   src/gig_arg_map.h \
+  src/gig_argument.h \
   src/gig_callback.h \
+  src/gig_closure.h \
+  src/gig_constant.h \
+  src/gig_data_type.h \
+  src/gig_document.h \
+  src/gig_flag.h \
   src/gig_function.h \
   src/gig_function_private.h \
-  src/gig_constant.h \
-  src/gig_flag.h \
+  src/gig_logging.h \
+  src/gig_object.h \
   src/gig_repository.h \
+  src/gig_signal.h \
   src/gig_type.h \
   src/gig_type_private.h \
   src/gig_util.h \
-  src/gig_logging.h
+  src/gig_value.h \
+  src/gig_visibility.h
 
 libguile_gi_la_SOURCES = \
   $(libguile_gi_la_internal_headers) \
@@ -145,10 +148,11 @@ libguile_gi_la_SOURCES = \
 
 libguile_gi_la_CPPFLAGS = \
   -DG_LOG_DOMAIN=\"GuileGI\" \
-  -DG_LOG_USE_STRUCTURED
+  -DG_LOG_USE_STRUCTURED \
+  -DBUILDING_GIG
 
 if BUILDING_DLL
-libguile_gi_la_CPPFLAGS += -DGIR_DLL -DGIR_DLL_EXPORTS
+libguile_gi_la_CPPFLAGS += -DGIG_DLL
 endif
 if COVERAGE
 libguile_gi_la_CPPFLAGS += -DENABLE_GCOV --coverage
@@ -157,8 +161,11 @@ if MTRACE
 libguile_gi_la_CPPFLAGS += -DMTRACE
 endif
 
+CFLAG_VISIBILITY = -fvisibility=hidden
+
 libguile_gi_la_CFLAGS = \
   -std=c11 \
+  $(CFLAG_VISIBILITY) \
   $(GUILE_CFLAGS) \
   $(GLIB_CFLAGS) \
   $(GOBJECT_CFLAGS) \
@@ -168,7 +175,6 @@ libguile_gi_la_CFLAGS = \
 libguile_gi_la_LDFLAGS = \
  -no-undefined \
  -version-info $(LIBGUILE_GI_INTERFACE) \
- -export-symbols-regex '^gig_' \
  $(GUILE_LDFLAGS)
 
 if !DLL_VERSION_INFO

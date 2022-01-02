@@ -24,8 +24,5 @@ void gig_argument_c_to_scm(C2S_ARG_DECL);
 char *gig_argument_describe_arg(GIArgInfo *arg_info);
 char *gig_argument_describe_return(GITypeInfo *type_info, GITransfer transfer, gboolean null_ok,
                                    gboolean skip);
-
-void gig_init_argument(void);
-
 G_END_DECLS
 #endif
