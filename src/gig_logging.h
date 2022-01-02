@@ -17,10 +17,11 @@
 #define GIG_LOGGING_H
 
 #include <girepository.h>
+#include "gig_visibility.h"
 
 // *INDENT-OFF*
 G_BEGIN_DECLS
 // *INDENT-ON*
-void gig_init_logging(void);
+GIG_API void gig_init_logging(void);
 G_END_DECLS
 #endif

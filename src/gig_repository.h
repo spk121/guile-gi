@@ -3,6 +3,7 @@
 
 #include <glib.h>
 #include <girepository.h>
+#include "gig_visibility.h"
 
 typedef GIBaseInfo *(*GigRepositoryNested)(GIBaseInfo *info, gint n);
 
@@ -25,6 +26,6 @@ void gig_repository_nested_infos(GIBaseInfo *base,
                                  gint *n_signals, GigRepositoryNested *signal);
 
 
-void gig_init_repository(void);
+GIG_API void gig_init_repository(void);
 
 #endif

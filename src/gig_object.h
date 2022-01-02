@@ -5,8 +5,10 @@
 #include <glib.h>
 #include <glib-object.h>
 #include <girepository.h>
+#include "gig_visibility.h"
 
-void gig_init_object(void);
 SCM gig_property_define(GType type, GIPropertyInfo *info, const gchar *_namespace, SCM defs);
+
+GIG_API void gig_init_object(void);
 
 #endif

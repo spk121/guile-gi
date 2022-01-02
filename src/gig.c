@@ -29,6 +29,7 @@
 #include "gig_type.h"
 #include "gig_util.h"
 #include "gig_value.h"
+#include "gig.h"
 
 #ifdef ENABLE_GCOV
 void __gcov_reset(void);

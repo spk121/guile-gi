@@ -21,6 +21,7 @@
 #include "gig_util.h"
 #include "gig_arg_map.h"
 #include "gig_repository.h"
+#include "gig_document.h"
 
 static void do_document(GIBaseInfo *info, const gchar *parent);
 
@@ -261,7 +262,7 @@ _document(SCM info)
 }
 
 void
-gig_init_document()
+gig_init_document(void)
 {
     scm_c_define_gsubr("%document", 1, 0, 0, _document);
 }

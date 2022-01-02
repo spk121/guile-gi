@@ -18,6 +18,7 @@
 #include <glib.h>
 #include <libguile.h>
 #include "gig_util.h"
+#include "gig_logging.h"
 
 _Thread_local int logger_initialized = 0;
 
