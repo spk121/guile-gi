@@ -15,6 +15,7 @@
 
 #include <stdbool.h>
 #include <string.h>
+#include <stdlib.h>
 #include <girepository.h>
 #include <glib.h>
 #include <libguile.h>
@@ -50,8 +51,8 @@ static GLogWriterOutput
 gig_log_writer(GLogLevelFlags flags, const GLogField *fields, size_t n_fields, void *user_data)
 {
 #define LOG_FIELD(f) field_ref(f, fields, n_fields)
-#define ENV_MESSAGES_DEBUG (g_getenv("G_MESSAGES_DEBUG"))
-#define ENV_GIG_DEBUG (g_getenv("GIG_DEBUG"))
+#define ENV_MESSAGES_DEBUG (getenv("G_MESSAGES_DEBUG"))
+#define ENV_GIG_DEBUG (getenv("GIG_DEBUG"))
     const GLogField *message;
 
     const char *prefix = NULL, *color = NULL;
