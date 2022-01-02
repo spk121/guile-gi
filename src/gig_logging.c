@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2019 Michael L. Gran
+// Copyright (C) 2018, 2019, 2022 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -164,15 +164,14 @@ gig_log_custom_helper(GLogLevelFlags log_level, const GLogField *fields, size_t 
         scm_set_car_x(it, scm_from_utf8_keyword(key));
         // TODO: add more conversions
         if (                    /* the message itself is a string */
-               !g_strcmp0(fields[i].key, "MESSAGE") ||
+               !strcmp(fields[i].key, "MESSAGE") ||
                /* log level as string */
-               !g_strcmp0(fields[i].key, "PRIORITY") ||
+               !strcmp(fields[i].key, "PRIORITY") ||
                /* domains */
-               !g_strcmp0(fields[i].key, "GLIB_DOMAIN") ||
-               !g_strcmp0(fields[i].key, "GIG_DOMAIN") ||
+               !strcmp(fields[i].key, "GLIB_DOMAIN") || !strcmp(fields[i].key, "GIG_DOMAIN") ||
                /* source information inserted by g_debug, etc */
-               !g_strcmp0(fields[i].key, "CODE_FILE") ||
-               !g_strcmp0(fields[i].key, "CODE_FUNC") || !g_strcmp0(fields[i].key, "CODE_LINE") ||
+               !strcmp(fields[i].key, "CODE_FILE") ||
+               !strcmp(fields[i].key, "CODE_FUNC") || !strcmp(fields[i].key, "CODE_LINE") ||
                /* end on a false statement  */
                0)
             scm_set_car_x(scm_cdr(it), scm_from_utf8_string(fields[i].value));
