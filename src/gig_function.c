@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2019, 2020, 2021 Michael L. Gran
+// Copyright (C) 2018, 2019, 2020, 2021, 2022 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 #include "gig_function_private.h"
 #include "gig_type.h"
 #include "gig_signal.h"
+#include "gig_util.h"
 
 typedef struct _GigFunction
 {
@@ -384,7 +385,7 @@ create_gsubr(GIFunctionInfo *function_info, const gchar *name, SCM self_type,
     gfn->function_info = function_info;
     gfn->amap = amap;
     g_free(gfn->name);
-    gfn->name = g_strdup(name);
+    gfn->name = xstrdup(name);
     g_base_info_ref(function_info);
 
     gig_amap_s_input_count(gfn->amap, required_input_count, optional_input_count);

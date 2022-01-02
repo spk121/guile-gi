@@ -1,4 +1,4 @@
-// Copyright (C) 2019 Michael L. Gran
+// Copyright (C) 2019, 2022 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -52,7 +52,7 @@ static void
 arg_map_entry_init(GigArgMapEntry *entry)
 {
     memset(entry, 0, sizeof(GigArgMapEntry));
-    entry->name = g_strdup("(uninitialized)");
+    entry->name = xstrdup("(uninitialized)");
 }
 
 // Gather information on how to map Scheme arguments to C arguments.
@@ -65,7 +65,7 @@ gig_amap_new(const gchar *name, GICallableInfo *function_info)
     n = g_callable_info_get_n_args(function_info);
     amap = arg_map_allocate(n);
     g_free(amap->name);
-    amap->name = g_strdup(g_base_info_get_name(function_info));
+    amap->name = xstrdup(g_base_info_get_name(function_info));
     arg_map_apply_function_info(amap, function_info);
     if (amap->is_invalid) {
         gig_amap_free(amap);
@@ -107,14 +107,14 @@ arg_map_apply_function_info(GigArgMap *amap, GIFunctionInfo *func_info)
         arg_info = g_callable_info_get_arg(func_info, i);
         gig_type_meta_init_from_arg_info(&amap->pdata[i].meta, arg_info);
         g_free(amap->pdata[i].name);
-        amap->pdata[i].name = g_strdup(g_base_info_get_name(arg_info));
+        amap->pdata[i].name = xstrdup(g_base_info_get_name(arg_info));
         g_base_info_unref(arg_info);
         amap->is_invalid |= amap->pdata[i].meta.is_invalid;
     }
 
     gig_type_meta_init_from_callable_info(&amap->return_val.meta, func_info);
     g_free(amap->return_val.name);
-    amap->return_val.name = g_strdup("%return");
+    amap->return_val.name = xstrdup("%return");
     amap->is_invalid |= amap->return_val.meta.is_invalid;
 }
 
