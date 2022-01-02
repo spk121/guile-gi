@@ -13,9 +13,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#include <assert.h>
 #include <stdbool.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 #include <girepository.h>
 #include <glib.h>
 #include <libguile.h>
@@ -94,7 +95,7 @@ gig_log_writer(GLogLevelFlags flags, const GLogField *fields, size_t n_fields, v
     }
 
     message = field_ref("MESSAGE", fields, n_fields);
-    g_assert(message != NULL);
+    assert(message != NULL);
 
     SCM port = SCM_PACK_POINTER(user_data);
 

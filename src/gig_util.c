@@ -14,6 +14,8 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "core.h"
+#define _XOPEN_SOURCE 700       /* For strdup, strndup */
+#include <assert.h>
 #include <ctype.h>
 #include <errno.h>
 #include <string.h>

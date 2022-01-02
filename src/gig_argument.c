@@ -13,6 +13,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#include <assert.h>
 #include <string.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -115,8 +116,8 @@ child_type(GigTypeMeta *meta, GIArgument *arg)
 static size_t
 zero_terminated_array_length(GigTypeMeta *meta, GIArgument *arg)
 {
-    g_assert_nonnull(meta);
-    g_assert_nonnull(arg);
+    assert(meta != NULL);
+    assert(arg != NULL);
 
     if (arg->v_pointer == NULL)
         return 0;
@@ -124,9 +125,12 @@ zero_terminated_array_length(GigTypeMeta *meta, GIArgument *arg)
         return strvlen((const char **)arg->v_pointer);
     else {
         size_t item_size = gig_meta_real_item_size(&meta->params[0]);
+
+        assert(item_size > 0);
+
         switch (item_size) {
         case 0:
-            g_assert_not_reached();
+            assert_not_reached();
         case 1:
             return strlen(arg->v_string);
         case 2:
@@ -477,10 +481,8 @@ scm_to_c_pointer(S2C_ARG_DECL)
     if (scm_is_false(object) && meta->is_nullable)
         arg->v_pointer = NULL;
     else if (meta->pointer_type == GIG_DATA_CALLBACK) {
-        if (scm_is_true(scm_procedure_p(object))) {
+        if (scm_is_true(scm_procedure_p(object)))
             arg->v_pointer = gig_callback_to_c(subr, meta->callable_info, object);
-            g_assert(arg->v_pointer != NULL);
-        }
         else
             scm_wrong_type_arg_msg(subr, argpos, object, "a procedure");
     }
@@ -626,7 +628,7 @@ scm_to_c_native_immediate_array(S2C_ARG_DECL)
     // zero terminated.
 
     size_t item_size = gig_meta_real_item_size(&meta->params[0]);
-    g_assert_cmpint(item_size, !=, 0);
+    assert(item_size != 0);
 
     if (scm_is_bytevector(object)) {
         *size = SCM_BYTEVECTOR_LENGTH(object) / item_size;
@@ -695,7 +697,7 @@ scm_to_c_ptr_array(S2C_ARG_DECL)
     for (size_t i = 0; i < *size; i++)
         g_ptr_array_add(ptrarray, ((void **)(_arg.v_pointer))[i]);
     arg->v_pointer = ptrarray;
-    g_assert_nonnull(arg->v_pointer);
+    assert(arg->v_pointer != NULL);
 
     // Free the C array without clobbering the pointers it used to
     // contain.
@@ -729,7 +731,7 @@ c_hash_pointer_to_arg(GigTypeMeta *meta, void **p, GIArgument *arg)
             else if (meta->item_size == 4)
                 arg->v_int32 = x;
             else
-                g_assert_not_reached();
+                assert_not_reached();
         }
         // 8-byte INT, INT64, DOUBLE and FLOAT are stored by
         // reference, even if they would fit in a pointer.
@@ -765,7 +767,7 @@ arg_to_c_hash_pointer(GigTypeMeta *meta, GigHashKeyType key_type, GIArgument *ar
         else if (meta->item_size == 4)
             return GINT_TO_POINTER(arg->v_int32);
         else
-            g_assert_not_reached();
+            assert_not_reached();
     }
     else if (key_type == GIG_HASH_INT64) {
         // GHashTables expect int64_t to be passed by reference, even
@@ -795,7 +797,7 @@ arg_to_c_hash_pointer(GigTypeMeta *meta, GigHashKeyType key_type, GIArgument *ar
             return p;
         }
         else
-            g_assert_not_reached();
+            assert_not_reached();
     }
     // else is GIG_HASH_STRING or GIG_HASH_POINTER which don't require
     // special handling.
@@ -965,7 +967,7 @@ scm_to_c_garray(S2C_ARG_DECL)
 
     gig_argument_scm_to_c(subr, argpos, &_meta, object, NULL, &_arg, size);
     arg->v_pointer = g_array_new(_meta.is_zero_terminated, FALSE, _meta.params[0].item_size);
-    g_assert_nonnull(arg->v_pointer);
+    assert(arg->v_pointer != NULL);
     ((GArray *)(arg->v_pointer))->len = *size;
     ((GArray *)(arg->v_pointer))->data = _arg.v_pointer;
 }
@@ -1054,7 +1056,7 @@ scm_to_c_native_interface_array(S2C_ARG_DECL)
                 }
         }
         else
-            g_assert_not_reached();
+            assert_not_reached();
     }
     else {
         // Everything else is unhandled.
@@ -1518,14 +1520,16 @@ c_native_array_to_scm(C2S_ARG_DECL)
         ssize_t inc;
         SCM *elt;
         elt = scm_vector_writable_elements(*object, &handle, &len, &inc);
-        g_assert_nonnull(arg->v_pointer);
+
+        assert(arg->v_pointer != NULL);
 
         GIArgument _arg = *arg;
         GigTypeMeta _meta = meta->params[0];
 
         if (item_type == G_TYPE_VALUE) {
             // value arrays are weird, man
-            g_assert(meta->is_ptr);
+
+            assert(meta->is_ptr);
             for (size_t k = 0; k < len; k++, _arg.v_pointer += sizeof(GValue), elt += inc)
                 gig_argument_c_to_scm(subr, argpos, &_meta, &_arg, elt, -1);
         }
@@ -1562,7 +1566,7 @@ c_native_array_to_scm(C2S_ARG_DECL)
         SCM *elt;
 
         elt = scm_vector_writable_elements(*object, &handle, &len, &inc);
-        g_assert(len == length);
+        assert(len == length);
 
         for (size_t i = 0; i < length; i++, elt += inc) {
             char *str = ((char **)(arg->v_pointer))[i];
@@ -1587,7 +1591,7 @@ c_native_array_to_scm(C2S_ARG_DECL)
     default:
         UNHANDLED;
     }
-    g_assert(!SCM_UNBNDP(*object));
+    assert(!SCM_UNBNDP(*object));
 #undef TRANSFER
 }
 

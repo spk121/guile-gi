@@ -124,6 +124,7 @@ libguile_gi_la_c_sources = \
 
 libguile_gi_la_internal_headers = \
   src/core.h \
+  src/core/logging.h \
   src/core/mem.h \
   src/core/string.h \
   src/core/visibility.h \

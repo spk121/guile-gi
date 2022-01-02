@@ -12,6 +12,8 @@
 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+#include <assert.h>
 #include <girepository.h>
 #include "gig_value.h"
 #include "gig_type.h"
@@ -43,7 +45,7 @@
 int
 gig_value_from_scm(GValue *value, SCM obj)
 {
-    g_assert(value != NULL);
+    assert(value != NULL);
 
     GType value_type = G_VALUE_TYPE(value);
 
@@ -412,7 +414,7 @@ gig_value_to_scm_structured_type(const GValue *value, GType fundamental, bool co
     }
     default:
     {
-        // g_assert_not_reached ();
+        // assert_not_reached ();
         /* PyGTypeMarshal *bm; */
         /* if ((bm = pyg_type_lookup(G_VALUE_TYPE(value)))) */
         /*  return bm->fromvalue(value); */
