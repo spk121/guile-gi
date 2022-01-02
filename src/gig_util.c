@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#define _XOPEN_SOURCE 500       /* For strdup */
+#define _XOPEN_SOURCE 700       /* For strdup, strndup */
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
@@ -34,6 +34,22 @@ xstrdup(const char *S)
         exit(1);
     }
     x = strdup(S);
+    if (x == NULL) {
+        fprintf(stderr, "Out of memory\n");
+        exit(1);
+    }
+    return x;
+}
+
+char *
+xstrndup(const char *S, size_t siz)
+{
+    char *x;
+    if (siz == 0 || S == NULL) {
+        fprintf(stderr, "strndup null exception\n");
+        exit(1);
+    }
+    x = strndup(S, siz);
     if (x == NULL) {
         fprintf(stderr, "Out of memory\n");
         exit(1);

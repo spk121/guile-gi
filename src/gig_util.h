@@ -25,6 +25,7 @@ G_BEGIN_DECLS
 // *INDENT-ON*
 
 char *xstrdup(const char *S);
+char *xstrndup(const char *S, size_t siz);
 
 G_GNUC_MALLOC gchar *gig_callable_info_make_name(GICallableInfo *info, const gchar *prefix);
 const gchar *gig_constant_strip_prefix(const gchar *name, const gchar *strip_prefix);

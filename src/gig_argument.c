@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2019, 2020, 2021 Michael L. Gran
+// Copyright (C) 2018, 2019, 2020, 2021, 2022 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -454,8 +454,8 @@ scm_to_c_string(S2C_ARG_DECL)
         else
             // But when we're copying the contents of the string, the
             // null termination can be enforced here.
-            arg->v_string = g_strndup((const gchar *)SCM_BYTEVECTOR_CONTENTS(object),
-                                      SCM_BYTEVECTOR_LENGTH(object));
+            arg->v_string = xstrndup((const char *)SCM_BYTEVECTOR_CONTENTS(object),
+                                     SCM_BYTEVECTOR_LENGTH(object));
     }
     else if (scm_is_string(object)) {
         if (meta->pointer_type == GIG_DATA_LOCALE_STRING)
