@@ -1,4 +1,4 @@
-// Copyright (C) 2019, 2020, 2021 Michael L. Gran
+// Copyright (C) 2019, 2020, 2021, 2022 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,6 +23,8 @@
 // *INDENT-OFF*
 G_BEGIN_DECLS
 // *INDENT-ON*
+
+char *xstrdup(const char *S);
 
 G_GNUC_MALLOC gchar *gig_callable_info_make_name(GICallableInfo *info, const gchar *prefix);
 const gchar *gig_constant_strip_prefix(const gchar *name, const gchar *strip_prefix);

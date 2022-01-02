@@ -1,4 +1,4 @@
-// Copyright (C) 2019, 2020, 2021 Michael L. Gran
+// Copyright (C) 2019, 2020, 2021, 2022 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -209,7 +209,7 @@ callback_binding_inner(struct callback_binding_args *args)
     if (amap->name)
         callback_name = g_strdup_printf("callback:<%s>", amap->name);
     else
-        callback_name = g_strdup("callback");
+        callback_name = xstrdup("callback");
 
     // Do the two-step conversion from libffi arguments to GIArgument
     // to SCM arguments.

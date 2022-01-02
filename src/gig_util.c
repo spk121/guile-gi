@@ -1,4 +1,4 @@
-// Copyright (C) 2019, 2020, 2021 Michael L. Gran
+// Copyright (C) 2019, 2020, 2021, 2022 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -13,7 +13,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#define _XOPEN_SOURCE 500       /* For strdup */
 #include <errno.h>
+#include <stdio.h>
 #include <string.h>
 #include <libguile.h>
 #include <glib.h>
@@ -22,6 +24,22 @@
 
 static gboolean is_predicate(GIFunctionInfo *info);
 static void count_args(GICallableInfo *info, gint *in, gint *out);
+
+char *
+xstrdup(const char *S)
+{
+    char *x;
+    if (S == NULL) {
+        fprintf(stderr, "strdup null pointer error\n");
+        exit(1);
+    }
+    x = strdup(S);
+    if (x == NULL) {
+        fprintf(stderr, "Out of memory\n");
+        exit(1);
+    }
+    return x;
+}
 
 // Returns TRUE if this function returns a single boolean.
 static gboolean
@@ -380,7 +398,7 @@ g_registered_type_info_get_qualified_name(GIRegisteredTypeInfo *info)
 {
     const gchar *_name = g_base_info_get_attribute(info, "c:type");
     if (_name != NULL)
-        return g_strdup(_name);
+        return xstrdup(_name);
 
     const gchar *_namespace = g_base_info_get_namespace(info);
     const gchar *prefix = g_irepository_get_c_prefix(NULL, _namespace);
