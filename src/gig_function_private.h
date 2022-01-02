@@ -16,7 +16,6 @@
 #ifndef GIG_FUNCTION_PRIVATE_H
 #define GIG_FUNCTION_PRIVATE_H
 
-extern SCM ensure_generic_proc;
 extern SCM make_proc;
 extern SCM add_method_proc;
 

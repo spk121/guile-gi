@@ -36,7 +36,7 @@ typedef struct _GigFunction
 } GigFunction;
 
 static GHashTable *function_cache;
-SCM ensure_generic_proc;
+static SCM ensure_generic_proc;
 SCM make_proc;
 SCM add_method_proc;
 
