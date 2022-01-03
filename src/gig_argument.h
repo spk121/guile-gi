@@ -4,10 +4,11 @@
 #include <girepository.h>
 #include <libguile.h>
 #include "gig_arg_map.h"
+#include "gig_mem_list.h"
 
 #define S2C_ARG_DECL const char *subr, int argpos,    \
         GigTypeMeta *meta, SCM object,               \
-        GPtrArray *must_free, GIArgument *arg, size_t *size
+        GigMemList **must_free, GIArgument *arg, size_t *size
 #define S2C_ARGS subr, argpos, meta, object, must_free, arg, size
 
 #define C2S_ARG_DECL const char *subr, int argpos,    \

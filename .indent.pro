@@ -100,16 +100,17 @@
 -T GISignalInfo
 -T GITypeInfo
 
--T GigArgMapEntry
 -T GigArgMap
+-T GigArgMapEntry
 -T GigBoxedFuncs
 -T GigCallback
 -T GigClosure
 -T GigFunction
 -T GigGsubr
+-T GigMemList
 -T GigRepositoryNested
--T GigSignalSpec
 -T GigSignalSlot
+-T GigSignalSpec
 -T GigTypeMeta
 -T GigTypeRefFunction
 -T GigTypeUnrefFunction
