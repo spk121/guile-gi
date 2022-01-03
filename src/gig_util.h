@@ -32,8 +32,8 @@ char *xstrndup(const char *S, size_t siz);
 void *xmemdup(const void *mem, size_t len);
 
 MALLOC gchar *gig_callable_info_make_name(GICallableInfo *info, const gchar *prefix);
-const gchar *gig_constant_strip_prefix(const gchar *name, const gchar *strip_prefix);
-gchar *gig_gname_to_scm_name(const gchar *gname);
+const char *gig_constant_strip_prefix(const char *name, const char *strip_prefix);
+char *gig_gname_to_scm_name(const char *gname);
 SCM scm_c_list_ref(SCM list, gsize k);
 gboolean scm_is_list(SCM obj);
 gsize scm_c_length(SCM list);

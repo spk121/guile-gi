@@ -14,6 +14,9 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #define _XOPEN_SOURCE 700       /* For strdup, strndup */
+#include <assert.h>
+#include <stdbool.h>
+#include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
@@ -249,10 +252,10 @@ gig_callable_info_make_name(GICallableInfo *info, const gchar *prefix)
  *
  * Returns: the stripped constant name.
  */
-const gchar *
-gig_constant_strip_prefix(const gchar *name, const gchar *strip_prefix)
+const char *
+gig_constant_strip_prefix(const char *name, const char *strip_prefix)
 {
-    gsize prefix_len, i;
+    size_t prefix_len, i;
 
     prefix_len = strlen(strip_prefix);
 
@@ -268,48 +271,50 @@ gig_constant_strip_prefix(const gchar *name, const gchar *strip_prefix)
     /* strip off prefix from value name, while keeping it a valid
      * identifier */
     for (i = prefix_len + 1; i > 0; i--) {
-        if (g_ascii_isalpha(name[i - 1]) || name[i - 1] == '_') {
+        if (isalpha(name[i - 1]) || name[i - 1] == '_') {
             return &name[i - 1];
         }
     }
     return name;
 }
 
-gchar *
-gig_gname_to_scm_name(const gchar *gname)
+char *
+gig_gname_to_scm_name(const char *gname)
 {
-    g_assert(gname != NULL);
-    g_assert(strlen(gname) > 0);
+    assert(gname != NULL);
+    assert(strlen(gname) > 0);
 
-    gsize len = strlen(gname);
-    GString *str = g_string_new(NULL);
-    gboolean was_lower = FALSE;
+    size_t len = strlen(gname);
+    char *str = malloc(len * 2 + 1);
+    bool was_lower = FALSE;
 
+    size_t j = 0;
     for (gsize i = 0; i < len; i++) {
-        if (g_ascii_islower(gname[i])) {
-            g_string_append_c(str, gname[i]);
+        if (islower(gname[i])) {
+            str[j++] = gname[i];
             was_lower = TRUE;
         }
         else if (gname[i] == '_' || gname[i] == '-') {
-            g_string_append_c(str, '-');
+            str[j++] = '-';
             was_lower = FALSE;
         }
         else if (gname[i] == '?' || gname[i] == ':' || gname[i] == '%') {
-            g_string_append_c(str, gname[i]);
+            str[j++] = gname[i];
             was_lower = FALSE;
         }
-        else if (g_ascii_isdigit(gname[i])) {
-            g_string_append_c(str, gname[i]);
+        else if (isdigit(gname[i])) {
+            str[j++] = gname[i];
             was_lower = FALSE;
         }
-        else if (g_ascii_isupper(gname[i])) {
+        else if (isupper(gname[i])) {
             if (was_lower)
-                g_string_append_c(str, '-');
-            g_string_append_c(str, g_ascii_tolower(gname[i]));
+                str[j++] = '-';
+            str[j++] = tolower(gname[i]);
             was_lower = FALSE;
         }
     }
-    return g_string_free(str, FALSE);
+    str[j++] = '\0';
+    return realloc(str, j);
 }
 
 SCM
