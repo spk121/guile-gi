@@ -14,6 +14,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #define _XOPEN_SOURCE 700       /* For strdup, strndup */
+#include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
@@ -250,7 +251,7 @@ gig_constant_strip_prefix(const gchar *name, const gchar *strip_prefix)
     /* strip off prefix from value name, while keeping it a valid
      * identifier */
     for (i = prefix_len + 1; i > 0; i--) {
-        if (g_ascii_isalpha(name[i - 1]) || name[i - 1] == '_') {
+        if (isalpha(name[i - 1]) || name[i - 1] == '_') {
             return &name[i - 1];
         }
     }
@@ -268,7 +269,7 @@ gig_gname_to_scm_name(const gchar *gname)
     gboolean was_lower = FALSE;
 
     for (gsize i = 0; i < len; i++) {
-        if (g_ascii_islower(gname[i])) {
+        if (islower(gname[i])) {
             g_string_append_c(str, gname[i]);
             was_lower = TRUE;
         }
@@ -280,14 +281,14 @@ gig_gname_to_scm_name(const gchar *gname)
             g_string_append_c(str, gname[i]);
             was_lower = FALSE;
         }
-        else if (g_ascii_isdigit(gname[i])) {
+        else if (isdigit(gname[i])) {
             g_string_append_c(str, gname[i]);
             was_lower = FALSE;
         }
-        else if (g_ascii_isupper(gname[i])) {
+        else if (isupper(gname[i])) {
             if (was_lower)
                 g_string_append_c(str, '-');
-            g_string_append_c(str, g_ascii_tolower(gname[i]));
+            g_string_append_c(str, tolower(gname[i]));
             was_lower = FALSE;
         }
     }
