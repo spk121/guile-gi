@@ -24,13 +24,16 @@
 G_BEGIN_DECLS
 // *INDENT-ON*
 
+#define MALLOC __attribute__((malloc))
+MALLOC void *xcalloc(size_t nmemb, size_t siz);
+MALLOC void *xmalloc(size_t siz);
 char *xstrdup(const char *S);
 char *xstrndup(const char *S, size_t siz);
+void *xmemdup(const void *mem, size_t len);
 
-G_GNUC_MALLOC gchar *gig_callable_info_make_name(GICallableInfo *info, const gchar *prefix);
+MALLOC gchar *gig_callable_info_make_name(GICallableInfo *info, const gchar *prefix);
 const gchar *gig_constant_strip_prefix(const gchar *name, const gchar *strip_prefix);
 gchar *gig_gname_to_scm_name(const gchar *gname);
-void *gig_memdup(const void *mem, size_t len);
 SCM scm_c_list_ref(SCM list, gsize k);
 gboolean scm_is_list(SCM obj);
 gsize scm_c_length(SCM list);

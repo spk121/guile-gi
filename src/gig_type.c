@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2019, 2020, 2021 Michael L. Gran
+// Copyright (C) 2018, 2019, 2020, 2021, 2022 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -253,7 +253,7 @@ gig_type_define_with_info(GIRegisteredTypeInfo *info, SCM dsupers, SCM slots)
 
     SCM cls;
     if (exists) {
-        g_free(_name);
+        free(_name);
         cls = SCM_PACK_POINTER(_value);
     }
     else {
@@ -262,7 +262,7 @@ gig_type_define_with_info(GIRegisteredTypeInfo *info, SCM dsupers, SCM slots)
         cls = scm_call_4(make_class_proc, dsupers, slots, kwd_name, class_name);
         gig_debug_load("%s - creating new type", name);
         g_hash_table_insert(gig_type_name_hash, _name, SCM_UNPACK_POINTER(cls));
-        g_free(name);
+        free(name);
     }
 
     return cls;
@@ -393,7 +393,7 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
 
             for (guint n = 0; n < n_interfaces; n++)
                 dsupers = scm_cons(gig_type_get_scheme_type(interfaces[n]), dsupers);
-            g_free(interfaces);
+            free(interfaces);
 
             // dsupers need to be sorted, or else Guile will barf
             dsupers = scm_sort_x(dsupers, type_less_p_proc);
@@ -414,7 +414,7 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
 
             for (guint n = 0; n < n_interfaces; n++)
                 dsupers = scm_cons(gig_type_get_scheme_type(interfaces[n]), dsupers);
-            g_free(interfaces);
+            free(interfaces);
 
             dsupers = scm_sort_x(dsupers, type_less_p_proc);
             new_type = scm_call_4(make_class_proc, dsupers, slots, kwd_name, type_class_name);
@@ -449,7 +449,7 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
         }
     }
 
-    g_free(_type_class_name);
+    free(_type_class_name);
     return defs;
 }
 
@@ -546,7 +546,7 @@ gig_type_get_scheme_type_with_info(GIRegisteredTypeInfo *info)
 {
     gchar *_name = g_registered_type_info_get_qualified_name(info);
     gpointer *scm_ptr = g_hash_table_lookup(gig_type_name_hash, _name);
-    g_free(_name);
+    free(_name);
     if (scm_ptr == NULL)
         return SCM_UNDEFINED;
     return SCM_PACK_POINTER(scm_ptr);
@@ -639,7 +639,7 @@ scm_type_gtype_get_children(SCM s_gtype)
             entry = scm_from_uintptr_t(children[i]);
             ret = scm_append(scm_list_2(ret, scm_list_1(entry)));
         }
-        g_free(children);
+        free(children);
     }
 
     return ret;
@@ -665,7 +665,7 @@ scm_type_gtype_get_interfaces(SCM s_gtype)
             entry = scm_from_uintptr_t(interfaces[i]);
             ret = scm_append(scm_list_2(ret, scm_list_1(entry)));
         }
-        g_free(interfaces);
+        free(interfaces);
     }
 
     return ret;
@@ -790,7 +790,7 @@ scm_allocate_boxed(SCM boxed_type)
     if (size == 0)
         scm_out_of_range("%allocate-boxed", s_size);
 
-    gpointer boxed = g_malloc0(size);
+    gpointer boxed = xcalloc(1, size);
     GigTypeUnrefFunction unref;
     unref = (GigTypeUnrefFunction)scm_to_pointer(scm_class_ref(boxed_type, sym_unref));
     SCM pointer = scm_from_pointer(boxed, unref);
@@ -868,7 +868,7 @@ gig_init_types_once(void)
     SCM getter_with_setter = scm_c_public_ref("oop goops", "<applicable-struct-with-setter>");
 
     gig_type_gtype_hash = g_hash_table_new(g_direct_hash, g_direct_equal);
-    gig_type_name_hash = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+    gig_type_name_hash = g_hash_table_new_full(g_str_hash, g_str_equal, free, NULL);
     gig_type_scm_hash = g_hash_table_new(g_direct_hash, g_direct_equal);
 
 #define A(G,S)                                  \

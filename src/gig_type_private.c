@@ -22,7 +22,7 @@ _boxed_free(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
 GigBoxedFuncs *
 _boxed_funcs_for_type(GType type)
 {
-    GigBoxedFuncs *funcs = g_new0(GigBoxedFuncs, 1);
+    GigBoxedFuncs *funcs = xcalloc(1, sizeof(GigBoxedFuncs));
 
     funcs->atypes[0] = &ffi_type_pointer;
 
@@ -56,7 +56,7 @@ _boxed_funcs_free(GigBoxedFuncs *funcs)
     funcs->copy_closure = NULL;
     funcs->free_closure = NULL;
 
-    g_free(funcs);
+    free(funcs);
 }
 
 void

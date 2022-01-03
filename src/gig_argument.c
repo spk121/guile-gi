@@ -580,12 +580,11 @@ scm_to_c_native_boolean_array(S2C_ARG_DECL)
         scm_wrong_type_arg_msg(subr, argpos, object, "vector of booleans");
     *size = scm_c_vector_length(object);
     if (meta->is_zero_terminated) {
-        arg->v_pointer = malloc(sizeof(gboolean) * (*size + 1));
-        ((gboolean *)arg->v_pointer)[*size] = 0;
+        arg->v_pointer = xcalloc(*size + 1, sizeof(gboolean));
         LATER_FREE(arg->v_pointer);
     }
     else {
-        arg->v_pointer = malloc(sizeof(gboolean) * *size);
+        arg->v_pointer = xcalloc(*size, sizeof(gboolean));
         LATER_FREE(arg->v_pointer);
     }
     for (gsize i = 0; i < *size; i++)
@@ -602,12 +601,11 @@ scm_to_c_native_unichar_array(S2C_ARG_DECL)
         scm_wrong_type_arg_msg(subr, argpos, object, "string");
     *size = scm_c_string_length(object);
     if (meta->is_zero_terminated) {
-        arg->v_pointer = malloc(sizeof(gunichar) * (*size + 1));
-        ((gunichar *)arg->v_pointer)[*size] = 0;
+        arg->v_pointer = xcalloc(*size + 1, sizeof(gunichar));
         LATER_FREE(arg->v_pointer);
     }
     else {
-        arg->v_pointer = malloc(sizeof(gunichar) * *size);
+        arg->v_pointer = xcalloc(*size, sizeof(gunichar));
         LATER_FREE(arg->v_pointer);
     }
     for (gsize i = 0; i < *size; i++)
@@ -630,23 +628,23 @@ scm_to_c_native_immediate_array(S2C_ARG_DECL)
         *size = SCM_BYTEVECTOR_LENGTH(object) / item_size;
         if (meta->transfer == GI_TRANSFER_EVERYTHING) {
             if (meta->is_zero_terminated) {
-                gsize len = SCM_BYTEVECTOR_LENGTH(object);
                 // Note, null terminated here.
-                arg->v_pointer = g_malloc0(len + item_size);
-                memcpy(arg->v_pointer, SCM_BYTEVECTOR_CONTENTS(object), len);
+                arg->v_pointer = xcalloc(*size + 1, item_size);
+                memcpy(arg->v_pointer, SCM_BYTEVECTOR_CONTENTS(object),
+                       SCM_BYTEVECTOR_LENGTH(object));
             }
             else {
-                arg->v_pointer = gig_memdup(SCM_BYTEVECTOR_CONTENTS(object),
-                                            SCM_BYTEVECTOR_LENGTH(object));
+                arg->v_pointer = xmemdup(SCM_BYTEVECTOR_CONTENTS(object),
+                                         SCM_BYTEVECTOR_LENGTH(object));
             }
         }
         else {
             if (meta->is_zero_terminated) {
-                gsize len = SCM_BYTEVECTOR_LENGTH(object);
                 // Adding null terminator element.
-                arg->v_pointer = g_malloc0(len + item_size);
+                arg->v_pointer = xcalloc(*size + 1, item_size);
                 LATER_FREE(arg->v_pointer);
-                memcpy(arg->v_pointer, SCM_BYTEVECTOR_CONTENTS(object), len);
+                memcpy(arg->v_pointer, SCM_BYTEVECTOR_CONTENTS(object),
+                       SCM_BYTEVECTOR_LENGTH(object));
             }
             else
                 // The fast path
@@ -670,7 +668,7 @@ scm_to_c_byte_array(S2C_ARG_DECL)
         if (meta->transfer == GI_TRANSFER_EVERYTHING)
             arg->v_pointer = g_byte_array_new_take(contents, len);
         else
-            arg->v_pointer = g_byte_array_new_take(gig_memdup(contents, len), len);
+            arg->v_pointer = g_byte_array_new_take(xmemdup(contents, len), len);
     }
     else
         scm_wrong_type_arg_msg(subr, argpos, object, "bytevector");
@@ -769,12 +767,12 @@ arg_to_c_hash_pointer(GigTypeMeta *meta, GigHashKeyType key_type, GIArgument *ar
         // GHashTables expect gint64 to be passed by reference, even
         // if they fit in a pointer.
         if (meta->gtype == G_TYPE_INT || meta->gtype == G_TYPE_INT64) {
-            gint64 *p = g_malloc(sizeof(gint64));
+            gint64 *p = xmalloc(sizeof(gint64));
             *p = arg->v_int64;
             return p;
         }
         else if (meta->gtype == G_TYPE_UINT || meta->gtype == G_TYPE_UINT64) {
-            guint64 *p = g_malloc(sizeof(guint64));
+            guint64 *p = xmalloc(sizeof(guint64));
             *p = arg->v_uint64;
             return p;
         }
@@ -783,12 +781,12 @@ arg_to_c_hash_pointer(GigTypeMeta *meta, GigHashKeyType key_type, GIArgument *ar
         // GHashTables expect double and float to be passed by
         // reference, even if they fit in a pointer.
         if (meta->gtype == G_TYPE_DOUBLE) {
-            gdouble *p = g_malloc(sizeof(double));
+            gdouble *p = xmalloc(sizeof(double));
             *p = arg->v_double;
             return p;
         }
         else if (meta->gtype == G_TYPE_FLOAT) {
-            gfloat *p = g_malloc(sizeof(double));
+            gfloat *p = xmalloc(sizeof(float));
             *p = arg->v_float;
             return p;
         }
@@ -830,13 +828,13 @@ scm_to_c_ghashtable(S2C_ARG_DECL)
             key_type = GIG_HASH_INT64;
             hash_func = g_int64_hash;
             equal_func = g_int64_equal;
-            key_destroy_func = g_free;
+            key_destroy_func = free;
         }
         else if (type == G_TYPE_DOUBLE || type == G_TYPE_FLOAT) {
             key_type = GIG_HASH_REAL;
             hash_func = g_double_hash;
             equal_func = g_double_equal;
-            key_destroy_func = g_free;
+            key_destroy_func = free;
         }
         else {
             // Should be unreachable
@@ -854,7 +852,7 @@ scm_to_c_ghashtable(S2C_ARG_DECL)
             key_type = GIG_HASH_STRING;
             hash_func = g_str_hash;
             equal_func = g_str_equal;
-            key_destroy_func = g_free;
+            key_destroy_func = free;
         }
         else {
             // All other pointer type are a straight pointer comparison
@@ -876,17 +874,17 @@ scm_to_c_ghashtable(S2C_ARG_DECL)
         else if (type == G_TYPE_INT || type == G_TYPE_UINT || type == G_TYPE_INT64 ||
                  type == G_TYPE_UINT64) {
             val_type = GIG_HASH_INT64;
-            val_destroy_func = g_free;
+            val_destroy_func = free;
         }
         else if (type == G_TYPE_DOUBLE || type == G_TYPE_FLOAT) {
             val_type = GIG_HASH_REAL;
-            val_destroy_func = g_free;
+            val_destroy_func = free;
         }
     }
     else {
         if (type == G_TYPE_STRING) {
             val_type = GIG_HASH_STRING;
-            val_destroy_func = g_free;
+            val_destroy_func = free;
         }
         else
             val_type = GIG_HASH_POINTER;
@@ -938,12 +936,11 @@ scm_to_c_native_gtype_array(S2C_ARG_DECL)
         scm_wrong_type_arg_msg(subr, argpos, object, "vector of gtype-ables");
     *size = scm_c_vector_length(object);
     if (meta->is_zero_terminated) {
-        arg->v_pointer = malloc(sizeof(GType) * (*size + 1));
-        ((GType *) arg->v_pointer)[*size] = 0;
+        arg->v_pointer = xcalloc(*size + 1, sizeof(GType));
         LATER_FREE(arg->v_pointer);
     }
     else {
-        arg->v_pointer = malloc(sizeof(GType) * *size);
+        arg->v_pointer = xcalloc(*size, sizeof(GType));
         LATER_FREE(arg->v_pointer);
     }
     for (gsize i = 0; i < *size; i++)
@@ -983,19 +980,16 @@ scm_to_c_native_interface_array(S2C_ARG_DECL)
             scm_wrong_type_arg_msg(subr, argpos, object, "vector of objects");
         *size = scm_c_vector_length(object);
         if (meta->params[0].is_ptr) {
-            if (meta->is_zero_terminated) {
-                arg->v_pointer = malloc(sizeof(gpointer) * (*size + 1));
-                ((gpointer *)arg->v_pointer)[*size] = 0;
-            }
-            else {
-                arg->v_pointer = malloc(sizeof(gpointer) * *size);
-            }
+            if (meta->is_zero_terminated)
+                arg->v_pointer = xcalloc(*size + 1, sizeof(gpointer));
+            else
+                arg->v_pointer = xcalloc(*size, sizeof(gpointer));
             for (gsize i = 0; i < *size; i++) {
                 gpointer p = gig_type_peek_object(scm_c_vector_ref(object, i));
                 if (meta->transfer == GI_TRANSFER_EVERYTHING) {
                     if (fundamental_item_type == G_TYPE_BOXED) {
                         ((gpointer *)(arg->v_pointer))[i] =
-                            gig_memdup(p, gig_meta_real_item_size(&meta->params[0]));
+                            xmemdup(p, gig_meta_real_item_size(&meta->params[0]));
                     }
                     else if (fundamental_item_type == G_TYPE_VARIANT) {
                         ((gpointer *)(arg->v_pointer))[i] = p;
@@ -1014,14 +1008,14 @@ scm_to_c_native_interface_array(S2C_ARG_DECL)
             GigTypeMeta *item_meta = &meta->params[0];
             gsize real_item_size = gig_meta_real_item_size(item_meta);
             if (meta->is_zero_terminated)
-                arg->v_pointer = g_malloc0(real_item_size * (*size + 1));
+                arg->v_pointer = xcalloc(*size + 1, real_item_size);
             else
-                arg->v_pointer = malloc(real_item_size * *size);
+                arg->v_pointer = xcalloc(*size, real_item_size);
             for (gsize i = 0; i < *size; i++) {
                 gpointer p = gig_type_peek_object(scm_c_vector_ref(object, i));
                 if (meta->transfer == GI_TRANSFER_EVERYTHING)
                     memcpy((char *)(arg->v_pointer) + i * real_item_size,
-                           gig_memdup(p, real_item_size), real_item_size);
+                           xmemdup(p, real_item_size), real_item_size);
                 else
                     memcpy((char *)(arg->v_pointer) + i * real_item_size, p, real_item_size);
             }
@@ -1034,9 +1028,9 @@ scm_to_c_native_interface_array(S2C_ARG_DECL)
             *size = length;
             gint *ptr;
             if (meta->is_zero_terminated)
-                ptr = g_new0(gint, length + 1);
+                ptr = xcalloc(length + 1, sizeof(gint));
             else
-                ptr = g_new0(gint, length);
+                ptr = xcalloc(length, sizeof(gint));
             arg->v_pointer = ptr;
             LATER_FREE(ptr);
             SCM iter = object;
@@ -1078,7 +1072,7 @@ scm_to_c_native_string_array(S2C_ARG_DECL)
 
         elt = scm_vector_elements(object, &handle, &len, &inc);
         *size = len;
-        gchar **strv = g_new0(gchar *, len + 1);
+        gchar **strv = xcalloc(len + 1, sizeof(gchar *));
         LATER_FREE(strv);
 
         for (gsize i = 0; i < len; i++, elt += inc) {
@@ -1096,7 +1090,7 @@ scm_to_c_native_string_array(S2C_ARG_DECL)
     else if (scm_is_list(object)) {
         gsize len = scm_c_length(object);
         *size = len;
-        gchar **strv = g_new0(gchar *, len + 1);
+        gchar **strv = xcalloc(len + 1, sizeof(gchar *));
         LATER_FREE(strv);
         SCM iter = object;
         for (gsize i = 0; i < len; i++) {
@@ -1372,7 +1366,7 @@ c_string_to_scm(C2S_ARG_DECL)
                     *object = scm_from_locale_string(arg->v_string);
             }
             if (meta->transfer == GI_TRANSFER_EVERYTHING) {
-                g_free(arg->v_string);
+                free(arg->v_string);
                 arg->v_string = NULL;
             }
         }
@@ -1425,7 +1419,7 @@ c_native_array_to_scm(C2S_ARG_DECL)
         else if (meta->transfer == GI_TRANSFER_EVERYTHING)              \
             *object = scm_take_ ## _short_type ## vector((_type *)(arg->v_pointer), length); \
         else                                                            \
-            *object = scm_take_ ## _short_type ## vector((_type *)gig_memdup(arg->v_pointer, sz), length); \
+            *object = scm_take_ ## _short_type ## vector((_type *)xmemdup(arg->v_pointer, sz), length); \
     } while(0)
 
     GType item_type = meta->params[0].gtype;
@@ -1606,7 +1600,7 @@ static void
 deep_free(void *x)
 {
     char *p = *(char **)x;
-    g_free(p);
+    free(p);
 }
 
 static void
@@ -1650,7 +1644,7 @@ c_gptrarray_to_scm(C2S_ARG_DECL)
     // Transfer the contents out of the GPtrArray into a
     // native C array, and then on to an SCM
     size = array->len;
-    _arg.v_pointer = gig_memdup(array->pdata, array->len * sizeof(gpointer));
+    _arg.v_pointer = xmemdup(array->pdata, array->len * sizeof(gpointer));
     c_native_array_to_scm(subr, argpos, &_meta, &_arg, object, size);
 
     // Free the GPtrArray without deleting the contents

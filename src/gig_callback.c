@@ -292,7 +292,7 @@ callback_binding_inner(struct callback_binding_args *args)
             }
         }
     }
-    g_free(callback_name);
+    free(callback_name);
     return (void *)1;
 }
 
@@ -395,7 +395,7 @@ gig_callback_new(const char *name, GICallbackInfo *callback_info, SCM s_func)
 {
     g_assert(scm_is_true(scm_procedure_p(s_func)));
 
-    GigCallback *gcb = g_new0(GigCallback, 1);
+    GigCallback *gcb = xcalloc(1, sizeof(GigCallback));
     ffi_type **ffi_args = NULL;
     ffi_type *ffi_ret_type;
     gint n_args = g_callable_info_get_n_args(callback_info);
@@ -427,7 +427,7 @@ gig_callback_new(const char *name, GICallbackInfo *callback_info, SCM s_func)
 
     // Initialize the argument info vectors.
     if (n_args > 0) {
-        ffi_args = g_new0(ffi_type *, n_args);
+        ffi_args = xcalloc(n_args, sizeof(ffi_type *));
         gcb->atypes = ffi_args;
 
         for (gint i = 0; i < n_args; i++)
@@ -469,7 +469,7 @@ gig_callback_new_for_callback(GICallbackInfo *info, gpointer c_func)
     // we only take one arg now, the scm arg list
     n_args = n_args == 0 ? 0 : 1;
 
-    GigCallback *gcb = g_new0(GigCallback, 1);
+    GigCallback *gcb = xcalloc(1, sizeof(GigCallback));
 
     gcb->name = NULL;
 
@@ -478,7 +478,7 @@ gig_callback_new_for_callback(GICallbackInfo *info, gpointer c_func)
     gcb->amap = gig_amap_new(gcb->name, gcb->callback_info);
 
     if (n_args > 0) {
-        gcb->atypes = g_new0(ffi_type *, 1);
+        gcb->atypes = xcalloc(1, sizeof(ffi_type *));
         gcb->atypes[0] = &ffi_type_pointer;
     }
 
@@ -530,7 +530,7 @@ gig_callback_to_scm(const char *name, GICallbackInfo *info, gpointer callback)
         return SCM_BOOL_F;
     char *subr_name = g_strdup_printf("c-callback:%s", name);
     SCM subr = scm_c_make_gsubr(subr_name, 0, 0, 1, gcb->callback_ptr);
-    g_free(subr_name);
+    free(subr_name);
     return subr;
 }
 
@@ -678,18 +678,18 @@ callback_free(GigCallback *gcb)
 
     gig_amap_free(gcb->amap);
     g_base_info_unref(gcb->callback_info);
-    g_free(gcb->atypes);
+    free(gcb->atypes);
     gcb->atypes = NULL;
 
     if (gcb->name) {
-        g_free(gcb->name);
+        free(gcb->name);
         gcb->name = NULL;
         // only Scheme callbacks have names and those callbacks need to
         // be GC'd.
         scm_gc_unprotect_object(gcb->s_func);
     }
 
-    g_free(gcb);
+    free(gcb);
 }
 
 static void

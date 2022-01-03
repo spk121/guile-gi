@@ -302,7 +302,7 @@ gig_user_object_init(GTypeInstance *instance, gpointer class_ptr)
     g_type_query(parent_type, &query);
     properties = g_object_class_list_properties(class_ptr, &n_properties);
 
-    GValue *instance_properties = g_new0(GValue, n_properties);
+    GValue *instance_properties = xcalloc(n_properties, sizeof(GValue));
     g_object_set_qdata(G_OBJECT(instance), gig_user_object_properties, instance_properties);
 
     for (guint i = 0; i < n_properties; i++) {
@@ -325,7 +325,7 @@ gig_user_object_define(const gchar *type_name,
     memset(&type_info, 0, sizeof(type_info));
 
     /* This data will needed when the class is dynamically instantiated. */
-    class_init_info = g_new0(GigUserObjectInitInfo, 1);
+    class_init_info = xcalloc(1, sizeof(GigUserObjectInitInfo));
     class_init_info->properties = properties;
     class_init_info->signals = signals;
 
@@ -412,7 +412,7 @@ signal_lookup(const char *proc, GObject *self,
     gchar *name = scm_to_utf8_string(s_name);
 
     *c_signal = g_signal_lookup(name, G_OBJECT_TYPE(self));
-    g_free(name);
+    free(name);
 
     if (c_signal == 0)
         scm_misc_error(proc, "~A: unknown signal name ~A",
@@ -424,7 +424,7 @@ signal_lookup(const char *proc, GObject *self,
         SCM detail_str = scm_symbol_to_string(detail);
         gchar *_detail = scm_to_utf8_string(detail_str);
         *c_detail = g_quark_from_string(_detail);
-        g_free(_detail);
+        free(_detail);
     }
     else
         *c_detail = 0;
@@ -483,7 +483,7 @@ gig_i_scm_emit(SCM self, SCM signal, SCM s_detail, SCM args)
                        scm_list_4(self, signal, scm_from_uint32(query_info.n_params),
                                   scm_length(args)));
 
-    values = g_new0(GValue, query_info.n_params + 1);
+    values = xcalloc(query_info.n_params + 1, sizeof(GValue));
     g_value_init(values, G_OBJECT_TYPE(obj));
     gig_value_from_scm_with_error(values, self, "%emit", SCM_ARG1);
     SCM iter = args;
@@ -525,7 +525,7 @@ gig_i_scm_emit(SCM self, SCM signal, SCM s_detail, SCM args)
     }
     for (gsize narg = 0; narg < query_info.n_params + 1; narg++)
         g_value_unset(values + narg);
-    g_free(values);
+    free(values);
     if (scm_is_null(ret))
         return SCM_UNSPECIFIED;
     else
