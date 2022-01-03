@@ -66,7 +66,7 @@ scm_signal_accu(GSignalInvocationHint * ihint,
         scm_dynwind_begin(0);
         if (scm_is_true(scm_symbol_p(name))) {
             _name = scm_to_utf8_string(scm_symbol_to_string(name));
-            scm_dynwind_unwind_handler(g_free, _name, SCM_F_WIND_EXPLICITLY);
+            scm_dynwind_unwind_handler(free, _name, SCM_F_WIND_EXPLICITLY);
         }
         scm_misc_error(_name,
                        "callback accumulator returned ~S when 0, 1, or 2 values were expected",
@@ -152,13 +152,13 @@ gig_free_signalspec(GigSignalSpec *spec)
 {
     if (spec) {
         if (spec->param_types) {
-            g_free(spec->param_types);
+            free(spec->param_types);
             spec->param_types = NULL;
         }
-        g_free(spec->signal_name);
+        free(spec->signal_name);
         spec->signal_name = NULL;
     }
-    g_free(spec);
+    free(spec);
 }
 
 SCM

@@ -412,7 +412,7 @@ signal_lookup(const char *proc, GObject *self,
     gchar *name = scm_to_utf8_string(s_name);
 
     *c_signal = g_signal_lookup(name, G_OBJECT_TYPE(self));
-    g_free(name);
+    free(name);
 
     if (c_signal == 0)
         scm_misc_error(proc, "~A: unknown signal name ~A",
@@ -424,7 +424,7 @@ signal_lookup(const char *proc, GObject *self,
         SCM detail_str = scm_symbol_to_string(detail);
         gchar *_detail = scm_to_utf8_string(detail_str);
         *c_detail = g_quark_from_string(_detail);
-        g_free(_detail);
+        free(_detail);
     }
     else
         *c_detail = 0;
@@ -525,7 +525,7 @@ gig_i_scm_emit(SCM self, SCM signal, SCM s_detail, SCM args)
     }
     for (gsize narg = 0; narg < query_info.n_params + 1; narg++)
         g_value_unset(values + narg);
-    g_free(values);
+    free(values);
     if (scm_is_null(ret))
         return SCM_UNSPECIFIED;
     else

@@ -384,7 +384,7 @@ create_gsubr(GIFunctionInfo *function_info, const gchar *name, SCM self_type,
     gfn = xcalloc(1, sizeof(GigFunction));
     gfn->function_info = function_info;
     gfn->amap = amap;
-    g_free(gfn->name);
+    free(gfn->name);
     gfn->name = xstrdup(name);
     g_base_info_ref(function_info);
 
@@ -459,7 +459,7 @@ gig_callable_prepare_invoke(GigArgMap *amap,
 {
     *cinvoke_input_arg_array = g_array_new(FALSE, TRUE, sizeof(GIArgument));
     *cinvoke_output_arg_array = g_array_new(FALSE, TRUE, sizeof(GIArgument));
-    *cinvoke_free_array = g_ptr_array_new_with_free_func(g_free);
+    *cinvoke_free_array = g_ptr_array_new_with_free_func(free);
 
     // Convert the scheme arguments into C.
     object_list_to_c_args(amap, name, args, *cinvoke_input_arg_array,
@@ -892,19 +892,19 @@ gig_init_function(void)
 static void
 function_free(GigFunction *gfn)
 {
-    g_free(gfn->name);
+    free(gfn->name);
     gfn->name = NULL;
 
     ffi_closure_free(gfn->closure);
     gfn->closure = NULL;
 
     g_base_info_unref(gfn->function_info);
-    g_free(gfn->atypes);
+    free(gfn->atypes);
     gfn->atypes = NULL;
 
     gig_amap_free(gfn->amap);
 
-    g_free(gfn);
+    free(gfn);
 }
 
 static void

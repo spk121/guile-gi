@@ -292,7 +292,7 @@ gig_data_type_free(GigTypeMeta *meta)
     for (gint i = 0; i < meta->n_params; i++)
         gig_data_type_free(&meta->params[i]);
     if (meta->n_params > 0)
-        g_free(meta->params);
+        free(meta->params);
 
     if ((meta->gtype == G_TYPE_POINTER) && (meta->pointer_type == GIG_DATA_CALLBACK) &&
         meta->callable_info)

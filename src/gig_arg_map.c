@@ -64,7 +64,7 @@ gig_amap_new(const gchar *name, GICallableInfo *function_info)
 
     n = g_callable_info_get_n_args(function_info);
     amap = arg_map_allocate(n);
-    g_free(amap->name);
+    free(amap->name);
     amap->name = xstrdup(g_base_info_get_name(function_info));
     arg_map_apply_function_info(amap, function_info);
     if (amap->is_invalid) {
@@ -106,14 +106,14 @@ arg_map_apply_function_info(GigArgMap *amap, GIFunctionInfo *func_info)
     for (i = 0; i < n; i++) {
         arg_info = g_callable_info_get_arg(func_info, i);
         gig_type_meta_init_from_arg_info(&amap->pdata[i].meta, arg_info);
-        g_free(amap->pdata[i].name);
+        free(amap->pdata[i].name);
         amap->pdata[i].name = xstrdup(g_base_info_get_name(arg_info));
         g_base_info_unref(arg_info);
         amap->is_invalid |= amap->pdata[i].meta.is_invalid;
     }
 
     gig_type_meta_init_from_callable_info(&amap->return_val.meta, func_info);
-    g_free(amap->return_val.name);
+    free(amap->return_val.name);
     amap->return_val.name = xstrdup("%return");
     amap->is_invalid |= amap->return_val.meta.is_invalid;
 }
@@ -282,14 +282,14 @@ gig_amap_free(GigArgMap *amap)
 
     for (gint i = 0; i < amap->len; i++) {
         gig_data_type_free(&amap->pdata[i].meta);
-        g_free(amap->pdata[i].name);
+        free(amap->pdata[i].name);
     }
     gig_data_type_free(&amap->return_val.meta);
-    g_free(amap->return_val.name);
-    g_free(amap->pdata);
-    g_free(amap->name);
+    free(amap->return_val.name);
+    free(amap->pdata);
+    free(amap->name);
     amap->pdata = NULL;
-    g_free(amap);
+    free(amap);
 }
 
 void

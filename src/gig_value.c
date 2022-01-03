@@ -493,7 +493,7 @@ gig_value_transform(SCM val, SCM type)
     if (g_value_transform(old_val, new_val))
         return gig_type_transfer_object(G_TYPE_VALUE, new_val, GI_TRANSFER_EVERYTHING);
     else {
-        g_free(new_val);
+        free(new_val);
         scm_misc_error("%transform", "failed to transform ~A into ~A", scm_list_2(val, type));
     }
 }

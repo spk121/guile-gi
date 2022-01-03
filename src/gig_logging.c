@@ -106,7 +106,7 @@ gig_log_writer(GLogLevelFlags flags, const GLogField *fields, gsize n_fields, gp
             scm_c_write(port, ": ", 2);
             scm_c_write(port, message->value, strlen(message->value));
             scm_newline(port);
-            g_free(colored_prefix);
+            free(colored_prefix);
         }
         else
             scm_printf(port, "%s: %s\n", prefix, (const gchar *)message->value);
@@ -181,9 +181,9 @@ gig_log_custom_helper(GLogLevelFlags log_level, const GLogField *fields, gsize n
             it = scm_cddr(it);
             scm_set_car_x(it, scm_from_utf8_keyword(length));
             scm_set_car_x(scm_cdr(it), scm_from_size_t(fields[i].length));
-            g_free(length);
+            free(length);
         }
-        g_free(key);
+        free(key);
     }
     scm_set_cdr_x(scm_cdr(it), SCM_EOL);
     scm_apply_0(SCM_PACK_POINTER(user_data), args);

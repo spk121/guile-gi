@@ -292,7 +292,7 @@ callback_binding_inner(struct callback_binding_args *args)
             }
         }
     }
-    g_free(callback_name);
+    free(callback_name);
     return (void *)1;
 }
 
@@ -530,7 +530,7 @@ gig_callback_to_scm(const char *name, GICallbackInfo *info, gpointer callback)
         return SCM_BOOL_F;
     char *subr_name = g_strdup_printf("c-callback:%s", name);
     SCM subr = scm_c_make_gsubr(subr_name, 0, 0, 1, gcb->callback_ptr);
-    g_free(subr_name);
+    free(subr_name);
     return subr;
 }
 
@@ -678,18 +678,18 @@ callback_free(GigCallback *gcb)
 
     gig_amap_free(gcb->amap);
     g_base_info_unref(gcb->callback_info);
-    g_free(gcb->atypes);
+    free(gcb->atypes);
     gcb->atypes = NULL;
 
     if (gcb->name) {
-        g_free(gcb->name);
+        free(gcb->name);
         gcb->name = NULL;
         // only Scheme callbacks have names and those callbacks need to
         // be GC'd.
         scm_gc_unprotect_object(gcb->s_func);
     }
 
-    g_free(gcb);
+    free(gcb);
 }
 
 static void

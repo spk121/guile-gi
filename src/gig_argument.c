@@ -828,13 +828,13 @@ scm_to_c_ghashtable(S2C_ARG_DECL)
             key_type = GIG_HASH_INT64;
             hash_func = g_int64_hash;
             equal_func = g_int64_equal;
-            key_destroy_func = g_free;
+            key_destroy_func = free;
         }
         else if (type == G_TYPE_DOUBLE || type == G_TYPE_FLOAT) {
             key_type = GIG_HASH_REAL;
             hash_func = g_double_hash;
             equal_func = g_double_equal;
-            key_destroy_func = g_free;
+            key_destroy_func = free;
         }
         else {
             // Should be unreachable
@@ -852,7 +852,7 @@ scm_to_c_ghashtable(S2C_ARG_DECL)
             key_type = GIG_HASH_STRING;
             hash_func = g_str_hash;
             equal_func = g_str_equal;
-            key_destroy_func = g_free;
+            key_destroy_func = free;
         }
         else {
             // All other pointer type are a straight pointer comparison
@@ -874,17 +874,17 @@ scm_to_c_ghashtable(S2C_ARG_DECL)
         else if (type == G_TYPE_INT || type == G_TYPE_UINT || type == G_TYPE_INT64 ||
                  type == G_TYPE_UINT64) {
             val_type = GIG_HASH_INT64;
-            val_destroy_func = g_free;
+            val_destroy_func = free;
         }
         else if (type == G_TYPE_DOUBLE || type == G_TYPE_FLOAT) {
             val_type = GIG_HASH_REAL;
-            val_destroy_func = g_free;
+            val_destroy_func = free;
         }
     }
     else {
         if (type == G_TYPE_STRING) {
             val_type = GIG_HASH_STRING;
-            val_destroy_func = g_free;
+            val_destroy_func = free;
         }
         else
             val_type = GIG_HASH_POINTER;
@@ -1366,7 +1366,7 @@ c_string_to_scm(C2S_ARG_DECL)
                     *object = scm_from_locale_string(arg->v_string);
             }
             if (meta->transfer == GI_TRANSFER_EVERYTHING) {
-                g_free(arg->v_string);
+                free(arg->v_string);
                 arg->v_string = NULL;
             }
         }
@@ -1600,7 +1600,7 @@ static void
 deep_free(void *x)
 {
     char *p = *(char **)x;
-    g_free(p);
+    free(p);
 }
 
 static void

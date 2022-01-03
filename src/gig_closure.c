@@ -125,14 +125,14 @@ invoke_closure(SCM closure, SCM return_type, SCM inout_mask, SCM args)
 
     g_value_init(retval, scm_to_gtype(return_type));
     if (G_VALUE_TYPE(retval) == G_TYPE_INVALID) {
-        g_free(retval);
+        free(retval);
         goto out;
     }
 
     for (gsize narg = 0; narg < nargs; narg++, iter = scm_cdr(iter)) {
         const GValue *arg = gig_type_peek_typed_object(scm_car(iter), gig_value_type);
         if (arg == NULL) {
-            g_free(retval);
+            free(retval);
             goto out;
         }
         g_value_init(params + narg, G_VALUE_TYPE(arg));
@@ -179,7 +179,7 @@ invoke_closure(SCM closure, SCM return_type, SCM inout_mask, SCM args)
   out:
     for (gsize narg = 0; narg < nargs; narg++)
         g_value_unset(params + narg);
-    g_free(params);
+    free(params);
     return ret;
 }
 

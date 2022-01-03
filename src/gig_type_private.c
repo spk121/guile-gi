@@ -56,7 +56,7 @@ _boxed_funcs_free(GigBoxedFuncs *funcs)
     funcs->copy_closure = NULL;
     funcs->free_closure = NULL;
 
-    g_free(funcs);
+    free(funcs);
 }
 
 void
