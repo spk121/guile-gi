@@ -37,7 +37,6 @@
         g_error("unhandled argument type '%s' %s:%d", gig_type_meta_describe(meta), __FILE__, __LINE__); \
     } while(FALSE)
 
-static gpointer later_free(GPtrArray *must_free, GigTypeMeta *meta, gpointer ptr);
 
 // Fundamental types
 static void scm_to_c_interface(S2C_ARG_DECL);
@@ -87,17 +86,6 @@ static void c_garray_to_scm(C2S_ARG_DECL);
 static void c_gptrarray_to_scm(C2S_ARG_DECL);
 static void c_ghashtable_to_scm(C2S_ARG_DECL);
 static void c_list_to_scm(C2S_ARG_DECL);
-
-// Use this to register allocated data to be freed after use.
-static gpointer
-later_free(GPtrArray *must_free, GigTypeMeta *meta, gpointer ptr)
-{
-    if ((must_free != NULL) && meta->transfer != GI_TRANSFER_EVERYTHING)
-        g_ptr_array_insert(must_free, 0, ptr);
-    return ptr;
-}
-
-#define LATER_FREE(_ptr) later_free(must_free, meta, _ptr)
 
 static GType
 child_type(GigTypeMeta *meta, GIArgument *arg)
@@ -462,7 +450,8 @@ scm_to_c_string(S2C_ARG_DECL)
             arg->v_string = scm_to_locale_string(object);
         else
             arg->v_string = scm_to_utf8_string(object);
-        LATER_FREE(arg->v_string);
+        if (meta->transfer != GI_TRANSFER_EVERYTHING)
+            gig_mem_list_add(must_free, arg->v_string);
     }
     else
         scm_wrong_type_arg_msg(subr, argpos, object, "string or bytevector");
@@ -579,14 +568,12 @@ scm_to_c_native_boolean_array(S2C_ARG_DECL)
     if (!scm_is_vector(object))
         scm_wrong_type_arg_msg(subr, argpos, object, "vector of booleans");
     *size = scm_c_vector_length(object);
-    if (meta->is_zero_terminated) {
+    if (meta->is_zero_terminated)
         arg->v_pointer = xcalloc(*size + 1, sizeof(gboolean));
-        LATER_FREE(arg->v_pointer);
-    }
-    else {
+    else
         arg->v_pointer = xcalloc(*size, sizeof(gboolean));
-        LATER_FREE(arg->v_pointer);
-    }
+    if (meta->transfer != GI_TRANSFER_EVERYTHING)
+        gig_mem_list_add(must_free, arg->v_pointer);
     for (gsize i = 0; i < *size; i++)
         ((gboolean *)(arg->v_pointer))[i] = (gboolean)scm_is_true(scm_c_vector_ref(object, i));
 }
@@ -600,14 +587,12 @@ scm_to_c_native_unichar_array(S2C_ARG_DECL)
     if (!scm_is_string(object))
         scm_wrong_type_arg_msg(subr, argpos, object, "string");
     *size = scm_c_string_length(object);
-    if (meta->is_zero_terminated) {
+    if (meta->is_zero_terminated)
         arg->v_pointer = xcalloc(*size + 1, sizeof(gunichar));
-        LATER_FREE(arg->v_pointer);
-    }
-    else {
+    else
         arg->v_pointer = xcalloc(*size, sizeof(gunichar));
-        LATER_FREE(arg->v_pointer);
-    }
+    if (meta->transfer != GI_TRANSFER_EVERYTHING)
+        gig_mem_list_add(must_free, arg->v_pointer);
     for (gsize i = 0; i < *size; i++)
         ((gunichar *)(arg->v_pointer))[i] = (gunichar)SCM_CHAR(scm_c_string_ref(object, i));
 }
@@ -642,7 +627,7 @@ scm_to_c_native_immediate_array(S2C_ARG_DECL)
             if (meta->is_zero_terminated) {
                 // Adding null terminator element.
                 arg->v_pointer = xcalloc(*size + 1, item_size);
-                LATER_FREE(arg->v_pointer);
+                gig_mem_list_add(must_free, arg->v_pointer);
                 memcpy(arg->v_pointer, SCM_BYTEVECTOR_CONTENTS(object),
                        SCM_BYTEVECTOR_LENGTH(object));
             }
@@ -935,14 +920,13 @@ scm_to_c_native_gtype_array(S2C_ARG_DECL)
     if (!scm_is_vector(object))
         scm_wrong_type_arg_msg(subr, argpos, object, "vector of gtype-ables");
     *size = scm_c_vector_length(object);
-    if (meta->is_zero_terminated) {
+    if (meta->is_zero_terminated)
         arg->v_pointer = xcalloc(*size + 1, sizeof(GType));
-        LATER_FREE(arg->v_pointer);
-    }
-    else {
+    else
         arg->v_pointer = xcalloc(*size, sizeof(GType));
-        LATER_FREE(arg->v_pointer);
-    }
+    if (meta->transfer != GI_TRANSFER_EVERYTHING)
+        gig_mem_list_add(must_free, arg->v_pointer);
+
     for (gsize i = 0; i < *size; i++)
         ((GType *) (arg->v_pointer))[i] = scm_to_gtype(scm_c_vector_ref(object, i));
 }
@@ -1032,7 +1016,9 @@ scm_to_c_native_interface_array(S2C_ARG_DECL)
             else
                 ptr = xcalloc(length, sizeof(gint));
             arg->v_pointer = ptr;
-            LATER_FREE(ptr);
+            if (meta->transfer != GI_TRANSFER_EVERYTHING)
+                gig_mem_list_add(must_free, arg->v_pointer);
+
             SCM iter = object;
 
             for (gsize i = 0; i < length; i++, iter = scm_cdr(iter))
@@ -1073,14 +1059,16 @@ scm_to_c_native_string_array(S2C_ARG_DECL)
         elt = scm_vector_elements(object, &handle, &len, &inc);
         *size = len;
         gchar **strv = xcalloc(len + 1, sizeof(gchar *));
-        LATER_FREE(strv);
+        if (meta->transfer != GI_TRANSFER_EVERYTHING)
+            gig_mem_list_add(must_free, strv);
 
         for (gsize i = 0; i < len; i++, elt += inc) {
             if (meta->params[0].pointer_type == GIG_DATA_LOCALE_STRING)
                 strv[i] = scm_to_locale_string(*elt);
             else
                 strv[i] = scm_to_utf8_string(*elt);
-            LATER_FREE(strv[i]);
+            if (meta->transfer != GI_TRANSFER_EVERYTHING)
+                gig_mem_list_add(must_free, strv[i]);
         }
         strv[len] = NULL;
         arg->v_pointer = strv;
@@ -1091,7 +1079,9 @@ scm_to_c_native_string_array(S2C_ARG_DECL)
         gsize len = scm_c_length(object);
         *size = len;
         gchar **strv = xcalloc(len + 1, sizeof(gchar *));
-        LATER_FREE(strv);
+        if (meta->transfer != GI_TRANSFER_EVERYTHING)
+            gig_mem_list_add(must_free, strv);
+
         SCM iter = object;
         for (gsize i = 0; i < len; i++) {
             SCM elt = scm_car(iter);
@@ -1100,7 +1090,8 @@ scm_to_c_native_string_array(S2C_ARG_DECL)
             else
                 strv[i] = scm_to_utf8_string(elt);
             iter = scm_cdr(iter);
-            LATER_FREE(strv[i]);
+            if (meta->transfer != GI_TRANSFER_EVERYTHING)
+                gig_mem_list_add(must_free, strv[i]);
         }
         strv[len] = NULL;
         arg->v_pointer = strv;

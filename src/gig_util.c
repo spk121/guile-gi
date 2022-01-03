@@ -29,7 +29,7 @@ void *
 xcalloc(size_t nmemb, size_t siz)
 {
     void *x;
-    if (nmemb == 0  || siz == 0)
+    if (nmemb == 0 || siz == 0)
         return NULL;
     x = calloc(nmemb, siz);
     if (x == 0) {
