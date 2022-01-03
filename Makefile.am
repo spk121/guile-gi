@@ -138,7 +138,8 @@ libguile_gi_la_internal_headers = \
   src/gig_type.h \
   src/gig_type_private.h \
   src/gig_util.h \
-  src/gig_value.h
+  src/gig_value.h \
+  src/gig_visibility.h
 
 libguile_gi_la_SOURCES = \
   $(libguile_gi_la_internal_headers) \
