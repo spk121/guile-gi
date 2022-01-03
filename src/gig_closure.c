@@ -118,8 +118,8 @@ invoke_closure(SCM closure, SCM return_type, SCM inout_mask, SCM args)
     SCM_ASSERT_TYPE(scm_is_list(args), args, SCM_ARG2, "%invoke-closure", "list");
 
     gsize nargs = scm_c_length(args);
-    GValue *params = g_new0(GValue, nargs);
-    GValue *retval = g_new0(GValue, 1);
+    GValue *params = xcalloc(nargs, sizeof(GValue));
+    GValue *retval = xcalloc(1, sizeof(GValue));
     SCM ret = SCM_UNDEFINED;
     SCM iter = args;
 
@@ -154,7 +154,7 @@ invoke_closure(SCM closure, SCM return_type, SCM inout_mask, SCM args)
         if (bit_count > nargs)
             scm_misc_error(NULL, "~S returned fewer values than we should unpack",
                            scm_list_1(closure));
-        GValue *out = g_new0(GValue, bit_count);
+        GValue *out = xcalloc(bit_count, sizeof(GValue));
 
         bits = scm_bitvector_elements(inout_mask, &handle, &offset, &length, &inc);
         pos = offset;

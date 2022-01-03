@@ -381,7 +381,7 @@ create_gsubr(GIFunctionInfo *function_info, const gchar *name, SCM self_type,
         return NULL;
     }
 
-    gfn = g_new0(GigFunction, 1);
+    gfn = xcalloc(1, sizeof(GigFunction));
     gfn->function_info = function_info;
     gfn->amap = amap;
     g_free(gfn->name);
@@ -412,7 +412,7 @@ create_gsubr(GIFunctionInfo *function_info, const gchar *name, SCM self_type,
     // Initialize the argument info vectors.
     gint have_args = 0;
     if (*required_input_count + *optional_input_count > 0) {
-        gfn->atypes = g_new0(ffi_type *, 1);
+        gfn->atypes = xcalloc(1, sizeof(ffi_type *));
         gfn->atypes[0] = &ffi_type_pointer;
         have_args = 1;
     }
@@ -480,7 +480,8 @@ gig_callable_prepare_invoke(GigArgMap *amap,
     // needed.  It is easier than figuring out which output arguments
     // need allocation.
     *out_args = (GIArgument *)((*cinvoke_output_arg_array)->data);
-    *out_boxes = g_new0(GIArgument, (*cinvoke_output_arg_array)->len);
+    *out_boxes = xcalloc((*cinvoke_output_arg_array)->len, sizeof(GIArgument));
+
     g_ptr_array_insert(*cinvoke_free_array, 0, *out_boxes);
     for (guint i = 0; i < (*cinvoke_output_arg_array)->len; i++)
         if ((*out_args + i)->v_pointer == NULL)
@@ -748,7 +749,7 @@ store_argument(gint invoke_in, gint invoke_out, gboolean inout, gboolean inout_f
 
     if (invoke_in >= 0) {
         if (inout) {
-            gpointer *dup = gig_memdup(arg, sizeof(GIArgument));
+            gpointer *dup = xmemdup(arg, sizeof(GIArgument));
             parg = &g_array_index(cinvoke_input_arg_array, GIArgument, invoke_in);
             parg->v_pointer = dup;
 

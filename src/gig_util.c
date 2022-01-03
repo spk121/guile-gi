@@ -25,6 +25,56 @@
 static gboolean is_predicate(GIFunctionInfo *info);
 static void count_args(GICallableInfo *info, gint *in, gint *out);
 
+void *
+xcalloc(size_t nmemb, size_t siz)
+{
+    void *x;
+    if (nmemb == 0  || siz == 0)
+        return NULL;
+    x = calloc(nmemb, siz);
+    if (x == 0) {
+        fprintf(stderr, "Out of memory\n");
+        exit(1);
+    }
+    return x;
+}
+
+void *
+xmalloc(size_t siz)
+{
+    void *x;
+    if (siz == 0) {
+        fprintf(stderr, "malloc zero size error\n");
+        exit(1);
+    }
+    x = malloc(siz);
+    if (x == NULL) {
+        fprintf(stderr, "Out of memory\n");
+        exit(1);
+    }
+    return x;
+}
+
+void *
+xmemdup(const void *mem, size_t len)
+{
+    void *new_mem;
+
+    if (mem == NULL || len == 0) {
+        fprintf(stderr, "memdup zero size error\n");
+        exit(1);
+    }
+    new_mem = malloc(len);
+    if (new_mem == NULL) {
+        fprintf(stderr, "Out of memory\n");
+        exit(1);
+    }
+    memcpy(new_mem, mem, len);
+
+    return new_mem;
+}
+
+
 char *
 xstrdup(const char *S)
 {
@@ -260,21 +310,6 @@ gig_gname_to_scm_name(const gchar *gname)
         }
     }
     return g_string_free(str, FALSE);
-}
-
-void *
-gig_memdup(const void *mem, size_t len)
-{
-    void *new_mem;
-
-    if (mem && len != 0) {
-        new_mem = g_malloc(len);
-        memcpy(new_mem, mem, len);
-    }
-    else
-        new_mem = NULL;
-
-    return new_mem;
 }
 
 SCM

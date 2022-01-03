@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2019, 2020, 2021 Michael L. Gran
+// Copyright (C) 2018, 2019, 2020, 2021, 2022 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -790,7 +790,7 @@ scm_allocate_boxed(SCM boxed_type)
     if (size == 0)
         scm_out_of_range("%allocate-boxed", s_size);
 
-    gpointer boxed = g_malloc0(size);
+    gpointer boxed = xcalloc(1, size);
     GigTypeUnrefFunction unref;
     unref = (GigTypeUnrefFunction)scm_to_pointer(scm_class_ref(boxed_type, sym_unref));
     SCM pointer = scm_from_pointer(boxed, unref);

@@ -70,7 +70,7 @@ gig_type_meta_init_from_callable_info(GigTypeMeta *meta, GICallableInfo *ci)
 static void
 add_params(GigTypeMeta *meta, gint n)
 {
-    meta->params = g_new0(GigTypeMeta, n);
+    meta->params = xcalloc(n, sizeof(GigTypeMeta));
     meta->n_params = n;
 }
 

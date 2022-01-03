@@ -83,8 +83,8 @@ arg_map_allocate(gsize n)
 {
     GigArgMap *amap;
 
-    amap = g_new0(GigArgMap, 1);
-    amap->pdata = g_new0(GigArgMapEntry, n);
+    amap = xcalloc(1, sizeof(GigArgMap));
+    amap->pdata = xcalloc(n, sizeof(GigArgMapEntry));
     amap->len = n;
     for (gsize i = 0; i < n; i++) {
         arg_map_entry_init(&amap->pdata[i]);
