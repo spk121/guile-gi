@@ -15,7 +15,6 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 ACLOCAL_AMFLAGS = -I m4 ${ACLOCAL_FLAGS}
-AUTOMAKE_OPTIONS = subdir-objects
 AM_DISTCHECK_CONFIGURE_FLAGS = --with-gnu-filesystem-hierarchy --enable-introspection
 
 #################

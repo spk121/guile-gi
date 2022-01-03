@@ -22,7 +22,7 @@ AC_INIT([Guile GI], [0.3.2], [spk121@yahoo.com], [guile_gi])
 
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_SRCDIR([src/gig.c])
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([subdir-objects tar-ustar filename-length-max=99])
 
 AC_PREREQ([2.63])
 AC_CONFIG_HEADERS([src/config.h])
