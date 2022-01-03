@@ -114,3 +114,5 @@
 -T GigTypeMeta
 -T GigTypeRefFunction
 -T GigTypeUnrefFunction
+-T CBList
+-T FuncList
