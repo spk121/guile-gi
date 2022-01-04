@@ -102,6 +102,7 @@
 
 -T GigArgMap
 -T GigArgMapEntry
+-T GigArgsStore
 -T GigBoxedFuncs
 -T GigCallback
 -T GigClosure
