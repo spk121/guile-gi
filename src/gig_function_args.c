@@ -13,6 +13,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#include <assert.h>
 #include "gig_util.h"
 #include "gig_function_args.h"
 
@@ -162,7 +163,7 @@ _find_output_arg(GigArgMapEntry *entry, GIArgument *in, GIArgument *out)
     case GIG_ARG_DIRECTION_OUTPUT:
         return out + entry->c_output_pos;
     default:
-        g_assert_not_reached();
+        abort();
     }
 }
 
@@ -241,7 +242,7 @@ gig_args_store_scm(GigArgsStore *store, SCM obj, GigArgMap *amap, int s, const c
 
         is_in = gig_amap_input_c2i(amap, c_child_invoke_in, &i_child);
         is_out = gig_amap_output_i2c(amap, i_child, &c_child_invoke_out);
-        g_assert(is_in);
+        assert(is_in);
         if (!is_out)
             c_child_invoke_out = -1;
 

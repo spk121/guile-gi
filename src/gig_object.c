@@ -13,6 +13,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#include <assert.h>
 #include <string.h>
 #include "gig_object.h"
 #include "gig_type.h"
@@ -118,7 +119,7 @@ gig_i_scm_make_gobject(SCM s_gtype, SCM s_prop_keylist)
     obj = g_object_new_with_properties(type, n_prop, keys, values);
     scm_dynwind_end();
 
-    g_assert(obj);
+    assert(obj);
 
     return gig_object_take(obj);
 #undef FUNC
@@ -250,8 +251,8 @@ gig_user_object_dispose(GObject *object)
     type = G_OBJECT_TYPE(object);
     parent_type = g_type_parent(type);
 
-    g_assert(G_TYPE_IS_CLASSED(type));
-    g_assert(G_TYPE_IS_CLASSED(parent_type));
+    assert(G_TYPE_IS_CLASSED(type));
+    assert(G_TYPE_IS_CLASSED(parent_type));
 
     g_info("dispose is currently just calling the parent's dispose");
 

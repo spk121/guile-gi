@@ -13,6 +13,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#include <assert.h>
 #include <ffi.h>
 #include <libguile.h>
 #include "gig_function.h"
@@ -131,7 +132,7 @@ gig_function_define(GType type, GICallableInfo *info, const gchar *_namespace, S
         proc = proc4signal((GISignalInfo *)info, function_name, self_type,
                            &required_input_count, &optional_input_count, &formals, &specializers);
     else
-        g_assert_not_reached();
+        abort();
 
     if (SCM_UNBNDP(proc))
         goto end;
@@ -508,15 +509,15 @@ function_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
     // into Guile for this thread?
     scm_init_guile();
 
-    g_assert(cif != NULL);
-    g_assert(ret != NULL);
-    g_assert(ffi_args != NULL);
-    g_assert(user_data != NULL);
+    assert(cif != NULL);
+    assert(ret != NULL);
+    assert(ffi_args != NULL);
+    assert(user_data != NULL);
 
     guint n_args = cif->nargs;
 
     // we have either 0 args or 1 args, which is the already packed list
-    g_assert(n_args <= 1);
+    assert(n_args <= 1);
 
     if (n_args)
         s_args = SCM_PACK(*(scm_t_bits *) (ffi_args[0]));

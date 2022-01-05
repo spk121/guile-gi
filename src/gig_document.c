@@ -165,7 +165,7 @@ do_document(GIBaseInfo *info, const gchar *_namespace)
             kind = "class";
             break;
         default:
-            g_assert_not_reached();
+            abort();
         }
 
         scm_printf(SCM_UNDEFINED, "<%s name=\"%s\">", kind, g_base_info_get_name(info));

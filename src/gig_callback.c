@@ -13,6 +13,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#include <assert.h>
 #include <libguile.h>
 #include <libguile/hooks.h>
 #include <ffi.h>
@@ -154,7 +155,7 @@ store_output(GigArgMapEntry *entry, gpointer **arg, GIArgument *value)
             **(gint64 **)arg = value->v_int64;
             break;
         default:
-            g_assert_not_reached();
+            abort();
         }
         break;
     }
@@ -174,7 +175,7 @@ store_output(GigArgMapEntry *entry, gpointer **arg, GIArgument *value)
             **(guint64 **)arg = value->v_uint64;
             break;
         default:
-            g_assert_not_reached();
+            abort();
         }
         break;
     }
@@ -226,18 +227,19 @@ callback_binding_inner(struct callback_binding_args *args)
     SCM s_args = SCM_EOL;
     SCM s_ret;
 
-    g_assert(cif != NULL);
-    g_assert(ret != NULL);
-    g_assert(ffi_args != NULL);
-    g_assert(gcb != NULL);
+    assert(cif != NULL);
+    assert(ret != NULL);
+    assert(ffi_args != NULL);
+    assert(gcb != NULL);
 
     guint n_args = cif->nargs;
 
     scm_load_goops();
 
-    g_assert(scm_is_true(scm_procedure_p(gcb->s_func)));
-    g_assert_cmpint(n_args, ==, g_callable_info_get_n_args(gcb->callback_info));
-    g_assert(gcb->amap != NULL);
+    assert(scm_is_true(scm_procedure_p(gcb->s_func)));
+    assert(n_args == g_callable_info_get_n_args(gcb->callback_info));
+    assert(gcb->amap != NULL);
+
     GigArgMap *amap = gcb->amap;
     char *callback_name;
     if (amap->name)
@@ -287,7 +289,7 @@ callback_binding_inner(struct callback_binding_args *args)
         gint start = 0;
 
         gsize n_values_ = scm_c_nvalues(s_ret);
-        g_assert_cmpint(n_values_, <, G_MAXINT32);
+        assert(n_values_ < G_MAXINT32);
         gint in, out, n_values = (gint)n_values_;
         gig_amap_c_count(amap, &in, &out);
 
@@ -364,15 +366,15 @@ c_callback_binding_inner(struct callback_binding_args *args)
     GigCallback *gcb = args->gcb;
     SCM s_args = SCM_UNDEFINED;
 
-    g_assert(cif != NULL);
-    g_assert(ret != NULL);
-    g_assert(ffi_args != NULL);
-    g_assert(gcb != NULL);
+    assert(cif != NULL);
+    assert(ret != NULL);
+    assert(ffi_args != NULL);
+    assert(gcb != NULL);
 
     guint n_args = cif->nargs;
 
     // we have either 0 args or 1 args, which is the already packed list
-    g_assert(n_args <= 1);
+    assert(n_args <= 1);
     if (n_args)
         s_args = SCM_PACK(*(scm_t_bits *) (ffi_args[0]));
 
@@ -427,7 +429,7 @@ c_callback_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user
 GigCallback *
 gig_callback_new(const char *name, GICallbackInfo *callback_info, SCM s_func)
 {
-    g_assert(scm_is_true(scm_procedure_p(s_func)));
+    assert(scm_is_true(scm_procedure_p(s_func)));
 
     GigCallback *gcb = xcalloc(1, sizeof(GigCallback));
     ffi_type **ffi_args = NULL;
@@ -453,8 +455,8 @@ gig_callback_new(const char *name, GICallbackInfo *callback_info, SCM s_func)
     // and set a pointer to the corresponding executable address.
     gcb->closure = ffi_closure_alloc(sizeof(ffi_closure), &(gcb->callback_ptr));
 
-    g_assert_nonnull(gcb->closure);
-    g_assert_nonnull(gcb->callback_ptr);
+    assert(gcb->closure != NULL);
+    assert(gcb->callback_ptr != NULL);
 
     // STEP 2
     // Next, we begin to construct an FFI_CIF to describe the function call.
@@ -531,8 +533,8 @@ gig_callback_new_for_callback(GICallbackInfo *info, gpointer c_func)
 gpointer
 gig_callback_to_c(const char *name, GICallbackInfo *cb_info, SCM s_func)
 {
-    g_assert(cb_info != NULL);
-    g_assert(scm_is_true(scm_procedure_p(s_func)));
+    assert(cb_info != NULL);
+    assert(scm_is_true(scm_procedure_p(s_func)));
 
     // Lookup s_func in the callback cache.
     CBList *x = callback_list;
@@ -603,7 +605,7 @@ amap_entry_to_ffi_type(GigArgMapEntry *entry)
             case 8:
                 return &ffi_type_sint64;
             default:
-                g_assert_not_reached();
+                abort();
             }
         else if (fundamental_type == G_TYPE_UINT)
             switch (entry->meta.item_size) {
@@ -616,7 +618,7 @@ amap_entry_to_ffi_type(GigArgMapEntry *entry)
             case 8:
                 return &ffi_type_uint64;
             default:
-                g_assert_not_reached();
+                abort();
             }
         else if (fundamental_type == G_TYPE_INT64)
             return &ffi_type_sint64;
@@ -633,14 +635,14 @@ amap_entry_to_ffi_type(GigArgMapEntry *entry)
             case 8:
                 return &ffi_type_sint64;
             default:
-                g_assert_not_reached();
+                abort();
             }
         else if (fundamental_type == G_TYPE_FLAGS)
             return &ffi_type_uint32;
         else if (fundamental_type == G_TYPE_ENUM)
             return &ffi_type_sint32;
         else
-            g_assert_not_reached();
+            abort();
     }
 }
 
