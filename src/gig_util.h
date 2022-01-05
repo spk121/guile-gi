@@ -25,6 +25,8 @@ G_BEGIN_DECLS
 // *INDENT-ON*
 
 #define MALLOC __attribute__((malloc))
+
+size_t strvlen(const char **x);
 MALLOC void *xcalloc(size_t nmemb, size_t siz);
 MALLOC void *xmalloc(size_t siz);
 char *xstrdup(const char *S);

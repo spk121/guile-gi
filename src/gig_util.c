@@ -28,6 +28,14 @@
 static gboolean is_predicate(GIFunctionInfo *info);
 static void count_args(GICallableInfo *info, gint *in, gint *out);
 
+size_t strvlen(const char **x)
+{
+    size_t i = 0;
+    while (x[i] != NULL)
+        i++;
+    return i;
+}
+
 void *
 xcalloc(size_t nmemb, size_t siz)
 {
