@@ -14,6 +14,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <inttypes.h>
+#include <stdio.h>
 #include <libguile.h>
 #include "gig_flag.h"
 #include "gig_type.h"
@@ -101,7 +102,9 @@ gig_init_flag(void)
 static SCM
 define_conversion(const gchar *fmt, const gchar *name, SCM proc)
 {
-    gchar *_sym = g_strdup_printf(fmt, name);
+    int len = snprintf(NULL, 0, fmt, name) + 1;
+    char *_sym = xmalloc(len);
+    snprintf(_sym, len, fmt, name);
     SCM sym = scm_from_utf8_symbol(_sym);
     free(_sym);
     scm_define(sym, proc);

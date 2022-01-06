@@ -16,6 +16,7 @@
 #include <libguile.h>
 #include <libguile/hooks.h>
 #include <ffi.h>
+#include <stdio.h>
 #include "gig_argument.h"
 #include "gig_callback.h"
 #include "gig_function.h"
@@ -185,6 +186,8 @@ struct callback_binding_args
 static void *
 callback_binding_inner(struct callback_binding_args *args)
 {
+#define CALLBACK_NAME_MAX_LEN (256)
+
     ffi_cif *cif = args->cif;
     gpointer ret = args->ret;
     gpointer *ffi_args = args->ffi_args;
@@ -205,11 +208,11 @@ callback_binding_inner(struct callback_binding_args *args)
     g_assert_cmpint(n_args, ==, g_callable_info_get_n_args(gcb->callback_info));
     g_assert(gcb->amap != NULL);
     GigArgMap *amap = gcb->amap;
-    char *callback_name;
+    char callback_name[CALLBACK_NAME_MAX_LEN];
     if (amap->name)
-        callback_name = g_strdup_printf("callback:<%s>", amap->name);
+        snprintf(callback_name, CALLBACK_NAME_MAX_LEN, "callback:<%s>", amap->name);
     else
-        callback_name = xstrdup("callback");
+        strncpy(callback_name, "callback", CALLBACK_NAME_MAX_LEN);
 
     // Do the two-step conversion from libffi arguments to GIArgument
     // to SCM arguments.
@@ -292,8 +295,8 @@ callback_binding_inner(struct callback_binding_args *args)
             }
         }
     }
-    free(callback_name);
     return (void *)1;
+#undef CALLBACK_NAME_MAX_LEN
 }
 
 void
@@ -406,8 +409,10 @@ gig_callback_new(const char *name, GICallbackInfo *callback_info, SCM s_func)
         g_debug("Constructing C callback for %s", gcb->name);
     }
     else {
-        gcb->name = g_strdup_printf("callback:%s", name);
-        g_debug("Construction a C Callback for an anonymous procedure");
+        size_t len = strlen("callback:") + strlen(name) + 1;
+        gcb->name = xmalloc(len);
+        snprintf(gcb->name, len, "callback:%s", name);
+        gig_debug_load("Construction a C Callback for an anonymous procedure");
     }
 
     gcb->s_func = s_func;
@@ -528,7 +533,9 @@ gig_callback_to_scm(const char *name, GICallbackInfo *info, gpointer callback)
     GigCallback *gcb = gig_callback_new_for_callback(info, callback);
     if (gcb == NULL)
         return SCM_BOOL_F;
-    char *subr_name = g_strdup_printf("c-callback:%s", name);
+    size_t len = strlen("c-callback:") + strlen(name) + 1;
+    char *subr_name = xmalloc(len);
+    snprintf(subr_name, len, "c-callback:%s", name);
     SCM subr = scm_c_make_gsubr(subr_name, 0, 0, 1, gcb->callback_ptr);
     free(subr_name);
     return subr;
