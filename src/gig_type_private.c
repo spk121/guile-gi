@@ -1,6 +1,7 @@
 #include <assert.h>
 #include "gig_type_private.h"
 #include "gig_util.h"
+#include "gig_logging.h"
 
 typedef struct _func_list
 {

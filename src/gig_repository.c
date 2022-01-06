@@ -22,6 +22,7 @@
 #include "gig_constant.h"
 #include "gig_flag.h"
 #include "gig_repository.h"
+#include "gig_logging.h"
 
 static SCM
 require(SCM lib, SCM version)

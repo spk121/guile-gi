@@ -25,6 +25,7 @@
 #include "gig_signal.h"
 #include "gig_util.h"
 #include "gig_keyval.h"
+#include "gig_logging.h"
 
 struct _GigFunction
 {

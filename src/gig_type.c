@@ -24,6 +24,7 @@
 #include "gig_type_private.h"
 #include "gig_keyval.h"
 #include "gig_strval.h"
+#include "gig_logging.h"
 
 // In C, a GType is an integer.  It is an integer ID that maps to a
 // type of GObject.

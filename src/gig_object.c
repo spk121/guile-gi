@@ -23,6 +23,7 @@
 #include "gig_closure.h"
 #include "gig_value.h"
 #include "gig_function_private.h"
+#include "gig_logging.h"
 
 GQuark gig_user_object_properties;
 

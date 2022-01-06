@@ -24,6 +24,7 @@
 #include "gig_object.h"
 #include "gig_type.h"
 #include "gig_util.h"
+#include "gig_logging.h"
 
 #define TRACE_C2S() gig_debug_transfer("[C2S] On line %d while handing %s of %s.", __LINE__, gig_type_meta_describe(meta), subr)
 #define TRACE_S2C() gig_debug_transfer("[S2C] On line %d while handing %s of %s.", __LINE__, gig_type_meta_describe(meta), subr)

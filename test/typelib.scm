@@ -1,6 +1,7 @@
 (use-modules (gi)
              (gi documentation)
-             (gi repository))
+             (gi repository)
+             (srfi srfi-64))
 
 (test-begin "typelib")
 

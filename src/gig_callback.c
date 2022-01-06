@@ -21,6 +21,7 @@
 #include "gig_argument.h"
 #include "gig_callback.h"
 #include "gig_function.h"
+#include "gig_logging.h"
 #include "gig_util.h"
 
 typedef struct _GigCallback GigCallback;

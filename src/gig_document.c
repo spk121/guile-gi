@@ -22,6 +22,7 @@
 #include "gig_arg_map.h"
 #include "gig_repository.h"
 #include "gig_document.h"
+#include "gig_logging.h"
 
 static void do_document(GIBaseInfo *info, const gchar *parent);
 
