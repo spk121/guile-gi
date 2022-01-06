@@ -44,21 +44,21 @@ func_list_free(FuncList **lst)
 static void
 _boxed_copy(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
 {
-    GType type = GPOINTER_TO_SIZE(user_data);
-    gig_debug_transfer("boxed_copy(%s, %p)", g_type_name(type), *(gpointer *)ffi_args[0]);
-    *(ffi_arg *)ret = (ffi_arg)g_boxed_copy(type, *(gpointer *)ffi_args[0]);
+    GType type = (size_t)(user_data);
+    gig_debug_transfer("boxed_copy(%s, %p)", g_type_name(type), *(void **)ffi_args[0]);
+    *(ffi_arg *)ret = (ffi_arg)g_boxed_copy(type, *(void **)ffi_args[0]);
 }
 
 static void
 _boxed_free(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
 {
-    GType type = GPOINTER_TO_SIZE(user_data);
-    gig_debug_transfer("boxed_free(%s, %p)", g_type_name(type), *(gpointer *)ffi_args[0]);
-    g_boxed_free(type, *(gpointer *)ffi_args[0]);
+    GType type = (size_t)user_data;
+    gig_debug_transfer("boxed_free(%s, %p)", g_type_name(type), *(void **)ffi_args[0]);
+    g_boxed_free(type, *(void **)ffi_args[0]);
 }
 
 GigBoxedFuncs *
-_boxed_funcs_for_type(GType type)
+_boxed_funcs_for_type(size_t type)
 {
     GigBoxedFuncs *funcs = g_new0(GigBoxedFuncs, 1);
 
@@ -76,9 +76,9 @@ _boxed_funcs_for_type(GType type)
                         funcs->atypes) == FFI_OK);
 
     assert(ffi_prep_closure_loc(funcs->copy_closure, &(funcs->copy_cif), _boxed_copy,
-                                GSIZE_TO_POINTER(type), funcs->copy) == FFI_OK);
+                                (void *)type, funcs->copy) == FFI_OK);
     assert(ffi_prep_closure_loc(funcs->free_closure, &(funcs->free_cif), _boxed_free,
-                                GSIZE_TO_POINTER(type), funcs->free) == FFI_OK);
+                                (void *)type, funcs->free) == FFI_OK);
 
     func_list_add(&_boxed_funcs, funcs);
 

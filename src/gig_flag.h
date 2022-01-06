@@ -19,16 +19,12 @@
 #include <girepository.h>
 #include <libguile.h>
 
-// *INDENT-OFF*
-G_BEGIN_DECLS
-// *INDENT-ON*
-
-gint gig_enum_to_int(SCM _enum);
-guint gig_flags_to_uint(SCM _flags);
-SCM gig_int_to_enum(gint value, GType type);
-SCM gig_uint_to_flags(guint value, GType type);
-SCM gig_int_to_enum_with_info(gint val, GIEnumInfo *info);
-SCM gig_uint_to_flags_with_info(guint val, GIEnumInfo *info);
+int gig_enum_to_int(SCM _enum);
+unsigned gig_flags_to_uint(SCM _flags);
+SCM gig_int_to_enum(int value, GType type);
+SCM gig_uint_to_flags(unsigned value, GType type);
+SCM gig_int_to_enum_with_info(int val, GIEnumInfo *info);
+SCM gig_uint_to_flags_with_info(unsigned val, GIEnumInfo *info);
 SCM gig_symbol_to_enum(SCM type, SCM symbol);
 SCM gig_list_to_flags(SCM type, SCM symbol);
 
@@ -37,5 +33,4 @@ SCM gig_define_enum(GIEnumInfo *info, SCM defs);
 
 void gig_init_flag(void);
 
-G_END_DECLS
 #endif

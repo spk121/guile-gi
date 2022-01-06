@@ -57,7 +57,7 @@ gig_value_from_scm(GValue *value, SCM obj)
             return GIG_VALUE_WRONG_TYPE;
         if (!scm_is_signed_integer(obj, G_MININT8, G_MAXINT8))
             return GIG_VALUE_OUT_OF_RANGE;
-        gint8 temp = scm_to_int8(obj);
+        int8_t temp = scm_to_int8(obj);
         g_value_set_schar(value, temp);
         return 0;
     }
@@ -76,7 +76,7 @@ gig_value_from_scm(GValue *value, SCM obj)
     {
         if (!scm_is_eq(obj, SCM_BOOL_T) && !scm_is_eq(obj, SCM_BOOL_F))
             return GIG_VALUE_WRONG_TYPE;
-        gboolean temp;
+        bool temp;
         temp = scm_is_true(obj);
         g_value_set_boolean(value, temp);
         return 0;
@@ -87,7 +87,7 @@ gig_value_from_scm(GValue *value, SCM obj)
             return GIG_VALUE_WRONG_TYPE;
         if (!scm_is_signed_integer(obj, G_MININT, G_MAXINT))
             return GIG_VALUE_OUT_OF_RANGE;
-        gint temp;
+        int temp;
         temp = scm_to_int(obj);
         g_value_set_int(value, temp);
         return 0;
@@ -98,7 +98,7 @@ gig_value_from_scm(GValue *value, SCM obj)
             return GIG_VALUE_WRONG_TYPE;
         if (!scm_is_unsigned_integer(obj, 0, G_MAXUINT))
             return GIG_VALUE_OUT_OF_RANGE;
-        guint temp;
+        unsigned temp;
         temp = scm_to_uint(obj);
         g_value_set_uint(value, temp);
         return 0;
@@ -131,7 +131,7 @@ gig_value_from_scm(GValue *value, SCM obj)
             return GIG_VALUE_WRONG_TYPE;
         if (!scm_is_signed_integer(obj, G_MININT64, G_MAXINT64))
             return GIG_VALUE_OUT_OF_RANGE;
-        gint64 temp;
+        int64_t temp;
         temp = scm_to_int64(obj);
         g_value_set_int64(value, temp);
         return 0;
@@ -142,7 +142,7 @@ gig_value_from_scm(GValue *value, SCM obj)
             return GIG_VALUE_WRONG_TYPE;
         if (!scm_is_unsigned_integer(obj, 0, G_MAXUINT64))
             return GIG_VALUE_OUT_OF_RANGE;
-        guint64 temp;
+        uint64_t temp;
         temp = scm_to_uint64(obj);
         g_value_set_uint64(value, temp);
         return 0;
@@ -196,7 +196,7 @@ gig_value_from_scm(GValue *value, SCM obj)
     {
         if (!scm_is_string(obj))
             return GIG_VALUE_WRONG_TYPE;
-        gchar *temp = scm_to_utf8_string(obj);
+        char *temp = scm_to_utf8_string(obj);
         g_value_take_string(value, temp);
         return 0;
     }
@@ -257,9 +257,9 @@ gig_value_from_scm(GValue *value, SCM obj)
 }
 
 void
-gig_value_from_scm_with_error(GValue *value, SCM obj, const gchar *subr, gint pos)
+gig_value_from_scm_with_error(GValue *value, SCM obj, const char *subr, int pos)
 {
-    gint res = gig_value_from_scm(value, obj);
+    int res = gig_value_from_scm(value, obj);
     switch (res) {
     case 0:
         return;
@@ -277,7 +277,7 @@ gig_value_from_scm_with_error(GValue *value, SCM obj, const gchar *subr, gint po
 }
 
 SCM
-gig_value_param_as_scm(const GValue *gvalue, gboolean copy_boxed, const GParamSpec *pspec)
+gig_value_param_as_scm(const GValue *gvalue, bool copy_boxed, const GParamSpec *pspec)
 {
     if (G_IS_PARAM_SPEC_UNICHAR(pspec)) {
         scm_t_wchar u;
@@ -302,9 +302,9 @@ gig_value_param_as_scm(const GValue *gvalue, gboolean copy_boxed, const GParamSp
  * Returns: a PyObject representing the value.
  */
 SCM
-gig_value_to_scm_basic_type(const GValue *value, GType fundamental, gboolean *handled)
+gig_value_to_scm_basic_type(const GValue *value, GType fundamental, bool *handled)
 {
-    *handled = TRUE;
+    *handled = true;
     switch (fundamental) {
     case G_TYPE_CHAR:
         return scm_from_int8(g_value_get_schar(value));
@@ -334,14 +334,14 @@ gig_value_to_scm_basic_type(const GValue *value, GType fundamental, gboolean *ha
         return scm_from_double(g_value_get_double(value));
     case G_TYPE_STRING:
     {
-        const gchar *str = g_value_get_string(value);
+        const char *str = g_value_get_string(value);
         if (str)
             return scm_from_utf8_string(str);
         else
             return SCM_BOOL_F;
     }
     default:
-        *handled = FALSE;
+        *handled = false;
         return SCM_BOOL_F;
     }
     return SCM_BOOL_F;
@@ -350,13 +350,13 @@ gig_value_to_scm_basic_type(const GValue *value, GType fundamental, gboolean *ha
 // This function creates and returns a Scheme value that
 // represents the GValue passed as an argument.
 static SCM
-gig_value_to_scm_structured_type(const GValue *value, GType fundamental, gboolean copy_boxed)
+gig_value_to_scm_structured_type(const GValue *value, GType fundamental, bool copy_boxed)
 {
     GITransfer transfer = copy_boxed ? GI_TRANSFER_NOTHING : GI_TRANSFER_EVERYTHING;
     switch (fundamental) {
     case G_TYPE_INTERFACE:
     {
-        gpointer obj = g_value_get_object(value);
+        void *obj = g_value_get_object(value);
         if (!obj)
             return SCM_BOOL_F;
         else if (g_type_is_a(G_VALUE_TYPE(value), G_TYPE_OBJECT))
@@ -388,7 +388,7 @@ gig_value_to_scm_structured_type(const GValue *value, GType fundamental, gboolea
             return scm_from_utf8_stringn(string->str, string->len);
         }
         else {
-            gpointer boxed = g_value_get_boxed(value);
+            void *boxed = g_value_get_boxed(value);
             if (boxed)
                 return gig_type_transfer_object(G_VALUE_TYPE(value), g_value_get_boxed(value),
                                                 transfer);
@@ -399,7 +399,7 @@ gig_value_to_scm_structured_type(const GValue *value, GType fundamental, gboolea
 
     case G_TYPE_OBJECT:
     {
-        gpointer obj = g_value_get_object(value);
+        void *obj = g_value_get_object(value);
         if (obj)
             return gig_type_transfer_object(G_OBJECT_TYPE(obj), obj, transfer);
         else
@@ -423,7 +423,7 @@ gig_value_to_scm_structured_type(const GValue *value, GType fundamental, gboolea
     }
     }
 
-    const gchar *type_name = g_type_name(G_VALUE_TYPE(value));
+    const char *type_name = g_type_name(G_VALUE_TYPE(value));
     if (type_name == NULL)
         type_name = "(null)";
     scm_misc_error("gig_value_to_scm", "unknown type ~S",
@@ -435,10 +435,10 @@ gig_value_to_scm_structured_type(const GValue *value, GType fundamental, gboolea
 /* Returns an SCM version of the GValue.  If COPY_BOXED,
    try to make a deep copy of the object. */
 SCM
-gig_value_as_scm(const GValue *value, gboolean copy_boxed)
+gig_value_as_scm(const GValue *value, bool copy_boxed)
 {
     SCM guobj;
-    gboolean handled;
+    bool handled;
     GType fundamental = G_TYPE_FUNDAMENTAL(G_VALUE_TYPE(value));
 
 #if 0
@@ -458,7 +458,7 @@ SCM
 gig_value_get(SCM value)
 {
     GValue *gvalue = gig_type_peek_typed_object(value, gig_value_type);
-    return gig_value_as_scm(gvalue, FALSE);
+    return gig_value_as_scm(gvalue, false);
 }
 
 SCM

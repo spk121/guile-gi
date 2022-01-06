@@ -1,7 +1,6 @@
 #ifndef GIG_FUNCTION_ARGS_H
 #define GIG_FUNCTION_ARGS_H
 #include <stdbool.h>
-#include <glib-object.h>
 #include <libguile.h>
 #include <girepository.h>
 #include "gig_mem_list.h"

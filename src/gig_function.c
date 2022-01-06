@@ -29,8 +29,8 @@ typedef struct _GigFunction
     GIFunctionInfo *function_info;
     ffi_closure *closure;
     ffi_cif cif;
-    gpointer function_ptr;
-    gchar *name;
+    void *function_ptr;
+    char *name;
     ffi_type **atypes;
     GigArgMap *amap;
 } GigFunction;
@@ -52,24 +52,24 @@ SCM sym_self;
 SCM gig_before_function_hook;
 
 static GigGsubr *check_gsubr_cache(GICallableInfo *function_info, SCM self_type,
-                                   gint *required_input_count, gint *optional_input_count,
+                                   int *required_input_count, int *optional_input_count,
                                    SCM *formals, SCM *specializers);
-static GigGsubr *create_gsubr(GIFunctionInfo *function_info, const gchar *name, SCM self_type,
-                              gint *required_input_count, gint *optional_input_count,
+static GigGsubr *create_gsubr(GIFunctionInfo *function_info, const char *name, SCM self_type,
+                              int *required_input_count, int *optional_input_count,
                               SCM *formals, SCM *specializers);
-static void make_formals(GICallableInfo *, GigArgMap *, gint n_inputs, SCM self_type,
+static void make_formals(GICallableInfo *, GigArgMap *, int n_inputs, SCM self_type,
                          SCM *formals, SCM *specializers);
-static void function_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_data);
-static SCM function_invoke(GIFunctionInfo *info, GigArgMap *amap, const gchar *name,
+static void function_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data);
+static SCM function_invoke(GIFunctionInfo *info, GigArgMap *amap, const char *name,
                            GObject *object, SCM args, GError **error);
 static void function_free(GigFunction *fn);
 static void gig_fini_function(void);
-static SCM gig_function_define1(const gchar *public_name, SCM proc, int opt, SCM formals,
+static SCM gig_function_define1(const char *public_name, SCM proc, int opt, SCM formals,
                                 SCM specializers);
 
-static SCM proc4function(GIFunctionInfo *info, const gchar *name, SCM self_type,
+static SCM proc4function(GIFunctionInfo *info, const char *name, SCM self_type,
                          int *req, int *opt, SCM *formals, SCM *specs);
-static SCM proc4signal(GISignalInfo *info, const gchar *name, SCM self_type,
+static SCM proc4signal(GISignalInfo *info, const char *name, SCM self_type,
                        int *req, int *opt, SCM *formals, SCM *specs);
 
 #define LOOKUP_DEFINITION(module)                                       \
@@ -97,18 +97,18 @@ default_definition(SCM name)
 #undef LOOKUP_DEFINITION
 
 SCM
-gig_function_define(GType type, GICallableInfo *info, const gchar *_namespace, SCM defs)
+gig_function_define(GType type, GICallableInfo *info, const char *_namespace, SCM defs)
 {
     scm_dynwind_begin(0);
     SCM def;
-    gboolean is_method = g_callable_info_is_method(info);
+    bool is_method = g_callable_info_is_method(info);
 
-    gchar *function_name = NULL;
-    gchar *method_name = NULL;
+    char *function_name = NULL;
+    char *method_name = NULL;
     function_name = scm_dynwind_or_bust("%gig-function-define",
                                         gig_callable_info_make_name(info, _namespace));
 
-    gint required_input_count, optional_input_count;
+    int required_input_count, optional_input_count;
     SCM formals, specializers, self_type = SCM_UNDEFINED;
 
     gig_debug_load("%s - bound to %s %s%s%s",
@@ -157,7 +157,7 @@ gig_function_define(GType type, GICallableInfo *info, const gchar *_namespace, S
 // this procedure creates a SCM wrapper for that procedure in the
 // current module.
 static SCM
-gig_function_define1(const gchar *public_name, SCM proc, int opt, SCM formals, SCM specializers)
+gig_function_define1(const char *public_name, SCM proc, int opt, SCM formals, SCM specializers)
 {
     assert(public_name != NULL);
 
@@ -189,7 +189,7 @@ gig_function_define1(const gchar *public_name, SCM proc, int opt, SCM formals, S
 }
 
 static SCM
-proc4function(GIFunctionInfo *info, const gchar *name, SCM self_type,
+proc4function(GIFunctionInfo *info, const char *name, SCM self_type,
               int *req, int *opt, SCM *formals, SCM *specializers)
 {
     GigGsubr *func_gsubr = check_gsubr_cache(info, self_type, req, opt,
@@ -206,7 +206,7 @@ proc4function(GIFunctionInfo *info, const gchar *name, SCM self_type,
 }
 
 static SCM
-proc4signal(GISignalInfo *info, const gchar *name, SCM self_type, int *req, int *opt, SCM *formals,
+proc4signal(GISignalInfo *info, const char *name, SCM self_type, int *req, int *opt, SCM *formals,
             SCM *specializers)
 {
     GigArgMap *amap;
@@ -227,10 +227,10 @@ proc4signal(GISignalInfo *info, const gchar *name, SCM self_type, int *req, int 
     values[0] = scm_from_utf8_string(g_base_info_get_name(info));
     values[1] = scm_c_make_bitvector(*req + *opt, SCM_BOOL_F);
 
-    gsize offset, length;
-    gssize pos = 0, inc;
+    size_t offset, length;
+    ssize_t pos = 0, inc;
     scm_t_array_handle handle;
-    guint32 *bits = scm_bitvector_writable_elements(values[1], &handle, &offset, &length, &inc);
+    uint32_t *bits = scm_bitvector_writable_elements(values[1], &handle, &offset, &length, &inc);
     pos = offset + inc;
 
     /* Set up output mask.
@@ -238,9 +238,9 @@ proc4signal(GISignalInfo *info, const gchar *name, SCM self_type, int *req, int 
      * we can probably take some work off the user when it comes to setting up
      * handlers.
      */
-    for (gint i = 1; i < *req + *opt; i++, pos += inc) {
-        gsize word_pos = pos / 32;
-        gsize mask = 1L << (pos % 32);
+    for (int i = 1; i < *req + *opt; i++, pos += inc) {
+        size_t word_pos = pos / 32;
+        size_t mask = 1L << (pos % 32);
         GigArgMapEntry *entry = gig_amap_get_input_entry_by_s(amap, i - 1);
         if (entry->is_s_output)
             bits[word_pos] |= mask;
@@ -266,8 +266,8 @@ proc4signal(GISignalInfo *info, const gchar *name, SCM self_type, int *req, int 
 }
 
 static GigGsubr *
-check_gsubr_cache(GICallableInfo *function_info, SCM self_type, gint *required_input_count,
-                  gint *optional_input_count, SCM *formals, SCM *specializers)
+check_gsubr_cache(GICallableInfo *function_info, SCM self_type, int *required_input_count,
+                  int *optional_input_count, SCM *formals, SCM *specializers)
 {
     // Check the cache to see if this function has already been created.
     GigFunction *gfn =
@@ -324,7 +324,7 @@ type_specializer(GigTypeMeta *meta)
 
 static void
 make_formals(GICallableInfo *callable,
-             GigArgMap *argmap, gint n_inputs, SCM self_type, SCM *formals, SCM *specializers)
+             GigArgMap *argmap, int n_inputs, SCM self_type, SCM *formals, SCM *specializers)
 {
     SCM i_formal, i_specializer;
 
@@ -340,10 +340,10 @@ make_formals(GICallableInfo *callable,
         n_inputs--;
     }
 
-    for (gint s = 0; s < n_inputs;
+    for (int s = 0; s < n_inputs;
          s++, i_formal = scm_cdr(i_formal), i_specializer = scm_cdr(i_specializer)) {
         GigArgMapEntry *entry = gig_amap_get_input_entry_by_s(argmap, s);
-        gchar *formal = scm_dynwind_or_bust("%make-formals",
+        char *formal = scm_dynwind_or_bust("%make-formals",
                                             gig_gname_to_scm_name(entry->name));
         scm_set_car_x(i_formal, scm_from_utf8_symbol(formal));
         // Don't force types on nullable input, as #f can also be used to represent
@@ -358,8 +358,8 @@ make_formals(GICallableInfo *callable,
 }
 
 static GigGsubr *
-create_gsubr(GIFunctionInfo *function_info, const gchar *name, SCM self_type,
-             gint *required_input_count, gint *optional_input_count,
+create_gsubr(GIFunctionInfo *function_info, const char *name, SCM self_type,
+             int *required_input_count, int *optional_input_count,
              SCM *formals, SCM *specializers)
 {
     GigFunction *gfn;
@@ -401,7 +401,7 @@ create_gsubr(GIFunctionInfo *function_info, const gchar *name, SCM self_type,
     // call.
 
     // Initialize the argument info vectors.
-    gint have_args = 0;
+    int have_args = 0;
     if (*required_input_count + *optional_input_count > 0) {
         gfn->atypes = xcalloc(1, sizeof(ffi_type *));
         gfn->atypes[0] = &ffi_type_pointer;
@@ -439,7 +439,7 @@ create_gsubr(GIFunctionInfo *function_info, const gchar *name, SCM self_type,
 }
 
 static SCM
-function_invoke(GIFunctionInfo *func_info, GigArgMap *amap, const gchar *name, GObject *self,
+function_invoke(GIFunctionInfo *func_info, GigArgMap *amap, const char *name, GObject *self,
                 SCM args, GError **error)
 {
     GigArgsStore store = { 0 };
@@ -453,7 +453,7 @@ function_invoke(GIFunctionInfo *func_info, GigArgMap *amap, const gchar *name, G
 
     GIArgument return_arg;
     return_arg.v_pointer = NULL;
-    gboolean ok = g_function_info_invoke(func_info, store.in,
+    bool ok = g_function_info_invoke(func_info, store.in,
                                          store.in_len,
                                          store.out,
                                          store.out_len, &return_arg, error);
@@ -466,14 +466,14 @@ function_invoke(GIFunctionInfo *func_info, GigArgMap *amap, const gchar *name, G
 }
 
 SCM
-gig_callable_invoke(GICallableInfo *callable_info, gpointer callable, GigArgMap *amap,
-                    const gchar *name, GObject *self, SCM args, GError **error)
+gig_callable_invoke(GICallableInfo *callable_info, void *callable, GigArgMap *amap,
+                    const char *name, GObject *self, SCM args, GError **error)
 {
     GigArgsStore store = { 0 };
     gig_args_store_initialize(&store, self, amap, args, name);
 
     GIArgument return_arg;
-    gboolean ok;
+    bool ok;
 
     // Make the actual call.
     // Use GObject's ffi to call the C function.
@@ -502,7 +502,7 @@ gig_callable_invoke(GICallableInfo *callable_info, gpointer callable, GigArgMap 
 // and returns the results as an SCM packed into an FFI argument.
 // Also, it converts GErrors into SCM misc-errors.
 static void
-function_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_data)
+function_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
 {
     GigFunction *gfn = user_data;
     GObject *self = NULL;
@@ -517,7 +517,7 @@ function_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
     assert(ffi_args != NULL);
     assert(user_data != NULL);
 
-    guint n_args = cif->nargs;
+    unsigned n_args = cif->nargs;
 
     // we have either 0 args or 1 args, which is the already packed list
     assert(n_args <= 1);
@@ -543,7 +543,7 @@ function_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
 
     // If there is a GError, write an error and exit.
     if (err) {
-        gchar str[256];
+        char str[256];
         memset(str, 0, 256);
         strncpy(str, err->message, 255);
         g_error_free(err);

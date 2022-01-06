@@ -24,21 +24,21 @@
 #include "gig_document.h"
 #include "gig_logging.h"
 
-static void do_document(GIBaseInfo *info, const gchar *parent);
+static void do_document(GIBaseInfo *info, const char *parent);
 
 static void
 document_nested(GIBaseInfo *parent)
 {
 #define DOCUMENT_NESTED(N, I)                           \
     do {                                                \
-        for (gint i = 0; i < N; i++)                    \
+        for (int i = 0; i < N; i++)                    \
             do_document(I(parent, i), _namespace);      \
     } while (0)
 
-    gchar *_namespace = gig_gname_to_scm_name(g_base_info_get_name(parent));
+    char *_namespace = gig_gname_to_scm_name(g_base_info_get_name(parent));
     scm_dynwind_free(_namespace);
 
-    gint n_methods, n_properties, n_signals;
+    int n_methods, n_properties, n_signals;
     GigRepositoryNested method, property, nested_signal;
 
     gig_repository_nested_infos(parent, &n_methods, &method, &n_properties, &property,
@@ -52,22 +52,22 @@ document_nested(GIBaseInfo *parent)
 }
 
 static void
-document_arg_entry(const gchar *kind, GigArgMapEntry *entry)
+document_arg_entry(const char *kind, GigArgMapEntry *entry)
 {
-    gchar *name = gig_gname_to_scm_name(entry->name);
+    char *name = gig_gname_to_scm_name(entry->name);
     scm_dynwind_free(name);
     scm_printf(SCM_UNDEFINED, "<%s name=\"%s\" c:name=\"%s\">", kind, name, entry->name);
     scm_printf(SCM_UNDEFINED, "</%s>", kind);
 }
 
 static void
-do_document(GIBaseInfo *info, const gchar *_namespace)
+do_document(GIBaseInfo *info, const char *_namespace)
 {
 #define FUNC "%document"
-    gchar *scheme_name;
-    const gchar *kind;
+    char *scheme_name;
+    const char *kind;
     GigArgMap *arg_map;
-    gint in, out, req, opt;
+    int in, out, req, opt;
     GIInfoType type = g_base_info_get_type(info);
 
     scm_dynwind_begin(0);
@@ -105,14 +105,14 @@ do_document(GIBaseInfo *info, const gchar *_namespace)
             scm_printf(SCM_UNDEFINED, "<argument name=\"self\">");
             scm_printf(SCM_UNDEFINED, "</argument>");
         }
-        for (gint i = 0; i < req + opt; i++) {
+        for (int i = 0; i < req + opt; i++) {
             GigArgMapEntry *entry = gig_amap_get_input_entry_by_s(arg_map, i);
             document_arg_entry("argument", entry);
         }
         if (arg_map->return_val.meta.gtype != G_TYPE_NONE)
             document_arg_entry("return", &arg_map->return_val);
 
-        for (gint i = 0; i < out; i++) {
+        for (int i = 0; i < out; i++) {
             GigArgMapEntry *entry = gig_amap_get_output_entry_by_c(arg_map, i);
             document_arg_entry("return", entry);
         }
@@ -127,12 +127,12 @@ do_document(GIBaseInfo *info, const gchar *_namespace)
             GigArgMapEntry *entry = arg_map->pdata + i;
             scm_printf(SCM_UNDEFINED, "<parameter name=\"%s\">", entry->name);
             if (entry->parent) {
-                gchar *parent = gig_gname_to_scm_name(entry->parent->name);
+                char *parent = gig_gname_to_scm_name(entry->parent->name);
                 scm_printf(SCM_UNDEFINED, "<inferred parent=\"%s\"/>", parent);
                 free(parent);
             }
             else {
-                gchar *arg = gig_gname_to_scm_name(entry->name);
+                char *arg = gig_gname_to_scm_name(entry->name);
                 scm_printf(SCM_UNDEFINED, "<inferred argument=\"%s\"/>", arg);
                 free(arg);
             }
@@ -203,8 +203,8 @@ do_document(GIBaseInfo *info, const gchar *_namespace)
 
         document_nested(info);
 
-        gint n_values = g_enum_info_get_n_values(info);
-        for (gint i = 0; i < n_values; i++)
+        int n_values = g_enum_info_get_n_values(info);
+        for (int i = 0; i < n_values; i++)
             do_document(g_enum_info_get_value(info, i), g_base_info_get_name(info));
 
         scm_printf(SCM_UNDEFINED, "</%s>", kind);
@@ -217,7 +217,7 @@ do_document(GIBaseInfo *info, const gchar *_namespace)
     case GI_INFO_TYPE_VFUNC:
     case GI_INFO_TYPE_PROPERTY:
     {
-        const gchar *name = g_base_info_get_name(info);
+        const char *name = g_base_info_get_name(info);
         GParamFlags flags = g_property_info_get_flags(info);
         scm_printf(SCM_UNDEFINED, "<property name=\"%s\"><scheme>"
                    "<accessor name=\"%s\" long-name=\"%s:%s\" readable=\"%d\" writable=\"%d\"/>"

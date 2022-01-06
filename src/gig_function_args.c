@@ -29,7 +29,7 @@ static void
 gig_args_store_scm_list(GigArgsStore *store, SCM s_args, GigArgMap *amap, const char *subr);
 
 static SCM
-_convert_output_args(GigArgMap *amap, const gchar *func_name, GIArgument *in, GIArgument *out,
+_convert_output_args(GigArgMap *amap, const char *func_name, GIArgument *in, GIArgument *out,
                      SCM output);
 
 static GIArgument *_find_output_arg(GigArgMapEntry *entry, GIArgument *in, GIArgument *out);
@@ -114,13 +114,13 @@ gig_args_store_return_value(GigArgsStore *store, GObject *self, GigArgMap *amap,
 }
 
 static SCM
-_convert_output_args(GigArgMap *amap, const gchar *func_name, GIArgument *in, GIArgument *out,
+_convert_output_args(GigArgMap *amap, const char *func_name, GIArgument *in, GIArgument *out,
                      SCM output)
 {
     gig_debug_transfer("%s - convert_output_args", func_name);
-    gint s_output_pos;
+    int s_output_pos;
 
-    for (gint c_output_pos = 0; c_output_pos < amap->c_output_len; c_output_pos++) {
+    for (int c_output_pos = 0; c_output_pos < amap->c_output_len; c_output_pos++) {
         if (!gig_amap_output_c2s(amap, c_output_pos, &s_output_pos))
             continue;
 
@@ -135,7 +135,7 @@ _convert_output_args(GigArgMap *amap, const gchar *func_name, GIArgument *in, GI
         }
 
         SCM obj;
-        gsize size = GIG_ARRAY_SIZE_UNKNOWN;
+        size_t size = GIG_ARRAY_SIZE_UNKNOWN;
 
         if (entry->child) {
             // We need to know the size argument before we can process
@@ -205,7 +205,7 @@ gig_args_store_scm(GigArgsStore *store, SCM obj, GigArgMap *amap, int s, const c
     entry = gig_amap_get_input_entry_by_s(amap, s);
     gig_argument_scm_to_c(name, s, &entry->meta, obj, &(store->free_list), &arg, &size);
 
-    gint i;
+    int i;
     int c_invoke_in, c_invoke_out, c_child_invoke_in;
     bool is_in, is_out;
     bool inout, inout_free;
@@ -226,7 +226,7 @@ gig_args_store_scm(GigArgsStore *store, SCM obj, GigArgMap *amap, int s, const c
         inout_free = (amap->pdata[i].meta.transfer == GI_TRANSFER_NOTHING);
     }
     else
-        inout_free = FALSE;
+        inout_free = false;
 
     gig_args_store_argument(store, &arg, c_invoke_in, c_invoke_out, inout, inout_free);
 
@@ -235,8 +235,8 @@ gig_args_store_scm(GigArgsStore *store, SCM obj, GigArgMap *amap, int s, const c
     if (gig_amap_input_s_2_child_input_c(amap, s, &c_child_invoke_in)) {
         GigArgMapEntry *size_entry = entry->child;
         GIArgument size_arg;
-        gsize dummy_size;
-        gint c_child_invoke_out, i_child;
+        size_t dummy_size;
+        int c_child_invoke_out, i_child;
 
         gig_argument_scm_to_c(name, s, &size_entry->meta, scm_from_size_t(size),
                               &(store->free_list), &size_arg, &dummy_size);
@@ -251,7 +251,7 @@ gig_args_store_scm(GigArgsStore *store, SCM obj, GigArgMap *amap, int s, const c
         if (inout)
             inout_free = (amap->pdata[i_child].meta.transfer == GI_TRANSFER_NOTHING);
         else
-            inout_free = FALSE;
+            inout_free = false;
         gig_args_store_argument(store, &size_arg, c_child_invoke_in, c_child_invoke_out, inout,
                                 inout_free);
     }

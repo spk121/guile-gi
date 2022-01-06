@@ -31,20 +31,20 @@ static SCM symbol_to_enum;
 static SCM flags_to_list;
 static SCM list_to_flags;
 
-gint
+int
 gig_enum_to_int(SCM val)
 {
     return scm_to_int(scm_call_1(enum_to_number, val));
 }
 
-guint
+unsigned
 gig_flags_to_uint(SCM val)
 {
     return scm_to_uint(scm_call_1(flags_to_number, val));
 }
 
 SCM
-gig_int_to_enum(gint v, GType gtype)
+gig_int_to_enum(int v, GType gtype)
 {
     SCM type = gig_type_get_scheme_type(gtype);
     SCM val = scm_from_int(v);
@@ -52,7 +52,7 @@ gig_int_to_enum(gint v, GType gtype)
 }
 
 SCM
-gig_uint_to_flags(guint v, GType gtype)
+gig_uint_to_flags(unsigned v, GType gtype)
 {
     SCM type = gig_type_get_scheme_type(gtype);
     SCM val = scm_from_uint(v);
@@ -60,7 +60,7 @@ gig_uint_to_flags(guint v, GType gtype)
 }
 
 SCM
-gig_int_to_enum_with_info(gint v, GIEnumInfo *info)
+gig_int_to_enum_with_info(int v, GIEnumInfo *info)
 {
     SCM type = gig_type_get_scheme_type_with_info(info);
     SCM val = scm_from_int(v);
@@ -68,7 +68,7 @@ gig_int_to_enum_with_info(gint v, GIEnumInfo *info)
 }
 
 SCM
-gig_uint_to_flags_with_info(guint v, GIEnumInfo *info)
+gig_uint_to_flags_with_info(unsigned v, GIEnumInfo *info)
 {
     SCM type = gig_type_get_scheme_type_with_info(info);
     SCM val = scm_from_uint(v);
@@ -101,7 +101,7 @@ gig_init_flag(void)
 }
 
 static SCM
-define_conversion(const gchar *fmt, const gchar *name, SCM proc)
+define_conversion(const char *fmt, const char *name, SCM proc)
 {
     int len = snprintf(NULL, 0, fmt, name) + 1;
     char *_sym = malloc(len);
@@ -117,7 +117,7 @@ gig_define_enum_conversions(GIEnumInfo *info, GType type, SCM defs)
 {
     SCM _class;
     scm_dynwind_begin(0);
-    gchar *cls = gig_gname_to_scm_name(g_base_info_get_name(info));
+    char *cls = gig_gname_to_scm_name(g_base_info_get_name(info));
     scm_dynwind_or_bust("%define-enum-conversions", cls);
 
     if (type != G_TYPE_NONE)
@@ -156,11 +156,11 @@ gig_define_enum_conversions(GIEnumInfo *info, GType type, SCM defs)
 SCM
 gig_define_enum(GIEnumInfo *info, SCM defs)
 {
-    gint n_values = g_enum_info_get_n_values(info);
-    gint i = 0;
+    int n_values = g_enum_info_get_n_values(info);
+    int i = 0;
     GIValueInfo *vi = NULL;
     GIInfoType t = g_base_info_get_type(info);
-    gchar *_key;
+    char *_key;
     SCM key;
     SCM _class;
 
@@ -181,13 +181,13 @@ gig_define_enum(GIEnumInfo *info, SCM defs)
 
     SCM obarray = scm_make_hash_table(scm_from_int(n_values));
 
-    gchar *_class_name = scm_to_utf8_string(scm_symbol_to_string(scm_class_name(_class)));
+    char *_class_name = scm_to_utf8_string(scm_symbol_to_string(scm_class_name(_class)));
 
     while (i < n_values) {
         vi = g_enum_info_get_value(info, i);
         _key = gig_gname_to_scm_name(g_base_info_get_name(vi));
         key = scm_from_utf8_symbol(_key);
-        gint64 _val = g_value_info_get_value(vi);
+        int64_t _val = g_value_info_get_value(vi);
         SCM val;
 
         switch (t) {

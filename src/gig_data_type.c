@@ -54,15 +54,15 @@ gig_type_meta_init_from_callable_info(GigTypeMeta *meta, GICallableInfo *ci)
 
     gig_type_meta_init_from_type_info(meta, type_info);
 
-    meta->is_in = FALSE;
+    meta->is_in = false;
     if (meta->gtype != G_TYPE_NONE && meta->gtype != G_TYPE_INVALID)
-        meta->is_out = TRUE;
+        meta->is_out = true;
     else
-        meta->is_out = FALSE;
+        meta->is_out = false;
     meta->is_skip = g_callable_info_skip_return(ci);
 
-    meta->is_caller_allocates = FALSE;
-    meta->is_optional = FALSE;
+    meta->is_caller_allocates = false;
+    meta->is_optional = false;
     meta->is_nullable = g_callable_info_may_return_null(ci);
 
     meta->transfer = transfer;
@@ -70,14 +70,14 @@ gig_type_meta_init_from_callable_info(GigTypeMeta *meta, GICallableInfo *ci)
 }
 
 static void
-add_params(GigTypeMeta *meta, gint n)
+add_params(GigTypeMeta *meta, int n)
 {
     meta->params = xcalloc(n, sizeof(GigTypeMeta));
     meta->n_params = n;
 }
 
 static void
-add_child_params(GigTypeMeta *meta, GITypeInfo *type_info, gint n)
+add_child_params(GigTypeMeta *meta, GITypeInfo *type_info, int n)
 {
     GITypeInfo *param_type;
     add_params(meta, n);
@@ -106,24 +106,24 @@ gig_type_meta_init_from_basic_type_tag(GigTypeMeta *meta, GITypeTag tag)
             meta->item_size = sizeof (CTYPE);   \
             return;                             \
         }                                       \
-    } while(FALSE)
+    } while(false)
 
-    T(GI_TYPE_TAG_BOOLEAN, G_TYPE_BOOLEAN, gboolean);
-    T(GI_TYPE_TAG_DOUBLE, G_TYPE_DOUBLE, gdouble);
-    T(GI_TYPE_TAG_FLOAT, G_TYPE_FLOAT, gfloat);
+    T(GI_TYPE_TAG_BOOLEAN, G_TYPE_BOOLEAN, gboolean); // gboolean != bool
+    T(GI_TYPE_TAG_DOUBLE, G_TYPE_DOUBLE, double);
+    T(GI_TYPE_TAG_FLOAT, G_TYPE_FLOAT, float);
     T(GI_TYPE_TAG_GTYPE, G_TYPE_GTYPE, GType);
-    T(GI_TYPE_TAG_INT8, G_TYPE_CHAR, gint8);
-    T(GI_TYPE_TAG_INT16, G_TYPE_INT, gint16);
-    T(GI_TYPE_TAG_INT32, G_TYPE_INT, gint32);
-    T(GI_TYPE_TAG_INT64, G_TYPE_INT, gint64);
-    T(GI_TYPE_TAG_UINT8, G_TYPE_UCHAR, guint8);
-    T(GI_TYPE_TAG_UINT16, G_TYPE_UINT, guint16);
-    T(GI_TYPE_TAG_UINT32, G_TYPE_UINT, guint32);
-    T(GI_TYPE_TAG_UINT64, G_TYPE_UINT, guint64);
+    T(GI_TYPE_TAG_INT8, G_TYPE_CHAR, int8_t);
+    T(GI_TYPE_TAG_INT16, G_TYPE_INT, int16_t);
+    T(GI_TYPE_TAG_INT32, G_TYPE_INT, int32_t);
+    T(GI_TYPE_TAG_INT64, G_TYPE_INT, int64_t);
+    T(GI_TYPE_TAG_UINT8, G_TYPE_UCHAR, uint8_t);
+    T(GI_TYPE_TAG_UINT16, G_TYPE_UINT, uint16_t);
+    T(GI_TYPE_TAG_UINT32, G_TYPE_UINT, uint32_t);
+    T(GI_TYPE_TAG_UINT64, G_TYPE_UINT, uint64_t);
     if (tag == GI_TYPE_TAG_UNICHAR) {
         meta->gtype = G_TYPE_UINT;
-        meta->item_size = sizeof(gunichar);
-        meta->is_unichar = TRUE;
+        meta->item_size = sizeof(uint32_t);
+        meta->is_unichar = true;
         return;
     }
     if (tag == GI_TYPE_TAG_UTF8) {
@@ -157,22 +157,22 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
     }
     else if (tag == GI_TYPE_TAG_ARRAY) {
         GIArrayType array_type = g_type_info_get_array_type(type_info);
-        gint len;
+        int len;
 
         add_child_params(meta, type_info, 1);
 
         if (array_type == GI_ARRAY_TYPE_C) {
             meta->gtype = G_TYPE_ARRAY;
-            meta->is_raw_array = TRUE;
+            meta->is_raw_array = true;
             meta->length = GIG_ARRAY_SIZE_UNKNOWN;
 
             if ((len = g_type_info_get_array_length(type_info)) != -1)
-                meta->has_size = TRUE;
+                meta->has_size = true;
             else if ((len = g_type_info_get_array_fixed_size(type_info)) != -1)
                 meta->length = len;
 
             if (g_type_info_is_zero_terminated(type_info))
-                meta->is_zero_terminated = TRUE;
+                meta->is_zero_terminated = true;
 
             if (len == -1 && !meta->is_zero_terminated) {
                 gig_critical_load("no way of determining array size of %s, coercing to pointer",
@@ -210,7 +210,7 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
         switch (itype) {
         case GI_INFO_TYPE_UNRESOLVED:
             meta->gtype = G_TYPE_INVALID;
-            meta->is_invalid = TRUE;
+            meta->is_invalid = true;
             gig_critical_load("Unrepresentable type: %s, %s, %s",
                               g_base_info_get_name_safe(type_info),
                               g_base_info_get_name_safe(referenced_base_info),
@@ -238,7 +238,7 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
                 meta->item_size = g_union_info_get_size(referenced_base_info);
 
             if (meta->gtype == G_TYPE_NONE)
-                meta->is_invalid = TRUE;
+                meta->is_invalid = true;
             break;
         case GI_INFO_TYPE_CALLBACK:
         {
@@ -248,7 +248,7 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
             // TODO: Find a way to reuse this amap, so that computing it is not a waste
             GigArgMap *_amap = gig_amap_new(NULL, meta->callable_info);
             if (_amap == NULL)
-                meta->is_invalid = TRUE;
+                meta->is_invalid = true;
             else
                 gig_amap_free(_amap);
         }
@@ -257,11 +257,11 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
             if (GI_IS_REGISTERED_TYPE_INFO(referenced_base_info)) {
                 meta->gtype = g_registered_type_info_get_g_type(referenced_base_info);
                 if (meta->gtype == G_TYPE_NONE)
-                    meta->is_invalid = TRUE;
+                    meta->is_invalid = true;
             }
             else {
                 gig_critical_load("Unhandled item type in %s:%d", __FILE__, __LINE__);
-                meta->is_invalid = TRUE;
+                meta->is_invalid = true;
             }
         }
 
@@ -280,18 +280,18 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
     }
 }
 
-G_GNUC_PURE gsize
+G_GNUC_PURE size_t
 gig_meta_real_item_size(const GigTypeMeta *meta)
 {
     if (meta->gtype == G_TYPE_STRING || meta->gtype == G_TYPE_POINTER || meta->is_ptr)
-        return sizeof(gpointer);
+        return sizeof(void *);
     return meta->item_size;
 }
 
 void
 gig_data_type_free(GigTypeMeta *meta)
 {
-    for (gint i = 0; i < meta->n_params; i++)
+    for (int i = 0; i < meta->n_params; i++)
         gig_data_type_free(&meta->params[i]);
     if (meta->n_params > 0)
         free(meta->params);
@@ -305,9 +305,9 @@ gig_data_type_free(GigTypeMeta *meta)
 }
 
 #define STRLEN 128
-gchar gig_data_type_describe_buf[STRLEN];
+char gig_data_type_describe_buf[STRLEN];
 
-const gchar *
+const char *
 gig_type_meta_describe(const GigTypeMeta *meta)
 {
     GString *s = g_string_new(NULL);
@@ -321,7 +321,7 @@ gig_type_meta_describe(const GigTypeMeta *meta)
         g_string_append_printf(s, " or NULL");
     strncpy(gig_data_type_describe_buf, s->str, STRLEN - 1);
     gig_data_type_describe_buf[STRLEN - 1] = '\0';
-    g_string_free(s, TRUE);
+    g_string_free(s, true);
     return gig_data_type_describe_buf;
 }
 

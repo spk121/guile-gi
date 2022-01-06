@@ -68,8 +68,8 @@ gig_i_scm_make_gobject(SCM s_gtype, SCM s_prop_keylist)
     GType type;
     GObject *obj;
     GObjectClass *_class;
-    gsize n_prop;
-    const gchar **keys;
+    size_t n_prop;
+    const char **keys;
     GValue *values;
 
     type = scm_to_gtype(s_gtype);
@@ -91,7 +91,7 @@ gig_i_scm_make_gobject(SCM s_gtype, SCM s_prop_keylist)
         values = scm_dynwind_or_bust(FUNC, calloc(n_prop, sizeof(GValue)));
 
         SCM iter = s_prop_keylist;
-        for (gsize i = 0; i < n_prop; i++, iter = scm_cddr(iter)) {
+        for (size_t i = 0; i < n_prop; i++, iter = scm_cddr(iter)) {
             SCM key = scm_car(iter);
             SCM s_value = scm_cadr(iter);
 
@@ -128,7 +128,7 @@ gig_i_scm_make_gobject(SCM s_gtype, SCM s_prop_keylist)
 }
 
 static GParamSpec *
-get_paramspec(const GObject *self, const gchar *prop)
+get_paramspec(const GObject *self, const char *prop)
 {
     GObjectClass *oclass = G_OBJECT_GET_CLASS(self);
     return g_object_class_find_property(oclass, prop);
@@ -138,7 +138,7 @@ static SCM
 gig_i_scm_get_pspec(SCM self, SCM prop)
 {
     GObject *obj;
-    gchar *name;
+    char *name;
     GParamSpec *pspec;
 
     SCM_ASSERT(SCM_IS_A_P(self, gig_object_type), self, SCM_ARG1, "%get-pspec");
@@ -182,7 +182,7 @@ gig_i_scm_get_property(SCM self, SCM property)
 
     g_value_init(&value, G_PARAM_SPEC_VALUE_TYPE(pspec));
     g_object_get_property(obj, pspec->name, &value);
-    ret = gig_value_param_as_scm(&value, TRUE, pspec);
+    ret = gig_value_param_as_scm(&value, true, pspec);
     g_value_unset(&value);
 
     return ret;
@@ -227,7 +227,7 @@ make_new_signal(GigSignalSpec *signal_spec, GType instance_type)
 }
 
 static void
-gig_user_object_get_property(GObject *object, guint property_id, GValue *value, GParamSpec *pspec)
+gig_user_object_get_property(GObject *object, unsigned property_id, GValue *value, GParamSpec *pspec)
 {
     GValue *properties = g_object_get_qdata(object, gig_user_object_properties);
     GValue *property = properties + property_id - 1;
@@ -235,19 +235,19 @@ gig_user_object_get_property(GObject *object, guint property_id, GValue *value, 
 }
 
 static void
-gig_user_object_set_property(GObject *object, guint property_id,
+gig_user_object_set_property(GObject *object, unsigned property_id,
                              const GValue *value, GParamSpec *pspec)
 {
     GValue *properties = g_object_get_qdata(object, gig_user_object_properties);
     GValue *property = properties + property_id - 1;
-    g_param_value_convert(pspec, value, property, FALSE);
+    g_param_value_convert(pspec, value, property, false);
 }
 
 static void
 gig_user_object_dispose(GObject *object)
 {
     GType type, parent_type;
-    gpointer _parent_class;
+    void *_parent_class;
     GObjectClass *parent_class;
 
     type = G_OBJECT_TYPE(object);
@@ -273,11 +273,11 @@ gig_user_object_finalize(GObject *object)
 }
 
 static void
-gig_user_class_init(GObjectClass *_class, gpointer class_info)
+gig_user_class_init(GObjectClass *_class, void *class_info)
 {
     GType type = G_TYPE_FROM_CLASS(_class);
     GigUserObjectInitInfo *init_info = class_info;
-    gsize n_properties = init_info->n_properties;
+    size_t n_properties = init_info->n_properties;
     GParamSpec **properties = init_info->properties;
 
     _class->set_property = gig_user_object_set_property;
@@ -288,16 +288,16 @@ gig_user_class_init(GObjectClass *_class, gpointer class_info)
     for (size_t i = 0; i < init_info->n_signals; i++)
         make_new_signal(init_info->signals[i], type);
 
-    for (gsize i = 1; i <= n_properties; i++)
+    for (size_t i = 1; i <= n_properties; i++)
         g_object_class_install_property(_class, i, properties[i - 1]);
 }
 
 static void
-gig_user_object_init(GTypeInstance *instance, gpointer class_ptr)
+gig_user_object_init(GTypeInstance *instance, void *class_ptr)
 {
     GType type = G_TYPE_FROM_CLASS(class_ptr);
     GType parent_type = g_type_parent(type);
-    guint n_properties;
+    unsigned n_properties;
     GParamSpec **properties;
     GTypeQuery query;
 
@@ -307,7 +307,7 @@ gig_user_object_init(GTypeInstance *instance, gpointer class_ptr)
     GValue *instance_properties = xcalloc(n_properties, sizeof(GValue));
     g_object_set_qdata(G_OBJECT(instance), gig_user_object_properties, instance_properties);
 
-    for (guint i = 0; i < n_properties; i++) {
+    for (unsigned i = 0; i < n_properties; i++) {
         const GValue *_default;
         _default = g_param_spec_get_default_value(properties[i]);
         g_value_init(instance_properties + i, properties[i]->value_type);
@@ -316,7 +316,7 @@ gig_user_object_init(GTypeInstance *instance, gpointer class_ptr)
 }
 
 static GType
-gig_user_object_define(const gchar *type_name,
+gig_user_object_define(const char *type_name,
                        GType parent_type, GParamSpec **properties,
                        size_t n_properties, GigSignalSpec **signals, size_t n_signals)
 {
@@ -351,10 +351,10 @@ gig_user_object_define(const gchar *type_name,
 static SCM
 gig_i_scm_define_type(SCM s_type_name, SCM s_parent_type, SCM s_properties, SCM s_signals)
 {
-    gchar *type_name;
+    char *type_name;
     GType parent_type;
     GType new_type;
-    gsize n_properties, n_signals;
+    size_t n_properties, n_signals;
     GParamSpec **properties;
     GigSignalSpec **signals;
 
@@ -384,7 +384,7 @@ gig_i_scm_define_type(SCM s_type_name, SCM s_parent_type, SCM s_properties, SCM 
         n_properties = scm_c_length(s_properties);
         properties = xcalloc(n_properties, sizeof(GParamSpec *));
         SCM iter = s_properties;
-        for (gsize i = 0; i < n_properties; i++) {
+        for (size_t i = 0; i < n_properties; i++) {
             GParamSpec *pspec = gig_paramspec_peek(scm_car(iter));
             properties[i] = pspec;
             iter = scm_cdr(iter);
@@ -398,7 +398,7 @@ gig_i_scm_define_type(SCM s_type_name, SCM s_parent_type, SCM s_properties, SCM 
     if (scm_is_list(s_signals)) {
         n_signals = scm_c_length(s_signals);
         signals = xcalloc(n_signals, sizeof(GigSignalSpec *));
-        for (gsize i = 0; i < n_signals; i++) {
+        for (size_t i = 0; i < n_signals; i++) {
             GigSignalSpec *sspec = NULL;
             sspec = gig_signalspec_from_obj(scm_c_list_ref(s_signals, i));
             signals[i] = sspec;
@@ -419,10 +419,10 @@ gig_i_scm_define_type(SCM s_type_name, SCM s_parent_type, SCM s_properties, SCM 
 
 static void
 signal_lookup(const char *proc, GObject *self,
-              SCM signal, SCM detail, guint *c_signal, GSignalQuery *query_info, GQuark *c_detail)
+              SCM signal, SCM detail, unsigned *c_signal, GSignalQuery *query_info, GQuark *c_detail)
 {
     SCM s_name = gig_signal_ref(signal, GIG_SIGNAL_SLOT_NAME);
-    gchar *name = scm_to_utf8_string(s_name);
+    char *name = scm_to_utf8_string(s_name);
 
     *c_signal = g_signal_lookup(name, G_OBJECT_TYPE(self));
     free(name);
@@ -435,7 +435,7 @@ signal_lookup(const char *proc, GObject *self,
 
     if ((query_info->signal_flags & G_SIGNAL_DETAILED) && scm_is_symbol(detail)) {
         SCM detail_str = scm_symbol_to_string(detail);
-        gchar *_detail = scm_to_utf8_string(detail_str);
+        char *_detail = scm_to_utf8_string(detail_str);
         *c_detail = g_quark_from_string(_detail);
         free(_detail);
     }
@@ -447,11 +447,11 @@ static SCM
 gig_i_scm_connect(SCM self, SCM signal, SCM sdetail, SCM callback, SCM s_after, SCM reserved)
 {
     GObject *obj;
-    gboolean after;
+    bool after;
     GClosure *closure;
-    gulong handlerid;
+    unsigned long handlerid;
     GSignalQuery query_info;
-    guint sigid;
+    unsigned sigid;
     GQuark detail;
 
     SCM_ASSERT(SCM_IS_A_P(self, gig_object_type), self, SCM_ARG1, "%connect");
@@ -475,7 +475,7 @@ gig_i_scm_emit(SCM self, SCM signal, SCM s_detail, SCM args)
     GObject *obj;
     GValue *values, retval = G_VALUE_INIT;
     GSignalQuery query_info;
-    guint sigid;
+    unsigned sigid;
     GQuark detail;
     SCM ret = SCM_EOL;
 
@@ -500,7 +500,7 @@ gig_i_scm_emit(SCM self, SCM signal, SCM s_detail, SCM args)
     g_value_init(values, G_OBJECT_TYPE(obj));
     gig_value_from_scm_with_error(values, self, "%emit", SCM_ARG1);
     SCM iter = args;
-    for (guint i = 0; i < query_info.n_params; i++, iter = scm_cdr(iter)) {
+    for (unsigned i = 0; i < query_info.n_params; i++, iter = scm_cdr(iter)) {
         g_value_init(values + i + 1, query_info.param_types[i]);
         gig_value_from_scm_with_error(values + i + 1, scm_car(iter), "%emit", SCM_ARGn);
     }
@@ -511,14 +511,14 @@ gig_i_scm_emit(SCM self, SCM signal, SCM s_detail, SCM args)
     g_signal_emitv(values, sigid, detail, &retval);
 
     if (query_info.return_type != G_TYPE_NONE)
-        ret = scm_cons(gig_value_as_scm(&retval, FALSE), ret);
+        ret = scm_cons(gig_value_as_scm(&retval, false), ret);
 
     SCM output_mask = gig_signal_ref(signal, GIG_SIGNAL_SLOT_OUTPUT_MASK);
     if (scm_is_bitvector(output_mask)) {
-        gsize offset, length;
-        gssize pos = 0, inc;
+        size_t offset, length;
+        ssize_t pos = 0, inc;
         scm_t_array_handle handle;
-        const guint32 *bits;
+        const uint32_t *bits;
 
         if (scm_c_bitvector_length(output_mask) != query_info.n_params + 1)
             scm_misc_error(NULL, "~S has an invalid bitmask", scm_list_1(signal));
@@ -526,17 +526,17 @@ gig_i_scm_emit(SCM self, SCM signal, SCM s_detail, SCM args)
         bits = scm_bitvector_elements(output_mask, &handle, &offset, &length, &inc);
         pos = offset;
 
-        for (guint i = 0; i < query_info.n_params + 1; i++, pos += inc) {
-            gsize word_pos = pos / 32;
-            gsize mask = 1L << (pos % 32);
+        for (unsigned i = 0; i < query_info.n_params + 1; i++, pos += inc) {
+            size_t word_pos = pos / 32;
+            size_t mask = 1L << (pos % 32);
 
             if (bits[word_pos] & mask)
-                ret = scm_cons(gig_value_as_scm(values + i, FALSE), ret);
+                ret = scm_cons(gig_value_as_scm(values + i, false), ret);
         }
         scm_array_handle_release(&handle);
         ret = scm_reverse_x(ret, SCM_EOL);
     }
-    for (gsize narg = 0; narg < query_info.n_params + 1; narg++)
+    for (size_t narg = 0; narg < query_info.n_params + 1; narg++)
         g_value_unset(values + narg);
     free(values);
     if (scm_is_null(ret))
@@ -548,15 +548,15 @@ gig_i_scm_emit(SCM self, SCM signal, SCM s_detail, SCM args)
 static SCM sym_value;
 static SCM ensure_accessor_proc;
 
-static SCM do_define_property(const gchar *, SCM, SCM, SCM);
+static SCM do_define_property(const char *, SCM, SCM, SCM);
 
 SCM
-gig_property_define(GType type, GIPropertyInfo *info, const gchar *_namespace, SCM defs)
+gig_property_define(GType type, GIPropertyInfo *info, const char *_namespace, SCM defs)
 {
     GParamSpec *prop = NULL;
     SCM s_prop, def;
 
-    const gchar *name = g_base_info_get_name(info);
+    const char *name = g_base_info_get_name(info);
     char *mid_name, *long_name;
 
     SCM self_type = gig_type_get_scheme_type(type);
@@ -602,7 +602,7 @@ gig_property_define(GType type, GIPropertyInfo *info, const gchar *_namespace, S
 }
 
 static SCM
-do_define_property(const gchar *public_name, SCM prop, SCM self_type, SCM value_type)
+do_define_property(const char *public_name, SCM prop, SCM self_type, SCM value_type)
 {
     assert(public_name != NULL);
 

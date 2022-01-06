@@ -16,13 +16,9 @@
 #ifndef GIG_UTIL_H
 #define GIG_UTIL_H
 
-#include <glib.h>
+#include <stdbool.h>
 #include <libguile.h>
 #include <girepository.h>
-
-// *INDENT-OFF*
-G_BEGIN_DECLS
-// *INDENT-ON*
 
 #define MALLOC __attribute__((malloc))
 
@@ -33,21 +29,21 @@ char *xstrdup(const char *S);
 char *xstrndup(const char *S, size_t siz);
 void *xmemdup(const void *mem, size_t len);
 
-MALLOC gchar *gig_callable_info_make_name(GICallableInfo *info, const gchar *prefix);
+MALLOC char *gig_callable_info_make_name(GICallableInfo *info, const char *prefix);
 const char *gig_constant_strip_prefix(const char *name, const char *strip_prefix);
 char *gig_gname_to_scm_name(const char *gname);
-SCM scm_c_list_ref(SCM list, gsize k);
-gboolean scm_is_list(SCM obj);
-gsize scm_c_length(SCM list);
-gpointer scm_dynwind_or_bust(const gchar *subr, gpointer mem);
+SCM scm_c_list_ref(SCM list, size_t k);
+bool scm_is_list(SCM obj);
+size_t scm_c_length(SCM list);
+void *scm_dynwind_or_bust(const char *subr, void *mem);
 SCM scm_class_ref(SCM cls, SCM slot);
 SCM scm_class_set_x(SCM cls, SCM slot, SCM val);
 SCM scm_drop_right_1(SCM lst);
-SCM scm_c_reexport(const gchar *name, ...);
-void scm_printf(SCM port, const gchar *fmt, ...);
-const gchar *g_base_info_get_name_safe(GIBaseInfo *info);
-gchar *g_registered_type_info_get_qualified_name(GIRegisteredTypeInfo *info);
-gchar *scm_write_to_utf8_stringn(SCM x, gsize max_len);
+SCM scm_c_reexport(const char *name, ...);
+void scm_printf(SCM port, const char *fmt, ...);
+const char *g_base_info_get_name_safe(GIBaseInfo *info);
+char *g_registered_type_info_get_qualified_name(GIRegisteredTypeInfo *info);
+char *scm_write_to_utf8_stringn(SCM x, int max_len);
 
 #define scm_is_equal(a,b) scm_is_true(scm_equal_p(a,b))
 
@@ -61,5 +57,4 @@ gchar *scm_write_to_utf8_stringn(SCM x, gsize max_len);
 #define scm_c_bitvector_count(x) scm_to_size_t(scm_bit_count(SCM_BOOL_T, (x)))
 #endif
 
-G_END_DECLS
 #endif
