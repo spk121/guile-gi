@@ -162,7 +162,7 @@ zero_terminated_array_length(GigTypeMeta *meta, GIArgument *arg)
         }
         }
     }
-    g_return_val_if_reached(GIG_ARRAY_SIZE_UNKNOWN);
+    return GIG_ARRAY_SIZE_UNKNOWN;
 }
 
 //////////////////////////////////////////////////////////
@@ -824,7 +824,6 @@ scm_to_c_ghashtable(S2C_ARG_DECL)
         }
         else {
             // Should be unreachable
-            g_warn_if_reached();
             key_type = GIG_HASH_POINTER;
             hash_func = NULL;
             equal_func = NULL;

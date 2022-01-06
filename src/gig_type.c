@@ -172,7 +172,9 @@ gig_type_transfer_object(GType type, gpointer ptr, GITransfer transfer)
     gig_debug_transfer("gig_type_transfer_object(%s, %p, %d)", g_type_name(type), ptr, transfer);
 
     SCM scm_type = gig_type_get_scheme_type(type);
-    g_return_val_if_fail(SCM_CLASSP(scm_type), SCM_BOOL_F);
+
+    assert(SCM_CLASSP(scm_type));
+
     GigTypeRefFunction ref;
     ref = (GigTypeRefFunction)scm_to_pointer(scm_class_ref(scm_type, sym_ref));
     GigTypeUnrefFunction unref;
@@ -211,7 +213,8 @@ gig_type_check_typed_object(SCM obj, SCM expected_type)
 gpointer
 gig_type_peek_typed_object(SCM obj, SCM expected_type)
 {
-    g_return_val_if_fail(SCM_IS_A_P(obj, expected_type), NULL);
+    assert(SCM_IS_A_P(obj, expected_type);
+           
     return scm_to_pointer(scm_slot_ref(obj, sym_value));
 }
 
@@ -307,7 +310,6 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
         SCM new_type, dsupers, slots = SCM_EOL;
         gpointer sparent = gig_keyval_find_entry(gig_type_gtype_hash,
                                                  parent);
-        // g_return_val_if_fail(sparent != NULL, defs);
 
         switch (fundamental) {
         case G_TYPE_ENUM:
@@ -428,7 +430,7 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
         }
         }
 
-        g_return_val_if_fail(!SCM_UNBNDP(new_type), defs);
+        assert(!SCM_UNBNDP(new_type));
 
         SCM key = gig_type_associate(gtype, new_type);
         if (!SCM_UNBNDP(defs)) {
@@ -441,13 +443,13 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
     else {
         gig_debug_load("%s - type already exists for %zx %s",
                        _type_class_name, gtype, g_type_name(gtype));
-        g_return_val_if_fail(orig_value != NULL, defs);
+        assert(orig_value != NULL);
         SCM val = SCM_PACK_POINTER(orig_value);
 
         // FIXME: The warning below should be infrequent enough to not need silencing
         if (SCM_UNBNDP(val))
             return defs;
-        g_return_val_if_fail(!SCM_UNBNDP(val), defs);
+        assert(!SCM_UNBNDP(val));
         SCM key = scm_class_name(val);
         if (!SCM_UNBNDP(defs)) {
             scm_define(key, val);
@@ -527,7 +529,7 @@ gig_type_free_types(void)
 static SCM
 _gig_type_check_scheme_type(gpointer _stype)
 {
-    g_return_val_if_fail(_stype != NULL, SCM_UNDEFINED);
+    assert(_stype != NULL);
     return SCM_PACK_POINTER(_stype);
 }
 

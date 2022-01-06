@@ -604,7 +604,7 @@ gig_property_define(GType type, GIPropertyInfo *info, const gchar *_namespace, S
 static SCM
 do_define_property(const gchar *public_name, SCM prop, SCM self_type, SCM value_type)
 {
-    g_return_val_if_fail(public_name != NULL, SCM_UNDEFINED);
+    assert(public_name != NULL);
 
     SCM sym_public_name, formals, specializers, generic, proc, setter;
 

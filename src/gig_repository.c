@@ -13,6 +13,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#include <assert.h>
 #include <libguile.h>
 #include <girepository.h>
 #include "gig_type.h"
@@ -150,7 +151,7 @@ gig_repository_nested_infos(GIBaseInfo *base,
 SCM
 load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
 {
-    g_return_val_if_fail(info != NULL, defs);
+    assert(info != NULL);
 
     GIBaseInfo *parent = g_base_info_get_container(info);
     GType parent_gtype = G_TYPE_INVALID;
