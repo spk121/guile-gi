@@ -21,6 +21,7 @@
 #include "gig_util.h"
 #include "gig_object.h"
 #include "gig_type_private.h"
+#include "gig_logging.h"
 
 // In C, a GType is an integer.  It is an integer ID that maps to a
 // type of GObject.
@@ -242,8 +243,8 @@ SCM
 gig_type_define_with_info(GIRegisteredTypeInfo *info, SCM dsupers, SCM slots)
 {
     if (g_registered_type_info_get_g_type(info) != G_TYPE_NONE) {
-        g_critical("gig_type_define_with_info used when GType was available, "
-                   "use gig_type_define or gig_type_define_full instead.");
+        gig_critical_load("gig_type_define_with_info used when GType was available, "
+                          "use gig_type_define or gig_type_define_full instead.");
         return SCM_UNDEFINED;
     }
 
@@ -512,7 +513,7 @@ gig_type_get_gtype_from_obj(SCM x)
 static void
 gig_type_free_types(void)
 {
-    g_debug("Freeing gtype hash table");
+    gig_debug_load("Freeing gtype hash table");
     g_hash_table_remove_all(gig_type_gtype_hash);
     g_hash_table_remove_all(gig_type_name_hash);
     g_hash_table_remove_all(gig_type_scm_hash);
@@ -807,7 +808,7 @@ gig_type_define_fundamental(GType type, SCM extra_supers,
     GIBaseInfo *info;
 
     if (gig_type_is_registered(type)) {
-        g_warning("not redefining fundamental type %s", g_type_name(type));
+        gig_critical_load("not redefining fundamental type %s", g_type_name(type));
         return;
     }
 

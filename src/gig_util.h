@@ -57,19 +57,6 @@ gchar *scm_write_to_utf8_stringn(SCM x, gsize max_len);
             obj = SCM_BOOL_F;    \
     } while (0)                  \
 
-#define gig_debug_internal(level,domain,...)                  \
-    do {                                                      \
-        g_log_structured(G_LOG_DOMAIN, level,                 \
-                         "CODE_FILE", __FILE__,               \
-                         "CODE_LINE", G_STRINGIFY(__LINE__),  \
-                         "CODE_FUNC", __func__,               \
-                         "GIG_DOMAIN", domain,                \
-                         "MESSAGE", __VA_ARGS__);             \
-    } while (FALSE)
-#define gig_debug_transfer(...) gig_debug_internal(G_LOG_LEVEL_DEBUG, "transfers", __VA_ARGS__)
-#define gig_debug_load(...)     gig_debug_internal(G_LOG_LEVEL_DEBUG, "load", __VA_ARGS__)
-#define gig_warning_load(...)   gig_debug_internal(G_LOG_LEVEL_WARNING, "load", __VA_ARGS__)
-#define gig_critical_load(...)  gig_debug_internal(G_LOG_LEVEL_CRITICAL, "load", __VA_ARGS__)
 #if (SCM_MAJOR_VERSION == 2) || (SCM_MAJOR_VERSION == 3 && SCM_MINOR_VERSION == 0 && SCM_MICRO_VERSION < 4)
 #define scm_c_bitvector_count(x) scm_to_size_t(scm_bit_count(SCM_BOOL_T, (x)))
 #endif

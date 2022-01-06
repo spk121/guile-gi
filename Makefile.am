@@ -209,7 +209,6 @@ dist_pkgguilesite_DATA = \
   module/gi/core-generics.scm \
   module/gi/compat.scm \
   module/gi/documentation.scm \
-  module/gi/logging.scm \
   module/gi/oop.scm \
   module/gi/repository.scm \
   module/gi/types.scm \
@@ -393,7 +392,6 @@ TESTS = \
   test/task.scm \
   test/type.scm \
   test/signals.scm \
-  test/logging.scm \
   $(EVERYTHING_TESTS)
 
 XFAIL_TESTS =

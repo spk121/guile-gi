@@ -19,6 +19,7 @@
 #include "gig_function.h"
 #include "gig_type.h"
 #include "gig_signal.h"
+#include "gig_logging.h"
 #include "gig_util.h"
 #include "gig_function_args.h"
 
@@ -444,8 +445,8 @@ function_invoke(GIFunctionInfo *func_info, GigArgMap *amap, const gchar *name, G
 
     // Make the actual call.
     // Use GObject's ffi to call the C function.
-    g_debug("%s - calling with %lu input and %lu output arguments",
-            name, store.in_len, store.out_len);
+    gig_debug_invoke("%s - calling with %lu input and %lu output arguments",
+                     name, store.in_len, store.out_len);
     gig_amap_dump(name, amap);
 
     GIArgument return_arg;
@@ -474,8 +475,8 @@ gig_callable_invoke(GICallableInfo *callable_info, gpointer callable, GigArgMap 
 
     // Make the actual call.
     // Use GObject's ffi to call the C function.
-    g_debug("%s - calling with %lu input and %lu output arguments",
-            name, store.in_len, store.out_len);
+    gig_debug_invoke("%s - calling with %lu input and %lu output arguments",
+                     name, store.in_len, store.out_len);
     gig_amap_dump(name, amap);
 
     ok = g_callable_info_invoke(callable_info, callable,
@@ -601,7 +602,7 @@ function_free(GigFunction *gfn)
 static void
 gig_fini_function(void)
 {
-    g_debug("Freeing functions");
+    gig_debug_load("Freeing functions");
     g_hash_table_remove_all(function_cache);
     g_hash_table_unref(function_cache);
     function_cache = NULL;

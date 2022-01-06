@@ -23,6 +23,7 @@
 #include "gig_flag.h"
 #include "gig_object.h"
 #include "gig_type.h"
+#include "gig_logging.h"
 #include "gig_util.h"
 
 #define TRACE_C2S() gig_debug_transfer("[C2S] On line %d while handing %s of %s.", __LINE__, gig_type_meta_describe(meta), subr)
@@ -30,12 +31,12 @@
 
 #define SURPRISING                                                      \
     do {                                                                \
-        g_warning("Unusual argument type '%s' %s:%d", gig_type_meta_describe(meta), __FILE__, __LINE__); \
+        gig_critical_load("Unusual argument type '%s' %s:%d", gig_type_meta_describe(meta), __FILE__, __LINE__); \
     } while(FALSE)
 
 #define UNHANDLED                                                       \
     do {                                                                \
-        g_error("unhandled argument type '%s' %s:%d", gig_type_meta_describe(meta), __FILE__, __LINE__); \
+        gig_critical_load("unhandled argument type '%s' %s:%d", gig_type_meta_describe(meta), __FILE__, __LINE__); \
     } while(FALSE)
 
 

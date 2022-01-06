@@ -20,6 +20,7 @@
 #include "gig_object.h"
 #include "gig_flag.h"
 #include "gig_util.h"
+#include "gig_logging.h"
 
 #ifndef FLT_MAX
 #define FLT_MAX 3.402823466e+38F
@@ -223,7 +224,7 @@ gig_value_from_scm(GValue *value, SCM obj)
             return gig_value_from_scm(n_value, obj);
         }
         else if (G_VALUE_HOLDS(value, G_TYPE_GSTRING)) {
-            g_critical("unhandled value type");
+            gig_critical_load("unhandled value type");
             return GIG_VALUE_WRONG_TYPE;
         }
         else
@@ -248,7 +249,7 @@ gig_value_from_scm(GValue *value, SCM obj)
         }
         return GIG_VALUE_WRONG_TYPE;
     default:
-        g_critical("unhandled value type");
+        gig_critical_load("unhandled value type");
         return GIG_VALUE_WRONG_TYPE;
     }
 

@@ -13,197 +13,170 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include <string.h>
+#include <stdarg.h>
+#include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
-#include <girepository.h>
-#include <glib.h>
-#include <libguile.h>
-#include "gig_util.h"
+#include <string.h>
+#include <time.h>
 #include "gig_logging.h"
 
-_Thread_local int logger_initialized = 0;
+// GIG_DEBUG:
 
-static const GLogField *
-field_ref(const gchar *needle, const GLogField *fields, gsize n_fields)
+// To make logging happen, set the environment variable GIG_DEBUG.
+// If it is set at all, the error and warning messages will be printed.
+// If it contains any of these words, it prints more info
+// - all: print all categories debug and info messages
+// - invoke: print debug messages about function invocation
+// - transfer: print debug messages about object creation and transfer
+// - load: print debug messages about loading typelib info
+// - init: print debug messages about initialization and finalization
+// - verbose: also print file names, line numbers, PIDs
+
+// GIG_DEBUG_OUTPUT
+// If this is set, the output will be printed to a file using
+// this filename.  The filename will be appended.
+
+#define N_TERMINALS 455
+static char color_terminals[N_TERMINALS][24] = {
+    "xterm", "xterm-256color", "xterm-new", "konsole",
+    "konsole-256color", "linux", "gnome", "gnome-256color", "screen",
+    "screen-16color", "screen-256color",
+
+#if 0
+    "alacritty", "ansi", "ansi80x25", "ansis", "Apple_Terminal",
+    "aterm", "bterm", "cons25", "cygwin", "Eterm", "Eterm-256color",
+    "Eterm-88color", "eterm-color", "Eterm-color", "hurd", "jfbterm",
+    "kitty", "kon", "kon2", "mach-color", "mach-gnu-color", "mlterm",
+    "mrxvt", "nsterm", "nsterm-256color", "nxterm", "pcansi", "putty",
+    "putty-256color", "rxvt", "rxvt-16color", "rxvt-256color",
+    "rxvt-88color", "rxvt-color", "rxvt-cygwin", "rxvt-cygwin-native",
+    "rxvt-unicode", "rxvt-unicode-256color", "rxvt-xpm",
+    "screen.Eterm", "screen.gnome", "screen.konsole",
+    "screen.konsole-256color", "screen.linux", "screen.linux-s",
+    "screen.mlterm", "screen.mlterm-256color", "screen.mrxvt",
+    "screen.putty", "screen.putty-256color", "screen.rxvt",
+    "screen.teraterm", "screen.vte", "screen.vte-256color",
+    "screen.xterm-256color", "screen.xterm-new",
+    "screen.xterm-xfree86", "st", "st-16color", "st-256color",
+    "stterm", "stterm-16color", "stterm-256color", "teraterm",
+    "teraterm2.3", "tmux", "tmux-256color", "tmux-direct", "vte",
+    "vte-256color", "vwmterm", "wsvt25", "wsvt25m", "xfce",
+    "xterm-1002", "xterm-1003", "xterm-1005", "xterm-1006",
+    "xterm-16color", "xterm-88color", "xterm-8bit", "xterm-basic",
+    "xterm-color", "xterm-direct", "xterm-direct16", "xterm-direct2",
+    "xterm-direct256", "xterm-hp", "xterm-nic", "xterm-noapp",
+    "xterm-sco", "xterm-sun", "xterm-utf8", "xterm-vt220",
+    "xterm-x10mouse", "xterm-x11hilite", "xterm-x11mouse",
+    "xterm-xf86-v32", "xterm-xf86-v33", "xterm-xf86-v333",
+    "xterm-xf86-v40", "xterm-xf86-v43", "xterm-xf86-v44",
+    "xterm-xfree86", "xterm-xi"
+#endif
+};
+
+static bool
+is_color_term(const char *str)
 {
-    for (gsize i = 0; i < n_fields; i++)
-        if (!(strcmp(fields[i].key, needle)))
-            return fields + i;
-    return NULL;
-}
-
-static gboolean
-is_enabled(const GLogField *domain, const gchar *domains, gboolean allow_empty)
-{
-    if (!domain || !domain->value)
-        return allow_empty;
-    if (domains == NULL)
-        return FALSE;
-    if (!strcmp(domains, "all"))
-        return TRUE;
-    if (strstr(domains, domain->value))
-        return TRUE;
-    return FALSE;
-}
-
-static GLogWriterOutput
-gig_log_writer(GLogLevelFlags flags, const GLogField *fields, gsize n_fields, gpointer user_data)
-{
-#define LOG_FIELD(f) field_ref(f, fields, n_fields)
-#define ENV_MESSAGES_DEBUG (getenv("G_MESSAGES_DEBUG"))
-#define ENV_GIG_DEBUG (getenv("GIG_DEBUG"))
-    const GLogField *message;
-
-    const gchar *prefix = NULL, *color = NULL;
-    if (!logger_initialized) {
-        scm_init_guile();
-        logger_initialized = 1;
+    for (int i = 0; i < N_TERMINALS; i++) {
+        if (strcmp(str, color_terminals[i]) == 0)
+            return true;
     }
-    switch (flags & G_LOG_LEVEL_MASK) {
-    case G_LOG_LEVEL_ERROR:
-        color = "\033[1;31m%s\033[0m";
+    return false;
+}
+
+void
+gig_log(int level, const char *file, int line, const char *func,
+        const char *domain, const char *template, ...)
+{
+    static char msg[401];
+    static int msg_len = 400;
+    char *debug;
+
+    debug = getenv("GIG_DEBUG");
+    if (!debug)
+        return;
+    if (level > GIG_LOG_WARNING && (strstr(debug, "all") == NULL && strstr(debug, domain) == NULL))
+        return;
+
+    va_list args;
+    va_start(args, template);
+    memset(msg, 0, sizeof(msg));
+    vsnprintf(msg, msg_len, template, args);
+    va_end(args);
+
+    char *debug_output = getenv("GIG_DEBUG_OUTPUT");
+    FILE *fp = NULL;
+    bool use_verbose = false;
+    char *color, *reset, *prefix;
+
+    if (debug_output)
+        fp = fopen(debug_output, "a");
+
+    if (strstr(debug, "verbose") != NULL)
+        use_verbose = true;
+
+    switch (level) {
+    case GIG_LOG_ERROR:
+        color = "\033[1;31m";
+        reset = "\033[0m";
         prefix = "ERROR";
         break;
-    case G_LOG_LEVEL_CRITICAL:
-        color = "\033[1;35m%s\033[0m";
+    case GIG_LOG_CRITICAL:
+        color = "\033[1;35m";
+        reset = "\033[0m";
         prefix = "CRITICAL";
         break;
-    case G_LOG_LEVEL_WARNING:
-        color = "\033[1;33m%s\033[0m";
+    case GIG_LOG_WARNING:
+        color = "\033[1;35m";
+        reset = "\033[0m";
         prefix = "WARNING";
         break;
-    case G_LOG_LEVEL_MESSAGE:
-        color = "\033[1;32m%s\033[0m";
-        prefix = "MESSAGE";
+    case GIG_LOG_NOTICE:
+        color = "\033[1;32m";
+        reset = "\033[0m";
+        prefix = "NOTICE";
         break;
-    case G_LOG_LEVEL_INFO:
-        color = "\033[1;32m%s\033[0m";
-        if (!is_enabled(LOG_FIELD("GLIB_DOMAIN"), ENV_MESSAGES_DEBUG, FALSE)
-            || !is_enabled(LOG_FIELD("GIG_DOMAIN"), ENV_GIG_DEBUG, TRUE))
-            return G_LOG_WRITER_HANDLED;
+    case GIG_LOG_INFO:
+        color = "\033[1;32m";
+        reset = "\033[0m";
         prefix = "INFO";
         break;
-    case G_LOG_LEVEL_DEBUG:
-        color = "\033[1;32m%s\033[0m";
-        if (!is_enabled(LOG_FIELD("GLIB_DOMAIN"), ENV_MESSAGES_DEBUG, FALSE)
-            || !is_enabled(LOG_FIELD("GIG_DOMAIN"), ENV_GIG_DEBUG, TRUE))
-            return G_LOG_WRITER_HANDLED;
+    case GIG_LOG_DEBUG:
+        color = "\033[1;32m";
+        reset = "\033[0m";
         prefix = "DEBUG";
         break;
+    default:
+        color = "";
+        reset = "";
+        prefix = "";
     }
 
-    message = field_ref("MESSAGE", fields, n_fields);
-    g_assert(message != NULL);
+    char *term = getenv("TERM");
+    
+    if (!term || !is_color_term(term)) {
+        color = "";
+        reset = "";
+    }
 
-    SCM port = SCM_PACK_POINTER(user_data);
-
-    if (scm_is_true(scm_output_port_p(port))) {
-        if (scm_is_true(scm_file_port_p(port))) {
-            gint fd = scm_to_int(scm_fileno(port));
-            gchar *colored_prefix =
-                g_strdup_printf(g_log_writer_supports_color(fd) ? color : "%s", prefix);
-            scm_c_write(port, colored_prefix, strlen(colored_prefix));
-            scm_c_write(port, ": ", 2);
-            scm_c_write(port, message->value, strlen(message->value));
-            scm_newline(port);
-            free(colored_prefix);
-        }
+    if (use_verbose) {
+        time_t t = time(NULL);
+        char timestr[80];
+        strftime(timestr, 80, "%F %T", gmtime(&t));
+        if (fp)
+            fprintf(fp, "%s%s%s %s %s %s %s:%d %s\n",
+                    color, prefix, reset, domain, timestr, func, file, line, msg);
         else
-            scm_printf(port, "%s: %s\n", prefix, (const gchar *)message->value);
+            fprintf(stderr, "%s%s%s %s %s %s %s:%d %s\n",
+                    color, prefix, reset, domain, timestr, func, file, line, msg);
     }
-    else
-        scm_printf(scm_current_error_port(), "%s: %s\n", prefix, (const gchar *)message->value);
-
-    return G_LOG_WRITER_HANDLED;
-#undef LOG_FIELD
-#undef ENV_MESSAGES_DEBUG
-#undef ENV_GIG_DEBUG
-}
-
-SCM
-gig_log_to_port(SCM port)
-{
-    SCM_ASSERT_TYPE(SCM_OPOUTPORTP(port), port, SCM_ARG1, "install-port-logger!",
-                    "open output port");
-    g_log_set_writer_func(gig_log_writer, SCM_UNPACK_POINTER(port), NULL);
-    return SCM_UNSPECIFIED;
-}
-
-SCM
-gig_log_to_journal(void)
-{
-    g_log_set_writer_func(g_log_writer_journald, NULL, NULL);
-    return SCM_UNSPECIFIED;
-}
-
-void
-gig_unprotect_func(gpointer func)
-{
-    scm_gc_unprotect_object(SCM_PACK_POINTER(func));
-}
-
-SCM kwd_log_level;
-
-static GLogWriterOutput
-gig_log_custom_helper(GLogLevelFlags log_level, const GLogField *fields, gsize n_fields,
-                      gpointer user_data)
-{
-    if (!logger_initialized) {
-        scm_init_guile();
-        logger_initialized = 1;
+    else {
+        if (fp)
+            fprintf(fp, "%s%s%s %s\n", color, prefix, reset, msg);
+        else
+            fprintf(stderr, "%s%s%s %s\n", color, prefix, reset, msg);
     }
 
-    SCM args = scm_make_list(scm_from_size_t(4 * n_fields + 2), SCM_UNDEFINED);
-    SCM it = args;
-    scm_set_car_x(it, kwd_log_level);
-    scm_set_car_x(scm_cdr(it), scm_from_size_t(log_level));
-
-    for (gsize i = 0; i < n_fields; i++) {
-        it = scm_cddr(it);
-        gchar *key = gig_gname_to_scm_name(fields[i].key);
-        scm_set_car_x(it, scm_from_utf8_keyword(key));
-        // TODO: add more conversions
-        if (                    /* the message itself is a string */
-               !strcmp(fields[i].key, "MESSAGE") ||
-               /* log level as string */
-               !strcmp(fields[i].key, "PRIORITY") ||
-               /* domains */
-               !strcmp(fields[i].key, "GLIB_DOMAIN") || !strcmp(fields[i].key, "GIG_DOMAIN") ||
-               /* source information inserted by g_debug, etc */
-               !strcmp(fields[i].key, "CODE_FILE") ||
-               !strcmp(fields[i].key, "CODE_FUNC") || !strcmp(fields[i].key, "CODE_LINE") ||
-               /* end on a false statement  */
-               0)
-            scm_set_car_x(scm_cdr(it), scm_from_utf8_string(fields[i].value));
-        else {
-            scm_set_car_x(scm_cdr(it), scm_from_pointer((gpointer)fields[i].value, NULL));
-            gchar *length = g_strdup_printf("%s-length", key);
-            it = scm_cddr(it);
-            scm_set_car_x(it, scm_from_utf8_keyword(length));
-            scm_set_car_x(scm_cdr(it), scm_from_size_t(fields[i].length));
-            free(length);
-        }
-        free(key);
-    }
-    scm_set_cdr_x(scm_cdr(it), SCM_EOL);
-    scm_apply_0(SCM_PACK_POINTER(user_data), args);
-
-    return G_LOG_WRITER_HANDLED;
-}
-
-SCM
-gig_install_custom_logger(SCM func)
-{
-    func = scm_gc_protect_object(func);
-    g_log_set_writer_func(gig_log_custom_helper, SCM_UNPACK_POINTER(func), gig_unprotect_func);
-    return SCM_UNSPECIFIED;
-}
-
-void
-gig_init_logging()
-{
-    kwd_log_level = scm_from_utf8_keyword("log-level");
-    scm_c_define_gsubr("install-port-logger!", 1, 0, 0, gig_log_to_port);
-    scm_c_define_gsubr("install-journal-logger!", 0, 0, 0, gig_log_to_journal);
-    scm_c_define_gsubr("install-custom-logger!", 1, 0, 0, gig_install_custom_logger);
+    if (fp)
+        fclose(fp);
 }

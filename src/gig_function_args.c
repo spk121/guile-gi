@@ -15,6 +15,7 @@
 
 #include <assert.h>
 #include "gig_util.h"
+#include "gig_logging.h"
 #include "gig_function_args.h"
 
 static void

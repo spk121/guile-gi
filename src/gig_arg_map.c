@@ -18,9 +18,8 @@
 #include <string.h>
 #include "gig_arg_map.h"
 #include "gig_data_type.h"
+#include "gig_logging.h"
 #include "gig_util.h"
-
-#define gig_debug_amap(...) gig_debug_internal(G_LOG_LEVEL_DEBUG, "amap", __VA_ARGS__)
 
 const gchar dir_strings[GIG_ARG_DIRECTION_COUNT][9] = {
     [GIG_ARG_DIRECTION_VOID] = "void",
@@ -297,13 +296,13 @@ void
 gig_amap_dump(const gchar *name, const GigArgMap *amap)
 {
     gig_debug_amap("%s - argument mapping", name ? name : amap->name);
-    gig_debug_amap(" SCM inputs required: %d, optional: %d, outputs: %d", amap->s_input_req,
-                   amap->s_input_opt, amap->s_output_len);
-    gig_debug_amap(" C inputs: %d, outputs: %d", amap->c_input_len, amap->c_output_len);
+    gig_debug_amap("  SCM inputs required: %d, optional: %d, outputs: %d", amap->s_input_req,
+                     amap->s_input_opt, amap->s_output_len);
+    gig_debug_amap("  C inputs: %d, outputs: %d", amap->c_input_len, amap->c_output_len);
     for (gint i = 0; i < amap->len; i++) {
         const GigArgMapEntry *entry = &amap->pdata[i];
         GString *s = g_string_new(NULL);
-        g_string_append_printf(s, " Arg %d: '%s' %s",
+        g_string_append_printf(s, "  Arg %d: '%s' %s",
                                i, entry->name, gig_type_meta_describe(&entry->meta));
         g_string_append_printf(s, ", %s, %s, %s",
                                dir_strings[entry->s_direction],
@@ -330,7 +329,7 @@ gig_amap_dump(const gchar *name, const GigArgMap *amap)
     if (amap->return_val.meta.gtype != G_TYPE_NONE) {
         const GigArgMapEntry *entry = &amap->return_val;
         GString *s = g_string_new(NULL);
-        g_string_append_printf(s, " Return: '%s' %s",
+        g_string_append_printf(s, "  Return: '%s' %s",
                                entry->name, gig_type_meta_describe(&entry->meta));
         g_string_append_printf(s, ", %s, %s, %s",
                                dir_strings[entry->s_direction],
