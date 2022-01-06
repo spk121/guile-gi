@@ -15,6 +15,7 @@
 
 #include <assert.h>
 #include <string.h>
+#include <stdio.h>
 #include "gig_object.h"
 #include "gig_type.h"
 #include "gig_logging.h"
@@ -556,14 +557,16 @@ gig_property_define(GType type, GIPropertyInfo *info, const gchar *_namespace, S
     SCM s_prop, def;
 
     const gchar *name = g_base_info_get_name(info);
-    gchar *long_name;
+    char *mid_name, *long_name;
 
     SCM self_type = gig_type_get_scheme_type(type);
 
     scm_dynwind_begin(0);
-    long_name = scm_dynwind_or_bust("%gig-property-define",
-                                    g_strdup_printf("%s:%s", _namespace, name));
-    long_name = scm_dynwind_or_bust("%gig-property-define", gig_gname_to_scm_name(long_name));
+    size_t mid_len = strlen(_namespace) + strlen(":") + strlen(name) + 1;
+    mid_name = malloc(mid_len);
+    snprintf(mid_name, mid_len, "%s:%s", _namespace, name);
+    long_name = gig_gname_to_scm_name(mid_name);
+    free(mid_name);
 
     if (G_TYPE_IS_CLASSED(type)) {
         GObjectClass *_class = g_type_class_ref(type);
@@ -593,6 +596,7 @@ gig_property_define(GType type, GIPropertyInfo *info, const gchar *_namespace, S
     else
         gig_warning_load("Missing property %s", long_name);
 
+    free(long_name);
     scm_dynwind_end();
     return defs;
 }

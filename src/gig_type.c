@@ -14,6 +14,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <assert.h>
+#include <stdio.h>
 #include <libguile.h>
 #include <girepository.h>
 #include <ffi.h>
@@ -88,10 +89,13 @@ static SCM make_class_proc;
 static SCM kwd_name;
 SCM sym_obarray;
 
-gchar *
+char *
 gig_type_class_name_from_gtype(GType gtype)
 {
-    return g_strdup_printf("<%s>", g_type_name(gtype));
+    size_t len = strlen("<>") + strlen(g_type_name(gtype)) + 1;
+    char *str = malloc(len);
+    snprintf(str, len, "<%s>", g_type_name(gtype));
+    return str;
 }
 
 // Returns TRUE if TYPE is contained in the hash table of known types.
@@ -258,7 +262,9 @@ gig_type_define_with_info(GIRegisteredTypeInfo *info, SCM dsupers, SCM slots)
     if (_value)
         cls = SCM_PACK_POINTER(_value);
     else {
-        gchar *name = g_strdup_printf("<%s>", _name);
+        int len = strlen("<>") + strlen(_name) + 1;
+        char *name = malloc(len);
+        snprintf(name, len, "<%s>", _name);
         SCM class_name = scm_from_utf8_symbol(name);
         cls = scm_call_4(make_class_proc, dsupers, slots, kwd_name, class_name);
         gig_debug_load("%s - creating new type", name);
@@ -498,12 +504,12 @@ scm_from_gtype(GType x)
 GType
 gig_type_get_gtype_from_obj(SCM x)
 {
-    gpointer value;
+    GType value;
     if ((value = gig_keyval_find_entry(gig_type_scm_hash, SCM_UNPACK(x))))
         return value;
     else if (SCM_INSTANCEP(x) &&
              (value = gig_keyval_find_entry(gig_type_scm_hash, SCM_UNPACK(SCM_CLASS_OF(x)))))
-        return GPOINTER_TO_SIZE(value);
+        return value;
 
     return G_TYPE_INVALID;
 }

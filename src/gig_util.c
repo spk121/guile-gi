@@ -227,21 +227,29 @@ gig_callable_info_make_name(GICallableInfo *info, const gchar *prefix)
     if (prefix)
         str1 = gig_gname_to_scm_name(prefix);
     str2 = gig_gname_to_scm_name(g_base_info_get_name(info));
+
+    int len = strlen(":!") + 1;
+    if (str1)
+        len += strlen(str1);
+    if (str2)
+        len += strlen(str2);
+    name = malloc(len);
+
     if (!prefix) {
         if (destructive)
-            name = g_strdup_printf("%s!", str2);
+            snprintf(name, len, "%s!", str2);
         else if (predicate)
-            name = g_strdup_printf("%s?", str2);
+            snprintf(name, len, "%s?", str2);
         else
             return str2;
     }
     else {
         if (destructive)
-            name = g_strdup_printf("%s:%s!", str1, str2);
+            snprintf(name, len, "%s:%s!", str1, str2);
         else if (predicate)
-            name = g_strdup_printf("%s:%s?", str1, str2);
+            snprintf(name, len, "%s:%s?", str1, str2);
         else
-            name = g_strdup_printf("%s:%s", str1, str2);
+            snprintf(name, len, "%s:%s", str1, str2);
     }
     free(str1);
     free(str2);
@@ -419,12 +427,15 @@ scm_c_reexport(const gchar *name, ...)
 void
 scm_printf(SCM port, const gchar *fmt, ...)
 {
+#define SCM_PRINTF_MAX_LINE_LEN (1024)
+    char _message[SCM_PRINTF_MAX_LINE_LEN];
     va_list args;
     va_start(args, fmt);
-    gchar *_message = g_strdup_vprintf(fmt, args);
+    vsnprintf(_message, SCM_PRINTF_MAX_LINE_LEN, fmt, args);
+    va_end(args);
     SCM message = scm_from_utf8_string(_message);
-    free(_message);
     scm_display(message, port);
+#undef SCM_PRINTF_MAX_LINE_LEN
 }
 
 const gchar *
@@ -469,7 +480,10 @@ g_registered_type_info_get_qualified_name(GIRegisteredTypeInfo *info)
     const gchar *prefix = g_irepository_get_c_prefix(NULL, _namespace);
 
     // add initial % to ensure that the name is private
-    return g_strdup_printf("%%%s%s", prefix, g_base_info_get_name(info));
+    int len = strlen("%") + strlen(prefix) + strlen(g_base_info_get_name(info)) + 1;
+    char *str = malloc(len);
+    snprintf(str, len, "%%%s%s", prefix, g_base_info_get_name(info));
+    return str;
 }
 
 gchar *
