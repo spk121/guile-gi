@@ -297,7 +297,7 @@ gig_amap_dump(const gchar *name, const GigArgMap *amap)
 {
     gig_debug_amap("%s - argument mapping", name ? name : amap->name);
     gig_debug_amap("  SCM inputs required: %d, optional: %d, outputs: %d", amap->s_input_req,
-                     amap->s_input_opt, amap->s_output_len);
+                   amap->s_input_opt, amap->s_output_len);
     gig_debug_amap("  C inputs: %d, outputs: %d", amap->c_input_len, amap->c_output_len);
     for (gint i = 0; i < amap->len; i++) {
         const GigArgMapEntry *entry = &amap->pdata[i];

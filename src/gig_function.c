@@ -22,6 +22,7 @@
 #include "gig_logging.h"
 #include "gig_util.h"
 #include "gig_function_args.h"
+#include "gig_keyval.h"
 
 typedef struct _GigFunction
 {
@@ -34,7 +35,7 @@ typedef struct _GigFunction
     GigArgMap *amap;
 } GigFunction;
 
-static GHashTable *function_cache;
+static GigKeyVal *function_cache;
 static SCM ensure_generic_proc;
 SCM make_proc;
 SCM add_method_proc;
@@ -269,7 +270,8 @@ check_gsubr_cache(GICallableInfo *function_info, SCM self_type, gint *required_i
                   gint *optional_input_count, SCM *formals, SCM *specializers)
 {
     // Check the cache to see if this function has already been created.
-    GigFunction *gfn = g_hash_table_lookup(function_cache, function_info);
+    GigFunction *gfn =
+        (GigFunction *)gig_keyval_find_entry(function_cache, (intptr_t) function_info);
 
     if (gfn == NULL)
         return NULL;
@@ -431,7 +433,7 @@ create_gsubr(GIFunctionInfo *function_info, const gchar *name, SCM self_type,
                        "closure location preparation error #~A",
                        scm_list_1(scm_from_int(closure_ok)));
 
-    g_hash_table_insert(function_cache, function_info, gfn);
+    gig_keyval_add_entry(function_cache, (intptr_t) function_info, (intptr_t) gfn);
 
     return gfn->function_ptr;
 }
@@ -556,8 +558,7 @@ function_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
 void
 gig_init_function(void)
 {
-    function_cache =
-        g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, (GDestroyNotify)function_free);
+    function_cache = gig_keyval_new();
 
     top_type = scm_c_public_ref("oop goops", "<top>");
     method_type = scm_c_public_ref("oop goops", "<method>");
@@ -603,7 +604,6 @@ static void
 gig_fini_function(void)
 {
     gig_debug_load("Freeing functions");
-    g_hash_table_remove_all(function_cache);
-    g_hash_table_unref(function_cache);
+    gig_keyval_free(function_cache, NULL, function_free);
     function_cache = NULL;
 }
