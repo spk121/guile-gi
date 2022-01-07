@@ -12,6 +12,7 @@
 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#include <stdio.h>
 #include "gig_signal.h"
 #include "gig_object.h"
 #include "gig_value.h"
@@ -36,25 +37,25 @@ static SCM signal_accu_true_handled;
 
 static SCM make_signal_proc;
 
-static bool
+static gboolean
 scm_signal_accu(GSignalInvocationHint * ihint,
                 GValue *seed, const GValue *element, void *procedure)
 {
     SCM _seed, _element, result;
-    _seed = gig_value_as_scm(seed, false);
-    _element = gig_value_as_scm(element, false);
+    _seed = gig_value_as_scm(seed, FALSE);
+    _element = gig_value_as_scm(element, FALSE);
 
     result = scm_call_2(SCM_PACK_POINTER(procedure), _seed, _element);
     switch (scm_c_nvalues(result)) {
     case 0:
-        return true;
+        return TRUE;
     case 1:
         if (!scm_is_eq(result, SCM_UNSPECIFIED))
             gig_value_from_scm(seed, result);
-        return true;
+        return TRUE;
     case 2:
     {
-        bool ret = scm_is_true(scm_c_value_ref(result, 0));
+        gboolean ret = scm_is_true(scm_c_value_ref(result, 0));
         SCM next_seed = scm_c_value_ref(result, 1);
         gig_value_from_scm(seed, next_seed);
         return ret;

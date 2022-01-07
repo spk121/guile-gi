@@ -76,8 +76,7 @@ gig_value_from_scm(GValue *value, SCM obj)
     {
         if (!scm_is_eq(obj, SCM_BOOL_T) && !scm_is_eq(obj, SCM_BOOL_F))
             return GIG_VALUE_WRONG_TYPE;
-        bool temp;
-        temp = scm_is_true(obj);
+        gboolean temp = scm_is_true(obj);
         g_value_set_boolean(value, temp);
         return 0;
     }
