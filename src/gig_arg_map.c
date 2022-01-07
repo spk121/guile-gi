@@ -21,7 +21,7 @@
 #include "gig_logging.h"
 #include "gig_util.h"
 
-const char dir_strings[GIG_ARG_DIRECTION_COUNT][9] = {
+static char dir_strings[GIG_ARG_DIRECTION_COUNT][9] = {
     [GIG_ARG_DIRECTION_VOID] = "void",
     [GIG_ARG_DIRECTION_INPUT] = "input",
     [GIG_ARG_DIRECTION_INOUT] = "inout",
@@ -29,13 +29,13 @@ const char dir_strings[GIG_ARG_DIRECTION_COUNT][9] = {
     [GIG_ARG_DIRECTION_OUTPUT] = "output"
 };
 
-const char tuple_strings[GIG_ARG_TUPLE_COUNT][11] = {
+static char tuple_strings[GIG_ARG_TUPLE_COUNT][11] = {
     [GIG_ARG_TUPLE_SINGLETON] = "singleton",
     [GIG_ARG_TUPLE_ARRAY] = "array",
     [GIG_ARG_TUPLE_ARRAY_SIZE] = "array_size"
 };
 
-const char presence_strings[GIG_ARG_PRESENCE_COUNT][9] = {
+static char presence_strings[GIG_ARG_PRESENCE_COUNT][9] = {
     [GIG_ARG_PRESENCE_REQUIRED] = "required",
     [GIG_ARG_PRESENCE_OPTIONAL] = "optional",
     [GIG_ARG_PRESENCE_IMPLICIT] = "implicit"
