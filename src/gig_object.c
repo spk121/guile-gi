@@ -121,7 +121,8 @@ gig_i_scm_make_gobject(SCM s_gtype, SCM s_prop_keylist)
     obj = g_object_new_with_properties(type, n_prop, keys, values);
     scm_dynwind_end();
 
-    assert(obj);
+    if (G_IS_INITIALLY_UNOWNED(obj))
+        g_object_ref_sink(obj);
 
     return gig_object_take(obj);
 #undef FUNC
