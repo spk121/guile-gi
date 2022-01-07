@@ -214,7 +214,7 @@ void *
 gig_type_peek_typed_object(SCM obj, SCM expected_type)
 {
     assert(SCM_IS_A_P(obj, expected_type));
-           
+
     return scm_to_pointer(scm_slot_ref(obj, sym_value));
 }
 
@@ -309,7 +309,7 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
 
         SCM new_type, dsupers, slots = SCM_EOL;
         void *sparent = gig_keyval_find_entry(gig_type_gtype_hash,
-                                                 parent);
+                                              parent);
 
         switch (fundamental) {
         case G_TYPE_ENUM:
@@ -538,7 +538,7 @@ gig_type_get_scheme_type(GType gtype)
 {
     void *_key, *_value;
     bool exists = gig_keyval_find_entry_extended(gig_type_gtype_hash, gtype,
-                                                     &_key, &_value);
+                                                 &_key, &_value);
 
     if (exists)
         return _gig_type_check_scheme_type(_value);
@@ -837,7 +837,7 @@ gig_type_define_fundamental(GType type, SCM extra_supers,
 
     scm_dynwind_begin(0);
     char *class_name = scm_dynwind_or_bust("%define-compact-type",
-                                            gig_type_class_name_from_gtype(type));
+                                           gig_type_class_name_from_gtype(type));
 
     SCM new_type = scm_call_4(make_fundamental_proc,
                               scm_from_utf8_symbol(class_name),

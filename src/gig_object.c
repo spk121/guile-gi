@@ -228,7 +228,8 @@ make_new_signal(GigSignalSpec *signal_spec, GType instance_type)
 }
 
 static void
-gig_user_object_get_property(GObject *object, unsigned property_id, GValue *value, GParamSpec *pspec)
+gig_user_object_get_property(GObject *object, unsigned property_id, GValue *value,
+                             GParamSpec *pspec)
 {
     GValue *properties = g_object_get_qdata(object, gig_user_object_properties);
     GValue *property = properties + property_id - 1;
@@ -420,7 +421,8 @@ gig_i_scm_define_type(SCM s_type_name, SCM s_parent_type, SCM s_properties, SCM 
 
 static void
 signal_lookup(const char *proc, GObject *self,
-              SCM signal, SCM detail, unsigned *c_signal, GSignalQuery *query_info, GQuark *c_detail)
+              SCM signal, SCM detail, unsigned *c_signal, GSignalQuery *query_info,
+              GQuark *c_detail)
 {
     SCM s_name = gig_signal_ref(signal, GIG_SIGNAL_SLOT_NAME);
     char *name = scm_to_utf8_string(s_name);

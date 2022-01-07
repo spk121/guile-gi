@@ -224,7 +224,7 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
         }
 
         GIObjectInfo *p = g_object_info_get_parent(info);
-        bool has_parent = p ? true: false;
+        bool has_parent = p ? true : false;
         if (p)
             g_base_info_unref(p);
         if (!has_parent) {

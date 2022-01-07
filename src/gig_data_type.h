@@ -40,15 +40,15 @@ struct _GigTypeMeta
     uint16_t is_out:1;
 
     // For return values
-    uint16_t is_skip:1;          // true when output is ignored
+    uint16_t is_skip:1;         // true when output is ignored
 
     // For pointers
     uint16_t is_caller_allocates:1;
-    uint16_t is_optional:1;      // Out-only. Pass in NULL to ignore this.
-    uint16_t is_nullable:1;      // For in, can pass in NULL. For out, may return NULL.
+    uint16_t is_optional:1;     // Out-only. Pass in NULL to ignore this.
+    uint16_t is_nullable:1;     // For in, can pass in NULL. For out, may return NULL.
 
     // Error status
-    uint16_t is_invalid:1;       // True when one of the arguments has invalid type
+    uint16_t is_invalid:1;      // True when one of the arguments has invalid type
     uint16_t is_raw_array:1;
     uint16_t is_zero_terminated:1;
     uint16_t has_size:1;

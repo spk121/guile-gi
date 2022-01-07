@@ -86,8 +86,7 @@ cblist_free(CBList **lst)
 }
 
 static void
-convert_ffi_arg_to_giargument(void *_ffi_arg, ffi_type *arg_type, bool unpack,
-                              GIArgument *giarg)
+convert_ffi_arg_to_giargument(void *_ffi_arg, ffi_type *arg_type, bool unpack, GIArgument *giarg)
 {
     if (unpack)
         _ffi_arg = ((void **)_ffi_arg)[0];
@@ -101,21 +100,21 @@ convert_ffi_arg_to_giargument(void *_ffi_arg, ffi_type *arg_type, bool unpack,
     else if (arg_type == &ffi_type_uint)
         giarg->v_uint = *(unsigned *)_ffi_arg;
     else if (arg_type == &ffi_type_sint8)
-        giarg->v_int8 = *(int8_t *)_ffi_arg;
+        giarg->v_int8 = *(int8_t *) _ffi_arg;
     else if (arg_type == &ffi_type_uint8)
-        giarg->v_uint8 = *(uint8_t *)_ffi_arg;
+        giarg->v_uint8 = *(uint8_t *) _ffi_arg;
     else if (arg_type == &ffi_type_sint16)
-        giarg->v_int16 = *(int16_t *)_ffi_arg;
+        giarg->v_int16 = *(int16_t *) _ffi_arg;
     else if (arg_type == &ffi_type_uint16)
-        giarg->v_uint16 = *(uint16_t *)_ffi_arg;
+        giarg->v_uint16 = *(uint16_t *) _ffi_arg;
     else if (arg_type == &ffi_type_sint32)
-        giarg->v_int32 = *(int32_t *)_ffi_arg;
+        giarg->v_int32 = *(int32_t *) _ffi_arg;
     else if (arg_type == &ffi_type_uint32)
-        giarg->v_uint32 = *(uint32_t *)_ffi_arg;
+        giarg->v_uint32 = *(uint32_t *) _ffi_arg;
     else if (arg_type == &ffi_type_sint64)
-        giarg->v_int64 = *(int64_t *)_ffi_arg;
+        giarg->v_int64 = *(int64_t *) _ffi_arg;
     else if (arg_type == &ffi_type_uint64)
-        giarg->v_uint64 = *(uint64_t *)_ffi_arg;
+        giarg->v_uint64 = *(uint64_t *) _ffi_arg;
     else if (arg_type == &ffi_type_float)
         giarg->v_float = *(gfloat *)_ffi_arg;
     else if (arg_type == &ffi_type_double)
@@ -140,22 +139,22 @@ store_output(GigArgMapEntry *entry, void ***arg, GIArgument *value)
         **(char **)arg = value->v_int8;
         break;
     case G_TYPE_UCHAR:
-        **(unsigned char **) arg = value->v_uint8;
+        **(unsigned char **)arg = value->v_uint8;
         break;
     case G_TYPE_INT:
     {
         switch (item_size) {
         case 1:
-            **(int8_t **)arg = value->v_int8;
+            **(int8_t **) arg = value->v_int8;
             break;
         case 2:
-            **(int16_t **)arg = value->v_int16;
+            **(int16_t **) arg = value->v_int16;
             break;
         case 4:
-            **(int32_t **)arg = value->v_int32;
+            **(int32_t **) arg = value->v_int32;
             break;
         case 8:
-            **(int64_t **)arg = value->v_int64;
+            **(int64_t **) arg = value->v_int64;
             break;
         default:
             abort();
@@ -166,16 +165,16 @@ store_output(GigArgMapEntry *entry, void ***arg, GIArgument *value)
     {
         switch (entry->meta.item_size) {
         case 1:
-            **(uint8_t **)arg = value->v_uint8;
+            **(uint8_t **) arg = value->v_uint8;
             break;
         case 2:
-            **(uint16_t **)arg = value->v_uint16;
+            **(uint16_t **) arg = value->v_uint16;
             break;
         case 4:
-            **(uint32_t **)arg = value->v_uint32;
+            **(uint32_t **) arg = value->v_uint32;
             break;
         case 8:
-            **(uint64_t **)arg = value->v_uint64;
+            **(uint64_t **) arg = value->v_uint64;
             break;
         default:
             abort();
@@ -183,10 +182,10 @@ store_output(GigArgMapEntry *entry, void ***arg, GIArgument *value)
         break;
     }
     case G_TYPE_INT64:
-        **(int64_t **)arg = value->v_int64;
+        **(int64_t **) arg = value->v_int64;
         break;
     case G_TYPE_UINT64:
-        **(uint64_t **)arg = value->v_uint64;
+        **(uint64_t **) arg = value->v_uint64;
         break;
     case G_TYPE_FLOAT:
         **(float **)arg = value->v_float;

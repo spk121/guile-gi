@@ -344,7 +344,7 @@ make_formals(GICallableInfo *callable,
          s++, i_formal = scm_cdr(i_formal), i_specializer = scm_cdr(i_specializer)) {
         GigArgMapEntry *entry = gig_amap_get_input_entry_by_s(argmap, s);
         char *formal = scm_dynwind_or_bust("%make-formals",
-                                            gig_gname_to_scm_name(entry->name));
+                                           gig_gname_to_scm_name(entry->name));
         scm_set_car_x(i_formal, scm_from_utf8_symbol(formal));
         // Don't force types on nullable input, as #f can also be used to represent
         // NULL.
@@ -359,8 +359,7 @@ make_formals(GICallableInfo *callable,
 
 static GigGsubr *
 create_gsubr(GIFunctionInfo *function_info, const char *name, SCM self_type,
-             int *required_input_count, int *optional_input_count,
-             SCM *formals, SCM *specializers)
+             int *required_input_count, int *optional_input_count, SCM *formals, SCM *specializers)
 {
     GigFunction *gfn;
     ffi_type *ffi_ret_type;
@@ -454,9 +453,9 @@ function_invoke(GIFunctionInfo *func_info, GigArgMap *amap, const char *name, GO
     GIArgument return_arg;
     return_arg.v_pointer = NULL;
     bool ok = g_function_info_invoke(func_info, store.in,
-                                         store.in_len,
-                                         store.out,
-                                         store.out_len, &return_arg, error);
+                                     store.in_len,
+                                     store.out,
+                                     store.out_len, &return_arg, error);
 
     SCM ret = gig_args_store_return_value(&store, self, amap, args, name, &return_arg, ok);
 

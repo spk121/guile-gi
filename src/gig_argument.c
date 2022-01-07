@@ -264,7 +264,7 @@ scm_to_c_char(S2C_ARG_DECL)
             if (SCM_CHAR(object) > 255)
                 scm_out_of_range(subr, object);
             else
-                arg->v_int8 = (uint8_t)SCM_CHAR(object);
+                arg->v_int8 = (uint8_t) SCM_CHAR(object);
         }
         else if (!scm_is_signed_integer(object, INT8_MIN, INT8_MAX))
             scm_out_of_range(subr, object);
@@ -276,7 +276,7 @@ scm_to_c_char(S2C_ARG_DECL)
             if (SCM_CHAR(object) > 255)
                 scm_out_of_range(subr, object);
             else
-                arg->v_uint8 = (uint8_t)SCM_CHAR(object);
+                arg->v_uint8 = (uint8_t) SCM_CHAR(object);
         }
         else if (!scm_is_unsigned_integer(object, 0, UINT8_MAX))
             scm_out_of_range(subr, object);
@@ -704,7 +704,7 @@ c_hash_pointer_to_arg(GigTypeMeta *meta, void **p, GIArgument *arg)
         if (meta->gtype == G_TYPE_INT && meta->item_size <= 4) {
             // 4-byte INT types are packed into the pointer storage,
             // but with intptr_t sign extension.
-            int x = (int)(intptr_t)(p);
+            int x = (int)(intptr_t) (p);
             if (meta->item_size == 1)
                 arg->v_int8 = x;
             else if (meta->item_size == 2)
@@ -717,9 +717,9 @@ c_hash_pointer_to_arg(GigTypeMeta *meta, void **p, GIArgument *arg)
         // 8-byte INT, INT64, DOUBLE and FLOAT are stored by
         // reference, even if they would fit in a pointer.
         else if (meta->gtype == G_TYPE_INT || meta->gtype == G_TYPE_INT64)
-            arg->v_int64 = *(int64_t *)p;
+            arg->v_int64 = *(int64_t *) p;
         else if (meta->gtype == G_TYPE_UINT || meta->gtype == G_TYPE_UINT64)
-            arg->v_uint64 = *(uint64_t *)p;
+            arg->v_uint64 = *(uint64_t *) p;
         else if (meta->gtype == G_TYPE_FLOAT)
             arg->v_float = *(float *)p;
         else if (meta->gtype == G_TYPE_DOUBLE)
@@ -742,11 +742,11 @@ arg_to_c_hash_pointer(GigTypeMeta *meta, GigHashKeyType key_type, GIArgument *ar
         // GHashTables apparently expect that negative integers have
         // intptr_t sign extension.
         if (meta->item_size == 1)
-            return (void *)(intptr_t)(arg->v_int8);
+            return (void *)(intptr_t) (arg->v_int8);
         else if (meta->item_size == 2)
-            return (void *)(intptr_t)(arg->v_int16);
+            return (void *)(intptr_t) (arg->v_int16);
         else if (meta->item_size == 4)
-            return (void *)(intptr_t)(arg->v_int32);
+            return (void *)(intptr_t) (arg->v_int32);
         else
             abort();
     }

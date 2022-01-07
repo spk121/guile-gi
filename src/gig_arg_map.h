@@ -128,14 +128,14 @@ void gig_amap_s_input_count(const GigArgMap *amap, int *required, int *optional)
 GigArgMapEntry *gig_amap_get_input_entry_by_s(GigArgMap *am, int spos);
 GigArgMapEntry *gig_amap_get_output_entry_by_c(GigArgMap *am, int cpos);
 bool gig_amap_output_child_c(GigArgMap *am, int c_output_pos,
-                                 int *cinvoke_output_array_size_index);
+                             int *cinvoke_output_array_size_index);
 void gig_amap_c_count(const GigArgMap *am, int *c_input_pos, int *c_output_pos);
 bool gig_amap_input_s_2_input_c(const GigArgMap *amap, int s_input, int *c_input);
 bool gig_amap_input_s_2_output_c(const GigArgMap *amap, int s_input, int *c_output);
 bool gig_amap_input_s_2_child_input_c(const GigArgMap *amap, int s_input, int *c_input);
 bool gig_amap_input_s_2_child_output_c(const GigArgMap *amap, int s_input, int *c_output);
 bool gig_amap_get_cinvoke_array_length_indices(const GigArgMap *am, int s_input_pos,
-                                                   int *c_input_pos, int *c_output_pos);
+                                               int *c_input_pos, int *c_output_pos);
 bool gig_amap_input_i2c(const GigArgMap *amap, int i, int *c);
 bool gig_amap_input_i2s(const GigArgMap *amap, int i, int *s);
 bool gig_amap_input_c2i(const GigArgMap *amap, int c, int *i);

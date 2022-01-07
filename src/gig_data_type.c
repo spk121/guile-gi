@@ -108,7 +108,7 @@ gig_type_meta_init_from_basic_type_tag(GigTypeMeta *meta, GITypeTag tag)
         }                                       \
     } while(false)
 
-    T(GI_TYPE_TAG_BOOLEAN, G_TYPE_BOOLEAN, gboolean); // gboolean != bool
+    T(GI_TYPE_TAG_BOOLEAN, G_TYPE_BOOLEAN, gboolean);   // gboolean != bool
     T(GI_TYPE_TAG_DOUBLE, G_TYPE_DOUBLE, double);
     T(GI_TYPE_TAG_FLOAT, G_TYPE_FLOAT, float);
     T(GI_TYPE_TAG_GTYPE, G_TYPE_GTYPE, GType);
