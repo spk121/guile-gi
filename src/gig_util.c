@@ -241,7 +241,7 @@ gig_callable_info_make_name(GICallableInfo *info, const char *prefix)
         else if (predicate)
             snprintf(name, len, "%s?", str2);
         else
-            return str2;
+            snprintf(name, len, "%s", str2);
     }
     else {
         if (destructive)
