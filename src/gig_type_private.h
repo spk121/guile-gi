@@ -32,7 +32,7 @@ typedef struct _GigBoxedFuncs
 } GigBoxedFuncs;
 
 GigBoxedFuncs *_boxed_funcs_for_type(size_t type);
-void _free_boxed_funcs();
+void _free_boxed_funcs(void);
 
 extern SCM sym_obarray;
 
