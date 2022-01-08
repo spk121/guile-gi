@@ -237,7 +237,7 @@ type_less_p(SCM a, SCM b)
     return scm_less_p(key_b, key_a);
 }
 
-SCM
+static SCM
 gig_type_associate(GType gtype, SCM stype)
 {
     gig_type_register_self(gtype, stype);
