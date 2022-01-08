@@ -184,8 +184,8 @@ gig_args_store_scm_list(GigArgsStore *store, SCM s_args, GigArgMap *amap, const 
     gig_amap_c_count(amap, &input_len, &output_len);
     store->in_len = input_len;
     store->out_len = output_len;
-    store->in = calloc(store->in_len, sizeof(GIArgument));
-    store->out = calloc(store->out_len, sizeof(GIArgument));
+    store->in = xcalloc(store->in_len, sizeof(GIArgument));
+    store->out = xcalloc(store->out_len, sizeof(GIArgument));
 
     for (int i = 0; i < args_count; i++) {
         SCM obj = scm_c_list_ref(s_args, i);

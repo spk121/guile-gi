@@ -2,12 +2,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include "gig_keyval.h"
+#include "gig_util.h"
 
 GigKeyVal *
 gig_keyval_new(void)
 {
-    GigKeyVal *kv = calloc(1, sizeof(GigKeyVal));
-    kv->entries = calloc(20, sizeof(GigKeyValItem));
+    GigKeyVal *kv = xcalloc(1, sizeof(GigKeyVal));
+    kv->entries = xcalloc(20, sizeof(GigKeyValItem));
     kv->alloc = 20;
     kv->len = 0;
     return kv;
@@ -110,8 +111,8 @@ strval_comparison(const void *pA, const void *pB)
 GigStrVal *
 gig_strval_new(void)
 {
-    GigStrVal *sv = calloc(1, sizeof(GigStrVal));
-    sv->entries = calloc(20, sizeof(GigStrValItem));
+    GigStrVal *sv = xcalloc(1, sizeof(GigStrVal));
+    sv->entries = xcalloc(20, sizeof(GigStrValItem));
     sv->alloc = 20;
     sv->len = 0;
     return sv;

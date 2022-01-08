@@ -87,8 +87,8 @@ gig_i_scm_make_gobject(SCM s_gtype, SCM s_prop_keylist)
         scm_dynwind_unwind_handler(g_type_class_unref, _class, SCM_F_WIND_EXPLICITLY);
 
         n_prop = scm_c_length(s_prop_keylist) / 2;
-        keys = scm_dynwind_or_bust(FUNC, calloc(n_prop, sizeof(char *)));
-        values = scm_dynwind_or_bust(FUNC, calloc(n_prop, sizeof(GValue)));
+        keys = scm_dynwind_or_bust(FUNC, xcalloc(n_prop, sizeof(char *)));
+        values = scm_dynwind_or_bust(FUNC, xcalloc(n_prop, sizeof(GValue)));
 
         SCM iter = s_prop_keylist;
         for (size_t i = 0; i < n_prop; i++, iter = scm_cddr(iter)) {
