@@ -2,7 +2,43 @@
 #include "gig_type_private.h"
 #include "gig_util.h"
 
-static GSList *_boxed_funcs = NULL;
+typedef struct _func_list
+{
+    GigBoxedFuncs *bf;
+    struct _func_list *next;
+} FuncList;
+
+static FuncList *_boxed_funcs = NULL;
+
+static void _boxed_funcs_free(GigBoxedFuncs *funcs);
+
+static void
+func_list_add(FuncList **lst, GigBoxedFuncs *bf)
+{
+    FuncList *cur;
+    cur = malloc(sizeof(FuncList));
+    if (cur == NULL)
+        abort();
+    cur->bf = bf;
+    cur->next = *lst;
+    *lst = cur;
+}
+
+static void
+func_list_free(FuncList **lst)
+{
+    FuncList *cur, *next;
+    cur = *lst;
+    do {
+        if (cur == NULL)
+            break;
+        _boxed_funcs_free(cur->bf);
+        next = cur->next;
+        free(cur);
+        cur = next;
+    } while (1);
+    *lst = NULL;
+}
 
 static void
 _boxed_copy(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
@@ -43,7 +79,7 @@ _boxed_funcs_for_type(GType type)
     assert(ffi_prep_closure_loc(funcs->free_closure, &(funcs->free_cif), _boxed_free,
                                 GSIZE_TO_POINTER(type), funcs->free) == FFI_OK);
 
-    _boxed_funcs = g_slist_prepend(_boxed_funcs, funcs);
+    func_list_add(&_boxed_funcs, funcs);
 
     return funcs;
 }
@@ -63,5 +99,5 @@ _boxed_funcs_free(GigBoxedFuncs *funcs)
 void
 _free_boxed_funcs()
 {
-    g_slist_free_full(_boxed_funcs, (GDestroyNotify)_boxed_funcs_free);
+    func_list_free(&_boxed_funcs);
 }

@@ -32,7 +32,7 @@
 #endif
 #define GIG_LOCAL
 
-#else 
+#else
 
 #define GIG_API __attribute__ ((visibility("default")))
 #define GIG_LOCAL __attribute__ ((visibility("hidden")))

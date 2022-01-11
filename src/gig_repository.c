@@ -366,7 +366,7 @@ get_search_path(void)
     do {
         entry = scm_from_utf8_string(slist->data);
         output = scm_cons(entry, output);
-    } while ((slist = g_slist_next(slist)));
+    } while ((slist = slist->next) != NULL);
     return scm_reverse_x(output, SCM_EOL);
 }
 
