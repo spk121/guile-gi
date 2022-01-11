@@ -66,10 +66,19 @@ gchar *scm_write_to_utf8_stringn(SCM x, gsize max_len);
                          "GIG_DOMAIN", domain,                \
                          "MESSAGE", __VA_ARGS__);             \
     } while (FALSE)
+
+#define gig_debug_init(...) gig_debug_internal(G_LOG_LEVEL_DEBUG, "init", __VA_ARGS__)
+
 #define gig_debug_transfer(...) gig_debug_internal(G_LOG_LEVEL_DEBUG, "transfers", __VA_ARGS__)
+#define gig_warning_transfer(...) gig_debug_internal(G_LOG_LEVEL_WARNING, "transfers", __VA_ARGS__)
+#define gig_critical_transfer(...) gig_debug_internal(G_LOG_LEVEL_CRITICAL, "transfers", __VA_ARGS__)
+#define gig_error_transfer(...) gig_debug_internal(G_LOG_LEVEL_ERROR, "transfers", __VA_ARGS__)
 #define gig_debug_load(...)     gig_debug_internal(G_LOG_LEVEL_DEBUG, "load", __VA_ARGS__)
 #define gig_warning_load(...)   gig_debug_internal(G_LOG_LEVEL_WARNING, "load", __VA_ARGS__)
 #define gig_critical_load(...)  gig_debug_internal(G_LOG_LEVEL_CRITICAL, "load", __VA_ARGS__)
+#define gig_error_load(...)  gig_debug_internal(G_LOG_LEVEL_ERROR, "load", __VA_ARGS__)
+#define gig_debug_ffi(...) gig_debug_internal(G_LOG_LEVEL_DEBUG, "ffi", __VA_ARGS__)
+#define gig_critical_ffi(...) gig_debug_internal(G_LOG_LEVEL_CRITICAL, "ffi", __VA_ARGS__)
 
 #define gig_return_val_if_fail(a,b)                                     \
     do {                                                                \

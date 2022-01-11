@@ -30,12 +30,12 @@
 
 #define SURPRISING                                                      \
     do {                                                                \
-        g_warning("Unusual argument type '%s' %s:%d", gig_type_meta_describe(meta), __FILE__, __LINE__); \
+        gig_warning_transfer("Unusual argument type '%s' %s:%d", gig_type_meta_describe(meta), __FILE__, __LINE__); \
     } while(FALSE)
 
 #define UNHANDLED                                                       \
     do {                                                                \
-        g_error("unhandled argument type '%s' %s:%d", gig_type_meta_describe(meta), __FILE__, __LINE__); \
+        gig_error_transfer("unhandled argument type '%s' %s:%d", gig_type_meta_describe(meta), __FILE__, __LINE__); \
     } while(FALSE)
 
 static gpointer later_free(GPtrArray *must_free, GigTypeMeta *meta, gpointer ptr);

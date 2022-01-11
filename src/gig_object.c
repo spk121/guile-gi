@@ -254,9 +254,9 @@ gig_user_object_dispose(GObject *object)
     assert(G_TYPE_IS_CLASSED(type));
     assert(G_TYPE_IS_CLASSED(parent_type));
 
-    g_info("dispose is currently just calling the parent's dispose");
+    gig_debug_ffi("dispose is currently just calling the parent's dispose");
 
-    g_debug("disposing parent type");
+    gig_debug_ffi("disposing parent type");
     _parent_class = g_type_class_ref(parent_type);
     parent_class = G_OBJECT_CLASS(_parent_class);
 
@@ -496,7 +496,7 @@ gig_i_scm_emit(SCM self, SCM signal, SCM s_detail, SCM args)
 
     if (query_info.return_type != G_TYPE_NONE)
         g_value_init(&retval, query_info.return_type);
-    g_debug("%s - emitting signal", g_signal_name(sigid));
+    gig_debug_ffi("%s - emitting signal", g_signal_name(sigid));
     g_signal_emitv(values, sigid, detail, &retval);
 
     if (query_info.return_type != G_TYPE_NONE)

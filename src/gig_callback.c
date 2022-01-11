@@ -120,7 +120,7 @@ convert_ffi_arg_to_giargument(gpointer _ffi_arg, ffi_type *arg_type, gboolean un
     else if (arg_type == &ffi_type_double)
         giarg->v_double = *(gdouble *)_ffi_arg;
     else {
-        g_critical("Unhandled FFI type in %s: %d", __FILE__, __LINE__);
+        gig_critical_ffi("Unhandled FFI type in %s: %d", __FILE__, __LINE__);
         giarg->v_pointer = _ffi_arg;
     }
 }
@@ -201,7 +201,7 @@ store_output(GigArgMapEntry *entry, gpointer **arg, GIArgument *value)
         **(gchar ***)arg = value->v_pointer;
         break;
     default:
-        g_critical("Unhandled FFI type in %s: %d", __FILE__, __LINE__);
+        gig_critical_ffi("Unhandled FFI type in %s: %d", __FILE__, __LINE__);
         **(gchar ***)arg = value->v_pointer;
         break;
     }
@@ -442,7 +442,7 @@ gig_callback_new(const char *name, GICallbackInfo *callback_info, SCM s_func)
     SCM s_name = scm_procedure_name(s_func);
     if (scm_is_symbol(s_name)) {
         gcb->name = scm_to_utf8_string(scm_symbol_to_string(s_name));
-        g_debug("Constructing C callback for %s", gcb->name);
+        gig_debug_load("Constructing C callback for %s", gcb->name);
     }
     else {
         size_t len = strlen("callback:") + strlen(name) + 1;
@@ -738,6 +738,6 @@ callback_free(GigCallback *gcb)
 static void
 gig_fini_callback(void)
 {
-    g_debug("Freeing callbacks");
+    gig_debug_init("Freeing callbacks");
     cblist_free(&callback_list);
 }

@@ -518,7 +518,7 @@ gig_type_get_gtype_from_obj(SCM x)
 static void
 gig_type_free_types(void)
 {
-    g_debug("Freeing gtype hash table");
+    gig_debug_init("Freeing gtype hash table");
     g_hash_table_remove_all(gig_type_gtype_hash);
     g_hash_table_remove_all(gig_type_name_hash);
     g_hash_table_remove_all(gig_type_scm_hash);
@@ -813,7 +813,7 @@ gig_type_define_fundamental(GType type, SCM extra_supers,
     GIBaseInfo *info;
 
     if (gig_type_is_registered(type)) {
-        g_warning("not redefining fundamental type %s", g_type_name(type));
+        gig_warning_load("not redefining fundamental type %s", g_type_name(type));
         return;
     }
 

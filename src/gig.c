@@ -60,7 +60,7 @@ gig_init(void)
 #ifdef MTRACE
     mtrace();
 #endif
-    g_debug("Begin libguile-gir initialization");
+    gig_debug_init("Begin libguile-gir initialization");
     gig_init_flag();
     gig_init_signal();
     gig_init_callback();
@@ -69,7 +69,7 @@ gig_init(void)
     scm_c_define_gsubr("gcov-reset", 0, 0, 0, scm_gcov_reset);
     scm_c_define_gsubr("gcov-dump", 0, 0, 0, scm_gcov_dump);
 #endif
-    g_debug("End libguile-gir initialization");
+    gig_debug_init("End libguile-gir initialization");
 }
 
 #ifdef STANDALONE
