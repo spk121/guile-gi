@@ -173,7 +173,7 @@ zero_terminated_array_length(GigTypeMeta *meta, GIArgument *arg)
         }
         }
     }
-    g_return_val_if_reached(GIG_ARRAY_SIZE_UNKNOWN);
+    gig_return_val_if_reached(GIG_ARRAY_SIZE_UNKNOWN);
 }
 
 //////////////////////////////////////////////////////////

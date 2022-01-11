@@ -149,7 +149,7 @@ gig_repository_nested_infos(GIBaseInfo *base,
 SCM
 load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
 {
-    g_return_val_if_fail(info != NULL, defs);
+    gig_return_val_if_fail(info != NULL, defs);
 
     GIBaseInfo *parent = g_base_info_get_container(info);
     GType parent_gtype = G_TYPE_INVALID;

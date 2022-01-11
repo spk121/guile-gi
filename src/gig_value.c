@@ -343,7 +343,7 @@ gig_value_to_scm_basic_type(const GValue *value, GType fundamental, gboolean *ha
         *handled = FALSE;
         return SCM_BOOL_F;
     }
-    g_return_val_if_reached(SCM_BOOL_F);
+    gig_return_val_if_reached(SCM_BOOL_F);
 }
 
 // This function creates and returns a Scheme value that
@@ -427,7 +427,7 @@ gig_value_to_scm_structured_type(const GValue *value, GType fundamental, gboolea
         type_name = "(null)";
     scm_misc_error("gig_value_to_scm", "unknown type ~S",
                    scm_list_1(scm_from_utf8_string(type_name)));
-    g_return_val_if_reached(SCM_BOOL_F);
+    gig_return_val_if_reached(SCM_BOOL_F);
 }
 
 

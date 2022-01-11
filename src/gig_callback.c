@@ -491,12 +491,12 @@ gig_callback_new_for_callback(GICallbackInfo *info, gpointer c_func)
 
     ffi_status prep_ok, closure_ok;
     prep_ok = ffi_prep_cif(&(gcb->cif), FFI_DEFAULT_ABI, n_args, &ffi_type_pointer, gcb->atypes);
-    g_return_val_if_fail(prep_ok == FFI_OK, NULL);
+    gig_return_val_if_fail(prep_ok == FFI_OK, NULL);
 
     gcb->closure = ffi_closure_alloc(sizeof(ffi_closure), &(gcb->callback_ptr));
     closure_ok = ffi_prep_closure_loc(gcb->closure, &(gcb->cif), c_callback_binding, gcb,
                                       gcb->callback_ptr);
-    g_return_val_if_fail(closure_ok == FFI_OK, NULL);
+    gig_return_val_if_fail(closure_ok == FFI_OK, NULL);
 
     return gcb;
 }

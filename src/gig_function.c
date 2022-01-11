@@ -129,7 +129,7 @@ gig_function_define(GType type, GICallableInfo *info, const gchar *_namespace, S
 
     if (is_method) {
         self_type = gig_type_get_scheme_type(type);
-        g_return_val_if_fail(!SCM_UNBNDP(self_type), defs);
+        gig_return_val_if_fail(!SCM_UNBNDP(self_type), defs);
         method_name = scm_dynwind_or_bust("%gig-function-define",
                                           gig_callable_info_make_name(info, NULL));
         gig_debug_load("%s - shorthand for %s", method_name, function_name);
@@ -169,7 +169,7 @@ gig_function_define(GType type, GICallableInfo *info, const gchar *_namespace, S
 static SCM
 gig_function_define1(const gchar *public_name, SCM proc, int opt, SCM formals, SCM specializers)
 {
-    g_return_val_if_fail(public_name != NULL, SCM_UNDEFINED);
+    gig_return_val_if_fail(public_name != NULL, SCM_UNDEFINED);
 
     SCM sym_public_name = scm_from_utf8_symbol(public_name);
     SCM generic = default_definition(sym_public_name);
@@ -402,8 +402,8 @@ create_gsubr(GIFunctionInfo *function_info, const gchar *name, SCM self_type,
     // address.
     gfn->closure = ffi_closure_alloc(sizeof(ffi_closure), &(gfn->function_ptr));
 
-    g_return_val_if_fail(gfn->closure != NULL, NULL);
-    g_return_val_if_fail(gfn->function_ptr != NULL, NULL);
+    gig_return_val_if_fail(gfn->closure != NULL, NULL);
+    gig_return_val_if_fail(gfn->function_ptr != NULL, NULL);
 
     // STEP 2
     // Next, we begin to construct an FFI_CIF to describe the function
