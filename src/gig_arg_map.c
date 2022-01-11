@@ -13,6 +13,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 #include "gig_arg_map.h"
@@ -124,7 +125,7 @@ arg_map_determine_array_length_index(GigArgMap *amap, GigArgMapEntry *entry, GIT
     if (entry->meta.gtype == G_TYPE_ARRAY && entry->meta.has_size) {
         gint idx = g_type_info_get_array_length(info);
 
-        g_assert_cmpint(idx, !=, -1);
+        assert(idx >= 0);
 
         entry->tuple = GIG_ARG_TUPLE_ARRAY;
         entry->child = amap->pdata + idx;
@@ -271,7 +272,7 @@ arg_map_compute_s_call_positions(GigArgMap *amap)
     }
 
     amap->s_output_len = s_output_pos;
-    g_assert_cmpint(amap->s_input_req + amap->s_input_opt, ==, s_input_pos);
+    assert(amap->s_input_req + amap->s_input_opt == s_input_pos);
 }
 
 void
@@ -349,9 +350,10 @@ gig_amap_dump(const gchar *name, const GigArgMap *amap)
 void
 gig_amap_s_input_count(const GigArgMap *amap, gint *required, gint *optional)
 {
-    g_assert_nonnull(amap);
-    g_assert_nonnull(required);
-    g_assert_nonnull(optional);
+    assert(amap != NULL);
+    assert(required != NULL);
+    assert(optional != NULL);
+
     *required = amap->s_input_req;
     *optional = amap->s_input_opt;
 }
@@ -359,21 +361,23 @@ gig_amap_s_input_count(const GigArgMap *amap, gint *required, gint *optional)
 GigArgMapEntry *
 gig_amap_get_input_entry_by_s(GigArgMap *amap, gint spos)
 {
-    g_assert_nonnull(amap);
     gint i = 0;
+
+    assert(amap != NULL);
+
     while (i < amap->len) {
         if (amap->pdata[i].is_s_input && (amap->pdata[i].s_input_pos == spos)) {
             return &amap->pdata[i];
         }
         i++;
     }
-    g_assert_not_reached();
+    abort();
 }
 
 GigArgMapEntry *
 gig_amap_get_output_entry_by_c(GigArgMap *amap, gint cpos)
 {
-    g_assert_nonnull(amap);
+    assert(amap != NULL);
 
     gint i = 0;
     while (i < amap->len) {
@@ -391,8 +395,8 @@ gig_amap_get_output_entry_by_c(GigArgMap *amap, gint cpos)
 gboolean
 gig_amap_output_child_c(GigArgMap *amap, gint c_output_pos, gint *cinvoke_output_array_size_index)
 {
-    g_assert_nonnull(amap);
-    g_assert_nonnull(cinvoke_output_array_size_index);
+    assert(amap != NULL);
+    assert(cinvoke_output_array_size_index != NULL);
 
     gint i = 0;
     while (i < amap->len) {
@@ -412,9 +416,9 @@ gig_amap_output_child_c(GigArgMap *amap, gint c_output_pos, gint *cinvoke_output
 void
 gig_amap_c_count(const GigArgMap *amap, gint *c_input_len, gint *c_output_len)
 {
-    g_assert_nonnull(amap);
-    g_assert_nonnull(c_input_len);
-    g_assert_nonnull(c_output_len);
+    assert(amap != NULL);
+    assert(c_input_len != NULL);
+    assert(c_output_len != NULL);
 
     *c_input_len = amap->c_input_len;
     *c_output_len = amap->c_output_len;
@@ -427,8 +431,8 @@ gig_amap_c_count(const GigArgMap *amap, gint *c_input_len, gint *c_output_len)
 gboolean
 gig_amap_input_s_2_input_c(const GigArgMap *amap, gint s_input_pos, gint *c_input_pos)
 {
-    g_assert_nonnull(amap);
-    g_assert_nonnull(c_input_pos);
+    assert(amap != NULL);
+    assert(c_input_pos != NULL);
 
     gint i = 0;
     while (i < amap->len) {
@@ -448,8 +452,8 @@ gig_amap_input_s_2_input_c(const GigArgMap *amap, gint s_input_pos, gint *c_inpu
 gboolean
 gig_amap_input_s_2_output_c(const GigArgMap *amap, gint s_input_pos, gint *c_output_pos)
 {
-    g_assert_nonnull(amap);
-    g_assert_nonnull(c_output_pos);
+    assert(amap != NULL);
+    assert(c_output_pos != NULL);
 
     gint i = 0;
     while (i < amap->len) {
@@ -474,8 +478,8 @@ gig_amap_input_s_2_output_c(const GigArgMap *amap, gint s_input_pos, gint *c_out
 gboolean
 gig_amap_input_s_2_child_input_c(const GigArgMap *amap, gint s_input_pos, gint *c_input_pos)
 {
-    g_assert_nonnull(amap);
-    g_assert_nonnull(c_input_pos);
+    assert(amap != NULL);
+    assert(c_input_pos != NULL);
 
     gint i = 0;
     while (i < amap->len) {
@@ -500,8 +504,8 @@ gig_amap_input_s_2_child_input_c(const GigArgMap *amap, gint s_input_pos, gint *
 gboolean
 gig_amap_input_s_2_child_output_c(const GigArgMap *amap, gint s_input_pos, gint *c_output_pos)
 {
-    g_assert_nonnull(amap);
-    g_assert_nonnull(c_output_pos);
+    assert(amap != NULL);
+    assert(c_output_pos != NULL);
 
     gint i = 0;
     while (i < amap->len) {

@@ -14,6 +14,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #define _XOPEN_SOURCE 700       /* For strdup, strndup */
+#include <assert.h>
 #include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
@@ -277,8 +278,8 @@ gig_constant_strip_prefix(const gchar *name, const gchar *strip_prefix)
 gchar *
 gig_gname_to_scm_name(const gchar *gname)
 {
-    g_assert(gname != NULL);
-    g_assert(strlen(gname) > 0);
+    assert(gname != NULL);
+    assert(strlen(gname) > 0);
 
     gsize len = strlen(gname);
     GString *str = g_string_new(NULL);

@@ -12,10 +12,10 @@
 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-#include <libguile/hooks.h>
+#include <assert.h>
 #include <string.h>
 #include <ffi.h>
+#include <libguile/hooks.h>
 #include "gig_argument.h"
 #include "gig_util.h"
 #include "gig_arg_map.h"
@@ -633,15 +633,15 @@ function_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
     // into Guile for this thread?
     scm_init_guile();
 
-    g_assert(cif != NULL);
-    g_assert(ret != NULL);
-    g_assert(ffi_args != NULL);
-    g_assert(user_data != NULL);
+    assert(cif != NULL);
+    assert(ret != NULL);
+    assert(ffi_args != NULL);
+    assert(user_data != NULL);
 
     guint n_args = cif->nargs;
 
     // we have either 0 args or 1 args, which is the already packed list
-    g_assert(n_args <= 1);
+    assert(n_args <= 1);
 
     if (n_args)
         s_args = SCM_PACK(*(scm_t_bits *) (ffi_args[0]));
@@ -726,7 +726,7 @@ object_to_c_arg(GigArgMap *amap, gint s, const gchar *name, SCM obj,
 
         is_in = gig_amap_input_c2i(amap, c_child_invoke_in, &i_child);
         is_out = gig_amap_output_i2c(amap, i_child, &c_child_invoke_out);
-        g_assert(is_in);
+        assert(is_in);
         if (!is_out)
             c_child_invoke_out = -1;
 
@@ -776,11 +776,11 @@ object_list_to_c_args(GigArgMap *amap,
                       GArray *cinvoke_input_arg_array,
                       GPtrArray *cinvoke_free_array, GArray *cinvoke_output_arg_array)
 {
-    g_assert_nonnull(amap);
-    g_assert_nonnull(subr);
-    g_assert_nonnull(cinvoke_input_arg_array);
-    g_assert_nonnull(cinvoke_free_array);
-    g_assert_nonnull(cinvoke_output_arg_array);
+    assert(amap != NULL);
+    assert(subr != NULL);
+    assert(cinvoke_input_arg_array != NULL);
+    assert(cinvoke_free_array != NULL);
+    assert(cinvoke_output_arg_array != NULL);
 
     gint args_count, required, optional;
     if (SCM_UNBNDP(s_args))

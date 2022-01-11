@@ -13,6 +13,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>
 
+#include <assert.h>
 #include <stdio.h>
 #include <libguile.h>
 #include <girepository.h>
@@ -251,7 +252,7 @@ gig_type_define_with_info(GIRegisteredTypeInfo *info, SCM dsupers, SCM slots)
     }
 
     gchar *_name = g_registered_type_info_get_qualified_name(info);
-    g_assert(_name != NULL);
+    assert(_name != NULL);
     gpointer _key, _value;
     gboolean exists = g_hash_table_lookup_extended(gig_type_name_hash, _name, &_key, &_value);
 
@@ -280,7 +281,7 @@ gig_type_define_with_info(GIRegisteredTypeInfo *info, SCM dsupers, SCM slots)
 SCM
 gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
 {
-    g_assert(GSIZE_TO_POINTER(gtype) != NULL);
+    assert(GSIZE_TO_POINTER(gtype) != NULL);
 
     gboolean newkey;
     gpointer orig_key, orig_value;
@@ -816,7 +817,7 @@ gig_type_define_fundamental(GType type, SCM extra_supers,
         return;
     }
 
-    g_assert(scm_is_true(scm_module_public_interface(scm_current_module())));
+    assert(scm_is_true(scm_module_public_interface(scm_current_module())));
 
     repository = g_irepository_get_default();
     info = g_irepository_find_by_gtype(repository, type);
