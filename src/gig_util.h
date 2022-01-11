@@ -85,6 +85,13 @@ gchar *scm_write_to_utf8_stringn(SCM x, gsize max_len);
         return (x);                                                     \
     } while (0)
 
+#define gig_assert_not_reached()                                        \
+    do {                                                                \
+        gig_debug_internal(G_LOG_LEVEL_CRITICAL, "reached", "unexpected reach"); \
+        exit(1);                                                        \
+    } while (0)
+
+
 #if (SCM_MAJOR_VERSION == 2) || (SCM_MAJOR_VERSION == 3 && SCM_MINOR_VERSION == 0 && SCM_MICRO_VERSION < 4)
 #define scm_c_bitvector_count(x) scm_to_size_t(scm_bit_count(SCM_BOOL_T, (x)))
 #endif

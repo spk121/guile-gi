@@ -144,7 +144,7 @@ gig_function_define(GType type, GICallableInfo *info, const gchar *_namespace, S
         proc = proc4signal((GISignalInfo *)info, function_name, self_type,
                            &required_input_count, &optional_input_count, &formals, &specializers);
     else
-        g_assert_not_reached();
+        gig_assert_not_reached();
 
     if (SCM_UNBNDP(proc))
         goto end;
@@ -818,7 +818,7 @@ find_output_arg(GigArgMapEntry *entry, GIArgument *in, GIArgument *out)
     case GIG_ARG_DIRECTION_OUTPUT:
         return out + entry->c_output_pos;
     default:
-        g_assert_not_reached();
+        gig_assert_not_reached();
     }
 }
 

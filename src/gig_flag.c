@@ -145,7 +145,7 @@ gig_define_enum_conversions(GIEnumInfo *info, GType type, SCM defs)
         C("list->%s", list_to_flags);
         break;
     default:
-        g_assert_not_reached();
+        gig_assert_not_reached();
     }
     scm_dynwind_end();
 
@@ -175,7 +175,7 @@ gig_define_enum(GIEnumInfo *info, SCM defs)
         _class = gig_type_define_with_info(info, scm_list_1(gig_flags_type), SCM_EOL);
         break;
     default:
-        g_assert_not_reached();
+        gig_assert_not_reached();
     }
 
     SCM obarray = scm_make_hash_table(scm_from_int(n_values));
@@ -199,7 +199,7 @@ gig_define_enum(GIEnumInfo *info, SCM defs)
             val = scm_from_uint(_val);
             break;
         default:
-            g_assert_not_reached();
+            gig_assert_not_reached();
         }
 
         scm_hashq_set_x(obarray, key, val);

@@ -122,7 +122,7 @@ store_output(GigArgMapEntry *entry, gpointer **arg, GIArgument *value)
             **(gint64 **)arg = value->v_int64;
             break;
         default:
-            g_assert_not_reached();
+            gig_assert_not_reached();
         }
         break;
     }
@@ -142,7 +142,7 @@ store_output(GigArgMapEntry *entry, gpointer **arg, GIArgument *value)
             **(guint64 **)arg = value->v_uint64;
             break;
         default:
-            g_assert_not_reached();
+            gig_assert_not_reached();
         }
         break;
     }
@@ -578,7 +578,7 @@ amap_entry_to_ffi_type(GigArgMapEntry *entry)
             case 8:
                 return &ffi_type_sint64;
             default:
-                g_assert_not_reached();
+                gig_assert_not_reached();
             }
         else if (fundamental_type == G_TYPE_UINT)
             switch (entry->meta.item_size) {
@@ -591,7 +591,7 @@ amap_entry_to_ffi_type(GigArgMapEntry *entry)
             case 8:
                 return &ffi_type_uint64;
             default:
-                g_assert_not_reached();
+                gig_assert_not_reached();
             }
         else if (fundamental_type == G_TYPE_INT64)
             return &ffi_type_sint64;
@@ -608,14 +608,14 @@ amap_entry_to_ffi_type(GigArgMapEntry *entry)
             case 8:
                 return &ffi_type_sint64;
             default:
-                g_assert_not_reached();
+                gig_assert_not_reached();
             }
         else if (fundamental_type == G_TYPE_FLAGS)
             return &ffi_type_uint32;
         else if (fundamental_type == G_TYPE_ENUM)
             return &ffi_type_sint32;
         else
-            g_assert_not_reached();
+            gig_assert_not_reached();
     }
 }
 

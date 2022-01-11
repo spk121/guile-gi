@@ -185,7 +185,7 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
         else if (array_type == GI_ARRAY_TYPE_PTR_ARRAY)
             meta->gtype = G_TYPE_PTR_ARRAY;
         else
-            g_assert_not_reached();
+            gig_assert_not_reached();
     }
     else if (tag == GI_TYPE_TAG_GHASH) {
         meta->gtype = G_TYPE_HASH_TABLE;

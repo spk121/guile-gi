@@ -126,7 +126,7 @@ zero_terminated_array_length(GigTypeMeta *meta, GIArgument *arg)
         assert(item_size > 0);
         switch (item_size) {
         case 0:
-            g_assert_not_reached();
+            gig_assert_not_reached();
         case 1:
             return strlen(arg->v_string);
         case 2:
@@ -725,7 +725,7 @@ c_hash_pointer_to_arg(GigTypeMeta *meta, gpointer *p, GIArgument *arg)
             else if (meta->item_size == 4)
                 arg->v_int32 = x;
             else
-                g_assert_not_reached();
+                gig_assert_not_reached();
         }
         // 8-byte INT, INT64, DOUBLE and FLOAT are stored by
         // reference, even if they would fit in a pointer.
@@ -761,7 +761,7 @@ arg_to_c_hash_pointer(GigTypeMeta *meta, GigHashKeyType key_type, GIArgument *ar
         else if (meta->item_size == 4)
             return GINT_TO_POINTER(arg->v_int32);
         else
-            g_assert_not_reached();
+            gig_assert_not_reached();
     }
     else if (key_type == GIG_HASH_INT64) {
         // GHashTables expect gint64 to be passed by reference, even
@@ -791,7 +791,7 @@ arg_to_c_hash_pointer(GigTypeMeta *meta, GigHashKeyType key_type, GIArgument *ar
             return p;
         }
         else
-            g_assert_not_reached();
+            gig_assert_not_reached();
     }
     // else is GIG_HASH_STRING or GIG_HASH_POINTER which don't require
     // special handling.
@@ -1046,7 +1046,7 @@ scm_to_c_native_interface_array(S2C_ARG_DECL)
                 }
         }
         else
-            g_assert_not_reached();
+            gig_assert_not_reached();
     }
     else {
         // Everything else is unhandled.

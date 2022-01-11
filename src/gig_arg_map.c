@@ -267,7 +267,7 @@ arg_map_compute_s_call_positions(GigArgMap *amap)
             entry->s_output_pos = s_output_pos++;
             break;
         default:
-            g_assert_not_reached();
+            gig_assert_not_reached();
         }
     }
 

@@ -414,7 +414,7 @@ gig_value_to_scm_structured_type(const GValue *value, GType fundamental, gboolea
     }
     default:
     {
-        // g_assert_not_reached ();
+        // gig_assert_not_reached ();
         /* PyGTypeMarshal *bm; */
         /* if ((bm = pyg_type_lookup(G_VALUE_TYPE(value)))) */
         /*  return bm->fromvalue(value); */
