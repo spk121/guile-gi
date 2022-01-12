@@ -26,6 +26,7 @@ G_BEGIN_DECLS
 // *INDENT-ON*
 
 typedef SCM (*GigGsubr)(void);
+typedef struct _GigFunction GigFunction;
 
 SCM gig_function_define(GType type, GICallableInfo *info, const gchar *_namespace, SCM defs);
 SCM gig_callable_invoke(GICallableInfo *callable_info, gpointer callable, GigArgMap *amap,
