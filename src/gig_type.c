@@ -105,7 +105,7 @@ static intbool_t
 gig_type_is_registered(gtype_t gtype)
 {
     scm_t_bits x;
-    x = SCM_UNPACK(gtype_hash_find_entry(gtype_scm_store, gtype));
+    x = gtype_hash_find_entry(gtype_scm_store, gtype);
     return x != 0;
 }
 
@@ -116,7 +116,7 @@ gig_type_register_self(gtype_t gtype, SCM stype)
     scm_t_bits pval;
     char *stype_str = NULL, *old_stype_str = NULL;
 
-    pval = SCM_UNPACK(gtype_hash_find_entry(gtype_scm_store, gtype));
+    pval = gtype_hash_find_entry(gtype_scm_store, gtype);
 
     // #<undefined> beats NULL. Anything defined beats #<undefined>.
 
@@ -125,7 +125,7 @@ gig_type_register_self(gtype_t gtype, SCM stype)
     if (pval != 0 && !SCM_UNBNDP(SCM_PACK(pval)) && SCM_UNBNDP(stype))
         return;
     stype_str = scm_write_to_utf8_stringn(stype, 80);
-    gtype_hash_add_entry(gtype_scm_store, gtype, stype);
+    gtype_hash_add_entry(gtype_scm_store, gtype, SCM_UNPACK(stype));
     if (pval == 0) {
         if (parent)
             gig_debug_load("%s - registering a new %s type for %zx as %s", g_type_name(gtype),
@@ -245,7 +245,7 @@ gig_type_associate(gtype_t gtype, SCM stype)
     gig_type_register_self(gtype, stype);
     scm_set_object_property_x(stype, sym_sort_key,
                               scm_from_size_t(gtype_hash_size(gtype_scm_store)));
-    scm_hash_add_entry(scm_gtype_store, stype, gtype);
+    scm_hash_add_entry(scm_gtype_store, SCM_UNPACK(stype), gtype);
     return scm_class_name(stype);
 }
 
@@ -260,7 +260,7 @@ gig_type_define_with_info(GIRegisteredTypeInfo *info, SCM dsupers, SCM slots)
 
     char *_name = g_registered_type_info_get_qualified_name(info);
     assert(_name != NULL);
-    scm_t_bits _value = SCM_UNPACK(name_hash_find_entry(name_scm_store, _name));
+    scm_t_bits _value = name_hash_find_entry(name_scm_store, _name);
 
     SCM cls;
     if (_value) {
@@ -274,7 +274,7 @@ gig_type_define_with_info(GIRegisteredTypeInfo *info, SCM dsupers, SCM slots)
         SCM class_name = scm_from_utf8_symbol(name);
         cls = scm_call_4(make_class_proc, dsupers, slots, kwd_name, class_name);
         gig_debug_load("%s - creating new type", name);
-        name_hash_add_entry(name_scm_store, _name, cls);
+        name_hash_add_entry(name_scm_store, _name, SCM_UNPACK(cls));
         free(name);
     }
 
@@ -294,7 +294,7 @@ gig_type_define_full(gtype_t gtype, SCM defs, SCM extra_supers)
     gtype_t fundamental = G_TYPE_FUNDAMENTAL(gtype);
     char *_type_class_name = gig_type_class_name_from_gtype(gtype);
 
-    orig_value = SCM_UNPACK(gtype_hash_find_entry(gtype_scm_store, gtype));
+    orig_value = gtype_hash_find_entry(gtype_scm_store, gtype);
     if (orig_value == 0) {
         gig_debug_load("%s - creating new %s type for %zx %s",
                        _type_class_name, g_type_name(fundamental), gtype, g_type_name(gtype));
@@ -310,7 +310,7 @@ gig_type_define_full(gtype_t gtype, SCM defs, SCM extra_supers)
             gig_type_define(parent, defs);
 
         SCM new_type, dsupers, slots = SCM_EOL;
-        scm_t_bits sparent = SCM_UNPACK(gtype_hash_find_entry(gtype_scm_store, parent));
+        scm_t_bits sparent = gtype_hash_find_entry(gtype_scm_store, parent);
 
         switch (fundamental) {
         case G_TYPE_ENUM:
@@ -482,7 +482,7 @@ scm_to_gtype_full(SCM x, const char *subr, int argpos)
     if (scm_is_unsigned_integer(x, 0, SIZE_MAX))
         return scm_to_size_t(x);
     else if (SCM_CLASSP(x))
-        return scm_hash_find_entry(scm_gtype_store, x);
+        return scm_hash_find_entry(scm_gtype_store, SCM_UNPACK(x));
     else
         scm_wrong_type_arg_msg(subr, argpos, x, "gtype_t integer or class");
 }
@@ -491,9 +491,9 @@ SCM
 scm_from_gtype(gtype_t x)
 {
     // gtype_t <-> SCM associations must go both ways
-    scm_t_bits _value = SCM_UNPACK(gtype_hash_find_entry(gtype_scm_store, x));
+    scm_t_bits _value = gtype_hash_find_entry(gtype_scm_store, x);
     if (_value != 0) {
-        if (scm_hash_find_entry(scm_gtype_store, SCM_PACK(_value)) != 0)
+        if (scm_hash_find_entry(scm_gtype_store, _value) != 0)
             return SCM_PACK(_value);
     }
     return scm_from_size_t(x);
@@ -506,9 +506,9 @@ gtype_t
 gig_type_get_gtype_from_obj(SCM x)
 {
     gtype_t value;
-    if ((value = scm_hash_find_entry(scm_gtype_store, x)))
+    if ((value = scm_hash_find_entry(scm_gtype_store, SCM_UNPACK(x))))
         return value;
-    else if (SCM_INSTANCEP(x) && (value = scm_hash_find_entry(scm_gtype_store, SCM_CLASS_OF(x))))
+    else if (SCM_INSTANCEP(x) && (value = scm_hash_find_entry(scm_gtype_store, SCM_UNPACK(SCM_CLASS_OF(x)))))
         return value;
 
     return G_TYPE_INVALID;
@@ -534,13 +534,13 @@ _gig_type_check_scheme_type(scm_t_bits _stype)
 SCM
 gig_type_get_scheme_type(gtype_t gtype)
 {
-    scm_t_bits _value = SCM_UNPACK(gtype_hash_find_entry(gtype_scm_store, gtype));
+    scm_t_bits _value = gtype_hash_find_entry(gtype_scm_store, gtype);
 
     if (_value)
         return _gig_type_check_scheme_type(_value);
     else {
         gig_type_define(gtype, SCM_UNDEFINED);
-        _value = SCM_UNPACK(gtype_hash_find_entry(gtype_scm_store, gtype));
+        _value = gtype_hash_find_entry(gtype_scm_store, gtype);
         return _gig_type_check_scheme_type(_value);
     }
 }
@@ -549,7 +549,7 @@ SCM
 gig_type_get_scheme_type_with_info(GIRegisteredTypeInfo *info)
 {
     char *_name = g_registered_type_info_get_qualified_name(info);
-    scm_t_bits value = SCM_UNPACK(name_hash_find_entry(name_scm_store, _name));
+    scm_t_bits value = name_hash_find_entry(name_scm_store, _name);
     free(_name);
     if (value == 0)
         return SCM_UNDEFINED;

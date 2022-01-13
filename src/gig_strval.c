@@ -36,7 +36,7 @@ name_hash_comparison(const void *pA, const void *pB)
 }
 
 void
-name_hash_add_entry(NameHash *kv, const char *str, SCM val)
+name_hash_add_entry(NameHash *kv, const char *str, scm_t_bits val)
 {
     NameItem A;
     A.str = str;
@@ -60,17 +60,17 @@ name_hash_add_entry(NameHash *kv, const char *str, SCM val)
     }
 }
 
-SCM
-name_hash_find_entry(NameHash *kv, const char *str)
+scm_t_bits
+name_hash_find_entry(NameHash* kv, const char *str)
 {
     void *pB;
     NameItem A;
     A.str = str;
-    A.val = (SCM)0;
+    A.val = (scm_t_bits) 0;
 
     pB = bsearch(&A, kv->entries, kv->len, sizeof(NameItem), name_hash_comparison);
     if (pB == NULL)
-        return (SCM)0;
+        return (scm_t_bits) 0;
 
     return ((NameItem *) pB)->val;
 }
@@ -80,3 +80,6 @@ name_hash_size(NameHash *kv)
 {
     return kv->len;
 }
+
+
+

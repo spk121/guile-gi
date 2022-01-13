@@ -7,12 +7,12 @@
 #include <stdint.h>
 #include <libguile.h>
 
-typedef void (*NameHashValFreeFunc)(SCM x);
+typedef void (* NameHashValFreeFunc)(scm_t_bits x);
 
 typedef struct _NameItem
 {
     char *str;
-    SCM val;
+    scm_t_bits val;
 } NameItem;
 
 typedef struct _NameHash
@@ -23,9 +23,10 @@ typedef struct _NameHash
 } NameHash;
 
 NameHash *name_hash_new(void);
-SCM name_hash_find_entry(NameHash *kv, const char *key);
-void name_hash_add_entry(NameHash *kv, const char *key, SCM val);
+scm_t_bits name_hash_find_entry(NameHash *kv, const char *key);
+void name_hash_add_entry(NameHash *kv, const char *key, scm_t_bits val);
 void name_hash_free(NameHash *kv, NameHashValFreeFunc valfree);
 int name_hash_size(NameHash *kv);
 
 #endif
+

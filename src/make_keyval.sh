@@ -24,13 +24,13 @@ cat gig_keyval.i.h \
     | sed 's/TABLE/GtypeHash/g' \
     | sed 's/ITEM/GtypeItem/g' \
     | sed 's/TYPE1/GType/g' \
-    | sed 's/TYPE2/SCM/g' \
+    | sed 's/TYPE2/scm_t_bits/g' \
     | sed 's/FUNC/gtype_hash/g' >> gig_keyval.h
 
 cat gig_keyval.i.h \
     | sed 's/TABLE/ScmHash/g' \
     | sed 's/ITEM/ScmItem/g' \
-    | sed 's/TYPE1/SCM/g' \
+    | sed 's/TYPE1/scm_t_bits/g' \
     | sed 's/TYPE2/GType/g' \
     | sed 's/FUNC/scm_hash/g' >> gig_keyval.h
 
@@ -61,13 +61,13 @@ cat gig_keyval.i.c \
     | sed 's/TABLE/GtypeHash/g' \
     | sed 's/ITEM/GtypeItem/g' \
     | sed 's/TYPE1/GType/g' \
-    | sed 's/TYPE2/SCM/g' \
+    | sed 's/TYPE2/scm_t_bits/g' \
     | sed 's/FUNC/gtype_hash/g' >> gig_keyval.c
 
 cat gig_keyval.i.c \
     | sed 's/TABLE/ScmHash/g' \
     | sed 's/ITEM/ScmItem/g' \
-    | sed 's/TYPE1/SCM/g' \
+    | sed 's/TYPE1/scm_t_bits/g' \
     | sed 's/TYPE2/GType/g' \
     | sed 's/FUNC/scm_hash/g' >> gig_keyval.c
 
@@ -90,7 +90,7 @@ echo "
 cat gig_strval.i.h \
     | sed 's/TABLE/NameHash/g' \
     | sed 's/ITEM/NameItem/g' \
-    | sed 's/TYPE2/SCM/g' \
+    | sed 's/TYPE2/scm_t_bits/g' \
     | sed 's/FUNC/name_hash/g' >> gig_strval.h
 
 echo "
@@ -111,7 +111,7 @@ echo "
 cat gig_strval.i.c \
     | sed 's/TABLE/NameHash/g' \
     | sed 's/ITEM/NameItem/g' \
-    | sed 's/TYPE2/SCM/g' \
+    | sed 's/TYPE2/scm_t_bits/g' \
     | sed 's/FUNC/name_hash/g' >> gig_strval.c
 
 echo "

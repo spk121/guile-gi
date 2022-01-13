@@ -16,8 +16,7 @@ function_cache_new(void)
 }
 
 void
-function_cache_free(FunctionInfoTable *kv, FunctionInfoTableKeyFreeFunc keyfree,
-                    FunctionInfoTableValFreeFunc valfree)
+function_cache_free(FunctionInfoTable *kv, FunctionInfoTableKeyFreeFunc keyfree, FunctionInfoTableValFreeFunc valfree)
 {
     for (int i = 0; i < kv->len; i++) {
         if (keyfree)
@@ -38,7 +37,7 @@ function_cache_comparison(const void *pA, const void *pB)
 }
 
 void
-function_cache_add_entry(FunctionInfoTable *kv, GIFunctionInfo *key, GigFunction *val)
+function_cache_add_entry(FunctionInfoTable *kv, GIFunctionInfo * key, GigFunction * val)
 {
     FunctionInfoItem A;
     A.key = key;
@@ -63,16 +62,16 @@ function_cache_add_entry(FunctionInfoTable *kv, GIFunctionInfo *key, GigFunction
 }
 
 GigFunction *
-function_cache_find_entry(FunctionInfoTable *kv, GIFunctionInfo *key)
+function_cache_find_entry(FunctionInfoTable *kv, GIFunctionInfo * key)
 {
     void *pB;
     FunctionInfoItem A;
     A.key = key;
-    A.val = (GigFunction *)0;
+    A.val = (GigFunction *) 0;
 
     pB = bsearch(&A, kv->entries, kv->len, sizeof(FunctionInfoItem), function_cache_comparison);
     if (pB == NULL)
-        return (GigFunction *)0;
+        return (GigFunction *) 0;
 
     return ((FunctionInfoItem *) pB)->val;
 }
@@ -82,7 +81,6 @@ function_cache_size(FunctionInfoTable *kv)
 {
     return kv->len;
 }
-
 GtypeHash *
 gtype_hash_new(void)
 {
@@ -115,7 +113,7 @@ gtype_hash_comparison(const void *pA, const void *pB)
 }
 
 void
-gtype_hash_add_entry(GtypeHash *kv, gtype_t key, SCM val)
+gtype_hash_add_entry(GtypeHash *kv, GType key, scm_t_bits val)
 {
     GtypeItem A;
     A.key = key;
@@ -139,17 +137,17 @@ gtype_hash_add_entry(GtypeHash *kv, gtype_t key, SCM val)
     }
 }
 
-SCM
-gtype_hash_find_entry(GtypeHash *kv, gtype_t key)
+scm_t_bits
+gtype_hash_find_entry(GtypeHash *kv, GType key)
 {
     void *pB;
     GtypeItem A;
     A.key = key;
-    A.val = (SCM)0;
+    A.val = (scm_t_bits) 0;
 
     pB = bsearch(&A, kv->entries, kv->len, sizeof(GtypeItem), gtype_hash_comparison);
     if (pB == NULL)
-        return (SCM)0;
+        return (scm_t_bits) 0;
 
     return ((GtypeItem *) pB)->val;
 }
@@ -159,7 +157,6 @@ gtype_hash_size(GtypeHash *kv)
 {
     return kv->len;
 }
-
 ScmHash *
 scm_hash_new(void)
 {
@@ -192,7 +189,7 @@ scm_hash_comparison(const void *pA, const void *pB)
 }
 
 void
-scm_hash_add_entry(ScmHash *kv, SCM key, gtype_t val)
+scm_hash_add_entry(ScmHash *kv, scm_t_bits key, GType val)
 {
     ScmItem A;
     A.key = key;
@@ -216,17 +213,17 @@ scm_hash_add_entry(ScmHash *kv, SCM key, gtype_t val)
     }
 }
 
-gtype_t
-scm_hash_find_entry(ScmHash *kv, SCM key)
+GType
+scm_hash_find_entry(ScmHash *kv, scm_t_bits key)
 {
     void *pB;
     ScmItem A;
     A.key = key;
-    A.val = (gtype_t) 0;
+    A.val = (GType) 0;
 
     pB = bsearch(&A, kv->entries, kv->len, sizeof(ScmItem), scm_hash_comparison);
     if (pB == NULL)
-        return (gtype_t) 0;
+        return (GType) 0;
 
     return ((ScmItem *) pB)->val;
 }
@@ -236,3 +233,5 @@ scm_hash_size(ScmHash *kv)
 {
     return kv->len;
 }
+
+
