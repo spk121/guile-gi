@@ -73,7 +73,7 @@
  */
 
 // Maps GType to SCM
-static GTypeHash *gtype_scm_store = NULL;
+static GtypeHash *gtype_scm_store = NULL;
 // Maps string to SCM
 static NameHash *name_scm_store = NULL;
 // Maps SCM to GType

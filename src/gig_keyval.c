@@ -81,18 +81,18 @@ function_cache_size(FunctionInfoTable * kv)
 {
     return kv->len;
 }
-GTypeHash *
+GtypeHash *
 gtype_hash_new(void)
 {
-    GTypeHash *kv = calloc(1, sizeof(GTypeHash));
-    kv->entries = calloc(20, sizeof(GTypeItem));
+    GtypeHash *kv = calloc(1, sizeof(GtypeHash));
+    kv->entries = calloc(20, sizeof(GtypeItem));
     kv->alloc = 20;
     kv->len = 0;
     return kv;
 }
 
 void
-gtype_hash_free(GTypeHash *kv, GTypeHashKeyFreeFunc keyfree, GTypeHashValFreeFunc valfree)
+gtype_hash_free(GtypeHash *kv, GtypeHashKeyFreeFunc keyfree, GtypeHashValFreeFunc valfree)
 {
     for (int i = 0; i < kv->len; i++) {
         if (keyfree)
@@ -107,53 +107,53 @@ gtype_hash_free(GTypeHash *kv, GTypeHashKeyFreeFunc keyfree, GTypeHashValFreeFun
 static int
 gtype_hash_comparison(const void *pA, const void *pB)
 {
-    const GTypeItem *A = pA;
-    const GTypeItem *B = pB;
+    const GtypeItem *A = pA;
+    const GtypeItem *B = pB;
     return (A->key > B->key) - (A->key < B->key);
 }
 
 void
-gtype_hash_add_entry(GTypeHash *kv, GType key, SCM val)
+gtype_hash_add_entry(GtypeHash *kv, GType key, SCM val)
 {
-    GTypeItem A;
+    GtypeItem A;
     A.key = key;
     A.val = val;
 
     void *pB;
-    pB = bsearch(&A, kv->entries, kv->len, sizeof(GTypeItem), gtype_hash_comparison);
+    pB = bsearch(&A, kv->entries, kv->len, sizeof(GtypeItem), gtype_hash_comparison);
     if (pB == NULL) {
         if (kv->alloc == kv->len) {
             kv->alloc += 20;
-            kv->entries = realloc(kv->entries, kv->alloc * sizeof(GTypeItem));
+            kv->entries = realloc(kv->entries, kv->alloc * sizeof(GtypeItem));
         }
         kv->entries[kv->len].key = key;
         kv->entries[kv->len].val = val;
         kv->len++;
-        qsort(kv->entries, kv->len, sizeof(GTypeItem), gtype_hash_comparison);
+        qsort(kv->entries, kv->len, sizeof(GtypeItem), gtype_hash_comparison);
     }
     else {
-        GTypeItem *B = pB;
+        GtypeItem *B = pB;
         B->val = val;
     }
 }
 
 SCM
-gtype_hash_find_entry(GTypeHash *kv, GType key)
+gtype_hash_find_entry(GtypeHash *kv, GType key)
 {
     void *pB;
-    GTypeItem A;
+    GtypeItem A;
     A.key = key;
     A.val = (SCM) 0;
 
-    pB = bsearch(&A, kv->entries, kv->len, sizeof(GTypeItem), gtype_hash_comparison);
+    pB = bsearch(&A, kv->entries, kv->len, sizeof(GtypeItem), gtype_hash_comparison);
     if (pB == NULL)
         return (SCM) 0;
 
-    return ((GTypeItem *) pB)->val;
+    return ((GtypeItem *) pB)->val;
 }
 
 int
-gtype_hash_size(GTypeHash * kv)
+gtype_hash_size(GtypeHash * kv)
 {
     return kv->len;
 }

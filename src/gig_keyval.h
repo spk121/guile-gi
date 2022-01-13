@@ -28,27 +28,27 @@ GigFunction * function_cache_find_entry(FunctionInfoTable *kv, GIFunctionInfo * 
 void function_cache_add_entry(FunctionInfoTable *kv, GIFunctionInfo * key, GigFunction * val);
 void function_cache_free(FunctionInfoTable *kv, FunctionInfoTableKeyFreeFunc keyfree, FunctionInfoTableValFreeFunc valfree);
 int function_cache_size(FunctionInfoTable *kv);
-typedef void (* GTypeHashKeyFreeFunc)(GType x);
-typedef void (* GTypeHashValFreeFunc)(SCM x);
+typedef void (* GtypeHashKeyFreeFunc)(GType x);
+typedef void (* GtypeHashValFreeFunc)(SCM x);
 
-typedef struct _GTypeItem
+typedef struct _GtypeItem
 {
     GType key;
     SCM val;
-} GTypeItem;
+} GtypeItem;
 
-typedef struct _GTypeHash
+typedef struct _GtypeHash
 {
-    GTypeItem *entries;
+    GtypeItem *entries;
     int len;
     int alloc;
-} GTypeHash;
+} GtypeHash;
 
-GTypeHash *gtype_hash_new(void);
-SCM gtype_hash_find_entry(GTypeHash *kv, GType key);
-void gtype_hash_add_entry(GTypeHash *kv, GType key, SCM val);
-void gtype_hash_free(GTypeHash *kv, GTypeHashKeyFreeFunc keyfree, GTypeHashValFreeFunc valfree);
-int gtype_hash_size(GTypeHash *kv);
+GtypeHash *gtype_hash_new(void);
+SCM gtype_hash_find_entry(GtypeHash *kv, GType key);
+void gtype_hash_add_entry(GtypeHash *kv, GType key, SCM val);
+void gtype_hash_free(GtypeHash *kv, GtypeHashKeyFreeFunc keyfree, GtypeHashValFreeFunc valfree);
+int gtype_hash_size(GtypeHash *kv);
 typedef void (* ScmHashKeyFreeFunc)(SCM x);
 typedef void (* ScmHashValFreeFunc)(GType x);
 

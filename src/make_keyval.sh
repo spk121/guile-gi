@@ -21,8 +21,8 @@ cat gig_keyval.i.h \
     | sed 's/FUNC/function_cache/g' >> gig_keyval.h
 
 cat gig_keyval.i.h \
-    | sed 's/TABLE/GTypeHash/g' \
-    | sed 's/ITEM/GTypeItem/g' \
+    | sed 's/TABLE/GtypeHash/g' \
+    | sed 's/ITEM/GtypeItem/g' \
     | sed 's/TYPE1/GType/g' \
     | sed 's/TYPE2/SCM/g' \
     | sed 's/FUNC/gtype_hash/g' >> gig_keyval.h
@@ -58,8 +58,8 @@ cat gig_keyval.i.c \
     | sed 's/FUNC/function_cache/g' >> gig_keyval.c
 
 cat gig_keyval.i.c \
-    | sed 's/TABLE/GTypeHash/g' \
-    | sed 's/ITEM/GTypeItem/g' \
+    | sed 's/TABLE/GtypeHash/g' \
+    | sed 's/ITEM/GtypeItem/g' \
     | sed 's/TYPE1/GType/g' \
     | sed 's/TYPE2/SCM/g' \
     | sed 's/FUNC/gtype_hash/g' >> gig_keyval.c
