@@ -81,6 +81,7 @@
 -T GPtrArray
 -T GQuark
 -T GSignalQuery
+-T GSignalInvocationHint
 -T GString
 -T GTypeInstance
 -T GValue
@@ -116,3 +117,8 @@
 -T GigTypeUnrefFunction
 -T CBList
 -T FuncList
+-T NameHash
+-T intbool_t
+-T gtype_t
+-T FunctionInfoTable
+

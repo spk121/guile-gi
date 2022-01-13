@@ -20,10 +20,8 @@
   #:use-module (system foreign)
 
   #:use-module (gi types)
-  #:use-module (gi core-generics)
-  #:re-export (load)
   #:export (require
-            infos info
+            get-all-entries
             load-by-name typelib->module
 
             get-search-path prepend-search-path!
@@ -35,14 +33,8 @@
 (eval-when (expand load eval)
   (load-extension "libguile-gi" "gig_init_repository"))
 
-(define-method (load (info <GIBaseInfo>))
-  (%load-info info LOAD_EVERYTHING))
-
-(define-method (load (info <GIBaseInfo>) flags)
-  (%load-info info flags))
-
 (define* (load-by-name lib name #:optional (flags LOAD_EVERYTHING))
-  (load (info lib name) flags))
+  (load-entry (find-entry-by-name lib name) flags))
 
 (define* (typelib->module module lib #:optional version)
   (require lib version)
@@ -57,10 +49,12 @@
       (set-module-version! interface (module-version module))
       (set-module-kind! interface 'interface)
       (set-module-public-interface! module interface)))
-
   (save-module-excursion
    (lambda ()
      (set-current-module module)
-     (module-export! module (append-map! load (infos lib)))))
+     (module-export! module
+                     (append-map! (lambda (x)
+                                    (load-entry x LOAD_EVERYTHING))
+                                  (get-all-entries lib)))))
 
   module)

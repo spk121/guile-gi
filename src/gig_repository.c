@@ -24,8 +24,45 @@
 #include "gig_repository.h"
 #include "gig_logging.h"
 
+static scm_t_bits info_smob_tag = SCM_UNPACK(SCM_BOOL_F);
+
 static SCM
-require(SCM lib, SCM version)
+make_info_smob(GIBaseInfo *info)
+{
+    SCM smob;
+    smob = scm_new_smob(info_smob_tag, (size_t)info);
+    return smob;
+}
+
+static SCM
+mark_info_smob(SCM smob)
+{
+    return SCM_UNSPECIFIED;
+}
+
+static size_t
+free_info_smob(SCM smob)
+{
+    GIBaseInfo *info = (GIBaseInfo *)SCM_SMOB_DATA(smob);
+    g_base_info_unref(info);
+    return 0;
+}
+
+static int
+print_info_smob(SCM smob, SCM port, scm_print_state * pstate)
+{
+    GIBaseInfo *info = (GIBaseInfo *)SCM_SMOB_DATA(smob);
+
+    scm_puts("#<RepositoryEntry ", port);
+    scm_display(scm_from_size_t((size_t)info), port);
+    scm_puts(">", port);
+
+    /* non-zero means success */
+    return 1;
+}
+
+static SCM
+scm_require(SCM lib, SCM version)
 {
     SCM_ASSERT_TYPE(scm_is_string(lib), lib, SCM_ARG1, "require", "string");
     SCM_ASSERT_TYPE(SCM_UNBNDP(version) ||
@@ -54,12 +91,12 @@ require(SCM lib, SCM version)
 }
 
 static SCM
-infos(SCM lib)
+scm_get_all_entries(SCM lib)
 {
-    SCM_ASSERT_TYPE(scm_is_string(lib), lib, SCM_ARG1, "infos", "string");
+    SCM_ASSERT_TYPE(scm_is_string(lib), lib, SCM_ARG1, "get-all-entries", "string");
 
     scm_dynwind_begin(0);
-    char *_lib = scm_dynwind_or_bust("infos", scm_to_utf8_string(lib));
+    char *_lib = scm_dynwind_or_bust("get-all-entries", scm_to_utf8_string(lib));
     int n = g_irepository_get_n_infos(NULL, _lib);
     SCM infos = SCM_EOL;
 
@@ -69,8 +106,7 @@ infos(SCM lib)
             g_base_info_unref(info);
             continue;
         }
-        infos = scm_cons(gig_type_transfer_object(GI_TYPE_BASE_INFO, info, GI_TRANSFER_EVERYTHING),
-                         infos);
+        infos = scm_cons(make_info_smob(info), infos);
     }
     scm_dynwind_end();
 
@@ -316,11 +352,11 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
 }
 
 static SCM
-load(SCM info, SCM flags)
+scm_load_entry(SCM info, SCM flags)
 {
     SCM_ASSERT_TYPE(SCM_UNBNDP(flags) ||
-                    scm_is_unsigned_integer(flags, 0, LOAD_EVERYTHING), flags, SCM_ARG2, "load",
-                    "integer");
+                    scm_is_unsigned_integer(flags, 0, LOAD_EVERYTHING), flags, SCM_ARG2,
+                    "load-entry", "integer");
 
     LoadFlags load_flags;
     if (SCM_UNBNDP(flags))
@@ -328,35 +364,35 @@ load(SCM info, SCM flags)
     else
         load_flags = scm_to_uint(flags);
 
-    GIBaseInfo *base_info = (GIBaseInfo *)gig_type_peek_object(info);
+    GIBaseInfo *base_info = (GIBaseInfo *)SCM_SMOB_DATA(info);
 
     return load_info(base_info, load_flags, SCM_EOL);
 }
 
 static SCM
-info(SCM lib, SCM name)
+scm_find_entry_by_name(SCM lib, SCM name)
 {
-    SCM_ASSERT_TYPE(scm_is_string(lib), lib, SCM_ARG1, "info", "string");
-    SCM_ASSERT_TYPE(scm_is_string(name), name, SCM_ARG2, "info", "string");
+    SCM_ASSERT_TYPE(scm_is_string(lib), lib, SCM_ARG1, "find-entry-by-name", "string");
+    SCM_ASSERT_TYPE(scm_is_string(name), name, SCM_ARG2, "find-entry-by-name", "string");
 
     char *_lib, *_name;
     GIBaseInfo *info;
     scm_dynwind_begin(0);
-    _lib = scm_dynwind_or_bust("info", scm_to_utf8_string(lib));
-    _name = scm_dynwind_or_bust("info", scm_to_utf8_string(name));
+    _lib = scm_dynwind_or_bust("find-entry-by-name", scm_to_utf8_string(lib));
+    _name = scm_dynwind_or_bust("find-entry-by-name", scm_to_utf8_string(name));
 
     info = g_irepository_find_by_name(NULL, _lib, _name);
     if (info == NULL)
-        scm_misc_error("info",
+        scm_misc_error("find-entry-by-name",
                        "could not load ~A from ~A, did you forget to require or perhaps misspell?",
                        scm_list_2(name, lib));
     scm_dynwind_end();
 
-    return gig_type_transfer_object(GI_TYPE_BASE_INFO, info, GI_TRANSFER_EVERYTHING);
+    return make_info_smob(info);
 }
 
 static SCM
-get_search_path(void)
+scm_get_search_path(void)
 {
     GSList *slist = g_irepository_get_search_path();
     SCM entry;
@@ -372,7 +408,7 @@ get_search_path(void)
 }
 
 static SCM
-prepend_search_path(SCM s_dir)
+scm_prepend_search_path_x(SCM s_dir)
 {
     char *dir;
 
@@ -386,7 +422,7 @@ prepend_search_path(SCM s_dir)
 }
 
 static SCM
-get_dependencies(SCM namespace)
+scm_get_dependencies(SCM namespace)
 {
     char *_namespace;
     char **_dependencies;
@@ -413,13 +449,18 @@ get_dependencies(SCM namespace)
 void
 gig_init_repository()
 {
-    scm_c_define_gsubr("require", 1, 1, 0, require);
-    scm_c_define_gsubr("infos", 1, 0, 0, infos);
-    scm_c_define_gsubr("info", 2, 0, 0, info);
-    scm_c_define_gsubr("%load-info", 1, 1, 0, load);
-    scm_c_define_gsubr("get-search-path", 0, 0, 0, get_search_path);
-    scm_c_define_gsubr("prepend-search-path!", 1, 0, 0, prepend_search_path);
-    scm_c_define_gsubr("get-dependencies", 1, 0, 0, get_dependencies);
+    info_smob_tag = scm_make_smob_type("RepositoryEntry", sizeof(GIBaseInfo *));
+    scm_set_smob_mark(info_smob_tag, mark_info_smob);
+    scm_set_smob_free(info_smob_tag, free_info_smob);
+    scm_set_smob_print(info_smob_tag, print_info_smob);
+
+    scm_c_define_gsubr("require", 1, 1, 0, scm_require);
+    scm_c_define_gsubr("get-all-entries", 1, 0, 0, scm_get_all_entries);
+    scm_c_define_gsubr("find-entry-by-name", 2, 0, 0, scm_find_entry_by_name);
+    scm_c_define_gsubr("load-entry", 1, 1, 0, scm_load_entry);
+    scm_c_define_gsubr("get-search-path", 0, 0, 0, scm_get_search_path);
+    scm_c_define_gsubr("prepend-search-path!", 1, 0, 0, scm_prepend_search_path_x);
+    scm_c_define_gsubr("get-dependencies", 1, 0, 0, scm_get_dependencies);
 
 #define D(x) scm_permanent_object(scm_c_define(#x, scm_from_uint(x)))
 

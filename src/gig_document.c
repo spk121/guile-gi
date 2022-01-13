@@ -13,6 +13,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#include <assert.h>
 #include <libguile.h>
 #include <glib.h>
 #include <glib-object.h>
@@ -63,6 +64,7 @@ document_arg_entry(const char *kind, GigArgMapEntry *entry)
 static void
 do_document(GIBaseInfo *info, const char *_namespace)
 {
+    assert(info != NULL);
 #define FUNC "%document"
     char *scheme_name;
     const char *kind;
@@ -257,7 +259,7 @@ do_document(GIBaseInfo *info, const char *_namespace)
 static SCM
 _document(SCM info)
 {
-    GIBaseInfo *real_info = (GIBaseInfo *)gig_type_peek_object(info);
+    GIBaseInfo *real_info = (GIBaseInfo *)SCM_SMOB_DATA(info);
     do_document(real_info, NULL);
     return SCM_UNSPECIFIED;
 }

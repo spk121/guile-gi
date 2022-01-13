@@ -39,7 +39,7 @@
                G_TYPE_OBJECT G_TYPE_STRING
                G_TYPE_POINTER
                <string>
-               <GObject> <GInterface> <GParam> <GBoxed> <GIBaseInfo>
+               <GObject> <GInterface> <GParam> <GBoxed>
                <GVariant> <GValue> <GClosure>
                enum->number flags->number
                transform procedure->closure)
