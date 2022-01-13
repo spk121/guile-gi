@@ -70,7 +70,7 @@ FUNC_find_entry(TABLE *kv, TYPE1 key)
 }
 
 int
-FUNC_size(TABLE * kv)
+FUNC_size(TABLE *kv)
 {
     return kv->len;
 }

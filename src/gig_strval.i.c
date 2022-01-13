@@ -69,7 +69,7 @@ FUNC_find_entry(TABLE* kv, const char *str)
 }
 
 int
-FUNC_size(TABLE * kv)
+FUNC_size(TABLE *kv)
 {
     return kv->len;
 }

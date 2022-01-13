@@ -13,9 +13,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include <girepository.h>
-#include <glib-object.h>
-#include <glib.h>
 #include <libguile.h>
 #include "gig_callback.h"
 #include "gig_flag.h"
@@ -73,8 +70,8 @@ gig_init(void)
 }
 
 #ifdef STANDALONE
-gint
-main(gint argc, gchar **argv)
+int
+main(int argc, char **argv)
 {
     scm_init_guile();
 

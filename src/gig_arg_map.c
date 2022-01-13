@@ -23,7 +23,7 @@
 
 #define gig_debug_amap(...) gig_debug_internal(G_LOG_LEVEL_DEBUG, "amap", __VA_ARGS__)
 
-const gchar dir_strings[GIG_ARG_DIRECTION_COUNT][9] = {
+const char dir_strings[GIG_ARG_DIRECTION_COUNT][9] = {
     [GIG_ARG_DIRECTION_VOID] = "void",
     [GIG_ARG_DIRECTION_INPUT] = "input",
     [GIG_ARG_DIRECTION_INOUT] = "inout",
@@ -31,19 +31,19 @@ const gchar dir_strings[GIG_ARG_DIRECTION_COUNT][9] = {
     [GIG_ARG_DIRECTION_OUTPUT] = "output"
 };
 
-const gchar tuple_strings[GIG_ARG_TUPLE_COUNT][11] = {
+const char tuple_strings[GIG_ARG_TUPLE_COUNT][11] = {
     [GIG_ARG_TUPLE_SINGLETON] = "singleton",
     [GIG_ARG_TUPLE_ARRAY] = "array",
     [GIG_ARG_TUPLE_ARRAY_SIZE] = "array_size"
 };
 
-const gchar presence_strings[GIG_ARG_PRESENCE_COUNT][9] = {
+const char presence_strings[GIG_ARG_PRESENCE_COUNT][9] = {
     [GIG_ARG_PRESENCE_REQUIRED] = "required",
     [GIG_ARG_PRESENCE_OPTIONAL] = "optional",
     [GIG_ARG_PRESENCE_IMPLICIT] = "implicit"
 };
 
-static GigArgMap *arg_map_allocate(gsize n);
+static GigArgMap *arg_map_allocate(size_t n);
 static void arg_map_apply_function_info(GigArgMap *amap, GIFunctionInfo *func_info);
 static void arg_map_determine_argument_presence(GigArgMap *amap, GIFunctionInfo *info);
 static void arg_map_compute_c_invoke_positions(GigArgMap *amap);
@@ -59,10 +59,10 @@ arg_map_entry_init(GigArgMapEntry *entry)
 
 // Gather information on how to map Scheme arguments to C arguments.
 GigArgMap *
-gig_amap_new(const gchar *name, GICallableInfo *function_info)
+gig_amap_new(const char *name, GICallableInfo *function_info)
 {
     GigArgMap *amap;
-    gsize n;
+    size_t n;
 
     n = g_callable_info_get_n_args(function_info);
     amap = arg_map_allocate(n);
@@ -81,14 +81,14 @@ gig_amap_new(const gchar *name, GICallableInfo *function_info)
 }
 
 static GigArgMap *
-arg_map_allocate(gsize n)
+arg_map_allocate(size_t n)
 {
     GigArgMap *amap;
 
     amap = xcalloc(1, sizeof(GigArgMap));
     amap->pdata = xcalloc(n, sizeof(GigArgMapEntry));
     amap->len = n;
-    for (gsize i = 0; i < n; i++) {
+    for (size_t i = 0; i < n; i++) {
         arg_map_entry_init(&amap->pdata[i]);
         amap->pdata[i].i = i;
     }
@@ -100,7 +100,7 @@ arg_map_allocate(gsize n)
 static void
 arg_map_apply_function_info(GigArgMap *amap, GIFunctionInfo *func_info)
 {
-    gint i, n;
+    int i, n;
     GIArgInfo *arg_info;
 
     n = amap->len;
@@ -124,7 +124,7 @@ static void
 arg_map_determine_array_length_index(GigArgMap *amap, GigArgMapEntry *entry, GITypeInfo *info)
 {
     if (entry->meta.gtype == G_TYPE_ARRAY && entry->meta.has_size) {
-        gint idx = g_type_info_get_array_length(info);
+        int idx = g_type_info_get_array_length(info);
 
         assert(idx >= 0);
 
@@ -141,8 +141,8 @@ static void
 arg_map_determine_argument_presence(GigArgMap *amap, GIFunctionInfo *info)
 {
     GigArgMapEntry *entry;
-    gboolean opt_flag = TRUE;
-    gint i, n;
+    intbool_t opt_flag = TRUE;
+    int i, n;
 
     n = amap->len;
 
@@ -184,12 +184,12 @@ arg_map_determine_argument_presence(GigArgMap *amap, GIFunctionInfo *info)
 static void
 arg_map_compute_c_invoke_positions(GigArgMap *amap)
 {
-    gint i, n;
+    int i, n;
     GigArgMapEntry *entry;
     n = amap->len;
 
-    gint c_input_pos = 0;
-    gint c_output_pos = 0;
+    int c_input_pos = 0;
+    int c_output_pos = 0;
     for (i = 0; i < n; i++) {
         entry = &amap->pdata[i];
 
@@ -233,12 +233,12 @@ arg_map_compute_c_invoke_positions(GigArgMap *amap)
 static void
 arg_map_compute_s_call_positions(GigArgMap *amap)
 {
-    gint i, n;
+    int i, n;
     GigArgMapEntry *entry;
     n = amap->len;
 
-    gint s_input_pos = 0;
-    gint s_output_pos = 0;
+    int s_input_pos = 0;
+    int s_output_pos = 0;
     // We now can decide where these arguments appear in the SCM GSubr
     // call.
     for (i = 0; i < n; i++) {
@@ -282,7 +282,7 @@ gig_amap_free(GigArgMap *amap)
     if (!amap)
         return;
 
-    for (gint i = 0; i < amap->len; i++) {
+    for (int i = 0; i < amap->len; i++) {
         gig_data_type_free(&amap->pdata[i].meta);
         free(amap->pdata[i].name);
     }
@@ -295,13 +295,13 @@ gig_amap_free(GigArgMap *amap)
 }
 
 void
-gig_amap_dump(const gchar *name, const GigArgMap *amap)
+gig_amap_dump(const char *name, const GigArgMap *amap)
 {
     gig_debug_ffi("%s - argument mapping", name ? name : amap->name);
     gig_debug_ffi("  SCM inputs required: %d, optional: %d, outputs: %d", amap->s_input_req,
-                     amap->s_input_opt, amap->s_output_len);
+                  amap->s_input_opt, amap->s_output_len);
     gig_debug_ffi("  C inputs: %d, outputs: %d", amap->c_input_len, amap->c_output_len);
-    for (gint i = 0; i < amap->len; i++) {
+    for (int i = 0; i < amap->len; i++) {
         const GigArgMapEntry *entry = &amap->pdata[i];
         GString *s = g_string_new(NULL);
         g_string_append_printf(s, "  Arg %d: '%s' %s",
@@ -349,7 +349,7 @@ gig_amap_dump(const gchar *name, const GigArgMap *amap)
 }
 
 void
-gig_amap_s_input_count(const GigArgMap *amap, gint *required, gint *optional)
+gig_amap_s_input_count(const GigArgMap *amap, int *required, int *optional)
 {
     assert(amap != NULL);
     assert(required != NULL);
@@ -360,9 +360,9 @@ gig_amap_s_input_count(const GigArgMap *amap, gint *required, gint *optional)
 }
 
 GigArgMapEntry *
-gig_amap_get_input_entry_by_s(GigArgMap *amap, gint spos)
+gig_amap_get_input_entry_by_s(GigArgMap *amap, int spos)
 {
-    gint i = 0;
+    int i = 0;
 
     assert(amap != NULL);
 
@@ -376,11 +376,11 @@ gig_amap_get_input_entry_by_s(GigArgMap *amap, gint spos)
 }
 
 GigArgMapEntry *
-gig_amap_get_output_entry_by_c(GigArgMap *amap, gint cpos)
+gig_amap_get_output_entry_by_c(GigArgMap *amap, int cpos)
 {
     assert(amap != NULL);
 
-    gint i = 0;
+    int i = 0;
     while (i < amap->len) {
         if (amap->pdata[i].is_c_output && (amap->pdata[i].c_output_pos == cpos)) {
             return &amap->pdata[i];
@@ -393,13 +393,13 @@ gig_amap_get_output_entry_by_c(GigArgMap *amap, gint cpos)
 // If this output element is an array with another output element
 // being its size, this returns TRUE and stores the index of the other
 // argument.
-gboolean
-gig_amap_output_child_c(GigArgMap *amap, gint c_output_pos, gint *cinvoke_output_array_size_index)
+intbool_t
+gig_amap_output_child_c(GigArgMap *amap, int c_output_pos, int *cinvoke_output_array_size_index)
 {
     assert(amap != NULL);
     assert(cinvoke_output_array_size_index != NULL);
 
-    gint i = 0;
+    int i = 0;
     while (i < amap->len) {
         if (amap->pdata[i].is_c_output && (amap->pdata[i].c_output_pos == c_output_pos)) {
             if (amap->pdata[i].child) {
@@ -415,7 +415,7 @@ gig_amap_output_child_c(GigArgMap *amap, gint c_output_pos, gint *cinvoke_output
 // Get the number of required and optional gsubr arguments for this
 // gsubr call.
 void
-gig_amap_c_count(const GigArgMap *amap, gint *c_input_len, gint *c_output_len)
+gig_amap_c_count(const GigArgMap *amap, int *c_input_len, int *c_output_len)
 {
     assert(amap != NULL);
     assert(c_input_len != NULL);
@@ -429,13 +429,13 @@ gig_amap_c_count(const GigArgMap *amap, gint *c_input_len, gint *c_output_len)
 // index positions for this argument in the C function call.  Return
 // TRUE if this gsubr argument is used in the C function call.
 
-gboolean
-gig_amap_input_s_2_input_c(const GigArgMap *amap, gint s_input_pos, gint *c_input_pos)
+intbool_t
+gig_amap_input_s_2_input_c(const GigArgMap *amap, int s_input_pos, int *c_input_pos)
 {
     assert(amap != NULL);
     assert(c_input_pos != NULL);
 
-    gint i = 0;
+    int i = 0;
     while (i < amap->len) {
         if (amap->pdata[i].is_s_input && (amap->pdata[i].s_input_pos == s_input_pos)) {
             if (amap->pdata[i].is_c_input) {
@@ -450,13 +450,13 @@ gig_amap_input_s_2_input_c(const GigArgMap *amap, gint s_input_pos, gint *c_inpu
     gig_return_val_if_reached(FALSE);
 }
 
-gboolean
-gig_amap_input_s_2_output_c(const GigArgMap *amap, gint s_input_pos, gint *c_output_pos)
+intbool_t
+gig_amap_input_s_2_output_c(const GigArgMap *amap, int s_input_pos, int *c_output_pos)
 {
     assert(amap != NULL);
     assert(c_output_pos != NULL);
 
-    gint i = 0;
+    int i = 0;
     while (i < amap->len) {
         if (amap->pdata[i].is_s_input && (amap->pdata[i].s_input_pos == s_input_pos)) {
             if (amap->pdata[i].is_c_output) {
@@ -476,13 +476,13 @@ gig_amap_input_s_2_output_c(const GigArgMap *amap, gint s_input_pos, gint *c_out
 // return the input and output positions for the array size in the C
 // function call.  Return TRUE if this gsubr argument's array size is
 // used in the C function call.
-gboolean
-gig_amap_input_s_2_child_input_c(const GigArgMap *amap, gint s_input_pos, gint *c_input_pos)
+intbool_t
+gig_amap_input_s_2_child_input_c(const GigArgMap *amap, int s_input_pos, int *c_input_pos)
 {
     assert(amap != NULL);
     assert(c_input_pos != NULL);
 
-    gint i = 0;
+    int i = 0;
     while (i < amap->len) {
         if (amap->pdata[i].is_s_input && (amap->pdata[i].s_input_pos == s_input_pos)) {
             GigArgMapEntry *child = amap->pdata[i].child;
@@ -502,13 +502,13 @@ gig_amap_input_s_2_child_input_c(const GigArgMap *amap, gint s_input_pos, gint *
     gig_return_val_if_reached(FALSE);
 }
 
-gboolean
-gig_amap_input_s_2_child_output_c(const GigArgMap *amap, gint s_input_pos, gint *c_output_pos)
+intbool_t
+gig_amap_input_s_2_child_output_c(const GigArgMap *amap, int s_input_pos, int *c_output_pos)
 {
     assert(amap != NULL);
     assert(c_output_pos != NULL);
 
-    gint i = 0;
+    int i = 0;
     while (i < amap->len) {
         if (amap->pdata[i].is_s_input && (amap->pdata[i].s_input_pos == s_input_pos)) {
             GigArgMapEntry *child = amap->pdata[i].child;
@@ -530,8 +530,8 @@ gig_amap_input_s_2_child_output_c(const GigArgMap *amap, gint s_input_pos, gint 
 
 ////////////////////////////////////////////////////////////////
 
-gboolean
-gig_amap_input_i2c(const GigArgMap *amap, gint i, gint *cpos)
+intbool_t
+gig_amap_input_i2c(const GigArgMap *amap, int i, int *cpos)
 {
     if (i < 0 || i >= amap->len)
         gig_return_val_if_reached(FALSE);
@@ -541,8 +541,8 @@ gig_amap_input_i2c(const GigArgMap *amap, gint i, gint *cpos)
     return TRUE;
 }
 
-gboolean
-gig_amap_input_i2s(const GigArgMap *amap, gint i, gint *spos)
+intbool_t
+gig_amap_input_i2s(const GigArgMap *amap, int i, int *spos)
 {
     if (i < 0 || i >= amap->len)
         gig_return_val_if_reached(FALSE);
@@ -552,13 +552,13 @@ gig_amap_input_i2s(const GigArgMap *amap, gint i, gint *spos)
     return TRUE;
 }
 
-gboolean
-gig_amap_input_c2i(const GigArgMap *amap, gint cpos, gint *i)
+intbool_t
+gig_amap_input_c2i(const GigArgMap *amap, int cpos, int *i)
 {
     if (cpos < 0 || cpos >= amap->c_input_len) {
         gig_return_val_if_reached(FALSE);
     }
-    gint j = 0;
+    int j = 0;
     while (j < amap->len) {
         if (amap->pdata[j].is_c_input && (amap->pdata[j].c_input_pos == cpos)) {
             *i = j;
@@ -570,13 +570,13 @@ gig_amap_input_c2i(const GigArgMap *amap, gint cpos, gint *i)
 }
 
 
-gboolean
-gig_amap_input_s2i(const GigArgMap *amap, gint spos, gint *i)
+intbool_t
+gig_amap_input_s2i(const GigArgMap *amap, int spos, int *i)
 {
     if (spos < 0 || spos >= amap->s_input_req + amap->s_input_opt) {
         gig_return_val_if_reached(FALSE);
     }
-    gint j = 0;
+    int j = 0;
     while (j < amap->len) {
         if (amap->pdata[j].is_s_input && (amap->pdata[j].s_input_pos == spos)) {
             *i = j;
@@ -587,13 +587,13 @@ gig_amap_input_s2i(const GigArgMap *amap, gint spos, gint *i)
     return FALSE;
 }
 
-gboolean
-gig_amap_input_c2s(const GigArgMap *amap, gint cpos, gint *spos)
+intbool_t
+gig_amap_input_c2s(const GigArgMap *amap, int cpos, int *spos)
 {
     if (cpos < 0 || cpos >= amap->c_input_len) {
         gig_return_val_if_reached(FALSE);
     }
-    gint j = 0;
+    int j = 0;
     while (j < amap->len) {
         if (amap->pdata[j].is_c_input && (amap->pdata[j].c_input_pos == cpos)) {
             if (amap->pdata[j].is_s_input) {
@@ -609,8 +609,8 @@ gig_amap_input_c2s(const GigArgMap *amap, gint cpos, gint *spos)
     return FALSE;
 }
 
-gboolean
-gig_amap_input_s2c(const GigArgMap *am, gint spos, gint *cpos)
+intbool_t
+gig_amap_input_s2c(const GigArgMap *am, int spos, int *cpos)
 {
     if (spos < 0 || spos >= am->s_input_req + am->s_input_opt) {
         gig_return_val_if_reached(FALSE);
@@ -632,8 +632,8 @@ gig_amap_input_s2c(const GigArgMap *am, gint spos, gint *cpos)
 
 ////////////////////////////////////////////////////////////////
 
-gboolean
-gig_amap_output_i2c(const GigArgMap *amap, gint i, gint *cpos)
+intbool_t
+gig_amap_output_i2c(const GigArgMap *amap, int i, int *cpos)
 {
     if (i < 0 || i >= amap->len)
         gig_return_val_if_reached(FALSE);
@@ -643,8 +643,8 @@ gig_amap_output_i2c(const GigArgMap *amap, gint i, gint *cpos)
     return TRUE;
 }
 
-gboolean
-gig_amap_output_i2s(const GigArgMap *amap, gint i, gint *spos)
+intbool_t
+gig_amap_output_i2s(const GigArgMap *amap, int i, int *spos)
 {
     if (i < 0 || i >= amap->len)
         gig_return_val_if_reached(FALSE);
@@ -654,12 +654,12 @@ gig_amap_output_i2s(const GigArgMap *amap, gint i, gint *spos)
     return TRUE;
 }
 
-gboolean
-gig_amap_output_c2i(const GigArgMap *amap, gint cpos, gint *i)
+intbool_t
+gig_amap_output_c2i(const GigArgMap *amap, int cpos, int *i)
 {
     if (cpos < 0 || cpos >= amap->c_output_len)
         gig_return_val_if_reached(FALSE);
-    gint j = 0;
+    int j = 0;
     while (j < amap->len) {
         if (amap->pdata[j].is_c_output && (amap->pdata[j].c_output_pos == cpos)) {
             *i = j;
@@ -671,12 +671,12 @@ gig_amap_output_c2i(const GigArgMap *amap, gint cpos, gint *i)
 }
 
 
-gboolean
-gig_amap_output_s2i(const GigArgMap *amap, gint spos, gint *i)
+intbool_t
+gig_amap_output_s2i(const GigArgMap *amap, int spos, int *i)
 {
     if (spos < 0 || spos >= amap->s_output_len)
         gig_return_val_if_reached(FALSE);
-    gint j = 0;
+    int j = 0;
     while (j < amap->len) {
         if (amap->pdata[j].is_s_output && (amap->pdata[j].s_output_pos == spos)) {
             *i = j;
@@ -687,12 +687,12 @@ gig_amap_output_s2i(const GigArgMap *amap, gint spos, gint *i)
     return FALSE;
 }
 
-gboolean
-gig_amap_output_c2s(const GigArgMap *amap, gint cpos, gint *spos)
+intbool_t
+gig_amap_output_c2s(const GigArgMap *amap, int cpos, int *spos)
 {
     if (cpos < 0 || cpos >= amap->c_output_len)
         gig_return_val_if_reached(FALSE);
-    gint j = 0;
+    int j = 0;
     while (j < amap->len) {
         if (amap->pdata[j].is_c_output && (amap->pdata[j].c_output_pos == cpos)) {
             if (amap->pdata[j].is_s_output) {
@@ -707,8 +707,8 @@ gig_amap_output_c2s(const GigArgMap *amap, gint cpos, gint *spos)
     return FALSE;
 }
 
-gboolean
-gig_amap_output_s2c(const GigArgMap *am, gint spos, gint *cpos)
+intbool_t
+gig_amap_output_s2c(const GigArgMap *am, int spos, int *cpos)
 {
     if (spos < 0 || spos >= am->s_output_len)
         gig_return_val_if_reached(FALSE);
@@ -729,8 +729,8 @@ gig_amap_output_s2c(const GigArgMap *am, gint spos, gint *cpos)
 
 ////////////////////////////////////////////////////////////////
 
-gboolean
-gig_amap_child_i(const GigArgMap *am, gint i, gint *ichild)
+intbool_t
+gig_amap_child_i(const GigArgMap *am, int i, int *ichild)
 {
     if (am->pdata[i].child == NULL)
         return FALSE;
@@ -738,8 +738,8 @@ gig_amap_child_i(const GigArgMap *am, gint i, gint *ichild)
     return TRUE;
 }
 
-gboolean
-gig_amap_return_child_i(const GigArgMap *am, gint *ichild)
+intbool_t
+gig_amap_return_child_i(const GigArgMap *am, int *ichild)
 {
     if (am->return_val.child == NULL)
         return FALSE;

@@ -141,6 +141,7 @@ libguile_gi_la_internal_headers = \
   src/gig_signal.h \
   src/gig_strval.h \
   src/gig_type.h \
+  src/gig_types.h \
   src/gig_type_private.h \
   src/gig_util.h \
   src/gig_value.h \

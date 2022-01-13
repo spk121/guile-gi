@@ -16,20 +16,17 @@
 #define GIG_SIGNAL_H
 #include <girepository.h>
 #include <libguile.h>
-
-// *INDENT-OFF*
-G_BEGIN_DECLS
-// *INDENT-ON*
+#include "gig_types.h"
 
 typedef struct _GigSignalSpec
 {
-    gchar *signal_name;
+    char *signal_name;
     GSignalFlags signal_flags;
     GSignalAccumulator accumulator;
-    gpointer accu_data;
-    GType return_type;
-    guint n_params;
-    GType *param_types;
+    void *accu_data;
+    gtype_t return_type;
+    unsigned n_params;
+    gtype_t *param_types;
 } GigSignalSpec;
 
 extern SCM gig_signal_type;
@@ -49,12 +46,10 @@ typedef enum
 } GigSignalSlot;
 
 SCM gig_signal_ref(SCM signal, GigSignalSlot slot);
-SCM gig_make_signal(gsize n_slots, GigSignalSlot *slots, SCM *slot_values);
+SCM gig_make_signal(size_t n_slots, GigSignalSlot *slots, SCM *slot_values);
 
-GClosure *gig_signal_closure_new(SCM instance, GType g_type, const gchar *signal_name,
+GClosure *gig_signal_closure_new(SCM instance, gtype_t g_type, const char *signal_name,
                                  SCM callback);
 
 void gig_init_signal(void);
-
-G_END_DECLS
 #endif

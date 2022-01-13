@@ -153,7 +153,7 @@ gig_log(int level, const char *file, int line, const char *func,
     }
 
     char *term = getenv("TERM");
-    
+
     if (!term || !is_color_term(term)) {
         color = "";
         reset = "";

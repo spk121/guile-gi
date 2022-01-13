@@ -61,25 +61,22 @@ name_hash_add_entry(NameHash *kv, const char *str, SCM val)
 }
 
 SCM
-name_hash_find_entry(NameHash* kv, const char *str)
+name_hash_find_entry(NameHash *kv, const char *str)
 {
     void *pB;
     NameItem A;
     A.str = str;
-    A.val = (SCM) 0;
+    A.val = (SCM)0;
 
     pB = bsearch(&A, kv->entries, kv->len, sizeof(NameItem), name_hash_comparison);
     if (pB == NULL)
-        return (SCM) 0;
+        return (SCM)0;
 
     return ((NameItem *) pB)->val;
 }
 
 int
-name_hash_size(NameHash * kv)
+name_hash_size(NameHash *kv)
 {
     return kv->len;
 }
-
-
-

@@ -16,22 +16,15 @@
 #ifndef GIG_FUNCTION_H
 #define GIG_FUNCTION_H
 
-#include <glib.h>
 #include <girepository.h>
 #include <libguile.h>
 #include "gig_arg_map.h"
 
-// *INDENT-OFF*
-G_BEGIN_DECLS
-// *INDENT-ON*
-
 typedef SCM (*GigGsubr)(void);
 typedef struct _GigFunction GigFunction;
 
-SCM gig_function_define(GType type, GICallableInfo *info, const gchar *_namespace, SCM defs);
-SCM gig_callable_invoke(GICallableInfo *callable_info, gpointer callable, GigArgMap *amap,
-                        const gchar *name, GObject *self, SCM args, GError **error);
+SCM gig_function_define(gtype_t type, GICallableInfo *info, const char *_namespace, SCM defs);
+SCM gig_callable_invoke(GICallableInfo *callable_info, void *callable, GigArgMap *amap,
+                        const char *name, GObject *self, SCM args, GError **error);
 void gig_init_function(void);
-
-G_END_DECLS
 #endif

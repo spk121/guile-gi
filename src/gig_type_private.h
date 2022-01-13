@@ -15,10 +15,10 @@
 #ifndef _GIG_TYPE_PRIVATE_H_
 #define _GIG_TYPE_PRIVATE_H_
 
-#include <glib.h>
 #include <glib-object.h>
 #include <ffi.h>
 #include <libguile.h>
+#include "gig_types.h"
 
 typedef struct _GigBoxedFuncs
 {
@@ -33,7 +33,7 @@ typedef struct _GigBoxedFuncs
     void *free;
 } GigBoxedFuncs;
 
-GigBoxedFuncs *_boxed_funcs_for_type(GType type);
+GigBoxedFuncs *_boxed_funcs_for_type(gtype_t type);
 void _free_boxed_funcs();
 
 extern SCM sym_obarray;

@@ -7,7 +7,7 @@
 #include <stdint.h>
 #include <libguile.h>
 
-typedef void (* NameHashValFreeFunc)(SCM x);
+typedef void (*NameHashValFreeFunc)(SCM x);
 
 typedef struct _NameItem
 {
@@ -29,4 +29,3 @@ void name_hash_free(NameHash *kv, NameHashValFreeFunc valfree);
 int name_hash_size(NameHash *kv);
 
 #endif
-

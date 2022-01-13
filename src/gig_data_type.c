@@ -69,14 +69,14 @@ gig_type_meta_init_from_callable_info(GigTypeMeta *meta, GICallableInfo *ci)
 }
 
 static void
-add_params(GigTypeMeta *meta, gint n)
+add_params(GigTypeMeta *meta, int n)
 {
     meta->params = xcalloc(n, sizeof(GigTypeMeta));
     meta->n_params = n;
 }
 
 static void
-add_child_params(GigTypeMeta *meta, GITypeInfo *type_info, gint n)
+add_child_params(GigTypeMeta *meta, GITypeInfo *type_info, int n)
 {
     GITypeInfo *param_type;
     add_params(meta, n);
@@ -107,18 +107,18 @@ gig_type_meta_init_from_basic_type_tag(GigTypeMeta *meta, GITypeTag tag)
         }                                       \
     } while(FALSE)
 
-    T(GI_TYPE_TAG_BOOLEAN, G_TYPE_BOOLEAN, gboolean);
+    T(GI_TYPE_TAG_BOOLEAN, G_TYPE_BOOLEAN, intbool_t);
     T(GI_TYPE_TAG_DOUBLE, G_TYPE_DOUBLE, gdouble);
     T(GI_TYPE_TAG_FLOAT, G_TYPE_FLOAT, gfloat);
-    T(GI_TYPE_TAG_GTYPE, G_TYPE_GTYPE, GType);
-    T(GI_TYPE_TAG_INT8, G_TYPE_CHAR, gint8);
-    T(GI_TYPE_TAG_INT16, G_TYPE_INT, gint16);
-    T(GI_TYPE_TAG_INT32, G_TYPE_INT, gint32);
-    T(GI_TYPE_TAG_INT64, G_TYPE_INT, gint64);
-    T(GI_TYPE_TAG_UINT8, G_TYPE_UCHAR, guint8);
-    T(GI_TYPE_TAG_UINT16, G_TYPE_UINT, guint16);
-    T(GI_TYPE_TAG_UINT32, G_TYPE_UINT, guint32);
-    T(GI_TYPE_TAG_UINT64, G_TYPE_UINT, guint64);
+    T(GI_TYPE_TAG_GTYPE, G_TYPE_GTYPE, gtype_t);
+    T(GI_TYPE_TAG_INT8, G_TYPE_CHAR, int8_t);
+    T(GI_TYPE_TAG_INT16, G_TYPE_INT, int16_t);
+    T(GI_TYPE_TAG_INT32, G_TYPE_INT, int32_t);
+    T(GI_TYPE_TAG_INT64, G_TYPE_INT, int64_t);
+    T(GI_TYPE_TAG_UINT8, G_TYPE_UCHAR, uint8_t);
+    T(GI_TYPE_TAG_UINT16, G_TYPE_UINT, uint16_t);
+    T(GI_TYPE_TAG_UINT32, G_TYPE_UINT, uint32_t);
+    T(GI_TYPE_TAG_UINT64, G_TYPE_UINT, uint64_t);
     if (tag == GI_TYPE_TAG_UNICHAR) {
         meta->gtype = G_TYPE_UINT;
         meta->item_size = sizeof(gunichar);
@@ -156,7 +156,7 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
     }
     else if (tag == GI_TYPE_TAG_ARRAY) {
         GIArrayType array_type = g_type_info_get_array_type(type_info);
-        gint len;
+        int len;
 
         add_child_params(meta, type_info, 1);
 
@@ -218,7 +218,7 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
         case GI_INFO_TYPE_ENUM:
         case GI_INFO_TYPE_FLAGS:
             meta->gtype = g_registered_type_info_get_g_type(referenced_base_info);
-            // Not all enum or flag types have an associated GType
+            // Not all enum or flag types have an associated gtype_t
             // Hence we store the enum info for GIArgument conversions
             if (meta->gtype == G_TYPE_NONE) {
                 meta->enum_info = g_base_info_ref(referenced_base_info);
@@ -279,18 +279,18 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
     }
 }
 
-G_GNUC_PURE gsize
+G_GNUC_PURE size_t
 gig_meta_real_item_size(const GigTypeMeta *meta)
 {
     if (meta->gtype == G_TYPE_STRING || meta->gtype == G_TYPE_POINTER || meta->is_ptr)
-        return sizeof(gpointer);
+        return sizeof(void *);
     return meta->item_size;
 }
 
 void
 gig_data_type_free(GigTypeMeta *meta)
 {
-    for (gint i = 0; i < meta->n_params; i++)
+    for (int i = 0; i < meta->n_params; i++)
         gig_data_type_free(&meta->params[i]);
     if (meta->n_params > 0)
         free(meta->params);
@@ -304,9 +304,9 @@ gig_data_type_free(GigTypeMeta *meta)
 }
 
 #define STRLEN 128
-gchar gig_data_type_describe_buf[STRLEN];
+char gig_data_type_describe_buf[STRLEN];
 
-const gchar *
+const char *
 gig_type_meta_describe(const GigTypeMeta *meta)
 {
     GString *s = g_string_new(NULL);
