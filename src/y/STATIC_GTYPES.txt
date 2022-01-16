@@ -1,0 +1,39 @@
+These types are static
+
+G_TYPE_INVALID 0
+G_TYPE_NONE 4
+G_TYPE_INTERFACE 8
+G_TYPE_CHAR 12
+G_TYPE_UCHAR 16
+G_TYPE_BOOLEAN 20
+G_TYPE_INT 24
+G_TYPE_UINT 28
+G_TYPE_LONG 32
+G_TYPE_ULONG 36
+G_TYPE_INT64 40
+G_TYPE_UINT64 44
+G_TYPE_ENUM 48
+G_TYPE_FLAGS 52
+G_TYPE_FLOAT 56
+G_TYPE_DOUBLE 60
+G_TYPE_STRING 64
+G_TYPE_POINTER 68
+G_TYPE_BOXED 72
+G_TYPE_PARAM 76
+G_TYPE_OBJECT 80
+G_TYPE_VARIANT 84
+
+Anything over G_TYPE_FUNDAMENTAL_MAX is a type number
+assigned at compile time
+
+G_TYPE_FUNDAMENTAL_MAX 255 << 2 = 1020
+
+================
+These types are dynamic
+
+G_TYPE_GTYPE g_type_get_gtype()
+G_TYPE_ARRAY g_array_get_type()
+G_TYPE_BYTE_ARRAY g_byte_array_get_type()
+G_TYPE_PTR_ARRAY g_ptr_array_get_type()
+G_TYPE_HASH_TABLE g_hash_table_get_type()
+G_TYPE_VALUE g_value_get_type();

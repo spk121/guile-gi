@@ -1,0 +1,12 @@
+typedef enum
+{
+    SIGNAL_SLOT_NAME,
+    SIGNAL_SLOT_FLAGS,
+    SIGNAL_SLOT_ACCUMULATOR,
+    SIGNAL_SLOT_RETURN_TYPE,
+    SIGNAL_SLOT_PARAM_TYPES,
+    SIGNAL_SLOT_OUTPUT_MASK,
+    SIGNAL_SLOT_COUNT
+} Signal_slot;
+
+SCM make_signal(int, Signal_slot *, SCM *);
