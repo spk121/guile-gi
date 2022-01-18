@@ -101,6 +101,7 @@ examples/resources/test.gresource: AM_GRESOURCE_FLAGS = --sourcedir=$(abs_buildd
 guileextension_LTLIBRARIES = libguile-gi.la
 
 libguile_gi_la_c_sources = \
+  src/c/mem.c \
   src/gig.c \
   src/gig_arg_map.c \
   src/gig_argument.c \
@@ -125,6 +126,7 @@ libguile_gi_la_c_sources = \
   src/gig_value.c
 
 libguile_gi_la_internal_headers = \
+  src/c/mem.h \
   src/gig.h \
   src/gig_arg_map.h \
   src/gig_argument.h \

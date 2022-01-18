@@ -1,4 +1,5 @@
 #include <assert.h>
+#include "c/mem.h"
 #include "gig_type_private.h"
 #include "gig_util.h"
 #include "gig_logging.h"
@@ -17,7 +18,7 @@ static void
 func_list_add(FuncList **lst, GigBoxedFuncs *bf)
 {
     FuncList *cur;
-    cur = malloc(sizeof(FuncList));
+    cur = xmalloc(sizeof(FuncList));
     if (cur == NULL)
         abort();
     cur->bf = bf;

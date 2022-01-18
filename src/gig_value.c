@@ -15,6 +15,7 @@
 
 #include <assert.h>
 #include <girepository.h>
+#include "c/mem.h"
 #include "gig_value.h"
 #include "gig_type.h"
 #include "gig_object.h"

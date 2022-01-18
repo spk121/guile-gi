@@ -15,6 +15,7 @@
 
 #include <string.h>
 #include <glib-object.h>
+#include "c/mem.h"
 #include "gig_argument.h"
 #include "gig_data_type.h"
 #include "gig_arg_map.h"

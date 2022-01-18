@@ -16,6 +16,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
+#include "c/mem.h"
 #include "gig_arg_map.h"
 #include "gig_data_type.h"
 #include "gig_logging.h"

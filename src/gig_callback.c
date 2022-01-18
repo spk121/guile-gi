@@ -18,6 +18,7 @@
 #include <libguile/hooks.h>
 #include <ffi.h>
 #include <stdio.h>
+#include "c/mem.h"
 #include "gig_argument.h"
 #include "gig_callback.h"
 #include "gig_function.h"
@@ -61,7 +62,7 @@ static void
 cblist_add(CBList **lst, GigCallback *gcb)
 {
     CBList *cur;
-    cur = malloc(sizeof(CBList));
+    cur = xmalloc(sizeof(CBList));
     if (cur == NULL)
         abort();
     cur->gcb = gcb;

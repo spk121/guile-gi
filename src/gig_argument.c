@@ -18,6 +18,7 @@
 #include <girepository.h>
 #include <glib.h>
 #include <libguile.h>
+#include "c/mem.h"
 #include "gig_argument.h"
 #include "gig_callback.h"
 #include "gig_flag.h"

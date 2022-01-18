@@ -23,11 +23,6 @@
 #define MALLOC __attribute__((malloc))
 
 size_t strvlen(const char **x);
-MALLOC void *xcalloc(size_t nmemb, size_t siz);
-MALLOC void *xmalloc(size_t siz);
-char *xstrdup(const char *S);
-char *xstrndup(const char *S, size_t siz);
-void *xmemdup(const void *mem, size_t len);
 
 MALLOC char *gig_callable_info_make_name(GICallableInfo *info, const char *prefix);
 const char *gig_constant_strip_prefix(const char *name, const char *strip_prefix);

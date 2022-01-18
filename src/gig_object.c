@@ -16,6 +16,7 @@
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
+#include "c/mem.h"
 #include "gig_object.h"
 #include "gig_type.h"
 #include "gig_util.h"
@@ -87,8 +88,8 @@ gig_i_scm_make_gobject(SCM s_gtype, SCM s_prop_keylist)
         scm_dynwind_unwind_handler(g_type_class_unref, _class, SCM_F_WIND_EXPLICITLY);
 
         n_prop = scm_c_length(s_prop_keylist) / 2;
-        keys = scm_dynwind_or_bust(FUNC, calloc(n_prop, sizeof(char *)));
-        values = scm_dynwind_or_bust(FUNC, calloc(n_prop, sizeof(GValue)));
+        keys = scm_dynwind_or_bust(FUNC, xcalloc(n_prop, sizeof(char *)));
+        values = scm_dynwind_or_bust(FUNC, xcalloc(n_prop, sizeof(GValue)));
 
         SCM iter = s_prop_keylist;
         for (size_t i = 0; i < n_prop; i++, iter = scm_cddr(iter)) {
@@ -566,7 +567,7 @@ gig_property_define(GType type, GIPropertyInfo *info, const char *_namespace, SC
 
     scm_dynwind_begin(0);
     size_t mid_len = strlen(_namespace) + strlen(":") + strlen(name) + 1;
-    mid_name = malloc(mid_len);
+    mid_name = xmalloc(mid_len);
     snprintf(mid_name, mid_len, "%s:%s", _namespace, name);
     long_name = gig_gname_to_scm_name(mid_name);
     free(mid_name);

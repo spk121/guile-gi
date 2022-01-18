@@ -21,6 +21,7 @@
 #include <string.h>
 #include <libguile.h>
 #include <glib-object.h>
+#include "c/mem.h"
 #include "gig_util.h"
 
 static intbool_t is_predicate(GIFunctionInfo *info);
@@ -33,70 +34,6 @@ strvlen(const char **x)
     while (x[i] != NULL)
         i++;
     return i;
-}
-
-void *
-xcalloc(size_t nmemb, size_t siz)
-{
-    void *x;
-    x = calloc(nmemb, siz);
-    if (x == 0) {
-        fprintf(stderr, "Out of memory\n");
-        exit(1);
-    }
-    return x;
-}
-
-void *
-xmalloc(size_t siz)
-{
-    void *x;
-    x = malloc(siz);
-    if (x == NULL) {
-        fprintf(stderr, "Out of memory\n");
-        exit(1);
-    }
-    return x;
-}
-
-void *
-xmemdup(const void *mem, size_t len)
-{
-    void *new_mem;
-
-    new_mem = malloc(len);
-    if (new_mem == NULL) {
-        fprintf(stderr, "Out of memory\n");
-        exit(1);
-    }
-    memcpy(new_mem, mem, len);
-
-    return new_mem;
-}
-
-
-char *
-xstrdup(const char *S)
-{
-    char *x;
-    x = strdup(S);
-    if (x == NULL) {
-        fprintf(stderr, "Out of memory\n");
-        exit(1);
-    }
-    return x;
-}
-
-char *
-xstrndup(const char *S, size_t siz)
-{
-    char *x;
-    x = strndup(S, siz);
-    if (x == NULL) {
-        fprintf(stderr, "Out of memory\n");
-        exit(1);
-    }
-    return x;
 }
 
 // Returns TRUE if this function returns a single boolean.

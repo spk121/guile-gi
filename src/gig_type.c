@@ -18,6 +18,7 @@
 #include <libguile.h>
 #include <girepository.h>
 #include <ffi.h>
+#include "c/mem.h"
 #include "gig_type.h"
 #include "gig_util.h"
 #include "gig_object.h"
@@ -95,7 +96,7 @@ char *
 gig_type_class_name_from_gtype(gtype_t gtype)
 {
     size_t len = strlen("<>") + strlen(g_type_name(gtype)) + 1;
-    char *str = malloc(len);
+    char *str = xmalloc(len);
     snprintf(str, len, "<%s>", g_type_name(gtype));
     return str;
 }

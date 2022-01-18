@@ -16,6 +16,7 @@
 #include <string.h>
 #include <ffi.h>
 #include <libguile/hooks.h>
+#include "c/mem.h"
 #include "gig_argument.h"
 #include "gig_util.h"
 #include "gig_arg_map.h"

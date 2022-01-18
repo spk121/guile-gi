@@ -1,3 +1,4 @@
+#include "c/mem.h"
 #include "gig_closure.h"
 #include "gig_value.h"
 #include "gig_type.h"
