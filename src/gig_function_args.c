@@ -15,6 +15,7 @@
 
 #include "gig_util.h"
 #include "gig_function_args.h"
+#include "gig_logging.h"
 
 static void
 gig_args_store_argument(GigArgsStore *store, GIArgument *arg, int invoke_in, int invoke_out,
