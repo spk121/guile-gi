@@ -18,25 +18,16 @@
 #include <girepository.h>
 #include "x.h"
 #include "y/type.h"
-#include "y/constant.h"
-#include "y/function.h"
 #include "y/object.h"
-#include "y/enum.h"
-#include "y/repository.h"
+#include "y/function.h"
 #include "y/guile.h"
+#include "y/constant.h"
+#include "y/flag.h"
+#include "y/repository.h"
 
 static scm_t_bits info_smob_tag = SCM_UNPACK(SCM_BOOL_F);
 static int glib_loaded = 0;
 static int gobject_loaded = 0;
-
-typedef enum _LoadFlags
-{
-    LOAD_INFO_ONLY = 0,
-    LOAD_METHODS = 1 << 0,
-    LOAD_PROPERTIES = 1 << 1,
-    LOAD_SIGNALS = 1 << 2,
-    LOAD_EVERYTHING = LOAD_METHODS | LOAD_PROPERTIES | LOAD_SIGNALS
-} LoadFlags;
 
 int
 has_loaded_gobject(void)
@@ -78,6 +69,87 @@ print_info_smob(SCM smob, SCM port, scm_print_state * pstate)
     /* non-zero means success */
     return 1;
 }
+static SCM
+scm_require(SCM lib, SCM version)
+{
+    SCM_ASSERT_TYPE(scm_is_string(lib), lib, SCM_ARG1, "require", "string");
+    SCM_ASSERT_TYPE(SCM_UNBNDP(version) ||
+                    scm_is_string(version), version, SCM_ARG2, "require", "string");
+
+    char *_lib, *_version = NULL;
+    GITypelib *tl;
+    GError *error = NULL;
+
+    scm_dynwind_begin(0);
+    _lib = dynfree(scm_to_utf8_string(lib));
+    if (!SCM_UNBNDP(version) && scm_is_true(version))
+        _version = dynfree(scm_to_utf8_string(version));
+
+    debug_load("requiring %s-%s", _lib, _version != NULL ? _version : "latest");
+    tl = g_irepository_require(NULL, _lib, _version, 0, &error);
+
+    if (tl == NULL) {
+        SCM err = scm_from_utf8_string(error->message);
+        g_error_free(error);
+        scm_misc_error("require", "~A", scm_list_1(err));
+    }
+    if (!glib_loaded && (strcmp("GLib", _lib) == 0))
+        glib_loaded = 1;
+    if (!gobject_loaded && (strcmp("GObject", _lib) == 0))
+        gobject_loaded = 1;
+    if (!glib_loaded || !gobject_loaded)
+    {
+        char **dependencies = g_irepository_get_dependencies(NULL, _lib);
+        int i = 0;
+        while (dependencies[i] != NULL)
+        {
+            if (strncmp(dependencies[i], "GLib-", 5) == 0)
+                glib_loaded = 1;
+            if (strncmp(dependencies[i], "GObject-", 8) == 0)
+                gobject_loaded = 1;
+            i++;
+        }
+    }
+    scm_dynwind_end();
+
+    return SCM_UNSPECIFIED;
+}
+
+static SCM
+scm_get_all_entries(SCM lib)
+{
+    SCM_ASSERT_TYPE(scm_is_string(lib), lib, SCM_ARG1, "get-all-entries", "string");
+
+    scm_dynwind_begin(0);
+    char *_lib = dynfree(scm_to_utf8_string(lib));
+    if (!g_irepository_is_registered(NULL, _lib, NULL)) {
+        scm_dynwind_end();
+        return SCM_BOOL_F;
+    }
+    int n = g_irepository_get_n_infos(NULL, _lib);
+    SCM infos = SCM_EOL;
+
+    for (int i = 0; i < n; i++) {
+        GIBaseInfo *info = g_irepository_get_info(NULL, _lib, i);
+        if (g_base_info_is_deprecated(info)) {
+            g_base_info_unref(info);
+            continue;
+        }
+        infos = scm_cons(make_info_smob(info), infos);
+    }
+    scm_dynwind_end();
+
+    return scm_reverse_x(infos, SCM_EOL);
+}
+
+typedef enum _LoadFlags
+{
+    LOAD_INFO_ONLY = 0,
+    LOAD_METHODS = 1 << 0,
+    LOAD_PROPERTIES = 1 << 1,
+    LOAD_SIGNALS = 1 << 2,
+    LOAD_EVERYTHING = LOAD_METHODS | LOAD_PROPERTIES | LOAD_SIGNALS
+} LoadFlags;
 
 void
 repository_nested_infos(GIBaseInfo *base,
@@ -309,76 +381,21 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
 }
 
 static SCM
-scm_require(SCM lib, SCM version)
+scm_load_entry(SCM info, SCM flags)
 {
-    SCM_ASSERT_TYPE(scm_is_string(lib), lib, SCM_ARG1, "require", "string");
-    SCM_ASSERT_TYPE(SCM_UNBNDP(version) ||
-                    scm_is_string(version), version, SCM_ARG2, "require", "string");
+    SCM_ASSERT_TYPE(SCM_UNBNDP(flags) ||
+                    scm_is_unsigned_integer(flags, 0, LOAD_EVERYTHING), flags, SCM_ARG2,
+                    "load-entry", "integer");
 
-    char *_lib, *_version = NULL;
-    GITypelib *tl;
-    GError *error = NULL;
+    LoadFlags load_flags;
+    if (SCM_UNBNDP(flags))
+        load_flags = LOAD_EVERYTHING;
+    else
+        load_flags = scm_to_uint(flags);
 
-    scm_dynwind_begin(0);
-    _lib = dynfree(scm_to_utf8_string(lib));
-    if (!SCM_UNBNDP(version) && scm_is_true(version))
-        _version = dynfree(scm_to_utf8_string(version));
+    GIBaseInfo *base_info = (GIBaseInfo *)SCM_SMOB_DATA(info);
 
-    debug_load("requiring %s-%s", _lib, _version != NULL ? _version : "latest");
-    tl = g_irepository_require(NULL, _lib, _version, 0, &error);
-
-    if (tl == NULL) {
-        SCM err = scm_from_utf8_string(error->message);
-        g_error_free(error);
-        scm_misc_error("require", "~A", scm_list_1(err));
-    }
-    if (!glib_loaded && (strcmp("GLib", _lib) == 0))
-        glib_loaded = 1;
-    if (!gobject_loaded && (strcmp("GObject", _lib) == 0))
-        gobject_loaded = 1;
-    if (!glib_loaded || !gobject_loaded)
-    {
-        char **dependencies = g_irepository_get_dependencies(NULL, _lib);
-        int i = 0;
-        while (dependencies[i] != NULL)
-        {
-            if (strncmp(dependencies[i], "GLib-", 5) == 0)
-                glib_loaded = 1;
-            if (strncmp(dependencies[i], "GObject-", 8) == 0)
-                gobject_loaded = 1;
-            i++;
-        }
-    }
-    scm_dynwind_end();
-
-    return SCM_UNSPECIFIED;
-}
-
-static SCM
-scm_get_all_entries(SCM lib)
-{
-    SCM_ASSERT_TYPE(scm_is_string(lib), lib, SCM_ARG1, "get-all-entries", "string");
-
-    scm_dynwind_begin(0);
-    char *_lib = dynfree(scm_to_utf8_string(lib));
-    if (!g_irepository_is_registered(NULL, _lib, NULL)) {
-        scm_dynwind_end();
-        return SCM_BOOL_F;
-    }
-    int n = g_irepository_get_n_infos(NULL, _lib);
-    SCM infos = SCM_EOL;
-
-    for (int i = 0; i < n; i++) {
-        GIBaseInfo *info = g_irepository_get_info(NULL, _lib, i);
-        if (g_base_info_is_deprecated(info)) {
-            g_base_info_unref(info);
-            continue;
-        }
-        infos = scm_cons(make_info_smob(info), infos);
-    }
-    scm_dynwind_end();
-
-    return scm_reverse_x(infos, SCM_EOL);
+    return load_info(base_info, load_flags, SCM_EOL);
 }
 
 static SCM
@@ -458,24 +475,6 @@ scm_get_dependencies(SCM namespace)
     return scm_reverse_x(dependencies, SCM_EOL);
 }
 
-static SCM
-scm_load_entry(SCM info, SCM flags)
-{
-    SCM_ASSERT_TYPE(SCM_UNBNDP(flags) ||
-                    scm_is_unsigned_integer(flags, 0, LOAD_EVERYTHING), flags, SCM_ARG2,
-                    "load-entry", "integer");
-
-    LoadFlags load_flags;
-    if (SCM_UNBNDP(flags))
-        load_flags = LOAD_EVERYTHING;
-    else
-        load_flags = scm_to_uint(flags);
-
-    GIBaseInfo *base_info = (GIBaseInfo *)SCM_SMOB_DATA(info);
-
-    return load_info(base_info, load_flags, SCM_EOL);
-}
-
 void
 init_repository(void)
 {
@@ -487,8 +486,16 @@ init_repository(void)
     scm_c_define_gsubr("require", 1, 1, 0, scm_require);
     scm_c_define_gsubr("get-all-entries", 1, 0, 0, scm_get_all_entries);
     scm_c_define_gsubr("find-entry-by-name", 2, 0, 0, scm_find_entry_by_name);
+    scm_c_define_gsubr("load-entry", 1, 1, 0, scm_load_entry);
     scm_c_define_gsubr("get-search-path", 0, 0, 0, scm_get_search_path);
     scm_c_define_gsubr("prepend-search-path!", 1, 0, 0, scm_prepend_search_path_x);
     scm_c_define_gsubr("get-dependencies", 1, 0, 0, scm_get_dependencies);
-    scm_c_define_gsubr("load-entry", 1, 1, 0, scm_load_entry);
+
+#define D(x) scm_permanent_object(scm_c_define(#x, scm_from_uint(x)))
+
+    D(LOAD_INFO_ONLY);
+    D(LOAD_METHODS);
+    D(LOAD_PROPERTIES);
+    D(LOAD_SIGNALS);
+    D(LOAD_EVERYTHING);
 }

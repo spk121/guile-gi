@@ -19,11 +19,11 @@
 #include <ffi.h>
 #include <stdio.h>
 #include "x.h"
-#include "y/arg_map.h"
 #include "y/argument.h"
 #include "y/callback.h"
-#include "y/guile.h"
 #include "y/function.h"
+#include "y/arg_map.h"
+#include "y/guile.h"
 
 typedef struct _Callback Callback;
 struct _Callback
@@ -96,76 +96,53 @@ convert_ffi_arg_to_giargument(void *_ffi_arg, ffi_type *arg_type, int unpack,
 static void
 store_output(Arg_map_entry *entry, void ***arg, GIArgument *value)
 {
-    GType gtype = G_TYPE_FUNDAMENTAL(entry->arg.gtype);
-    size_t item_size = entry->arg.item_size;
-    switch (gtype) {
-    case G_TYPE_BOOLEAN:
+    Type_tag type = entry->arg.payload;
+    switch (type) {
+    case TYPE_BOOLEAN:
         **(int **)arg = value->v_int;
         break;
-    case G_TYPE_CHAR:
+    case TYPE_INT8:
         **(char **)arg = value->v_int8;
         break;
-    case G_TYPE_UCHAR:
+    case TYPE_UINT8:
         **(unsigned char **)arg = value->v_uint8;
         break;
-    case G_TYPE_INT:
-    {
-        switch (item_size) {
-        case 1:
-            **(int8_t **) arg = value->v_int8;
-            break;
-        case 2:
-            **(int16_t **) arg = value->v_int16;
-            break;
-        case 4:
-            **(int32_t **) arg = value->v_int32;
-            break;
-        case 8:
-            **(int64_t **) arg = value->v_int64;
-            break;
-        default:
-            assert_not_reached();
-        }
+    case TYPE_INT16:
+        **(int16_t **)arg = value->v_int16;
         break;
-    }
-    case G_TYPE_UINT:
-    {
-        switch (entry->arg.item_size) {
-        case 1:
-            **(uint8_t **) arg = value->v_uint8;
-            break;
-        case 2:
-            **(uint16_t **) arg = value->v_uint16;
-            break;
-        case 4:
-            **(uint32_t **) arg = value->v_uint32;
-            break;
-        case 8:
-            **(uint64_t **) arg = value->v_uint64;
-            break;
-        default:
-            assert_not_reached();
-        }
+    case TYPE_UINT16:
+        **(uint16_t **)arg = value->v_uint16;
         break;
-    }
-    case G_TYPE_INT64:
-        **(int64_t **) arg = value->v_int64;
+    case TYPE_INT32:
+        **(int32_t **)arg = value->v_int32;
         break;
-    case G_TYPE_UINT64:
-        **(uint64_t **) arg = value->v_uint64;
+    case TYPE_UINT32:
+        **(uint32_t **)arg = value->v_uint32;
         break;
-    case G_TYPE_FLOAT:
+    case TYPE_INT64:
+        **(int64_t **)arg = value->v_int64;
+        break;
+    case TYPE_UINT64:
+        **(uint64_t **)arg = value->v_uint64;
+        break;
+    case TYPE_FLOAT:
         **(float **)arg = value->v_float;
         break;
-    case G_TYPE_DOUBLE:
+    case TYPE_DOUBLE:
         **(double **)arg = value->v_double;
         break;
-    case G_TYPE_STRING:
+    case TYPE_UTF8_STRING:
+    case TYPE_LOCALE_STRING:
         **(char ***)arg = value->v_string;
         break;
-    case G_TYPE_POINTER:
-    case G_TYPE_BOXED:
-    case G_TYPE_OBJECT:
+    case TYPE_STRUCT:
+    case TYPE_UNION:
+    case TYPE_ARRAY:
+    case TYPE_GARRAY:
+    case TYPE_GBYTEARRAY:
+    case TYPE_GPTRARRAY:
+    case TYPE_OBJECT:
+    case TYPE_INTERFACE:
         **(char ***)arg = value->v_pointer;
         break;
     default:
@@ -264,7 +241,7 @@ callback_binding_inner(struct callback_binding_args *args)
         int in, out, n_values = (int)n_values_;
         arg_map_c_count(amap, &in, &out);
 
-        if (amap->return_val.arg.gtype != G_TYPE_NONE) {
+        if (amap->return_val.arg.payload != TYPE_NONE) {
             start = 1;
             SCM real_ret = scm_c_value_ref(s_ret, 0);
             argument_scm_to_c(callback_name, 0, &amap->return_val.arg, real_ret, NULL, &giarg,
@@ -452,7 +429,7 @@ callback_new(const char *name, GICallbackInfo *callback_info, SCM s_func)
     prep_ok = ffi_prep_cif(&(gcb->cif), FFI_DEFAULT_ABI, n_args, ffi_ret_type, ffi_args);
 
     if (prep_ok != FFI_OK)
-        scm_misc_error("-callback-new",
+        scm_misc_error("callback-new",
                        "closure call interface preparation error #~A",
                        scm_list_1(scm_from_int(prep_ok)));
 
@@ -463,7 +440,7 @@ callback_new(const char *name, GICallbackInfo *callback_info, SCM s_func)
                                       gcb->callback_ptr);
 
     if (closure_ok != FFI_OK)
-        scm_misc_error("-callback-new",
+        scm_misc_error("callback-new",
                        "closure location preparation error #~A",
                        scm_list_1(scm_from_int(closure_ok)));
 
@@ -560,61 +537,43 @@ arg_map_entry_to_ffi_type(Arg_map_entry *entry)
     if (entry->arg.is_ptr)
         return &ffi_type_pointer;
     else {
-        GType fundamental_type = G_TYPE_FUNDAMENTAL(entry->arg.gtype);
-        if (fundamental_type == G_TYPE_NONE)
+        Type_tag fundamental_type = entry->arg.payload;
+        if (fundamental_type == TYPE_NONE)
             return &ffi_type_void;
-        else if (fundamental_type == G_TYPE_BOOLEAN)
+        else if (fundamental_type == TYPE_BOOLEAN)
             return &ffi_type_sint;
-        else if (fundamental_type == G_TYPE_CHAR)
+        else if (fundamental_type == TYPE_INT8)
             return &ffi_type_sint8;
-        else if (fundamental_type == G_TYPE_UCHAR)
+        else if (fundamental_type == TYPE_UINT8)
             return &ffi_type_uint8;
-        else if (fundamental_type == G_TYPE_INT)
-            switch (entry->arg.item_size) {
-            case 1:
-                return &ffi_type_sint8;
-            case 2:
-                return &ffi_type_sint16;
-            case 4:
-                return &ffi_type_sint32;
-            case 8:
-                return &ffi_type_sint64;
-            default:
-                assert_not_reached();
-            }
-        else if (fundamental_type == G_TYPE_UINT)
-            switch (entry->arg.item_size) {
-            case 1:
-                return &ffi_type_uint8;
-            case 2:
-                return &ffi_type_uint16;
-            case 4:
-                return &ffi_type_uint32;
-            case 8:
-                return &ffi_type_uint64;
-            default:
-                assert_not_reached();
-            }
-        else if (fundamental_type == G_TYPE_INT64)
-            return &ffi_type_sint64;
-        else if (fundamental_type == G_TYPE_UINT64)
-            return &ffi_type_uint64;
-        else if (fundamental_type == G_TYPE_FLOAT)
-            return &ffi_type_float;
-        else if (fundamental_type == G_TYPE_DOUBLE)
-            return &ffi_type_double;
-        else if (fundamental_type == G_TYPE_GTYPE)
-            switch (entry->arg.item_size) {
-            case 4:
-                return &ffi_type_sint32;
-            case 8:
-                return &ffi_type_sint64;
-            default:
-                assert_not_reached();
-            }
-        else if (fundamental_type == G_TYPE_FLAGS)
+        else if (fundamental_type == TYPE_INT16)
+            return &ffi_type_sint16;
+        else if (fundamental_type == TYPE_UINT16)
+            return &ffi_type_uint16;
+        else if (fundamental_type == TYPE_INT32)
+            return &ffi_type_sint32;
+        else if (fundamental_type == TYPE_UINT32)
             return &ffi_type_uint32;
-        else if (fundamental_type == G_TYPE_ENUM)
+        else if (fundamental_type == TYPE_INT64)
+            return &ffi_type_sint64;
+        else if (fundamental_type == TYPE_UINT64)
+            return &ffi_type_uint64;
+        else if (fundamental_type == TYPE_FLOAT)
+            return &ffi_type_float;
+        else if (fundamental_type == TYPE_DOUBLE)
+            return &ffi_type_double;
+        else if (fundamental_type == TYPE_GTYPE)
+            switch (sizeof(GType)) {
+            case 4:
+                return &ffi_type_sint32;
+            case 8:
+                return &ffi_type_sint64;
+            default:
+                assert_not_reached();
+            }
+        else if (fundamental_type == TYPE_FLAGS)
+            return &ffi_type_uint32;
+        else if (fundamental_type == TYPE_ENUM)
             return &ffi_type_sint32;
         else
             assert_not_reached();
@@ -709,3 +668,4 @@ fini_callback(void)
     debug_init("Freeing callbacks");
     slist_free(&callback_list, callback_free);
 }
+

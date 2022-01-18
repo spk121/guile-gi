@@ -19,8 +19,8 @@
 #include "x.h"
 #include "y/flag.h"
 #include "y/type.h"
+#include "y/type_private.h"
 #include "y/guile.h"
-//#include "type_private.h"
 
 static SCM _enum_to_number;
 static SCM _flags_to_number;
@@ -170,10 +170,10 @@ define_enum(GIEnumInfo *info, SCM defs)
 
     switch (t) {
     case GI_INFO_TYPE_ENUM:
-        _class = define_type_with_info(info, scm_list_1(get_enum_type()), SCM_EOL);
+        _class = define_type_with_info(info, scm_list_1(enum_type), SCM_EOL);
         break;
     case GI_INFO_TYPE_FLAGS:
-        _class = define_type_with_info(info, scm_list_1(get_flags_type()), SCM_EOL);
+        _class = define_type_with_info(info, scm_list_1(flags_type), SCM_EOL);
         break;
     default:
         assert_not_reached();

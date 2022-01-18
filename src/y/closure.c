@@ -1,8 +1,8 @@
 #include <stdint.h>
 #include "x.h"
 #include "y/closure.h"
-#include "y/type.h"
 #include "y/value.h"
+#include "y/type.h"
 #include "y/guile.h"
 
 typedef struct _Closure Closure;
@@ -18,7 +18,7 @@ struct _Closure
 };
 
 static void
-_closure_invalidate(void *data, GClosure *closure)
+invalidate_closure(void *data, GClosure *closure)
 {
     Closure *pc = (Closure *)closure;
     SCM old_callback = pc->callback;
@@ -32,7 +32,7 @@ _closure_invalidate(void *data, GClosure *closure)
 }
 
 static void
-_closure_marshal(GClosure *closure, GValue *ret, unsigned n_params, const GValue *params,
+marshal_closure(GClosure *closure, GValue *ret, unsigned n_params, const GValue *params,
                      void *hint, void *marshal_data)
 {
     Closure *pc = (Closure *)closure;
@@ -88,7 +88,7 @@ _closure_marshal(GClosure *closure, GValue *ret, unsigned n_params, const GValue
             size_t mask = 1L << (pos % 32);
 
             if (bits[word_pos] & mask)
-                g_warn_if_fail(!value_from_scm((GValue *)(params + i),
+                warn_if_fail(!value_from_scm((GValue *)(params + i),
                                                    scm_c_value_ref(_ret, idx++)));
         }
         scm_array_handle_release(&handle);
@@ -99,8 +99,8 @@ GClosure *
 closure_new(SCM callback, SCM inout_mask)
 {
     GClosure *closure = g_closure_new_simple(sizeof(Closure), NULL);
-    g_closure_add_invalidate_notifier(closure, NULL, _closure_invalidate);
-    g_closure_set_marshal(closure, _closure_marshal);
+    g_closure_add_invalidate_notifier(closure, NULL, invalidate_closure);
+    g_closure_set_marshal(closure, marshal_closure);
     // FIXME: what about garbage collection?
     ((Closure *)closure)->callback = scm_gc_protect_object(callback);
     if (SCM_UNBNDP(inout_mask) || scm_is_false(inout_mask))
@@ -113,9 +113,9 @@ closure_new(SCM callback, SCM inout_mask)
 static SCM
 invoke_closure(SCM closure, SCM return_type, SCM inout_mask, SCM args)
 {
-    SCM_ASSERT_TYPE(SCM_IS_A_P(closure, get_closure_type()), closure, SCM_ARG1, "%invoke-closure",
+    SCM_ASSERT_TYPE(SCM_IS_A_P(closure, closure_type), closure, SCM_ARG1, "%invoke-closure",
                     "closure");
-    GClosure *real_closure = peek_typed_object(closure, get_closure_type());
+    GClosure *real_closure = peek_typed_object(closure, closure_type);
     SCM_ASSERT_TYPE(scm_is_list(args), args, SCM_ARG2, "%invoke-closure", "list");
 
     size_t nargs = scm_c_length(args);
@@ -204,3 +204,4 @@ init_closure()
     scm_c_define_gsubr("procedure->closure", 1, 1, 0, procedure_to_closure);
     scm_c_define_gsubr("%invoke-closure", 4, 0, 0, invoke_closure);
 }
+

@@ -20,7 +20,7 @@
 #include "y/constant.h"
 
 SCM
-define_constant(GIConstantInfo *info)
+define_constant(GIConstantInfo *info, SCM defs)
 {
     const char *public_name = g_base_info_get_name(info);
 
@@ -86,7 +86,6 @@ define_constant(GIConstantInfo *info)
     g_constant_info_free_value(info, &value);
     g_base_info_unref(typeinfo);
 
-    SCM def = scm_c_define(public_name, ret);
-    scm_permanent_object(def);
-    return scm_from_utf8_symbol(public_name);
+    scm_permanent_object(scm_c_define(public_name, ret));
+    return scm_cons(scm_from_utf8_symbol(public_name), defs);
 }

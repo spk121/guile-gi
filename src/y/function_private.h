@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2019 Michael L. Gran
+// Copyright (C) 2019, 2020 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -13,18 +13,22 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef CORE_FUNCTION_H
-#define CORE_FUNCTION_H
+#ifndef Y_FUNCTION_PRIVATE_H
+#define Y_FUNCTION_PRIVATE_H
 
-#include <girepository.h>
-#include <libguile.h>
-#include "arg_map.h"
+extern SCM ensure_generic_proc;
+extern SCM make_proc;
+extern SCM add_method_proc;
 
-typedef SCM (*GigGsubr)(void);
+extern SCM top_type;
+extern SCM method_type;
 
-SCM function_define(GType type, GICallableInfo *info, const char *_namespace, SCM defs);
-SCM callable_invoke(GICallableInfo *callable_info, void *callable, GigArgMap *amap,
-                        const char *name, GObject *self, SCM args, GError **error);
-void init_function(void);
+extern SCM kwd_specializers;
+extern SCM kwd_formals;
+extern SCM kwd_procedure;
+
+extern SCM sym_self;
+
+SCM default_definition(SCM name);
 
 #endif

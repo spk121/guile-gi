@@ -18,8 +18,9 @@
 #include "x.h"
 #include "y/arg.h"
 
-static const char arg_payload_string[(size_t)TYPE_TAG_OTHER+1][16] =
+static const char arg_payload_string[(size_t)TYPE_OTHER+1][16] =
 {
+    "NONE",
     "INVALID",
     "VOID",
     "POINTER",
@@ -55,6 +56,8 @@ static const char arg_payload_string[(size_t)TYPE_TAG_OTHER+1][16] =
     "OBJECT",
     "INTERFACE",
     "CONSTANT",
+    "PARAM",
+    "VARIANT",
     "OTHER"
 };
 
@@ -122,7 +125,7 @@ arg_init_from_callable_info(Arg *meta, GICallableInfo *ci)
     arg_init_from_type_info(meta, type_info);
 
     meta->is_in = FALSE;
-    if (meta->payload != TYPE_TAG_VOID && meta->payload != TYPE_TAG_INVALID)
+    if (meta->payload != TYPE_NONE && meta->payload != TYPE_INVALID)
         meta->is_out = TRUE;
     else
         meta->is_out = FALSE;
@@ -154,10 +157,10 @@ add_child_params(Arg *meta, GITypeInfo *type_info, int n)
         arg_init_from_type_info(&meta->params[i], param_type);
         g_base_info_unref(param_type);
 
-        if (meta->transfer == TRANSFER_EVERYTHING)
-            meta->params[i].transfer = TRANSFER_EVERYTHING;
+        if (meta->transfer == GI_TRANSFER_EVERYTHING)
+            meta->params[i].transfer = GI_TRANSFER_EVERYTHING;
         else
-            meta->params[i].transfer = TRANSFER_NOTHING;
+            meta->params[i].transfer = GI_TRANSFER_NOTHING;
 
         meta->is_invalid |= meta->params[i].is_invalid;
     }
@@ -166,30 +169,30 @@ add_child_params(Arg *meta, GITypeInfo *type_info, int n)
 static void
 arg_init_from_basic_type_tag(Arg *meta, GITypeTag tag)
 {
-#define T(TYPETAG,GTYPE,CTYPE)                  \
+#define T(TYPETAG,TYPE,CTYPE)                  \
     do {                                        \
         if (tag == TYPETAG) {                   \
-            meta->payload = GTYPE;                \
+            meta->payload = TYPE;                \
             meta->item_size = sizeof (CTYPE);   \
             return;                             \
         }                                       \
     } while(FALSE)
 
-    T(GI_TYPE_TAG_BOOLEAN, TYPE_TAG_BOOLEAN, int);
-    T(GI_TYPE_TAG_DOUBLE, TYPE_TAG_DOUBLE, double);
-    T(GI_TYPE_TAG_FLOAT, TYPE_TAG_FLOAT, float);
-    T(GI_TYPE_TAG_GTYPE, TYPE_TAG_GTYPE, size_t);
-    T(GI_TYPE_TAG_INT8, TYPE_TAG_INT8, int8_t);
-    T(GI_TYPE_TAG_INT16, TYPE_TAG_INT16, int16_t);
-    T(GI_TYPE_TAG_INT32, TYPE_TAG_INT32, int32_t);
-    T(GI_TYPE_TAG_INT64, TYPE_TAG_INT64, int64_t);
-    T(GI_TYPE_TAG_UINT8, TYPE_TAG_UINT8, uint8_t);
-    T(GI_TYPE_TAG_UINT16, TYPE_TAG_UINT16, uint16_t);
-    T(GI_TYPE_TAG_UINT32, TYPE_TAG_UINT32, uint32_t);
-    T(GI_TYPE_TAG_UINT64, TYPE_TAG_UINT64, uint64_t);
-    T(GI_TYPE_TAG_UNICHAR, TYPE_TAG_UNICHAR, uint32_t);
-    T(GI_TYPE_TAG_UTF8, TYPE_TAG_UTF8_STRING, char *);
-    T(GI_TYPE_TAG_UTF8, TYPE_TAG_LOCALE_STRING, char *);
+    T(GI_TYPE_TAG_BOOLEAN, TYPE_BOOLEAN, int);
+    T(GI_TYPE_TAG_DOUBLE, TYPE_DOUBLE, double);
+    T(GI_TYPE_TAG_FLOAT, TYPE_FLOAT, float);
+    T(GI_TYPE_TAG_GTYPE, TYPE_GTYPE, size_t);
+    T(GI_TYPE_TAG_INT8, TYPE_INT8, int8_t);
+    T(GI_TYPE_TAG_INT16, TYPE_INT16, int16_t);
+    T(GI_TYPE_TAG_INT32, TYPE_INT32, int32_t);
+    T(GI_TYPE_TAG_INT64, TYPE_INT64, int64_t);
+    T(GI_TYPE_TAG_UINT8, TYPE_UINT8, uint8_t);
+    T(GI_TYPE_TAG_UINT16, TYPE_UINT16, uint16_t);
+    T(GI_TYPE_TAG_UINT32, TYPE_UINT32, uint32_t);
+    T(GI_TYPE_TAG_UINT64, TYPE_UINT64, uint64_t);
+    T(GI_TYPE_TAG_UNICHAR, TYPE_UNICHAR, uint32_t);
+    T(GI_TYPE_TAG_UTF8, TYPE_UTF8_STRING, char *);
+    T(GI_TYPE_TAG_FILENAME, TYPE_LOCALE_STRING, char *);
     T(GI_TYPE_TAG_ERROR, G_TYPE_ERROR, GError);
     error_load("unhandled type '%s' %s %d", g_type_tag_to_string(tag), __FILE__, __LINE__);
 #undef T
@@ -203,9 +206,9 @@ arg_init_from_type_info(Arg *meta, GITypeInfo *type_info)
 
     if (tag == GI_TYPE_TAG_VOID) {
         if (meta->is_ptr)
-            meta->payload = TYPE_TAG_POINTER;
+            meta->payload = TYPE_POINTER;
         else
-            meta->payload = TYPE_TAG_VOID;
+            meta->payload = TYPE_NONE;
         meta->item_size = 0;
     }
     else if (tag == GI_TYPE_TAG_ARRAY) {
@@ -215,7 +218,7 @@ arg_init_from_type_info(Arg *meta, GITypeInfo *type_info)
         add_child_params(meta, type_info, 1);
 
         if (array_type == GI_ARRAY_TYPE_C) {
-            meta->payload = TYPE_TAG_ARRAY;
+            meta->payload = TYPE_ARRAY;
             meta->is_raw_array = TRUE;
             meta->length = ARG_ARRAY_SIZE_UNKNOWN;
 
@@ -230,29 +233,29 @@ arg_init_from_type_info(Arg *meta, GITypeInfo *type_info)
             if (len == -1 && !meta->is_zero_terminated) {
                 warning_load("no way of determining array size of %s, coercing to pointer",
                                  g_base_info_get_name(type_info));
-                meta->payload = TYPE_TAG_POINTER;
+                meta->payload = TYPE_POINTER;
             }
         }
         else if (array_type == GI_ARRAY_TYPE_ARRAY)
-            meta->payload = TYPE_TAG_GARRAY;
+            meta->payload = TYPE_GARRAY;
         else if (array_type == GI_ARRAY_TYPE_BYTE_ARRAY)
-            meta->payload = TYPE_TAG_GBYTEARRAY;
+            meta->payload = TYPE_GBYTEARRAY;
         else if (array_type == GI_ARRAY_TYPE_PTR_ARRAY)
-            meta->payload = TYPE_TAG_GPTRARRAY;
-        elsel
+            meta->payload = TYPE_GPTRARRAY;
+        else
             assert_not_reached();
     }
     else if (tag == GI_TYPE_TAG_GHASH) {
-        meta->payload = TYPE_TAG_GHASH;
+        meta->payload = TYPE_GHASH;
         meta->item_size = sizeof(GHashTable *);
         add_child_params(meta, type_info, 2);
     }
     else if (tag == GI_TYPE_TAG_GLIST) {
-        meta->payload = TYPE_TAG_GLIST;
+        meta->payload = TYPE_GLIST;
         add_child_params(meta, type_info, 1);
     }
     else if (tag == GI_TYPE_TAG_GSLIST) {
-        meta->payload = TYPE_TAG_GSLIST;
+        meta->payload = TYPE_GSLIST;
         add_child_params(meta, type_info, 1);
     }
     else if (tag == GI_TYPE_TAG_INTERFACE) {
@@ -260,7 +263,7 @@ arg_init_from_type_info(Arg *meta, GITypeInfo *type_info)
         GIInfoType itype = g_base_info_get_type(referenced_base_info);
         switch (itype) {
         case GI_INFO_TYPE_UNRESOLVED:
-            meta->payload = TYPE_TAG_INVALID;
+            meta->payload = TYPE_INVALID;
             meta->is_invalid = TRUE;
             warning_load("Unrepresentable type: %s, %s, %s",
                              get_info_name(type_info),
@@ -270,16 +273,17 @@ arg_init_from_type_info(Arg *meta, GITypeInfo *type_info)
         case GI_INFO_TYPE_ENUM:
         case GI_INFO_TYPE_FLAGS:
             if (itype == GI_INFO_TYPE_ENUM)
-                meta->payload = TYPE_TAG_ENUM;
+                meta->payload = TYPE_ENUM;
             else
-                meta->payload = TYPE_TAG_FLAGS;
+                meta->payload = TYPE_FLAGS;
             
-            meta->gtype = g_registered_type_info_get_g_type(referenced_base_info);
+            meta->_gtype = g_registered_type_info_get_g_type(referenced_base_info);
             meta->name = get_info_name(type_info);
             // Not all enum or flag types have an associated gtype_t
             // Hence we store the enum info for GIArgument conversions
-            if (meta->gtype == G_TYPE_NONE) {
+            if (meta->_gtype == G_TYPE_NONE) {
                 meta->enum_info = g_base_info_ref(referenced_base_info);
+                meta->_gtype = itype == GI_INFO_TYPE_ENUM ? G_TYPE_ENUM : G_TYPE_FLAGS;
             }
             break;
 
@@ -287,28 +291,28 @@ arg_init_from_type_info(Arg *meta, GITypeInfo *type_info)
         case GI_INFO_TYPE_UNION:
         case GI_INFO_TYPE_OBJECT:
         case GI_INFO_TYPE_INTERFACE:
+            meta->_gtype = g_registered_type_info_get_g_type(referenced_base_info);
+            meta->name = get_info_name(type_info);
             if (itype == GI_INFO_TYPE_STRUCT) {
-                meta->payload = TYPE_TAG_STRUCT;
+                meta->payload = TYPE_STRUCT;
                 meta->item_size = g_struct_info_get_size(referenced_base_info);
             }
             else if (itype == GI_INFO_TYPE_UNION) {
-                meta->payload = TYPE_TAG_STRUCT;
+                meta->payload = TYPE_UNION;
                 meta->item_size = g_union_info_get_size(referenced_base_info);
             }
             else if (itype == GI_INFO_TYPE_OBJECT) {
-                meta->payload = TYPE_TAG_OBJECT;
+                meta->payload = TYPE_OBJECT;
             }
             else if (itype == GI_INFO_TYPE_INTERFACE) {
-                meta->payload = TYPE_TAG_INTERFACE;
+                meta->payload = TYPE_INTERFACE;
             }
-            meta->gtype = g_registered_type_info_get_g_type(referenced_base_info);
-            meta->name = get_info_name(type_info);
             
-            if (meta->gtype == G_TYPE_NONE)
+            if (meta->_gtype == G_TYPE_NONE)
                 meta->is_invalid = TRUE;
             break;
         case GI_INFO_TYPE_CALLBACK:
-            meta->payload = TYPE_TAG_CALLBACK;
+            meta->payload = TYPE_CALLBACK;
             meta->callable_info = g_base_info_ref(referenced_base_info);
 
 #if 0            
@@ -323,11 +327,11 @@ arg_init_from_type_info(Arg *meta, GITypeInfo *type_info)
             
         default:
             if (GI_IS_REGISTERED_TYPE_INFO(referenced_base_info)) {
-                meta->payload = TYPE_TAG_OTHER;
-                meta->gtype = g_registered_type_info_get_g_type(referenced_base_info);
+                meta->payload = TYPE_OTHER;
+                meta->_gtype = g_registered_type_info_get_g_type(referenced_base_info);
                 meta->name = get_info_name(type_info);
                 
-                if (meta->gtype == G_TYPE_NONE)
+                if (meta->_gtype == G_TYPE_NONE)
                     meta->is_invalid = TRUE;
             }
             else {
@@ -342,17 +346,23 @@ arg_init_from_type_info(Arg *meta, GITypeInfo *type_info)
         arg_init_from_basic_type_tag(meta, tag);
 
     // FIXME: how did we get here?
-    if (meta->payload == TYPE_TAG_VOID) {
+    if (meta->payload == TYPE_NONE) {
         if (meta->is_ptr) {
-            meta->payload = TYPE_TAG_POINTER;
-            meta->item_size = sizeof(void *);
+            meta->payload = TYPE_POINTER;
+            meta->_gtype = G_TYPE_POINTER;
         }
+        else
+            meta->_gtype = G_TYPE_NONE;
+        meta->item_size = 0;
     }
 }
 
 size_t
 arg_item_size(const Arg *meta)
 {
+    if(meta->payload == TYPE_UTF8_STRING || meta->payload == TYPE_LOCALE_STRING
+       || meta->payload == TYPE_POINTER || meta->is_ptr)
+        return sizeof(void *);
     return meta->item_size;
 }
 
@@ -364,9 +374,9 @@ arg_free(Arg *meta)
     if (meta->n_params > 0)
         free(meta->params);
 
-    if (meta->payload == TYPE_TAG_CALLBACK && meta->callable_info != NULL)
+    if (meta->payload == TYPE_CALLBACK && meta->callable_info != NULL)
         g_base_info_unref(meta->callable_info);
-    if (((meta->payload == TYPE_TAG_ENUM) || (meta->payload == TYPE_TAG_FLAGS))
+    if (((meta->payload == TYPE_ENUM) || (meta->payload == TYPE_FLAGS))
         && meta->enum_info)
         g_base_info_unref(meta->enum_info);
 }
@@ -382,7 +392,7 @@ arg_describe(const Arg *meta)
              meta->is_ptr ? "pointer to " : "",
              meta->is_caller_allocates ? "caller allocated " : "",
              arg_payload_string[meta->payload],
-             meta->gtype ? meta->name : "",
+             meta->_gtype ? meta->name : "",
              meta->is_nullable ? "or NULL" : "");
     return arg_describe_buf;
 }

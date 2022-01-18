@@ -5,6 +5,7 @@
 #include "x.h"
 
 GClosure *closure_new(SCM callback, SCM inout_mask);
+
 GIG_API void init_closure(void);
 
 #endif

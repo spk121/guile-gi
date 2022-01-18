@@ -20,10 +20,10 @@ MORE_CFLAGS += \
 EVEN_MORE_CFLAGS = -Wpadded
 
 CPPFLAGS = -I .
-CFLAGS := -g -Og -Wall -fpic $(PKG_CFLAGS) -fsanitize=address -static-libasan
+CFLAGS := $(CPPFLAGS) -g -Og -Wall -fpic $(PKG_CFLAGS)
 
 PKG_LIBS != pkg-config guile-3.0 gobject-introspection-1.0 libffi --libs
-LIBS := $(PKG_LIBS) -fsanitize=address -static-libasan
+LIBS := $(PKG_LIBS)
 
 # OBJS = \
 # gig_arg_map.o \
@@ -49,9 +49,30 @@ LIBS := $(PKG_LIBS) -fsanitize=address -static-libasan
 # gig_value.o
 
 OBJS = \
-x/keyval.o  x/logging.o  x/mem.o  x/slist.o  x/string.o  x/strval.o \
-y/repository.o y/guile.o y/constant.o y/type.o y/callback.o y/closure.o \
-y/flag.o y/function.o
+x/keyval.o \
+x/logging.o \
+x/mem.o \
+x/slist.o \
+x/string.o \
+x/strval.o \
+y/arg.o \
+y/arg_map.o \
+y/argument.o \
+y/callback.o \
+y/closure.o \
+y/constant.o \
+y/flag.o \
+y/function_args.o \
+y/function.o \
+y/guile.o \
+y/meta_type.o \
+y/object.o \
+y/repository.o \
+y/signal.o \
+y/type.o \
+y/type_private.o \
+y/value.o \
+y/util.o
 
 libguile-gi.so: $(OBJS)
 	$(CC) -shared -o $@ $(OBJS) $(LIBS)
@@ -64,4 +85,4 @@ guile-gi: libguile-gi.a main.o
 	$(CC) -o $@ main.o libguile-gi.a $(LIBS)
 
 clean:
-	-rm *.o libguile-gi.so libguile-gi.a
+	-rm $(OBJS) libguile-gi.so libguile-gi.a guile-gi

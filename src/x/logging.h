@@ -62,4 +62,11 @@ void internal_log(int level, const char *file, int line, const char *func,
     } while (0)
 
 #endif
- 
+
+#define warn_if_fail(a)                                     \
+    do {                                                                \
+        if (!(a)) {                                                     \
+            debug_internal(G_LOG_LEVEL_CRITICAL, "return", "unexpected failure: %s", #a); \
+        }                                                               \
+    } while(0)
+

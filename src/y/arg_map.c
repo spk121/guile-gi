@@ -119,7 +119,7 @@ arg_map_apply_function_info(Arg_map *amap, GIFunctionInfo *func_info)
 static void
 arg_map_determine_array_length_index(Arg_map *amap, Arg_map_entry *entry, GITypeInfo *info)
 {
-    if (entry->arg.payload == TYPE_TAG_ARRAY && entry->arg.has_size) {
+    if (entry->arg.payload == TYPE_ARRAY && entry->arg.has_size) {
         int idx = g_type_info_get_array_length(info);
 
         assert(idx >= 0);
@@ -326,7 +326,7 @@ arg_map_dump(const char *name, const Arg_map *amap)
             debug_load("%s", s);
         }
     }
-    if (amap->return_val.arg.gtype != G_TYPE_NONE) {
+    if (amap->return_val.arg._gtype != G_TYPE_NONE) {
         const Arg_map_entry *entry = &amap->return_val;
         s[0] = '\0';
         len = snprintf(s, 100, "  Return: '%s' %s",

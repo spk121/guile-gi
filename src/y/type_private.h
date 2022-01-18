@@ -1,4 +1,4 @@
-// Copyright (C) 2019, 2020, 2021, 2022 Michael L. Gran
+// Copyright (C) 2019, 2020 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -12,25 +12,29 @@
 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#ifndef Y_TYPE_PRIVATE_H
+#define Y_TYPE_PRIVATE_H
 
-#ifndef CORE_UTIL_H
-#define CORE_UTIL_H
-
-#include <stdbool.h>
+#include <glib-object.h>
+#include <ffi.h>
 #include <libguile.h>
-#include <girepository.h>
 
-#define MALLOC __attribute__((malloc))
+typedef struct _Boxed_funcs
+{
+    ffi_type *atypes[1];
 
-size_t strvlen(const char **x);
-MALLOC void *xcalloc(size_t nmemb, size_t siz);
-MALLOC void *xmalloc(size_t siz);
-void *xrealloc(void *mem, size_t siz);
-char *xstrdup(const char *S);
-char *xstrndup(const char *S, size_t siz);
-void *xmemdup(const void *mem, size_t len);
+    ffi_closure *copy_closure;
+    ffi_cif copy_cif;
+    void *copy;
 
-void *free_on_dynwind(void *mem);
-MALLOC char *make_name(GICallableInfo *info, const char *prefix);
+    ffi_closure *free_closure;
+    ffi_cif free_cif;
+    void *free;
+} Boxed_funcs;
+
+Boxed_funcs *_boxed_funcs_for_type(GType type);
+void _free_boxed_funcs();
+
+extern SCM sym_obarray;
 
 #endif
