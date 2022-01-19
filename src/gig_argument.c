@@ -454,7 +454,7 @@ scm_to_c_string(S2C_ARG_DECL)
         else
             arg->v_string = scm_to_utf8_string(object);
         if (meta->transfer != GI_TRANSFER_EVERYTHING)
-            gig_mem_list_add(must_free, arg->v_string);
+            slist_prepend(must_free, arg->v_string);
     }
     else
         scm_wrong_type_arg_msg(subr, argpos, object, "string or bytevector");
@@ -574,7 +574,7 @@ scm_to_c_native_boolean_array(S2C_ARG_DECL)
     else
         arg->v_pointer = xcalloc(*size, sizeof(gboolean));
     if (meta->transfer != GI_TRANSFER_EVERYTHING)
-        gig_mem_list_add(must_free, arg->v_pointer);
+        slist_prepend(must_free, arg->v_pointer);
     for (size_t i = 0; i < *size; i++)
         ((intbool_t *)(arg->v_pointer))[i] = (intbool_t)scm_is_true(scm_c_vector_ref(object, i));
 }
@@ -593,7 +593,7 @@ scm_to_c_native_unichar_array(S2C_ARG_DECL)
     else
         arg->v_pointer = xcalloc(*size, sizeof(gunichar));
     if (meta->transfer != GI_TRANSFER_EVERYTHING)
-        gig_mem_list_add(must_free, arg->v_pointer);
+        slist_prepend(must_free, arg->v_pointer);
     for (size_t i = 0; i < *size; i++)
         ((gunichar *)(arg->v_pointer))[i] = (gunichar)SCM_CHAR(scm_c_string_ref(object, i));
 }
@@ -628,7 +628,7 @@ scm_to_c_native_immediate_array(S2C_ARG_DECL)
             if (meta->is_zero_terminated) {
                 // Adding null terminator element.
                 arg->v_pointer = xcalloc(*size + 1, item_size);
-                gig_mem_list_add(must_free, arg->v_pointer);
+                slist_prepend(must_free, arg->v_pointer);
                 memcpy(arg->v_pointer, SCM_BYTEVECTOR_CONTENTS(object),
                        SCM_BYTEVECTOR_LENGTH(object));
             }
@@ -926,7 +926,7 @@ scm_to_c_native_gtype_array(S2C_ARG_DECL)
     else
         arg->v_pointer = xcalloc(*size, sizeof(GType));
     if (meta->transfer != GI_TRANSFER_EVERYTHING)
-        gig_mem_list_add(must_free, arg->v_pointer);
+        slist_prepend(must_free, arg->v_pointer);
 
     for (size_t i = 0; i < *size; i++)
         ((GType *) (arg->v_pointer))[i] = scm_to_gtype(scm_c_vector_ref(object, i));
@@ -1018,7 +1018,7 @@ scm_to_c_native_interface_array(S2C_ARG_DECL)
                 ptr = xcalloc(length, sizeof(int));
             arg->v_pointer = ptr;
             if (meta->transfer != GI_TRANSFER_EVERYTHING)
-                gig_mem_list_add(must_free, arg->v_pointer);
+                slist_prepend(must_free, arg->v_pointer);
 
             SCM iter = object;
 
@@ -1061,7 +1061,7 @@ scm_to_c_native_string_array(S2C_ARG_DECL)
         *size = len;
         char **strv = xcalloc(len + 1, sizeof(gchar *));
         if (meta->transfer != GI_TRANSFER_EVERYTHING)
-            gig_mem_list_add(must_free, strv);
+            slist_prepend(must_free, strv);
 
         for (size_t i = 0; i < len; i++, elt += inc) {
             if (meta->params[0].pointer_type == GIG_DATA_LOCALE_STRING)
@@ -1069,7 +1069,7 @@ scm_to_c_native_string_array(S2C_ARG_DECL)
             else
                 strv[i] = scm_to_utf8_string(*elt);
             if (meta->transfer != GI_TRANSFER_EVERYTHING)
-                gig_mem_list_add(must_free, strv[i]);
+                slist_prepend(must_free, strv[i]);
         }
         strv[len] = NULL;
         arg->v_pointer = strv;
@@ -1081,7 +1081,7 @@ scm_to_c_native_string_array(S2C_ARG_DECL)
         *size = len;
         char **strv = xcalloc(len + 1, sizeof(char *));
         if (meta->transfer != GI_TRANSFER_EVERYTHING)
-            gig_mem_list_add(must_free, strv);
+            slist_prepend(must_free, strv);
 
         SCM iter = object;
         for (size_t i = 0; i < len; i++) {
@@ -1092,7 +1092,7 @@ scm_to_c_native_string_array(S2C_ARG_DECL)
                 strv[i] = scm_to_utf8_string(elt);
             iter = scm_cdr(iter);
             if (meta->transfer != GI_TRANSFER_EVERYTHING)
-                gig_mem_list_add(must_free, strv[i]);
+                slist_prepend(must_free, strv[i]);
         }
         strv[len] = NULL;
         arg->v_pointer = strv;

@@ -4,7 +4,7 @@
 #include <glib-object.h>
 #include <libguile.h>
 #include <girepository.h>
-#include "gig_mem_list.h"
+#include "clib.h"
 #include "gig_argument.h"
 #include "gig_arg_map.h"
 
@@ -15,7 +15,7 @@ typedef struct _GigArgsStore
     GIArgument *out;
     GIArgument *boxed_out;
     size_t out_len;
-    GigMemList *free_list;
+    slist_t *free_list;
 } GigArgsStore;
 
 void

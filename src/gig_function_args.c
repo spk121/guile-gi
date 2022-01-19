@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "c/mem.h"
+#include "clib.h"
 #include "gig_util.h"
 #include "gig_function_args.h"
 #include "gig_logging.h"
@@ -58,7 +58,7 @@ gig_args_store_initialize(GigArgsStore *store, GObject *self, GigArgMap *amap, S
     // needed.  It is easier than figuring out which output arguments
     // need allocation.
     store->boxed_out = xcalloc(store->out_len, sizeof(GIArgument));
-    gig_mem_list_add(&(store->free_list), store->boxed_out);
+    slist_prepend(&(store->free_list), store->boxed_out);
     for (size_t i = 0; i < store->out_len; i++)
         if (store->out[i].v_pointer == NULL)
             store->out[i].v_pointer = &(store->boxed_out[i]);
@@ -99,6 +99,7 @@ gig_args_store_return_value(GigArgsStore *store, GObject *self, GigArgMap *amap,
 
     free(store->in);
     free(store->out);
+    slist_free(&(store->free_list), free);
 
     if (!ok)
         return SCM_UNDEFINED;
@@ -266,7 +267,7 @@ gig_args_store_argument(GigArgsStore *store, GIArgument *arg, int invoke_in, int
             GIArgument *dup = xmemdup(arg, sizeof(GIArgument));
             store->in[invoke_in].v_pointer = dup;
             if (inout_free)
-                gig_mem_list_add(&(store->free_list), dup);
+                slist_prepend(&(store->free_list), dup);
             store->out[invoke_out].v_pointer = NULL;
         }
         else

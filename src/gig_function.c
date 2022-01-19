@@ -465,7 +465,6 @@ function_invoke(GIFunctionInfo *func_info, GigArgMap *amap, const char *name, GO
 
     SCM ret = gig_args_store_return_value(&store, self, amap, args, name, &return_arg, ok);
 
-    gig_mem_list_free(&(store.free_list));
     return ret;
 
 }
@@ -497,7 +496,6 @@ gig_callable_invoke(GICallableInfo *callable_info, void *callable, GigArgMap *am
 
     SCM ret = gig_args_store_return_value(&store, self, amap, args, name, &return_arg, ok);
 
-    gig_mem_list_free(&(store.free_list));
     return ret;
 }
 
