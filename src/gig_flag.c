@@ -103,9 +103,7 @@ gig_init_flag(void)
 static SCM
 define_conversion(const char *fmt, const char *name, SCM proc)
 {
-    int len = snprintf(NULL, 0, fmt, name) + 1;
-    char *_sym = xmalloc(len);
-    snprintf(_sym, len, fmt, name);
+    char *_sym = decorate_string(fmt, name);
     SCM sym = scm_from_utf8_symbol(_sym);
     free(_sym);
     scm_define(sym, proc);
@@ -117,7 +115,7 @@ gig_define_enum_conversions(GIEnumInfo *info, gtype_t type, SCM defs)
 {
     SCM _class;
     scm_dynwind_begin(0);
-    char *cls = gig_gname_to_scm_name(g_base_info_get_name(info));
+    char *cls = g_name_to_scm_name(g_base_info_get_name(info));
     scm_dynwind_or_bust("%define-enum-conversions", cls);
 
     if (type != G_TYPE_NONE)
@@ -146,7 +144,7 @@ gig_define_enum_conversions(GIEnumInfo *info, gtype_t type, SCM defs)
         C("list->%s", list_to_flags);
         break;
     default:
-        gig_assert_not_reached();
+        assert_not_reached();
     }
     scm_dynwind_end();
 
@@ -176,7 +174,7 @@ gig_define_enum(GIEnumInfo *info, SCM defs)
         _class = gig_type_define_with_info(info, scm_list_1(gig_flags_type), SCM_EOL);
         break;
     default:
-        gig_assert_not_reached();
+        assert_not_reached();
     }
 
     SCM obarray = scm_make_hash_table(scm_from_int(n_values));
@@ -185,7 +183,7 @@ gig_define_enum(GIEnumInfo *info, SCM defs)
 
     while (i < n_values) {
         vi = g_enum_info_get_value(info, i);
-        _key = gig_gname_to_scm_name(g_base_info_get_name(vi));
+        _key = g_name_to_scm_name(g_base_info_get_name(vi));
         key = scm_from_utf8_symbol(_key);
         int64_t _val = g_value_info_get_value(vi);
         SCM val;
@@ -200,7 +198,7 @@ gig_define_enum(GIEnumInfo *info, SCM defs)
             val = scm_from_uint(_val);
             break;
         default:
-            gig_assert_not_reached();
+            assert_not_reached();
         }
 
         scm_hashq_set_x(obarray, key, val);

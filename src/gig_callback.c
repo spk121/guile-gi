@@ -123,7 +123,7 @@ store_output(GigArgMapEntry *entry, void ***arg, GIArgument *value)
             **(int64_t **) arg = value->v_int64;
             break;
         default:
-            gig_assert_not_reached();
+            assert_not_reached();
         }
         break;
     }
@@ -143,7 +143,7 @@ store_output(GigArgMapEntry *entry, void ***arg, GIArgument *value)
             **(uint64_t **) arg = value->v_uint64;
             break;
         default:
-            gig_assert_not_reached();
+            assert_not_reached();
         }
         break;
     }
@@ -412,9 +412,7 @@ gig_callback_new(const char *name, GICallbackInfo *callback_info, SCM s_func)
         debug_load("Constructing C callback for %s", gcb->name);
     }
     else {
-        size_t len = strlen("callback:") + strlen(name) + 1;
-        gcb->name = xmalloc(len);
-        snprintf(gcb->name, len, "callback:%s", name);
+        gcb->name = concatenate("callback:", name);
         debug_load("Construction a C Callback for an anonymous procedure");
     }
 
@@ -536,9 +534,7 @@ gig_callback_to_scm(const char *name, GICallbackInfo *info, void *callback)
     GigCallback *gcb = gig_callback_new_for_callback(info, callback);
     if (gcb == NULL)
         return SCM_BOOL_F;
-    size_t len = strlen("c-callback:") + strlen(name) + 1;
-    char *subr_name = xmalloc(len);
-    snprintf(subr_name, len, "c-callback:%s", name);
+    char *subr_name = concatenate("c-callback:", name);
     SCM subr = scm_c_make_gsubr(subr_name, 0, 0, 1, gcb->callback_ptr);
     free(subr_name);
     return subr;
@@ -579,7 +575,7 @@ amap_entry_to_ffi_type(GigArgMapEntry *entry)
             case 8:
                 return &ffi_type_sint64;
             default:
-                gig_assert_not_reached();
+                assert_not_reached();
             }
         else if (fundamental_type == G_TYPE_UINT)
             switch (entry->meta.item_size) {
@@ -592,7 +588,7 @@ amap_entry_to_ffi_type(GigArgMapEntry *entry)
             case 8:
                 return &ffi_type_uint64;
             default:
-                gig_assert_not_reached();
+                assert_not_reached();
             }
         else if (fundamental_type == G_TYPE_INT64)
             return &ffi_type_sint64;
@@ -609,14 +605,14 @@ amap_entry_to_ffi_type(GigArgMapEntry *entry)
             case 8:
                 return &ffi_type_sint64;
             default:
-                gig_assert_not_reached();
+                assert_not_reached();
             }
         else if (fundamental_type == G_TYPE_FLAGS)
             return &ffi_type_uint32;
         else if (fundamental_type == G_TYPE_ENUM)
             return &ffi_type_sint32;
         else
-            gig_assert_not_reached();
+            assert_not_reached();
     }
 }
 

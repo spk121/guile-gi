@@ -22,11 +22,7 @@
 
 #define MALLOC __attribute__((malloc))
 
-size_t strvlen(const char **x);
-
 MALLOC char *gig_callable_info_make_name(GICallableInfo *info, const char *prefix);
-const char *gig_constant_strip_prefix(const char *name, const char *strip_prefix);
-char *gig_gname_to_scm_name(const char *gname);
 SCM scm_c_list_ref(SCM list, size_t k);
 intbool_t scm_is_list(SCM obj);
 size_t scm_c_length(SCM list);

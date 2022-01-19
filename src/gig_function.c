@@ -137,7 +137,7 @@ gig_function_define(gtype_t type, GICallableInfo *info, const char *_namespace, 
         proc = proc4signal((GISignalInfo *)info, function_name, self_type,
                            &required_input_count, &optional_input_count, &formals, &specializers);
     else
-        gig_assert_not_reached();
+        assert_not_reached();
 
     if (SCM_UNBNDP(proc))
         goto end;
@@ -346,7 +346,7 @@ make_formals(GICallableInfo *callable,
          s++, i_formal = scm_cdr(i_formal), i_specializer = scm_cdr(i_specializer)) {
         GigArgMapEntry *entry = gig_amap_get_input_entry_by_s(argmap, s);
         char *formal = scm_dynwind_or_bust("%make-formals",
-                                           gig_gname_to_scm_name(entry->name));
+                                           g_name_to_scm_name(entry->name));
         scm_set_car_x(i_formal, scm_from_utf8_symbol(formal));
         // Don't force types on nullable input, as #f can also be used to represent
         // NULL.

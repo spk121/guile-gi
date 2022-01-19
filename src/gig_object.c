@@ -565,10 +565,8 @@ gig_property_define(GType type, GIPropertyInfo *info, const char *_namespace, SC
     SCM self_type = gig_type_get_scheme_type(type);
 
     scm_dynwind_begin(0);
-    size_t mid_len = strlen(_namespace) + strlen(":") + strlen(name) + 1;
-    mid_name = xmalloc(mid_len);
-    snprintf(mid_name, mid_len, "%s:%s", _namespace, name);
-    long_name = gig_gname_to_scm_name(mid_name);
+    mid_name = concatenate3(_namespace, ":", name);
+    long_name = g_name_to_scm_name(mid_name);
     free(mid_name);
 
     if (G_TYPE_IS_CLASSED(type)) {

@@ -21,20 +21,12 @@
 #include <string.h>
 #include <libguile.h>
 #include <glib-object.h>
-#include "c/mem.h"
+#include "clib.h"
 #include "gig_util.h"
 
 static intbool_t is_predicate(GIFunctionInfo *info);
 static void count_args(GICallableInfo *info, int *in, int *out);
 
-size_t
-strvlen(const char **x)
-{
-    size_t i = 0;
-    while (x[i] != NULL)
-        i++;
-    return i;
-}
 
 // Returns TRUE if this function returns a single boolean.
 static intbool_t
@@ -142,8 +134,8 @@ gig_callable_info_make_name(GICallableInfo *info, const char *prefix)
     predicate = is_predicate(info);
     destructive = is_destructive(info);
     if (prefix)
-        str1 = gig_gname_to_scm_name(prefix);
-    str2 = gig_gname_to_scm_name(g_base_info_get_name(info));
+        str1 = g_name_to_scm_name(prefix);
+    str2 = g_name_to_scm_name(g_base_info_get_name(info));
 
     int len = strlen(":!") + 1;
     if (str1)
@@ -171,82 +163,6 @@ gig_callable_info_make_name(GICallableInfo *info, const char *prefix)
     free(str1);
     free(str2);
     return name;
-}
-
-/**
- * gig_constant_strip_prefix:
- * @name: the constant name.
- * @strip_prefix: the prefix to strip.
- *
- * Advances the pointer @name by strlen(@strip_prefix) characters.  If
- * the resulting name does not start with a letter or underscore, the
- * @name pointer will be rewound.  This is to ensure that the
- * resulting name is a valid identifier.  Hence the returned string is
- * a pointer into the string @name.
- *
- * Returns: the stripped constant name.
- */
-const char *
-gig_constant_strip_prefix(const char *name, const char *strip_prefix)
-{
-    size_t prefix_len, i;
-
-    prefix_len = strlen(strip_prefix);
-
-    /* Check so name starts with strip_prefix, if it doesn't:
-     * return the rest of the part which doesn't match
-     */
-    for (i = 0; i < prefix_len; i++) {
-        if (name[i] != strip_prefix[i] && name[i] != '_') {
-            return &name[i];
-        }
-    }
-
-    /* strip off prefix from value name, while keeping it a valid
-     * identifier */
-    for (i = prefix_len + 1; i > 0; i--) {
-        if (isalpha(name[i - 1]) || name[i - 1] == '_') {
-            return &name[i - 1];
-        }
-    }
-    return name;
-}
-
-char *
-gig_gname_to_scm_name(const char *gname)
-{
-    assert(gname != NULL);
-    assert(strlen(gname) > 0);
-
-    size_t len = strlen(gname);
-    GString *str = g_string_new(NULL);
-    intbool_t was_lower = FALSE;
-
-    for (size_t i = 0; i < len; i++) {
-        if (islower(gname[i])) {
-            g_string_append_c(str, gname[i]);
-            was_lower = TRUE;
-        }
-        else if (gname[i] == '_' || gname[i] == '-') {
-            g_string_append_c(str, '-');
-            was_lower = FALSE;
-        }
-        else if (gname[i] == '?' || gname[i] == ':' || gname[i] == '%') {
-            g_string_append_c(str, gname[i]);
-            was_lower = FALSE;
-        }
-        else if (isdigit(gname[i])) {
-            g_string_append_c(str, gname[i]);
-            was_lower = FALSE;
-        }
-        else if (isupper(gname[i])) {
-            if (was_lower)
-                g_string_append_c(str, '-');
-            g_string_append_c(str, tolower(gname[i]));
-            was_lower = FALSE;
-        }
-    }
-    return g_string_free(str, FALSE);
 }
 
 SCM
