@@ -102,6 +102,7 @@ guileextension_LTLIBRARIES = libguile-gi.la
 
 libguile_gi_la_c_sources = \
   src/c/keyval.c \
+  src/c/logging.c \
   src/c/mem.c \
   src/c/slist.c \
   src/c/strval.c \
@@ -116,7 +117,6 @@ libguile_gi_la_c_sources = \
   src/gig_flag.c \
   src/gig_function.c \
   src/gig_function_args.c \
-  src/gig_logging.c \
   src/gig_object.c \
   src/gig_repository.c \
   src/gig_signal.c \
@@ -128,6 +128,7 @@ libguile_gi_la_c_sources = \
 libguile_gi_la_internal_headers = \
   src/clib.h \
   src/c/keyval.h \
+  src/c/logging.h \
   src/c/mem.h \
   src/c/slist.h \
   src/c/strval.h \
@@ -144,7 +145,6 @@ libguile_gi_la_internal_headers = \
   src/gig_function.h \
   src/gig_function_args.h \
   src/gig_function_private.h \
-  src/gig_logging.h \
   src/gig_object.h \
   src/gig_repository.h \
   src/gig_signal.h \

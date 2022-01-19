@@ -15,8 +15,8 @@
 
 #include <libguile.h>
 #include <inttypes.h>
+#include "clib.h"
 #include "gig_constant.h"
-#include "gig_logging.h"
 
 SCM
 gig_constant_define(GIConstantInfo *info, SCM defs)
@@ -35,51 +35,51 @@ gig_constant_define(GIConstantInfo *info, SCM defs)
 
     switch (typetag) {
     case GI_TYPE_TAG_BOOLEAN:
-        gig_debug_load("%s - boolean constant %d", public_name, value.v_boolean);
+        debug_load("%s - boolean constant %d", public_name, value.v_boolean);
         ret = scm_from_bool(value.v_boolean);
         break;
     case GI_TYPE_TAG_DOUBLE:
-        gig_debug_load("%s - double constant %lf", public_name, value.v_double);
+        debug_load("%s - double constant %lf", public_name, value.v_double);
         ret = scm_from_double(value.v_double);
         break;
     case GI_TYPE_TAG_INT8:
-        gig_debug_load("%s - int8 constant %d", public_name, (int)value.v_int8);
+        debug_load("%s - int8 constant %d", public_name, (int)value.v_int8);
         ret = scm_from_int8(value.v_int8);
         break;
     case GI_TYPE_TAG_INT16:
-        gig_debug_load("%s - int16 constant %d", public_name, (int)value.v_int16);
+        debug_load("%s - int16 constant %d", public_name, (int)value.v_int16);
         ret = scm_from_int16(value.v_int16);
         break;
     case GI_TYPE_TAG_INT32:
-        gig_debug_load("%s - int32 constant %d", public_name, (int)value.v_int32);
+        debug_load("%s - int32 constant %d", public_name, (int)value.v_int32);
         ret = scm_from_int32(value.v_int32);
         break;
     case GI_TYPE_TAG_INT64:
-        gig_debug_load("%s - int64 constant %" PRId64, public_name, value.v_int64);
+        debug_load("%s - int64 constant %" PRId64, public_name, value.v_int64);
         ret = scm_from_int64(value.v_int64);
         break;
     case GI_TYPE_TAG_UINT8:
-        gig_debug_load("%s - uint8 constant %d", public_name, (int)value.v_uint8);
+        debug_load("%s - uint8 constant %d", public_name, (int)value.v_uint8);
         ret = scm_from_uint8(value.v_uint8);
         break;
     case GI_TYPE_TAG_UINT16:
-        gig_debug_load("%s - uint16 constant %d", public_name, (int)value.v_uint16);
+        debug_load("%s - uint16 constant %d", public_name, (int)value.v_uint16);
         ret = scm_from_uint16(value.v_uint16);
         break;
     case GI_TYPE_TAG_UINT32:
-        gig_debug_load("%s - uint32 constant %d", public_name, (int)value.v_uint32);
+        debug_load("%s - uint32 constant %d", public_name, (int)value.v_uint32);
         ret = scm_from_uint32(value.v_uint32);
         break;
     case GI_TYPE_TAG_UINT64:
-        gig_debug_load("%s - uint64 constant %" PRIu64, public_name, value.v_uint64);
+        debug_load("%s - uint64 constant %" PRIu64, public_name, value.v_uint64);
         ret = scm_from_uint64(value.v_uint64);
         break;
     case GI_TYPE_TAG_UTF8:
-        gig_debug_load("%s - UTF8 constant %s", public_name, value.v_string);
+        debug_load("%s - UTF8 constant %s", public_name, value.v_string);
         ret = scm_from_utf8_string(value.v_string);
         break;
     default:
-        gig_critical_load("%s - unsupported type %d", public_name, typetag);
+        critical_load("%s - unsupported type %d", public_name, typetag);
         ret = SCM_BOOL_F;
     }
     g_constant_info_free_value(info, &value);

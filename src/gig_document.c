@@ -18,12 +18,12 @@
 #include <glib.h>
 #include <glib-object.h>
 #include <girepository.h>
+#include "clib.h"
 #include "gig_type.h"
 #include "gig_util.h"
 #include "gig_arg_map.h"
 #include "gig_repository.h"
 #include "gig_document.h"
-#include "gig_logging.h"
 
 static void do_document(GIBaseInfo *info, const char *parent);
 
@@ -249,7 +249,7 @@ do_document(GIBaseInfo *info, const char *_namespace)
     case GI_INFO_TYPE_INVALID:
     case GI_INFO_TYPE_INVALID_0:
     default:
-        gig_critical_load("Unsupported irepository type %d", type);
+        critical_load("Unsupported irepository type %d", type);
         break;
     }
     scm_dynwind_end();

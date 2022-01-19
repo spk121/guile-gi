@@ -15,12 +15,11 @@
 
 #include <string.h>
 #include <glib-object.h>
-#include "c/mem.h"
+#include "clib.h"
 #include "gig_argument.h"
 #include "gig_data_type.h"
 #include "gig_arg_map.h"
 #include "gig_util.h"
-#include "gig_logging.h"
 
 static void gig_type_meta_init_from_type_info(GigTypeMeta *type, GITypeInfo *ti);
 static void gig_type_meta_init_from_basic_type_tag(GigTypeMeta *meta, GITypeTag tag);
@@ -175,8 +174,8 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
                 meta->is_zero_terminated = TRUE;
 
             if (len == -1 && !meta->is_zero_terminated) {
-                gig_warning_load("no way of determining array size of %s, coercing to pointer",
-                                 g_type_name(meta->gtype));
+                warning_load("no way of determining array size of %s, coercing to pointer",
+                             g_type_name(meta->gtype));
                 meta->gtype = G_TYPE_POINTER;
             }
         }
@@ -211,10 +210,10 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
         case GI_INFO_TYPE_UNRESOLVED:
             meta->gtype = G_TYPE_INVALID;
             meta->is_invalid = TRUE;
-            gig_warning_load("Unrepresentable type: %s, %s, %s",
-                             g_base_info_get_name_safe(type_info),
-                             g_base_info_get_name_safe(referenced_base_info),
-                             g_info_type_to_string(itype));
+            warning_load("Unrepresentable type: %s, %s, %s",
+                         g_base_info_get_name_safe(type_info),
+                         g_base_info_get_name_safe(referenced_base_info),
+                         g_info_type_to_string(itype));
             break;
         case GI_INFO_TYPE_ENUM:
         case GI_INFO_TYPE_FLAGS:
@@ -260,7 +259,7 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
                     meta->is_invalid = TRUE;
             }
             else {
-                gig_critical_load("Unhandled item type in %s:%d", __FILE__, __LINE__);
+                critical_load("Unhandled item type in %s:%d", __FILE__, __LINE__);
                 meta->is_invalid = TRUE;
             }
         }

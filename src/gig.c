@@ -14,11 +14,11 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <libguile.h>
+#include "clib.h"
 #include "gig_callback.h"
 #include "gig_flag.h"
 #include "gig_function.h"
 #include "gig_object.h"
-#include "gig_logging.h"
 #include "gig_signal.h"
 #include "gig_type.h"
 #include "gig_util.h"
@@ -57,7 +57,7 @@ gig_init(void)
 #ifdef MTRACE
     mtrace();
 #endif
-    gig_debug_init("Begin libguile-gir initialization");
+    debug_init("Begin libguile-gir initialization");
     gig_init_flag();
     gig_init_signal();
     gig_init_callback();
@@ -66,7 +66,7 @@ gig_init(void)
     scm_c_define_gsubr("gcov-reset", 0, 0, 0, scm_gcov_reset);
     scm_c_define_gsubr("gcov-dump", 0, 0, 0, scm_gcov_dump);
 #endif
-    gig_debug_init("End libguile-gir initialization");
+    debug_init("End libguile-gir initialization");
 }
 
 #ifdef STANDALONE

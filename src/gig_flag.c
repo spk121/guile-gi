@@ -16,11 +16,10 @@
 #include <inttypes.h>
 #include <stdio.h>
 #include <libguile.h>
-#include "c/mem.h"
+#include "clib.h"
 #include "gig_flag.h"
 #include "gig_type.h"
 #include "gig_type_private.h"
-#include "gig_logging.h"
 #include "gig_util.h"
 
 static SCM enum_to_number;
@@ -193,11 +192,11 @@ gig_define_enum(GIEnumInfo *info, SCM defs)
 
         switch (t) {
         case GI_INFO_TYPE_ENUM:
-            gig_debug_load("%s - add enum %s %d", _class_name, _key, _val);
+            debug_load("%s - add enum %s %d", _class_name, _key, _val);
             val = scm_from_int(_val);
             break;
         case GI_INFO_TYPE_FLAGS:
-            gig_debug_load("%s - add flag %s %u", _class_name, _key, _val);
+            debug_load("%s - add flag %s %u", _class_name, _key, _val);
             val = scm_from_uint(_val);
             break;
         default:

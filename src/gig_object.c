@@ -16,7 +16,7 @@
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
-#include "c/mem.h"
+#include "clib.h"
 #include "gig_object.h"
 #include "gig_type.h"
 #include "gig_util.h"
@@ -24,7 +24,6 @@
 #include "gig_closure.h"
 #include "gig_value.h"
 #include "gig_function_private.h"
-#include "gig_logging.h"
 
 GQuark gig_user_object_properties;
 
@@ -259,9 +258,9 @@ gig_user_object_dispose(GObject *object)
     assert(G_TYPE_IS_CLASSED(type));
     assert(G_TYPE_IS_CLASSED(parent_type));
 
-    gig_debug_ffi("dispose is currently just calling the parent's dispose");
+    debug_ffi("dispose is currently just calling the parent's dispose");
 
-    gig_debug_ffi("disposing parent type");
+    debug_ffi("disposing parent type");
     _parent_class = g_type_class_ref(parent_type);
     parent_class = G_OBJECT_CLASS(_parent_class);
 
@@ -511,7 +510,7 @@ gig_i_scm_emit(SCM self, SCM signal, SCM s_detail, SCM args)
 
     if (query_info.return_type != G_TYPE_NONE)
         g_value_init(&retval, query_info.return_type);
-    gig_debug_ffi("%s - emitting signal", g_signal_name(sigid));
+    debug_ffi("%s - emitting signal", g_signal_name(sigid));
     g_signal_emitv(values, sigid, detail, &retval);
 
     if (query_info.return_type != G_TYPE_NONE)
@@ -583,22 +582,22 @@ gig_property_define(GType type, GIPropertyInfo *info, const char *_namespace, SC
         prop = g_object_interface_find_property(iface, name);
     }
     else
-        gig_critical_load("%s is neither class nor interface, but we define properties, wtf?",
-                          g_type_name(type));
+        critical_load("%s is neither class nor interface, but we define properties, wtf?",
+                      g_type_name(type));
     if (prop != NULL) {
         s_prop = gig_type_transfer_object(G_PARAM_SPEC_TYPE(prop), prop, GI_TRANSFER_NOTHING);
 
         def = do_define_property(long_name, s_prop, self_type, top_type);
         if (!SCM_UNBNDP(def))
             defs = scm_cons(def, defs);
-        gig_debug_load("%s - bound to property %s.%s", long_name, g_type_name(type), name);
+        debug_load("%s - bound to property %s.%s", long_name, g_type_name(type), name);
         def = do_define_property(name, s_prop, self_type, top_type);
         if (!SCM_UNBNDP(def))
             defs = scm_cons(def, defs);
-        gig_debug_load("%s - shorthand for %s", name, long_name);
+        debug_load("%s - shorthand for %s", name, long_name);
     }
     else
-        gig_warning_load("Missing property %s", long_name);
+        warning_load("Missing property %s", long_name);
 
     free(long_name);
     scm_dynwind_end();
@@ -608,7 +607,7 @@ gig_property_define(GType type, GIPropertyInfo *info, const char *_namespace, SC
 static SCM
 do_define_property(const char *public_name, SCM prop, SCM self_type, SCM value_type)
 {
-    gig_return_val_if_fail(public_name != NULL, SCM_UNDEFINED);
+    return_val_if_fail(public_name != NULL, SCM_UNDEFINED);
 
     SCM sym_public_name, formals, specializers, generic, proc, setter;
 

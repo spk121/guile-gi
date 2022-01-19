@@ -25,7 +25,6 @@
 #include "gig_type.h"
 #include "gig_signal.h"
 #include "gig_util.h"
-#include "gig_logging.h"
 #include "gig_function_args.h"
 
 struct _GigFunction
@@ -115,18 +114,18 @@ gig_function_define(gtype_t type, GICallableInfo *info, const char *_namespace, 
     int required_input_count, optional_input_count;
     SCM formals, specializers, self_type = SCM_UNDEFINED;
 
-    gig_debug_load("%s - bound to %s %s%s%s",
-                   function_name,
-                   (GI_IS_SIGNAL_INFO(info) ? "signal" : "function"),
-                   (_namespace ? _namespace : ""), (_namespace ? "." : ""),
-                   g_base_info_get_name(info));
+    debug_load("%s - bound to %s %s%s%s",
+               function_name,
+               (GI_IS_SIGNAL_INFO(info) ? "signal" : "function"),
+               (_namespace ? _namespace : ""), (_namespace ? "." : ""),
+               g_base_info_get_name(info));
 
     if (is_method) {
         self_type = gig_type_get_scheme_type(type);
-        gig_return_val_if_fail(!SCM_UNBNDP(self_type), defs);
+        return_val_if_fail(!SCM_UNBNDP(self_type), defs);
         method_name = scm_dynwind_or_bust("%gig-function-define",
                                           gig_callable_info_make_name(info, NULL));
-        gig_debug_load("%s - shorthand for %s", method_name, function_name);
+        debug_load("%s - shorthand for %s", method_name, function_name);
     }
 
     SCM proc = SCM_UNDEFINED;
@@ -163,7 +162,7 @@ gig_function_define(gtype_t type, GICallableInfo *info, const char *_namespace, 
 static SCM
 gig_function_define1(const char *public_name, SCM proc, int opt, SCM formals, SCM specializers)
 {
-    gig_return_val_if_fail(public_name != NULL, SCM_UNDEFINED);
+    return_val_if_fail(public_name != NULL, SCM_UNDEFINED);
 
     SCM sym_public_name = scm_from_utf8_symbol(public_name);
     SCM generic = default_definition(sym_public_name);
@@ -202,7 +201,7 @@ proc4function(GIFunctionInfo *info, const char *name, SCM self_type,
         func_gsubr = create_gsubr(info, name, self_type, req, opt, formals, specializers);
 
     if (!func_gsubr) {
-        gig_debug_load("%s - could not create a gsubr", name);
+        debug_load("%s - could not create a gsubr", name);
         return SCM_UNDEFINED;
     }
 
@@ -370,7 +369,7 @@ create_gsubr(GIFunctionInfo *function_info, const char *name, SCM self_type,
 
     amap = gig_amap_new(name, function_info);
     if (amap == NULL) {
-        gig_debug_load("%s - invalid argument map", name);
+        debug_load("%s - invalid argument map", name);
         return NULL;
     }
 
@@ -395,8 +394,8 @@ create_gsubr(GIFunctionInfo *function_info, const char *name, SCM self_type,
     // address.
     gfn->closure = ffi_closure_alloc(sizeof(ffi_closure), &(gfn->function_ptr));
 
-    gig_return_val_if_fail(gfn->closure != NULL, NULL);
-    gig_return_val_if_fail(gfn->function_ptr != NULL, NULL);
+    return_val_if_fail(gfn->closure != NULL, NULL);
+    return_val_if_fail(gfn->function_ptr != NULL, NULL);
 
     // STEP 2
     // Next, we begin to construct an FFI_CIF to describe the function
@@ -606,7 +605,7 @@ function_free(GigFunction *gfn)
 static void
 gig_fini_function(void)
 {
-    gig_debug_init("Freeing functions");
+    debug_init("Freeing functions");
     keyval_free(function_cache, NULL, function_free);
     function_cache = NULL;
 }

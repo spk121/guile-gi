@@ -23,7 +23,6 @@
 #include "gig_util.h"
 #include "gig_object.h"
 #include "gig_type_private.h"
-#include "gig_logging.h"
 
 // In C, a gtype_t is an integer.  It is an integer ID that maps to a
 // type of GObject.
@@ -127,20 +126,20 @@ gig_type_register_self(gtype_t gtype, SCM stype)
     keyval_add_entry(gtype_scm_store, gtype, SCM_UNPACK(stype));
     if (pval == 0) {
         if (parent)
-            gig_debug_load("%s - registering a new %s type for %zx as %s", g_type_name(gtype),
-                           g_type_name(parent), gtype, stype_str);
+            debug_load("%s - registering a new %s type for %zx as %s", g_type_name(gtype),
+                       g_type_name(parent), gtype, stype_str);
         else
-            gig_debug_load("%s - registering a new type for %zx as %s", g_type_name(gtype), gtype,
-                           stype_str);
+            debug_load("%s - registering a new type for %zx as %s", g_type_name(gtype), gtype,
+                       stype_str);
     }
     else {
         old_stype_str = scm_write_to_utf8_stringn(SCM_PACK(pval), 80);
         if (parent)
-            gig_debug_load("%s - re-registering %s type for %zx from %s to %s", g_type_name(gtype),
-                           g_type_name(parent), gtype, old_stype_str, stype_str);
+            debug_load("%s - re-registering %s type for %zx from %s to %s", g_type_name(gtype),
+                       g_type_name(parent), gtype, old_stype_str, stype_str);
         else
-            gig_debug_load("%s - re-registering type for %zx from %s to %s", g_type_name(gtype),
-                           gtype, old_stype_str, stype_str);
+            debug_load("%s - re-registering type for %zx from %s to %s", g_type_name(gtype),
+                       gtype, old_stype_str, stype_str);
         free(old_stype_str);
     }
     free(stype_str);
@@ -172,10 +171,10 @@ gig_type_transfer_object(gtype_t type, void *ptr, GITransfer transfer)
     if (G_TYPE_IS_CLASSED(type))
         type = G_OBJECT_TYPE(ptr);
 
-    gig_debug_transfer("gig_type_transfer_object(%s, %p, %d)", g_type_name(type), ptr, transfer);
+    debug_transfer("gig_type_transfer_object(%s, %p, %d)", g_type_name(type), ptr, transfer);
 
     SCM scm_type = gig_type_get_scheme_type(type);
-    gig_return_val_if_fail(SCM_CLASSP(scm_type), SCM_BOOL_F);
+    return_val_if_fail(SCM_CLASSP(scm_type), SCM_BOOL_F);
     GigTypeRefFunction ref;
     ref = (GigTypeRefFunction)scm_to_pointer(scm_class_ref(scm_type, sym_ref));
     GigTypeUnrefFunction unref;
@@ -215,7 +214,7 @@ gig_type_check_typed_object(SCM obj, SCM expected_type)
 void *
 gig_type_peek_typed_object(SCM obj, SCM expected_type)
 {
-    gig_return_val_if_fail(SCM_IS_A_P(obj, expected_type), NULL);
+    return_val_if_fail(SCM_IS_A_P(obj, expected_type), NULL);
     return scm_to_pointer(scm_slot_ref(obj, sym_value));
 }
 
@@ -271,7 +270,7 @@ gig_type_define_with_info(GIRegisteredTypeInfo *info, SCM dsupers, SCM slots)
         snprintf(name, len, "<%s>", _name);
         SCM class_name = scm_from_utf8_symbol(name);
         cls = scm_call_4(make_class_proc, dsupers, slots, kwd_name, class_name);
-        gig_debug_load("%s - creating new type", name);
+        debug_load("%s - creating new type", name);
         strval_add_entry(name_scm_store, _name, SCM_UNPACK(cls));
         free(name);
     }
@@ -294,13 +293,13 @@ gig_type_define_full(gtype_t gtype, SCM defs, SCM extra_supers)
 
     orig_value = keyval_find_entry(gtype_scm_store, gtype);
     if (orig_value == 0) {
-        gig_debug_load("%s - creating new %s type for %zx %s",
-                       _type_class_name, g_type_name(fundamental), gtype, g_type_name(gtype));
+        debug_load("%s - creating new %s type for %zx %s",
+                   _type_class_name, g_type_name(fundamental), gtype, g_type_name(gtype));
 
         gtype_t reserved = g_type_from_name(g_type_name(gtype));
         if (reserved != 0 && reserved != gtype)
-            gig_critical_load("%s - %s already has %zx as registered gtype_t", _type_class_name,
-                              g_type_name(gtype), reserved);
+            critical_load("%s - %s already has %zx as registered gtype_t", _type_class_name,
+                          g_type_name(gtype), reserved);
 
         SCM type_class_name = scm_from_utf8_symbol(_type_class_name);
 
@@ -320,9 +319,9 @@ gig_type_define_full(gtype_t gtype, SCM defs, SCM extra_supers)
             for (unsigned i = 0; i < _class->n_values; i++) {
                 SCM key = scm_from_utf8_symbol(_class->values[i].value_nick);
                 SCM value = scm_from_int(_class->values[i].value);
-                gig_debug_load("%s - add enum %s %d",
-                               _type_class_name, _class->values[i].value_nick,
-                               _class->values[i].value);
+                debug_load("%s - add enum %s %d",
+                           _type_class_name, _class->values[i].value_nick,
+                           _class->values[i].value);
                 scm_hashq_set_x(obarray, key, value);
             }
             g_type_class_unref(_class);
@@ -343,9 +342,9 @@ gig_type_define_full(gtype_t gtype, SCM defs, SCM extra_supers)
             for (unsigned i = 0; i < _class->n_values; i++) {
                 SCM key = scm_from_utf8_symbol(_class->values[i].value_nick);
                 SCM value = scm_from_int(_class->values[i].value);
-                gig_debug_load("%s - add flag %s %u",
-                               _type_class_name, _class->values[i].value_nick,
-                               _class->values[i].value);
+                debug_load("%s - add flag %s %u",
+                           _type_class_name, _class->values[i].value_nick,
+                           _class->values[i].value);
                 scm_hashq_set_x(obarray, key, value);
             }
             g_type_class_unref(_class);
@@ -429,25 +428,25 @@ gig_type_define_full(gtype_t gtype, SCM defs, SCM extra_supers)
         }
         }
 
-        gig_return_val_if_fail(!SCM_UNBNDP(new_type), defs);
+        return_val_if_fail(!SCM_UNBNDP(new_type), defs);
 
         SCM key = gig_type_associate(gtype, new_type);
         if (!SCM_UNBNDP(defs)) {
             scm_define(key, new_type);
             defs = scm_cons(key, defs);
         }
-        gig_debug_load("Hash table sizes %d %d", keyval_size(gtype_scm_store),
-                       keyval_size(scm_gtype_store));
+        debug_load("Hash table sizes %d %d", keyval_size(gtype_scm_store),
+                   keyval_size(scm_gtype_store));
     }
     else {
-        gig_debug_load("%s - type already exists for %zx %s",
-                       _type_class_name, gtype, g_type_name(gtype));
+        debug_load("%s - type already exists for %zx %s",
+                   _type_class_name, gtype, g_type_name(gtype));
         SCM val = SCM_PACK(orig_value);
 
         // FIXME: The warning below should be infrequent enough to not need silencing
         if (SCM_UNBNDP(val))
             return defs;
-        gig_return_val_if_fail(!SCM_UNBNDP(val), defs);
+        return_val_if_fail(!SCM_UNBNDP(val), defs);
         SCM key = scm_class_name(val);
         if (!SCM_UNBNDP(defs)) {
             scm_define(key, val);
@@ -516,7 +515,7 @@ gig_type_get_gtype_from_obj(SCM x)
 static void
 gig_type_free_types(void)
 {
-    gig_debug_init("Freeing gtype hash table");
+    debug_init("Freeing gtype hash table");
     keyval_free(gtype_scm_store, NULL, NULL);
     strval_free(name_scm_store, NULL);
     keyval_free(scm_gtype_store, NULL, NULL);
@@ -526,7 +525,7 @@ gig_type_free_types(void)
 static SCM
 _gig_type_check_scheme_type(scm_t_bits _stype)
 {
-    gig_return_val_if_fail(_stype != 0, SCM_UNDEFINED);
+    return_val_if_fail(_stype != 0, SCM_UNDEFINED);
     return SCM_PACK(_stype);
 }
 
@@ -806,7 +805,7 @@ gig_type_define_fundamental(gtype_t type, SCM extra_supers,
     GIBaseInfo *info;
 
     if (gig_type_is_registered(type)) {
-        gig_warning_load("not redefining fundamental type %s", g_type_name(type));
+        warning_load("not redefining fundamental type %s", g_type_name(type));
         return;
     }
 

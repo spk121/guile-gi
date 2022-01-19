@@ -16,7 +16,6 @@
 #include "clib.h"
 #include "gig_util.h"
 #include "gig_function_args.h"
-#include "gig_logging.h"
 
 static void
 gig_args_store_argument(GigArgsStore *store, GIArgument *arg, int invoke_in, int invoke_out,
@@ -118,7 +117,7 @@ static SCM
 _convert_output_args(GigArgMap *amap, const gchar *func_name, GIArgument *in, GIArgument *out,
                      SCM output)
 {
-    gig_debug_transfer("%s - convert_output_args", func_name);
+    debug_transfer("%s - convert_output_args", func_name);
     gint s_output_pos;
 
     for (gint c_output_pos = 0; c_output_pos < amap->c_output_len; c_output_pos++) {

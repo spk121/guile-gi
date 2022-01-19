@@ -18,21 +18,20 @@
 #include <girepository.h>
 #include <glib.h>
 #include <libguile.h>
-#include "c/mem.h"
+#include "clib.h"
 #include "gig_argument.h"
 #include "gig_callback.h"
 #include "gig_flag.h"
 #include "gig_object.h"
 #include "gig_type.h"
 #include "gig_util.h"
-#include "gig_logging.h"
 
-#define TRACE_C2S() gig_debug_transfer("[C2S] On line %d while handing %s of %s.", __LINE__, gig_type_meta_describe(meta), subr)
-#define TRACE_S2C() gig_debug_transfer("[S2C] On line %d while handing %s of %s.", __LINE__, gig_type_meta_describe(meta), subr)
+#define TRACE_C2S() debug_transfer("[C2S] On line %d while handing %s of %s.", __LINE__, gig_type_meta_describe(meta), subr)
+#define TRACE_S2C() debug_transfer("[S2C] On line %d while handing %s of %s.", __LINE__, gig_type_meta_describe(meta), subr)
 
 #define SURPRISING                                                      \
     do {                                                                \
-        gig_warning_transfer("Unusual argument type '%s' %s:%d", gig_type_meta_describe(meta), __FILE__, __LINE__); \
+        warning_transfer("Unusual argument type '%s' %s:%d", gig_type_meta_describe(meta), __FILE__, __LINE__); \
     } while(FALSE)
 
 #define UNHANDLED                                                       \
@@ -162,7 +161,7 @@ zero_terminated_array_length(GigTypeMeta *meta, GIArgument *arg)
         }
         }
     }
-    gig_return_val_if_reached(GIG_ARRAY_SIZE_UNKNOWN);
+    return_val_if_reached(GIG_ARRAY_SIZE_UNKNOWN);
 }
 
 //////////////////////////////////////////////////////////
@@ -703,7 +702,7 @@ c_hash_pointer_to_arg(GigTypeMeta *meta, void **p, GIArgument *arg)
         if (meta->gtype == G_TYPE_INT && meta->item_size <= 4) {
             // 4-byte INT types are packed into the pointer storage,
             // but with intptr_t sign extension.
-            int x = (int)(intptr_t)(p);
+            int x = (int)(intptr_t) (p);
             if (meta->item_size == 1)
                 arg->v_int8 = x;
             else if (meta->item_size == 2)
@@ -1485,7 +1484,7 @@ c_native_array_to_scm(C2S_ARG_DECL)
         SCM *elt;
         elt = scm_vector_writable_elements(*object, &handle, &len, &inc);
         for (size_t k = 0; k < len; k++, elt += inc)
-            *elt = ((intbool_t *) (arg->v_pointer))[k] ? SCM_BOOL_T : SCM_BOOL_F;
+            *elt = ((intbool_t *)(arg->v_pointer))[k] ? SCM_BOOL_T : SCM_BOOL_F;
         scm_array_handle_release(&handle);
         if (meta->transfer == GI_TRANSFER_EVERYTHING) {
             free(arg->v_pointer);

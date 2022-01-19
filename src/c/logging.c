@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "gig_logging.h"
+#include "logging.h"
 
 // GIG_DEBUG:
 
@@ -85,8 +85,8 @@ is_color_term(const char *str)
 }
 
 void
-gig_log(int level, const char *file, int line, const char *func,
-        const char *domain, const char *template, ...)
+internal_log(int level, const char *file, int line, const char *func,
+             const char *domain, const char *template, ...)
 {
     static char msg[401];
     static int msg_len = 400;
@@ -95,7 +95,7 @@ gig_log(int level, const char *file, int line, const char *func,
     debug = getenv("GIG_DEBUG");
     if (!debug)
         return;
-    if (level > GIG_LOG_WARNING && (strstr(debug, "all") == NULL && strstr(debug, domain) == NULL))
+    if (level > LOG_WARNING && (strstr(debug, "all") == NULL && strstr(debug, domain) == NULL))
         return;
 
     va_list args;
@@ -116,32 +116,32 @@ gig_log(int level, const char *file, int line, const char *func,
         use_verbose = true;
 
     switch (level) {
-    case GIG_LOG_ERROR:
+    case LOG_ERROR:
         color = "\033[1;31m";
         reset = "\033[0m";
         prefix = "ERROR";
         break;
-    case GIG_LOG_CRITICAL:
+    case LOG_CRITICAL:
         color = "\033[1;35m";
         reset = "\033[0m";
         prefix = "CRITICAL";
         break;
-    case GIG_LOG_WARNING:
+    case LOG_WARNING:
         color = "\033[1;35m";
         reset = "\033[0m";
         prefix = "WARNING";
         break;
-    case GIG_LOG_NOTICE:
+    case LOG_NOTICE:
         color = "\033[1;32m";
         reset = "\033[0m";
         prefix = "NOTICE";
         break;
-    case GIG_LOG_INFO:
+    case LOG_INFO:
         color = "\033[1;32m";
         reset = "\033[0m";
         prefix = "INFO";
         break;
-    case GIG_LOG_DEBUG:
+    case LOG_DEBUG:
         color = "\033[1;32m";
         reset = "\033[0m";
         prefix = "DEBUG";

@@ -12,7 +12,7 @@
 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-#include "c/mem.h"
+#include "clib.h"
 #include "gig_signal.h"
 #include "gig_object.h"
 #include "gig_value.h"
@@ -20,7 +20,6 @@
 #include "gig_argument.h"
 #include "gig_flag.h"
 #include "gig_util.h"
-#include "gig_logging.h"
 
 typedef void (*handler_func)(void *);
 static SCM signal_slot_syms[GIG_SIGNAL_SLOT_COUNT];
@@ -39,8 +38,7 @@ static SCM signal_accu_true_handled;
 static SCM make_signal_proc;
 
 static intbool_t
-scm_signal_accu(GSignalInvocationHint *ihint,
-                GValue *seed, const GValue *element, void *procedure)
+scm_signal_accu(GSignalInvocationHint *ihint, GValue *seed, const GValue *element, void *procedure)
 {
     SCM _seed, _element, result;
     _seed = gig_value_as_scm(seed, FALSE);
@@ -52,13 +50,13 @@ scm_signal_accu(GSignalInvocationHint *ihint,
         return TRUE;
     case 1:
         if (!scm_is_eq(result, SCM_UNSPECIFIED))
-            gig_return_val_if_fail(!gig_value_from_scm(seed, result), FALSE);
+            return_val_if_fail(!gig_value_from_scm(seed, result), FALSE);
         return TRUE;
     case 2:
     {
         intbool_t ret = scm_is_true(scm_c_value_ref(result, 0));
         SCM next_seed = scm_c_value_ref(result, 1);
-        gig_return_val_if_fail(!gig_value_from_scm(seed, next_seed), FALSE);
+        return_val_if_fail(!gig_value_from_scm(seed, next_seed), FALSE);
         return ret;
     }
     default:

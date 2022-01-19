@@ -15,6 +15,7 @@
 
 #include <libguile.h>
 #include <girepository.h>
+#include "clib.h"
 #include "gig_type.h"
 #include "gig_object.h"
 #include "gig_function.h"
@@ -22,7 +23,6 @@
 #include "gig_constant.h"
 #include "gig_flag.h"
 #include "gig_repository.h"
-#include "gig_logging.h"
 
 static scm_t_bits info_smob_tag = SCM_UNPACK(SCM_BOOL_F);
 
@@ -77,7 +77,7 @@ scm_require(SCM lib, SCM version)
     if (!SCM_UNBNDP(version) && scm_is_true(version))
         _version = scm_dynwind_or_bust("require", scm_to_utf8_string(version));
 
-    gig_debug_load("requiring %s-%s", _lib, _version != NULL ? _version : "latest");
+    debug_load("requiring %s-%s", _lib, _version != NULL ? _version : "latest");
     tl = g_irepository_require(NULL, _lib, _version, 0, &error);
 
     if (tl == NULL) {
@@ -162,9 +162,9 @@ gig_repository_nested_infos(GIBaseInfo *base,
             const char *name = g_base_info_get_name(base);
             if (!g_type_is_a(gtype, G_TYPE_OBJECT)) {
                 if (*n_properties != 0)
-                    gig_warning_load("%s - non-Object interface wants properties", name);
+                    warning_load("%s - non-Object interface wants properties", name);
                 if (*n_signals != 0)
-                    gig_warning_load("%s - non-Object interface wants signals", name);
+                    warning_load("%s - non-Object interface wants signals", name);
                 *n_properties = *n_signals = 0;
             }
         }
@@ -186,7 +186,7 @@ gig_repository_nested_infos(GIBaseInfo *base,
 SCM
 load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
 {
-    gig_return_val_if_fail(info != NULL, defs);
+    return_val_if_fail(info != NULL, defs);
 
     GIBaseInfo *parent = g_base_info_get_container(info);
     gtype_t parent_gtype = G_TYPE_INVALID;
@@ -198,7 +198,7 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
 
     switch (g_base_info_get_type(info)) {
     case GI_INFO_TYPE_CALLBACK:
-        gig_debug_load("Unsupported irepository type 'CALLBACK'");
+        debug_load("Unsupported irepository type 'CALLBACK'");
         break;
     case GI_INFO_TYPE_FUNCTION:
     case GI_INFO_TYPE_SIGNAL:
@@ -211,8 +211,8 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
     {
         gtype_t gtype = g_registered_type_info_get_g_type(info);
         if (gtype == G_TYPE_NONE) {
-            gig_debug_load("%s - not loading boxed type because is has no gtype_t",
-                           g_base_info_get_name(info));
+            debug_load("%s - not loading boxed type because is has no gtype_t",
+                       g_base_info_get_name(info));
             break;
         }
         defs = gig_type_define(gtype, defs);
@@ -222,8 +222,8 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
     {
         gtype_t gtype = g_registered_type_info_get_g_type(info);
         if (gtype == G_TYPE_NONE) {
-            gig_debug_load("%s - not loading struct type because is has no gtype_t",
-                           g_base_info_get_name(info));
+            debug_load("%s - not loading struct type because is has no gtype_t",
+                       g_base_info_get_name(info));
             break;
         }
         defs = gig_type_define(gtype, defs);
@@ -249,12 +249,11 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
         gtype_t gtype = g_registered_type_info_get_g_type(info);
         const char *_namespace = g_base_info_get_name(info);
         if (gtype == G_TYPE_INVALID) {
-            gig_debug_load("%s - not loading object type because its gtype_t is invalid",
-                           _namespace);
+            debug_load("%s - not loading object type because its gtype_t is invalid", _namespace);
             break;
         }
         if (gtype == G_TYPE_NONE) {
-            gig_debug_load("%s - not loading object type because is has no gtype_t", _namespace);
+            debug_load("%s - not loading object type because is has no gtype_t", _namespace);
             break;
         }
 
@@ -263,7 +262,7 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
         if (p)
             g_base_info_unref(p);
         if (!has_parent) {
-            gig_debug_load("%s:%s - has no parent", _namespace, g_type_name(gtype));
+            debug_load("%s:%s - has no parent", _namespace, g_type_name(gtype));
             gig_type_define_fundamental(gtype, SCM_EOL, g_object_ref_sink, g_object_unref);
         }
         defs = gig_type_define(gtype, defs);
@@ -273,8 +272,8 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
     {
         gtype_t gtype = g_registered_type_info_get_g_type(info);
         if (gtype == G_TYPE_NONE) {
-            gig_debug_load("%s - not loading interface type because is has no gtype_t",
-                           g_base_info_get_name(info));
+            debug_load("%s - not loading interface type because is has no gtype_t",
+                       g_base_info_get_name(info));
             break;
         }
         defs = gig_type_define(gtype, defs);
@@ -287,8 +286,8 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
     {
         gtype_t gtype = g_registered_type_info_get_g_type(info);
         if (gtype == G_TYPE_NONE) {
-            gig_debug_load("%s - not loading union type because is has no gtype_t",
-                           g_base_info_get_name(info));
+            debug_load("%s - not loading union type because is has no gtype_t",
+                       g_base_info_get_name(info));
             break;
         }
         defs = gig_type_define(gtype, defs);
@@ -299,25 +298,25 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
         goto recursion;
     }
     case GI_INFO_TYPE_VALUE:
-        gig_critical_load("Unsupported irepository type 'VALUE'");
+        critical_load("Unsupported irepository type 'VALUE'");
         break;
     case GI_INFO_TYPE_VFUNC:
-        gig_critical_load("Unsupported irepository type 'VFUNC'");
+        critical_load("Unsupported irepository type 'VFUNC'");
         break;
     case GI_INFO_TYPE_FIELD:
-        gig_critical_load("Unsupported irepository type 'FIELD'");
+        critical_load("Unsupported irepository type 'FIELD'");
         break;
     case GI_INFO_TYPE_ARG:
-        gig_critical_load("Unsupported irepository type 'ARG'");
+        critical_load("Unsupported irepository type 'ARG'");
         break;
     case GI_INFO_TYPE_TYPE:
-        gig_critical_load("Unsupported irepository type 'TYPE'");
+        critical_load("Unsupported irepository type 'TYPE'");
         break;
     case GI_INFO_TYPE_INVALID:
     case GI_INFO_TYPE_INVALID_0:
     default:
-        gig_critical_load("Unsupported irepository type %d '%s'", g_base_info_get_type(info),
-                          g_base_info_get_name(info));
+        critical_load("Unsupported irepository type %d '%s'", g_base_info_get_type(info),
+                      g_base_info_get_name(info));
         break;
     }
 

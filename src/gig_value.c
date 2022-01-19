@@ -15,13 +15,12 @@
 
 #include <assert.h>
 #include <girepository.h>
-#include "c/mem.h"
+#include "clib.h"
 #include "gig_value.h"
 #include "gig_type.h"
 #include "gig_object.h"
 #include "gig_flag.h"
 #include "gig_util.h"
-#include "gig_logging.h"
 
 #ifndef FLT_MAX
 #define FLT_MAX 3.402823466e+38F
@@ -225,7 +224,7 @@ gig_value_from_scm(GValue *value, SCM obj)
             return gig_value_from_scm(n_value, obj);
         }
         else if (G_VALUE_HOLDS(value, G_TYPE_GSTRING)) {
-            gig_critical_transfer("unhandled value type");
+            critical_transfer("unhandled value type");
             return GIG_VALUE_WRONG_TYPE;
         }
         else
@@ -250,7 +249,7 @@ gig_value_from_scm(GValue *value, SCM obj)
         }
         return GIG_VALUE_WRONG_TYPE;
     default:
-        gig_critical_transfer("unhandled value type");
+        critical_transfer("unhandled value type");
         return GIG_VALUE_WRONG_TYPE;
     }
 
@@ -303,7 +302,7 @@ gig_value_param_as_scm(const GValue *gvalue, intbool_t copy_boxed, const GParamS
  * Returns: a PyObject representing the value.
  */
 SCM
-gig_value_to_scm_basic_type(const GValue *value, gtype_t fundamental, intbool_t * handled)
+gig_value_to_scm_basic_type(const GValue *value, gtype_t fundamental, intbool_t *handled)
 {
     *handled = TRUE;
     switch (fundamental) {
