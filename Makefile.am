@@ -104,6 +104,7 @@ libguile_gi_la_c_sources = \
   src/c/keyval.c \
   src/c/mem.c \
   src/c/slist.c \
+  src/c/strval.c \
   src/gig.c \
   src/gig_arg_map.c \
   src/gig_argument.c \
@@ -119,7 +120,6 @@ libguile_gi_la_c_sources = \
   src/gig_object.c \
   src/gig_repository.c \
   src/gig_signal.c \
-  src/gig_strval.c \
   src/gig_type.c \
   src/gig_type_private.c \
   src/gig_util.c \
@@ -130,6 +130,7 @@ libguile_gi_la_internal_headers = \
   src/c/keyval.h \
   src/c/mem.h \
   src/c/slist.h \
+  src/c/strval.h \
   src/c/visibility.h \
   src/gig.h \
   src/gig_arg_map.h \
@@ -147,7 +148,6 @@ libguile_gi_la_internal_headers = \
   src/gig_object.h \
   src/gig_repository.h \
   src/gig_signal.h \
-  src/gig_strval.h \
   src/gig_type.h \
   src/gig_types.h \
   src/gig_type_private.h \

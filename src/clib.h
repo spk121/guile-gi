@@ -3,5 +3,6 @@
 #include "c/keyval.h"
 #include "c/mem.h"
 #include "c/slist.h"
+#include "c/strval.h"
 #include "c/visibility.h"
 #endif

@@ -23,7 +23,6 @@
 #include "gig_util.h"
 #include "gig_object.h"
 #include "gig_type_private.h"
-#include "gig_strval.h"
 #include "gig_logging.h"
 
 // In C, a gtype_t is an integer.  It is an integer ID that maps to a
@@ -75,7 +74,7 @@
 // Maps gtype_t to SCM
 static keyval_t *gtype_scm_store = NULL;
 // Maps string to SCM
-static NameHash *name_scm_store = NULL;
+static strval_t *name_scm_store = NULL;
 // Maps SCM to gtype_t
 static keyval_t *scm_gtype_store = NULL;
 
@@ -259,7 +258,7 @@ gig_type_define_with_info(GIRegisteredTypeInfo *info, SCM dsupers, SCM slots)
 
     char *_name = g_registered_type_info_get_qualified_name(info);
     assert(_name != NULL);
-    scm_t_bits _value = name_hash_find_entry(name_scm_store, _name);
+    scm_t_bits _value = strval_find_entry(name_scm_store, _name);
 
     SCM cls;
     if (_value) {
@@ -273,7 +272,7 @@ gig_type_define_with_info(GIRegisteredTypeInfo *info, SCM dsupers, SCM slots)
         SCM class_name = scm_from_utf8_symbol(name);
         cls = scm_call_4(make_class_proc, dsupers, slots, kwd_name, class_name);
         gig_debug_load("%s - creating new type", name);
-        name_hash_add_entry(name_scm_store, _name, SCM_UNPACK(cls));
+        strval_add_entry(name_scm_store, _name, SCM_UNPACK(cls));
         free(name);
     }
 
@@ -519,7 +518,7 @@ gig_type_free_types(void)
 {
     gig_debug_init("Freeing gtype hash table");
     keyval_free(gtype_scm_store, NULL, NULL);
-    name_hash_free(name_scm_store, NULL);
+    strval_free(name_scm_store, NULL);
     keyval_free(scm_gtype_store, NULL, NULL);
     _free_boxed_funcs();
 }
@@ -549,7 +548,7 @@ SCM
 gig_type_get_scheme_type_with_info(GIRegisteredTypeInfo *info)
 {
     char *_name = g_registered_type_info_get_qualified_name(info);
-    scm_t_bits value = name_hash_find_entry(name_scm_store, _name);
+    scm_t_bits value = strval_find_entry(name_scm_store, _name);
     free(_name);
     if (value == 0)
         return SCM_UNDEFINED;
@@ -869,7 +868,7 @@ gig_init_types_once(void)
     SCM getter_with_setter = scm_c_public_ref("oop goops", "<applicable-struct-with-setter>");
 
     gtype_scm_store = keyval_new();
-    name_scm_store = name_hash_new();
+    name_scm_store = strval_new();
     scm_gtype_store = keyval_new();
 
 #define A(G,S)                                  \
