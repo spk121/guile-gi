@@ -126,7 +126,9 @@ libguile_gi_la_c_sources = \
   src/gig_value.c
 
 libguile_gi_la_internal_headers = \
+  src/clib.h \
   src/c/mem.h \
+  src/c/visibility.h \
   src/gig.h \
   src/gig_arg_map.h \
   src/gig_argument.h \
@@ -150,8 +152,7 @@ libguile_gi_la_internal_headers = \
   src/gig_types.h \
   src/gig_type_private.h \
   src/gig_util.h \
-  src/gig_value.h \
-  src/gig_visibility.h
+  src/gig_value.h
 
 libguile_gi_la_SOURCES = \
   $(libguile_gi_la_internal_headers) \

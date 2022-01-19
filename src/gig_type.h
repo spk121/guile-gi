@@ -17,7 +17,7 @@
 #define GIG_TYPE_H
 
 #include <girepository.h>
-#include "gig_visibility.h"
+#include "clib.h"
 #include "gig_types.h"
 
 extern SCM gig_enum_type;

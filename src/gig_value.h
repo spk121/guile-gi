@@ -3,8 +3,9 @@
 
 #include <libguile.h>
 #include <girepository.h>
+#include "clib.h"
 #include "gig_types.h"
-#include "gig_visibility.h"
+
 
 SCM gig_value_c2g(GValue *val);
 SCM gig_value_to_scm_basic_type(const GValue *value, gtype_t fundamental, intbool_t *handled);

@@ -1,5 +1,5 @@
 /*
-  gig_visibility.h
+  visibility.h
 
   Copyright 2022 Michael L. Gran
 
@@ -20,8 +20,8 @@
   <https://www.gnu.org/licenses/>.
 */
 
-#ifndef GIG_VISIBILITY_H
-#define GIG_VISIBILITY_H
+#ifndef X_VISIBILITY_H
+#define X_VISIBILITY_H
 
 #ifdef GIG_DLL
 

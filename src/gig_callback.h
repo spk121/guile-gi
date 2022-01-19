@@ -3,7 +3,7 @@
 
 #include <girepository.h>
 #include <libguile.h>
-#include "gig_visibility.h"
+#include "clib.h"
 
 SCM gig_callback_to_scm(const char *name, GICallbackInfo *info, void *proc);
 void *gig_callback_to_c(const char *name, GICallbackInfo *callback_info, SCM s_func);

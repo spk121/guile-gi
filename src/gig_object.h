@@ -3,7 +3,7 @@
 
 #include <libguile.h>
 #include <girepository.h>
-#include "gig_visibility.h"
+#include "clib.h"
 #include "gig_types.h"
 
 SCM gig_property_define(gtype_t type, GIPropertyInfo *info, const char *_namespace, SCM defs);
