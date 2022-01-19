@@ -16,7 +16,7 @@
 #include <string.h>
 #include <ffi.h>
 #include <libguile/hooks.h>
-#include "c/mem.h"
+#include "clib.h"
 #include "gig_argument.h"
 #include "gig_util.h"
 #include "gig_arg_map.h"
@@ -25,7 +25,6 @@
 #include "gig_type.h"
 #include "gig_signal.h"
 #include "gig_util.h"
-#include "gig_keyval.h"
 #include "gig_logging.h"
 #include "gig_function_args.h"
 
@@ -40,7 +39,7 @@ struct _GigFunction
     GigArgMap *amap;
 };
 
-static FunctionInfoTable *function_cache;
+static keyval_t *function_cache;
 SCM ensure_generic_proc;
 SCM make_proc;
 SCM add_method_proc;
@@ -275,7 +274,7 @@ check_gsubr_cache(GICallableInfo *function_info, SCM self_type, int *required_in
                   int *optional_input_count, SCM *formals, SCM *specializers)
 {
     // Check the cache to see if this function has already been created.
-    GigFunction *gfn = function_cache_find_entry(function_cache, function_info);
+    GigFunction *gfn = keyval_find_entry(function_cache, function_info);
 
     if (gfn == NULL)
         return NULL;
@@ -436,7 +435,7 @@ create_gsubr(GIFunctionInfo *function_info, const char *name, SCM self_type,
                        "closure location preparation error #~A",
                        scm_list_1(scm_from_int(closure_ok)));
 
-    function_cache_add_entry(function_cache, function_info, gfn);
+    keyval_add_entry(function_cache, function_info, gfn);
 
     return gfn->function_ptr;
 }
@@ -562,7 +561,7 @@ function_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
 void
 gig_init_function(void)
 {
-    function_cache = function_cache_new();
+    function_cache = keyval_new();
 
     top_type = scm_c_public_ref("oop goops", "<top>");
     method_type = scm_c_public_ref("oop goops", "<method>");
@@ -608,6 +607,6 @@ static void
 gig_fini_function(void)
 {
     gig_debug_init("Freeing functions");
-    function_cache_free(function_cache, NULL, function_free);
+    keyval_free(function_cache, NULL, function_free);
     function_cache = NULL;
 }
