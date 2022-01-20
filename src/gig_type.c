@@ -23,18 +23,18 @@
 #include "gig_object.h"
 #include "gig_type_private.h"
 
-// In C, a gtype_t is an integer.  It is an integer ID that maps to a
+// In C, a GType is an integer.  It is an integer ID that maps to a
 // type of GObject.
 
 // If Guile-GI does its job well, the users will never need to concern
 // themselves with these integers, and instead just use Guile types
 // created from them.
 
-// For most of the gtype_t integer IDs, the ID is associated with a
+// For most of the GType integer IDs, the ID is associated with a
 // GObject struct type, union type, or object type.  For those IDs
 // that indicate a GObject struct, union, or object type, we make a
 // Guile foreign object type.  For example, if, for example, there
-// were a gtype_t ID 0xaabbccdd that mapped to the C struct GtkWindow
+// were a GType ID 0xaabbccdd that mapped to the C struct GtkWindow
 // pointer type, on the Guile side, a <GtkWindow> object type
 // would be created.
 
@@ -56,7 +56,7 @@
  * - interface_name: the actual name of type of the interface, like "Window"
  *             Find this with g_base_info_get_name (g_type_info_get_interface (typeinfo))
 
- * The gtype_t wrapper is for gtype_ts of type
+ * The GType wrapper is for GTypes of type
  * - STRUCT
  * - ENUM
  * - OBJECT
@@ -64,16 +64,16 @@
  * - FLAGS (rare)
  * - INTERFACE (rare)
 
- * The Guile binding only creates new gtype_ts when it makes GObject classes that subtype
+ * The Guile binding only creates new GTypes when it makes GObject classes that subtype
  * existing classes.
  *
  */
 
-// Maps gtype_t to SCM
+// Maps GType to SCM
 static keyval_t *gtype_scm_store = NULL;
 // Maps string to SCM
 static strval_t *name_scm_store = NULL;
-// Maps SCM to gtype_t
+// Maps SCM to GType
 static keyval_t *scm_gtype_store = NULL;
 
 static SCM type_less_p_proc;
@@ -105,9 +105,9 @@ gig_type_is_registered(GType gtype)
 }
 
 static void
-gig_type_register_self(gtype_t gtype, SCM stype)
+gig_type_register_self(GType gtype, SCM stype)
 {
-    gtype_t parent = g_type_parent(gtype);
+    GType parent = g_type_parent(gtype);
     scm_t_bits pval;
     char *stype_str = NULL, *old_stype_str = NULL;
 
@@ -119,8 +119,9 @@ gig_type_register_self(gtype_t gtype, SCM stype)
         return;
     if (pval != 0 && !SCM_UNBNDP(SCM_PACK(pval)) && SCM_UNBNDP(stype))
         return;
-    stype_str = scm_write_to_utf8_stringn(stype, 80);
     keyval_add_entry(gtype_scm_store, gtype, SCM_UNPACK(stype));
+
+    stype_str = scm_write_to_utf8_stringn(stype, 80);
     if (pval == 0) {
         if (parent)
             debug_load("%s - registering a new %s type for %zx as %s", g_type_name(gtype),
@@ -157,19 +158,21 @@ gig_type_register(GType gtype, SCM stype)
 SCM
 gig_type_transfer_object(GType type, void *ptr, GITransfer transfer)
 {
+    SCM scm_type;
+    SCM pointer;
+    GigTypeRefFunction ref;
+    GigTypeUnrefFunction unref;
+
     if (G_TYPE_IS_CLASSED(type))
         type = G_OBJECT_TYPE(ptr);
 
     debug_transfer("gig_type_transfer_object(%s, %p, %d)", g_type_name(type), ptr, transfer);
 
-    SCM scm_type = gig_type_get_scheme_type(type);
+    scm_type = gig_type_get_scheme_type(type);
     return_val_if_fail(SCM_CLASSP(scm_type), SCM_BOOL_F);
-    GigTypeRefFunction ref;
-    ref = (GigTypeRefFunction)scm_to_pointer(scm_get_class_ref_slot(scm_type));
-    GigTypeUnrefFunction unref;
-    unref = (GigTypeUnrefFunction)scm_to_pointer(scm_get_class_unref_slot(scm_type));
 
-    SCM pointer;
+    ref = (GigTypeRefFunction)scm_to_pointer(scm_get_class_ref_slot(scm_type));
+    unref = (GigTypeUnrefFunction)scm_to_pointer(scm_get_class_unref_slot(scm_type));
     switch (transfer) {
     case GI_TRANSFER_NOTHING:
         pointer = scm_from_pointer(ref(ptr), unref);
@@ -185,13 +188,13 @@ gig_type_transfer_object(GType type, void *ptr, GITransfer transfer)
     return scm_make_with_value(scm_type, pointer);
 }
 
-intbool_t
+int
 gig_type_check_object(SCM obj)
 {
     return SCM_IS_A_P(obj, gig_fundamental_type);
 }
 
-intbool_t
+int
 gig_type_check_typed_object(SCM obj, SCM expected_type)
 {
     return SCM_IS_A_P(obj, expected_type);
@@ -221,7 +224,7 @@ type_less_p(SCM a, SCM b)
 }
 
 SCM
-gig_type_associate(gtype_t gtype, SCM stype)
+gig_type_associate(GType gtype, SCM stype)
 {
     gig_type_register_self(gtype, stype);
     scm_set_object_property_x(stype, sym_sort_key, scm_from_size_t(keyval_size(gtype_scm_store)));
@@ -240,9 +243,7 @@ g_registered_type_info_get_qualified_name(GIRegisteredTypeInfo *info)
     const char *prefix = g_irepository_get_c_prefix(NULL, _namespace);
 
     // add initial % to ensure that the name is private
-    int len = strlen("%") + strlen(prefix) + strlen(g_base_info_get_name(info)) + 1;
-    char *str = xmalloc(len);
-    snprintf(str, len, "%%%s%s", prefix, g_base_info_get_name(info));
+    char *str = concatenate3("%", prefix, g_base_info_get_name(info));
     return str;
 }
 
@@ -250,8 +251,8 @@ SCM
 gig_type_define_with_info(GIRegisteredTypeInfo *info, SCM dsupers, SCM slots)
 {
     if (g_registered_type_info_get_g_type(info) != G_TYPE_NONE) {
-        g_critical("gig_type_define_with_info used when gtype_t was available, "
-                   "use gig_type_define or gig_type_define_full instead.");
+        critical_load("gig_type_define_with_info used when GType was available, "
+                      "use gig_type_define or gig_type_define_full instead.");
         return SCM_UNDEFINED;
     }
 
@@ -276,180 +277,221 @@ gig_type_define_with_info(GIRegisteredTypeInfo *info, SCM dsupers, SCM slots)
     return cls;
 }
 
-// Given introspection info from a typelib library for a given gtype_t,
+
+// Given introspection info from a typelib library for a given GType,
 // this makes a new Guile foreign object type and it stores the type
 // in our hash table of known types.
+
+static SCM
+make_enum_class(char *cname, SCM name, GType gtype, SCM sparent)
+{
+    GEnumClass *_class = g_type_class_ref(gtype);
+    SCM size = scm_from_uint(_class->n_values);
+    SCM obarray = scm_make_hash_table(size);
+
+    for (unsigned i = 0; i < _class->n_values; i++) {
+        SCM key = scm_from_utf8_symbol(_class->values[i].value_nick);
+        SCM value = scm_from_int(_class->values[i].value);
+        debug_load("%s - add enum %s %d",
+                   cname, _class->values[i].value_nick, _class->values[i].value);
+        scm_hashq_set_x(obarray, key, value);
+    }
+    g_type_class_unref(_class);
+
+    SCM dsupers = scm_list_1(SCM_PACK_POINTER(sparent));
+    SCM slots = SCM_EOL;
+    SCM new_type = scm_make_class_with_name(dsupers, slots, name);
+
+    scm_set_class_obarray_slot(new_type, obarray);
+    return new_type;
+}
+
+static SCM
+make_flags_class(const char *cname, SCM name, GType gtype, SCM sparent)
+{
+    GFlagsClass *_class = g_type_class_ref(gtype);
+    SCM size = scm_from_uint(_class->n_values);
+    SCM obarray = scm_make_hash_table(size);
+
+    for (unsigned i = 0; i < _class->n_values; i++) {
+        SCM key = scm_from_utf8_symbol(_class->values[i].value_nick);
+        SCM value = scm_from_int(_class->values[i].value);
+        debug_load("%s - add flag %s %u",
+                   cname, _class->values[i].value_nick, _class->values[i].value);
+        scm_hashq_set_x(obarray, key, value);
+    }
+    g_type_class_unref(_class);
+
+    SCM dsupers = scm_list_1(SCM_PACK_POINTER(sparent));
+    SCM slots = SCM_EOL;
+    SCM new_type = scm_make_class_with_name(dsupers, slots, name);
+
+    scm_set_class_obarray_slot(new_type, obarray);
+    return new_type;
+}
+
+static SCM
+make_boxed_class(const char *cname, SCM name, GType gtype, SCM sparent, SCM extra_supers)
+{
+    SCM dsupers = scm_cons(SCM_PACK_POINTER(sparent), extra_supers);
+    SCM slots = SCM_EOL;
+    SCM new_type = scm_make_class_with_name(dsupers, slots, name);
+
+    GigBoxedFuncs *funcs = _boxed_funcs_for_type(gtype);
+
+    GIBaseInfo *info;
+    size_t size = 0;
+
+    info = g_irepository_find_by_gtype(NULL, gtype);
+    if (info != NULL) {
+        if (GI_IS_STRUCT_INFO(info))
+            size = g_struct_info_get_size((GIStructInfo *) info);
+        g_base_info_unref(info);
+    }
+
+    scm_set_class_ref_slot(new_type, scm_from_pointer(funcs->copy, NULL));
+    scm_set_class_unref_slot(new_type, scm_from_pointer(funcs->free, NULL));
+    scm_set_class_size_slot(new_type, scm_from_size_t(size));
+    return new_type;
+}
+
+static SCM
+make_interface_class(const char *cname, SCM name, GType gtype, SCM sparent, SCM extra_supers)
+{
+    GType *interfaces = NULL;
+    unsigned n_interfaces = 0;
+    GType parent = g_type_parent(gtype);
+    GType fundamental = G_TYPE_FUNDAMENTAL(gtype);
+
+    if (fundamental == G_TYPE_OBJECT)
+        interfaces = g_type_interfaces(gtype, &n_interfaces);
+    else if (fundamental == G_TYPE_INTERFACE)
+        interfaces = g_type_interface_prerequisites(gtype, &n_interfaces);
+
+    SCM dsupers;
+    if (parent == G_TYPE_INTERFACE)
+        dsupers = extra_supers;
+    else
+        dsupers = scm_cons(SCM_PACK_POINTER(sparent), extra_supers);
+
+    for (unsigned n = 0; n < n_interfaces; n++)
+        dsupers = scm_cons(gig_type_get_scheme_type(interfaces[n]), dsupers);
+    free(interfaces);
+
+    // dsupers need to be sorted, or else Guile will barf
+    dsupers = scm_sort_x(dsupers, type_less_p_proc);
+    SCM slots = SCM_EOL;
+    SCM new_type = scm_make_class_with_name(dsupers, slots, name);
+    return new_type;
+}
+
+static SCM
+make_fallback_class(const char *cname, SCM name, GType gtype, SCM sparent, SCM extra_supers)
+{
+    GType *interfaces = NULL;
+    unsigned n_interfaces = 0;
+    interfaces = g_type_interfaces(gtype, &n_interfaces);
+    SCM dsupers;
+    if (sparent)
+        dsupers = scm_cons(SCM_PACK_POINTER(sparent), extra_supers);
+    else
+        dsupers = scm_cons(gig_fundamental_type, extra_supers);
+
+    for (unsigned n = 0; n < n_interfaces; n++)
+        dsupers = scm_cons(gig_type_get_scheme_type(interfaces[n]), dsupers);
+    free(interfaces);
+
+    dsupers = scm_sort_x(dsupers, type_less_p_proc);
+    SCM slots = SCM_EOL;
+    SCM new_type = scm_make_class_with_name(dsupers, slots, name);
+    return new_type;
+}
+
+static SCM
+define_new_type(char *_type_class_name, GType gtype, SCM defs, SCM extra_supers)
+{
+    GType fundamental = G_TYPE_FUNDAMENTAL(gtype);
+    GType parent = g_type_parent(gtype);
+    if (parent != G_TYPE_INVALID)
+        gig_type_define(parent, defs);
+
+    debug_load("%s - creating new %s type for %zx %s",
+               _type_class_name, g_type_name(fundamental), gtype, g_type_name(gtype));
+
+    GType reserved = g_type_from_name(g_type_name(gtype));
+    if (reserved != 0 && reserved != gtype)
+        critical_load("%s - %s already has %zx as registered GType", _type_class_name,
+                      g_type_name(gtype), reserved);
+
+    SCM type_class_name = scm_from_utf8_symbol(_type_class_name);
+
+    SCM new_type;
+    scm_t_bits sparent = keyval_find_entry(gtype_scm_store, parent);
+
+    switch (fundamental) {
+    case G_TYPE_ENUM:
+        new_type = make_enum_class(_type_class_name, type_class_name, gtype, SCM_PACK(sparent));
+        break;
+    case G_TYPE_FLAGS:
+        new_type = make_flags_class(_type_class_name, type_class_name, gtype, SCM_PACK(sparent));
+        break;
+    case G_TYPE_BOXED:
+        new_type =
+            make_boxed_class(_type_class_name, type_class_name, gtype, SCM_PACK(sparent),
+                             extra_supers);
+        break;
+    case G_TYPE_INTERFACE:
+    case G_TYPE_PARAM:
+    case G_TYPE_OBJECT:
+        new_type =
+            make_interface_class(_type_class_name, type_class_name, gtype, SCM_PACK(sparent),
+                                 extra_supers);
+        break;
+    default:
+        new_type =
+            make_fallback_class(_type_class_name, type_class_name, gtype, SCM_PACK(sparent),
+                                extra_supers);
+        break;
+    }
+
+    return_val_if_fail(!SCM_UNBNDP(new_type), defs);
+
+    SCM key = gig_type_associate(gtype, new_type);
+    if (!SCM_UNBNDP(defs)) {
+        scm_define(key, new_type);
+        defs = scm_cons(key, defs);
+    }
+    debug_load("Hash table sizes %d %d", keyval_size(gtype_scm_store),
+               keyval_size(scm_gtype_store));
+    return defs;
+}
+
+static SCM
+redefine_existing_type(const char *cname, GType gtype, SCM stype, SCM defs)
+{
+    SCM name = scm_class_name(stype);
+    debug_load("%s - type already exists for %zx %s", cname, gtype, g_type_name(gtype));
+
+    scm_define(name, stype);
+    defs = scm_cons(name, defs);
+    return defs;
+}
+
 SCM
-gig_type_define_full(gtype_t gtype, SCM defs, SCM extra_supers)
+gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
 {
     assert(GSIZE_TO_POINTER(gtype) != NULL);
 
     scm_t_bits orig_value;
-    gtype_t parent = g_type_parent(gtype);
-    gtype_t fundamental = G_TYPE_FUNDAMENTAL(gtype);
     char *_type_class_name = gig_type_class_name_from_gtype(gtype);
 
     orig_value = keyval_find_entry(gtype_scm_store, gtype);
-    if (orig_value == 0) {
-        debug_load("%s - creating new %s type for %zx %s",
-                   _type_class_name, g_type_name(fundamental), gtype, g_type_name(gtype));
-
-        gtype_t reserved = g_type_from_name(g_type_name(gtype));
-        if (reserved != 0 && reserved != gtype)
-            critical_load("%s - %s already has %zx as registered gtype_t", _type_class_name,
-                          g_type_name(gtype), reserved);
-
-        SCM type_class_name = scm_from_utf8_symbol(_type_class_name);
-
-        if (parent != G_TYPE_INVALID)
-            gig_type_define(parent, defs);
-
-        SCM new_type, dsupers, slots = SCM_EOL;
-        scm_t_bits sparent = keyval_find_entry(gtype_scm_store, parent);
-
-        switch (fundamental) {
-        case G_TYPE_ENUM:
-        {
-            GEnumClass *_class = g_type_class_ref(gtype);
-            SCM size = scm_from_uint(_class->n_values);
-            SCM obarray = scm_make_hash_table(size);
-
-            for (unsigned i = 0; i < _class->n_values; i++) {
-                SCM key = scm_from_utf8_symbol(_class->values[i].value_nick);
-                SCM value = scm_from_int(_class->values[i].value);
-                debug_load("%s - add enum %s %d",
-                           _type_class_name, _class->values[i].value_nick,
-                           _class->values[i].value);
-                scm_hashq_set_x(obarray, key, value);
-            }
-            g_type_class_unref(_class);
-
-            dsupers = scm_list_1(SCM_PACK_POINTER(sparent));
-            new_type = scm_make_class_with_name(dsupers, slots, type_class_name);
-
-            scm_set_class_obarray_slot(new_type, obarray);
-            break;
-        }
-
-        case G_TYPE_FLAGS:
-        {
-            GFlagsClass *_class = g_type_class_ref(gtype);
-            SCM size = scm_from_uint(_class->n_values);
-            SCM obarray = scm_make_hash_table(size);
-
-            for (unsigned i = 0; i < _class->n_values; i++) {
-                SCM key = scm_from_utf8_symbol(_class->values[i].value_nick);
-                SCM value = scm_from_int(_class->values[i].value);
-                debug_load("%s - add flag %s %u",
-                           _type_class_name, _class->values[i].value_nick,
-                           _class->values[i].value);
-                scm_hashq_set_x(obarray, key, value);
-            }
-            g_type_class_unref(_class);
-
-            dsupers = scm_list_1(SCM_PACK_POINTER(sparent));
-            new_type = scm_make_class_with_name(dsupers, slots, type_class_name);
-
-            scm_set_class_obarray_slot(new_type, obarray);
-            break;
-        }
-
-        case G_TYPE_BOXED:
-        {
-            dsupers = scm_cons(SCM_PACK_POINTER(sparent), extra_supers);
-            new_type = scm_make_class_with_name(dsupers, slots, type_class_name);
-
-            GigBoxedFuncs *funcs = _boxed_funcs_for_type(gtype);
-
-            GIRepository *repository;
-            GIBaseInfo *info;
-            size_t size = 0;
-
-            repository = g_irepository_get_default();
-            info = g_irepository_find_by_gtype(repository, gtype);
-            if (info != NULL) {
-                if (GI_IS_STRUCT_INFO(info))
-                    size = g_struct_info_get_size((GIStructInfo *) info);
-                g_base_info_unref(info);
-            }
-
-            scm_set_class_ref_slot(new_type, scm_from_pointer(funcs->copy, NULL));
-            scm_set_class_unref_slot(new_type, scm_from_pointer(funcs->free, NULL));
-            scm_set_class_size_slot(new_type, scm_from_size_t(size));
-            break;
-        }
-
-        case G_TYPE_INTERFACE:
-        case G_TYPE_PARAM:
-        case G_TYPE_OBJECT:
-        {
-            gtype_t *interfaces = NULL;
-            unsigned n_interfaces = 0;
-            if (fundamental == G_TYPE_OBJECT)
-                interfaces = g_type_interfaces(gtype, &n_interfaces);
-            else if (fundamental == G_TYPE_INTERFACE)
-                interfaces = g_type_interface_prerequisites(gtype, &n_interfaces);
-
-            if (parent == G_TYPE_INTERFACE)
-                dsupers = extra_supers;
-            else
-                dsupers = scm_cons(SCM_PACK_POINTER(sparent), extra_supers);
-
-            for (unsigned n = 0; n < n_interfaces; n++)
-                dsupers = scm_cons(gig_type_get_scheme_type(interfaces[n]), dsupers);
-            free(interfaces);
-
-            // dsupers need to be sorted, or else Guile will barf
-            dsupers = scm_sort_x(dsupers, type_less_p_proc);
-            new_type = scm_make_class_with_name(dsupers, slots, type_class_name);
-            break;
-
-        }
-
-        default:
-        {
-            gtype_t *interfaces = NULL;
-            unsigned n_interfaces = 0;
-            interfaces = g_type_interfaces(gtype, &n_interfaces);
-            if (sparent)
-                dsupers = scm_cons(SCM_PACK_POINTER(sparent), extra_supers);
-            else
-                dsupers = scm_cons(gig_fundamental_type, extra_supers);
-
-            for (unsigned n = 0; n < n_interfaces; n++)
-                dsupers = scm_cons(gig_type_get_scheme_type(interfaces[n]), dsupers);
-            free(interfaces);
-
-            dsupers = scm_sort_x(dsupers, type_less_p_proc);
-            new_type = scm_make_class_with_name(dsupers, slots, type_class_name);
-            break;
-        }
-        }
-
-        return_val_if_fail(!SCM_UNBNDP(new_type), defs);
-
-        SCM key = gig_type_associate(gtype, new_type);
-        if (!SCM_UNBNDP(defs)) {
-            scm_define(key, new_type);
-            defs = scm_cons(key, defs);
-        }
-        debug_load("Hash table sizes %d %d", keyval_size(gtype_scm_store),
-                   keyval_size(scm_gtype_store));
-    }
+    if (orig_value == 0)
+        defs = define_new_type(_type_class_name, gtype, defs, extra_supers);
     else {
-        debug_load("%s - type already exists for %zx %s",
-                   _type_class_name, gtype, g_type_name(gtype));
-        SCM val = SCM_PACK(orig_value);
-
-        // FIXME: The warning below should be infrequent enough to not need silencing
-        if (SCM_UNBNDP(val))
-            return defs;
-        return_val_if_fail(!SCM_UNBNDP(val), defs);
-        SCM key = scm_class_name(val);
-        if (!SCM_UNBNDP(defs)) {
-            scm_define(key, val);
-            defs = scm_cons(key, defs);
-        }
+        SCM stype = SCM_PACK(orig_value);
+        if (!SCM_UNBNDP(defs) && !SCM_UNBNDP(stype))
+            defs = redefine_existing_type(_type_class_name, gtype, stype, defs);
     }
 
     free(_type_class_name);
@@ -457,21 +499,21 @@ gig_type_define_full(gtype_t gtype, SCM defs, SCM extra_supers)
 }
 
 SCM
-gig_type_define(gtype_t gtype, SCM defs)
+gig_type_define(GType gtype, SCM defs)
 {
     return gig_type_define_full(gtype, defs, SCM_EOL);
 }
 
-// This routine returns the integer gtype_t ID of a scheme object, that is
-// - already a gtype_t ID encoded as size_t,
-// - a foreign object for a gtype_t
-gtype_t
+// This routine returns the integer GType ID of a scheme object, that is
+// - already a GType ID encoded as size_t,
+// - a foreign object for a GType
+GType
 scm_to_gtype(SCM x)
 {
     return scm_to_gtype_full(x, NULL, SCM_ARGn);
 }
 
-gtype_t
+GType
 scm_to_gtype_full(SCM x, const char *subr, int argpos)
 {
     if (scm_is_unsigned_integer(x, 0, SIZE_MAX))
@@ -479,13 +521,13 @@ scm_to_gtype_full(SCM x, const char *subr, int argpos)
     else if (scm_is_class(x))
         return keyval_find_entry(scm_gtype_store, SCM_UNPACK(x));
     else
-        scm_wrong_type_arg_msg(subr, argpos, x, "gtype_t integer or class");
+        scm_wrong_type_arg_msg(subr, argpos, x, "GType integer or class");
 }
 
 SCM
-scm_from_gtype(gtype_t x)
+scm_from_gtype(GType x)
 {
-    // gtype_t <-> SCM associations must go both ways
+    // GType <-> SCM associations must go both ways
     scm_t_bits _value = keyval_find_entry(gtype_scm_store, x);
     if (_value != 0) {
         if (keyval_find_entry(scm_gtype_store, _value) != 0)
@@ -494,13 +536,13 @@ scm_from_gtype(gtype_t x)
     return scm_from_size_t(x);
 }
 
-// This routine returns the integer gtype_t ID of a given
+// This routine returns the integer GType ID of a given
 // GIR foreign object type, or an instance of a GIR foreign object type.
 // It returns #f on failure.
-gtype_t
+GType
 gig_type_get_gtype_from_obj(SCM x)
 {
-    gtype_t value;
+    GType value;
     if ((value = keyval_find_entry(scm_gtype_store, SCM_UNPACK(x))))
         return value;
     else if (SCM_INSTANCEP(x) &&
@@ -528,7 +570,7 @@ _gig_type_check_scheme_type(scm_t_bits _stype)
 }
 
 SCM
-gig_type_get_scheme_type(gtype_t gtype)
+gig_type_get_scheme_type(GType gtype)
 {
     scm_t_bits _value = keyval_find_entry(gtype_scm_store, gtype);
 
@@ -555,82 +597,82 @@ gig_type_get_scheme_type_with_info(GIRegisteredTypeInfo *info)
 ////////////////////////////////////////////////////////////////
 // GUILE API
 
-// This Guile API routine returns the integer gtype_t ID of a given GIR
+// This Guile API routine returns the integer GType ID of a given GIR
 // foreign object type, or an instance of a GIR foreign object type.
 // It returns #f on failure.
 static SCM
 scm_type_get_gtype(SCM x)
 {
-    gtype_t type = gig_type_get_gtype_from_obj(x);
+    GType type = gig_type_get_gtype_from_obj(x);
     if (type != G_TYPE_INVALID)
         return scm_from_size_t(type);
     else
         return SCM_BOOL_F;
 }
 
-// Given an integer that is a gtype_t, this returns an associated Guile
+// Given an integer that is a GType, this returns an associated Guile
 // type, if one exists.
 static SCM
 scm_type_gtype_get_scheme_type(SCM s_gtype)
 {
     SCM_ASSERT_TYPE(scm_is_integer(s_gtype), s_gtype, SCM_ARG1, "gtype-get-scheme-type",
                     "integer");
-    gtype_t type = scm_to_uintptr_t(s_gtype);
+    GType type = scm_to_uintptr_t(s_gtype);
     return gig_type_get_scheme_type(type);
 }
 
-// Given an integer that is a gtype_t, this returns a Guile string of
+// Given an integer that is a GType, this returns a Guile string of
 // the type's name.
 static SCM
 scm_type_gtype_get_name(SCM s_gtype)
 {
     SCM_ASSERT_TYPE(scm_is_integer(s_gtype), s_gtype, SCM_ARG1, "gtype-get-name", "integer");
-    gtype_t type = scm_to_uintptr_t(s_gtype);
+    GType type = scm_to_uintptr_t(s_gtype);
     if (gig_type_is_registered(type))
         return scm_from_utf8_string(g_type_name(type));
 
     return scm_from_utf8_string("invalid");
 }
 
-// Given a Guile integer that is a gtype_t, this returns a Guile integer
-// that is the gtype_t of this type's parent.
+// Given a Guile integer that is a GType, this returns a Guile integer
+// that is the GType of this type's parent.
 static SCM
 scm_type_gtype_get_parent(SCM s_gtype)
 {
     SCM_ASSERT_TYPE(scm_is_integer(s_gtype), s_gtype, SCM_ARG1, "gtype-get-parent", "integer");
-    gtype_t type = scm_to_uintptr_t(s_gtype);
+    GType type = scm_to_uintptr_t(s_gtype);
 
     if (gig_type_is_registered(type))
         return scm_from_uintptr_t(g_type_parent(type));
     return SCM_BOOL_F;
 }
 
-// Given a Guile integer that is a gtype_t, this returns a Guile integer
-// that is the gtype_t of this type's fundamental parent.
+// Given a Guile integer that is a GType, this returns a Guile integer
+// that is the GType of this type's fundamental parent.
 static SCM
 scm_type_gtype_get_fundamental(SCM s_gtype)
 {
     SCM_ASSERT_TYPE(scm_is_integer(s_gtype), s_gtype, SCM_ARG1, "gtype-get-fundamental",
                     "integer");
-    gtype_t type = scm_to_uintptr_t(s_gtype);
+    GType type = scm_to_uintptr_t(s_gtype);
 
     if (gig_type_is_registered(type))
         return scm_from_uintptr_t(g_type_fundamental(type));
     return SCM_BOOL_F;
 }
 
-// Given a Guile integer that is a gtype_t, this returns a list of Guile
-// integers that are the children types of this gtype_t
+// Given a Guile integer that is a GType, this returns a list of Guile
+// integers that are the children types of this GType
 static SCM
 scm_type_gtype_get_children(SCM s_gtype)
 {
     SCM_ASSERT_TYPE(scm_is_integer(s_gtype), s_gtype, SCM_ARG1, "gtype-get-children", "integer");
-    gtype_t type = scm_to_uintptr_t(s_gtype);
+    GType type = scm_to_uintptr_t(s_gtype);
 
     SCM ret = SCM_EOL;
 
     if (gig_type_is_registered(type)) {
-        gtype_t *children;
+        GType *children;
         unsigned n_children, i;
         SCM entry;
 
@@ -645,18 +687,18 @@ scm_type_gtype_get_children(SCM s_gtype)
     return ret;
 }
 
-// Given a Guile integer that is a gtype_t, this returns a list of Guile
-// integers that are the interface types of this gtype_t
+// Given a Guile integer that is a GType, this returns a list of Guile
+// integers that are the interface types of this GType
 static SCM
 scm_type_gtype_get_interfaces(SCM s_gtype)
 {
     SCM_ASSERT_TYPE(scm_is_integer(s_gtype), s_gtype, SCM_ARG1, "gtype-get-interfaces", "integer");
-    gtype_t type = scm_to_uintptr_t(s_gtype);
+    GType type = scm_to_uintptr_t(s_gtype);
 
     SCM ret = SCM_EOL;
 
     if (gig_type_is_registered(type)) {
-        gtype_t *interfaces;
+        GType *interfaces;
         unsigned n_interfaces, i;
         SCM entry;
 
@@ -671,73 +713,73 @@ scm_type_gtype_get_interfaces(SCM s_gtype)
     return ret;
 }
 
-// Given a Guile integer that is a gtype_t, this returns an integer
-// which is the depth of this gtype_t in its GObject class structure
+// Given a Guile integer that is a GType, this returns an integer
+// which is the depth of this GType in its GObject class structure
 static SCM
 scm_type_gtype_get_depth(SCM s_gtype)
 {
     SCM_ASSERT_TYPE(scm_is_integer(s_gtype), s_gtype, SCM_ARG1, "gtype-get-depth", "integer");
-    gtype_t type = scm_to_uintptr_t(s_gtype);
+    GType type = scm_to_uintptr_t(s_gtype);
 
     if (gig_type_is_registered(type))
         return scm_from_uint(g_type_depth(type));
     return SCM_BOOL_F;
 }
 
-// Given a Guile integer that is a gtype_t, this returns #t
-// if the gtype_t is a GObject interface type.
+// Given a Guile integer that is a GType, this returns #t
+// if the GType is a GObject interface type.
 static SCM
 scm_type_gtype_is_interface_p(SCM s_gtype)
 {
     SCM_ASSERT_TYPE(scm_is_integer(s_gtype), s_gtype, SCM_ARG1, "gtype-is-interface?", "integer");
-    gtype_t type = scm_to_uintptr_t(s_gtype);
+    GType type = scm_to_uintptr_t(s_gtype);
 
     if (gig_type_is_registered(type))
         return scm_from_bool(G_TYPE_IS_INTERFACE(type));
     return SCM_BOOL_F;
 }
 
-// Given a Guile integer that is a gtype_t, this returns #t if the gtype_t
+// Given a Guile integer that is a GType, this returns #t if the GType
 // is a GObject classed type.
 static SCM
 scm_type_gtype_is_classed_p(SCM s_gtype)
 {
     SCM_ASSERT_TYPE(scm_is_integer(s_gtype), s_gtype, SCM_ARG1, "gtype-is-classed?", "integer");
-    gtype_t type = scm_to_uintptr_t(s_gtype);
+    GType type = scm_to_uintptr_t(s_gtype);
 
     if (gig_type_is_registered(type))
         return scm_from_bool(G_TYPE_IS_CLASSED(type));
     return SCM_BOOL_F;
 }
 
-// Given a Guile integer that is a gtype_t, this returns #t if the gtype_t
+// Given a Guile integer that is a GType, this returns #t if the GType
 // is a GObject type can be used to instantiate objects.
 static SCM
 scm_type_gtype_is_instantiatable_p(SCM s_gtype)
 {
     SCM_ASSERT_TYPE(scm_is_integer(s_gtype), s_gtype, SCM_ARG1, "gtype-is-instantiatable?",
                     "integer");
-    gtype_t type = scm_to_uintptr_t(s_gtype);
+    GType type = scm_to_uintptr_t(s_gtype);
 
     if (gig_type_is_registered(type))
         return scm_from_bool(G_TYPE_IS_INSTANTIATABLE(type));
     return SCM_BOOL_F;
 }
 
-// Given a Guile integer that is a gtype_t, this returns #t if the gtype_t
+// Given a Guile integer that is a GType, this returns #t if the GType
 // is a GObject type than can be base class for another type.
 static SCM
 scm_type_gtype_is_derivable_p(SCM s_gtype)
 {
     SCM_ASSERT_TYPE(scm_is_integer(s_gtype), s_gtype, SCM_ARG1, "gtype-is-derivable?", "integer");
-    gtype_t type = scm_to_uintptr_t(s_gtype);
+    GType type = scm_to_uintptr_t(s_gtype);
 
     if (gig_type_is_registered(type))
         return scm_from_bool(G_TYPE_IS_DERIVABLE(type));
     return SCM_BOOL_F;
 }
 
-// Given two Guile integers that are gtype_ts, with the first this
+// Given two Guile integers that are GTypes, with the first this
 // returns #t if the second class is a base class to the first class
 static SCM
 scm_type_gtype_is_a_p(SCM gself, SCM gparent)
@@ -745,7 +787,7 @@ scm_type_gtype_is_a_p(SCM gself, SCM gparent)
     SCM_ASSERT_TYPE(scm_is_integer(gself), gself, SCM_ARG1, "gtype-is-a?", "integer");
     SCM_ASSERT_TYPE(scm_is_integer(gparent), gparent, SCM_ARG2, "gtype-is-a?", "integer");
 
-    gtype_t self, parent;
+    GType self, parent;
     self = scm_to_uintptr_t(gself);
     parent = scm_to_uintptr_t(gparent);
 
@@ -796,10 +838,9 @@ scm_allocate_boxed(SCM boxed_type)
 }
 
 void
-gig_type_define_fundamental(gtype_t type, SCM extra_supers,
+gig_type_define_fundamental(GType type, SCM extra_supers,
                             GigTypeRefFunction ref, GigTypeUnrefFunction unref)
 {
-    GIRepository *repository;
     GIBaseInfo *info;
 
     if (gig_type_is_registered(type)) {
@@ -809,8 +850,7 @@ gig_type_define_fundamental(gtype_t type, SCM extra_supers,
 
     assert(scm_is_true(scm_module_public_interface(scm_current_module())));
 
-    repository = g_irepository_get_default();
-    info = g_irepository_find_by_gtype(repository, type);
+    info = g_irepository_find_by_gtype(NULL, type);
     if (info != NULL) {
         if (g_base_info_get_type(info) == GI_INFO_TYPE_OBJECT) {
             GIObjectInfoRefFunction _ref;
