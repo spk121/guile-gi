@@ -1,7 +1,6 @@
 #include <assert.h>
 #include "clib.h"
 #include "gig_type_private.h"
-#include "gig_util.h"
 
 static slist_t *_boxed_funcs = NULL;
 

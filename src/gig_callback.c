@@ -15,14 +15,12 @@
 
 #include <assert.h>
 #include <libguile.h>
-#include <libguile/hooks.h>
 #include <ffi.h>
 #include <stdio.h>
 #include "clib.h"
 #include "gig_argument.h"
 #include "gig_callback.h"
 #include "gig_function.h"
-#include "gig_util.h"
 
 typedef struct _GigCallback GigCallback;
 struct _GigCallback
@@ -43,8 +41,6 @@ struct _GigCallback
 
 static slist_t *callback_list = NULL;
 
-SCM gig_before_c_callback_hook;
-SCM gig_before_callback_hook;
 SCM gig_callback_thread_fluid;
 
 static ffi_type *amap_entry_to_ffi_type(GigArgMapEntry *entry);
@@ -206,7 +202,7 @@ callback_binding_inner(struct callback_binding_args *args)
 
     scm_load_goops();
 
-    assert(scm_is_true(scm_procedure_p(gcb->s_func)));
+    assert(scm_is_procedure(gcb->s_func));
     assert(n_args == g_callable_info_get_n_args(gcb->callback_info));
     assert(gcb->amap != NULL);
 
@@ -234,10 +230,8 @@ callback_binding_inner(struct callback_binding_args *args)
     s_args = scm_reverse_x(s_args, SCM_EOL);
     size_t length = scm_c_length(s_args);
 
-    if (scm_is_false(scm_hook_empty_p(gig_before_callback_hook)))
-        scm_c_run_hook(gig_before_callback_hook,
-                       scm_list_3(scm_from_utf8_string(g_base_info_get_name(gcb->callback_info)),
-                                  gcb->s_func, s_args));
+    run_before_callback_hook(scm_from_utf8_string(g_base_info_get_name(gcb->callback_info)),
+                             gcb->s_func, s_args);
 
     // The actual call of the Scheme callback happens here.
     if (length < amap->s_input_req || length > amap->s_input_req + amap->s_input_opt)
@@ -321,7 +315,7 @@ callback_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
         callback_binding_inner(&args);
     else {
         if (NULL == scm_with_guile(callback_binding_inner, &args))
-            scm_c_eval_string("(quit EXIT_FAILURE)");
+            scm_sad_quit();
     }
 }
 
@@ -351,10 +345,8 @@ c_callback_binding_inner(struct callback_binding_args *args)
     if (SCM_UNBNDP(s_args))
         s_args = SCM_EOL;
 
-    if (scm_is_false(scm_hook_empty_p(gig_before_c_callback_hook)))
-        scm_c_run_hook(gig_before_c_callback_hook,
-                       scm_list_3(scm_from_utf8_string(g_base_info_get_name(gcb->callback_info)),
-                                  scm_from_pointer(gcb->c_func, NULL), s_args));
+    run_before_c_callback_hook(scm_from_utf8_string(g_base_info_get_name(gcb->callback_info)),
+                               scm_from_pointer(gcb->c_func, NULL), s_args);
 
     // Use 'name' instead of gcb->name, which is NULL for C callbacks.
     GError *error = NULL;
@@ -390,7 +382,7 @@ c_callback_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
         c_callback_binding_inner(&args);
     else {
         if (NULL == scm_with_guile(c_callback_binding_inner, &args))
-            scm_c_eval_string("(quit EXIT_FAILURE)");
+            scm_sad_quit();
     }
 }
 
@@ -399,7 +391,7 @@ c_callback_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
 GigCallback *
 gig_callback_new(const char *name, GICallbackInfo *callback_info, SCM s_func)
 {
-    assert(scm_is_true(scm_procedure_p(s_func)));
+    assert(scm_is_procedure(s_func));
 
     GigCallback *gcb = xcalloc(1, sizeof(GigCallback));
     ffi_type **ffi_args = NULL;
@@ -408,7 +400,7 @@ gig_callback_new(const char *name, GICallbackInfo *callback_info, SCM s_func)
 
     SCM s_name = scm_procedure_name(s_func);
     if (scm_is_symbol(s_name)) {
-        gcb->name = scm_to_utf8_string(scm_symbol_to_string(s_name));
+        gcb->name = scm_to_utf8_symbol(s_name);
         debug_load("Constructing C callback for %s", gcb->name);
     }
     else {
@@ -504,7 +496,7 @@ void *
 gig_callback_to_c(const char *name, GICallbackInfo *cb_info, SCM s_func)
 {
     assert(cb_info != NULL);
-    assert(scm_is_true(scm_procedure_p(s_func)));
+    assert(scm_is_procedure(s_func));
 
     // Lookup s_func in the callback cache.
     slist_t *x = callback_list;
@@ -619,7 +611,7 @@ amap_entry_to_ffi_type(GigArgMapEntry *entry)
 static SCM
 scm_is_registered_callback_p(SCM s_proc)
 {
-    if (!scm_is_true(scm_procedure_p(s_proc)))
+    if (!scm_is_procedure(s_proc))
         scm_wrong_type_arg_msg("is-registered-callback?", 0, s_proc, "procedure");
 
     // Lookup s_func in the callback cache.
@@ -639,7 +631,7 @@ scm_is_registered_callback_p(SCM s_proc)
 static SCM
 scm_get_registered_callback_closure_pointer(SCM s_proc)
 {
-    if (!scm_is_true(scm_procedure_p(s_proc)))
+    if (!scm_is_procedure(s_proc))
         scm_wrong_type_arg_msg("get-registered-callback-closure-pointer", 0, s_proc, "procedure");
 
     // Lookup s_func in the callback cache.
@@ -662,13 +654,9 @@ gig_init_callback(void)
 {
     atexit(gig_fini_callback);
 
-    gig_before_c_callback_hook = scm_permanent_object(scm_make_hook(scm_from_size_t(3)));
-    gig_before_callback_hook = scm_permanent_object(scm_make_hook(scm_from_size_t(3)));
     gig_callback_thread_fluid = scm_permanent_object(scm_make_thread_local_fluid(SCM_BOOL_F));
     scm_fluid_set_x(gig_callback_thread_fluid, SCM_BOOL_T);
 
-    scm_c_define("%before-c-callback-hook", gig_before_c_callback_hook);
-    scm_c_define("%before-callback-hook", gig_before_callback_hook);
     scm_c_define("%callback-thread-fluid", gig_callback_thread_fluid);
 
     scm_c_define_gsubr("is-registered-callback?", 1, 0, 0, scm_is_registered_callback_p);

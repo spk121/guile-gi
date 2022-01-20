@@ -20,9 +20,9 @@
 #include <girepository.h>
 #include "clib.h"
 #include "gig_type.h"
-#include "gig_util.h"
 #include "gig_arg_map.h"
 #include "gig_repository.h"
+#include "gig_function.h"
 #include "gig_document.h"
 
 static void do_document(GIBaseInfo *info, const char *parent);
@@ -89,7 +89,7 @@ do_document(GIBaseInfo *info, const char *_namespace)
 
 
         scm_printf(SCM_UNDEFINED, "<%s name=\"%s\">", kind, g_base_info_get_name(info));
-        scheme_name = scm_dynwind_or_bust(FUNC, gig_callable_info_make_name(info, NULL));
+        scheme_name = scm_dynfree(gig_callable_info_make_name(info, NULL));
 
         if (g_callable_info_is_method(info))
             scm_printf(SCM_UNDEFINED, "<scheme><procedure name=\"%s\" long-name=\"%s:%s\">",
@@ -229,8 +229,7 @@ do_document(GIBaseInfo *info, const char *_namespace)
     }
     case GI_INFO_TYPE_VALUE:
     {
-        scheme_name = scm_dynwind_or_bust("%document",
-                                          g_name_to_scm_name(g_base_info_get_name(info)));
+        scheme_name = scm_dynfree(g_name_to_scm_name(g_base_info_get_name(info)));
         scm_printf(SCM_UNDEFINED, "<member name=\"%s\">", g_base_info_get_name(info));
         scm_printf(SCM_UNDEFINED, "<scheme><symbol name=\"%s\"", scheme_name);
         GIAttributeIter iter = { 0, };

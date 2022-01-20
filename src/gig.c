@@ -21,7 +21,6 @@
 #include "gig_object.h"
 #include "gig_signal.h"
 #include "gig_type.h"
-#include "gig_util.h"
 #include "gig_value.h"
 #include "gig.h"
 

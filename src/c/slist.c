@@ -2,7 +2,8 @@
 #include <stdlib.h>
 #include "slist.h"
 
-void slist_prepend(slist_t **lst, void *data)
+void
+slist_prepend(slist_t **lst, void *data)
 {
     slist_t *cur;
     cur = malloc(sizeof(slist_t));
@@ -15,7 +16,8 @@ void slist_prepend(slist_t **lst, void *data)
     *lst = cur;
 }
 
-void slist_free(slist_t **lst, void (*free_func)(void *))
+void
+slist_free(slist_t **lst, void (*free_func)(void *))
 {
     slist_t *cur, *next;
     cur = *lst;

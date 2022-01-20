@@ -7,4 +7,6 @@
 #include "c/slist.h"
 #include "c/strval.h"
 #include "c/visibility.h"
+#include "g/guile.h"
+#include "g/goops.h"
 #endif

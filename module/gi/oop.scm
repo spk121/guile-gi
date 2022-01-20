@@ -25,6 +25,8 @@
   #:re-export (connect))
 
 (eval-when (expand load eval)
+  (load-extension "libguile-gi" "init_core_guile")
+  (load-extension "libguile-gi" "init_core_goops")
   (load-extension "libguile-gi" "gig_init_object"))
 
 (define-class <GFundamental> ()

@@ -20,7 +20,6 @@
 #include "gig_type.h"
 #include "gig_object.h"
 #include "gig_flag.h"
-#include "gig_util.h"
 
 #ifndef FLT_MAX
 #define FLT_MAX 3.402823466e+38F
@@ -175,7 +174,7 @@ gig_value_from_scm(GValue *value, SCM obj)
     }
     case G_TYPE_FLOAT:
     {
-        if (!scm_is_true(scm_real_p(obj)))
+        if (!scm_is_real(obj))
             return GIG_VALUE_WRONG_TYPE;
         gdouble dval = scm_to_double(obj);
         if (dval < -G_MAXFLOAT || dval > G_MAXFLOAT)
@@ -185,7 +184,7 @@ gig_value_from_scm(GValue *value, SCM obj)
     }
     case G_TYPE_DOUBLE:
     {
-        if (!scm_is_true(scm_real_p(obj)))
+        if (!scm_is_real(obj))
             return GIG_VALUE_WRONG_TYPE;
         gdouble temp;
         temp = scm_to_double(obj);
@@ -206,7 +205,7 @@ gig_value_from_scm(GValue *value, SCM obj)
             g_value_set_pointer(value, scm_to_pointer(obj));
             return 0;
         }
-        else if (scm_is_true(scm_bytevector_p(obj))) {
+        else if (scm_is_bytevector_p(obj)) {
             g_value_set_pointer(value, SCM_BYTEVECTOR_CONTENTS(obj));
             return 0;
         }
@@ -344,7 +343,7 @@ gig_value_to_scm_basic_type(const GValue *value, gtype_t fundamental, intbool_t 
         *handled = FALSE;
         return SCM_BOOL_F;
     }
-    gig_return_val_if_reached(SCM_BOOL_F);
+    return_val_if_reached(SCM_BOOL_F);
 }
 
 // This function creates and returns a Scheme value that
@@ -415,7 +414,7 @@ gig_value_to_scm_structured_type(const GValue *value, gtype_t fundamental, intbo
     }
     default:
     {
-        // gig_assert_not_reached ();
+        // assert_not_reached ();
         /* Pygtype_tMarshal *bm; */
         /* if ((bm = pyg_type_lookup(G_VALUE_TYPE(value)))) */
         /*  return bm->fromvalue(value); */
@@ -428,7 +427,7 @@ gig_value_to_scm_structured_type(const GValue *value, gtype_t fundamental, intbo
         type_name = "(null)";
     scm_misc_error("gig_value_to_scm", "unknown type ~S",
                    scm_list_1(scm_from_utf8_string(type_name)));
-    gig_return_val_if_reached(SCM_BOOL_F);
+    return_val_if_reached(SCM_BOOL_F);
 }
 
 

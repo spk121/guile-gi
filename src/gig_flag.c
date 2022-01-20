@@ -20,7 +20,6 @@
 #include "gig_flag.h"
 #include "gig_type.h"
 #include "gig_type_private.h"
-#include "gig_util.h"
 
 static SCM enum_to_number;
 static SCM flags_to_number;
@@ -116,7 +115,7 @@ gig_define_enum_conversions(GIEnumInfo *info, gtype_t type, SCM defs)
     SCM _class;
     scm_dynwind_begin(0);
     char *cls = g_name_to_scm_name(g_base_info_get_name(info));
-    scm_dynwind_or_bust("%define-enum-conversions", cls);
+    scm_dynfree(cls);
 
     if (type != G_TYPE_NONE)
         _class = gig_type_get_scheme_type(type);
@@ -179,7 +178,7 @@ gig_define_enum(GIEnumInfo *info, SCM defs)
 
     SCM obarray = scm_make_hash_table(scm_from_int(n_values));
 
-    char *_class_name = scm_to_utf8_string(scm_symbol_to_string(scm_class_name(_class)));
+    char *_class_name = scm_to_utf8_symbol(scm_class_name(_class));
 
     while (i < n_values) {
         vi = g_enum_info_get_value(info, i);
@@ -208,7 +207,7 @@ gig_define_enum(GIEnumInfo *info, SCM defs)
         i++;
     }
 
-    scm_class_set_x(_class, sym_obarray, obarray);
+    scm_set_class_obarray_slot(_class, obarray);
 
     scm_define(scm_class_name(_class), _class);
     defs = scm_cons(scm_class_name(_class), defs);

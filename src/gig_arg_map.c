@@ -19,7 +19,6 @@
 #include "clib.h"
 #include "gig_arg_map.h"
 #include "gig_data_type.h"
-#include "gig_util.h"
 
 #define debug_amap(...) debug_internal(G_LOG_LEVEL_DEBUG, "amap", __VA_ARGS__)
 
@@ -268,7 +267,7 @@ arg_map_compute_s_call_positions(GigArgMap *amap)
             entry->s_output_pos = s_output_pos++;
             break;
         default:
-            gig_assert_not_reached();
+            assert_not_reached();
         }
     }
 

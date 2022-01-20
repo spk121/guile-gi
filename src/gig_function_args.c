@@ -14,7 +14,6 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "clib.h"
-#include "gig_util.h"
 #include "gig_function_args.h"
 
 static void

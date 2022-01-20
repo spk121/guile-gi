@@ -19,7 +19,6 @@
 #include "gig_type.h"
 #include "gig_argument.h"
 #include "gig_flag.h"
-#include "gig_util.h"
 
 typedef void (*handler_func)(void *);
 static SCM signal_slot_syms[GIG_SIGNAL_SLOT_COUNT];
@@ -64,8 +63,8 @@ scm_signal_accu(GSignalInvocationHint *ihint, GValue *seed, const GValue *elemen
         SCM name = scm_procedure_name(SCM_PACK_POINTER(procedure));
         char *_name = NULL;
         scm_dynwind_begin(0);
-        if (scm_is_true(scm_symbol_p(name))) {
-            _name = scm_to_utf8_string(scm_symbol_to_string(name));
+        if (scm_is_symbol(name)) {
+            _name = scm_to_utf8_symbol(name);
             scm_dynwind_unwind_handler(free, _name, SCM_F_WIND_EXPLICITLY);
         }
         scm_misc_error(_name,
@@ -132,7 +131,7 @@ gig_signalspec_from_obj(SCM obj)
         spec->accumulator = g_signal_accumulator_true_handled;
         spec->accu_data = NULL;
     }
-    else if (scm_is_true(scm_procedure_p(saccu))) {
+    else if (scm_is_procedure(saccu)) {
         if (spec->return_type == G_TYPE_NONE)
             scm_misc_error("%scm->signalspec",
                            "signal ~A must return a value to use an accumulator",

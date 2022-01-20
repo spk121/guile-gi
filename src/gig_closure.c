@@ -2,7 +2,6 @@
 #include "gig_closure.h"
 #include "gig_value.h"
 #include "gig_type.h"
-#include "gig_util.h"
 
 typedef struct _GigClosure GigClosure;
 
@@ -187,7 +186,7 @@ invoke_closure(SCM closure, SCM return_type, SCM inout_mask, SCM args)
 static SCM
 procedure_to_closure(SCM procedure, SCM inout_mask)
 {
-    SCM_ASSERT_TYPE(scm_is_true(scm_procedure_p(procedure)), procedure, SCM_ARG1,
+    SCM_ASSERT_TYPE(scm_is_procedure(procedure), procedure, SCM_ARG1,
                     "procedure->closure", "procedure");
     SCM_ASSERT_TYPE(SCM_UNBNDP(inout_mask) ||
                     scm_is_bitvector(inout_mask), procedure, SCM_ARG2,

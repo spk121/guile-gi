@@ -19,7 +19,6 @@
 #include "clib.h"
 #include "gig_object.h"
 #include "gig_type.h"
-#include "gig_util.h"
 #include "gig_signal.h"
 #include "gig_closure.h"
 #include "gig_value.h"
@@ -87,19 +86,19 @@ gig_i_scm_make_gobject(SCM s_gtype, SCM s_prop_keylist)
         scm_dynwind_unwind_handler(g_type_class_unref, _class, SCM_F_WIND_EXPLICITLY);
 
         n_prop = scm_c_length(s_prop_keylist) / 2;
-        keys = scm_dynwind_or_bust(FUNC, xcalloc(n_prop, sizeof(char *)));
-        values = scm_dynwind_or_bust(FUNC, xcalloc(n_prop, sizeof(GValue)));
+        keys = scm_dynfree(xcalloc(n_prop, sizeof(char *)));
+        values = scm_dynfree(xcalloc(n_prop, sizeof(GValue)));
 
         SCM iter = s_prop_keylist;
         for (size_t i = 0; i < n_prop; i++, iter = scm_cddr(iter)) {
             SCM key = scm_car(iter);
             SCM s_value = scm_cadr(iter);
 
-            SCM_ASSERT_TYPE(scm_is_true(scm_keyword_p(key)), key, SCM_ARGn, FUNC, "keyword");
+            SCM_ASSERT_TYPE(scm_is_keyword(key), key, SCM_ARGn, FUNC, "keyword");
 
-            key = scm_symbol_to_string(scm_keyword_to_symbol(key));
+            key = scm_keyword_to_string(key);
 
-            keys[i] = scm_dynwind_or_bust(FUNC, scm_to_utf8_string(key));
+            keys[i] = scm_dynfree(scm_to_utf8_string(key));
             GParamSpec *pspec = g_object_class_find_property(_class, keys[i]);
             if (!pspec) {
                 scm_misc_error(FUNC, "unknown object parameter ~S", scm_list_1(key));
@@ -146,7 +145,7 @@ gig_i_scm_get_pspec(SCM self, SCM prop)
 
     scm_dynwind_begin(0);
     obj = gig_object_peek(self);
-    name = scm_dynwind_or_bust("%get-pspec", scm_to_utf8_string(prop));
+    name = scm_dynfree(scm_to_utf8_string(prop));
     pspec = get_paramspec(obj, name);
     if (!pspec) {
         scm_misc_error("%get-pspec",
@@ -549,7 +548,6 @@ gig_i_scm_emit(SCM self, SCM signal, SCM s_detail, SCM args)
 }
 
 static SCM sym_value;
-static SCM ensure_accessor_proc;
 
 static SCM do_define_property(const char *, SCM, SCM, SCM);
 
@@ -585,11 +583,11 @@ gig_property_define(GType type, GIPropertyInfo *info, const char *_namespace, SC
     if (prop != NULL) {
         s_prop = gig_type_transfer_object(G_PARAM_SPEC_TYPE(prop), prop, GI_TRANSFER_NOTHING);
 
-        def = do_define_property(long_name, s_prop, self_type, top_type);
+        def = do_define_property(long_name, s_prop, self_type, scm_get_top_class());
         if (!SCM_UNBNDP(def))
             defs = scm_cons(def, defs);
         debug_load("%s - bound to property %s.%s", long_name, g_type_name(type), name);
-        def = do_define_property(name, s_prop, self_type, top_type);
+        def = do_define_property(name, s_prop, self_type, scm_get_top_class());
         if (!SCM_UNBNDP(def))
             defs = scm_cons(def, defs);
         debug_load("%s - shorthand for %s", name, long_name);
@@ -610,28 +608,22 @@ do_define_property(const char *public_name, SCM prop, SCM self_type, SCM value_t
     SCM sym_public_name, formals, specializers, generic, proc, setter;
 
     sym_public_name = scm_from_utf8_symbol(public_name);
-    generic = scm_call_2(ensure_accessor_proc, default_definition(sym_public_name),
-                         sym_public_name);
+    generic = scm_ensure_accessor_with_name(guile_get_default_definition(sym_public_name),
+                                            sym_public_name);
 
     // getter
     proc = scm_procedure(prop);
-    formals = scm_list_1(sym_self);
+    formals = scm_list_1(scm_from_utf8_symbol("self"));
     specializers = scm_list_1(self_type);
 
-    scm_call_2(add_method_proc, generic,
-               scm_call_7(make_proc, method_type,
-                          kwd_specializers, specializers,
-                          kwd_formals, formals, kwd_procedure, proc));
+    scm_add_method(generic, scm_make_method(specializers, formals, proc));
 
     // setter
     setter = scm_setter(prop);
-    formals = scm_list_2(sym_self, sym_value);
+    formals = scm_list_2(scm_from_utf8_symbol("self"), sym_value);
     specializers = scm_list_2(self_type, value_type);
 
-    scm_call_2(add_method_proc, scm_setter(generic),
-               scm_call_7(make_proc, method_type,
-                          kwd_specializers, specializers,
-                          kwd_formals, formals, kwd_procedure, setter));
+    scm_add_method(scm_setter(generic), scm_make_method(specializers, formals, setter));
 
     scm_define(sym_public_name, generic);
     return sym_public_name;
@@ -643,8 +635,6 @@ gig_init_object()
     gig_user_object_properties = g_quark_from_static_string("GigObject::properties");
 
     sym_value = scm_from_utf8_symbol("value");
-
-    ensure_accessor_proc = scm_c_public_ref("oop goops", "ensure-accessor");
 
     scm_c_define_gsubr("%make-gobject", 1, 1, 0, gig_i_scm_make_gobject);
     scm_c_define_gsubr("%object-get-pspec", 2, 0, 0, gig_i_scm_get_pspec);

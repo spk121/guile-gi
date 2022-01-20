@@ -19,7 +19,6 @@
 #include "gig_argument.h"
 #include "gig_data_type.h"
 #include "gig_arg_map.h"
-#include "gig_util.h"
 
 static void gig_type_meta_init_from_type_info(GigTypeMeta *type, GITypeInfo *ti);
 static void gig_type_meta_init_from_basic_type_tag(GigTypeMeta *meta, GITypeTag tag);
@@ -136,8 +135,39 @@ gig_type_meta_init_from_basic_type_tag(GigTypeMeta *meta, GITypeTag tag)
         return;
     }
     T(GI_TYPE_TAG_ERROR, G_TYPE_ERROR, GError);
-    gig_error_load("unhandled type '%s' %s %d", g_type_tag_to_string(tag), __FILE__, __LINE__);
+    error_load("unhandled type '%s' %s %d", g_type_tag_to_string(tag), __FILE__, __LINE__);
 #undef T
+}
+
+static const char *
+g_base_info_get_name_safe(GIBaseInfo *info)
+{
+    GIInfoType type = g_base_info_get_type(info);
+    switch (type) {
+    case GI_INFO_TYPE_FUNCTION:
+    case GI_INFO_TYPE_CALLBACK:
+    case GI_INFO_TYPE_STRUCT:
+    case GI_INFO_TYPE_BOXED:
+    case GI_INFO_TYPE_ENUM:
+    case GI_INFO_TYPE_FLAGS:
+    case GI_INFO_TYPE_OBJECT:
+    case GI_INFO_TYPE_INTERFACE:
+    case GI_INFO_TYPE_CONSTANT:
+    case GI_INFO_TYPE_UNION:
+    case GI_INFO_TYPE_VALUE:
+    case GI_INFO_TYPE_SIGNAL:
+    case GI_INFO_TYPE_PROPERTY:
+    case GI_INFO_TYPE_VFUNC:
+    case GI_INFO_TYPE_FIELD:
+    case GI_INFO_TYPE_ARG:
+    case GI_INFO_TYPE_UNRESOLVED:
+        return g_base_info_get_name(info);
+        break;
+    case GI_INFO_TYPE_TYPE:
+    default:
+        return "(unnamed)";
+        break;
+    }
 }
 
 static void
@@ -186,7 +216,7 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
         else if (array_type == GI_ARRAY_TYPE_PTR_ARRAY)
             meta->gtype = G_TYPE_PTR_ARRAY;
         else
-            gig_assert_not_reached();
+            assert_not_reached();
     }
     else if (tag == GI_TYPE_TAG_GHASH) {
         meta->gtype = G_TYPE_HASH_TABLE;

@@ -17,9 +17,9 @@ typedef struct _keyval_t
 } keyval_t;
 
 keyval_t *keyval_new(void);
-uint64_t keyval_find_entry(keyval_t * kv, uint64_t key);
-void keyval_add_entry(keyval_t * kv, uint64_t key, uint64_t val);
-void keyval_free(keyval_t * kv, void (*keyfree)(uint64_t key), void(*valfree)(uint64_t val));
-int keyval_size(keyval_t * kv);
+uint64_t keyval_find_entry(keyval_t *kv, uint64_t key);
+void keyval_add_entry(keyval_t *kv, uint64_t key, uint64_t val);
+void keyval_free(keyval_t *kv, void (*keyfree)(uint64_t key), void (*valfree)(uint64_t val));
+int keyval_size(keyval_t *kv);
 
 #endif

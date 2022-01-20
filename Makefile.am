@@ -107,6 +107,9 @@ libguile_gi_la_c_sources = \
   src/c/mem.c \
   src/c/slist.c \
   src/c/strval.c \
+  src/g/hooks.c \
+  src/g/guile.c \
+  src/g/goops.c \
   src/gig.c \
   src/gig_arg_map.c \
   src/gig_argument.c \
@@ -123,7 +126,6 @@ libguile_gi_la_c_sources = \
   src/gig_signal.c \
   src/gig_type.c \
   src/gig_type_private.c \
-  src/gig_util.c \
   src/gig_value.c
 
 libguile_gi_la_internal_headers = \
@@ -135,6 +137,9 @@ libguile_gi_la_internal_headers = \
   src/c/slist.h \
   src/c/strval.h \
   src/c/visibility.h \
+  src/g/hooks.h \
+  src/g/guile.h \
+  src/g/goops.h \
   src/gig.h \
   src/gig_arg_map.h \
   src/gig_argument.h \
@@ -153,7 +158,6 @@ libguile_gi_la_internal_headers = \
   src/gig_type.h \
   src/gig_types.h \
   src/gig_type_private.h \
-  src/gig_util.h \
   src/gig_value.h
 
 libguile_gi_la_SOURCES = \
@@ -220,6 +224,7 @@ dist_pkgguilesite_DATA = \
   module/gi/core-generics.scm \
   module/gi/compat.scm \
   module/gi/documentation.scm \
+  module/gi/hooks.scm \
   module/gi/oop.scm \
   module/gi/repository.scm \
   module/gi/types.scm \

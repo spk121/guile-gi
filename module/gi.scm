@@ -19,6 +19,7 @@
   #:use-module (gi repository)
   #:use-module (oop goops)
   #:use-module (srfi srfi-26)
+  #:use-module (gi hooks)
   #:re-export (<signal>
                make-signal
                connect
@@ -42,13 +43,14 @@
                <GObject> <GInterface> <GParam> <GBoxed>
                <GVariant> <GValue> <GClosure>
                enum->number flags->number
-               transform procedure->closure)
+               transform procedure->closure
+               %before-function-hook
+               %before-callback-hook
+               %before-c-callback-hook               )
   #:replace ((%new . make))
   #:export (use-typelibs
             register-type
-            %before-function-hook
-            %before-callback-hook
-            %before-c-callback-hook))
+))
 
 (define (subclass? type-a type-b)
   (memq type-b (class-precedence-list type-a)))
@@ -110,6 +112,8 @@
              #,@module-defs
              (use-modules #,@module-uses)))))))
 
+(load-extension "libguile-gi" "init_core_guile")
+(load-extension "libguile-gi" "init_core_goops")
 (load-extension "libguile-gi" "gig_init")
 
 (define (%new type . rest)
