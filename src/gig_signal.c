@@ -178,8 +178,8 @@ gig_make_signal(size_t n_slots, GigSignalSlot *slots, SCM *slot_values)
 void
 gig_init_signal()
 {
-    gig_signal_type = scm_c_public_ref("gi oop", "<signal>");
-    make_signal_proc = scm_c_public_ref("gi oop", "make-signal");
+    gig_signal_type = scm_c_public_ref("gi core signals", "<signal>");
+    make_signal_proc = scm_c_public_ref("gi core signals", "make-signal");
 
     signal_slot_syms[GIG_SIGNAL_SLOT_NAME] = scm_from_utf8_symbol("name");
     signal_slot_syms[GIG_SIGNAL_SLOT_FLAGS] = scm_from_utf8_symbol("flags");

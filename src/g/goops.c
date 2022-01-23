@@ -187,7 +187,17 @@ scm_get_value_slot(SCM instance)
 SCM
 scm_make_class_with_name(SCM supers, SCM slots, SCM name)
 {
-    return scm_call_4(make_class_proc, supers, slots, name_kwd, name);
+    SCM cls = scm_call_4(make_class_proc, supers, slots, name_kwd, name);
+    scm_display(scm_from_latin1_string("MAKE CLASS!!!\n"), scm_current_output_port());
+    scm_display(cls, scm_current_output_port());
+    scm_newline(scm_current_output_port());
+    scm_display(scm_class_direct_supers(cls), scm_current_output_port());
+    scm_newline(scm_current_output_port());
+    //scm_display(scm_get_class_ref_slot(cls), scm_current_output_port());
+    //scm_newline(scm_current_output_port());
+    //scm_display(scm_get_class_unref_slot(cls), scm_current_output_port());
+    //scm_newline(scm_current_output_port());
+    return cls;
 }
 
 SCM
@@ -258,8 +268,6 @@ init_core_goops(void)
         specializers_kwd = scm_from_utf8_keyword("specializers");
         formals_kwd = scm_from_utf8_keyword("formals");
         procedure_kwd = scm_from_utf8_keyword("procedure");
-
-
 
         applicable_type = scm_c_public_ref("oop goops", "<applicable>");
         applicable_struct_type = scm_c_public_ref("oop goops", "<applicable-struct>");

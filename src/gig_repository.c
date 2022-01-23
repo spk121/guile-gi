@@ -52,9 +52,9 @@ print_info_smob(SCM smob, SCM port, scm_print_state * pstate)
 {
     GIBaseInfo *info = (GIBaseInfo *)SCM_SMOB_DATA(smob);
 
-    scm_puts("#<RepositoryEntry ", port);
-    scm_display(scm_from_size_t((size_t)info), port);
-    scm_puts(">", port);
+    scm_printf(port, "<#RepositoryEntry 0x%x %s>",
+               (size_t)info,
+               g_base_info_get_name(info));
 
     /* non-zero means success */
     return 1;
@@ -157,7 +157,7 @@ gig_repository_nested_infos(GIBaseInfo *base,
         *n_properties = g_interface_info_get_n_properties(base);
         *property = (GigRepositoryNested)g_interface_info_get_property;
         {
-            gtype_t gtype = g_registered_type_info_get_g_type(base);
+            GType gtype = g_registered_type_info_get_g_type(base);
             const char *name = g_base_info_get_name(base);
             if (!g_type_is_a(gtype, G_TYPE_OBJECT)) {
                 if (*n_properties != 0)
@@ -188,7 +188,7 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
     return_val_if_fail(info != NULL, defs);
 
     GIBaseInfo *parent = g_base_info_get_container(info);
-    gtype_t parent_gtype = G_TYPE_INVALID;
+    GType parent_gtype = G_TYPE_INVALID;
     const char *parent_name = NULL;
     if (parent) {
         parent_gtype = g_registered_type_info_get_g_type(parent);
@@ -208,9 +208,9 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
         break;
     case GI_INFO_TYPE_BOXED:
     {
-        gtype_t gtype = g_registered_type_info_get_g_type(info);
+        GType gtype = g_registered_type_info_get_g_type(info);
         if (gtype == G_TYPE_NONE) {
-            debug_load("%s - not loading boxed type because is has no gtype_t",
+            debug_load("%s - not loading boxed type because is has no GType",
                        g_base_info_get_name(info));
             break;
         }
@@ -219,9 +219,9 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
     }
     case GI_INFO_TYPE_STRUCT:
     {
-        gtype_t gtype = g_registered_type_info_get_g_type(info);
+        GType gtype = g_registered_type_info_get_g_type(info);
         if (gtype == G_TYPE_NONE) {
-            debug_load("%s - not loading struct type because is has no gtype_t",
+            debug_load("%s - not loading struct type because is has no GType",
                        g_base_info_get_name(info));
             break;
         }
@@ -235,7 +235,7 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
     case GI_INFO_TYPE_ENUM:
     case GI_INFO_TYPE_FLAGS:
     {
-        gtype_t gtype = g_registered_type_info_get_g_type(info);
+        GType gtype = g_registered_type_info_get_g_type(info);
         if (gtype == G_TYPE_NONE)
             defs = gig_define_enum(info, defs);
         else
@@ -245,14 +245,14 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
     }
     case GI_INFO_TYPE_OBJECT:
     {
-        gtype_t gtype = g_registered_type_info_get_g_type(info);
+        GType gtype = g_registered_type_info_get_g_type(info);
         const char *_namespace = g_base_info_get_name(info);
         if (gtype == G_TYPE_INVALID) {
-            debug_load("%s - not loading object type because its gtype_t is invalid", _namespace);
+            debug_load("%s - not loading object type because its GType is invalid", _namespace);
             break;
         }
         if (gtype == G_TYPE_NONE) {
-            debug_load("%s - not loading object type because is has no gtype_t", _namespace);
+            debug_load("%s - not loading object type because is has no GType", _namespace);
             break;
         }
 
@@ -269,9 +269,9 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
     }
     case GI_INFO_TYPE_INTERFACE:
     {
-        gtype_t gtype = g_registered_type_info_get_g_type(info);
+        GType gtype = g_registered_type_info_get_g_type(info);
         if (gtype == G_TYPE_NONE) {
-            debug_load("%s - not loading interface type because is has no gtype_t",
+            debug_load("%s - not loading interface type because is has no GType",
                        g_base_info_get_name(info));
             break;
         }
@@ -283,9 +283,9 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
         break;
     case GI_INFO_TYPE_UNION:
     {
-        gtype_t gtype = g_registered_type_info_get_g_type(info);
+        GType gtype = g_registered_type_info_get_g_type(info);
         if (gtype == G_TYPE_NONE) {
-            debug_load("%s - not loading union type because is has no gtype_t",
+            debug_load("%s - not loading union type because is has no GType",
                        g_base_info_get_name(info));
             break;
         }

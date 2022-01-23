@@ -567,6 +567,11 @@ gig_property_define(GType type, GIPropertyInfo *info, const char *_namespace, SC
     long_name = g_name_to_scm_name(mid_name);
     free(mid_name);
 
+    debug_load("%s - defining property %s%s%s",
+               long_name,
+               (_namespace ? _namespace : ""), (_namespace ? "." : ""),
+               g_base_info_get_name(info));
+
     if (G_TYPE_IS_CLASSED(type)) {
         GObjectClass *_class = g_type_class_ref(type);
         scm_dynwind_unwind_handler(g_type_class_unref, _class, SCM_F_WIND_EXPLICITLY);
@@ -632,15 +637,19 @@ do_define_property(const char *public_name, SCM prop, SCM self_type, SCM value_t
 void
 gig_init_object()
 {
-    gig_user_object_properties = g_quark_from_static_string("GigObject::properties");
+    static int first = 1;
+    if (first == 1) {
+        first = 0;
+        gig_user_object_properties = g_quark_from_static_string("GigObject::properties");
 
-    sym_value = scm_from_utf8_symbol("value");
-
-    scm_c_define_gsubr("%make-gobject", 1, 1, 0, gig_i_scm_make_gobject);
-    scm_c_define_gsubr("%object-get-pspec", 2, 0, 0, gig_i_scm_get_pspec);
-    scm_c_define_gsubr("%get-property", 2, 0, 0, gig_i_scm_get_property);
-    scm_c_define_gsubr("%set-property!", 3, 0, 0, gig_i_scm_set_property_x);
-    scm_c_define_gsubr("%connect", 4, 2, 0, gig_i_scm_connect);
-    scm_c_define_gsubr("%emit", 2, 1, 1, gig_i_scm_emit);
-    scm_c_define_gsubr("%define-object-type", 2, 2, 0, gig_i_scm_define_type);
+        sym_value = scm_from_utf8_symbol("value");
+        
+        scm_c_define_gsubr("%make-gobject", 1, 1, 0, gig_i_scm_make_gobject);
+        scm_c_define_gsubr("%object-get-pspec", 2, 0, 0, gig_i_scm_get_pspec);
+        scm_c_define_gsubr("%get-property", 2, 0, 0, gig_i_scm_get_property);
+        scm_c_define_gsubr("%set-property!", 3, 0, 0, gig_i_scm_set_property_x);
+        scm_c_define_gsubr("%connect", 4, 2, 0, gig_i_scm_connect);
+        scm_c_define_gsubr("%emit", 2, 1, 1, gig_i_scm_emit);
+        scm_c_define_gsubr("%define-object-type", 2, 2, 0, gig_i_scm_define_type);
+    }
 }

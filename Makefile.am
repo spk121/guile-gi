@@ -221,11 +221,15 @@ nodist_pkgguilesite_DATA = \
   module/gi/config.scm
 
 dist_pkgguilesite_DATA = \
-  module/gi/core-generics.scm \
+  module/gi/core/flags-and-enums.scm \
+  module/gi/core/fundamental.scm \
+  module/gi/core/generics.scm \
+  module/gi/core/hooks.scm \
+  module/gi/core/objects.scm \
+  module/gi/core/signals.scm \
+  module/gi/core/util.scm \
   module/gi/compat.scm \
   module/gi/documentation.scm \
-  module/gi/hooks.scm \
-  module/gi/oop.scm \
   module/gi/repository.scm \
   module/gi/types.scm \
   module/gi/util.scm

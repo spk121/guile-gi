@@ -1,4 +1,4 @@
-;; Copyright (C), 2020 Michael L. Gran
+;; Copyright (C) 2020 Michael L. Gran
 
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -14,14 +14,16 @@
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>
 
 (define-module (gi compat)
-  #:use-module (gi types)
   #:use-module (oop goops)
   #:use-module (srfi srfi-2)
   #:use-module (srfi srfi-26)
   #:use-module (system foreign)
-  #:export (fiddle dynamic-fiddler))
+  #:use-module (gi core objects)
+  #:export (fiddle dynamic-fiddler))    ; plus 'export' at bottom of file
 
 (define (%fiddle proc fundamental)
+  "Calls PROC, a procedure that takes one argument, on the VALUE slot
+of FUNDAMENTAL."
   (proc (slot-ref fundamental 'value)))
 
 (define-method (fiddle (proc <procedure>) (boxed <GBoxed>))
@@ -33,8 +35,8 @@
   (%fiddle proc object))
 
 (define (dynamic-fiddler name lib)
-  "Load NAME from LIB and convert it into a procedure, that takes <pointer>
-and returns a generic Scheme object."
+  "Load NAME from LIB and convert it into a procedure. The procedure
+takes one <pointer> argument and returns a generic Scheme object."
   (and lib
        (compose pointer->scm
                 (pointer->procedure '* (dynamic-func name lib) (list '*)))))

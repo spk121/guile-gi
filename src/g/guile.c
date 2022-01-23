@@ -2,8 +2,6 @@
 #include <stdio.h>
 #include "guile.h"
 
-SCM sym_self;
-
 int
 scm_is_boolean(SCM x)
 {
@@ -170,14 +168,4 @@ guile_get_default_definition(SCM name)
     if (scm_is_true(variable))
         return scm_variable_ref(variable);
     return SCM_BOOL_F;
-}
-
-void
-init_core_guile(void)
-{
-    static int first = 1;
-    if (first) {
-        first = 0;
-        sym_self = scm_from_utf8_symbol("self");
-    }
 }

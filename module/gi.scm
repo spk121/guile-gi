@@ -13,13 +13,12 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 (define-module (gi)
-  #:use-module (gi core-generics)
-  #:use-module (gi oop)
-  #:use-module (gi types)
-  #:use-module (gi repository)
   #:use-module (oop goops)
   #:use-module (srfi srfi-26)
-  #:use-module (gi hooks)
+  #:use-module (gi core generics)
+  #:use-module (gi core hooks)
+  #:use-module (gi types)
+  #:use-module (gi repository)
   #:re-export (<signal>
                make-signal
                connect
@@ -28,7 +27,7 @@
                is-a?
                define-method
                ;; core-generics
-               command-line equal? format write quit send shutdown
+               connect command-line equal? format write load send send shutdown quit
                ;; types
                G_TYPE_NONE
                G_TYPE_CHAR G_TYPE_UCHAR
@@ -44,9 +43,11 @@
                <GVariant> <GValue> <GClosure>
                enum->number flags->number
                transform procedure->closure
+               ;; from (gi core hooks)
                %before-function-hook
                %before-callback-hook
-               %before-c-callback-hook               )
+               %before-c-callback-hook
+               )
   #:replace ((%new . make))
   #:export (use-typelibs
             register-type
@@ -112,16 +113,15 @@
              #,@module-defs
              (use-modules #,@module-uses)))))))
 
-(load-extension "libguile-gi" "init_core_guile")
 (load-extension "libguile-gi" "init_core_goops")
 (load-extension "libguile-gi" "gig_init")
 
 (define (%new type . rest)
   (cond
    ((subclass? type <GObject>)
-    ((@@ (gi oop) %make-gobject) type rest))
+    (make-gobject type rest))
    ((subclass? type <GBoxed>)
-    ((@@ (gi types) %allocate-boxed) type))
+    (%allocate-boxed type))
    ((subclass? type <GEnum>)
     (error "use symbol->enum or number->enum instead"))
    ((subclass? type <GFlags>)
@@ -132,7 +132,7 @@
 (define (register-type name parent . rest)
   (cond
    ((subclass? parent <GObject>)
-    (apply (@@ (gi oop) %define-object-type) name parent rest))
+    (apply %define-object-type name parent rest))
    (else
     (error "cannot define class with parent ~A" parent))))
 

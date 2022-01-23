@@ -86,6 +86,8 @@ SCM gig_flags_type;
 SCM gig_object_type;
 SCM gig_paramspec_type;
 SCM gig_value_type;
+SCM gig_variant_type;
+SCM gig_interface_type;
 static SCM make_fundamental_proc;
 
 
@@ -382,6 +384,16 @@ make_interface_class(const char *cname, SCM name, GType gtype, SCM sparent, SCM 
     dsupers = scm_sort_x(dsupers, type_less_p_proc);
     SCM slots = SCM_EOL;
     SCM new_type = scm_make_class_with_name(dsupers, slots, name);
+
+    if (fundamental == G_TYPE_OBJECT) {
+        scm_set_class_ref_slot(new_type, scm_from_pointer(g_object_ref_sink, NULL));
+        scm_set_class_unref_slot(new_type, scm_from_pointer(g_object_unref, NULL));
+    }
+    else if (fundamental == G_TYPE_PARAM) {
+        scm_set_class_ref_slot(new_type, scm_from_pointer(g_param_spec_ref_sink, NULL));
+        scm_set_class_unref_slot(new_type, scm_from_pointer(g_param_spec_unref, NULL));
+    }
+        
     return new_type;
 }
 
@@ -817,9 +829,13 @@ scm_type_dump_type_table(void)
     return list;
 }
 
+// Creates a new instance of BOXED_TYPE. Memory is allocated for the value
+// slot.
 static SCM
 scm_allocate_boxed(SCM boxed_type)
 {
+    fprintf(stderr, "is this ever used\n");
+    exit(1);
     SCM_ASSERT_TYPE(SCM_SUBCLASSP(boxed_type, gig_boxed_type), boxed_type, SCM_ARG1,
                     "%allocate-boxed", "boxed type");
     SCM s_size = scm_get_class_size_slot(boxed_type);
@@ -880,151 +896,149 @@ gig_type_define_fundamental(GType type, SCM extra_supers,
     scm_dynwind_end();
 }
 
-static void
-gig_init_types_once(void)
+void
+gig_init_types(void)
 {
-    gig_fundamental_type = scm_c_private_ref("gi oop", "<GFundamental>");
-    gig_boxed_type = scm_c_private_ref("gi oop", "<GBoxed>");
-    gig_enum_type = scm_c_private_ref("gi oop", "<GEnum>");
-    gig_flags_type = scm_c_private_ref("gi oop", "<GFlags>");
-    make_fundamental_proc = scm_c_private_ref("gi oop", "%make-fundamental-class");
+    static int first = 1;
+    if (first == 1) {
+        first = 0;
 
-    sym_sort_key = scm_from_utf8_symbol("sort-key");
+        sym_sort_key = scm_from_utf8_symbol("sort-key");
 
-    gtype_scm_store = keyval_new();
-    name_scm_store = strval_new();
-    scm_gtype_store = keyval_new();
+        gtype_scm_store = keyval_new();
+        name_scm_store = strval_new();
+        scm_gtype_store = keyval_new();
 
 #define A(G,S)                                  \
-    do {                                        \
-        SCM key = gig_type_associate(G, S);     \
-        scm_define(key, S);                     \
-    } while (0)
+        do {                                    \
+            SCM key = gig_type_associate(G, S); \
+            scm_define(key, S);                 \
+        } while (0)
 
-    // fundamental types
-    gig_type_define_fundamental(G_TYPE_OBJECT, SCM_EOL,
-                                (GigTypeRefFunction)g_object_ref_sink,
-                                (GigTypeUnrefFunction)g_object_unref);
-    gig_type_define_fundamental(G_TYPE_INTERFACE, SCM_EOL, NULL, NULL);
-    gig_type_define_fundamental(G_TYPE_PARAM,
-                                scm_list_1(scm_get_applicable_struct_with_setter_class()),
-                                (GigTypeRefFunction)g_param_spec_ref_sink,
-                                (GigTypeUnrefFunction)g_param_spec_unref);
+        // fundamental types
+        gig_fundamental_type = scm_c_public_ref("gi core fundamental", "<GFundamental>");
 
-    gig_type_define_fundamental(G_TYPE_VARIANT, SCM_EOL,
-                                (GigTypeRefFunction)g_variant_ref_sink,
-                                (GigTypeUnrefFunction)g_variant_unref);
+        gig_boxed_type = scm_c_public_ref("gi core objects", "<GBoxed>");
+        A(G_TYPE_BOXED, gig_boxed_type);
 
-    A(G_TYPE_BOXED, gig_boxed_type);
-    A(G_TYPE_ENUM, gig_enum_type);
-    A(G_TYPE_FLAGS, gig_flags_type);
+        gig_enum_type = scm_c_public_ref("gi core flags-and-enums", "<GEnum>");
+        A(G_TYPE_ENUM, gig_enum_type);
 
-    gig_object_type = gig_type_get_scheme_type(G_TYPE_OBJECT);
-    gig_paramspec_type = gig_type_get_scheme_type(G_TYPE_PARAM);
+        gig_flags_type = scm_c_public_ref("gi core flags-and-enums", "<GFlags>");
+        A(G_TYPE_FLAGS, gig_flags_type);
 
-    // derived types
+        gig_object_type = scm_c_public_ref("gi core objects", "<GObject>");
+        scm_set_class_ref_slot(gig_object_type, scm_from_pointer(g_object_ref_sink, NULL));
+        scm_set_class_unref_slot(gig_object_type, scm_from_pointer(g_object_unref, NULL));
+        A(G_TYPE_OBJECT, gig_object_type);
+        
+        gig_interface_type = scm_c_public_ref("gi core objects", "<GInterface>");
+        A(G_TYPE_INTERFACE, gig_interface_type);
+        
+        gig_paramspec_type = scm_c_public_ref("gi core objects", "<GParam>");
+        scm_set_class_ref_slot(gig_paramspec_type, scm_from_pointer(g_param_spec_ref_sink, NULL));
+        scm_set_class_unref_slot(gig_paramspec_type, scm_from_pointer(g_param_spec_unref, NULL));
+        A(G_TYPE_PARAM, gig_paramspec_type);
 
-    gig_type_define(GI_TYPE_BASE_INFO, SCM_EOL);
+        gig_variant_type = scm_c_public_ref("gi core objects", "<GVariant>");
+        scm_set_class_ref_slot(gig_variant_type, scm_from_pointer(g_variant_ref_sink,NULL));
+        scm_set_class_unref_slot(gig_variant_type, scm_from_pointer(g_variant_unref, NULL));
+        A(G_TYPE_VARIANT, gig_variant_type);
 
-    gig_type_define_full(G_TYPE_VALUE, SCM_EOL,
-                         scm_list_1(scm_get_applicable_struct_with_setter_class()));
-    gig_value_type = gig_type_get_scheme_type(G_TYPE_VALUE);
-    gig_type_define_full(G_TYPE_CLOSURE, SCM_EOL, scm_list_1(scm_get_applicable_struct_class()));
+        gig_value_type = scm_c_public_ref("gi core objects", "<GValue>");
+        scm_set_class_size_slot(gig_value_type, scm_from_size_t(sizeof(GValue)));
+        A(G_TYPE_VALUE, gig_value_type);
 
-    gig_closure_type = gig_type_get_scheme_type(G_TYPE_CLOSURE);
+        gig_closure_type = scm_c_public_ref("gi core objects", "<GClosure>");
+        A(G_TYPE_CLOSURE, gig_closure_type);
 
-    scm_set_class_size_slot(gig_value_type, scm_from_size_t(sizeof(GValue)));
+        // derived types
 
-    // value associations, do not rely on them for anything else
-    gig_type_associate(G_TYPE_STRING, scm_get_string_class());
-    SCM _scm_real = scm_get_real_class();
-    SCM _scm_integer = scm_get_integer_class();
+        make_fundamental_proc = scm_c_private_ref("gi core fundamental", "make-fundamental-class");
 
-    gig_type_register(G_TYPE_INT, _scm_integer);
-    gig_type_register(G_TYPE_UINT, _scm_integer);
-    gig_type_register(G_TYPE_LONG, _scm_integer);
-    gig_type_register(G_TYPE_ULONG, _scm_integer);
-    gig_type_register(G_TYPE_INT64, _scm_integer);
-    gig_type_register(G_TYPE_UINT64, _scm_integer);
+        gig_type_define(GI_TYPE_BASE_INFO, SCM_EOL);
 
-    gig_type_register(G_TYPE_FLOAT, _scm_real);
-    gig_type_register(G_TYPE_DOUBLE, _scm_real);
+        // value associations, do not rely on them for anything else
+        gig_type_associate(G_TYPE_STRING, scm_get_string_class());
+        SCM _scm_real = scm_get_real_class();
+        SCM _scm_integer = scm_get_integer_class();
 
-    // there is no base type for string, array and all the other accepted array conversions
-    gig_type_register(G_TYPE_BYTE_ARRAY, SCM_UNDEFINED);
-    gig_type_register(G_TYPE_ARRAY, SCM_UNDEFINED);
-    gig_type_register(G_TYPE_PTR_ARRAY, SCM_UNDEFINED);
+        gig_type_register(G_TYPE_INT, _scm_integer);
+        gig_type_register(G_TYPE_UINT, _scm_integer);
+        gig_type_register(G_TYPE_LONG, _scm_integer);
+        gig_type_register(G_TYPE_ULONG, _scm_integer);
+        gig_type_register(G_TYPE_INT64, _scm_integer);
+        gig_type_register(G_TYPE_UINT64, _scm_integer);
 
-    gig_type_register(G_TYPE_HASH_TABLE, scm_get_hashtable_class());
+        gig_type_register(G_TYPE_FLOAT, _scm_real);
+        gig_type_register(G_TYPE_DOUBLE, _scm_real);
 
-    atexit(gig_type_free_types);
+        // there is no base type for string, array and all the other accepted array conversions
+        gig_type_register(G_TYPE_BYTE_ARRAY, SCM_UNDEFINED);
+        gig_type_register(G_TYPE_ARRAY, SCM_UNDEFINED);
+        gig_type_register(G_TYPE_PTR_ARRAY, SCM_UNDEFINED);
 
-    // G_TYPE_X constants for use where SCM classes don't apply
+        gig_type_register(G_TYPE_HASH_TABLE, scm_get_hashtable_class());
+
+        atexit(gig_type_free_types);
+
+        // G_TYPE_X constants for use where SCM classes don't apply
 #define D(x)                                                            \
-    do                                                                  \
-    {                                                                   \
-        gig_type_register(x, SCM_UNDEFINED);                            \
-        scm_permanent_object(scm_c_define(#x, scm_from_uintptr_t(x)));  \
-        scm_c_export(#x, NULL);                                         \
-    } while (0)
+        do                                                              \
+        {                                                               \
+            gig_type_register(x, SCM_UNDEFINED);                        \
+            scm_permanent_object(scm_c_define(#x, scm_from_uintptr_t(x))); \
+            scm_c_export(#x, NULL);                                     \
+        } while (0)
 
-    D(G_TYPE_NONE);
-    D(G_TYPE_CHAR);
-    D(G_TYPE_UCHAR);
-    D(G_TYPE_BOOLEAN);
-    D(G_TYPE_INT);
-    D(G_TYPE_UINT);
-    D(G_TYPE_LONG);
-    D(G_TYPE_ULONG);
-    D(G_TYPE_INT64);
-    D(G_TYPE_UINT64);
-    D(G_TYPE_ENUM);
-    D(G_TYPE_FLAGS);
-    D(G_TYPE_FLOAT);
-    D(G_TYPE_DOUBLE);
-    D(G_TYPE_GTYPE);
-    D(G_TYPE_OBJECT);
-    D(G_TYPE_STRING);
-    D(G_TYPE_POINTER);
+        D(G_TYPE_NONE);
+        D(G_TYPE_CHAR);
+        D(G_TYPE_UCHAR);
+        D(G_TYPE_BOOLEAN);
+        D(G_TYPE_INT);
+        D(G_TYPE_UINT);
+        D(G_TYPE_LONG);
+        D(G_TYPE_ULONG);
+        D(G_TYPE_INT64);
+        D(G_TYPE_UINT64);
+        D(G_TYPE_ENUM);
+        D(G_TYPE_FLAGS);
+        D(G_TYPE_FLOAT);
+        D(G_TYPE_DOUBLE);
+        D(G_TYPE_GTYPE);
+        D(G_TYPE_OBJECT);
+        D(G_TYPE_STRING);
+        D(G_TYPE_POINTER);
 #undef D
 
-    type_less_p_proc = scm_c_make_gsubr("type-<?", 2, 0, 0, type_less_p);
+        type_less_p_proc = scm_c_make_gsubr("type-<?", 2, 0, 0, type_less_p);
 
-    scm_c_define_gsubr("get-gtype", 1, 0, 0, scm_type_get_gtype);
-    scm_c_define_gsubr("gtype-get-scheme-type", 1, 0, 0, scm_type_gtype_get_scheme_type);
-    scm_c_define_gsubr("gtype-get-name", 1, 0, 0, scm_type_gtype_get_name);
-    scm_c_define_gsubr("gtype-get-parent", 1, 0, 0, scm_type_gtype_get_parent);
-    scm_c_define_gsubr("gtype-get-fundamental", 1, 0, 0, scm_type_gtype_get_fundamental);
-    scm_c_define_gsubr("gtype-get-children", 1, 0, 0, scm_type_gtype_get_children);
-    scm_c_define_gsubr("gtype-get-interfaces", 1, 0, 0, scm_type_gtype_get_interfaces);
-    scm_c_define_gsubr("gtype-get-depth", 1, 0, 0, scm_type_gtype_get_depth);
-    scm_c_define_gsubr("gtype-is-interface?", 1, 0, 0, scm_type_gtype_is_interface_p);
-    scm_c_define_gsubr("gtype-is-classed?", 1, 0, 0, scm_type_gtype_is_classed_p);
-    scm_c_define_gsubr("gtype-is-instantiatable?", 1, 0, 0, scm_type_gtype_is_instantiatable_p);
-    scm_c_define_gsubr("gtype-is-derivable?", 1, 0, 0, scm_type_gtype_is_derivable_p);
-    scm_c_define_gsubr("gtype-is-a?", 2, 0, 0, scm_type_gtype_is_a_p);
-    scm_c_define_gsubr("%gtype-dump-table", 0, 0, 0, scm_type_dump_type_table);
-    scm_c_define_gsubr("%allocate-boxed", 1, 0, 0, scm_allocate_boxed);
-    scm_c_export("get-gtype",
-                 "gtype-get-scheme-type",
-                 "gtype-get-name",
-                 "gtype-get-parent",
-                 "gtype-get-fundamental",
-                 "gtype-get-children",
-                 "gtype-get-interfaces",
-                 "gtype-get-depth",
-                 "gtype-is-interface?",
-                 "gtype-is-classed?",
-                 "gtype-is-instantiatable?",
-                 "gtype-is-derivable?", "gtype-is-a?", "%gtype-dump-table", NULL);
-}
-
-void
-gig_init_types()
-{
-    static size_t type_init;
-    if (g_once_init_enter(&type_init)) {
-        gig_init_types_once();
-        g_once_init_leave(&type_init, 1);
+        scm_c_define_gsubr("get-gtype", 1, 0, 0, scm_type_get_gtype);
+        scm_c_define_gsubr("gtype-get-scheme-type", 1, 0, 0, scm_type_gtype_get_scheme_type);
+        scm_c_define_gsubr("gtype-get-name", 1, 0, 0, scm_type_gtype_get_name);
+        scm_c_define_gsubr("gtype-get-parent", 1, 0, 0, scm_type_gtype_get_parent);
+        scm_c_define_gsubr("gtype-get-fundamental", 1, 0, 0, scm_type_gtype_get_fundamental);
+        scm_c_define_gsubr("gtype-get-children", 1, 0, 0, scm_type_gtype_get_children);
+        scm_c_define_gsubr("gtype-get-interfaces", 1, 0, 0, scm_type_gtype_get_interfaces);
+        scm_c_define_gsubr("gtype-get-depth", 1, 0, 0, scm_type_gtype_get_depth);
+        scm_c_define_gsubr("gtype-is-interface?", 1, 0, 0, scm_type_gtype_is_interface_p);
+        scm_c_define_gsubr("gtype-is-classed?", 1, 0, 0, scm_type_gtype_is_classed_p);
+        scm_c_define_gsubr("gtype-is-instantiatable?", 1, 0, 0, scm_type_gtype_is_instantiatable_p);
+        scm_c_define_gsubr("gtype-is-derivable?", 1, 0, 0, scm_type_gtype_is_derivable_p);
+        scm_c_define_gsubr("gtype-is-a?", 2, 0, 0, scm_type_gtype_is_a_p);
+        scm_c_define_gsubr("%gtype-dump-table", 0, 0, 0, scm_type_dump_type_table);
+        scm_c_define_gsubr("%allocate-boxed", 1, 0, 0, scm_allocate_boxed);
+        scm_c_export("get-gtype",
+                     "gtype-get-scheme-type",
+                     "gtype-get-name",
+                     "gtype-get-parent",
+                     "gtype-get-fundamental",
+                     "gtype-get-children",
+                     "gtype-get-interfaces",
+                     "gtype-get-depth",
+                     "gtype-is-interface?",
+                     "gtype-is-classed?",
+                     "gtype-is-instantiatable?",
+                     "gtype-is-derivable?", "gtype-is-a?", "%gtype-dump-table", NULL);
     }
 }
