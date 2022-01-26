@@ -89,6 +89,8 @@ SCM gig_value_type;
 SCM gig_variant_type;
 SCM gig_interface_type;
 static SCM make_fundamental_proc;
+static SCM setup_value_accessor_proc;
+static SCM setup_param_accessor_proc;
 
 
 char *
@@ -392,6 +394,7 @@ make_interface_class(const char *cname, SCM name, GType gtype, SCM sparent, SCM 
     else if (fundamental == G_TYPE_PARAM) {
         scm_set_class_ref_slot(new_type, scm_from_pointer(g_param_spec_ref_sink, NULL));
         scm_set_class_unref_slot(new_type, scm_from_pointer(g_param_spec_unref, NULL));
+        scm_call_1(setup_value_accessor_proc, new_type);
     }
         
     return new_type;
@@ -834,8 +837,6 @@ scm_type_dump_type_table(void)
 static SCM
 scm_allocate_boxed(SCM boxed_type)
 {
-    fprintf(stderr, "is this ever used\n");
-    exit(1);
     SCM_ASSERT_TYPE(SCM_SUBCLASSP(boxed_type, gig_boxed_type), boxed_type, SCM_ARG1,
                     "%allocate-boxed", "boxed type");
     SCM s_size = scm_get_class_size_slot(boxed_type);

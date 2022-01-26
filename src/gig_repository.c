@@ -452,13 +452,13 @@ gig_init_repository()
     scm_set_smob_free(info_smob_tag, free_info_smob);
     scm_set_smob_print(info_smob_tag, print_info_smob);
 
-    scm_c_define_gsubr("require", 1, 1, 0, scm_require);
-    scm_c_define_gsubr("get-all-entries", 1, 0, 0, scm_get_all_entries);
-    scm_c_define_gsubr("find-entry-by-name", 2, 0, 0, scm_find_entry_by_name);
-    scm_c_define_gsubr("load-entry", 1, 1, 0, scm_load_entry);
-    scm_c_define_gsubr("get-search-path", 0, 0, 0, scm_get_search_path);
-    scm_c_define_gsubr("prepend-search-path!", 1, 0, 0, scm_prepend_search_path_x);
-    scm_c_define_gsubr("get-dependencies", 1, 0, 0, scm_get_dependencies);
+    scm_c_define_gsubr("%require", 1, 1, 0, scm_require);
+    scm_c_define_gsubr("%get-all-entries", 1, 0, 0, scm_get_all_entries);
+    scm_c_define_gsubr("%find-entry-by-name", 2, 0, 0, scm_find_entry_by_name);
+    scm_c_define_gsubr("%load-entry", 1, 1, 0, scm_load_entry);
+    scm_c_define_gsubr("%get-search-path", 0, 0, 0, scm_get_search_path);
+    scm_c_define_gsubr("%prepend-search-path!", 1, 0, 0, scm_prepend_search_path_x);
+    scm_c_define_gsubr("%get-dependencies", 1, 0, 0, scm_get_dependencies);
 
 #define D(x) scm_permanent_object(scm_c_define(#x, scm_from_uint(x)))
 

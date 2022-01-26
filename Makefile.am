@@ -226,7 +226,6 @@ dist_pkgguilesite_DATA = \
   module/gi/core/generics.scm \
   module/gi/core/hooks.scm \
   module/gi/core/objects.scm \
-  module/gi/core/signals.scm \
   module/gi/core/util.scm \
   module/gi/compat.scm \
   module/gi/documentation.scm \

@@ -29,15 +29,15 @@
                ;; core-generics
                connect command-line equal? format write load send send shutdown quit
                ;; types
-               G_TYPE_NONE
-               G_TYPE_CHAR G_TYPE_UCHAR
-               G_TYPE_BOOLEAN
-               G_TYPE_INT G_TYPE_UINT
-               G_TYPE_INT64 G_TYPE_UINT64
-               G_TYPE_ENUM G_TYPE_FLAGS
-               G_TYPE_FLOAT G_TYPE_DOUBLE
-               G_TYPE_OBJECT G_TYPE_STRING
-               G_TYPE_POINTER
+               ;; G_TYPE_NONE
+               ;; G_TYPE_CHAR G_TYPE_UCHAR
+               ;; G_TYPE_BOOLEAN
+               ;; G_TYPE_INT G_TYPE_UINT
+               ;; G_TYPE_INT64 G_TYPE_UINT64
+               ;; G_TYPE_ENUM G_TYPE_FLAGS
+               ;; G_TYPE_FLOAT G_TYPE_DOUBLE
+               ;; G_TYPE_OBJECT G_TYPE_STRING
+               ;; G_TYPE_POINTER
                <string>
                <GObject> <GInterface> <GParam> <GBoxed>
                <GVariant> <GValue> <GClosure>
@@ -115,6 +115,10 @@
 
 (load-extension "libguile-gi" "init_core_goops")
 (load-extension "libguile-gi" "gig_init")
+
+
+(define* (make-gobject gtype #:optional prop-list)
+  (%make-gobject gtype prop-list))
 
 (define (%new type . rest)
   (cond

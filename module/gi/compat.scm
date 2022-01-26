@@ -18,7 +18,7 @@
   #:use-module (srfi srfi-2)
   #:use-module (srfi srfi-26)
   #:use-module (system foreign)
-  #:use-module (gi core objects)
+  #:use-module (gi types)
   #:export (fiddle dynamic-fiddler))    ; plus 'export' at bottom of file
 
 (define (%fiddle proc fundamental)

@@ -30,11 +30,20 @@
             LOAD_METHODS LOAD_PROPERTIES LOAD_SIGNALS
             LOAD_EVERYTHING LOAD_INFO_ONLY))
 
-(eval-when (expand load eval)
-  (load-extension "libguile-gi" "gig_init_repository"))
+;;(eval-when (expand load eval)
+;;  (load-extension "libguile-gi" "gig_init_repository"))
+
+(define %load-entry #f)
+(define %find-entry-by-name #f)
+(define %require (lambda (m l) #f))
+
+(define LOAD_EVERYTHING %LOAD_EVERYTHING)
+
+(define* (require module #:optional lib)
+  (%require module lib))
 
 (define* (load-by-name lib name #:optional (flags LOAD_EVERYTHING))
-  (load-entry (find-entry-by-name lib name) flags))
+  (%load-entry (%find-entry-by-name lib name) flags))
 
 (define* (typelib->module module lib #:optional version)
   (require lib version)
@@ -54,7 +63,7 @@
      (set-current-module module)
      (module-export! module
                      (append-map! (lambda (x)
-                                    (load-entry x LOAD_EVERYTHING))
+                                    (%load-entry x LOAD_EVERYTHING))
                                   (get-all-entries lib)))))
 
   module)

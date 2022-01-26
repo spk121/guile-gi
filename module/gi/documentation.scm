@@ -35,9 +35,10 @@
             ->guile-procedures.txt
             ->docbook))
 
-(eval-when (expand load eval)
-  (load-extension "libguile-gi" "gig_init_document"))
+;;(eval-when (expand load eval)
+;;  (load-extension "libguile-gi" "gig_init_document"))
 
+(define %document #f)
 ;;; XML Parsing
 
 (define documentation-special-leaves
