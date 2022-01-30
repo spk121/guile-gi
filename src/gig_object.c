@@ -16,7 +16,7 @@
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
-#include "clib.h"
+#include "core.h"
 #include "gig_object.h"
 #include "gig_type.h"
 #include "gig_signal.h"
@@ -477,7 +477,7 @@ gig_i_scm_emit(SCM self, SCM signal, SCM s_detail, SCM args)
     GObject *obj;
     GValue *values, retval = G_VALUE_INIT;
     GSignalQuery query_info;
-    unsigned sigid;
+    unsigned sigid; 
     GQuark detail;
     SCM ret = SCM_EOL;
 

@@ -18,7 +18,7 @@
 #include <glib.h>
 #include <glib-object.h>
 #include <girepository.h>
-#include "clib.h"
+#include "core.h"
 #include "gig_type.h"
 #include "gig_arg_map.h"
 #include "gig_repository.h"

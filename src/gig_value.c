@@ -15,7 +15,7 @@
 
 #include <assert.h>
 #include <girepository.h>
-#include "clib.h"
+#include "core.h"
 #include "gig_value.h"
 #include "gig_type.h"
 #include "gig_object.h"
@@ -205,7 +205,7 @@ gig_value_from_scm(GValue *value, SCM obj)
             g_value_set_pointer(value, scm_to_pointer(obj));
             return 0;
         }
-        else if (scm_is_bytevector_p(obj)) {
+        else if (scm_is_bytevector(obj)) {
             g_value_set_pointer(value, SCM_BYTEVECTOR_CONTENTS(obj));
             return 0;
         }

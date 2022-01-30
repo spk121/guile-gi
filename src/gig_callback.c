@@ -17,7 +17,7 @@
 #include <libguile.h>
 #include <ffi.h>
 #include <stdio.h>
-#include "clib.h"
+#include "core.h"
 #include "gig_argument.h"
 #include "gig_callback.h"
 #include "gig_function.h"
@@ -42,6 +42,8 @@ struct _GigCallback
 static slist_t *callback_list = NULL;
 
 SCM gig_callback_thread_fluid;
+static SCM c_callback_hook = SCM_BOOL_F;
+static SCM callback_hook = SCM_BOOL_F;
 
 static ffi_type *amap_entry_to_ffi_type(GigArgMapEntry *entry);
 static void callback_free(GigCallback *gcb);
@@ -230,8 +232,9 @@ callback_binding_inner(struct callback_binding_args *args)
     s_args = scm_reverse_x(s_args, SCM_EOL);
     size_t length = scm_c_length(s_args);
 
-    run_before_callback_hook(scm_from_utf8_string(g_base_info_get_name(gcb->callback_info)),
-                             gcb->s_func, s_args);
+    scm_c_activate_hook_3(callback_hook,
+                          scm_from_utf8_string(g_base_info_get_name(gcb->callback_info)),
+                          gcb->s_func, s_args);
 
     // The actual call of the Scheme callback happens here.
     if (length < amap->s_input_req || length > amap->s_input_req + amap->s_input_opt)
@@ -345,8 +348,9 @@ c_callback_binding_inner(struct callback_binding_args *args)
     if (SCM_UNBNDP(s_args))
         s_args = SCM_EOL;
 
-    run_before_c_callback_hook(scm_from_utf8_string(g_base_info_get_name(gcb->callback_info)),
-                               scm_from_pointer(gcb->c_func, NULL), s_args);
+    scm_c_activate_hook_3(c_callback_hook,
+                          scm_from_utf8_string(g_base_info_get_name(gcb->callback_info)),
+                          scm_from_pointer(gcb->c_func, NULL), s_args);
 
     // Use 'name' instead of gcb->name, which is NULL for C callbacks.
     GError *error = NULL;
@@ -656,6 +660,9 @@ gig_init_callback(void)
 
     gig_callback_thread_fluid = scm_permanent_object(scm_make_thread_local_fluid(SCM_BOOL_F));
     scm_fluid_set_x(gig_callback_thread_fluid, SCM_BOOL_T);
+
+    callback_hook = scm_c_public_ref("gi core hooks", "%before-callback-hook");
+    c_callback_hook = scm_c_public_ref("gi core hooks", "%before-c-callback-hook");
 
     scm_c_define("%callback-thread-fluid", gig_callback_thread_fluid);
 

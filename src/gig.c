@@ -14,7 +14,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <libguile.h>
-#include "clib.h"
+#include "core.h"
 #include "gig_callback.h"
 #include "gig_flag.h"
 #include "gig_function.h"

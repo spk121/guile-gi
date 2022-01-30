@@ -15,7 +15,7 @@
 
 #include <libguile.h>
 #include <girepository.h>
-#include "clib.h"
+#include "core.h"
 #include "gig_type.h"
 #include "gig_object.h"
 #include "gig_function.h"
@@ -23,7 +23,7 @@
 #include "gig_flag.h"
 #include "gig_repository.h"
 
-static scm_t_bits info_smob_tag = SCM_UNPACK(SCM_BOOL_F);
+static scm_t_bits info_smob_tag = 0;
 
 static SCM
 make_info_smob(GIBaseInfo *info)

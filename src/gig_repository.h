@@ -2,7 +2,7 @@
 #define GIG_REPOSITORY_H
 
 #include <girepository.h>
-#include "clib.h"
+#include "core.h"
 
 typedef GIBaseInfo *(*GigRepositoryNested)(GIBaseInfo *info, int n);
 

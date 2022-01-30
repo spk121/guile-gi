@@ -16,7 +16,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <ffi.h>
-#include "clib.h"
+#include "core.h"
 #include "gig_argument.h"
 #include "gig_arg_map.h"
 #include <libguile.h>
@@ -37,6 +37,7 @@ struct _GigFunction
 };
 
 static keyval_t *function_cache;
+static SCM function_hook = SCM_BOOL_F;
 
 static GigGsubr *check_gsubr_cache(GICallableInfo *function_info, SCM self_type,
                                    int *required_input_count, int *optional_input_count,
@@ -584,7 +585,7 @@ function_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
     if (SCM_UNBNDP(s_args))
         s_args = SCM_EOL;
 
-    run_before_function_hook(scm_from_utf8_string(gfn->name), s_args);
+    scm_c_activate_hook_2(function_hook, scm_from_utf8_string(gfn->name), s_args);
 
     if (g_callable_info_is_method(gfn->function_info)) {
         self = gig_type_peek_object(scm_car(s_args));
@@ -613,6 +614,7 @@ void
 gig_init_function(void)
 {
     function_cache = keyval_new();
+    function_hook = scm_c_public_ref("gi core hooks", "%before-function-hook");
     atexit(gig_fini_function);
 }
 

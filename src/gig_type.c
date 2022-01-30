@@ -18,7 +18,7 @@
 #include <libguile.h>
 #include <girepository.h>
 #include <ffi.h>
-#include "clib.h"
+#include "core.h"
 #include "gig_type.h"
 #include "gig_object.h"
 #include "gig_type_private.h"
@@ -114,7 +114,6 @@ gig_type_register_self(GType gtype, SCM stype)
     GType parent = g_type_parent(gtype);
     scm_t_bits pval;
     char *stype_str = NULL, *old_stype_str = NULL;
-
     pval = keyval_find_entry(gtype_scm_store, gtype);
 
     // #<undefined> beats NULL. Anything defined beats #<undefined>.
@@ -302,7 +301,7 @@ make_enum_class(char *cname, SCM name, GType gtype, SCM sparent)
     }
     g_type_class_unref(_class);
 
-    SCM dsupers = scm_list_1(SCM_PACK_POINTER(sparent));
+    SCM dsupers = scm_list_1(sparent);
     SCM slots = SCM_EOL;
     SCM new_type = scm_make_class_with_name(dsupers, slots, name);
 
@@ -326,7 +325,7 @@ make_flags_class(const char *cname, SCM name, GType gtype, SCM sparent)
     }
     g_type_class_unref(_class);
 
-    SCM dsupers = scm_list_1(SCM_PACK_POINTER(sparent));
+    SCM dsupers = scm_list_1(sparent);
     SCM slots = SCM_EOL;
     SCM new_type = scm_make_class_with_name(dsupers, slots, name);
 
@@ -337,7 +336,7 @@ make_flags_class(const char *cname, SCM name, GType gtype, SCM sparent)
 static SCM
 make_boxed_class(const char *cname, SCM name, GType gtype, SCM sparent, SCM extra_supers)
 {
-    SCM dsupers = scm_cons(SCM_PACK_POINTER(sparent), extra_supers);
+    SCM dsupers = scm_cons(sparent, extra_supers);
     SCM slots = SCM_EOL;
     SCM new_type = scm_make_class_with_name(dsupers, slots, name);
 
@@ -376,7 +375,7 @@ make_interface_class(const char *cname, SCM name, GType gtype, SCM sparent, SCM 
     if (parent == G_TYPE_INTERFACE)
         dsupers = extra_supers;
     else
-        dsupers = scm_cons(SCM_PACK_POINTER(sparent), extra_supers);
+        dsupers = scm_cons(sparent, extra_supers);
 
     for (unsigned n = 0; n < n_interfaces; n++)
         dsupers = scm_cons(gig_type_get_scheme_type(interfaces[n]), dsupers);
@@ -407,8 +406,8 @@ make_fallback_class(const char *cname, SCM name, GType gtype, SCM sparent, SCM e
     unsigned n_interfaces = 0;
     interfaces = g_type_interfaces(gtype, &n_interfaces);
     SCM dsupers;
-    if (sparent)
-        dsupers = scm_cons(SCM_PACK_POINTER(sparent), extra_supers);
+    if (scm_is_true(sparent))
+        dsupers = scm_cons(sparent, extra_supers);
     else
         dsupers = scm_cons(gig_fundamental_type, extra_supers);
 
@@ -928,7 +927,7 @@ gig_init_types(void)
         gig_flags_type = scm_c_public_ref("gi core flags-and-enums", "<GFlags>");
         A(G_TYPE_FLAGS, gig_flags_type);
 
-        gig_object_type = scm_c_public_ref("gi core objects", "<GObject>");
+        gig_object_type = scm_c_public_ref("gi types", "<GObject>");
         scm_set_class_ref_slot(gig_object_type, scm_from_pointer(g_object_ref_sink, NULL));
         scm_set_class_unref_slot(gig_object_type, scm_from_pointer(g_object_unref, NULL));
         A(G_TYPE_OBJECT, gig_object_type);

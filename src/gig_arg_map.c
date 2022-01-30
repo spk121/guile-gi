@@ -16,7 +16,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
-#include "clib.h"
+#include "core.h"
 #include "gig_arg_map.h"
 #include "gig_data_type.h"
 

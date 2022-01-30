@@ -101,15 +101,14 @@ examples/resources/test.gresource: AM_GRESOURCE_FLAGS = --sourcedir=$(abs_buildd
 guileextension_LTLIBRARIES = libguile-gi.la
 
 libguile_gi_la_c_sources = \
-  src/c/_string.c \
-  src/c/keyval.c \
-  src/c/logging.c \
-  src/c/mem.c \
-  src/c/slist.c \
-  src/c/strval.c \
-  src/g/hooks.c \
-  src/g/guile.c \
-  src/g/goops.c \
+  src/core/string.c \
+  src/core/keyval.c \
+  src/core/logging.c \
+  src/core/mem.c \
+  src/core/slist.c \
+  src/core/strval.c \
+  src/core/scm.c \
+  src/core/oop.c \
   src/gig.c \
   src/gig_arg_map.c \
   src/gig_argument.c \
@@ -129,17 +128,16 @@ libguile_gi_la_c_sources = \
   src/gig_value.c
 
 libguile_gi_la_internal_headers = \
-  src/clib.h \
-  src/c/_string.h \
-  src/c/keyval.h \
-  src/c/logging.h \
-  src/c/mem.h \
-  src/c/slist.h \
-  src/c/strval.h \
-  src/c/visibility.h \
-  src/g/hooks.h \
-  src/g/guile.h \
-  src/g/goops.h \
+  src/core.h \
+  src/core/string.h \
+  src/core/keyval.h \
+  src/core/logging.h \
+  src/core/mem.h \
+  src/core/slist.h \
+  src/core/strval.h \
+  src/core/visibility.h \
+  src/core/scm.h \
+  src/core/oop.h \
   src/gig.h \
   src/gig_arg_map.h \
   src/gig_argument.h \
@@ -458,6 +456,8 @@ CLEANFILES = \
 EXTRA_DIST = \
   README.md \
   build-aux/config.rpath \
+  core/README \
+  type/README \
   docs/example-1.scm docs/gtk-3.scm docs/fdl-1.3.texi \
   docs/ex-date.scm docs/ex-gapplication.scm docs/ex-load-by-name.scm \
   docs/ex-button.scm \

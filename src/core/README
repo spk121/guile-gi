@@ -1,0 +1,2 @@
+Everything in src/core has no dependencies except for the standard C
+library and libguile.h.

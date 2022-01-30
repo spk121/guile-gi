@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "_string.h"
+#include "string.h"
 
 char *
 bracketize(const char *str)

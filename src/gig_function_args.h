@@ -4,7 +4,7 @@
 #include <glib-object.h>
 #include <libguile.h>
 #include <girepository.h>
-#include "clib.h"
+#include "core.h"
 #include "gig_argument.h"
 #include "gig_arg_map.h"
 

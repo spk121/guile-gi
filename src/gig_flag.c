@@ -16,7 +16,7 @@
 #include <inttypes.h>
 #include <stdio.h>
 #include <libguile.h>
-#include "clib.h"
+#include "core.h"
 #include "gig_flag.h"
 #include "gig_type.h"
 #include "gig_type_private.h"

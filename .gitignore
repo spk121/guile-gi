@@ -108,7 +108,7 @@ a.out
 vgrind.out
 
 # Crashes
-core*
+# core
 vgcore*
 !core-generics.scm
 

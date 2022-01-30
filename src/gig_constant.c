@@ -15,7 +15,7 @@
 
 #include <libguile.h>
 #include <inttypes.h>
-#include "clib.h"
+#include "core.h"
 #include "gig_constant.h"
 
 SCM
