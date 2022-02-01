@@ -63,7 +63,7 @@
      (set-current-module module)
      (module-export! module
                      (append-map! (lambda (x)
-                                    (%load-entry x LOAD_EVERYTHING))
-                                  (%get-all-entries lib)))))
+                                    ($load-entry x LOAD_EVERYTHING))
+                                  ($get-all-entries lib)))))
 
   module)

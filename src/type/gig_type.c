@@ -896,6 +896,92 @@ gig_type_define_fundamental(GType type, SCM extra_supers,
     scm_dynwind_end();
 }
 
+static SCM
+scm_type_associate(SCM gtype, SCM stype)
+{
+    size_t _gtype = scm_to_size_t(gtype);
+    gig_type_associate(_gtype, stype);
+    return stype;
+}
+
+static SCM
+scm_type_register(SCM gtype, SCM stype)
+{
+    size_t _gtype = scm_to_size_t(gtype);
+    gig_type_register(_gtype, stype);
+    return SCM_UNSPECIFIED;
+}
+
+static SCM
+scm_save_fundamental_type(SCM x)
+{
+    gig_fundamental_type = x;
+    return SCM_UNSPECIFIED;
+}
+
+static SCM
+scm_save_boxed_type(SCM x)
+{
+    gig_boxed_type = x;
+    return SCM_UNSPECIFIED;
+}
+
+static SCM
+scm_save_object_type(SCM x)
+{
+    gig_object_type = x;
+    return SCM_UNSPECIFIED;
+}
+
+static SCM
+scm_save_enum_type(SCM x)
+{
+    gig_enum_type = x;
+    return SCM_UNSPECIFIED;
+}
+
+static SCM
+scm_save_flags_type(SCM x)
+{
+    gig_flags_type = x;
+    return SCM_UNSPECIFIED;
+}
+
+static SCM
+scm_save_interface_type(SCM x)
+{
+    gig_interface_type = x;
+    return SCM_UNSPECIFIED;
+}
+
+static SCM
+scm_save_paramspec_type(SCM x)
+{
+    gig_paramspec_type = x;
+    return SCM_UNSPECIFIED;
+}
+
+static SCM
+scm_save_variant_type(SCM x)
+{
+    gig_variant_type = x;
+    return SCM_UNSPECIFIED;
+}
+
+static SCM
+scm_save_value_type(SCM x)
+{
+    gig_value_type = x;
+    return SCM_UNSPECIFIED;
+}
+
+static SCM
+scm_save_closure_type(SCM x)
+{
+    gig_closure_type = x;
+    return SCM_UNSPECIFIED;
+}
+
 void
 gig_init_types(void)
 {
@@ -910,12 +996,62 @@ gig_init_types(void)
         name_scm_store = strval_new();
         scm_gtype_store = keyval_new();
 
+        scm_c_define("$G_TYPE_NONE",scm_from_size_t(G_TYPE_NONE));
+        scm_c_define("$G_TYPE_CHAR",scm_from_size_t(G_TYPE_CHAR));
+        scm_c_define("$G_TYPE_UCHAR",scm_from_size_t(G_TYPE_UCHAR));
+        scm_c_define("$G_TYPE_BOOLEAN",scm_from_size_t(G_TYPE_BOOLEAN));
+        scm_c_define("$G_TYPE_INT",scm_from_size_t(G_TYPE_INT));
+        scm_c_define("$G_TYPE_UINT",scm_from_size_t(G_TYPE_UINT));
+        scm_c_define("$G_TYPE_LONG",scm_from_size_t(G_TYPE_LONG));
+        scm_c_define("$G_TYPE_ULONG",scm_from_size_t(G_TYPE_LONG));
+        scm_c_define("$G_TYPE_INT64",scm_from_size_t(G_TYPE_INT64));
+        scm_c_define("$G_TYPE_UINT64",scm_from_size_t(G_TYPE_UINT64));
+        scm_c_define("$G_TYPE_ENUM",scm_from_size_t(G_TYPE_ENUM));
+        scm_c_define("$G_TYPE_FLAGS",scm_from_size_t(G_TYPE_FLAGS));
+        scm_c_define("$G_TYPE_FLOAT",scm_from_size_t(G_TYPE_FLOAT));
+        scm_c_define("$G_TYPE_DOUBLE",scm_from_size_t(G_TYPE_DOUBLE));
+        scm_c_define("$G_TYPE_GTYPE",scm_from_size_t(G_TYPE_GTYPE));
+        scm_c_define("$G_TYPE_OBJECT",scm_from_size_t(G_TYPE_OBJECT));
+        scm_c_define("$G_TYPE_STRING",scm_from_size_t(G_TYPE_STRING));
+        scm_c_define("$G_TYPE_POINTER",scm_from_size_t(G_TYPE_POINTER));
+        scm_c_define("$G_TYPE_BOXED",scm_from_size_t(G_TYPE_BOXED));
+        scm_c_define("$G_TYPE_INTERFACE",scm_from_size_t(G_TYPE_INTERFACE));
+        scm_c_define("$G_TYPE_OBJECT",scm_from_size_t(G_TYPE_OBJECT));
+        scm_c_define("$G_TYPE_PARAM",scm_from_size_t(G_TYPE_PARAM));
+        scm_c_define("$G_TYPE_VARIANT",scm_from_size_t(G_TYPE_VARIANT));
+        // FIXME: not constant
+        scm_c_define("$G_TYPE_VALUE",scm_from_size_t(G_TYPE_VALUE));
+        // FIXME: not constant
+        scm_c_define("$G_TYPE_CLOSURE",scm_from_size_t(G_TYPE_CLOSURE));
+        
+        scm_c_define ("$ref-sink-object", scm_from_pointer(g_object_ref_sink, NULL));
+        scm_c_define ("$unref-object", scm_from_pointer(g_object_unref, NULL));
+        scm_c_define ("$ref-sink-param-spec", scm_from_pointer(g_param_spec_ref_sink, NULL));
+        scm_c_define ("$unref-param-spec", scm_from_pointer(g_param_spec_unref, NULL));
+        scm_c_define ("$ref-sink-variant", scm_from_pointer(g_variant_ref_sink, NULL));
+        scm_c_define ("$unref-variant", scm_from_pointer(g_variant_unref, NULL));
+
+        scm_c_define_gsubr("$type-associate", 2, 0, 0, scm_type_associate);
+        scm_c_define_gsubr("$type-register", 2, 0, 0, scm_type_register);
+        
+        scm_c_define_gsubr("$save-fundamental-type", 1, 0, 0, scm_save_fundamental_type);
+        scm_c_define_gsubr("$save-boxed-type", 1, 0, 0, scm_save_boxed_type);
+        scm_c_define_gsubr("$save-object-type", 1, 0, 0, scm_save_object_type);
+        scm_c_define_gsubr("$save-enum-type", 1, 0, 0, scm_save_enum_type);
+        scm_c_define_gsubr("$save-flags-type", 1, 0, 0, scm_save_flags_type);
+        scm_c_define_gsubr("$save-interface-type", 1, 0, 0, scm_save_interface_type);
+        scm_c_define_gsubr("$save-paramspec-type", 1, 0, 0, scm_save_paramspec_type);
+        scm_c_define_gsubr("$save-variant-type", 1, 0, 0, scm_save_variant_type);
+        scm_c_define_gsubr("$save-value-type", 1, 0, 0, scm_save_value_type);
+        scm_c_define_gsubr("$save-closure-type", 1, 0, 0, scm_save_closure_type);
+
 #define A(G,S)                                  \
         do {                                    \
             SCM key = gig_type_associate(G, S); \
             scm_define(key, S);                 \
         } while (0)
 
+#if 0
         // fundamental types
         gig_fundamental_type = scm_c_public_ref("gi core fundamental", "<GFundamental>");
 
@@ -927,18 +1063,16 @@ gig_init_types(void)
 
         gig_flags_type = scm_c_public_ref("gi core flags-and-enums", "<GFlags>");
         A(G_TYPE_FLAGS, gig_flags_type);
-
+#endif
 #if 0
         gig_object_type = scm_c_public_ref("gi types", "<GObject>");
         scm_set_class_ref_slot(gig_object_type, scm_from_pointer(g_object_ref_sink, NULL));
         scm_set_class_unref_slot(gig_object_type, scm_from_pointer(g_object_unref, NULL));
         A(G_TYPE_OBJECT, gig_object_type);
-#endif
         
         gig_interface_type = scm_c_public_ref("gi core objects", "<GInterface>");
         A(G_TYPE_INTERFACE, gig_interface_type);
 
-#if 0
         gig_paramspec_type = scm_c_public_ref("gi core objects", "<GParam>");
         scm_set_class_ref_slot(gig_paramspec_type, scm_from_pointer(g_param_spec_ref_sink, NULL));
         scm_set_class_unref_slot(gig_paramspec_type, scm_from_pointer(g_param_spec_unref, NULL));
@@ -961,8 +1095,9 @@ gig_init_types(void)
 
         make_fundamental_proc = scm_c_private_ref("gi core fundamental", "make-fundamental-class");
 
-        gig_type_define(GI_TYPE_BASE_INFO, SCM_EOL);
+        // gig_type_define(GI_TYPE_BASE_INFO, SCM_EOL);
 
+#if 0
         // value associations, do not rely on them for anything else
         gig_type_associate(G_TYPE_STRING, scm_get_string_class());
         SCM _scm_real = scm_get_real_class();
@@ -984,7 +1119,8 @@ gig_init_types(void)
         gig_type_register(G_TYPE_PTR_ARRAY, SCM_UNDEFINED);
 
         gig_type_register(G_TYPE_HASH_TABLE, scm_get_hashtable_class());
-
+#endif
+        
         atexit(gig_type_free_types);
 
         // G_TYPE_X constants for use where SCM classes don't apply
@@ -996,6 +1132,7 @@ gig_init_types(void)
             scm_c_export(#x, NULL);                                     \
         } while (0)
 
+#if 0
         D(G_TYPE_NONE);
         D(G_TYPE_CHAR);
         D(G_TYPE_UCHAR);
@@ -1015,6 +1152,7 @@ gig_init_types(void)
         D(G_TYPE_STRING);
         D(G_TYPE_POINTER);
 #undef D
+#endif
 
         type_less_p_proc = scm_c_make_gsubr("type-<?", 2, 0, 0, type_less_p);
 

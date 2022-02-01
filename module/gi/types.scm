@@ -69,24 +69,24 @@
 
 (define $log-port (current-output-port))
 
-(define G_TYPE_NONE %G_TYPE_NONE)
-(define G_TYPE_CHAR %G_TYPE_CHAR)
-(define G_TYPE_UCHAR %G_TYPE_UCHAR)
-(define G_TYPE_BOOLEAN %G_TYPE_BOOLEAN)
-(define G_TYPE_INT %G_TYPE_INT)
-(define G_TYPE_UINT %G_TYPE_UINT)
-(define G_TYPE_LONG %G_TYPE_LONG)
-(define G_TYPE_ULONG %G_TYPE_LONG)
-(define G_TYPE_INT64 %G_TYPE_INT64)
-(define G_TYPE_UINT64 %G_TYPE_UINT64)
-(define G_TYPE_ENUM %G_TYPE_ENUM)
-(define G_TYPE_FLAGS %G_TYPE_FLAGS)
-(define G_TYPE_FLOAT %G_TYPE_FLOAT)
-(define G_TYPE_DOUBLE %G_TYPE_DOUBLE)
-(define G_TYPE_GTYPE %G_TYPE_GTYPE)
-(define G_TYPE_OBJECT %G_TYPE_OBJECT)
-(define G_TYPE_STRING %G_TYPE_STRING)
-(define G_TYPE_POINTER %G_TYPE_POINTER)
+(define G_TYPE_NONE $G_TYPE_NONE)
+(define G_TYPE_CHAR $G_TYPE_CHAR)
+(define G_TYPE_UCHAR $G_TYPE_UCHAR)
+(define G_TYPE_BOOLEAN $G_TYPE_BOOLEAN)
+(define G_TYPE_INT $G_TYPE_INT)
+(define G_TYPE_UINT $G_TYPE_UINT)
+(define G_TYPE_LONG $G_TYPE_LONG)
+(define G_TYPE_ULONG $G_TYPE_LONG)
+(define G_TYPE_INT64 $G_TYPE_INT64)
+(define G_TYPE_UINT64 $G_TYPE_UINT64)
+(define G_TYPE_ENUM $G_TYPE_ENUM)
+(define G_TYPE_FLAGS $G_TYPE_FLAGS)
+(define G_TYPE_FLOAT $G_TYPE_FLOAT)
+(define G_TYPE_DOUBLE $G_TYPE_DOUBLE)
+(define G_TYPE_GTYPE $G_TYPE_GTYPE)
+(define G_TYPE_OBJECT $G_TYPE_OBJECT)
+(define G_TYPE_STRING $G_TYPE_STRING)
+(define G_TYPE_POINTER $G_TYPE_POINTER)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -253,9 +253,9 @@ SCM class.  It returns the class name."
 ;; Has per-instance 'procedure and 'setter slots
 (define-class <GParam> (<GFundamental> <applicable-struct-with-setter>)
   (ref #:allocation #:each-subclass
-       #:init-value %param-spec-ref-sink)
+       #:init-value $ref-sink-param-spec)
   (unref #:allocation #:each-subclass
-         #:init-value %param-spec-unref))
+         #:init-value $unref-param-spec))
 
 (define-method (initialize (pspec <GParam>) initargs)
   (next-method)
@@ -268,9 +268,9 @@ SCM class.  It returns the class name."
 ;; Has a per-instance 'procedure slot
 (define-class <GClosure> (<GFundamental> <applicable-struct>)
   (ref #:allocation #:each-subclass
-       #:init-value %param-spec-ref-sink)
+       #:init-value $ref-sink-param-spec)
   (unref #:allocation #:each-subclass
-         #:init-value %param-spec-unref))
+         #:init-value $unref-param-spec))
 
 (define-method (initialize (closure <GClosure>) initargs)
   (next-method)
@@ -286,33 +286,36 @@ SCM class.  It returns the class name."
 
 (define-class <GVariant> (<GFundamental>)
   (ref #:allocation #:each-subclass
-       #:init-value %variant-ref-sink)
+       #:init-value $ref-sink-variant)
   (unref #:allocation #:each-subclass
-         #:init-value %variant-unref))
+         #:init-value $unref-variant))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (initialize)
-  (type-associate %G_TYPE_STRING <string>)
   
-  (type-register %G_TYPE_INT <integer>)
-  (type-register %G_TYPE_UINT <integer>)
-  (type-register %G_TYPE_LONG <integer>)
-  (type-register %G_TYPE_ULONG <integer>)
-  (type-register %G_TYPE_INT64 <integer>)
-  (type-register %G_TYPE_UINT64 <integer>)
-  (type-register %G_TYPE_FLOAT <real>)
-  (type-register %G_TYPE_DOUBLE <real>)
-  (type-register %G_TYPE_HASH_TABLE <hashtable>)
-                  
-  (type-associate %G_TYPE_BOXED <GBoxed>)
-  (type-associate %G_TYPE_OBJECT <GObject>)
-  (type-associate %G_TYPE_ENUM <GEnum>)
-  (type-associate %G_TYPE_FLAGS <GFlags>)
-  (type-associate %G_TYPE_INTERFACE <GInterface>)
-  (type-associate %G_TYPE_PARAM <GParam>)
-  (type-associate %G_TYPE_VARIANT <GVariant>)
-  (type-associate %G_TYPE_VALUE <GValue>)
-  (type-associate %G_TYPE_CLOSURE <GClosure>))
+  ($type-register $G_TYPE_INT <integer>)
+  ($type-register $G_TYPE_UINT <integer>)
+  ($type-register $G_TYPE_LONG <integer>)
+  ($type-register $G_TYPE_ULONG <integer>)
+  ($type-register $G_TYPE_INT64 <integer>)
+  ($type-register $G_TYPE_UINT64 <integer>)
+  ($type-register $G_TYPE_FLOAT <real>)
+  ($type-register $G_TYPE_DOUBLE <real>)
+  ;; ($type-register $G_TYPE_HASH_TABLE <hashtable>)
+
+  ($type-associate $G_TYPE_STRING <string>)
+
+  ($save-fundamental-type <GFundamental>)
+  ($save-boxed-type ($type-associate $G_TYPE_BOXED <GBoxed>))
+  ($save-object-type ($type-associate $G_TYPE_OBJECT <GObject>))
+  ($save-enum-type ($type-associate $G_TYPE_ENUM <GEnum>))
+  ($save-flags-type ($type-associate $G_TYPE_FLAGS <GFlags>))
+  ($save-interface-type ($type-associate $G_TYPE_INTERFACE <GInterface>))
+  ($save-paramspec-type ($type-associate $G_TYPE_PARAM <GParam>))
+  ($save-variant-type ($type-associate $G_TYPE_VARIANT <GVariant>))
+  ($save-value-type ($type-associate $G_TYPE_VALUE <GValue>))
+  ($save-closure-type ($type-associate $G_TYPE_CLOSURE <GClosure>)))
+
 
 (initialize)

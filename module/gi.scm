@@ -113,7 +113,6 @@
              #,@module-defs
              (use-modules #,@module-uses)))))))
 
-(load-extension "libguile-gi" "init_core_goops")
 (load-extension "libguile-gi" "gig_init")
 
 
