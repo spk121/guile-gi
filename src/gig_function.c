@@ -17,12 +17,11 @@
 #include <stdio.h>
 #include <ffi.h>
 #include "core.h"
+#include "type.h"
 #include "gig_argument.h"
 #include "gig_arg_map.h"
 #include <libguile.h>
 #include "gig_function.h"
-#include "gig_type.h"
-#include "gig_signal.h"
 #include "gig_function_args.h"
 
 struct _GigFunction
@@ -285,7 +284,6 @@ proc4signal(GISignalInfo *info, const char *name, SCM self_type, int *req, int *
 
     make_formals(info, amap, *req + *opt, self_type, formals, specializers);
 
-    GigSignalSlot slots[] = { GIG_SIGNAL_SLOT_NAME, GIG_SIGNAL_SLOT_OUTPUT_MASK };
     SCM values[2];
 
     // use base_info name without transformations, otherwise we could screw things up
@@ -313,7 +311,7 @@ proc4signal(GISignalInfo *info, const char *name, SCM self_type, int *req, int *
     scm_array_handle_release(&handle);
     gig_amap_free(amap);
 
-    SCM signal = gig_make_signal(2, slots, values);
+    SCM signal = gig_make_signal2(values[0], values[1]);
 
     // check for collisions
     SCM current_definition = scm_current_module_definition(scm_from_utf8_symbol(name));

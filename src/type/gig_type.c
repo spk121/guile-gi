@@ -903,6 +903,7 @@ gig_init_types(void)
     if (first == 1) {
         first = 0;
 
+        init_core_oop();
         sym_sort_key = scm_from_utf8_symbol("sort-key");
 
         gtype_scm_store = keyval_new();
@@ -927,14 +928,17 @@ gig_init_types(void)
         gig_flags_type = scm_c_public_ref("gi core flags-and-enums", "<GFlags>");
         A(G_TYPE_FLAGS, gig_flags_type);
 
+#if 0
         gig_object_type = scm_c_public_ref("gi types", "<GObject>");
         scm_set_class_ref_slot(gig_object_type, scm_from_pointer(g_object_ref_sink, NULL));
         scm_set_class_unref_slot(gig_object_type, scm_from_pointer(g_object_unref, NULL));
         A(G_TYPE_OBJECT, gig_object_type);
+#endif
         
         gig_interface_type = scm_c_public_ref("gi core objects", "<GInterface>");
         A(G_TYPE_INTERFACE, gig_interface_type);
-        
+
+#if 0
         gig_paramspec_type = scm_c_public_ref("gi core objects", "<GParam>");
         scm_set_class_ref_slot(gig_paramspec_type, scm_from_pointer(g_param_spec_ref_sink, NULL));
         scm_set_class_unref_slot(gig_paramspec_type, scm_from_pointer(g_param_spec_unref, NULL));
@@ -951,7 +955,8 @@ gig_init_types(void)
 
         gig_closure_type = scm_c_public_ref("gi core objects", "<GClosure>");
         A(G_TYPE_CLOSURE, gig_closure_type);
-
+#endif
+        
         // derived types
 
         make_fundamental_proc = scm_c_private_ref("gi core fundamental", "make-fundamental-class");

@@ -32,5 +32,5 @@ SCM scm_set_class_size_slot(SCM cls, SCM size);
 SCM scm_set_class_unref_slot(SCM cls, SCM func);
 SCM scm_set_procedure_slot(SCM instance, SCM proc);
 
-void init_core_goops(void);
+void init_core_oop(void);
 #endif

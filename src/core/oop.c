@@ -247,11 +247,11 @@ scm_set_class_unref_slot(SCM cls, SCM func)
 SCM
 scm_set_procedure_slot(SCM instance, SCM proc)
 {
-    scm_slot_set_x(instance, procedure_sym, proc);
+    return scm_slot_set_x(instance, procedure_sym, proc);
 }
 
 void
-init_core_goops(void)
+init_core_oop(void)
 {
     static int first = 1;
     if (first) {

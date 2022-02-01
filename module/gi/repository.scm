@@ -37,7 +37,7 @@
 (define %find-entry-by-name #f)
 (define %require (lambda (m l) #f))
 
-(define LOAD_EVERYTHING %LOAD_EVERYTHING)
+(define LOAD_EVERYTHING 1)
 
 (define* (require module #:optional lib)
   (%require module lib))
@@ -64,6 +64,6 @@
      (module-export! module
                      (append-map! (lambda (x)
                                     (%load-entry x LOAD_EVERYTHING))
-                                  (get-all-entries lib)))))
+                                  (%get-all-entries lib)))))
 
   module)

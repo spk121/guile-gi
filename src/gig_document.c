@@ -19,7 +19,6 @@
 #include <glib-object.h>
 #include <girepository.h>
 #include "core.h"
-#include "gig_type.h"
 #include "gig_arg_map.h"
 #include "gig_repository.h"
 #include "gig_function.h"

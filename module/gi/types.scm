@@ -53,13 +53,67 @@
                flags-projection/number               
                ))
 
-;;(eval-when (expand load eval)
-  ;;(load-extension "libguile-gi" "init_core_goops")
-  ;;(load-extension "libguile-gi" "gig_init_object")
-  ;;(load-extension "libguile-gi" "gig_init_types")
-  ;;(load-extension "libguile-gi" "gig_init_closure")
-;;  )
+(eval-when (expand load eval)
+  (load-extension "libguile-gi-types" "gig_init_types")
+)
 
+;; This pair of hash tables bidirectionally maps GType integers to SCM
+;; classes that are usually subclasses of <GFundamental>
+(define $gtype-scm-hash (make-hash-table 100))
+(define $scm-gtype-hash (make-hash-table 100))
+
+;; This hash table holds only those SCM types that don't have a GType,
+
+;; like some enum and flag types.
+(define $name-scm-hash (make-hash-table 4))
+
+(define $log-port (current-output-port))
+
+(define G_TYPE_NONE %G_TYPE_NONE)
+(define G_TYPE_CHAR %G_TYPE_CHAR)
+(define G_TYPE_UCHAR %G_TYPE_UCHAR)
+(define G_TYPE_BOOLEAN %G_TYPE_BOOLEAN)
+(define G_TYPE_INT %G_TYPE_INT)
+(define G_TYPE_UINT %G_TYPE_UINT)
+(define G_TYPE_LONG %G_TYPE_LONG)
+(define G_TYPE_ULONG %G_TYPE_LONG)
+(define G_TYPE_INT64 %G_TYPE_INT64)
+(define G_TYPE_UINT64 %G_TYPE_UINT64)
+(define G_TYPE_ENUM %G_TYPE_ENUM)
+(define G_TYPE_FLAGS %G_TYPE_FLAGS)
+(define G_TYPE_FLOAT %G_TYPE_FLOAT)
+(define G_TYPE_DOUBLE %G_TYPE_DOUBLE)
+(define G_TYPE_GTYPE %G_TYPE_GTYPE)
+(define G_TYPE_OBJECT %G_TYPE_OBJECT)
+(define G_TYPE_STRING %G_TYPE_STRING)
+(define G_TYPE_POINTER %G_TYPE_POINTER)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+
+(define (type-register-self gtype stype)
+  (let ((pval (hash-ref $gtype-scm-hash gtype)))
+    (unless pval
+      (hash-set! $gtype-scm-store gtype stype)
+      (format $log-port "~A - registering a new type for ~A as ~S~%"
+              (gtype-get-name gtype) gtype stype))))
+
+(define (type-register gtype stype)
+  (let ((parent (gtype-get-parent gtype)))
+    (unless parent
+      (type-register-self parent #f))
+    (type-register-self gtype stype)))
+
+(define (type-associate gtype stype)
+  "Sets up the two-way association between the GType integer and its
+SCM class.  It returns the class name."
+  (type-register-self gtype stype)
+  (set-object-property! stype 'sort-key (hash-count (const #t) $gtype-scm-hash))
+  (hash-set! $scm-gtype-store stype gtype)
+  (class-name stype))
+
+
+#|
 (define %object-ref-sink #f)
 (define %object-unref #f)
 (define %param-spec-ref-sink #f)
@@ -67,24 +121,25 @@
 (define %variant-ref-sink #f)
 (define %variant-unref #f)
 (define %make-gobject #f)
-(define %emit #f)
-(define %connect #f)
-(define %get #F)
-(define %set! #f)
-(define %set-type! #f)
-(define %transform #f)
+(define %emit #f)                       ; move to %signal-emit
+(define %connect #f)                    ; %signal-connect
+(define %get #F)                        ; %value-get
+(define %set! #f)                       ; %value-set!
+(define %set-type! #f)                  ; %value-type-set!
+(define %transform #f)                  ; %value-transform
 (define %get-property #F)
 (define %set-property! #f)
 (define %invoke-closure #f)
+|#
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Objects
 
 (define-class <GObject> (<GFundamental>)
   (ref #:allocation #:each-subclass
-       #:init-value %object-ref-sink)
+       #:init-value $ref-sink-object)
   (unref #:allocation #:each-subclass
-         #:init-value %object-unref))
+         #:init-value $unref-object))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Signals
@@ -104,7 +159,7 @@
 
 (define-method (initialize (signal <signal>) initargs)
   (next-method)
-  (slot-set! signal 'procedure (cut %emit <> signal <...>)))
+  (slot-set! signal 'procedure (cut $emit-signal <> signal <...>)))
 
 (define make-signal (cute make <signal> <...>))
 
@@ -234,3 +289,30 @@
        #:init-value %variant-ref-sink)
   (unref #:allocation #:each-subclass
          #:init-value %variant-unref))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define (initialize)
+  (type-associate %G_TYPE_STRING <string>)
+  
+  (type-register %G_TYPE_INT <integer>)
+  (type-register %G_TYPE_UINT <integer>)
+  (type-register %G_TYPE_LONG <integer>)
+  (type-register %G_TYPE_ULONG <integer>)
+  (type-register %G_TYPE_INT64 <integer>)
+  (type-register %G_TYPE_UINT64 <integer>)
+  (type-register %G_TYPE_FLOAT <real>)
+  (type-register %G_TYPE_DOUBLE <real>)
+  (type-register %G_TYPE_HASH_TABLE <hashtable>)
+                  
+  (type-associate %G_TYPE_BOXED <GBoxed>)
+  (type-associate %G_TYPE_OBJECT <GObject>)
+  (type-associate %G_TYPE_ENUM <GEnum>)
+  (type-associate %G_TYPE_FLAGS <GFlags>)
+  (type-associate %G_TYPE_INTERFACE <GInterface>)
+  (type-associate %G_TYPE_PARAM <GParam>)
+  (type-associate %G_TYPE_VARIANT <GVariant>)
+  (type-associate %G_TYPE_VALUE <GValue>)
+  (type-associate %G_TYPE_CLOSURE <GClosure>))
+
+(initialize)

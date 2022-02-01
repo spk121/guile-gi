@@ -16,12 +16,7 @@
 #include <libguile.h>
 #include "core.h"
 #include "gig_callback.h"
-#include "gig_flag.h"
 #include "gig_function.h"
-#include "gig_object.h"
-#include "gig_signal.h"
-#include "gig_type.h"
-#include "gig_value.h"
 #include "gig.h"
 
 #ifdef ENABLE_GCOV
@@ -57,8 +52,7 @@ gig_init(void)
     mtrace();
 #endif
     debug_init("Begin libguile-gir initialization");
-    gig_init_flag();
-    gig_init_signal();
+    init_core_oop();
     gig_init_callback();
     gig_init_function();
 #ifdef ENABLE_GCOV

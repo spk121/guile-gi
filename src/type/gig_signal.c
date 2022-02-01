@@ -175,6 +175,15 @@ gig_make_signal(size_t n_slots, GigSignalSlot *slots, SCM *slot_values)
     return scm_apply_0(make_signal_proc, args);
 }
 
+SCM
+gig_make_signal2(SCM name, SCM mask)
+{
+    GigSignalSlot slots[] = { GIG_SIGNAL_SLOT_NAME, GIG_SIGNAL_SLOT_OUTPUT_MASK };
+    SCM values[2] = { name, mask };
+    SCM signal = gig_make_signal(2, slots, values);
+    return signal;
+}
+
 void
 gig_init_signal()
 {
