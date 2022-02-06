@@ -36,9 +36,10 @@ SCM gig_type_transfer_object(GType gtype, void *obj, GITransfer transfer);
 SCM scm_from_gtype(GType x);
 GType scm_to_gtype(SCM x);
 GType scm_to_gtype_full(SCM x, const char *subr, int argpos);
-#endif
+#else
 
 #include "type/gig_closure.h"
+#include "type/gig_constant.h"
 #include "type/gig_flag.h"
 #include "type/gig_object.h"
 #include "type/gig_signal.h"
@@ -46,5 +47,6 @@ GType scm_to_gtype_full(SCM x, const char *subr, int argpos);
 #include "type/gig_type_private.h"
 #include "type/gig_types.h"
 #include "type/gig_value.h"
+#endif
 
 #endif

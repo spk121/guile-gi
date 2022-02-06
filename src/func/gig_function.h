@@ -27,5 +27,5 @@ SCM gig_function_define(gtype_t type, GICallableInfo *info, const char *_namespa
 SCM gig_callable_invoke(GICallableInfo *callable_info, void *callable, GigArgMap *amap,
                         const char *name, GObject *self, SCM args, GError **error);
 char *gig_callable_info_make_name(GICallableInfo *info, const char *prefix);
-void gig_init_function(void);
+GIG_API void gig_init_function(void);
 #endif

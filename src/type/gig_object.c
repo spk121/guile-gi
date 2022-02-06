@@ -22,7 +22,6 @@
 #include "gig_signal.h"
 #include "gig_closure.h"
 #include "gig_value.h"
-#include "gig_function_private.h"
 
 GQuark gig_user_object_properties;
 
@@ -63,7 +62,7 @@ gig_paramspec_peek(SCM object)
 static SCM
 gig_i_scm_make_gobject(SCM s_gtype, SCM s_prop_keylist)
 {
-#define FUNC "%make-gobject"
+#define FUNC "$make-gobject"
     GType type;
     GObject *obj;
     GObjectClass *_class;
@@ -141,14 +140,14 @@ gig_i_scm_get_pspec(SCM self, SCM prop)
     char *name;
     GParamSpec *pspec;
 
-    SCM_ASSERT(SCM_IS_A_P(self, gig_object_type), self, SCM_ARG1, "%get-pspec");
+    SCM_ASSERT(SCM_IS_A_P(self, gig_object_type), self, SCM_ARG1, "$get-pspec");
 
     scm_dynwind_begin(0);
     obj = gig_object_peek(self);
     name = scm_dynfree(scm_to_utf8_string(prop));
     pspec = get_paramspec(obj, name);
     if (!pspec) {
-        scm_misc_error("%get-pspec",
+        scm_misc_error("$get-pspec",
                        "object of type ~A does not have a property ~S",
                        scm_list_2(SCM_CLASS_OF(self), prop));
     }
@@ -167,17 +166,17 @@ gig_i_scm_get_property(SCM self, SCM property)
 
     GValue value = { 0, };
 
-    SCM_ASSERT(SCM_IS_A_P(self, gig_object_type), self, SCM_ARG1, "%get-property");
-    SCM_ASSERT(SCM_IS_A_P(property, gig_paramspec_type), property, SCM_ARG2, "%get-property");
+    SCM_ASSERT(SCM_IS_A_P(self, gig_object_type), self, SCM_ARG1, "$get-property");
+    SCM_ASSERT(SCM_IS_A_P(property, gig_paramspec_type), property, SCM_ARG2, "$get-property");
     obj = gig_object_peek(self);
     pspec = gig_paramspec_peek(property);
     if (!pspec || pspec != get_paramspec(obj, pspec->name)) {
-        scm_misc_error("%get-property",
+        scm_misc_error("$get-property",
                        "object of type ~A does not have a property ~A",
                        scm_list_2(SCM_CLASS_OF(self), property));
     }
     if (!(pspec->flags & G_PARAM_READABLE)) {
-        scm_misc_error("%get-property", "property ~A is not readable", scm_list_1(property));
+        scm_misc_error("$get-property", "property ~A is not readable", scm_list_1(property));
     }
 
     g_value_init(&value, G_PARAM_SPEC_VALUE_TYPE(pspec));
@@ -196,22 +195,22 @@ gig_i_scm_set_property_x(SCM self, SCM property, SCM svalue)
 
     GValue value = { 0, };
 
-    SCM_ASSERT(SCM_IS_A_P(self, gig_object_type), self, SCM_ARG1, "%set-property!");
-    SCM_ASSERT(SCM_IS_A_P(property, gig_paramspec_type), property, SCM_ARG2, "%set-property");
+    SCM_ASSERT(SCM_IS_A_P(self, gig_object_type), self, SCM_ARG1, "$set-property!");
+    SCM_ASSERT(SCM_IS_A_P(property, gig_paramspec_type), property, SCM_ARG2, "$set-property");
 
     obj = gig_object_peek(self);
     pspec = gig_paramspec_peek(property);
     if (!pspec || pspec != get_paramspec(obj, pspec->name)) {
-        scm_misc_error("%set-property!",
+        scm_misc_error("$set-property!",
                        "object of type ~A does not have a property ~A",
                        scm_list_2(SCM_CLASS_OF(self), property));
     }
     if (!(pspec->flags & G_PARAM_WRITABLE)) {
-        scm_misc_error("%set-property!", "property ~A is not writable", scm_list_1(property));
+        scm_misc_error("$set-property!", "property ~A is not writable", scm_list_1(property));
     }
 
     g_value_init(&value, G_PARAM_SPEC_VALUE_TYPE(pspec));
-    gig_value_from_scm_with_error(&value, svalue, "%set-property!", SCM_ARG3);
+    gig_value_from_scm_with_error(&value, svalue, "$set-property!", SCM_ARG3);
     g_object_set_property(obj, pspec->name, &value);
 
     return SCM_UNSPECIFIED;
@@ -228,7 +227,7 @@ make_new_signal(GigSignalSpec *signal_spec, GType instance_type)
 
 static void
 gig_user_object_get_property(GObject *object, unsigned property_id, GValue *value,
-                             GParamSpec *pspec)
+                             [[maybe_unused]] GParamSpec *pspec)
 {
     GValue *properties = g_object_get_qdata(object, gig_user_object_properties);
     GValue *property = properties + property_id - 1;
@@ -269,7 +268,7 @@ gig_user_object_dispose(GObject *object)
 }
 
 static void
-gig_user_object_finalize(GObject *object)
+gig_user_object_finalize([[maybe_unused]] GObject *object)
 {
 }
 
@@ -339,6 +338,8 @@ gig_user_object_define(const char *type_name,
 
     /* Register it. */
     g_type_query(parent_type, &query);
+    if (query.class_size > UINT16_MAX || query.instance_size > UINT16_MAX)
+        abort();
     type_info.class_size = query.class_size;
     type_info.instance_size = query.instance_size;
     type_info.class_init = (GClassInitFunc) gig_user_class_init;
@@ -359,27 +360,27 @@ gig_i_scm_define_type(SCM s_type_name, SCM s_parent_type, SCM s_properties, SCM 
     GParamSpec **properties;
     GigSignalSpec **signals;
 
-    SCM_ASSERT(scm_is_string(s_type_name), s_type_name, SCM_ARG1, "%define-type");
+    SCM_ASSERT(scm_is_string(s_type_name), s_type_name, SCM_ARG1, "$define-type");
     SCM_ASSERT(SCM_SUBCLASSP(s_parent_type, gig_object_type), s_parent_type, SCM_ARG2,
-               "%define-type");
+               "$define-type");
 
     type_name = scm_to_utf8_string(s_type_name);
 
     parent_type = scm_to_gtype(s_parent_type);
 
     if (SCM_UNBNDP(gig_type_get_scheme_type(parent_type)))
-        scm_misc_error("%define-type", "type ~S is dupe", scm_list_1(s_parent_type));
+        scm_misc_error("$define-type", "type ~S is dupe", scm_list_1(s_parent_type));
 
     SCM_UNBND_TO_BOOL_F(s_properties);
     SCM_UNBND_TO_BOOL_F(s_signals);
 
     SCM_ASSERT_TYPE(scm_is_false(s_properties) ||
                     scm_is_list(s_properties),
-                    s_properties, SCM_ARG3, "%define-type", "list of param specs or #f");
+                    s_properties, SCM_ARG3, "$define-type", "list of param specs or #f");
 
     SCM_ASSERT_TYPE(scm_is_false(s_signals) ||
                     scm_is_list(s_signals),
-                    s_signals, SCM_ARG4, "%define-type", "list of signal specs or #f");
+                    s_signals, SCM_ARG4, "$define-type", "list of signal specs or #f");
 
     if (scm_is_list(s_properties)) {
         n_properties = scm_c_length(s_properties);
@@ -446,7 +447,7 @@ signal_lookup(const char *proc, GObject *self,
 }
 
 static SCM
-gig_i_scm_connect(SCM self, SCM signal, SCM sdetail, SCM callback, SCM s_after, SCM reserved)
+gig_i_scm_connect(SCM self, SCM signal, SCM sdetail, SCM callback, SCM s_after, [[maybe_unused]] SCM reserved)
 {
     GObject *obj;
     intbool_t after;
@@ -456,12 +457,12 @@ gig_i_scm_connect(SCM self, SCM signal, SCM sdetail, SCM callback, SCM s_after, 
     unsigned sigid;
     GQuark detail;
 
-    SCM_ASSERT(SCM_IS_A_P(self, gig_object_type), self, SCM_ARG1, "%connect");
-    SCM_ASSERT(SCM_IS_A_P(signal, gig_signal_type), signal, SCM_ARG2, "%connect");
+    SCM_ASSERT(SCM_IS_A_P(self, gig_object_type), self, SCM_ARG1, "$connect");
+    SCM_ASSERT(SCM_IS_A_P(signal, gig_signal_type), signal, SCM_ARG2, "$connect");
 
     obj = gig_object_peek(self);
 
-    signal_lookup("%connect", obj, signal, sdetail, &sigid, &query_info, &detail);
+    signal_lookup("$connect", obj, signal, sdetail, &sigid, &query_info, &detail);
 
     after = !SCM_UNBNDP(s_after) && scm_to_bool(s_after);
     closure = gig_closure_new(callback, gig_signal_ref(signal, GIG_SIGNAL_SLOT_OUTPUT_MASK));
@@ -481,12 +482,12 @@ gig_i_scm_emit(SCM self, SCM signal, SCM s_detail, SCM args)
     GQuark detail;
     SCM ret = SCM_EOL;
 
-    SCM_ASSERT(SCM_IS_A_P(self, gig_object_type), self, SCM_ARG1, "%emit");
-    SCM_ASSERT(SCM_IS_A_P(signal, gig_signal_type), signal, SCM_ARG2, "%emit");
+    SCM_ASSERT(SCM_IS_A_P(self, gig_object_type), self, SCM_ARG1, "$emit-signal");
+    SCM_ASSERT(SCM_IS_A_P(signal, gig_signal_type), signal, SCM_ARG2, "$emit-signal");
 
     obj = gig_object_peek(self);
 
-    signal_lookup("%emit", obj, signal, s_detail, &sigid, &query_info, &detail);
+    signal_lookup("$emit-signal", obj, signal, s_detail, &sigid, &query_info, &detail);
 
     if (SCM_UNBNDP(args))
         args = SCM_EOL;
@@ -494,17 +495,17 @@ gig_i_scm_emit(SCM self, SCM signal, SCM s_detail, SCM args)
         args = scm_cons(s_detail, args);
 
     if (scm_c_length(args) != query_info.n_params)
-        scm_misc_error("%emit", "~A: signal ~A has ~d params, but ~d were supplied",
+        scm_misc_error("$emit-signal", "~A: signal ~A has ~d params, but ~d were supplied",
                        scm_list_4(self, signal, scm_from_uint32(query_info.n_params),
                                   scm_length(args)));
 
     values = xcalloc(query_info.n_params + 1, sizeof(GValue));
     g_value_init(values, G_OBJECT_TYPE(obj));
-    gig_value_from_scm_with_error(values, self, "%emit", SCM_ARG1);
+    gig_value_from_scm_with_error(values, self, "$emit-signal", SCM_ARG1);
     SCM iter = args;
     for (unsigned i = 0; i < query_info.n_params; i++, iter = scm_cdr(iter)) {
         g_value_init(values + i + 1, query_info.param_types[i]);
-        gig_value_from_scm_with_error(values + i + 1, scm_car(iter), "%emit", SCM_ARGn);
+        gig_value_from_scm_with_error(values + i + 1, scm_car(iter), "$emit-signal", SCM_ARGn);
     }
 
     if (query_info.return_type != G_TYPE_NONE)
@@ -592,10 +593,12 @@ gig_property_define(GType type, GIPropertyInfo *info, const char *_namespace, SC
         if (!SCM_UNBNDP(def))
             defs = scm_cons(def, defs);
         debug_load("%s - bound to property %s.%s", long_name, g_type_name(type), name);
+#if SHORTHAND        
         def = do_define_property(name, s_prop, self_type, scm_get_top_class());
         if (!SCM_UNBNDP(def))
             defs = scm_cons(def, defs);
         debug_load("%s - shorthand for %s", name, long_name);
+#endif
     }
     else
         warning_load("Missing property %s", long_name);
@@ -635,7 +638,7 @@ do_define_property(const char *public_name, SCM prop, SCM self_type, SCM value_t
 }
 
 void
-gig_init_object()
+gig_init_object(void)
 {
     static int first = 1;
     if (first == 1) {
@@ -644,12 +647,12 @@ gig_init_object()
 
         sym_value = scm_from_utf8_symbol("value");
         
-        scm_c_define_gsubr("%make-gobject", 1, 1, 0, gig_i_scm_make_gobject);
-        scm_c_define_gsubr("%object-get-pspec", 2, 0, 0, gig_i_scm_get_pspec);
-        scm_c_define_gsubr("%get-property", 2, 0, 0, gig_i_scm_get_property);
-        scm_c_define_gsubr("%set-property!", 3, 0, 0, gig_i_scm_set_property_x);
-        scm_c_define_gsubr("%connect", 4, 2, 0, gig_i_scm_connect);
-        scm_c_define_gsubr("%emit", 2, 1, 1, gig_i_scm_emit);
-        scm_c_define_gsubr("%define-object-type", 2, 2, 0, gig_i_scm_define_type);
+        scm_c_define_gsubr("$make-gobject", 1, 1, 0, gig_i_scm_make_gobject);
+        scm_c_define_gsubr("$object-get-pspec", 2, 0, 0, gig_i_scm_get_pspec);
+        scm_c_define_gsubr("$get-property", 2, 0, 0, gig_i_scm_get_property);
+        scm_c_define_gsubr("$set-property!", 3, 0, 0, gig_i_scm_set_property_x);
+        scm_c_define_gsubr("$connect", 4, 2, 0, gig_i_scm_connect);
+        scm_c_define_gsubr("$emit-signal", 2, 1, 1, gig_i_scm_emit);
+        scm_c_define_gsubr("$define-object-type", 2, 2, 0, gig_i_scm_define_type);
     }
 }

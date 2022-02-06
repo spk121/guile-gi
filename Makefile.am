@@ -98,21 +98,28 @@ examples/resources/test.gresource: AM_GRESOURCE_FLAGS = --sourcedir=$(abs_buildd
 #  libguile-gi  #
 #################
 
-noinst_LTLIBRARIES = libcore.la
-guileextension_LTLIBRARIES = libguile-gi.la libguile-gi-types.la
+guileextension_LTLIBRARIES = libguile-gi.la
 
-libcore_la_c_sources =  \
-  src/core/string.c \
+libguile_gi_la_c_sources = \
   src/core/keyval.c \
   src/core/logging.c \
   src/core/mem.c \
-  src/core/slist.c \
-  src/core/strval.c \
+  src/core/oop.c \
   src/core/scm.c \
-  src/core/oop.c
-
-libguile_gi_types_la_c_sources = \
+  src/core/slist.c \
+  src/core/string.c \
+  src/core/strval.c \
+  src/doc/gig_document.c \
+  src/func/gig_arg_map.c \
+  src/func/gig_argument.c \
+  src/func/gig_callback.c \
+  src/func/gig_data_type.c \
+  src/func/gig_function.c \
+  src/func/gig_function_args.c \
+  src/gig.c \
+  src/repo/gig_repository.c \
   src/type/gig_closure.c \
+  src/type/gig_constant.c \
   src/type/gig_flag.c \
   src/type/gig_object.c \
   src/type/gig_signal.c \
@@ -120,63 +127,38 @@ libguile_gi_types_la_c_sources = \
   src/type/gig_type_private.c \
   src/type/gig_value.c
 
-libguile_gi_la_c_sources = \
-  src/gig.c \
-  src/gig_arg_map.c \
-  src/gig_argument.c \
-  src/gig_callback.c \
-  src/gig_constant.c \
-  src/gig_data_type.c \
-  src/gig_document.c \
-  src/gig_function.c \
-  src/gig_function_args.c \
-  src/gig_repository.c
-
-libcore_la_internal_headers = \
+libguile_gi_la_internal_headers = \
+  core.h \
   core/keyval.h \
-  core/mem.h \
-  core/scm.h \
-  core/string.h \
-  core/visibility.h \
   core/logging.h  \
+  core/mem.h \
   core/oop.h \
+  core/scm.h \
   core/slist.h \
+  core/string.h \
   core/strval.h \
-  core.h
-
-libguile_gi_types_la_internal_headers = \
+  core/visibility.h \
+  src/doc/gig_document.h \
+  src/func/gig_arg_map.h \
+  src/func/gig_argument.h \
+  src/func/gig_callback.h \
+  src/func/gig_closure.h \
+  src/func/gig_data_type.h \
+  src/func/gig_function.h \
+  src/func/gig_function_args.h \
+  src/func/gig_function_private.h \
+  src/gig.h \
+  src/repo/gig_repository.h \
+  src/type.h \
   src/type/gig_closure.h \
+  src/type/gig_constant.h \
   src/type/gig_flag.h \
+  src/type/gig_object.h \
   src/type/gig_object.h \
   src/type/gig_signal.h \
   src/type/gig_type.h \
   src/type/gig_type_private.h \
-  src/type/gig_value.h \
-  src/type.h
-
-libguile_gi_la_internal_headers = \
-  src/gig.h \
-  src/gig_arg_map.h \
-  src/gig_argument.h \
-  src/gig_callback.h \
-  src/gig_closure.h \
-  src/gig_constant.h \
-  src/gig_data_type.h \
-  src/gig_document.h \
-  src/gig_function.h \
-  src/gig_function_args.h \
-  src/gig_function_private.h \
-  src/gig_object.h \
-  src/gig_repository.h \
-  src/gig_signal.h
-
-libcore_la_SOURCES = \
-  $(libcore_la_internal_headers) \
-  $(libcore_la_c_sources)
-
-libguile_gi_types_la_SOURCES = \
-  $(libguile_gi_types_la_internal_headers) \
-  $(libguile_gi_types_la_c_sources)
+  src/type/gig_value.h
 
 libguile_gi_la_SOURCES = \
   $(libguile_gi_la_internal_headers) \
@@ -198,20 +180,6 @@ libguile_gi_la_CPPFLAGS += -DMTRACE
 endif
 
 CFLAG_VISIBILITY = -fvisibility=hidden
-
-libcore_la_CFLAGS = \
-  -std=c11 \
-  $(CFLAG_VISIBILITY) \
-  $(GUILE_CFLAGS)
-
-libguile_gi_types_la_CFLAGS = \
-  -std=c11 \
-  $(CFLAG_VISIBILITY) \
-  $(GUILE_CFLAGS) \
-  $(GLIB_CFLAGS) \
-  $(GOBJECT_CFLAGS) \
-  $(GOBJECT_INTROSPECTION_CFLAGS) \
-  $(FFI_CFLAGS)
 
 libguile_gi_la_CFLAGS = \
   -std=c11 \
@@ -235,25 +203,12 @@ if COVERAGE
 libguile_gi_la_LDFLAGS += --coverage -Wl,--dynamic-list-data
 endif
 
-libcore_la_LIBADD = \
- $(GUILE_LIBS)
-
-libguile_gi_types_la_LIBADD = \
- $(GUILE_LIBS) \
- $(GOBJECT_INTROSPECTION_LIBS) \
- $(GLIB_LIBS) \
- $(GOBJECT_LIBS) \
- $(FFI_LIBS) \
- libcore.la
-
 libguile_gi_la_LIBADD = \
  $(GUILE_LIBS) \
  $(GOBJECT_INTROSPECTION_LIBS) \
  $(GLIB_LIBS) \
  $(GOBJECT_LIBS) \
- $(FFI_LIBS) \
- libcore.la \
- libguile-gi-types.la
+ $(FFI_LIBS)
 
 #################
 # Guile Modules #

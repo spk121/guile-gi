@@ -1,4 +1,4 @@
-;; Copyright (C), 2019 Michael L. Gran
+;; Copyright (C) 2019, 2022 Michael L. Gran
 
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -20,30 +20,39 @@
   #:use-module (system foreign)
 
   #:use-module (gi types)
+  #:use-module (gi functions)
   #:export (require
-            get-all-entries
+            get-lib-names
             load-by-name typelib->module
+            get-all-entries
 
             get-search-path prepend-search-path!
             get-dependencies
 
             LOAD_METHODS LOAD_PROPERTIES LOAD_SIGNALS
-            LOAD_EVERYTHING LOAD_INFO_ONLY))
+            LOAD_EVERYTHING))
 
-;;(eval-when (expand load eval)
-;;  (load-extension "libguile-gi" "gig_init_repository"))
+(eval-when (expand load eval)
+  (load-extension "libguile-gi" "gig_init_repository"))
 
-(define %load-entry #f)
-(define %find-entry-by-name #f)
-(define %require (lambda (m l) #f))
+(define LOAD_METHODS $LOAD_METHODS)
+(define LOAD_PROPERTIES $LOAD_PROPERTIES)
+(define LOAD_SIGNALS $LOAD_SIGNALS)
+(define LOAD_EVERYTHING $LOAD_EVERYTHING)
 
-(define LOAD_EVERYTHING 1)
+(define* (require lib #:optional version)
+  "Forces the namespace LIB to be loaded if it isn't already.  This
+step is required once per LIB before any other functionality of
+this module is used.
 
-(define* (require module #:optional lib)
-  (%require module lib))
+If VERSION is given, loads that version, otherwise loads the latest
+available.
+
+Throws an error, if the library could not be found or loaded."
+  ($require lib version))
 
 (define* (load-by-name lib name #:optional (flags LOAD_EVERYTHING))
-  (%load-entry (%find-entry-by-name lib name) flags))
+  ($load-entry ($find-entry-by-name lib name) flags))
 
 (define* (typelib->module module lib #:optional version)
   (require lib version)
@@ -58,6 +67,7 @@
       (set-module-version! interface (module-version module))
       (set-module-kind! interface 'interface)
       (set-module-public-interface! module interface)))
+
   (save-module-excursion
    (lambda ()
      (set-current-module module)
@@ -67,3 +77,5 @@
                                   ($get-all-entries lib)))))
 
   module)
+
+(define get-all-entries $get-all-entries)

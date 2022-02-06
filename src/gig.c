@@ -15,8 +15,7 @@
 
 #include <libguile.h>
 #include "core.h"
-#include "gig_callback.h"
-#include "gig_function.h"
+#include "func.h"
 #include "gig.h"
 
 #ifdef ENABLE_GCOV

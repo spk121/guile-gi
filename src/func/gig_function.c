@@ -217,8 +217,10 @@ gig_function_define(gtype_t type, GICallableInfo *info, const char *_namespace, 
     if (is_method) {
         self_type = gig_type_get_scheme_type(type);
         return_val_if_fail(!SCM_UNBNDP(self_type), defs);
+#if SHORTHAND        
         method_name = scm_dynfree(gig_callable_info_make_name(info, NULL));
         debug_load("%s - shorthand for %s", method_name, function_name);
+#endif
     }
 
     SCM proc = SCM_UNDEFINED;
@@ -239,6 +241,7 @@ gig_function_define(gtype_t type, GICallableInfo *info, const char *_namespace, 
                                             optional_input_count, formals, specializers);
     if (!SCM_UNBNDP(def))
         defs = scm_cons(def, defs);
+#if SHORTHAND
     if (is_method) {
         def =
             scm_define_methods_from_procedure(method_name, proc, optional_input_count, formals,
@@ -246,7 +249,7 @@ gig_function_define(gtype_t type, GICallableInfo *info, const char *_namespace, 
         if (!SCM_UNBNDP(def))
             defs = scm_cons(def, defs);
     }
-
+#endif
   end:
     scm_dynwind_end();
     return defs;
@@ -611,9 +614,13 @@ function_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
 void
 gig_init_function(void)
 {
-    function_cache = keyval_new();
-    function_hook = scm_c_public_ref("gi core hooks", "%before-function-hook");
-    atexit(gig_fini_function);
+    static int first = 1;
+    if (first) {
+        first = 0;
+        function_cache = keyval_new();
+        function_hook = scm_c_public_ref("gi core hooks", "before-function-hook");
+        atexit(gig_fini_function);
+    }
 }
 
 static void

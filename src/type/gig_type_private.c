@@ -7,7 +7,8 @@ static slist_t *_boxed_funcs = NULL;
 static void _boxed_funcs_free(GigBoxedFuncs *funcs);
 
 static void
-_boxed_copy(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
+_boxed_copy([[maybe_unused]] ffi_cif *cif,
+            void *ret, void **ffi_args, void *user_data)
 {
     gtype_t type = GPOINTER_TO_SIZE(user_data);
     debug_transfer("boxed_copy(%s, %p)", g_type_name(type), *(void **)ffi_args[0]);
@@ -15,7 +16,7 @@ _boxed_copy(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
 }
 
 static void
-_boxed_free(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
+_boxed_free([[maybe_unused]] ffi_cif *cif, [[maybe_unused]] void *ret, void **ffi_args, void *user_data)
 {
     gtype_t type = GPOINTER_TO_SIZE(user_data);
     debug_transfer("boxed_free(%s, %p)", g_type_name(type), *(void **)ffi_args[0]);
@@ -63,7 +64,7 @@ _boxed_funcs_free(GigBoxedFuncs *funcs)
 }
 
 void
-_free_boxed_funcs()
+_free_boxed_funcs(void)
 {
-    slist_free(&_boxed_funcs, _boxed_funcs_free);
+    slist_free(&_boxed_funcs,(void (*)(void *)) _boxed_funcs_free);
 }

@@ -13,46 +13,58 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 (define-module (gi)
-  #:use-module (oop goops)
+  #:use-module ((oop goops) #:prefix oop:)
   #:use-module (srfi srfi-26)
-  #:use-module (gi core generics)
-  #:use-module (gi core hooks)
   #:use-module (gi types)
+  #:use-module (gi functions)
   #:use-module (gi repository)
+  #:declarative? #f
+  #:duplicates (merge-generics)
   #:re-export (<signal>
+               <GFlags>
+               list->flags
+               <GEnum>
+               symbol->enum
                make-signal
-               connect
+               connect-before
                connect-after
                ;; re-export some GOOPS stuff, so that we don't have to import all of it
-               is-a?
-               define-method
-               ;; core-generics
-               connect command-line equal? format write load send send shutdown quit
+               ;; is-a?
+               ;; define-method
+
                ;; types
-               ;; G_TYPE_NONE
-               ;; G_TYPE_CHAR G_TYPE_UCHAR
-               ;; G_TYPE_BOOLEAN
-               ;; G_TYPE_INT G_TYPE_UINT
-               ;; G_TYPE_INT64 G_TYPE_UINT64
-               ;; G_TYPE_ENUM G_TYPE_FLAGS
-               ;; G_TYPE_FLOAT G_TYPE_DOUBLE
-               ;; G_TYPE_OBJECT G_TYPE_STRING
-               ;; G_TYPE_POINTER
-               <string>
+               G_TYPE_NONE
+               G_TYPE_CHAR G_TYPE_UCHAR
+               G_TYPE_BOOLEAN
+               G_TYPE_INT G_TYPE_UINT
+               G_TYPE_INT64 G_TYPE_UINT64
+               G_TYPE_ENUM G_TYPE_FLAGS
+               G_TYPE_FLOAT G_TYPE_DOUBLE
+               G_TYPE_OBJECT G_TYPE_STRING
+               G_TYPE_POINTER
+               ;; <string>
                <GObject> <GInterface> <GParam> <GBoxed>
                <GVariant> <GValue> <GClosure>
                enum->number flags->number
+               flags-set?
                transform procedure->closure
-               ;; from (gi core hooks)
-               %before-function-hook
-               %before-callback-hook
-               %before-c-callback-hook
+
+               before-function-hook
+               before-callback-hook
+               before-c-callback-hook
+               is-registered-callback?
+               get-registered-callback-closure-pointer
+               
+               initialize
                )
   #:replace ((%new . make))
   #:export (use-typelibs
             register-type
-))
+            connect)
+  )
 
+(define connect (oop:ensure-generic (@ (guile) connect) 'connect))
+(define connect connect-before)
 (define (subclass? type-a type-b)
   (memq type-b (class-precedence-list type-a)))
 
@@ -113,22 +125,19 @@
              #,@module-defs
              (use-modules #,@module-uses)))))))
 
-(load-extension "libguile-gi" "gig_init")
-
-
-(define* (make-gobject gtype #:optional prop-list)
-  (%make-gobject gtype prop-list))
-
 (define (%new type . rest)
   (cond
    ((subclass? type <GObject>)
     (make-gobject type rest))
    ((subclass? type <GBoxed>)
-    (%allocate-boxed type))
+    (allocate-boxed type))
    ((subclass? type <GEnum>)
     (error "use symbol->enum or number->enum instead"))
    ((subclass? type <GFlags>)
     (error "use list->flags or number->flags instead"))
+   ((subclass? type <GValue>)
+    (pk '%new type rest)
+    (apply make <GValue> rest))
    (else
     (apply make type rest))))
 

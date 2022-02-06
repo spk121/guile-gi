@@ -17,8 +17,7 @@
 #include <girepository.h>
 #include "core.h"
 #include "type.h"
-#include "gig_function.h"
-#include "gig_constant.h"
+#include "func.h"
 #include "gig_repository.h"
 
 static scm_t_bits info_smob_tag = 0;
@@ -443,26 +442,26 @@ scm_get_dependencies(SCM namespace)
 }
 
 void
-gig_init_repository()
+gig_init_repository(void)
 {
-    info_smob_tag = scm_make_smob_type("RepositoryEntry", sizeof(GIBaseInfo *));
-    scm_set_smob_mark(info_smob_tag, mark_info_smob);
-    scm_set_smob_free(info_smob_tag, free_info_smob);
-    scm_set_smob_print(info_smob_tag, print_info_smob);
-
-    scm_c_define_gsubr("%require", 1, 1, 0, scm_require);
-    scm_c_define_gsubr("%get-all-entries", 1, 0, 0, scm_get_all_entries);
-    scm_c_define_gsubr("%find-entry-by-name", 2, 0, 0, scm_find_entry_by_name);
-    scm_c_define_gsubr("%load-entry", 1, 1, 0, scm_load_entry);
-    scm_c_define_gsubr("%get-search-path", 0, 0, 0, scm_get_search_path);
-    scm_c_define_gsubr("%prepend-search-path!", 1, 0, 0, scm_prepend_search_path_x);
-    scm_c_define_gsubr("%get-dependencies", 1, 0, 0, scm_get_dependencies);
-
-#define D(x) scm_permanent_object(scm_c_define(#x, scm_from_uint(x)))
-
-    D(LOAD_INFO_ONLY);
-    D(LOAD_METHODS);
-    D(LOAD_PROPERTIES);
-    D(LOAD_SIGNALS);
-    D(LOAD_EVERYTHING);
+    static int first = 1;
+    if (first) {
+        first = 0;
+        info_smob_tag = scm_make_smob_type("RepositoryEntry", sizeof(GIBaseInfo *));
+        scm_set_smob_mark(info_smob_tag, mark_info_smob);
+        scm_set_smob_free(info_smob_tag, free_info_smob);
+        scm_set_smob_print(info_smob_tag, print_info_smob);
+        
+        scm_c_define_gsubr("$require", 1, 1, 0, scm_require);
+        scm_c_define_gsubr("$get-all-entries", 1, 0, 0, scm_get_all_entries);
+        scm_c_define_gsubr("$find-entry-by-name", 2, 0, 0, scm_find_entry_by_name);
+        scm_c_define_gsubr("$load-entry", 1, 1, 0, scm_load_entry);
+        scm_c_define_gsubr("$get-search-path", 0, 0, 0, scm_get_search_path);
+        scm_c_define_gsubr("$prepend-search-path!", 1, 0, 0, scm_prepend_search_path_x);
+        scm_c_define_gsubr("$get-dependencies", 1, 0, 0, scm_get_dependencies);
+        scm_c_define("$LOAD_METHODS", scm_from_uint(LOAD_METHODS));
+        scm_c_define("$LOAD_PROPERTIES", scm_from_uint(LOAD_PROPERTIES));
+        scm_c_define("$LOAD_SIGNALS", scm_from_uint(LOAD_SIGNALS));
+        scm_c_define("$LOAD_EVERYTHING", scm_from_uint(LOAD_EVERYTHING));
+    }
 }

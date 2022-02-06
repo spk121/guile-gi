@@ -112,10 +112,10 @@ gig_closure_new(SCM callback, SCM inout_mask)
 static SCM
 invoke_closure(SCM closure, SCM return_type, SCM inout_mask, SCM args)
 {
-    SCM_ASSERT_TYPE(SCM_IS_A_P(closure, gig_closure_type), closure, SCM_ARG1, "%invoke-closure",
+    SCM_ASSERT_TYPE(SCM_IS_A_P(closure, gig_closure_type), closure, SCM_ARG1, "$invoke-closure",
                     "closure");
     GClosure *real_closure = gig_type_peek_typed_object(closure, gig_closure_type);
-    SCM_ASSERT_TYPE(scm_is_list(args), args, SCM_ARG2, "%invoke-closure", "list");
+    SCM_ASSERT_TYPE(scm_is_list(args), args, SCM_ARG2, "$invoke-closure", "list");
 
     size_t nargs = scm_c_length(args);
     GValue *params = xcalloc(nargs, sizeof(GValue));
@@ -187,10 +187,10 @@ static SCM
 procedure_to_closure(SCM procedure, SCM inout_mask)
 {
     SCM_ASSERT_TYPE(scm_is_procedure(procedure), procedure, SCM_ARG1,
-                    "procedure->closure", "procedure");
+                    "$procedure->closure", "procedure");
     SCM_ASSERT_TYPE(SCM_UNBNDP(inout_mask) ||
                     scm_is_bitvector(inout_mask), procedure, SCM_ARG2,
-                    "procedure->closure", "bitvector");
+                    "$procedure->closure", "bitvector");
     GClosure *cls = gig_closure_new(procedure, inout_mask);
     g_closure_ref(cls);
     g_closure_sink(cls);
@@ -198,8 +198,8 @@ procedure_to_closure(SCM procedure, SCM inout_mask)
 }
 
 void
-gig_init_closure()
+gig_init_closure(void)
 {
-    scm_c_define_gsubr("procedure->closure", 1, 1, 0, procedure_to_closure);
-    scm_c_define_gsubr("%invoke-closure", 4, 0, 0, invoke_closure);
+    scm_c_define_gsubr("$procedure->closure", 1, 1, 0, procedure_to_closure);
+    scm_c_define_gsubr("$invoke-closure", 4, 0, 0, invoke_closure);
 }

@@ -17,13 +17,10 @@
 #include "gig_object.h"
 #include "gig_value.h"
 #include "gig_type.h"
-#include "gig_argument.h"
 #include "gig_flag.h"
 
 typedef void (*handler_func)(void *);
 static SCM signal_slot_syms[GIG_SIGNAL_SLOT_COUNT];
-
-SCM gig_signal_type;
 
 SCM
 gig_signal_ref(SCM signal, GigSignalSlot slot)
@@ -33,11 +30,11 @@ gig_signal_ref(SCM signal, GigSignalSlot slot)
 
 static SCM signal_accu_first_wins;
 static SCM signal_accu_true_handled;
+SCM gig_signal_type = SCM_BOOL_F;
+static SCM make_signal_proc = SCM_BOOL_F;
 
-static SCM make_signal_proc;
-
-static intbool_t
-scm_signal_accu(GSignalInvocationHint *ihint, GValue *seed, const GValue *element, void *procedure)
+static int
+scm_signal_accu([[maybe_unused]] GSignalInvocationHint *ihint, GValue *seed, const GValue *element, void *procedure)
 {
     SCM _seed, _element, result;
     _seed = gig_value_as_scm(seed, FALSE);
@@ -53,7 +50,7 @@ scm_signal_accu(GSignalInvocationHint *ihint, GValue *seed, const GValue *elemen
         return TRUE;
     case 2:
     {
-        intbool_t ret = scm_is_true(scm_c_value_ref(result, 0));
+        int ret = scm_is_true(scm_c_value_ref(result, 0));
         SCM next_seed = scm_c_value_ref(result, 1);
         return_val_if_fail(!gig_value_from_scm(seed, next_seed), FALSE);
         return ret;
@@ -79,12 +76,10 @@ GigSignalSpec *
 gig_signalspec_from_obj(SCM obj)
 {
     unsigned n_params;
-    gtype_t *params;
+    GType *params;
     SCM sparams, saccu;
     GSignalFlags flags = 0;
     GigSignalSpec *spec = NULL;
-
-    SCM_ASSERT_TYPE(SCM_IS_A_P(obj, gig_signal_type), obj, SCM_ARG1, "%scm->signalspec", "signal");
 
     scm_dynwind_begin(0);
     spec = xcalloc(1, sizeof(GigSignalSpec));
@@ -97,8 +92,12 @@ gig_signalspec_from_obj(SCM obj)
 
     sparams = gig_signal_ref(obj, GIG_SIGNAL_SLOT_PARAM_TYPES);
     saccu = gig_signal_ref(obj, GIG_SIGNAL_SLOT_ACCUMULATOR);
-    n_params = scm_c_length(sparams);
-    params = xcalloc(n_params, sizeof(gtype_t));
+    size_t len = scm_c_length(sparams);
+    if (len > UINT_MAX)
+        scm_misc_error("%scm->signalspec", "signal ~A params overflow",
+                       scm_list_1(gig_signal_ref(obj, GIG_SIGNAL_SLOT_NAME)));
+    n_params = (unsigned) len;
+    params = xcalloc(n_params, sizeof(GType));
 
     for (unsigned i = 0; i < n_params; i++, sparams = scm_cdr(sparams))
         params[i] = scm_to_gtype(scm_car(sparams));
@@ -184,19 +183,37 @@ gig_make_signal2(SCM name, SCM mask)
     return signal;
 }
 
-void
-gig_init_signal()
+static SCM
+scm_save_signal_type(SCM x)
 {
-    gig_signal_type = scm_c_public_ref("gi types", "<signal>");
-    make_signal_proc = scm_c_public_ref("gi types", "make-signal");
+    gig_signal_type = x;
+    return SCM_UNSPECIFIED;
+}
 
-    signal_slot_syms[GIG_SIGNAL_SLOT_NAME] = scm_from_utf8_symbol("name");
-    signal_slot_syms[GIG_SIGNAL_SLOT_FLAGS] = scm_from_utf8_symbol("flags");
-    signal_slot_syms[GIG_SIGNAL_SLOT_ACCUMULATOR] = scm_from_utf8_symbol("accumulator");
-    signal_slot_syms[GIG_SIGNAL_SLOT_RETURN_TYPE] = scm_from_utf8_symbol("return-type");
-    signal_slot_syms[GIG_SIGNAL_SLOT_PARAM_TYPES] = scm_from_utf8_symbol("param-types");
-    signal_slot_syms[GIG_SIGNAL_SLOT_OUTPUT_MASK] = scm_from_utf8_symbol("output-mask");
+static SCM
+scm_save_make_signal_proc(SCM x)
+{
+    make_signal_proc = x;
+    return SCM_UNSPECIFIED;
+}
 
-    signal_accu_first_wins = scm_from_utf8_symbol("first-wins");
-    signal_accu_true_handled = scm_from_utf8_symbol("true-handled");
+void
+gig_init_signal(void)
+{
+    static int first = 1;
+    if (first) {
+        first = 0;
+        scm_c_define_gsubr("$save-signal-type", 1, 0, 0, scm_save_signal_type);
+        scm_c_define_gsubr("$save-make-signal-proc", 1, 0, 0, scm_save_make_signal_proc);
+        
+        signal_slot_syms[GIG_SIGNAL_SLOT_NAME] = scm_from_utf8_symbol("name");
+        signal_slot_syms[GIG_SIGNAL_SLOT_FLAGS] = scm_from_utf8_symbol("flags");
+        signal_slot_syms[GIG_SIGNAL_SLOT_ACCUMULATOR] = scm_from_utf8_symbol("accumulator");
+        signal_slot_syms[GIG_SIGNAL_SLOT_RETURN_TYPE] = scm_from_utf8_symbol("return-type");
+        signal_slot_syms[GIG_SIGNAL_SLOT_PARAM_TYPES] = scm_from_utf8_symbol("param-types");
+        signal_slot_syms[GIG_SIGNAL_SLOT_OUTPUT_MASK] = scm_from_utf8_symbol("output-mask");
+
+        signal_accu_first_wins = scm_from_utf8_symbol("first-wins");
+        signal_accu_true_handled = scm_from_utf8_symbol("true-handled");
+    }
 }

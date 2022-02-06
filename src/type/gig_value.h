@@ -8,10 +8,10 @@
 
 
 SCM gig_value_c2g(GValue *val);
-SCM gig_value_to_scm_basic_type(const GValue *value, gtype_t fundamental, intbool_t *handled);
-SCM gig_value_param_as_scm(const GValue *gvalue, intbool_t copy_boxed, const GParamSpec *pspec);
+SCM gig_value_to_scm_basic_type(GValue *value, GType fundamental, int *handled);
+SCM gig_value_param_as_scm(GValue *gvalue, int copy_boxed, GParamSpec *pspec);
 
-SCM gig_value_as_scm(const GValue *value, intbool_t copy_boxed);
+SCM gig_value_as_scm(GValue *value, int copy_boxed);
 SCM gig_value_get(SCM value);
 SCM gig_value_get_type(SCM value);
 SCM gig_value_set(SCM where, SCM what);

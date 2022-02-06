@@ -4,6 +4,7 @@
 (test-begin "insanity.scm")
 
 (require "GObject" "2.0")
+(require "GLib" "2.0")
 (let ((m (make-module)))
   (save-module-excursion
    (lambda ()

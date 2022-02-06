@@ -1,4 +1,5 @@
-(use-modules (gi) (gi types) (gi repository)
+(use-modules (gi) (gi repository)
+             (oop goops)
              (ice-9 textual-ports)
              (srfi srfi-1)
              (srfi srfi-64))
@@ -25,8 +26,8 @@
     (set! loop (main-loop:new #f #t))
     (is-a? loop <GMainLoop>)))
 
-(test-assert "is running" (is-running? loop))
-(test-assert "get context" (is-a? (get-context loop) <GMainContext>))
+(test-assert "is running" (main-loop:is-running? loop))
+(test-assert "get context" (is-a? (main-loop:get-context loop) <GMainContext>))
 
 (define %idle-counter 0)
 
@@ -102,7 +103,7 @@
 
 (test-assert "run mainloop"
   (begin
-    (run loop)
+    (main-loop:run loop)
     #t))
 
 (test-equal "idle ran 5 times" 5 n-idle)

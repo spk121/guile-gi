@@ -25,7 +25,7 @@
 #define FLT_MAX 3.402823466e+38F
 #endif
 
-/* GValue: a container holding a gtype_t and an associated GValue. */
+/* GValue: a container holding a GType and an associated GValue. */
 
 #define GIG_VALUE_WRONG_TYPE -1
 #define GIG_VALUE_OUT_OF_RANGE -2
@@ -47,7 +47,7 @@ gig_value_from_scm(GValue *value, SCM obj)
 {
     assert(value != NULL);
 
-    gtype_t value_type = G_VALUE_TYPE(value);
+    GType value_type = G_VALUE_TYPE(value);
 
     switch (G_TYPE_FUNDAMENTAL(value_type)) {
     case G_TYPE_CHAR:
@@ -176,17 +176,17 @@ gig_value_from_scm(GValue *value, SCM obj)
     {
         if (!scm_is_real(obj))
             return GIG_VALUE_WRONG_TYPE;
-        gdouble dval = scm_to_double(obj);
-        if (dval < -G_MAXFLOAT || dval > G_MAXFLOAT)
+        double dval = scm_to_double(obj);
+        if (dval < -(double) FLT_MAX || dval > (double) FLT_MAX)
             return GIG_VALUE_OUT_OF_RANGE;
-        g_value_set_float(value, dval);
+        g_value_set_float(value, (float) dval);
         return 0;
     }
     case G_TYPE_DOUBLE:
     {
         if (!scm_is_real(obj))
             return GIG_VALUE_WRONG_TYPE;
-        gdouble temp;
+        double temp;
         temp = scm_to_double(obj);
         g_value_set_double(value, temp);
         return 0;
@@ -264,7 +264,7 @@ gig_value_from_scm_with_error(GValue *value, SCM obj, const char *subr, int pos)
         return;
     case GIG_VALUE_WRONG_TYPE:
     {
-        gtype_t value_type = G_VALUE_TYPE(value);
+        GType value_type = G_VALUE_TYPE(value);
         if (value_type != G_TYPE_NONE && g_type_name(value_type))
             scm_wrong_type_arg_msg(subr, pos, obj, g_type_name(value_type));
         else
@@ -276,12 +276,12 @@ gig_value_from_scm_with_error(GValue *value, SCM obj, const char *subr, int pos)
 }
 
 SCM
-gig_value_param_as_scm(const GValue *gvalue, intbool_t copy_boxed, const GParamSpec *pspec)
+gig_value_param_as_scm(GValue *gvalue, intbool_t copy_boxed, GParamSpec *pspec)
 {
     if (G_IS_PARAM_SPEC_UNICHAR(pspec)) {
         scm_t_wchar u;
 
-        u = g_value_get_uint(gvalue);
+        u = (int) g_value_get_uint(gvalue);
         return SCM_MAKE_CHAR(u);
     }
     else
@@ -301,7 +301,7 @@ gig_value_param_as_scm(const GValue *gvalue, intbool_t copy_boxed, const GParamS
  * Returns: a PyObject representing the value.
  */
 SCM
-gig_value_to_scm_basic_type(const GValue *value, gtype_t fundamental, intbool_t *handled)
+gig_value_to_scm_basic_type(GValue *value, GType fundamental, intbool_t *handled)
 {
     *handled = TRUE;
     switch (fundamental) {
@@ -349,7 +349,7 @@ gig_value_to_scm_basic_type(const GValue *value, gtype_t fundamental, intbool_t 
 // This function creates and returns a Scheme value that
 // represents the GValue passed as an argument.
 static SCM
-gig_value_to_scm_structured_type(const GValue *value, gtype_t fundamental, intbool_t copy_boxed)
+gig_value_to_scm_structured_type(GValue *value, GType fundamental, int copy_boxed)
 {
     GITransfer transfer = copy_boxed ? GI_TRANSFER_NOTHING : GI_TRANSFER_EVERYTHING;
     switch (fundamental) {
@@ -415,7 +415,7 @@ gig_value_to_scm_structured_type(const GValue *value, gtype_t fundamental, intbo
     default:
     {
         // assert_not_reached ();
-        /* Pygtype_tMarshal *bm; */
+        /* PyGTypeMarshal *bm; */
         /* if ((bm = pyg_type_lookup(G_VALUE_TYPE(value)))) */
         /*  return bm->fromvalue(value); */
         break;
@@ -434,11 +434,11 @@ gig_value_to_scm_structured_type(const GValue *value, gtype_t fundamental, intbo
 /* Returns an SCM version of the GValue.  If COPY_BOXED,
    try to make a deep copy of the object. */
 SCM
-gig_value_as_scm(const GValue *value, intbool_t copy_boxed)
+gig_value_as_scm(GValue *value, intbool_t copy_boxed)
 {
     SCM guobj;
     intbool_t handled;
-    gtype_t fundamental = G_TYPE_FUNDAMENTAL(G_VALUE_TYPE(value));
+    GType fundamental = G_TYPE_FUNDAMENTAL(G_VALUE_TYPE(value));
 
 #if 0
     if (fundamental == G_TYPE_CHAR)
@@ -478,9 +478,9 @@ gig_value_set(SCM where, SCM what)
 SCM
 gig_value_set_type(SCM where, SCM what)
 {
-    gtype_t type = scm_to_gtype(what);
+    GType type = scm_to_gtype(what);
     SCM_ASSERT_TYPE(!G_TYPE_IS_ABSTRACT(type), what, SCM_ARG2, "%set-type!",
-                    "instantiable gtype_t");
+                    "instantiable GType");
     GValue *value = gig_type_peek_typed_object(where, gig_value_type);
     g_value_unset(value);
     g_value_init(value, type);
@@ -497,16 +497,20 @@ gig_value_transform(SCM val, SCM type)
         return gig_type_transfer_object(G_TYPE_VALUE, new_val, GI_TRANSFER_EVERYTHING);
     else {
         free(new_val);
-        scm_misc_error("%transform", "failed to transform ~A into ~A", scm_list_2(val, type));
+        scm_misc_error("$transform-value", "failed to transform ~A into ~A", scm_list_2(val, type));
     }
 }
 
 void
-gig_init_value()
+gig_init_value(void)
 {
-    scm_c_define_gsubr("%get", 1, 0, 0, gig_value_get);
-    scm_c_define_gsubr("%get-type", 1, 0, 0, gig_value_get_type);
-    scm_c_define_gsubr("%set!", 2, 0, 0, gig_value_set);
-    scm_c_define_gsubr("%set-type!", 2, 0, 0, gig_value_set_type);
-    scm_c_define_gsubr("%transform", 2, 0, 0, gig_value_transform);
+    static int first = 1;
+    if (first) {
+        first = 0;
+        scm_c_define_gsubr("$get-value", 1, 0, 0, gig_value_get);
+        scm_c_define_gsubr("$get-value-type", 1, 0, 0, gig_value_get_type);
+        scm_c_define_gsubr("$set-value!", 2, 0, 0, gig_value_set);
+        scm_c_define_gsubr("$set-value-type!", 2, 0, 0, gig_value_set_type);
+        scm_c_define_gsubr("$transform-value", 2, 0, 0, gig_value_transform);
+    }
 }

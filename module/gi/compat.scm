@@ -1,4 +1,4 @@
-;; Copyright (C) 2020 Michael L. Gran
+;; Copyright (C) 2020, 2022 Michael L. Gran
 
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -14,24 +14,27 @@
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>
 
 (define-module (gi compat)
+  #:use-module (gi types)
   #:use-module (oop goops)
   #:use-module (srfi srfi-2)
   #:use-module (srfi srfi-26)
   #:use-module (system foreign)
-  #:use-module (gi types)
   #:export (fiddle dynamic-fiddler))    ; plus 'export' at bottom of file
 
-(define (%fiddle proc fundamental)
-  "Calls PROC, a procedure that takes one argument, on the VALUE slot
-of FUNDAMENTAL."
-  (proc (slot-ref fundamental 'value)))
+(define (%fiddle proc obj)
+  "Applies PROC, a procedure that takes one argument, to the 'value' slot
+of OBJ, an instance of <GFundamental>.  The 'value' slot should
+contain a pointer."
+  (proc (slot-ref obj 'value)))
 
 (define-method (fiddle (proc <procedure>) (boxed <GBoxed>))
-  "Apply PROC on the raw pointer of BOXED."
+  "Applies PROC, a procedure that takes one argument, to the raw pointer
+of BOXED"
   (%fiddle proc boxed))
 
 (define-method (fiddle (proc <procedure>) (object <GObject>))
-  "Apply PROC on the raw pointer of OBJECT."
+  "Applies PROC, a procedure that takes one argument, to the raw pointer
+of OBJECT."
   (%fiddle proc object))
 
 (define (dynamic-fiddler name lib)

@@ -28,36 +28,36 @@ void internal_log(int level, const char *file, int line, const char *func,
 
 #define debug_internal(level,domain,...)  internal_log((level), __FILE__, __LINE__, __func__, (domain), __VA_ARGS__)
 
-#define debug_init(...) debug_internal(G_LOG_LEVEL_DEBUG, "init", __VA_ARGS__)
+#define debug_init(...) debug_internal(LOG_DEBUG, "init", __VA_ARGS__)
 
-#define debug_transfer(...) debug_internal(G_LOG_LEVEL_DEBUG, "transfers", __VA_ARGS__)
-#define warning_transfer(...) debug_internal(G_LOG_LEVEL_WARNING, "transfers", __VA_ARGS__)
-#define critical_transfer(...) debug_internal(G_LOG_LEVEL_CRITICAL, "transfers", __VA_ARGS__)
-#define error_transfer(...) debug_internal(G_LOG_LEVEL_ERROR, "transfers", __VA_ARGS__)
-#define debug_load(...)     debug_internal(G_LOG_LEVEL_DEBUG, "load", __VA_ARGS__)
-#define warning_load(...)   debug_internal(G_LOG_LEVEL_WARNING, "load", __VA_ARGS__)
-#define critical_load(...)  debug_internal(G_LOG_LEVEL_CRITICAL, "load", __VA_ARGS__)
-#define error_load(...)  debug_internal(G_LOG_LEVEL_ERROR, "load", __VA_ARGS__)
-#define debug_ffi(...) debug_internal(G_LOG_LEVEL_DEBUG, "ffi", __VA_ARGS__)
-#define critical_ffi(...) debug_internal(G_LOG_LEVEL_CRITICAL, "ffi", __VA_ARGS__)
+#define debug_transfer(...) debug_internal(LOG_DEBUG, "transfers", __VA_ARGS__)
+#define warning_transfer(...) debug_internal(LOG_WARNING, "transfers", __VA_ARGS__)
+#define critical_transfer(...) debug_internal(LOG_CRITICAL, "transfers", __VA_ARGS__)
+#define error_transfer(...) debug_internal(LOG_ERROR, "transfers", __VA_ARGS__)
+#define debug_load(...)     debug_internal(LOG_DEBUG, "load", __VA_ARGS__)
+#define warning_load(...)   debug_internal(LOG_WARNING, "load", __VA_ARGS__)
+#define critical_load(...)  debug_internal(LOG_CRITICAL, "load", __VA_ARGS__)
+#define error_load(...)  debug_internal(LOG_ERROR, "load", __VA_ARGS__)
+#define debug_ffi(...) debug_internal(LOG_DEBUG, "ffi", __VA_ARGS__)
+#define critical_ffi(...) debug_internal(LOG_CRITICAL, "ffi", __VA_ARGS__)
 
 #define return_val_if_fail(a,b)                                     \
     do {                                                                \
         if (!(a)) {                                                     \
-            debug_internal(G_LOG_LEVEL_CRITICAL, "return", "unexpected failure: %s", #a); \
+            debug_internal(LOG_CRITICAL, "return", "unexpected failure: %s", #a); \
             return (b);                                                 \
         }                                                               \
     } while(0)
 
 #define return_val_if_reached(x)                                    \
     do {                                                                \
-        debug_internal(G_LOG_LEVEL_CRITICAL, "return", "unexpected reach: %s", #x); \
+        debug_internal(LOG_CRITICAL, "return", "unexpected reach: %s", #x); \
         return (x);                                                     \
     } while (0)
 
 #define assert_not_reached()                                        \
     do {                                                                \
-        debug_internal(G_LOG_LEVEL_CRITICAL, "reached", "unexpected reach"); \
+        debug_internal(LOG_CRITICAL, "reached", "unexpected reach"); \
         exit(1);                                                        \
     } while (0)
 
@@ -66,6 +66,6 @@ void internal_log(int level, const char *file, int line, const char *func,
 #define warn_if_fail(a)                                     \
     do {                                                                \
         if (!(a)) {                                                     \
-            debug_internal(G_LOG_LEVEL_CRITICAL, "return", "unexpected failure: %s", #a); \
+            debug_internal(LOG_CRITICAL, "return", "unexpected failure: %s", #a); \
         }                                                               \
     } while(0)

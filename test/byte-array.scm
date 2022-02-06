@@ -1,4 +1,5 @@
 (use-modules (gi) (gi util)
+             (oop goops)
              (srfi srfi-64)
              (rnrs bytevectors))
 
@@ -30,10 +31,10 @@
 
   (test-eqv "size is 0"
     0
-    (get-size bytes))
+    (bytes:get-size bytes))
 
   (test-eq "data is #f"
     #f
-    (get-data bytes)))
+    (bytes:get-data bytes)))
 
 (test-end "byte-array")

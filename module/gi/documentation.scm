@@ -1,4 +1,4 @@
-;; Copyright (C), 2019 Michael L. Gran
+;; Copyright (C) 2019, 2022 Michael L. Gran
 
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -19,7 +19,6 @@
   #:use-module (ice-9 format)
   #:use-module (ice-9 peg)
   #:use-module (ice-9 pretty-print)
-  #:use-module (oop goops)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-2)
   #:use-module (srfi srfi-26)
@@ -35,10 +34,9 @@
             ->guile-procedures.txt
             ->docbook))
 
-;;(eval-when (expand load eval)
-;;  (load-extension "libguile-gi" "gig_init_document"))
+(eval-when (expand load eval)
+  (load-extension "libguile-gi" "gig_init_document"))
 
-(define %document #f)
 ;;; XML Parsing
 
 (define documentation-special-leaves
@@ -196,7 +194,7 @@
             '())))
 
 (define (%info ifo)
-  (let ((doc (with-output-to-string (lambda () (%document ifo)))))
+  (let ((doc (with-output-to-string (lambda () ($document ifo)))))
     doc))
 
 (define* (typelib lib #:optional version #:key (require? #t))

@@ -1,5 +1,5 @@
 (use-modules (gi)
-             (gi types)
+             ;; (gi types)
              (gi repository) (srfi srfi-64) (oop goops)
              (ice-9 hash-table)
              (ice-9 receive)
@@ -11,6 +11,7 @@
 
 (define (value-passthrough type val)
   (let ((value (make <GValue>)))
+    (format (current-error-port) "setter ~S~%" (slot-ref value 'setter))
     (set! (value type) val)
     (value)))
 
@@ -118,7 +119,8 @@
   #t
   (value-passthrough G_TYPE_UINT64 -1))
 
-(test-approximate "getset float"
+
+#;(test-approximate "getset float"
   1234.5678
   (value-passthrough G_TYPE_FLOAT 1234.5678)
   0.0001)
@@ -131,7 +133,7 @@
   #t
   (value-passthrough G_TYPE_FLOAT 1.0e40))
 
-(test-approximate "getset double"
+#;(test-approximate "getset double"
   1234.5678
   (value-passthrough G_TYPE_DOUBLE 1234.5678)
   0.0001)

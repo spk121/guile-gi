@@ -19,9 +19,9 @@
 #include <glib-object.h>
 #include <girepository.h>
 #include "core.h"
-#include "gig_arg_map.h"
-#include "gig_repository.h"
-#include "gig_function.h"
+#include "type.h"
+#include "func.h"
+#include "repo.h"
 #include "gig_document.h"
 
 static void do_document(GIBaseInfo *info, const char *parent);
@@ -149,7 +149,7 @@ do_document(GIBaseInfo *info, const char *_namespace)
     case GI_INFO_TYPE_INTERFACE:
     case GI_INFO_TYPE_UNION:
     {
-        gtype_t gtype = g_registered_type_info_get_g_type(info);
+        GType gtype = g_registered_type_info_get_g_type(info);
         if (gtype == G_TYPE_NONE)
             break;
 
@@ -190,7 +190,7 @@ do_document(GIBaseInfo *info, const char *_namespace)
 
         scm_printf(SCM_UNDEFINED, "<%s name=\"%s\">", kind, g_base_info_get_name(info));
 
-        gtype_t gtype = g_registered_type_info_get_g_type(info);
+        GType gtype = g_registered_type_info_get_g_type(info);
 
         scm_printf(SCM_UNDEFINED, "<scheme>");
 
@@ -265,5 +265,5 @@ _document(SCM info)
 void
 gig_init_document(void)
 {
-    scm_c_define_gsubr("%document", 1, 0, 0, _document);
+    scm_c_define_gsubr("$document", 1, 0, 0, _document);
 }

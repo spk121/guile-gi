@@ -12,6 +12,9 @@
    (negate null?)
    load-by-name))
 
+
+;(require "GObject" "2.0")
+;(load-by-name "GObject" "InitiallyUnowned")
 (if (false-if-exception (require "Gtk" "3.0"))
     (test-assert "init"
       (and (load-by-name? "Gtk" "init_check")

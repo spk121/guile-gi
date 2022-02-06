@@ -51,5 +51,5 @@ GIG_API SCM gig_make_signal2(SCM name, SCM output_mask);
 GClosure *gig_signal_closure_new(SCM instance, gtype_t g_type, const char *signal_name,
                                  SCM callback);
 
-void gig_init_signal(void);
+GIG_API void gig_init_signal(void);
 #endif

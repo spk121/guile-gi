@@ -12,8 +12,8 @@
   "a06b168d8e72c069aa3cc58d64b92a300f9f82127facb3219855053e49a4ecbe"
   (let ((cksum (checksum:new (symbol->checksum-type 'sha256)))
         (bv (string->utf8 "ABCDEFGHIJKLMNOPQRSTUVWXYZ\n")))
-    (update cksum bv)
-    (get-string cksum)))
+    (checksum:update cksum bv)
+    (checksum:get-string cksum)))
 
 (test-end "checksum")
 

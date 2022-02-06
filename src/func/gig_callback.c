@@ -299,7 +299,7 @@ callback_binding_inner(struct callback_binding_args *args)
 #undef CALLBACK_NAME_MAX_LEN
 }
 
-void
+static void
 callback_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
 {
     struct callback_binding_args args;
@@ -322,7 +322,7 @@ callback_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
     }
 }
 
-void *
+static void *
 c_callback_binding_inner(struct callback_binding_args *args)
 {
 
@@ -367,7 +367,7 @@ c_callback_binding_inner(struct callback_binding_args *args)
     return (void *)1;
 }
 
-void
+static void
 c_callback_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
 {
     struct callback_binding_args args;
@@ -392,7 +392,7 @@ c_callback_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
 
 // This procedure uses CALLBACK_INFO to create a dynamic FFI C closure
 // to use as an entry point to the scheme procedure S_FUNC.
-GigCallback *
+static GigCallback *
 gig_callback_new(const char *name, GICallbackInfo *callback_info, SCM s_func)
 {
     assert(scm_is_procedure(s_func));
@@ -463,7 +463,7 @@ gig_callback_new(const char *name, GICallbackInfo *callback_info, SCM s_func)
     return gcb;
 }
 
-GigCallback *
+static GigCallback *
 gig_callback_new_for_callback(GICallbackInfo *info, void *c_func)
 {
     int n_args = g_callable_info_get_n_args(info);
@@ -656,19 +656,23 @@ scm_get_registered_callback_closure_pointer(SCM s_proc)
 void
 gig_init_callback(void)
 {
-    atexit(gig_fini_callback);
+    static int first = 1;
+    if (first) {
+        first = 0;
+        atexit(gig_fini_callback);
 
-    gig_callback_thread_fluid = scm_permanent_object(scm_make_thread_local_fluid(SCM_BOOL_F));
-    scm_fluid_set_x(gig_callback_thread_fluid, SCM_BOOL_T);
-
-    callback_hook = scm_c_public_ref("gi core hooks", "%before-callback-hook");
-    c_callback_hook = scm_c_public_ref("gi core hooks", "%before-c-callback-hook");
-
-    scm_c_define("%callback-thread-fluid", gig_callback_thread_fluid);
-
-    scm_c_define_gsubr("is-registered-callback?", 1, 0, 0, scm_is_registered_callback_p);
-    scm_c_define_gsubr("get-registered-callback-closure-pointer", 1, 0, 0,
-                       scm_get_registered_callback_closure_pointer);
+        gig_callback_thread_fluid = scm_permanent_object(scm_make_thread_local_fluid(SCM_BOOL_F));
+        scm_fluid_set_x(gig_callback_thread_fluid, SCM_BOOL_T);
+        
+        callback_hook = scm_c_public_ref("gi core hooks", "before-callback-hook");
+        c_callback_hook = scm_c_public_ref("gi core hooks", "before-c-callback-hook");
+        
+        scm_c_define("%callback-thread-fluid", gig_callback_thread_fluid);
+        
+        scm_c_define_gsubr("$is-registered-callback?", 1, 0, 0, scm_is_registered_callback_p);
+        scm_c_define_gsubr("$get-registered-callback-closure-pointer", 1, 0, 0,
+                           scm_get_registered_callback_closure_pointer);
+    }
 }
 
 static void

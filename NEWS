@@ -1,3 +1,60 @@
+﻿2022-02-10: version 0.4.0
+
+ • The internal usage of SCM procedures and variables defined in
+   libguile-gi.so are given the “$” prefix throughout.
+   
+ • Internal usage of GLib and GObject functions has been reduced.
+   Internal usage of GLib and GObject is limited to packing/unpacking
+   GLib and GObject types.  We no longer use GLib for internal use of
+   hash tables, lists, environment variables, and logging.
+ 
+ • Many more Guile procedures now have docstrings.
+
+ • Most important variables and procedures are now re-exported by the
+   (gi) module.  For most cases, (gi) should be all you need.
+
+ • In (gi repository), the public <GIBaseInfo> GOOPS class has been
+   replaced by a private <RepositoryEntry> foreign object type.
+   
+ • In (gi repository), the new procedure “get-gir-names” returns a
+   list of the names of entries in a library as they appear in the
+   typelib, before conversion to Scheme-like names. These names are
+   the ones expected by the “load-by-name” procedure.
+   
+ • In (gi repository), the “load” method has been removed.  As a
+   consequence, loading this module no longer upgrades (guile) “load”
+   to a generic function.
+   
+ • In (gi repository), the “info” method and “infos” procedure are
+   removed.  The “load-by-name” and “get-lib-names” procedures could be
+   a workaround.
+   
+ • In (gi repository), the “LOAD_INFO_ONLY” option for “load-by-name”
+   has been removed.
+
+ • The (gi logging) module — which contained “install-port-logger!”,
+   “install-journal-logger!”, and “install-custom-logger!” — has been
+   removed.
+
+ • Since GLib logging is not being used, the G_MESSAGES_DEBUG
+   environment variable cannot be used to activate internal debug
+   messages.  The GIG_DEBUG environment variable is now used to
+   activate internal logging. If the environment variable
+   GIG_DEBUG_OUTPUT is set with a valid filename, debug output will be
+   appended that file.  Otherwise it will be written to stderr.  For
+   stderr, if the TERM environment variable is set to a common color
+   terminal, ANSI color will be used.
+
+ • For (gi types), it is now split into two modules: (gi types) and
+   (gi functions).
+
+ • (gi functions) is the new home of “is-registered-callback?” and
+   “get-registered-callback-closure-pointer”.  It also is the module
+   for “before-callback-hook”, “before-c-callback-hook”, and
+   “before-function-hook”, which now are renamed from
+   “%before-callback-hook”, “%before-c-callback-hook”, and
+   “%before-function-hook” respectively.
+
 2021-12-29: version 0.3.2
  - SCM GObject arguments should better preserve their type when
    passing through function calls, and not downgrade to the argument's

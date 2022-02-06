@@ -89,14 +89,18 @@ gig_list_to_flags(SCM type, SCM list)
 void
 gig_init_flag(void)
 {
-    enum_to_number = scm_c_public_ref("gi types", "enum->number");
-    flags_to_number = scm_c_public_ref("gi types", "flags->number");
-    number_to_enum = scm_c_public_ref("gi types", "number->enum");
-    enum_to_symbol = scm_c_public_ref("gi types", "enum->symbol");
-    symbol_to_enum = scm_c_public_ref("gi types", "symbol->enum");
-    number_to_flags = scm_c_public_ref("gi types", "number->flags");
-    list_to_flags = scm_c_public_ref("gi types", "list->flags");
-    flags_to_list = scm_c_public_ref("gi types", "flags->list");
+    static int first = 1;
+    if (first) {
+        first = 0;
+        enum_to_number = scm_c_public_ref("gi core flags-and-enums", "enum->number");
+        flags_to_number = scm_c_public_ref("gi core flags-and-enums", "flags->number");
+        number_to_enum = scm_c_public_ref("gi core flags-and-enums", "number->enum");
+        enum_to_symbol = scm_c_public_ref("gi core flags-and-enums", "enum->symbol");
+        symbol_to_enum = scm_c_public_ref("gi core flags-and-enums", "symbol->enum");
+        number_to_flags = scm_c_public_ref("gi core flags-and-enums", "number->flags");
+        list_to_flags = scm_c_public_ref("gi core flags-and-enums", "list->flags");
+        flags_to_list = scm_c_public_ref("gi core flags-and-enums", "flags->list");
+    }
 }
 
 static SCM
