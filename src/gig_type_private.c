@@ -7,16 +7,16 @@ static void
 _boxed_copy(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
 {
     GType type = GPOINTER_TO_SIZE(user_data);
-    gig_debug_transfer("boxed_copy(%s, %p)", g_type_name(type), *(gpointer *)ffi_args[0]);
-    *(ffi_arg *)ret = (ffi_arg)g_boxed_copy(type, *(gpointer *)ffi_args[0]);
+    gig_debug_transfer("boxed_copy(%s, %p)", g_type_name(type), *(void **)ffi_args[0]);
+    *(ffi_arg *)ret = (ffi_arg)g_boxed_copy(type, *(void **)ffi_args[0]);
 }
 
 static void
 _boxed_free(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
 {
     GType type = GPOINTER_TO_SIZE(user_data);
-    gig_debug_transfer("boxed_free(%s, %p)", g_type_name(type), *(gpointer *)ffi_args[0]);
-    g_boxed_free(type, *(gpointer *)ffi_args[0]);
+    gig_debug_transfer("boxed_free(%s, %p)", g_type_name(type), *(void **)ffi_args[0]);
+    g_boxed_free(type, *(void **)ffi_args[0]);
 }
 
 GigBoxedFuncs *

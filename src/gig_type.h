@@ -16,6 +16,7 @@
 #ifndef GIG_TYPE_H
 #define GIG_TYPE_H
 
+#include <stdbool.h>
 #include <girepository.h>
 
 // *INDENT-OFF*
@@ -30,10 +31,10 @@ extern SCM gig_paramspec_type;
 extern SCM gig_value_type;
 extern SCM gig_closure_type;
 
-typedef gpointer (*GigTypeRefFunction)(gpointer);
-typedef void (*GigTypeUnrefFunction)(gpointer);
+typedef void *(*GigTypeRefFunction)(void *);
+typedef void (*GigTypeUnrefFunction)(void *);
 
-G_GNUC_MALLOC gchar *gig_type_class_name_from_gtype(GType gtype);
+G_GNUC_MALLOC char *gig_type_class_name_from_gtype(GType gtype);
 
 void gig_type_register(GType gtype, SCM stype);
 SCM gig_type_define(GType gtype, SCM defs);
@@ -44,17 +45,17 @@ gig_type_define_fundamental(GType type, SCM extra_supers,
                             GigTypeRefFunction ref, GigTypeUnrefFunction unref);
 
 GType scm_to_gtype(SCM x);
-GType scm_to_gtype_full(SCM x, const gchar *subr, gint argpos);
+GType scm_to_gtype_full(SCM x, const char *subr, int argpos);
 SCM scm_from_gtype(GType x);
 GType gig_type_get_gtype_from_obj(SCM x);
 SCM gig_type_get_scheme_type(GType gtype);
 SCM gig_type_get_scheme_type_with_info(GIRegisteredTypeInfo *info);
 
-gboolean gig_type_check_object(SCM obj);
-gboolean gig_type_check_typed_object(SCM obj, SCM expected_type);
-SCM gig_type_transfer_object(GType gtype, gpointer obj, GITransfer transfer);
-gpointer gig_type_peek_object(SCM obj);
-gpointer gig_type_peek_typed_object(SCM obj, SCM expected);
+bool gig_type_check_object(SCM obj);
+bool gig_type_check_typed_object(SCM obj, SCM expected_type);
+SCM gig_type_transfer_object(GType gtype, void *obj, GITransfer transfer);
+void *gig_type_peek_object(SCM obj);
+void *gig_type_peek_typed_object(SCM obj, SCM expected);
 
 void gig_init_types(void);
 

@@ -78,8 +78,8 @@ gig_init(void)
 }
 
 #ifdef STANDALONE
-gint
-main(gint argc, gchar **argv)
+int
+main(int argc, char **argv)
 {
     scm_init_guile();
 

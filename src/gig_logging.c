@@ -13,6 +13,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#include <stdbool.h>
 #include <string.h>
 #include <girepository.h>
 #include <glib.h>
@@ -22,37 +23,37 @@
 _Thread_local int logger_initialized = 0;
 
 static const GLogField *
-field_ref(const gchar *needle, const GLogField *fields, gsize n_fields)
+field_ref(const char *needle, const GLogField *fields, size_t n_fields)
 {
-    for (gsize i = 0; i < n_fields; i++)
+    for (size_t i = 0; i < n_fields; i++)
         if (!(strcmp(fields[i].key, needle)))
             return fields + i;
     return NULL;
 }
 
-static gboolean
-is_enabled(const GLogField *domain, const gchar *domains, gboolean allow_empty)
+static bool
+is_enabled(const GLogField *domain, const char *domains, bool allow_empty)
 {
     if (!domain || !domain->value)
         return allow_empty;
     if (domains == NULL)
-        return FALSE;
+        return false;
     if (!strcmp(domains, "all"))
-        return TRUE;
+        return true;
     if (strstr(domains, domain->value))
-        return TRUE;
-    return FALSE;
+        return true;
+    return false;
 }
 
 static GLogWriterOutput
-gig_log_writer(GLogLevelFlags flags, const GLogField *fields, gsize n_fields, gpointer user_data)
+gig_log_writer(GLogLevelFlags flags, const GLogField *fields, size_t n_fields, void *user_data)
 {
 #define LOG_FIELD(f) field_ref(f, fields, n_fields)
 #define ENV_MESSAGES_DEBUG (g_getenv("G_MESSAGES_DEBUG"))
 #define ENV_GIG_DEBUG (g_getenv("GIG_DEBUG"))
     const GLogField *message;
 
-    const gchar *prefix = NULL, *color = NULL;
+    const char *prefix = NULL, *color = NULL;
     if (!logger_initialized) {
         scm_init_guile();
         logger_initialized = 1;
@@ -97,8 +98,8 @@ gig_log_writer(GLogLevelFlags flags, const GLogField *fields, gsize n_fields, gp
 
     if (scm_is_true(scm_output_port_p(port))) {
         if (scm_is_true(scm_file_port_p(port))) {
-            gint fd = scm_to_int(scm_fileno(port));
-            gchar *colored_prefix =
+            int fd = scm_to_int(scm_fileno(port));
+            char *colored_prefix =
                 g_strdup_printf(g_log_writer_supports_color(fd) ? color : "%s", prefix);
             scm_c_write(port, colored_prefix, strlen(colored_prefix));
             scm_c_write(port, ": ", 2);
@@ -107,10 +108,10 @@ gig_log_writer(GLogLevelFlags flags, const GLogField *fields, gsize n_fields, gp
             g_free(colored_prefix);
         }
         else
-            scm_printf(port, "%s: %s\n", prefix, (const gchar *)message->value);
+            scm_printf(port, "%s: %s\n", prefix, (const char *)message->value);
     }
     else
-        scm_printf(scm_current_error_port(), "%s: %s\n", prefix, (const gchar *)message->value);
+        scm_printf(scm_current_error_port(), "%s: %s\n", prefix, (const char *)message->value);
 
     return G_LOG_WRITER_HANDLED;
 #undef LOG_FIELD
@@ -135,7 +136,7 @@ gig_log_to_journal(void)
 }
 
 void
-gig_unprotect_func(gpointer func)
+gig_unprotect_func(void *func)
 {
     scm_gc_unprotect_object(SCM_PACK_POINTER(func));
 }
@@ -143,8 +144,8 @@ gig_unprotect_func(gpointer func)
 SCM kwd_log_level;
 
 static GLogWriterOutput
-gig_log_custom_helper(GLogLevelFlags log_level, const GLogField *fields, gsize n_fields,
-                      gpointer user_data)
+gig_log_custom_helper(GLogLevelFlags log_level, const GLogField *fields, size_t n_fields,
+                      void *user_data)
 {
     if (!logger_initialized) {
         scm_init_guile();
@@ -156,9 +157,9 @@ gig_log_custom_helper(GLogLevelFlags log_level, const GLogField *fields, gsize n
     scm_set_car_x(it, kwd_log_level);
     scm_set_car_x(scm_cdr(it), scm_from_size_t(log_level));
 
-    for (gsize i = 0; i < n_fields; i++) {
+    for (size_t i = 0; i < n_fields; i++) {
         it = scm_cddr(it);
-        gchar *key = gig_gname_to_scm_name(fields[i].key);
+        char *key = gig_gname_to_scm_name(fields[i].key);
         scm_set_car_x(it, scm_from_utf8_keyword(key));
         // TODO: add more conversions
         if (                    /* the message itself is a string */
@@ -175,8 +176,8 @@ gig_log_custom_helper(GLogLevelFlags log_level, const GLogField *fields, gsize n
                0)
             scm_set_car_x(scm_cdr(it), scm_from_utf8_string(fields[i].value));
         else {
-            scm_set_car_x(scm_cdr(it), scm_from_pointer((gpointer)fields[i].value, NULL));
-            gchar *length = g_strdup_printf("%s-length", key);
+            scm_set_car_x(scm_cdr(it), scm_from_pointer((void *)fields[i].value, NULL));
+            char *length = g_strdup_printf("%s-length", key);
             it = scm_cddr(it);
             scm_set_car_x(it, scm_from_utf8_keyword(length));
             scm_set_car_x(scm_cdr(it), scm_from_size_t(fields[i].length));

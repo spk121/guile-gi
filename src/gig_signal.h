@@ -23,12 +23,12 @@ G_BEGIN_DECLS
 
 typedef struct _GigSignalSpec
 {
-    gchar *signal_name;
+    char *signal_name;
     GSignalFlags signal_flags;
     GSignalAccumulator accumulator;
-    gpointer accu_data;
+    void *accu_data;
     GType return_type;
-    guint n_params;
+    unsigned n_params;
     GType *param_types;
 } GigSignalSpec;
 
@@ -49,9 +49,9 @@ typedef enum
 } GigSignalSlot;
 
 SCM gig_signal_ref(SCM signal, GigSignalSlot slot);
-SCM gig_make_signal(gsize n_slots, GigSignalSlot *slots, SCM *slot_values);
+SCM gig_make_signal(size_t n_slots, GigSignalSlot *slots, SCM *slot_values);
 
-GClosure *gig_signal_closure_new(SCM instance, GType g_type, const gchar *signal_name,
+GClosure *gig_signal_closure_new(SCM instance, GType g_type, const char *signal_name,
                                  SCM callback);
 
 void gig_init_signal(void);

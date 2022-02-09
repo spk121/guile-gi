@@ -21,7 +21,7 @@
 SCM
 gig_constant_define(GIConstantInfo *info, SCM defs)
 {
-    const gchar *public_name = g_base_info_get_name(info);
+    const char *public_name = g_base_info_get_name(info);
 
     GITypeInfo *typeinfo;
     typeinfo = g_constant_info_get_type(info);

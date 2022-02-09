@@ -38,7 +38,7 @@ static SCM make_signal_proc;
 
 static gboolean
 scm_signal_accu(GSignalInvocationHint * ihint,
-                GValue *seed, const GValue *element, gpointer procedure)
+                GValue *seed, const GValue *element, void *procedure)
 {
     SCM _seed, _element, result;
     _seed = gig_value_as_scm(seed, FALSE);
@@ -47,16 +47,16 @@ scm_signal_accu(GSignalInvocationHint * ihint,
     result = scm_call_2(SCM_PACK_POINTER(procedure), _seed, _element);
     switch (scm_c_nvalues(result)) {
     case 0:
-        return TRUE;
+        return true;
     case 1:
         if (!scm_is_eq(result, SCM_UNSPECIFIED))
             g_return_val_if_fail(!gig_value_from_scm(seed, result), FALSE);
-        return TRUE;
+        return true;
     case 2:
     {
-        gboolean ret = scm_is_true(scm_c_value_ref(result, 0));
+        bool ret = scm_is_true(scm_c_value_ref(result, 0));
         SCM next_seed = scm_c_value_ref(result, 1);
-        g_return_val_if_fail(!gig_value_from_scm(seed, next_seed), FALSE);
+        g_return_val_if_fail(!gig_value_from_scm(seed, next_seed), false);
         return ret;
     }
     default:
@@ -79,7 +79,7 @@ scm_signal_accu(GSignalInvocationHint * ihint,
 GigSignalSpec *
 gig_signalspec_from_obj(SCM obj)
 {
-    guint n_params;
+    unsigned n_params;
     GType *params;
     SCM sparams, saccu;
     GSignalFlags flags = 0;
@@ -101,7 +101,7 @@ gig_signalspec_from_obj(SCM obj)
     n_params = scm_c_length(sparams);
     params = g_new0(GType, n_params);
 
-    for (guint i = 0; i < n_params; i++, sparams = scm_cdr(sparams))
+    for (unsigned i = 0; i < n_params; i++, sparams = scm_cdr(sparams))
         params[i] = scm_to_gtype(scm_car(sparams));
 
     do {
@@ -162,12 +162,12 @@ gig_free_signalspec(GigSignalSpec *spec)
 }
 
 SCM
-gig_make_signal(gsize n_slots, GigSignalSlot *slots, SCM *slot_values)
+gig_make_signal(size_t n_slots, GigSignalSlot *slots, SCM *slot_values)
 {
     SCM args = scm_make_list(scm_from_size_t(n_slots * 2), SCM_UNDEFINED);
     SCM iter = args;
 
-    for (gsize i = 0; i < n_slots; i++, iter = scm_cddr(iter)) {
+    for (size_t i = 0; i < n_slots; i++, iter = scm_cddr(iter)) {
         SCM key_iter = iter, val_iter = scm_cdr(iter);
         scm_set_car_x(key_iter, scm_symbol_to_keyword(signal_slot_syms[slots[i]]));
         scm_set_car_x(val_iter, slot_values[i]);

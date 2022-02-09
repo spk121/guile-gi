@@ -30,7 +30,7 @@ require(SCM lib, SCM version)
     SCM_ASSERT_TYPE(SCM_UNBNDP(version) ||
                     scm_is_string(version), version, SCM_ARG2, "require", "string");
 
-    gchar *_lib, *_version = NULL;
+    char *_lib, *_version = NULL;
     GITypelib *tl;
     GError *error = NULL;
 
@@ -58,11 +58,11 @@ infos(SCM lib)
     SCM_ASSERT_TYPE(scm_is_string(lib), lib, SCM_ARG1, "infos", "string");
 
     scm_dynwind_begin(0);
-    gchar *_lib = scm_dynwind_or_bust("infos", scm_to_utf8_string(lib));
-    gint n = g_irepository_get_n_infos(NULL, _lib);
+    char *_lib = scm_dynwind_or_bust("infos", scm_to_utf8_string(lib));
+    int n = g_irepository_get_n_infos(NULL, _lib);
     SCM infos = SCM_EOL;
 
-    for (gint i = 0; i < n; i++) {
+    for (int i = 0; i < n; i++) {
         GIBaseInfo *info = g_irepository_get_info(NULL, _lib, i);
         if (g_base_info_is_deprecated(info)) {
             g_base_info_unref(info);
@@ -87,11 +87,11 @@ typedef enum _LoadFlags
 
 void
 gig_repository_nested_infos(GIBaseInfo *base,
-                            gint *n_methods,
+                            int *n_methods,
                             GigRepositoryNested *method,
-                            gint *n_properties,
+                            int *n_properties,
                             GigRepositoryNested *property,
-                            gint *n_signals, GigRepositoryNested *signal)
+                            int *n_signals, GigRepositoryNested *signal)
 {
     switch (g_base_info_get_type(base)) {
     case GI_INFO_TYPE_STRUCT:
@@ -122,7 +122,7 @@ gig_repository_nested_infos(GIBaseInfo *base,
         *property = (GigRepositoryNested)g_interface_info_get_property;
         {
             GType gtype = g_registered_type_info_get_g_type(base);
-            const gchar *name = g_base_info_get_name(base);
+            const char *name = g_base_info_get_name(base);
             if (!g_type_is_a(gtype, G_TYPE_OBJECT)) {
                 if (*n_properties != 0)
                     gig_warning_load("%s - non-Object interface wants properties", name);
@@ -153,7 +153,7 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
 
     GIBaseInfo *parent = g_base_info_get_container(info);
     GType parent_gtype = G_TYPE_INVALID;
-    const gchar *parent_name = NULL;
+    const char *parent_name = NULL;
     if (parent) {
         parent_gtype = g_registered_type_info_get_g_type(parent);
         parent_name = g_base_info_get_name(parent);
@@ -210,7 +210,7 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
     case GI_INFO_TYPE_OBJECT:
     {
         GType gtype = g_registered_type_info_get_g_type(info);
-        const gchar *_namespace = g_base_info_get_name(info);
+        const char *_namespace = g_base_info_get_name(info);
         if (gtype == G_TYPE_INVALID) {
             gig_debug_load("%s - not loading object type because its GType is invalid",
                            _namespace);
@@ -222,7 +222,7 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
         }
 
         GIObjectInfo *p = g_object_info_get_parent(info);
-        gboolean has_parent = p ? TRUE : FALSE;
+        bool has_parent = p ? true : false;
         if (p)
             g_base_info_unref(p);
         if (!has_parent) {
@@ -292,14 +292,14 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
 #define LOAD_NESTED(F, N, I)                                    \
         do {                                                    \
             if (flags & F)                                      \
-                for (gint i = 0; i < N; i++) {                  \
+                for (int i = 0; i < N; i++) {                  \
                     GIBaseInfo *nested_info = I(info, i);       \
                     defs = load_info(nested_info, flags, defs); \
                     g_base_info_unref(nested_info);             \
                 }                                               \
         } while (0)
 
-        gint n_methods, n_properties, n_signals;
+        int n_methods, n_properties, n_signals;
         GigRepositoryNested method, property, nested_signal;
 
         gig_repository_nested_infos(info, &n_methods, &method, &n_properties, &property,
@@ -338,7 +338,7 @@ info(SCM lib, SCM name)
     SCM_ASSERT_TYPE(scm_is_string(lib), lib, SCM_ARG1, "info", "string");
     SCM_ASSERT_TYPE(scm_is_string(name), name, SCM_ARG2, "info", "string");
 
-    gchar *_lib, *_name;
+    char *_lib, *_name;
     GIBaseInfo *info;
     scm_dynwind_begin(0);
     _lib = scm_dynwind_or_bust("info", scm_to_utf8_string(lib));
@@ -373,7 +373,7 @@ get_search_path(void)
 static SCM
 prepend_search_path(SCM s_dir)
 {
-    gchar *dir;
+    char *dir;
 
     SCM_ASSERT_TYPE(scm_is_string(s_dir), s_dir, SCM_ARG1, "prepend-search-path!", "string");
 
@@ -387,8 +387,8 @@ prepend_search_path(SCM s_dir)
 static SCM
 get_dependencies(SCM namespace)
 {
-    gchar *_namespace;
-    gchar **_dependencies;
+    char *_namespace;
+    char **_dependencies;
     int i;
     SCM dependencies = SCM_EOL;
 

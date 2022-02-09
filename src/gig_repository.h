@@ -4,7 +4,7 @@
 #include <glib.h>
 #include <girepository.h>
 
-typedef GIBaseInfo *(*GigRepositoryNested)(GIBaseInfo *info, gint n);
+typedef GIBaseInfo *(*GigRepositoryNested)(GIBaseInfo *info, int n);
 
 /**
  * gig_repository_nested_infos:
@@ -18,11 +18,11 @@ typedef GIBaseInfo *(*GigRepositoryNested)(GIBaseInfo *info, gint n);
  * Fetches all information of nested infos in BASE.
  */
 void gig_repository_nested_infos(GIBaseInfo *base,
-                                 gint *n_methods,
+                                 int *n_methods,
                                  GigRepositoryNested *method,
-                                 gint *n_properties,
+                                 int *n_properties,
                                  GigRepositoryNested *property,
-                                 gint *n_signals, GigRepositoryNested *signal);
+                                 int *n_signals, GigRepositoryNested *signal);
 
 
 void gig_init_repository(void);

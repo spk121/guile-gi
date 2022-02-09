@@ -16,6 +16,7 @@
 #include <libguile/hooks.h>
 #include <string.h>
 #include <ffi.h>
+#include <stdbool.h>
 #include "gig_argument.h"
 #include "gig_util.h"
 #include "gig_arg_map.h"
@@ -29,8 +30,8 @@ typedef struct _GigFunction
     GIFunctionInfo *function_info;
     ffi_closure *closure;
     ffi_cif cif;
-    gpointer function_ptr;
-    gchar *name;
+    void *function_ptr;
+    char *name;
     ffi_type **atypes;
     GigArgMap *amap;
 } GigFunction;
@@ -52,33 +53,33 @@ SCM sym_self;
 SCM gig_before_function_hook;
 
 static GigGsubr *check_gsubr_cache(GICallableInfo *function_info, SCM self_type,
-                                   gint *required_input_count, gint *optional_input_count,
+                                   int *required_input_count, int *optional_input_count,
                                    SCM *formals, SCM *specializers);
-static GigGsubr *create_gsubr(GIFunctionInfo *function_info, const gchar *name, SCM self_type,
-                              gint *required_input_count, gint *optional_input_count,
+static GigGsubr *create_gsubr(GIFunctionInfo *function_info, const char *name, SCM self_type,
+                              int *required_input_count, int *optional_input_count,
                               SCM *formals, SCM *specializers);
-static void make_formals(GICallableInfo *, GigArgMap *, gint n_inputs, SCM self_type,
+static void make_formals(GICallableInfo *, GigArgMap *, int n_inputs, SCM self_type,
                          SCM *formals, SCM *specializers);
-static void function_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_data);
-static SCM function_invoke(GIFunctionInfo *info, GigArgMap *amap, const gchar *name,
+static void function_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data);
+static SCM function_invoke(GIFunctionInfo *info, GigArgMap *amap, const char *name,
                            GObject *object, SCM args, GError **error);
-static SCM convert_output_args(GigArgMap *amap, const gchar *name, GIArgument *in, GIArgument *out,
+static SCM convert_output_args(GigArgMap *amap, const char *name, GIArgument *in, GIArgument *out,
                                SCM output);
-static void object_list_to_c_args(GigArgMap *amap, const gchar *subr,
+static void object_list_to_c_args(GigArgMap *amap, const char *subr,
                                   SCM s_args, GArray *in_args, GPtrArray *cinvoke_free_array,
                                   GArray *out_args);
 static void
-store_argument(gint invoke_in, gint invoke_out, gboolean inout, gboolean inout_free,
+store_argument(int invoke_in, int invoke_out, bool inout, bool inout_free,
                GIArgument *arg, GArray *cinvoke_input_arg_array, GPtrArray *cinvoke_free_array,
                GArray *cinvoke_output_arg_array);
 static void function_free(GigFunction *fn);
 static void gig_fini_function(void);
-static SCM gig_function_define1(const gchar *public_name, SCM proc, int opt, SCM formals,
+static SCM gig_function_define1(const char *public_name, SCM proc, int opt, SCM formals,
                                 SCM specializers);
 
-static SCM proc4function(GIFunctionInfo *info, const gchar *name, SCM self_type,
+static SCM proc4function(GIFunctionInfo *info, const char *name, SCM self_type,
                          int *req, int *opt, SCM *formals, SCM *specs);
-static SCM proc4signal(GISignalInfo *info, const gchar *name, SCM self_type,
+static SCM proc4signal(GISignalInfo *info, const char *name, SCM self_type,
                        int *req, int *opt, SCM *formals, SCM *specs);
 
 #define LOOKUP_DEFINITION(module)                                       \
@@ -106,18 +107,18 @@ default_definition(SCM name)
 #undef LOOKUP_DEFINITION
 
 SCM
-gig_function_define(GType type, GICallableInfo *info, const gchar *_namespace, SCM defs)
+gig_function_define(GType type, GICallableInfo *info, const char *_namespace, SCM defs)
 {
     scm_dynwind_begin(0);
     SCM def;
-    gboolean is_method = g_callable_info_is_method(info);
+    bool is_method = g_callable_info_is_method(info);
 
-    gchar *function_name = NULL;
-    gchar *method_name = NULL;
+    char *function_name = NULL;
+    char *method_name = NULL;
     function_name = scm_dynwind_or_bust("%gig-function-define",
                                         gig_callable_info_make_name(info, _namespace));
 
-    gint required_input_count, optional_input_count;
+    int required_input_count, optional_input_count;
     SCM formals, specializers, self_type = SCM_UNDEFINED;
 
     gig_debug_load("%s - bound to %s %s%s%s",
@@ -166,7 +167,7 @@ gig_function_define(GType type, GICallableInfo *info, const gchar *_namespace, S
 // this procedure creates a SCM wrapper for that procedure in the
 // current module.
 static SCM
-gig_function_define1(const gchar *public_name, SCM proc, int opt, SCM formals, SCM specializers)
+gig_function_define1(const char *public_name, SCM proc, int opt, SCM formals, SCM specializers)
 {
     g_return_val_if_fail(public_name != NULL, SCM_UNDEFINED);
 
@@ -198,7 +199,7 @@ gig_function_define1(const gchar *public_name, SCM proc, int opt, SCM formals, S
 }
 
 static SCM
-proc4function(GIFunctionInfo *info, const gchar *name, SCM self_type,
+proc4function(GIFunctionInfo *info, const char *name, SCM self_type,
               int *req, int *opt, SCM *formals, SCM *specializers)
 {
     GigGsubr *func_gsubr = check_gsubr_cache(info, self_type, req, opt,
@@ -215,7 +216,7 @@ proc4function(GIFunctionInfo *info, const gchar *name, SCM self_type,
 }
 
 static SCM
-proc4signal(GISignalInfo *info, const gchar *name, SCM self_type, int *req, int *opt, SCM *formals,
+proc4signal(GISignalInfo *info, const char *name, SCM self_type, int *req, int *opt, SCM *formals,
             SCM *specializers)
 {
     GigArgMap *amap;
@@ -236,10 +237,10 @@ proc4signal(GISignalInfo *info, const gchar *name, SCM self_type, int *req, int 
     values[0] = scm_from_utf8_string(g_base_info_get_name(info));
     values[1] = scm_c_make_bitvector(*req + *opt, SCM_BOOL_F);
 
-    gsize offset, length;
+    size_t offset, length;
     gssize pos = 0, inc;
     scm_t_array_handle handle;
-    guint32 *bits = scm_bitvector_writable_elements(values[1], &handle, &offset, &length, &inc);
+    uint32_t *bits = scm_bitvector_writable_elements(values[1], &handle, &offset, &length, &inc);
     pos = offset + inc;
 
     /* Set up output mask.
@@ -247,9 +248,9 @@ proc4signal(GISignalInfo *info, const gchar *name, SCM self_type, int *req, int 
      * we can probably take some work off the user when it comes to setting up
      * handlers.
      */
-    for (gint i = 1; i < *req + *opt; i++, pos += inc) {
-        gsize word_pos = pos / 32;
-        gsize mask = 1L << (pos % 32);
+    for (int i = 1; i < *req + *opt; i++, pos += inc) {
+        size_t word_pos = pos / 32;
+        size_t mask = 1L << (pos % 32);
         GigArgMapEntry *entry = gig_amap_get_input_entry_by_s(amap, i - 1);
         if (entry->is_s_output)
             bits[word_pos] |= mask;
@@ -275,8 +276,8 @@ proc4signal(GISignalInfo *info, const gchar *name, SCM self_type, int *req, int 
 }
 
 static GigGsubr *
-check_gsubr_cache(GICallableInfo *function_info, SCM self_type, gint *required_input_count,
-                  gint *optional_input_count, SCM *formals, SCM *specializers)
+check_gsubr_cache(GICallableInfo *function_info, SCM self_type, int *required_input_count,
+                  int *optional_input_count, SCM *formals, SCM *specializers)
 {
     // Check the cache to see if this function has already been created.
     GigFunction *gfn = g_hash_table_lookup(function_cache, function_info);
@@ -332,7 +333,7 @@ type_specializer(GigTypeMeta *meta)
 
 static void
 make_formals(GICallableInfo *callable,
-             GigArgMap *argmap, gint n_inputs, SCM self_type, SCM *formals, SCM *specializers)
+             GigArgMap *argmap, int n_inputs, SCM self_type, SCM *formals, SCM *specializers)
 {
     SCM i_formal, i_specializer;
 
@@ -348,10 +349,10 @@ make_formals(GICallableInfo *callable,
         n_inputs--;
     }
 
-    for (gint s = 0; s < n_inputs;
+    for (int s = 0; s < n_inputs;
          s++, i_formal = scm_cdr(i_formal), i_specializer = scm_cdr(i_specializer)) {
         GigArgMapEntry *entry = gig_amap_get_input_entry_by_s(argmap, s);
-        gchar *formal = scm_dynwind_or_bust("%make-formals",
+        char *formal = scm_dynwind_or_bust("%make-formals",
                                             gig_gname_to_scm_name(entry->name));
         scm_set_car_x(i_formal, scm_from_utf8_symbol(formal));
         // Don't force types on nullable input, as #f can also be used to represent
@@ -366,8 +367,8 @@ make_formals(GICallableInfo *callable,
 }
 
 static GigGsubr *
-create_gsubr(GIFunctionInfo *function_info, const gchar *name, SCM self_type,
-             gint *required_input_count, gint *optional_input_count,
+create_gsubr(GIFunctionInfo *function_info, const char *name, SCM self_type,
+             int *required_input_count, int *optional_input_count,
              SCM *formals, SCM *specializers)
 {
     GigFunction *gfn;
@@ -409,7 +410,7 @@ create_gsubr(GIFunctionInfo *function_info, const gchar *name, SCM self_type,
     // call.
 
     // Initialize the argument info vectors.
-    gint have_args = 0;
+    int have_args = 0;
     if (*required_input_count + *optional_input_count > 0) {
         gfn->atypes = g_new0(ffi_type *, 1);
         gfn->atypes[0] = &ffi_type_pointer;
@@ -448,7 +449,7 @@ create_gsubr(GIFunctionInfo *function_info, const gchar *name, SCM self_type,
 
 static void
 gig_callable_prepare_invoke(GigArgMap *amap,
-                            const gchar *name,
+                            const char *name,
                             GObject *self,
                             SCM args,
                             GArray **cinvoke_input_arg_array,
@@ -481,17 +482,17 @@ gig_callable_prepare_invoke(GigArgMap *amap,
     *out_args = (GIArgument *)((*cinvoke_output_arg_array)->data);
     *out_boxes = g_new0(GIArgument, (*cinvoke_output_arg_array)->len);
     g_ptr_array_insert(*cinvoke_free_array, 0, *out_boxes);
-    for (guint i = 0; i < (*cinvoke_output_arg_array)->len; i++)
+    for (unsigned i = 0; i < (*cinvoke_output_arg_array)->len; i++)
         if ((*out_args + i)->v_pointer == NULL)
             (*out_args + i)->v_pointer = *out_boxes + i;
 }
 
 static SCM
 gig_callable_return_value(GigArgMap *amap,
-                          const gchar *name,
+                          const char *name,
                           GObject *self,
                           SCM args,
-                          gboolean ok,
+                          bool ok,
                           GIArgument *return_arg,
                           GArray *cinvoke_input_arg_array,
                           GArray *cinvoke_output_arg_array,
@@ -502,15 +503,15 @@ gig_callable_return_value(GigArgMap *amap,
 
     // Here is where I check to see if I used the allocated
     // output argument space created above.
-    for (guint i = 0; i < cinvoke_output_arg_array->len; i++)
+    for (unsigned i = 0; i < cinvoke_output_arg_array->len; i++)
         if (out_args[i].v_pointer == &out_boxes[i])
             memcpy(&out_args[i], &out_boxes[i], sizeof(GIArgument));
 
     if (ok) {
         SCM s_return;
-        gsize sz = -1;
+        size_t sz = -1;
         if (amap->return_val.meta.has_size) {
-            gsize idx = amap->return_val.child->c_output_pos;
+            size_t idx = amap->return_val.child->c_output_pos;
             sz = ((GIArgument *)(cinvoke_output_arg_array->data))[idx].v_size;
         }
 
@@ -549,7 +550,7 @@ gig_callable_return_value(GigArgMap *amap,
 }
 
 static SCM
-function_invoke(GIFunctionInfo *func_info, GigArgMap *amap, const gchar *name, GObject *self,
+function_invoke(GIFunctionInfo *func_info, GigArgMap *amap, const char *name, GObject *self,
                 SCM args, GError **error)
 {
     GArray *cinvoke_input_arg_array;
@@ -570,7 +571,7 @@ function_invoke(GIFunctionInfo *func_info, GigArgMap *amap, const gchar *name, G
 
     GIArgument return_arg;
     return_arg.v_pointer = NULL;
-    gboolean ok = g_function_info_invoke(func_info, (GIArgument *)(cinvoke_input_arg_array->data),
+    bool ok = g_function_info_invoke(func_info, (GIArgument *)(cinvoke_input_arg_array->data),
                                          cinvoke_input_arg_array->len,
                                          (GIArgument *)(cinvoke_output_arg_array->data),
                                          cinvoke_output_arg_array->len, &return_arg, error);
@@ -580,15 +581,15 @@ function_invoke(GIFunctionInfo *func_info, GigArgMap *amap, const gchar *name, G
 }
 
 SCM
-gig_callable_invoke(GICallableInfo *callable_info, gpointer callable, GigArgMap *amap,
-                    const gchar *name, GObject *self, SCM args, GError **error)
+gig_callable_invoke(GICallableInfo *callable_info, void *callable, GigArgMap *amap,
+                    const char *name, GObject *self, SCM args, GError **error)
 {
     GArray *cinvoke_input_arg_array;
     GPtrArray *cinvoke_free_array;
     GArray *cinvoke_output_arg_array;
     GIArgument *out_args, *out_boxes;
     GIArgument return_arg;
-    gboolean ok;
+    bool ok;
 
     gig_callable_prepare_invoke(amap, name, self, args,
                                 &cinvoke_input_arg_array,
@@ -621,7 +622,7 @@ gig_callable_invoke(GICallableInfo *callable_info, gpointer callable, GigArgMap 
 // and returns the results as an SCM packed into an FFI argument.
 // Also, it converts GErrors into SCM misc-errors.
 static void
-function_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_data)
+function_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
 {
     GigFunction *gfn = user_data;
     GObject *self = NULL;
@@ -636,7 +637,7 @@ function_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
     g_assert(ffi_args != NULL);
     g_assert(user_data != NULL);
 
-    guint n_args = cif->nargs;
+    unsigned n_args = cif->nargs;
 
     // we have either 0 args or 1 args, which is the already packed list
     g_assert(n_args <= 1);
@@ -662,7 +663,7 @@ function_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
 
     // If there is a GError, write an error and exit.
     if (err) {
-        gchar str[256];
+        char str[256];
         memset(str, 0, 256);
         strncpy(str, err->message, 255);
         g_error_free(err);
@@ -675,18 +676,18 @@ function_binding(ffi_cif *cif, gpointer ret, gpointer *ffi_args, gpointer user_d
 }
 
 static void
-object_to_c_arg(GigArgMap *amap, gint s, const gchar *name, SCM obj,
+object_to_c_arg(GigArgMap *amap, int s, const char *name, SCM obj,
                 GArray *cinvoke_input_arg_array, GPtrArray *cinvoke_free_array,
                 GArray *cinvoke_output_arg_array)
 {
     // Convert an input scheme argument to a C invoke argument
     GIArgument arg;
     GigArgMapEntry *entry;
-    gsize size;
-    gint i;
-    gint c_invoke_in, c_invoke_out, c_child_invoke_in;
-    gboolean is_in, is_out;
-    gboolean inout, inout_free;
+    size_t size;
+    int i;
+    int c_invoke_in, c_invoke_out, c_child_invoke_in;
+    bool is_in, is_out;
+    bool inout, inout_free;
 
     entry = gig_amap_get_input_entry_by_s(amap, s);
     gig_argument_scm_to_c(name, s, &entry->meta, obj, cinvoke_free_array, &arg, &size);
@@ -707,7 +708,7 @@ object_to_c_arg(GigArgMap *amap, gint s, const gchar *name, SCM obj,
         inout_free = (amap->pdata[i].meta.transfer == GI_TRANSFER_NOTHING);
     }
     else
-        inout_free = FALSE;
+        inout_free = false;
     store_argument(c_invoke_in, c_invoke_out, inout, inout_free, &arg,
                    cinvoke_input_arg_array, cinvoke_free_array, cinvoke_output_arg_array);
 
@@ -716,8 +717,8 @@ object_to_c_arg(GigArgMap *amap, gint s, const gchar *name, SCM obj,
     if (gig_amap_input_s_2_child_input_c(amap, s, &c_child_invoke_in)) {
         GigArgMapEntry *size_entry = entry->child;
         GIArgument size_arg;
-        gsize dummy_size;
-        gint c_child_invoke_out, i_child;
+        size_t dummy_size;
+        int c_child_invoke_out, i_child;
 
         gig_argument_scm_to_c(name, s, &size_entry->meta, scm_from_size_t(size),
                               cinvoke_free_array, &size_arg, &dummy_size);
@@ -732,14 +733,14 @@ object_to_c_arg(GigArgMap *amap, gint s, const gchar *name, SCM obj,
         if (inout)
             inout_free = (amap->pdata[i_child].meta.transfer == GI_TRANSFER_NOTHING);
         else
-            inout_free = FALSE;
+            inout_free = false;
         store_argument(c_child_invoke_in, c_child_invoke_out, inout, inout_free, &size_arg,
                        cinvoke_input_arg_array, cinvoke_free_array, cinvoke_output_arg_array);
     }
 }
 
 static void
-store_argument(gint invoke_in, gint invoke_out, gboolean inout, gboolean inout_free,
+store_argument(int invoke_in, int invoke_out, bool inout, bool inout_free,
                GIArgument *arg, GArray *cinvoke_input_arg_array, GPtrArray *cinvoke_free_array,
                GArray *cinvoke_output_arg_array)
 {
@@ -747,7 +748,7 @@ store_argument(gint invoke_in, gint invoke_out, gboolean inout, gboolean inout_f
 
     if (invoke_in >= 0) {
         if (inout) {
-            gpointer *dup = gig_memdup(arg, sizeof(GIArgument));
+            void **dup = gig_memdup(arg, sizeof(GIArgument));
             parg = &g_array_index(cinvoke_input_arg_array, GIArgument, invoke_in);
             parg->v_pointer = dup;
 
@@ -770,7 +771,7 @@ store_argument(gint invoke_in, gint invoke_out, gboolean inout, gboolean inout_f
 
 static void
 object_list_to_c_args(GigArgMap *amap,
-                      const gchar *subr, SCM s_args,
+                      const char *subr, SCM s_args,
                       GArray *cinvoke_input_arg_array,
                       GPtrArray *cinvoke_free_array, GArray *cinvoke_output_arg_array)
 {
@@ -780,7 +781,7 @@ object_list_to_c_args(GigArgMap *amap,
     g_assert_nonnull(cinvoke_free_array);
     g_assert_nonnull(cinvoke_output_arg_array);
 
-    gint args_count, required, optional;
+    int args_count, required, optional;
     if (SCM_UNBNDP(s_args))
         args_count = 0;
     else
@@ -789,13 +790,13 @@ object_list_to_c_args(GigArgMap *amap,
     if (args_count < required || args_count > required + optional)
         scm_error_num_args_subr(subr);
 
-    gint input_len, output_len;
+    int input_len, output_len;
     gig_amap_c_count(amap, &input_len, &output_len);
 
     g_array_set_size(cinvoke_input_arg_array, input_len);
     g_array_set_size(cinvoke_output_arg_array, output_len);
 
-    for (gint i = 0; i < args_count; i++) {
+    for (int i = 0; i < args_count; i++) {
         SCM obj = scm_c_list_ref(s_args, i);
         object_to_c_arg(amap, i, subr, obj, cinvoke_input_arg_array, cinvoke_free_array,
                         cinvoke_output_arg_array);
@@ -821,13 +822,13 @@ find_output_arg(GigArgMapEntry *entry, GIArgument *in, GIArgument *out)
 }
 
 static SCM
-convert_output_args(GigArgMap *amap, const gchar *func_name, GIArgument *in, GIArgument *out,
+convert_output_args(GigArgMap *amap, const char *func_name, GIArgument *in, GIArgument *out,
                     SCM output)
 {
     gig_debug_transfer("%s - convert_output_args", func_name);
-    gint s_output_pos;
+    int s_output_pos;
 
-    for (gint c_output_pos = 0; c_output_pos < amap->c_output_len; c_output_pos++) {
+    for (int c_output_pos = 0; c_output_pos < amap->c_output_len; c_output_pos++) {
         if (!gig_amap_output_c2s(amap, c_output_pos, &s_output_pos))
             continue;
 
@@ -842,7 +843,7 @@ convert_output_args(GigArgMap *amap, const gchar *func_name, GIArgument *in, GIA
         }
 
         SCM obj;
-        gsize size = GIG_ARRAY_SIZE_UNKNOWN;
+        size_t size = GIG_ARRAY_SIZE_UNKNOWN;
 
         if (entry->child) {
             // We need to know the size argument before we can process

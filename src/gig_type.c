@@ -13,6 +13,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#include <stdbool.h>
 #include <libguile.h>
 #include <girepository.h>
 #include <ffi.h>
@@ -85,14 +86,14 @@ static SCM make_class_proc;
 static SCM kwd_name;
 SCM sym_obarray;
 
-gchar *
+char *
 gig_type_class_name_from_gtype(GType gtype)
 {
     return g_strdup_printf("<%s>", g_type_name(gtype));
 }
 
 // Returns TRUE if TYPE is contained in the hash table of known types.
-static gboolean
+static bool
 gig_type_is_registered(GType gtype)
 {
     return g_hash_table_contains(gig_type_gtype_hash, GSIZE_TO_POINTER(gtype));
@@ -102,8 +103,8 @@ static void
 gig_type_register_self(GType gtype, SCM stype)
 {
     GType parent = g_type_parent(gtype);
-    gpointer pval;
-    gchar *stype_str = NULL, *old_stype_str = NULL;
+    void *pval;
+    char *stype_str = NULL, *old_stype_str = NULL;
 
     pval = g_hash_table_lookup(gig_type_gtype_hash, GSIZE_TO_POINTER(gtype));
 
@@ -157,7 +158,7 @@ static SCM sym_unref;
 static SCM sym_size;
 
 SCM
-gig_type_transfer_object(GType type, gpointer ptr, GITransfer transfer)
+gig_type_transfer_object(GType type, void *ptr, GITransfer transfer)
 {
     if (G_TYPE_IS_CLASSED(type))
         type = G_OBJECT_TYPE(ptr);
@@ -189,26 +190,26 @@ gig_type_transfer_object(GType type, gpointer ptr, GITransfer transfer)
 static SCM gig_fundamental_type;
 static SCM gig_boxed_type;
 
-gboolean
+bool
 gig_type_check_object(SCM obj)
 {
     return SCM_IS_A_P(obj, gig_fundamental_type);
 }
 
-gboolean
+bool
 gig_type_check_typed_object(SCM obj, SCM expected_type)
 {
     return SCM_IS_A_P(obj, expected_type);
 }
 
-gpointer
+void *
 gig_type_peek_typed_object(SCM obj, SCM expected_type)
 {
     g_return_val_if_fail(SCM_IS_A_P(obj, expected_type), NULL);
     return scm_to_pointer(scm_slot_ref(obj, sym_value));
 }
 
-gpointer
+void *
 gig_type_peek_object(SCM obj)
 {
     return gig_type_peek_typed_object(obj, gig_fundamental_type);
@@ -246,10 +247,10 @@ gig_type_define_with_info(GIRegisteredTypeInfo *info, SCM dsupers, SCM slots)
         return SCM_UNDEFINED;
     }
 
-    gchar *_name = g_registered_type_info_get_qualified_name(info);
+    char *_name = g_registered_type_info_get_qualified_name(info);
     g_assert(_name != NULL);
-    gpointer _key, _value;
-    gboolean exists = g_hash_table_lookup_extended(gig_type_name_hash, _name, &_key, &_value);
+    void *_key, *_value;
+    bool exists = g_hash_table_lookup_extended(gig_type_name_hash, _name, &_key, &_value);
 
     SCM cls;
     if (exists) {
@@ -257,7 +258,7 @@ gig_type_define_with_info(GIRegisteredTypeInfo *info, SCM dsupers, SCM slots)
         cls = SCM_PACK_POINTER(_value);
     }
     else {
-        gchar *name = g_strdup_printf("<%s>", _name);
+        char *name = g_strdup_printf("<%s>", _name);
         SCM class_name = scm_from_utf8_symbol(name);
         cls = scm_call_4(make_class_proc, dsupers, slots, kwd_name, class_name);
         gig_debug_load("%s - creating new type", name);
@@ -276,15 +277,15 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
 {
     g_assert(GSIZE_TO_POINTER(gtype) != NULL);
 
-    gboolean newkey;
-    gpointer orig_key, orig_value;
+    bool newkey;
+    void *orig_key, *orig_value;
     GType parent = g_type_parent(gtype);
     GType fundamental = G_TYPE_FUNDAMENTAL(gtype);
-    gchar *_type_class_name = gig_type_class_name_from_gtype(gtype);
+    char *_type_class_name = gig_type_class_name_from_gtype(gtype);
 
     newkey = g_hash_table_lookup_extended(gig_type_gtype_hash,
                                           GSIZE_TO_POINTER(gtype), &orig_key, &orig_value);
-    if (newkey == FALSE) {
+    if (newkey == false) {
         gig_debug_load("%s - creating new %s type for %zx %s",
                        _type_class_name, g_type_name(fundamental), gtype, g_type_name(gtype));
 
@@ -299,7 +300,7 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
             gig_type_define(parent, defs);
 
         SCM new_type, dsupers, slots = SCM_EOL;
-        gpointer sparent = g_hash_table_lookup(gig_type_gtype_hash,
+        void *sparent = g_hash_table_lookup(gig_type_gtype_hash,
                                                GSIZE_TO_POINTER(parent));
         // g_return_val_if_fail(sparent != NULL, defs);
 
@@ -310,7 +311,7 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
             SCM size = scm_from_uint(_class->n_values);
             SCM obarray = scm_make_hash_table(size);
 
-            for (guint i = 0; i < _class->n_values; i++) {
+            for (unsigned i = 0; i < _class->n_values; i++) {
                 SCM key = scm_from_utf8_symbol(_class->values[i].value_nick);
                 SCM value = scm_from_int(_class->values[i].value);
                 gig_debug_load("%s - add enum %s %d",
@@ -333,7 +334,7 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
             SCM size = scm_from_uint(_class->n_values);
             SCM obarray = scm_make_hash_table(size);
 
-            for (guint i = 0; i < _class->n_values; i++) {
+            for (unsigned i = 0; i < _class->n_values; i++) {
                 SCM key = scm_from_utf8_symbol(_class->values[i].value_nick);
                 SCM value = scm_from_int(_class->values[i].value);
                 gig_debug_load("%s - add flag %s %u",
@@ -359,7 +360,7 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
 
             GIRepository *repository;
             GIBaseInfo *info;
-            gsize size = 0;
+            size_t size = 0;
 
             repository = g_irepository_get_default();
             info = g_irepository_find_by_gtype(repository, gtype);
@@ -380,7 +381,7 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
         case G_TYPE_OBJECT:
         {
             GType *interfaces = NULL;
-            guint n_interfaces = 0;
+            unsigned n_interfaces = 0;
             if (fundamental == G_TYPE_OBJECT)
                 interfaces = g_type_interfaces(gtype, &n_interfaces);
             else if (fundamental == G_TYPE_INTERFACE)
@@ -391,7 +392,7 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
             else
                 dsupers = scm_cons(SCM_PACK_POINTER(sparent), extra_supers);
 
-            for (guint n = 0; n < n_interfaces; n++)
+            for (unsigned n = 0; n < n_interfaces; n++)
                 dsupers = scm_cons(gig_type_get_scheme_type(interfaces[n]), dsupers);
             g_free(interfaces);
 
@@ -405,14 +406,14 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
         default:
         {
             GType *interfaces = NULL;
-            guint n_interfaces = 0;
+            unsigned n_interfaces = 0;
             interfaces = g_type_interfaces(gtype, &n_interfaces);
             if (sparent)
                 dsupers = scm_cons(SCM_PACK_POINTER(sparent), extra_supers);
             else
                 dsupers = scm_cons(gig_fundamental_type, extra_supers);
 
-            for (guint n = 0; n < n_interfaces; n++)
+            for (unsigned n = 0; n < n_interfaces; n++)
                 dsupers = scm_cons(gig_type_get_scheme_type(interfaces[n]), dsupers);
             g_free(interfaces);
 
@@ -469,7 +470,7 @@ scm_to_gtype(SCM x)
 }
 
 GType
-scm_to_gtype_full(SCM x, const gchar *subr, gint argpos)
+scm_to_gtype_full(SCM x, const char *subr, int argpos)
 {
     if (scm_is_unsigned_integer(x, 0, SIZE_MAX))
         return scm_to_size_t(x);
@@ -482,7 +483,7 @@ scm_to_gtype_full(SCM x, const gchar *subr, gint argpos)
 SCM
 scm_from_gtype(GType x)
 {
-    gpointer _key, _value;
+    void *_key, *_value;
 
     // GType <-> SCM associations must go both ways
     if (g_hash_table_lookup_extended(gig_type_gtype_hash, GSIZE_TO_POINTER(x), &_key, &_value)
@@ -498,7 +499,7 @@ scm_from_gtype(GType x)
 GType
 gig_type_get_gtype_from_obj(SCM x)
 {
-    gpointer value;
+    void *value;
     if ((value = g_hash_table_lookup(gig_type_scm_hash, SCM_UNPACK_POINTER(x))))
         return GPOINTER_TO_SIZE(value);
     else if (SCM_INSTANCEP(x) &&
@@ -519,7 +520,7 @@ gig_type_free_types(void)
 }
 
 static SCM
-_gig_type_check_scheme_type(gpointer _stype)
+_gig_type_check_scheme_type(void *_stype)
 {
     g_return_val_if_fail(_stype != NULL, SCM_UNDEFINED);
     return SCM_PACK_POINTER(_stype);
@@ -528,8 +529,8 @@ _gig_type_check_scheme_type(gpointer _stype)
 SCM
 gig_type_get_scheme_type(GType gtype)
 {
-    gpointer _key, _value;
-    gboolean exists = g_hash_table_lookup_extended(gig_type_gtype_hash, GSIZE_TO_POINTER(gtype),
+    void *_key, *_value;
+    bool exists = g_hash_table_lookup_extended(gig_type_gtype_hash, GSIZE_TO_POINTER(gtype),
                                                    &_key, &_value);
 
     if (exists)
@@ -544,8 +545,8 @@ gig_type_get_scheme_type(GType gtype)
 SCM
 gig_type_get_scheme_type_with_info(GIRegisteredTypeInfo *info)
 {
-    gchar *_name = g_registered_type_info_get_qualified_name(info);
-    gpointer *scm_ptr = g_hash_table_lookup(gig_type_name_hash, _name);
+    char *_name = g_registered_type_info_get_qualified_name(info);
+    void **scm_ptr = g_hash_table_lookup(gig_type_name_hash, _name);
     g_free(_name);
     if (scm_ptr == NULL)
         return SCM_UNDEFINED;
@@ -631,7 +632,7 @@ scm_type_gtype_get_children(SCM s_gtype)
 
     if (gig_type_is_registered(type)) {
         GType *children;
-        guint n_children, i;
+        unsigned n_children, i;
         SCM entry;
 
         children = g_type_children(type, &n_children);
@@ -657,7 +658,7 @@ scm_type_gtype_get_interfaces(SCM s_gtype)
 
     if (gig_type_is_registered(type)) {
         GType *interfaces;
-        guint n_interfaces, i;
+        unsigned n_interfaces, i;
         SCM entry;
 
         interfaces = g_type_interfaces(type, &n_interfaces);
@@ -758,14 +759,14 @@ static SCM
 scm_type_dump_type_table(void)
 {
     GHashTableIter iter;
-    gpointer key, value;
+    void *key, *value;
     SCM list = SCM_EOL;
 
     g_hash_table_iter_init(&iter, gig_type_gtype_hash);
     while (g_hash_table_iter_next(&iter, &key, &value)) {
         SCM entry;
         SCM fo_type;
-        gsize skey = GPOINTER_TO_SIZE(key);
+        size_t skey = GPOINTER_TO_SIZE(key);
 
         if (value)
             fo_type = SCM_PACK_POINTER(value);
@@ -785,12 +786,12 @@ scm_allocate_boxed(SCM boxed_type)
                     "%allocate-boxed", "boxed type");
     SCM s_size = scm_class_ref(boxed_type, sym_size);
 
-    gsize size = scm_to_size_t(s_size);
+    size_t size = scm_to_size_t(s_size);
 
     if (size == 0)
         scm_out_of_range("%allocate-boxed", s_size);
 
-    gpointer boxed = g_malloc0(size);
+    void *boxed = g_malloc0(size);
     GigTypeUnrefFunction unref;
     unref = (GigTypeUnrefFunction)scm_to_pointer(scm_class_ref(boxed_type, sym_unref));
     SCM pointer = scm_from_pointer(boxed, unref);
@@ -829,7 +830,7 @@ gig_type_define_fundamental(GType type, SCM extra_supers,
     }
 
     scm_dynwind_begin(0);
-    gchar *class_name = scm_dynwind_or_bust("%define-compact-type",
+    char *class_name = scm_dynwind_or_bust("%define-compact-type",
                                             gig_type_class_name_from_gtype(type));
 
     SCM new_type = scm_call_4(make_fundamental_proc,
@@ -997,7 +998,7 @@ gig_init_types_once(void)
 void
 gig_init_types()
 {
-    static gsize type_init;
+    static size_t type_init;
     if (g_once_init_enter(&type_init)) {
         gig_init_types_once();
         g_once_init_leave(&type_init, 1);

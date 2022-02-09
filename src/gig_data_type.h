@@ -22,7 +22,7 @@
 G_BEGIN_DECLS
 // *INDENT-ON*
 
-#define GIG_ARRAY_SIZE_UNKNOWN ((gsize)-1)
+#define GIG_ARRAY_SIZE_UNKNOWN ((size_t)-1)
 
 typedef enum _GigPointerType
 {
@@ -38,42 +38,42 @@ typedef struct _GigTypeMeta GigTypeMeta;
 struct _GigTypeMeta
 {
     GType gtype;
-    guint16 is_ptr:1;
+    uint16_t is_ptr:1;
 
     // For argument and return values
-    guint16 is_in:1;
-    guint16 is_out:1;
+    uint16_t is_in:1;
+    uint16_t is_out:1;
 
     // For return values
-    guint16 is_skip:1;          // TRUE when output is ignored
+    uint16_t is_skip:1;          // TRUE when output is ignored
 
     // For pointers
-    guint16 is_caller_allocates:1;
-    guint16 is_optional:1;      // Out-only. Pass in NULL to ignore this.
-    guint16 is_nullable:1;      // For in, can pass in NULL. For out, may return NULL.
+    uint16_t is_caller_allocates:1;
+    uint16_t is_optional:1;      // Out-only. Pass in NULL to ignore this.
+    uint16_t is_nullable:1;      // For in, can pass in NULL. For out, may return NULL.
 
     // Error status
-    guint16 is_invalid:1;       // True when one of the arguments has invalid type
-    guint16 is_raw_array:1;
-    guint16 is_zero_terminated:1;
-    guint16 has_size:1;
-    guint16 is_unichar:1;
-    guint16 padding1:4;
+    uint16_t is_invalid:1;       // True when one of the arguments has invalid type
+    uint16_t is_raw_array:1;
+    uint16_t is_zero_terminated:1;
+    uint16_t has_size:1;
+    uint16_t is_unichar:1;
+    uint16_t padding1:4;
 
     union
     {
         // For string and pointer types
         GigPointerType pointer_type;
         // For C array types
-        gsize length;
+        size_t length;
         // For C element types
-        gsize item_size;
+        size_t item_size;
     };
 
     GITransfer transfer;
 
     // Subtypes and callables
-    guint16 n_params;
+    uint16_t n_params;
     union
     {
         GigTypeMeta *params;
@@ -84,7 +84,7 @@ struct _GigTypeMeta
 
 void gig_type_meta_init_from_arg_info(GigTypeMeta *type, GIArgInfo *ai);
 void gig_type_meta_init_from_callable_info(GigTypeMeta *type, GICallableInfo *ci);
-G_GNUC_PURE gsize gig_meta_real_item_size(const GigTypeMeta *meta);
+G_GNUC_PURE size_t gig_meta_real_item_size(const GigTypeMeta *meta);
 const char *gig_type_meta_describe(const GigTypeMeta *meta);
 void gig_data_type_free(GigTypeMeta *meta);
 void gig_init_data_type(void);
