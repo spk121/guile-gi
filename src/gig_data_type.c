@@ -15,6 +15,7 @@
 
 #include "core.h"
 #include <string.h>
+#include <stdio.h>
 #include <glib-object.h>
 #include "gig_argument.h"
 #include "gig_data_type.h"
@@ -309,18 +310,18 @@ char gig_data_type_describe_buf[STRLEN];
 const char *
 gig_type_meta_describe(const GigTypeMeta *meta)
 {
-    GString *s = g_string_new(NULL);
-    g_string_append_printf(s, "%s%s%s",
-                           meta->is_ptr ? "pointer to " : "",
-                           meta->is_caller_allocates ? "caller allocated " : "",
-                           g_type_name(meta->gtype));
-    if (!G_TYPE_IS_FUNDAMENTAL(meta->gtype))
-        g_string_append_printf(s, " of type %s", g_type_name(G_TYPE_FUNDAMENTAL(meta->gtype)));
-    if (meta->is_nullable)
-        g_string_append_printf(s, " or NULL");
-    strncpy(gig_data_type_describe_buf, s->str, STRLEN - 1);
-    gig_data_type_describe_buf[STRLEN - 1] = '\0';
-    g_string_free(s, TRUE);
+    size_t len = 0;
+    len = snprintf(gig_data_type_describe_buf, STRLEN,
+                   "%s%s%s",
+                   (meta->is_ptr ? "pointer to " : ""),
+                   (meta->is_caller_allocates ? "caller allocated " : ""),
+                   g_type_name(meta->gtype));
+    if (!G_TYPE_IS_FUNDAMENTAL(meta->gtype) && len < STRLEN)
+        len += snprintf(gig_data_type_describe_buf + len, STRLEN - len,
+                        " of type %s", g_type_name(G_TYPE_FUNDAMENTAL(meta->gtype)));
+    if (meta->is_nullable && len < STRLEN)
+        len += snprintf(gig_data_type_describe_buf + len, STRLEN - len,
+                        " or NULL");
     return gig_data_type_describe_buf;
 }
 
