@@ -14,6 +14,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "core.h"
+#include <ctype.h>
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
@@ -186,7 +187,7 @@ gig_constant_strip_prefix(const char *name, const char *strip_prefix)
     /* strip off prefix from value name, while keeping it a valid
      * identifier */
     for (i = prefix_len + 1; i > 0; i--) {
-        if (g_ascii_isalpha(name[i - 1]) || name[i - 1] == '_') {
+        if (isalpha(name[i - 1]) || name[i - 1] == '_') {
             return &name[i - 1];
         }
     }
