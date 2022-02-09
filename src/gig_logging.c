@@ -101,7 +101,7 @@ gig_log_writer(GLogLevelFlags flags, const GLogField *fields, size_t n_fields, v
         if (scm_is_true(scm_file_port_p(port))) {
             int fd = scm_to_int(scm_fileno(port));
             char *colored_prefix =
-                g_strdup_printf(g_log_writer_supports_color(fd) ? color : "%s", prefix);
+                decorate_string(g_log_writer_supports_color(fd) ? color : "%s", prefix);
             scm_c_write(port, colored_prefix, strlen(colored_prefix));
             scm_c_write(port, ": ", 2);
             scm_c_write(port, message->value, strlen(message->value));
@@ -160,7 +160,7 @@ gig_log_custom_helper(GLogLevelFlags log_level, const GLogField *fields, size_t 
 
     for (size_t i = 0; i < n_fields; i++) {
         it = scm_cddr(it);
-        char *key = gig_gname_to_scm_name(fields[i].key);
+        char *key = make_scm_name(fields[i].key);
         scm_set_car_x(it, scm_from_utf8_keyword(key));
         // TODO: add more conversions
         if (                    /* the message itself is a string */
@@ -178,7 +178,7 @@ gig_log_custom_helper(GLogLevelFlags log_level, const GLogField *fields, size_t 
             scm_set_car_x(scm_cdr(it), scm_from_utf8_string(fields[i].value));
         else {
             scm_set_car_x(scm_cdr(it), scm_from_pointer((void *)fields[i].value, NULL));
-            char *length = g_strdup_printf("%s-length", key);
+            char *length = concatenate(key, "-length");
             it = scm_cddr(it);
             scm_set_car_x(it, scm_from_utf8_keyword(length));
             scm_set_car_x(scm_cdr(it), scm_from_size_t(fields[i].length));

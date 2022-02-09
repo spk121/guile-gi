@@ -550,8 +550,8 @@ gig_property_define(GType type, GIPropertyInfo *info, const char *_namespace, SC
 
     scm_dynwind_begin(0);
     long_name = scm_dynwind_or_bust("%gig-property-define",
-                                    g_strdup_printf("%s:%s", _namespace, name));
-    long_name = scm_dynwind_or_bust("%gig-property-define", gig_gname_to_scm_name(long_name));
+                                    concatenate3(_namespace, ":", name));
+    long_name = scm_dynwind_or_bust("%gig-property-define", make_scm_name(long_name));
 
     if (G_TYPE_IS_CLASSED(type)) {
         GObjectClass *_class = g_type_class_ref(type);

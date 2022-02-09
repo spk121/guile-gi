@@ -353,7 +353,7 @@ make_formals(GICallableInfo *callable,
          s++, i_formal = scm_cdr(i_formal), i_specializer = scm_cdr(i_specializer)) {
         GigArgMapEntry *entry = gig_amap_get_input_entry_by_s(argmap, s);
         char *formal = scm_dynwind_or_bust("%make-formals",
-                                            gig_gname_to_scm_name(entry->name));
+                                            make_scm_name(entry->name));
         scm_set_car_x(i_formal, scm_from_utf8_symbol(formal));
         // Don't force types on nullable input, as #f can also be used to represent
         // NULL.

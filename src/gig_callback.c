@@ -207,7 +207,7 @@ callback_binding_inner(struct callback_binding_args *args)
     GigArgMap *amap = gcb->amap;
     char *callback_name;
     if (amap->name)
-        callback_name = g_strdup_printf("callback:<%s>", amap->name);
+        callback_name = concatenate3("callback:<", amap->name, ">");
     else
         callback_name = xstrdup("callback");
 
@@ -406,7 +406,7 @@ gig_callback_new(const char *name, GICallbackInfo *callback_info, SCM s_func)
         g_debug("Constructing C callback for %s", gcb->name);
     }
     else {
-        gcb->name = g_strdup_printf("callback:%s", name);
+        gcb->name = concatenate("callback:", name);
         g_debug("Construction a C Callback for an anonymous procedure");
     }
 
@@ -528,7 +528,7 @@ gig_callback_to_scm(const char *name, GICallbackInfo *info, void *callback)
     GigCallback *gcb = gig_callback_new_for_callback(info, callback);
     if (gcb == NULL)
         return SCM_BOOL_F;
-    char *subr_name = g_strdup_printf("c-callback:%s", name);
+    char *subr_name = concatenate("c-callback:", name);
     SCM subr = scm_c_make_gsubr(subr_name, 0, 0, 1, gcb->callback_ptr);
     free(subr_name);
     return subr;

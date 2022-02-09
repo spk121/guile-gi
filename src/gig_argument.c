@@ -121,7 +121,7 @@ zero_terminated_array_length(GigTypeMeta *meta, GIArgument *arg)
     if (arg->v_pointer == NULL)
         return 0;
     else if (G_TYPE_FUNDAMENTAL(meta->params[0].gtype) == G_TYPE_STRING)
-        return g_strv_length((char **)arg->v_pointer);
+        return strvlen((const char **)arg->v_pointer);
     else {
         size_t item_size = gig_meta_real_item_size(&meta->params[0]);
         switch (item_size) {

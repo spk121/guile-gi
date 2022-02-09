@@ -101,7 +101,7 @@ gig_init_flag(void)
 static SCM
 define_conversion(const char *fmt, const char *name, SCM proc)
 {
-    char *_sym = g_strdup_printf(fmt, name);
+    char *_sym = decorate_string(fmt, name);
     SCM sym = scm_from_utf8_symbol(_sym);
     free(_sym);
     scm_define(sym, proc);
@@ -113,7 +113,7 @@ gig_define_enum_conversions(GIEnumInfo *info, GType type, SCM defs)
 {
     SCM _class;
     scm_dynwind_begin(0);
-    char *cls = gig_gname_to_scm_name(g_base_info_get_name(info));
+    char *cls = make_scm_name(g_base_info_get_name(info));
     scm_dynwind_or_bust("%define-enum-conversions", cls);
 
     if (type != G_TYPE_NONE)
@@ -181,7 +181,7 @@ gig_define_enum(GIEnumInfo *info, SCM defs)
 
     while (i < n_values) {
         vi = g_enum_info_get_value(info, i);
-        _key = gig_gname_to_scm_name(g_base_info_get_name(vi));
+        _key = make_scm_name(g_base_info_get_name(vi));
         key = scm_from_utf8_symbol(_key);
         int64_t _val = g_value_info_get_value(vi);
         SCM val;

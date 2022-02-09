@@ -89,7 +89,7 @@ SCM sym_obarray;
 char *
 gig_type_class_name_from_gtype(GType gtype)
 {
-    return g_strdup_printf("<%s>", g_type_name(gtype));
+    return bracketize(g_type_name(gtype));
 }
 
 // Returns TRUE if TYPE is contained in the hash table of known types.
@@ -258,7 +258,7 @@ gig_type_define_with_info(GIRegisteredTypeInfo *info, SCM dsupers, SCM slots)
         cls = SCM_PACK_POINTER(_value);
     }
     else {
-        char *name = g_strdup_printf("<%s>", _name);
+        char *name = bracketize(_name);
         SCM class_name = scm_from_utf8_symbol(name);
         cls = scm_call_4(make_class_proc, dsupers, slots, kwd_name, class_name);
         gig_debug_load("%s - creating new type", name);

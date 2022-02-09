@@ -16,6 +16,7 @@
 #include "core.h"
 #include <errno.h>
 #include <string.h>
+#include <stdio.h>
 #include <libguile.h>
 #include <glib.h>
 #include <glib-object.h>
@@ -130,23 +131,23 @@ gig_callable_info_make_name(GICallableInfo *info, const char *prefix)
     predicate = is_predicate(info);
     destructive = is_destructive(info);
     if (prefix)
-        str1 = gig_gname_to_scm_name(prefix);
-    str2 = gig_gname_to_scm_name(g_base_info_get_name(info));
+        str1 = make_scm_name(prefix);
+    str2 = make_scm_name(g_base_info_get_name(info));
     if (!prefix) {
         if (destructive)
-            name = g_strdup_printf("%s!", str2);
+            name = concatenate(str2, "!");
         else if (predicate)
-            name = g_strdup_printf("%s?", str2);
+            name = concatenate(str2, "?");
         else
             return str2;
     }
     else {
         if (destructive)
-            name = g_strdup_printf("%s:%s!", str1, str2);
+            name = concatenate4(str1, ":", str2, "!");
         else if (predicate)
-            name = g_strdup_printf("%s:%s?", str1, str2);
+            name = concatenate4(str1, ":", str2, "?");
         else
-            name = g_strdup_printf("%s:%s", str1, str2);
+            name = concatenate3(str1, ":", str2);
     }
     free(str1);
     free(str2);
@@ -190,43 +191,6 @@ gig_constant_strip_prefix(const char *name, const char *strip_prefix)
         }
     }
     return name;
-}
-
-char *
-gig_gname_to_scm_name(const char *gname)
-{
-    g_assert(gname != NULL);
-    g_assert(strlen(gname) > 0);
-
-    size_t len = strlen(gname);
-    GString *str = g_string_new(NULL);
-    bool was_lower = false;
-
-    for (size_t i = 0; i < len; i++) {
-        if (g_ascii_islower(gname[i])) {
-            g_string_append_c(str, gname[i]);
-            was_lower = true;
-        }
-        else if (gname[i] == '_' || gname[i] == '-') {
-            g_string_append_c(str, '-');
-            was_lower = false;
-        }
-        else if (gname[i] == '?' || gname[i] == ':' || gname[i] == '%') {
-            g_string_append_c(str, gname[i]);
-            was_lower = false;
-        }
-        else if (g_ascii_isdigit(gname[i])) {
-            g_string_append_c(str, gname[i]);
-            was_lower = false;
-        }
-        else if (g_ascii_isupper(gname[i])) {
-            if (was_lower)
-                g_string_append_c(str, '-');
-            g_string_append_c(str, g_ascii_tolower(gname[i]));
-            was_lower = false;
-        }
-    }
-    return g_string_free(str, FALSE);
 }
 
 SCM
@@ -322,12 +286,15 @@ scm_c_reexport(const char *name, ...)
 void
 scm_printf(SCM port, const char *fmt, ...)
 {
+#define SCM_PRINTF_MAX_LINE_LEN (1024)
+    char _message[SCM_PRINTF_MAX_LINE_LEN];
     va_list args;
     va_start(args, fmt);
-    char *_message = g_strdup_vprintf(fmt, args);
+    vsnprintf(_message, SCM_PRINTF_MAX_LINE_LEN, fmt, args);
+    va_end(args);
     SCM message = scm_from_utf8_string(_message);
-    free(_message);
     scm_display(message, port);
+#undef SCM_PRINTF_MAX_LINE_LEN
 }
 
 const char *
@@ -372,7 +339,7 @@ g_registered_type_info_get_qualified_name(GIRegisteredTypeInfo *info)
     const char *prefix = g_irepository_get_c_prefix(NULL, _namespace);
 
     // add initial % to ensure that the name is private
-    return g_strdup_printf("%%%s%s", prefix, g_base_info_get_name(info));
+    return concatenate3("%", prefix, g_base_info_get_name(info));
 }
 
 char *

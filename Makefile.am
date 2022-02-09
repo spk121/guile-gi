@@ -102,6 +102,7 @@ guileextension_LTLIBRARIES = libguile-gi.la
 
 libguile_gi_la_c_sources = \
   src/core/mem.c \
+  src/core/string.c \
   src/gig_argument.c \
   src/gig_closure.c \
   src/gig_data_type.c \
@@ -124,6 +125,7 @@ libguile_gi_la_c_sources = \
 libguile_gi_la_internal_headers = \
   src/core.h \
   src/core/mem.h \
+  src/core/string.h \
   src/core/visibility.h \
   src/gig_argument.h \
   src/gig_closure.h \

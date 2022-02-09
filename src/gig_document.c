@@ -33,7 +33,7 @@ document_nested(GIBaseInfo *parent)
             do_document(I(parent, i), _namespace);      \
     } while (0)
 
-    char *_namespace = gig_gname_to_scm_name(g_base_info_get_name(parent));
+    char *_namespace = make_scm_name(g_base_info_get_name(parent));
     scm_dynwind_free(_namespace);
 
     int n_methods, n_properties, n_signals;
@@ -52,7 +52,7 @@ document_nested(GIBaseInfo *parent)
 static void
 document_arg_entry(const char *kind, GigArgMapEntry *entry)
 {
-    char *name = gig_gname_to_scm_name(entry->name);
+    char *name = make_scm_name(entry->name);
     scm_dynwind_free(name);
     scm_printf(SCM_UNDEFINED, "<%s name=\"%s\" c:name=\"%s\">", kind, name, entry->name);
     scm_printf(SCM_UNDEFINED, "</%s>", kind);
@@ -125,12 +125,12 @@ do_document(GIBaseInfo *info, const char *_namespace)
             GigArgMapEntry *entry = arg_map->pdata + i;
             scm_printf(SCM_UNDEFINED, "<parameter name=\"%s\">", entry->name);
             if (entry->parent) {
-                char *parent = gig_gname_to_scm_name(entry->parent->name);
+                char *parent = make_scm_name(entry->parent->name);
                 scm_printf(SCM_UNDEFINED, "<inferred parent=\"%s\"/>", parent);
                 free(parent);
             }
             else {
-                char *arg = gig_gname_to_scm_name(entry->name);
+                char *arg = make_scm_name(entry->name);
                 scm_printf(SCM_UNDEFINED, "<inferred argument=\"%s\"/>", arg);
                 free(arg);
             }
@@ -226,7 +226,7 @@ do_document(GIBaseInfo *info, const char *_namespace)
     case GI_INFO_TYPE_VALUE:
     {
         scheme_name = scm_dynwind_or_bust("%document",
-                                          gig_gname_to_scm_name(g_base_info_get_name(info)));
+                                          make_scm_name(g_base_info_get_name(info)));
         scm_printf(SCM_UNDEFINED, "<member name=\"%s\">", g_base_info_get_name(info));
         scm_printf(SCM_UNDEFINED, "<scheme><symbol name=\"%s\"", scheme_name);
         GIAttributeIter iter = { 0, };
