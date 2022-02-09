@@ -103,7 +103,7 @@ define_conversion(const char *fmt, const char *name, SCM proc)
 {
     char *_sym = g_strdup_printf(fmt, name);
     SCM sym = scm_from_utf8_symbol(_sym);
-    g_free(_sym);
+    free(_sym);
     scm_define(sym, proc);
     return sym;
 }
@@ -202,7 +202,7 @@ gig_define_enum(GIEnumInfo *info, SCM defs)
         scm_hashq_set_x(obarray, key, val);
 
         g_base_info_unref(vi);
-        g_free(_key);
+        free(_key);
         i++;
     }
 
@@ -210,7 +210,7 @@ gig_define_enum(GIEnumInfo *info, SCM defs)
 
     scm_define(scm_class_name(_class), _class);
     defs = scm_cons(scm_class_name(_class), defs);
-    g_free(_class_name);
+    free(_class_name);
 
     return defs;
 }

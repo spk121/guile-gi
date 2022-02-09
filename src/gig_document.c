@@ -127,12 +127,12 @@ do_document(GIBaseInfo *info, const char *_namespace)
             if (entry->parent) {
                 char *parent = gig_gname_to_scm_name(entry->parent->name);
                 scm_printf(SCM_UNDEFINED, "<inferred parent=\"%s\"/>", parent);
-                g_free(parent);
+                free(parent);
             }
             else {
                 char *arg = gig_gname_to_scm_name(entry->name);
                 scm_printf(SCM_UNDEFINED, "<inferred argument=\"%s\"/>", arg);
-                g_free(arg);
+                free(arg);
             }
             scm_printf(SCM_UNDEFINED, "</parameter>");
         }

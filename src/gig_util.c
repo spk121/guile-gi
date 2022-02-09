@@ -13,6 +13,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#include "core.h"
 #include <errno.h>
 #include <string.h>
 #include <libguile.h>
@@ -147,8 +148,8 @@ gig_callable_info_make_name(GICallableInfo *info, const char *prefix)
         else
             name = g_strdup_printf("%s:%s", str1, str2);
     }
-    g_free(str1);
-    g_free(str2);
+    free(str1);
+    free(str2);
     return name;
 }
 
@@ -226,21 +227,6 @@ gig_gname_to_scm_name(const char *gname)
         }
     }
     return g_string_free(str, FALSE);
-}
-
-void *
-gig_memdup(const void *mem, size_t len)
-{
-    void *new_mem;
-
-    if (mem && len != 0) {
-        new_mem = g_malloc(len);
-        memcpy(new_mem, mem, len);
-    }
-    else
-        new_mem = NULL;
-
-    return new_mem;
 }
 
 SCM
@@ -340,7 +326,7 @@ scm_printf(SCM port, const char *fmt, ...)
     va_start(args, fmt);
     char *_message = g_strdup_vprintf(fmt, args);
     SCM message = scm_from_utf8_string(_message);
-    g_free(_message);
+    free(_message);
     scm_display(message, port);
 }
 
@@ -380,7 +366,7 @@ g_registered_type_info_get_qualified_name(GIRegisteredTypeInfo *info)
 {
     const char *_name = g_base_info_get_attribute(info, "c:type");
     if (_name != NULL)
-        return g_strdup(_name);
+        return xstrdup(_name);
 
     const char *_namespace = g_base_info_get_namespace(info);
     const char *prefix = g_irepository_get_c_prefix(NULL, _namespace);

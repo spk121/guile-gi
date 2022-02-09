@@ -379,7 +379,7 @@ prepend_search_path(SCM s_dir)
 
     dir = scm_to_utf8_string(s_dir);
     g_irepository_prepend_search_path(dir);
-    g_free(dir);
+    free(dir);
 
     return SCM_UNSPECIFIED;
 }
@@ -402,10 +402,10 @@ get_dependencies(SCM namespace)
     while (_dependencies[i] != NULL) {
         SCM entry = scm_from_utf8_string(_dependencies[i]);
         dependencies = scm_cons(entry, dependencies);
-        g_free(_dependencies[i]);
+        free(_dependencies[i]);
         i++;
     }
-    g_free(_dependencies);
+    free(_dependencies);
     return scm_reverse_x(dependencies, SCM_EOL);
 }
 

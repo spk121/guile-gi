@@ -28,7 +28,6 @@ G_BEGIN_DECLS
 G_GNUC_MALLOC char *gig_callable_info_make_name(GICallableInfo *info, const char *prefix);
 const char *gig_constant_strip_prefix(const char *name, const char *strip_prefix);
 char *gig_gname_to_scm_name(const char *gname);
-G_GNUC_INTERNAL void *gig_memdup(const void *mem, size_t len);
 G_GNUC_INTERNAL SCM scm_c_list_ref(SCM list, size_t k);
 G_GNUC_INTERNAL bool scm_is_list(SCM obj);
 G_GNUC_INTERNAL size_t scm_c_length(SCM list);

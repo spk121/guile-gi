@@ -118,21 +118,21 @@ invoke_closure(SCM closure, SCM return_type, SCM inout_mask, SCM args)
     SCM_ASSERT_TYPE(scm_is_list(args), args, SCM_ARG2, "%invoke-closure", "list");
 
     size_t nargs = scm_c_length(args);
-    GValue *params = g_new0(GValue, nargs);
-    GValue *retval = g_new0(GValue, 1);
+    GValue *params = xcalloc(nargs, sizeof(GValue));
+    GValue *retval = xcalloc(1, sizeof(GValue));
     SCM ret = SCM_UNDEFINED;
     SCM iter = args;
 
     g_value_init(retval, scm_to_gtype(return_type));
     if (G_VALUE_TYPE(retval) == G_TYPE_INVALID) {
-        g_free(retval);
+        free(retval);
         goto out;
     }
 
     for (size_t narg = 0; narg < nargs; narg++, iter = scm_cdr(iter)) {
         const GValue *arg = gig_type_peek_typed_object(scm_car(iter), gig_value_type);
         if (arg == NULL) {
-            g_free(retval);
+            free(retval);
             goto out;
         }
         g_value_init(params + narg, G_VALUE_TYPE(arg));
@@ -154,7 +154,7 @@ invoke_closure(SCM closure, SCM return_type, SCM inout_mask, SCM args)
         if (bit_count > nargs)
             scm_misc_error(NULL, "~S returned fewer values than we should unpack",
                            scm_list_1(closure));
-        GValue *out = g_new0(GValue, bit_count);
+        GValue *out = xcalloc(bit_count, sizeof(GValue));
 
         bits = scm_bitvector_elements(inout_mask, &handle, &offset, &length, &inc);
         pos = offset;
@@ -179,7 +179,7 @@ invoke_closure(SCM closure, SCM return_type, SCM inout_mask, SCM args)
   out:
     for (size_t narg = 0; narg < nargs; narg++)
         g_value_unset(params + narg);
-    g_free(params);
+    free(params);
     return ret;
 }
 

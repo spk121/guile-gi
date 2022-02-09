@@ -13,6 +13,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#include "core.h"
 #include <string.h>
 #include <glib-object.h>
 #include "gig_argument.h"
@@ -70,7 +71,7 @@ gig_type_meta_init_from_callable_info(GigTypeMeta *meta, GICallableInfo *ci)
 static void
 add_params(GigTypeMeta *meta, int n)
 {
-    meta->params = g_new0(GigTypeMeta, n);
+    meta->params = xcalloc(n, sizeof(GigTypeMeta));
     meta->n_params = n;
 }
 
@@ -292,7 +293,7 @@ gig_data_type_free(GigTypeMeta *meta)
     for (int i = 0; i < meta->n_params; i++)
         gig_data_type_free(&meta->params[i]);
     if (meta->n_params > 0)
-        g_free(meta->params);
+        free(meta->params);
 
     if ((meta->gtype == G_TYPE_POINTER) && (meta->pointer_type == GIG_DATA_CALLBACK) &&
         meta->callable_info)
