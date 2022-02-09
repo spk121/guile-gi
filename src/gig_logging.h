@@ -16,11 +16,12 @@
 #ifndef GIG_LOGGING_H
 #define GIG_LOGGING_H
 
+#include "core.h"
 #include <girepository.h>
 
 // *INDENT-OFF*
 G_BEGIN_DECLS
 // *INDENT-ON*
-void gig_init_logging(void);
+GIG_API void gig_init_logging(void);
 G_END_DECLS
 #endif

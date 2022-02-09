@@ -499,7 +499,7 @@ gig_value_transform(SCM val, SCM type)
 }
 
 void
-gig_init_value()
+gig_init_value(void)
 {
     scm_c_define_gsubr("%get", 1, 0, 0, gig_value_get);
     scm_c_define_gsubr("%get-type", 1, 0, 0, gig_value_get_type);

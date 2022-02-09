@@ -260,7 +260,7 @@ _document(SCM info)
     return SCM_UNSPECIFIED;
 }
 
-void
+GIG_API void
 gig_init_document()
 {
     scm_c_define_gsubr("%document", 1, 0, 0, _document);

@@ -2,6 +2,7 @@
 #define GIG_VALUE_H_
 
 #include <stdbool.h>
+#include "core.h"
 #include <glib.h>
 #include <libguile.h>
 #include <glib-object.h>
@@ -26,7 +27,7 @@ SCM gig_value_transform(SCM val, SCM type);
 void gig_value_from_scm_with_error(GValue *value, SCM obj, const char *subr, int pos);
 int gig_value_from_scm(GValue *value, SCM obj);
 
-void gig_init_value(void);
+GIG_API void gig_init_value(void);
 
 G_END_DECLS
 #endif

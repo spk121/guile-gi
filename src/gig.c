@@ -13,6 +13,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#include "core.h"
 #include <girepository.h>
 #include <glib-object.h>
 #include <glib.h>
@@ -56,7 +57,7 @@ scm_gcov_dump(void)
 }
 #endif
 
-void
+GIG_API void
 gig_init(void)
 {
 #ifdef MTRACE

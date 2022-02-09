@@ -19,6 +19,7 @@
 #include <glib.h>
 #include <libguile.h>
 #include "gig_util.h"
+#include "gig_logging.h"
 
 _Thread_local int logger_initialized = 0;
 
@@ -200,7 +201,7 @@ gig_install_custom_logger(SCM func)
 }
 
 void
-gig_init_logging()
+gig_init_logging(void)
 {
     kwd_log_level = scm_from_utf8_keyword("log-level");
     scm_c_define_gsubr("install-port-logger!", 1, 0, 0, gig_log_to_port);

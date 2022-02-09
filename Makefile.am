@@ -121,6 +121,8 @@ libguile_gi_la_c_sources = \
   src/gig_logging.c
 
 libguile_gi_la_internal_headers = \
+  src/core.h \
+  src/core/visibility.h \
   src/gig_argument.h \
   src/gig_closure.h \
   src/gig_data_type.h \
@@ -145,7 +147,8 @@ libguile_gi_la_SOURCES = \
 
 libguile_gi_la_CPPFLAGS = \
   -DG_LOG_DOMAIN=\"GuileGI\" \
-  -DG_LOG_USE_STRUCTURED
+  -DG_LOG_USE_STRUCTURED \
+  -DBUILDING_GIG
 
 if BUILDING_DLL
 libguile_gi_la_CPPFLAGS += -DGIR_DLL -DGIR_DLL_EXPORTS
@@ -157,8 +160,11 @@ if MTRACE
 libguile_gi_la_CPPFLAGS += -DMTRACE
 endif
 
+CFLAG_VISIBILITY = -fvisibility=hidden
+
 libguile_gi_la_CFLAGS = \
   -std=c11 \
+  $(CFLAG_VISIBILITY) \
   $(GUILE_CFLAGS) \
   $(GLIB_CFLAGS) \
   $(GOBJECT_CFLAGS) \
@@ -168,7 +174,6 @@ libguile_gi_la_CFLAGS = \
 libguile_gi_la_LDFLAGS = \
  -no-undefined \
  -version-info $(LIBGUILE_GI_INTERFACE) \
- -export-symbols-regex '^gig_' \
  $(GUILE_LDFLAGS)
 
 if !DLL_VERSION_INFO
@@ -432,6 +437,7 @@ CLEANFILES = \
 EXTRA_DIST = \
   README.md \
   build-aux/config.rpath \
+  src/core/README \
   docs/example-1.scm docs/gtk-3.scm docs/fdl-1.3.texi \
   docs/ex-date.scm docs/ex-gapplication.scm docs/ex-load-by-name.scm \
   docs/ex-button.scm \

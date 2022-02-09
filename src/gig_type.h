@@ -16,6 +16,7 @@
 #ifndef GIG_TYPE_H
 #define GIG_TYPE_H
 
+#include "core.h"
 #include <stdbool.h>
 #include <girepository.h>
 
@@ -57,7 +58,7 @@ SCM gig_type_transfer_object(GType gtype, void *obj, GITransfer transfer);
 void *gig_type_peek_object(SCM obj);
 void *gig_type_peek_typed_object(SCM obj, SCM expected);
 
-void gig_init_types(void);
+GIG_API void gig_init_types(void);
 
 G_END_DECLS
 #endif

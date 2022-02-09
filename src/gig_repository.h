@@ -1,6 +1,7 @@
 #ifndef GIG_REPOSITORY_H
 #define GIG_REPOSITORY_H
 
+#include "core.h"
 #include <glib.h>
 #include <girepository.h>
 
@@ -25,6 +26,6 @@ void gig_repository_nested_infos(GIBaseInfo *base,
                                  int *n_signals, GigRepositoryNested *signal);
 
 
-void gig_init_repository(void);
+GIG_API void gig_init_repository(void);
 
 #endif
