@@ -1,12 +1,65 @@
+// Copyright (C) 2019, 2022 Michael L. Gran
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef GI_LOGGING_H
 #define GI_LOGGING_H
 
+#include <assert.h>
 #include <stdio.h>
+#include <stdbool.h>
+#include <unistd.h>
 
-#define assert_not_reached()                    \
-    do {                                                                \
-        fprintf(stderr, "Reached invalid code at %s:%d\n", __FILE__, __LINE__); \
-        exit(1);                                                        \
-    } while (0)
+typedef struct _LogField
+{
+    const char *key;
+    const void *value;
+    ssize_t length;
+} LogField;
+
+typedef enum _LogWriterOutput
+{
+    LOG_WRITER_HANDLED = 1,
+    LOG_WRITER_UNHANDLED = 0
+} LogWriterOutput;
+
+typedef enum _LogLeveFlags
+{
+  /* log flags */
+  LOG_FLAG_RECURSION          = 1 << 0,
+  LOG_FLAG_FATAL              = 1 << 1,
+
+  /* GLib log levels */
+  LOG_LEVEL_ERROR             = 1 << 2,       /* always fatal */
+  LOG_LEVEL_CRITICAL          = 1 << 3,
+  LOG_LEVEL_WARNING           = 1 << 4,
+  LOG_LEVEL_MESSAGE           = 1 << 5,
+  LOG_LEVEL_INFO              = 1 << 6,
+  LOG_LEVEL_DEBUG             = 1 << 7,
+
+  LOG_LEVEL_MASK              = ~(LOG_FLAG_RECURSION | LOG_FLAG_FATAL),
+  LOG_FATAL_MASK              = LOG_FLAG_FATAL | LOG_LEVEL_ERROR
+} LogLevelFlags;
+
+typedef LogWriterOutput (*LogWriterFunc) (LogLevelFlags log_level, const LogField *fields, size_t n_fields, void *user_data);
+typedef void (*DestroyNotify) (void *data);
+
+bool log_writer_supports_color(int fd);
+void log_set_writer_func(LogWriterFunc func, void *user_data, DestroyNotify user_data_free);
+LogWriterOutput log_writer_journald (LogLevelFlags log_level, const LogField *fields, size_t n_fields, void *user_data);
+LogWriterOutput log_writer_default (LogLevelFlags log_level, const LogField *fields, size_t n_fields, void *user_data);
+void log_structured(const char *log_domain, LogLevelFlags log_level, ...);
+
+#define assert_not_reached() (assert(0))
 
 #endif

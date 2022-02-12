@@ -32,12 +32,12 @@
 
 #define SURPRISING                                                      \
     do {                                                                \
-        g_warning("Unusual argument type '%s' %s:%d", gig_type_meta_describe(meta), __FILE__, __LINE__); \
+        gig_warning("Unusual argument type '%s' %s:%d", gig_type_meta_describe(meta), __FILE__, __LINE__); \
     } while(false)
 
 #define UNHANDLED                                                       \
     do {                                                                \
-        g_error("unhandled argument type '%s' %s:%d", gig_type_meta_describe(meta), __FILE__, __LINE__); \
+        gig_error("unhandled argument type '%s' %s:%d", gig_type_meta_describe(meta), __FILE__, __LINE__); \
     } while(false)
 
 static void *later_free(GPtrArray *must_free, GigTypeMeta *meta, void *ptr);
@@ -177,7 +177,7 @@ zero_terminated_array_length(GigTypeMeta *meta, GIArgument *arg)
         }
         }
     }
-    g_return_val_if_reached(GIG_ARRAY_SIZE_UNKNOWN);
+    gig_return_val_if_reached(GIG_ARRAY_SIZE_UNKNOWN);
 }
 
 //////////////////////////////////////////////////////////
@@ -844,7 +844,7 @@ scm_to_c_ghashtable(S2C_ARG_DECL)
         }
         else {
             // Should be unreachable
-            g_warn_if_reached();
+            gig_warn_if_reached();
             key_type = GIG_HASH_POINTER;
             hash_func = NULL;
             equal_func = NULL;

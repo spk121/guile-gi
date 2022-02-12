@@ -137,7 +137,7 @@ gig_type_meta_init_from_basic_type_tag(GigTypeMeta *meta, GITypeTag tag)
         return;
     }
     T(GI_TYPE_TAG_ERROR, G_TYPE_ERROR, GError);
-    g_error("unhandled type '%s' %s %d", g_type_tag_to_string(tag), __FILE__, __LINE__);
+    gig_error("unhandled type '%s' %s %d", g_type_tag_to_string(tag), __FILE__, __LINE__);
 #undef T
 }
 
@@ -175,7 +175,7 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
                 meta->is_zero_terminated = true;
 
             if (len == -1 && !meta->is_zero_terminated) {
-                g_warning("no way of determining array size of %s, coercing to pointer",
+                gig_warning("no way of determining array size of %s, coercing to pointer",
                           g_type_name(meta->gtype));
                 meta->gtype = G_TYPE_POINTER;
             }
@@ -211,7 +211,7 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
         case GI_INFO_TYPE_UNRESOLVED:
             meta->gtype = G_TYPE_INVALID;
             meta->is_invalid = true;
-            g_warning("Unrepresentable type: %s, %s, %s",
+            gig_warning("Unrepresentable type: %s, %s, %s",
                       g_base_info_get_name_safe(type_info),
                       g_base_info_get_name_safe(referenced_base_info),
                       g_info_type_to_string(itype));
@@ -260,7 +260,7 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
                     meta->is_invalid = true;
             }
             else {
-                g_critical("Unhandled item type in %s:%d", __FILE__, __LINE__);
+                gig_critical("Unhandled item type in %s:%d", __FILE__, __LINE__);
                 meta->is_invalid = true;
             }
         }

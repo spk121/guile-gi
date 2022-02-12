@@ -386,7 +386,7 @@ gig_amap_get_output_entry_by_c(GigArgMap *amap, int cpos)
         }
         i++;
     }
-    g_return_val_if_reached(NULL);
+    gig_return_val_if_reached(NULL);
 }
 
 // If this output element is an array with another output element
@@ -446,7 +446,7 @@ gig_amap_input_s_2_input_c(const GigArgMap *amap, int s_input_pos, int *c_input_
         }
         i++;
     }
-    g_return_val_if_reached(false);
+    gig_return_val_if_reached(false);
 }
 
 bool
@@ -467,7 +467,7 @@ gig_amap_input_s_2_output_c(const GigArgMap *amap, int s_input_pos, int *c_outpu
         }
         i++;
     }
-    g_return_val_if_reached(false);
+    gig_return_val_if_reached(false);
 }
 
 // For the gsubr argument at position INDEX, if it is an array whose
@@ -498,7 +498,7 @@ gig_amap_input_s_2_child_input_c(const GigArgMap *amap, int s_input_pos, int *c_
         }
         i++;
     }
-    g_return_val_if_reached(false);
+    gig_return_val_if_reached(false);
 }
 
 bool
@@ -524,7 +524,7 @@ gig_amap_input_s_2_child_output_c(const GigArgMap *amap, int s_input_pos, int *c
         }
         i++;
     }
-    g_return_val_if_reached(false);
+    gig_return_val_if_reached(false);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -533,7 +533,7 @@ bool
 gig_amap_input_i2c(const GigArgMap *amap, int i, int *cpos)
 {
     if (i < 0 || i >= amap->len)
-        g_return_val_if_reached(false);
+        gig_return_val_if_reached(false);
     if (!amap->pdata[i].is_c_input)
         return false;
     *cpos = amap->pdata[i].c_input_pos;
@@ -544,7 +544,7 @@ bool
 gig_amap_input_i2s(const GigArgMap *amap, int i, int *spos)
 {
     if (i < 0 || i >= amap->len)
-        g_return_val_if_reached(FALSE);
+        gig_return_val_if_reached(FALSE);
     if (!amap->pdata[i].is_s_input)
         return false;
     *spos = amap->pdata[i].s_input_pos;
@@ -555,7 +555,7 @@ bool
 gig_amap_input_c2i(const GigArgMap *amap, int cpos, int *i)
 {
     if (cpos < 0 || cpos >= amap->c_input_len) {
-        g_return_val_if_reached(FALSE);
+        gig_return_val_if_reached(FALSE);
     }
     int j = 0;
     while (j < amap->len) {
@@ -573,7 +573,7 @@ bool
 gig_amap_input_s2i(const GigArgMap *amap, int spos, int *i)
 {
     if (spos < 0 || spos >= amap->s_input_req + amap->s_input_opt) {
-        g_return_val_if_reached(FALSE);
+        gig_return_val_if_reached(FALSE);
     }
     int j = 0;
     while (j < amap->len) {
@@ -590,7 +590,7 @@ bool
 gig_amap_input_c2s(const GigArgMap *amap, int cpos, int *spos)
 {
     if (cpos < 0 || cpos >= amap->c_input_len) {
-        g_return_val_if_reached(FALSE);
+        gig_return_val_if_reached(FALSE);
     }
     int j = 0;
     while (j < amap->len) {
@@ -612,7 +612,7 @@ bool
 gig_amap_input_s2c(const GigArgMap *am, int spos, int *cpos)
 {
     if (spos < 0 || spos >= am->s_input_req + am->s_input_opt) {
-        g_return_val_if_reached(FALSE);
+        gig_return_val_if_reached(FALSE);
     }
     int j = 0;
     while (j < am->len) {
@@ -635,7 +635,7 @@ bool
 gig_amap_output_i2c(const GigArgMap *amap, int i, int *cpos)
 {
     if (i < 0 || i >= amap->len)
-        g_return_val_if_reached(false);
+        gig_return_val_if_reached(false);
     if (!amap->pdata[i].is_c_output)
         return false;
     *cpos = amap->pdata[i].c_output_pos;
@@ -646,7 +646,7 @@ bool
 gig_amap_output_i2s(const GigArgMap *amap, int i, int *spos)
 {
     if (i < 0 || i >= amap->len)
-        g_return_val_if_reached(false);
+        gig_return_val_if_reached(false);
     if (!amap->pdata[i].is_s_output)
         return false;
     *spos = amap->pdata[i].s_output_pos;
@@ -657,7 +657,7 @@ bool
 gig_amap_output_c2i(const GigArgMap *amap, int cpos, int *i)
 {
     if (cpos < 0 || cpos >= amap->c_output_len)
-        g_return_val_if_reached(false);
+        gig_return_val_if_reached(false);
     int j = 0;
     while (j < amap->len) {
         if (amap->pdata[j].is_c_output && (amap->pdata[j].c_output_pos == cpos)) {
@@ -674,7 +674,7 @@ bool
 gig_amap_output_s2i(const GigArgMap *amap, int spos, int *i)
 {
     if (spos < 0 || spos >= amap->s_output_len)
-        g_return_val_if_reached(false);
+        gig_return_val_if_reached(false);
     int j = 0;
     while (j < amap->len) {
         if (amap->pdata[j].is_s_output && (amap->pdata[j].s_output_pos == spos)) {
@@ -690,7 +690,7 @@ bool
 gig_amap_output_c2s(const GigArgMap *amap, int cpos, int *spos)
 {
     if (cpos < 0 || cpos >= amap->c_output_len)
-        g_return_val_if_reached(false);
+        gig_return_val_if_reached(false);
     int j = 0;
     while (j < amap->len) {
         if (amap->pdata[j].is_c_output && (amap->pdata[j].c_output_pos == cpos)) {
@@ -710,7 +710,7 @@ bool
 gig_amap_output_s2c(const GigArgMap *am, int spos, int *cpos)
 {
     if (spos < 0 || spos >= am->s_output_len)
-        g_return_val_if_reached(false);
+        gig_return_val_if_reached(false);
     int j = 0;
     while (j < am->len) {
         if (am->pdata[j].is_s_output && (am->pdata[j].s_output_pos == spos)) {

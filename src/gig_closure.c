@@ -86,8 +86,8 @@ _gig_closure_marshal(GClosure *closure, GValue *ret, unsigned n_params, const GV
             size_t mask = 1L << (pos % 32);
 
             if (bits[word_pos] & mask)
-                g_warn_if_fail(!gig_value_from_scm((GValue *)(params + i),
-                                                   scm_c_value_ref(_ret, idx++)));
+                gig_value_from_scm((GValue *)(params + i),
+                                   scm_c_value_ref(_ret, idx++));
         }
         scm_array_handle_release(&handle);
     }

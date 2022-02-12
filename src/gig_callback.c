@@ -85,7 +85,7 @@ convert_ffi_arg_to_giargument(void *_ffi_arg, ffi_type *arg_type, bool unpack,
     else if (arg_type == &ffi_type_double)
         giarg->v_double = *(double *)_ffi_arg;
     else {
-        g_critical("Unhandled FFI type in %s: %d", __FILE__, __LINE__);
+        gig_critical("Unhandled FFI type in %s: %d", __FILE__, __LINE__);
         giarg->v_pointer = _ffi_arg;
     }
 }
@@ -166,7 +166,7 @@ store_output(GigArgMapEntry *entry, void ***arg, GIArgument *value)
         **(char ***)arg = value->v_pointer;
         break;
     default:
-        g_critical("Unhandled FFI type in %s: %d", __FILE__, __LINE__);
+        gig_critical("Unhandled FFI type in %s: %d", __FILE__, __LINE__);
         **(char ***)arg = value->v_pointer;
         break;
     }
@@ -405,11 +405,11 @@ gig_callback_new(const char *name, GICallbackInfo *callback_info, SCM s_func)
     SCM s_name = scm_procedure_name(s_func);
     if (scm_is_symbol(s_name)) {
         gcb->name = scm_to_utf8_string(scm_symbol_to_string(s_name));
-        g_debug("Constructing C callback for %s", gcb->name);
+        gig_debug("Constructing C callback for %s", gcb->name);
     }
     else {
         gcb->name = concatenate("callback:", name);
-        g_debug("Construction a C Callback for an anonymous procedure");
+        gig_debug("Construction a C Callback for an anonymous procedure");
     }
 
     gcb->s_func = s_func;
@@ -486,12 +486,12 @@ gig_callback_new_for_callback(GICallbackInfo *info, void *c_func)
 
     ffi_status prep_ok, closure_ok;
     prep_ok = ffi_prep_cif(&(gcb->cif), FFI_DEFAULT_ABI, n_args, &ffi_type_pointer, gcb->atypes);
-    g_return_val_if_fail(prep_ok == FFI_OK, NULL);
+    gig_return_val_if_fail(prep_ok == FFI_OK, NULL);
 
     gcb->closure = ffi_closure_alloc(sizeof(ffi_closure), &(gcb->callback_ptr));
     closure_ok = ffi_prep_closure_loc(gcb->closure, &(gcb->cif), c_callback_binding, gcb,
                                       gcb->callback_ptr);
-    g_return_val_if_fail(closure_ok == FFI_OK, NULL);
+    gig_return_val_if_fail(closure_ok == FFI_OK, NULL);
 
     return gcb;
 }
@@ -697,7 +697,7 @@ callback_free(GigCallback *gcb)
 static void
 gig_fini_callback(void)
 {
-    g_debug("Freeing callbacks");
+    gig_debug("Freeing callbacks");
     g_slist_free_full(callback_list, (GDestroyNotify)callback_free);
     callback_list = NULL;
 }

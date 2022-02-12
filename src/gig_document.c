@@ -245,7 +245,7 @@ do_document(GIBaseInfo *info, const char *_namespace)
     case GI_INFO_TYPE_INVALID:
     case GI_INFO_TYPE_INVALID_0:
     default:
-        g_critical("Unsupported irepository type %d", type);
+        gig_critical("Unsupported irepository type %d", type);
         break;
     }
     scm_dynwind_end();

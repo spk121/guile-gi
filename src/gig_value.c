@@ -223,7 +223,7 @@ gig_value_from_scm(GValue *value, SCM obj)
             return gig_value_from_scm(n_value, obj);
         }
         else if (G_VALUE_HOLDS(value, G_TYPE_GSTRING)) {
-            g_critical("unhandled value type");
+            gig_critical("unhandled value type");
             return GIG_VALUE_WRONG_TYPE;
         }
         else
@@ -248,7 +248,7 @@ gig_value_from_scm(GValue *value, SCM obj)
         }
         return GIG_VALUE_WRONG_TYPE;
     default:
-        g_critical("unhandled value type");
+        gig_critical("unhandled value type");
         return GIG_VALUE_WRONG_TYPE;
     }
 
@@ -343,7 +343,7 @@ gig_value_to_scm_basic_type(const GValue *value, GType fundamental, bool *handle
         *handled = false;
         return SCM_BOOL_F;
     }
-    g_return_val_if_reached(SCM_BOOL_F);
+    gig_return_val_if_reached(SCM_BOOL_F);
 }
 
 // This function creates and returns a Scheme value that
@@ -427,7 +427,7 @@ gig_value_to_scm_structured_type(const GValue *value, GType fundamental, bool co
         type_name = "(null)";
     scm_misc_error("gig_value_to_scm", "unknown type ~S",
                    scm_list_1(scm_from_utf8_string(type_name)));
-    g_return_val_if_reached(SCM_BOOL_F);
+    gig_return_val_if_reached(SCM_BOOL_F);
 }
 
 

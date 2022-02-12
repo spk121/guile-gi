@@ -18,7 +18,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <glib.h>
 #include <girepository.h>
 #include "gig_data_type.h"
 
