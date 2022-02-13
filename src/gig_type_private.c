@@ -1,8 +1,9 @@
 #include <assert.h>
+#include "core.h"
 #include "gig_type_private.h"
 #include "gig_util.h"
 
-static GSList *_boxed_funcs = NULL;
+static slist_t *_boxed_funcs = NULL;
 
 static void
 _boxed_copy(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
@@ -43,7 +44,7 @@ _boxed_funcs_for_type(GType type)
     assert(ffi_prep_closure_loc(funcs->free_closure, &(funcs->free_cif), _boxed_free,
                                 GSIZE_TO_POINTER(type), funcs->free) == FFI_OK);
 
-    _boxed_funcs = g_slist_prepend(_boxed_funcs, funcs);
+    slist_prepend(&_boxed_funcs, funcs);
 
     return funcs;
 }
@@ -63,5 +64,5 @@ _boxed_funcs_free(GigBoxedFuncs *funcs)
 void
 _free_boxed_funcs()
 {
-    g_slist_free_full(_boxed_funcs, (GDestroyNotify)_boxed_funcs_free);
+    slist_free(&_boxed_funcs, _boxed_funcs_free);
 }

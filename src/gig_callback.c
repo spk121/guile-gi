@@ -1,4 +1,4 @@
-// Copyright (C) 2019, 2020, 2021 Michael L. Gran
+// Copyright (C) 2019, 2020, 2021, 2022 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,6 +17,7 @@
 #include <libguile.h>
 #include <libguile/hooks.h>
 #include <ffi.h>
+#include "core.h"
 #include "gig_argument.h"
 #include "gig_callback.h"
 #include "gig_function.h"
@@ -39,7 +40,7 @@ struct _GigCallback
     ffi_type **atypes;
 };
 
-GSList *callback_list = NULL;
+static slist_t *callback_list = NULL;
 
 SCM gig_before_c_callback_hook;
 SCM gig_before_callback_hook;
@@ -503,7 +504,7 @@ gig_callback_to_c(const char *name, GICallbackInfo *cb_info, SCM s_func)
     assert(scm_is_true(scm_procedure_p(s_func)));
 
     // Lookup s_func in the callback cache.
-    GSList *x = callback_list;
+    slist_t *x = callback_list;
     GigCallback *gcb;
 
     // A callback is only a 'match' if it is the same Scheme produre
@@ -518,7 +519,7 @@ gig_callback_to_c(const char *name, GICallbackInfo *cb_info, SCM s_func)
     // Create a new entry if necessary.
     scm_gc_protect_object(s_func);
     gcb = gig_callback_new(name, cb_info, s_func);
-    callback_list = g_slist_prepend(callback_list, gcb);
+    slist_prepend(&callback_list, gcb);
     return gcb->callback_ptr;
 }
 
@@ -619,7 +620,7 @@ scm_is_registered_callback_p(SCM s_proc)
         scm_wrong_type_arg_msg("is-registered-callback?", 0, s_proc, "procedure");
 
     // Lookup s_func in the callback cache.
-    GSList *x = callback_list;
+    slist_t *x = callback_list;
     GigCallback *gcb;
 
     while (x != NULL) {
@@ -639,7 +640,7 @@ scm_get_registered_callback_closure_pointer(SCM s_proc)
         scm_wrong_type_arg_msg("get-registered-callback-closure-pointer", 0, s_proc, "procedure");
 
     // Lookup s_func in the callback cache.
-    GSList *x = callback_list;
+    slist_t *x = callback_list;
     GigCallback *gcb;
 
     // If you use the same scheme procedure for different callbacks,
@@ -698,6 +699,6 @@ static void
 gig_fini_callback(void)
 {
     gig_debug("Freeing callbacks");
-    g_slist_free_full(callback_list, (GDestroyNotify)callback_free);
+    slist_free(&callback_list, callback_free);
     callback_list = NULL;
 }
