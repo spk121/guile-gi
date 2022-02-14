@@ -146,7 +146,7 @@ gig_repository_nested_infos(GIBaseInfo *base,
     }
 }
 
-SCM
+static SCM
 load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
 {
     g_return_val_if_fail(info != NULL, defs);

@@ -31,6 +31,8 @@
 #include "gig_util.h"
 #include "gig_value.h"
 
+GIG_API void gig_init(void);
+
 #ifdef ENABLE_GCOV
 void __gcov_reset(void);
 void __gcov_dump(void);

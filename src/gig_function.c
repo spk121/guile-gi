@@ -805,7 +805,7 @@ object_list_to_c_args(GigArgMap *amap,
     return;
 }
 
-GIArgument *
+static GIArgument *
 find_output_arg(GigArgMapEntry *entry, GIArgument *in, GIArgument *out)
 {
     switch (entry->s_direction) {

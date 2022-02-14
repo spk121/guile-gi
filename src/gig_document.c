@@ -23,6 +23,8 @@
 #include "gig_repository.h"
 
 static void do_document(GIBaseInfo *info, const char *parent);
+GIG_API void gig_init_document(void);
+
 
 static void
 document_nested(GIBaseInfo *parent)

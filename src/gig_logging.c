@@ -123,7 +123,7 @@ gig_log_writer(LogLevelFlags flags, const LogField *fields, size_t n_fields, voi
 #undef ENV_GIG_DEBUG
 }
 
-SCM
+static SCM
 gig_log_to_port(SCM port)
 {
     SCM_ASSERT_TYPE(SCM_OPOUTPORTP(port), port, SCM_ARG1, "install-port-logger!",
@@ -132,14 +132,14 @@ gig_log_to_port(SCM port)
     return SCM_UNSPECIFIED;
 }
 
-SCM
+static SCM
 gig_log_to_journal(void)
 {
     scm_misc_error("install-journal-logger!", "journald unimplemented", SCM_EOL);
     return SCM_UNSPECIFIED;
 }
 
-void
+static void
 gig_unprotect_func(void *func)
 {
     scm_gc_unprotect_object(SCM_PACK_POINTER(func));
@@ -199,7 +199,7 @@ gig_log_custom_helper(LogLevelFlags log_level, const LogField *fields, size_t n_
     return LOG_WRITER_HANDLED;
 }
 
-SCM
+static SCM
 gig_install_custom_logger(SCM func)
 {
     func = scm_gc_protect_object(func);

@@ -299,7 +299,7 @@ callback_binding_inner(struct callback_binding_args *args)
     return (void *)1;
 }
 
-void
+static void
 callback_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
 {
     struct callback_binding_args args;
@@ -322,7 +322,7 @@ callback_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
     }
 }
 
-void *
+static void *
 c_callback_binding_inner(struct callback_binding_args *args)
 {
 
@@ -368,7 +368,7 @@ c_callback_binding_inner(struct callback_binding_args *args)
     return (void *)1;
 }
 
-void
+static void
 c_callback_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
 {
     struct callback_binding_args args;
@@ -393,7 +393,7 @@ c_callback_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
 
 // This procedure uses CALLBACK_INFO to create a dynamic FFI C closure
 // to use as an entry point to the scheme procedure S_FUNC.
-GigCallback *
+static GigCallback *
 gig_callback_new(const char *name, GICallbackInfo *callback_info, SCM s_func)
 {
     assert(scm_is_true(scm_procedure_p(s_func)));
@@ -464,7 +464,7 @@ gig_callback_new(const char *name, GICallbackInfo *callback_info, SCM s_func)
     return gcb;
 }
 
-GigCallback *
+static GigCallback *
 gig_callback_new_for_callback(GICallbackInfo *info, void *c_func)
 {
     int n_args = g_callable_info_get_n_args(info);
