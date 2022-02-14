@@ -21,7 +21,7 @@
 #include "gig_data_type.h"
 #include "gig_util.h"
 
-#define gig_debug_amap(...) gig_debug_internal(G_LOG_LEVEL_DEBUG, "amap", __VA_ARGS__)
+#define gig_debug_amap(...) gig_debug_internal(LOG_LEVEL_DEBUG, "amap", __VA_ARGS__)
 
 const char dir_strings[GIG_ARG_DIRECTION_COUNT][9] = {
     [GIG_ARG_DIRECTION_VOID] = "void",

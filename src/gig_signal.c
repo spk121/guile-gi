@@ -65,8 +65,7 @@ scm_signal_accu(GSignalInvocationHint * ihint,
         char *_name = NULL;
         scm_dynwind_begin(0);
         if (scm_is_true(scm_symbol_p(name))) {
-            _name = scm_to_utf8_string(scm_symbol_to_string(name));
-            scm_dynwind_unwind_handler(free, _name, SCM_F_WIND_EXPLICITLY);
+            _name = scm_dynfree(scm_to_utf8_symbol(name));
         }
         scm_misc_error(_name,
                        "callback accumulator returned ~S when 0, 1, or 2 values were expected",
@@ -132,7 +131,7 @@ gig_signalspec_from_obj(SCM obj)
         spec->accumulator = g_signal_accumulator_true_handled;
         spec->accu_data = NULL;
     }
-    else if (scm_is_true(scm_procedure_p(saccu))) {
+    else if (scm_is_procedure(saccu)) {
         if (spec->return_type == G_TYPE_NONE)
             scm_misc_error("%scm->signalspec",
                            "signal ~A must return a value to use an accumulator",

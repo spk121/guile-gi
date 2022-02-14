@@ -35,9 +35,9 @@ require(SCM lib, SCM version)
     GError *error = NULL;
 
     scm_dynwind_begin(0);
-    _lib = scm_dynwind_or_bust("require", scm_to_utf8_string(lib));
+    _lib = scm_dynfree(scm_to_utf8_string(lib));
     if (!SCM_UNBNDP(version) && scm_is_true(version))
-        _version = scm_dynwind_or_bust("require", scm_to_utf8_string(version));
+        _version = scm_dynfree(scm_to_utf8_string(version));
 
     gig_debug_load("requiring %s-%s", _lib, _version != NULL ? _version : "latest");
     tl = g_irepository_require(NULL, _lib, _version, 0, &error);
@@ -58,7 +58,7 @@ infos(SCM lib)
     SCM_ASSERT_TYPE(scm_is_string(lib), lib, SCM_ARG1, "infos", "string");
 
     scm_dynwind_begin(0);
-    char *_lib = scm_dynwind_or_bust("infos", scm_to_utf8_string(lib));
+    char *_lib = scm_dynfree(scm_to_utf8_string(lib));
     int n = g_irepository_get_n_infos(NULL, _lib);
     SCM infos = SCM_EOL;
 
@@ -341,8 +341,8 @@ info(SCM lib, SCM name)
     char *_lib, *_name;
     GIBaseInfo *info;
     scm_dynwind_begin(0);
-    _lib = scm_dynwind_or_bust("info", scm_to_utf8_string(lib));
-    _name = scm_dynwind_or_bust("info", scm_to_utf8_string(name));
+    _lib = scm_dynfree(scm_to_utf8_string(lib));
+    _name = scm_dynfree(scm_to_utf8_string(name));
 
     info = g_irepository_find_by_name(NULL, _lib, _name);
     if (info == NULL)

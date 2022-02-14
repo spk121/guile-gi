@@ -114,7 +114,7 @@ gig_define_enum_conversions(GIEnumInfo *info, GType type, SCM defs)
     SCM _class;
     scm_dynwind_begin(0);
     char *cls = make_scm_name(g_base_info_get_name(info));
-    scm_dynwind_or_bust("%define-enum-conversions", cls);
+    scm_dynfree(cls);
 
     if (type != G_TYPE_NONE)
         _class = gig_type_get_scheme_type(type);
@@ -177,7 +177,7 @@ gig_define_enum(GIEnumInfo *info, SCM defs)
 
     SCM obarray = scm_make_hash_table(scm_from_int(n_values));
 
-    char *_class_name = scm_to_utf8_string(scm_symbol_to_string(scm_class_name(_class)));
+    char *_class_name = scm_to_utf8_symbol(scm_class_name(_class));
 
     while (i < n_values) {
         vi = g_enum_info_get_value(info, i);

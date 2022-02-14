@@ -157,75 +157,6 @@ gig_callable_info_make_name(GICallableInfo *info, const char *prefix)
     return name;
 }
 
-/**
- * gig_constant_strip_prefix:
- * @name: the constant name.
- * @strip_prefix: the prefix to strip.
- *
- * Advances the pointer @name by strlen(@strip_prefix) characters.  If
- * the resulting name does not start with a letter or underscore, the
- * @name pointer will be rewound.  This is to ensure that the
- * resulting name is a valid identifier.  Hence the returned string is
- * a pointer into the string @name.
- *
- * Returns: the stripped constant name.
- */
-const char *
-gig_constant_strip_prefix(const char *name, const char *strip_prefix)
-{
-    size_t prefix_len, i;
-
-    prefix_len = strlen(strip_prefix);
-
-    /* Check so name starts with strip_prefix, if it doesn't:
-     * return the rest of the part which doesn't match
-     */
-    for (i = 0; i < prefix_len; i++) {
-        if (name[i] != strip_prefix[i] && name[i] != '_') {
-            return &name[i];
-        }
-    }
-
-    /* strip off prefix from value name, while keeping it a valid
-     * identifier */
-    for (i = prefix_len + 1; i > 0; i--) {
-        if (isalpha(name[i - 1]) || name[i - 1] == '_') {
-            return &name[i - 1];
-        }
-    }
-    return name;
-}
-
-SCM
-scm_c_list_ref(SCM list, size_t k)
-{
-    return scm_list_ref(list, scm_from_size_t(k));
-}
-
-size_t
-scm_c_length(SCM list)
-{
-    return scm_to_size_t(scm_length(list));
-}
-
-bool
-scm_is_list(SCM obj)
-{
-    return scm_is_true(scm_list_p(obj));
-}
-
-void *
-scm_dynwind_or_bust(const char *subr, void *mem)
-{
-    if (mem)
-        scm_dynwind_free(mem);
-    else {
-        errno = ENOMEM;
-        scm_syserror(subr);
-    }
-    return mem;
-}
-
 static SCM class_ref_proc = SCM_UNDEFINED;
 static SCM class_set_proc = SCM_UNDEFINED;
 static SCM srfi1_drop_right_proc = SCM_UNDEFINED;
@@ -286,20 +217,6 @@ scm_c_reexport(const char *name, ...)
     return SCM_UNSPECIFIED;
 }
 
-void
-scm_printf(SCM port, const char *fmt, ...)
-{
-#define SCM_PRINTF_MAX_LINE_LEN (1024)
-    char _message[SCM_PRINTF_MAX_LINE_LEN];
-    va_list args;
-    va_start(args, fmt);
-    vsnprintf(_message, SCM_PRINTF_MAX_LINE_LEN, fmt, args);
-    va_end(args);
-    SCM message = scm_from_utf8_string(_message);
-    scm_display(message, port);
-#undef SCM_PRINTF_MAX_LINE_LEN
-}
-
 const char *
 g_base_info_get_name_safe(GIBaseInfo *info)
 {
@@ -343,29 +260,4 @@ g_registered_type_info_get_qualified_name(GIRegisteredTypeInfo *info)
 
     // add initial % to ensure that the name is private
     return concatenate3("%", prefix, g_base_info_get_name(info));
-}
-
-char *
-scm_write_to_utf8_stringn(SCM x, size_t max_len)
-{
-    static int first = 1;
-    static SCM format;
-    static SCM ellipses;
-    if (first) {
-        format = scm_from_utf8_string("~S");
-        ellipses = scm_from_utf8_string("...");
-        first = 0;
-    }
-
-    SCM args_str = scm_simple_format(SCM_BOOL_F, format, scm_list_1(x));
-    char *cstr;
-    if (scm_c_string_length(args_str) > max_len) {
-        SCM truncated_args_str =
-            scm_string_append(scm_list_2(scm_c_substring(args_str, 0, max_len), ellipses));
-        cstr = scm_to_utf8_string(truncated_args_str);
-    }
-    else
-        cstr = scm_to_utf8_string(args_str);
-
-    return cstr;
 }

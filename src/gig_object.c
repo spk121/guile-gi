@@ -83,19 +83,19 @@ gig_i_scm_make_gobject(SCM s_gtype, SCM s_prop_keylist)
         scm_dynwind_unwind_handler(g_type_class_unref, _class, SCM_F_WIND_EXPLICITLY);
 
         n_prop = scm_c_length(s_prop_keylist) / 2;
-        keys = scm_dynwind_or_bust(FUNC, calloc(n_prop, sizeof(char *)));
-        values = scm_dynwind_or_bust(FUNC, calloc(n_prop, sizeof(GValue)));
+        keys = scm_dynfree(calloc(n_prop, sizeof(char *)));
+        values = scm_dynfree(calloc(n_prop, sizeof(GValue)));
 
         SCM iter = s_prop_keylist;
         for (size_t i = 0; i < n_prop; i++, iter = scm_cddr(iter)) {
             SCM key = scm_car(iter);
             SCM s_value = scm_cadr(iter);
 
-            SCM_ASSERT_TYPE(scm_is_true(scm_keyword_p(key)), key, SCM_ARGn, FUNC, "keyword");
+            SCM_ASSERT_TYPE(scm_is_keyword(key), key, SCM_ARGn, FUNC, "keyword");
 
-            key = scm_symbol_to_string(scm_keyword_to_symbol(key));
+            key = scm_keyword_to_string(key);
 
-            keys[i] = scm_dynwind_or_bust(FUNC, scm_to_utf8_string(key));
+            keys[i] = scm_dynfree(scm_to_utf8_string(key));
             GParamSpec *pspec = g_object_class_find_property(_class, keys[i]);
             if (!pspec) {
                 scm_misc_error(FUNC, "unknown object parameter ~S", scm_list_1(key));
@@ -141,7 +141,7 @@ gig_i_scm_get_pspec(SCM self, SCM prop)
 
     scm_dynwind_begin(0);
     obj = gig_object_peek(self);
-    name = scm_dynwind_or_bust("%get-pspec", scm_to_utf8_string(prop));
+    name = scm_dynfree(scm_to_utf8_string(prop));
     pspec = get_paramspec(obj, name);
     if (!pspec) {
         scm_misc_error("%get-pspec",
@@ -549,9 +549,8 @@ gig_property_define(GType type, GIPropertyInfo *info, const char *_namespace, SC
     SCM self_type = gig_type_get_scheme_type(type);
 
     scm_dynwind_begin(0);
-    long_name = scm_dynwind_or_bust("%gig-property-define",
-                                    concatenate3(_namespace, ":", name));
-    long_name = scm_dynwind_or_bust("%gig-property-define", make_scm_name(long_name));
+    long_name = scm_dynfree(concatenate3(_namespace, ":", name));
+    long_name = scm_dynfree(make_scm_name(long_name));
 
     if (G_TYPE_IS_CLASSED(type)) {
         GObjectClass *_class = g_type_class_ref(type);
@@ -593,7 +592,7 @@ do_define_property(const char *public_name, SCM prop, SCM self_type, SCM value_t
     SCM sym_public_name, formals, specializers, generic, proc, setter;
 
     sym_public_name = scm_from_utf8_symbol(public_name);
-    generic = scm_call_2(ensure_accessor_proc, default_definition(sym_public_name),
+    generic = scm_call_2(ensure_accessor_proc, scm_default_definition(sym_public_name),
                          sym_public_name);
 
     // getter

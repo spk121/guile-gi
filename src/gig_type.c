@@ -170,7 +170,7 @@ gig_type_transfer_object(GType type, void *ptr, GITransfer transfer)
     gig_debug_transfer("gig_type_transfer_object(%s, %p, %d)", g_type_name(type), ptr, transfer);
 
     SCM scm_type = gig_type_get_scheme_type(type);
-    g_return_val_if_fail(SCM_CLASSP(scm_type), SCM_BOOL_F);
+    g_return_val_if_fail(scm_is_class(scm_type), SCM_BOOL_F);
     GigTypeRefFunction ref;
     ref = (GigTypeRefFunction)scm_to_pointer(scm_class_ref(scm_type, sym_ref));
     GigTypeUnrefFunction unref;
@@ -830,8 +830,7 @@ gig_type_define_fundamental(GType type, SCM extra_supers,
     }
 
     scm_dynwind_begin(0);
-    char *class_name = scm_dynwind_or_bust("%define-compact-type",
-                                            gig_type_class_name_from_gtype(type));
+    char *class_name = scm_dynfree(gig_type_class_name_from_gtype(type));
 
     SCM new_type = scm_call_4(make_fundamental_proc,
                               scm_from_utf8_symbol(class_name),

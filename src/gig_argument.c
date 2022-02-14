@@ -20,6 +20,7 @@
 #include <girepository.h>
 #include <glib.h>
 #include <libguile.h>
+#include "core.h"
 #include "gig_argument.h"
 #include "gig_callback.h"
 #include "gig_flag.h"
@@ -271,11 +272,11 @@ scm_to_c_char(S2C_ARG_DECL)
     TRACE_S2C();
     GType t = meta->gtype;
 
-    if (!scm_is_integer(object) && !SCM_CHARP(object))
+    if (!scm_is_integer(object) && !scm_is_char(object))
         scm_wrong_type_arg_msg(subr, argpos, object, "int8");
 
     if (t == G_TYPE_CHAR) {
-        if (SCM_CHARP(object)) {
+        if (scm_is_char(object)) {
             if (SCM_CHAR(object) > 255)
                 scm_out_of_range(subr, object);
             else
@@ -287,7 +288,7 @@ scm_to_c_char(S2C_ARG_DECL)
             arg->v_int8 = scm_to_int8(object);
     }
     else if (t == G_TYPE_UCHAR) {
-        if (SCM_CHARP(object)) {
+        if (scm_is_char(object)) {
             if (SCM_CHAR(object) > 255)
                 scm_out_of_range(subr, object);
             else
@@ -305,7 +306,7 @@ scm_to_c_boolean(S2C_ARG_DECL)
 {
     TRACE_S2C();
 
-    if (!scm_is_eq(object, SCM_BOOL_T) && !scm_is_eq(object, SCM_BOOL_F))
+    if (!scm_is_boolean(object))
         scm_wrong_type_arg_msg(subr, argpos, object, "boolean");
     arg->v_boolean = scm_is_true(object);
 }
@@ -350,7 +351,7 @@ scm_to_c_integer(S2C_ARG_DECL)
         } while (0)                                                     \
 
         if (meta->is_unichar) {
-            if (SCM_CHARP(object))
+            if (scm_is_char(object))
                 arg->v_uint32 = SCM_CHAR(object);
             else if (scm_is_unsigned_integer(object, 0, SCM_CODEPOINT_MAX))
                 arg->v_uint32 = scm_to_uint32(object);
@@ -481,14 +482,14 @@ scm_to_c_pointer(S2C_ARG_DECL)
     if (scm_is_false(object) && meta->is_nullable)
         arg->v_pointer = NULL;
     else if (meta->pointer_type == GIG_DATA_CALLBACK) {
-        if (scm_is_true(scm_procedure_p(object)))
+        if (scm_is_procedure(object))
             arg->v_pointer = gig_callback_to_c(subr, meta->callable_info, object);
         else
             scm_wrong_type_arg_msg(subr, argpos, object, "a procedure");
     }
     else if (meta->gtype == G_TYPE_GTYPE)
         arg->v_size = scm_to_gtype_full(object, subr, argpos);
-    else if (SCM_POINTER_P(object))
+    else if (scm_is_pointer(object))
         arg->v_pointer = scm_to_pointer(object);
     else if (scm_is_bytevector(object))
         arg->v_pointer = SCM_BYTEVECTOR_CONTENTS(object);

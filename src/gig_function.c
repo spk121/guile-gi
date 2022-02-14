@@ -82,30 +82,6 @@ static SCM proc4function(GIFunctionInfo *info, const char *name, SCM self_type,
 static SCM proc4signal(GISignalInfo *info, const char *name, SCM self_type,
                        int *req, int *opt, SCM *formals, SCM *specs);
 
-#define LOOKUP_DEFINITION(module)                                       \
-    do {                                                                \
-        SCM variable = scm_module_variable(module, name);               \
-        if (scm_is_true(variable)) return scm_variable_ref(variable);   \
-    } while (0)
-
-static SCM
-current_module_definition(SCM name)
-{
-    LOOKUP_DEFINITION(scm_current_module());
-    return SCM_BOOL_F;
-}
-
-SCM
-default_definition(SCM name)
-{
-    LOOKUP_DEFINITION(scm_current_module());
-    LOOKUP_DEFINITION(scm_c_resolve_module("gi"));
-    LOOKUP_DEFINITION(scm_c_resolve_module("guile"));
-    return SCM_BOOL_F;
-}
-
-#undef LOOKUP_DEFINITION
-
 SCM
 gig_function_define(GType type, GICallableInfo *info, const char *_namespace, SCM defs)
 {
@@ -115,8 +91,7 @@ gig_function_define(GType type, GICallableInfo *info, const char *_namespace, SC
 
     char *function_name = NULL;
     char *method_name = NULL;
-    function_name = scm_dynwind_or_bust("%gig-function-define",
-                                        gig_callable_info_make_name(info, _namespace));
+    function_name = scm_dynfree(gig_callable_info_make_name(info, _namespace));
 
     int required_input_count, optional_input_count;
     SCM formals, specializers, self_type = SCM_UNDEFINED;
@@ -130,8 +105,7 @@ gig_function_define(GType type, GICallableInfo *info, const char *_namespace, SC
     if (is_method) {
         self_type = gig_type_get_scheme_type(type);
         g_return_val_if_fail(!SCM_UNBNDP(self_type), defs);
-        method_name = scm_dynwind_or_bust("%gig-function-define",
-                                          gig_callable_info_make_name(info, NULL));
+        method_name = scm_dynfree(gig_callable_info_make_name(info, NULL));
         gig_debug_load("%s - shorthand for %s", method_name, function_name);
     }
 
@@ -172,7 +146,7 @@ gig_function_define1(const char *public_name, SCM proc, int opt, SCM formals, SC
     g_return_val_if_fail(public_name != NULL, SCM_UNDEFINED);
 
     SCM sym_public_name = scm_from_utf8_symbol(public_name);
-    SCM generic = default_definition(sym_public_name);
+    SCM generic = scm_default_definition(sym_public_name);
     if (!scm_is_generic(generic))
         generic = scm_call_2(ensure_generic_proc, generic, sym_public_name);
 
@@ -261,7 +235,7 @@ proc4signal(GISignalInfo *info, const char *name, SCM self_type, int *req, int *
     SCM signal = gig_make_signal(2, slots, values);
 
     // check for collisions
-    SCM current_definition = current_module_definition(scm_from_utf8_symbol(name));
+    SCM current_definition = scm_current_module_definition(scm_from_utf8_symbol(name));
     if (scm_is_true(current_definition))
         for (SCM iter = scm_generic_function_methods(current_definition);
              scm_is_pair(iter); iter = scm_cdr(iter))
@@ -352,8 +326,7 @@ make_formals(GICallableInfo *callable,
     for (int s = 0; s < n_inputs;
          s++, i_formal = scm_cdr(i_formal), i_specializer = scm_cdr(i_specializer)) {
         GigArgMapEntry *entry = gig_amap_get_input_entry_by_s(argmap, s);
-        char *formal = scm_dynwind_or_bust("%make-formals",
-                                            make_scm_name(entry->name));
+        char *formal = scm_dynfree(make_scm_name(entry->name));
         scm_set_car_x(i_formal, scm_from_utf8_symbol(formal));
         // Don't force types on nullable input, as #f can also be used to represent
         // NULL.
@@ -648,9 +621,9 @@ function_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
     if (SCM_UNBNDP(s_args))
         s_args = SCM_EOL;
 
-    if (scm_is_false(scm_hook_empty_p(gig_before_function_hook)))
-        scm_c_run_hook(gig_before_function_hook,
-                       scm_list_2(scm_from_utf8_string(gfn->name), s_args));
+    if (!scm_is_empty_hook(gig_before_function_hook))
+        scm_c_activate_hook_2(gig_before_function_hook,
+                       scm_from_utf8_string(gfn->name), s_args);
 
     if (g_callable_info_is_method(gfn->function_info)) {
         self = gig_type_peek_object(scm_car(s_args));

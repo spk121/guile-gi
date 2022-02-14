@@ -29,6 +29,4 @@ extern SCM kwd_procedure;
 
 extern SCM sym_self;
 
-SCM default_definition(SCM name);
-
 #endif

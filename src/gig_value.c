@@ -73,7 +73,7 @@ gig_value_from_scm(GValue *value, SCM obj)
     }
     case G_TYPE_BOOLEAN:
     {
-        if (!scm_is_eq(obj, SCM_BOOL_T) && !scm_is_eq(obj, SCM_BOOL_F))
+        if (!scm_is_boolean(obj))
             return GIG_VALUE_WRONG_TYPE;
         bool temp;
         temp = scm_is_true(obj);
@@ -174,7 +174,7 @@ gig_value_from_scm(GValue *value, SCM obj)
     }
     case G_TYPE_FLOAT:
     {
-        if (!scm_is_true(scm_real_p(obj)))
+        if (!scm_is_real(obj))
             return GIG_VALUE_WRONG_TYPE;
         gdouble dval = scm_to_double(obj);
         if (dval < -G_MAXFLOAT || dval > G_MAXFLOAT)
@@ -184,7 +184,7 @@ gig_value_from_scm(GValue *value, SCM obj)
     }
     case G_TYPE_DOUBLE:
     {
-        if (!scm_is_true(scm_real_p(obj)))
+        if (!scm_is_real(obj))
             return GIG_VALUE_WRONG_TYPE;
         gdouble temp;
         temp = scm_to_double(obj);
@@ -201,7 +201,7 @@ gig_value_from_scm(GValue *value, SCM obj)
     }
     case G_TYPE_POINTER:
     {
-        if (SCM_POINTER_P(obj)) {
+        if (scm_is_pointer(obj)) {
             g_value_set_pointer(value, scm_to_pointer(obj));
             return 0;
         }
