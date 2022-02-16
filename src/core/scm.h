@@ -19,6 +19,7 @@ SCM scm_c_list_ref(SCM lst, size_t i);
 void scm_c_activate_hook_2(SCM hook, SCM a, SCM b);
 void scm_c_activate_hook_3(SCM hook, SCM a, SCM b, SCM c);
 SCM scm_current_module_definition(SCM name);
+SCM scm_drop_right_1(SCM lst);
 void *scm_dynfree(void *x);
 int scm_is_equal(SCM a, SCM b);
 void scm_printf(SCM port, const char *fmt, ...);
@@ -35,5 +36,10 @@ SCM scm_default_definition(SCM name);
         if (SCM_UNBNDP (obj))    \
             obj = SCM_BOOL_F;    \
     } while (0)
+
+#if (SCM_MAJOR_VERSION == 2) ||                                                                   \
+    (SCM_MAJOR_VERSION == 3 && SCM_MINOR_VERSION == 0 && SCM_MICRO_VERSION < 4)
+#define scm_c_bitvector_count(x) scm_to_size_t(scm_bit_count(SCM_BOOL_T, (x)))
+#endif
 
 #endif

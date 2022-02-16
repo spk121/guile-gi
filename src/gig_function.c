@@ -254,7 +254,7 @@ check_gsubr_cache(GICallableInfo *function_info, SCM self_type, int *required_in
                   int *optional_input_count, SCM *formals, SCM *specializers)
 {
     // Check the cache to see if this function has already been created.
-    GigFunction *gfn = keyval_find_entry(function_cache, function_info);
+    GigFunction *gfn = (GigFunction *)keyval_find_entry(function_cache, function_info);
 
     if (gfn == NULL)
         return NULL;

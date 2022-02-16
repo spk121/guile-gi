@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include "scm.h"
 
+static SCM srfi1_drop_right_proc = SCM_UNDEFINED;
+
 int
 scm_is_boolean(SCM x)
 {
@@ -94,6 +96,14 @@ scm_current_module_definition(SCM name)
     if (scm_is_true(variable))
         return scm_variable_ref(variable);
     return SCM_BOOL_F;
+}
+
+SCM
+scm_drop_right_1(SCM lst)
+{
+    if (SCM_UNBNDP(srfi1_drop_right_proc))
+        srfi1_drop_right_proc = scm_c_public_ref("srfi srfi-1", "drop-right");
+    return scm_call_2(srfi1_drop_right_proc, lst, scm_from_int(1));
 }
 
 void *

@@ -159,8 +159,6 @@ gig_callable_info_make_name(GICallableInfo *info, const char *prefix)
 
 static SCM class_ref_proc = SCM_UNDEFINED;
 static SCM class_set_proc = SCM_UNDEFINED;
-static SCM srfi1_drop_right_proc = SCM_UNDEFINED;
-static SCM module_reexport_proc = SCM_UNDEFINED;
 
 SCM
 scm_class_ref(SCM cls, SCM slot)
@@ -177,44 +175,6 @@ scm_class_set_x(SCM cls, SCM slot, SCM val)
     if (SCM_UNBNDP(class_set_proc))
         class_set_proc = scm_c_public_ref("oop goops", "class-slot-set!");
     return scm_call_3(class_set_proc, cls, slot, val);
-}
-
-SCM
-scm_drop_right_1(SCM lst)
-{
-    if (SCM_UNBNDP(srfi1_drop_right_proc))
-        srfi1_drop_right_proc = scm_c_public_ref("srfi srfi-1", "drop-right");
-    return scm_call_2(srfi1_drop_right_proc, lst, scm_from_int(1));
-}
-
-SCM
-scm_c_reexport(const char *name, ...)
-{
-    if (SCM_UNBNDP(module_reexport_proc))
-        module_reexport_proc = scm_c_public_ref("guile", "module-re-export!");
-
-    va_list args;
-    va_start(args, name);
-
-    SCM current_module = scm_current_module();
-    SCM syms = SCM_EOL;
-
-    SCM _public = scm_module_public_interface(current_module);
-    SCM obarray = SCM_MODULE_OBARRAY(_public);
-
-    do {
-        SCM sym = scm_from_utf8_symbol(name);
-
-        if (scm_is_false(scm_hashq_get_handle(obarray, sym)))
-            syms = scm_cons(scm_from_utf8_symbol(name), syms);
-
-        name = va_arg(args, char *);
-    } while (name != NULL);
-
-    scm_call_2(module_reexport_proc, current_module, syms);
-    va_end(args);
-
-    return SCM_UNSPECIFIED;
 }
 
 const char *

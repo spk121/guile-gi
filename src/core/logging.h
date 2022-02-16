@@ -62,4 +62,37 @@ void log_structured(const char *log_domain, LogLevelFlags log_level, ...);
 
 #define assert_not_reached() (assert(0))
 
+#define gig_debug_internal(level, domain, ...)                                                    \
+    do                                                                                            \
+    {                                                                                             \
+        log_structured(G_LOG_DOMAIN, level, "CODE_FILE", __FILE__, "CODE_LINE",                   \
+                       G_STRINGIFY(__LINE__), "CODE_FUNC", __func__, "GIG_DOMAIN", domain,        \
+                       "MESSAGE", __VA_ARGS__);                                                   \
+    } while (false)
+#define gig_debug_transfer(...) gig_debug_internal(LOG_LEVEL_DEBUG, "transfers", __VA_ARGS__)
+#define gig_debug_load(...) gig_debug_internal(LOG_LEVEL_DEBUG, "load", __VA_ARGS__)
+#define gig_warning_load(...) gig_debug_internal(LOG_LEVEL_WARNING, "load", __VA_ARGS__)
+#define gig_critical_load(...) gig_debug_internal(LOG_LEVEL_CRITICAL, "load", __VA_ARGS__)
+#define gig_debug(...) gig_debug_internal(LOG_LEVEL_DEBUG, "general", __VA_ARGS__)
+#define gig_warning(...) gig_debug_internal(LOG_LEVEL_WARNING, "general", __VA_ARGS__)
+#define gig_critical(...) gig_debug_internal(LOG_LEVEL_CRITICAL, "general", __VA_ARGS__)
+#define gig_error(...) gig_debug_internal(LOG_LEVEL_ERROR, "general", __VA_ARGS__)
+#define gig_warn_if_reached() gig_warning("unexpected condition reached")
+#define gig_return_val_if_reached(val)                                                            \
+    do                                                                                            \
+    {                                                                                             \
+        gig_warning("unexpected return condition reached");                                       \
+        return val;                                                                               \
+    } while (0)
+#define gig_return_val_if_fail(test, val)                                                         \
+    do                                                                                            \
+    {                                                                                             \
+        if (!(test))                                                                              \
+        {                                                                                         \
+            gig_warning("unexpected return val condition");                                       \
+            return val;                                                                           \
+        }                                                                                         \
+    } while (0)
+
+
 #endif
