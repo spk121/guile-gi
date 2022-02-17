@@ -104,6 +104,7 @@ libguile_gi_la_c_sources = \
   src/core/keyval.c \
   src/core/logging.c \
   src/core/mem.c \
+  src/core/oop.c \
   src/core/scm.c \
   src/core/slist.c \
   src/core/string.c \
@@ -132,6 +133,7 @@ libguile_gi_la_internal_headers = \
   src/core/keyval.h \
   src/core/logging.h \
   src/core/mem.h \
+  src/core/oop.h \
   src/core/scm.h \
   src/core/slist.h \
   src/core/string.h \

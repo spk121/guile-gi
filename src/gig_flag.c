@@ -206,7 +206,7 @@ gig_define_enum(GIEnumInfo *info, SCM defs)
         i++;
     }
 
-    scm_class_set_x(_class, sym_obarray, obarray);
+    scm_set_class_obarray_slot(_class, obarray);
 
     scm_define(scm_class_name(_class), _class);
     defs = scm_cons(scm_class_name(_class), defs);

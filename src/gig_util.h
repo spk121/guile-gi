@@ -27,8 +27,6 @@ G_BEGIN_DECLS
 // *INDENT-ON*
 
 G_GNUC_MALLOC char *gig_callable_info_make_name(GICallableInfo *info, const char *prefix);
-SCM scm_class_ref(SCM cls, SCM slot);
-SCM scm_class_set_x(SCM cls, SCM slot, SCM val);
 const char *g_base_info_get_name_safe(GIBaseInfo *info);
 char *g_registered_type_info_get_qualified_name(GIRegisteredTypeInfo *info);
 

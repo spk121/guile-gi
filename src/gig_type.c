@@ -85,10 +85,6 @@ SCM gig_paramspec_type;
 SCM gig_value_type;
 SCM gig_closure_type;
 
-static SCM make_class_proc;
-static SCM kwd_name;
-SCM sym_obarray;
-
 char *
 gig_type_class_name_from_gtype(GType gtype)
 {
@@ -153,13 +149,7 @@ gig_type_register(GType gtype, SCM stype)
     gig_type_register_self(gtype, stype);
 }
 
-static SCM make_instance_proc;
 static SCM make_fundamental_proc;
-static SCM kwd_value;
-static SCM sym_value;
-static SCM sym_ref;
-static SCM sym_unref;
-static SCM sym_size;
 
 SCM
 gig_type_transfer_object(GType type, void *ptr, GITransfer transfer)
@@ -172,9 +162,9 @@ gig_type_transfer_object(GType type, void *ptr, GITransfer transfer)
     SCM scm_type = gig_type_get_scheme_type(type);
     g_return_val_if_fail(scm_is_class(scm_type), SCM_BOOL_F);
     GigTypeRefFunction ref;
-    ref = (GigTypeRefFunction)scm_to_pointer(scm_class_ref(scm_type, sym_ref));
+    ref = (GigTypeRefFunction)scm_to_pointer(scm_get_class_ref_slot(scm_type));
     GigTypeUnrefFunction unref;
-    unref = (GigTypeUnrefFunction)scm_to_pointer(scm_class_ref(scm_type, sym_unref));
+    unref = (GigTypeUnrefFunction)scm_to_pointer(scm_get_class_unref_slot(scm_type));
 
     SCM pointer;
     switch (transfer) {
@@ -194,7 +184,7 @@ gig_type_transfer_object(GType type, void *ptr, GITransfer transfer)
         break;
     }
 
-    return scm_call_3(make_instance_proc, scm_type, kwd_value, pointer);
+    return scm_make_with_value(scm_type, pointer);
 }
 
 static SCM gig_fundamental_type;
@@ -216,7 +206,7 @@ void *
 gig_type_peek_typed_object(SCM obj, SCM expected_type)
 {
     g_return_val_if_fail(SCM_IS_A_P(obj, expected_type), NULL);
-    return scm_to_pointer(scm_slot_ref(obj, sym_value));
+    return scm_to_pointer(scm_get_value_slot(obj));
 }
 
 void *
@@ -269,7 +259,7 @@ gig_type_define_with_info(GIRegisteredTypeInfo *info, SCM dsupers, SCM slots)
     else {
         char *name = bracketize(_name);
         SCM class_name = scm_from_utf8_symbol(name);
-        cls = scm_call_4(make_class_proc, dsupers, slots, kwd_name, class_name);
+        cls = scm_make_class_with_name(dsupers, slots, class_name);
         gig_debug_load("%s - creating new type", name);
         strval_add_entry(name_scm_store, _name, SCM_UNPACK(cls));
         free(name);
@@ -329,9 +319,9 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
             g_type_class_unref(_class);
 
             dsupers = scm_list_1(SCM_PACK_POINTER(sparent));
-            new_type = scm_call_4(make_class_proc, dsupers, slots, kwd_name, type_class_name);
+            new_type = scm_make_class_with_name(dsupers, slots, type_class_name);
 
-            scm_class_set_x(new_type, sym_obarray, obarray);
+            scm_set_class_obarray_slot(new_type, obarray);
             break;
         }
 
@@ -352,16 +342,16 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
             g_type_class_unref(_class);
 
             dsupers = scm_list_1(SCM_PACK_POINTER(sparent));
-            new_type = scm_call_4(make_class_proc, dsupers, slots, kwd_name, type_class_name);
-
-            scm_class_set_x(new_type, sym_obarray, obarray);
+            new_type = scm_make_class_with_name(dsupers, slots, type_class_name);
+ 
+            scm_set_class_obarray_slot(new_type, obarray);
             break;
         }
 
         case G_TYPE_BOXED:
         {
             dsupers = scm_cons(SCM_PACK_POINTER(sparent), extra_supers);
-            new_type = scm_call_4(make_class_proc, dsupers, slots, kwd_name, type_class_name);
+            new_type = scm_make_class_with_name(dsupers, slots, type_class_name);
 
             GigBoxedFuncs *funcs = _boxed_funcs_for_type(gtype);
 
@@ -377,9 +367,9 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
                 g_base_info_unref(info);
             }
 
-            scm_class_set_x(new_type, sym_ref, scm_from_pointer(funcs->copy, NULL));
-            scm_class_set_x(new_type, sym_unref, scm_from_pointer(funcs->free, NULL));
-            scm_class_set_x(new_type, sym_size, scm_from_size_t(size));
+            scm_set_class_ref_slot(new_type, scm_from_pointer(funcs->copy, NULL));
+            scm_set_class_unref_slot(new_type, scm_from_pointer(funcs->free, NULL));
+            scm_set_class_size_slot(new_type, scm_from_size_t(size));
             break;
         }
 
@@ -405,7 +395,7 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
 
             // dsupers need to be sorted, or else Guile will barf
             dsupers = scm_sort_x(dsupers, type_less_p_proc);
-            new_type = scm_call_4(make_class_proc, dsupers, slots, kwd_name, type_class_name);
+            new_type = scm_make_class_with_name(dsupers, slots, type_class_name);
             break;
 
         }
@@ -425,7 +415,7 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
             free(interfaces);
 
             dsupers = scm_sort_x(dsupers, type_less_p_proc);
-            new_type = scm_call_4(make_class_proc, dsupers, slots, kwd_name, type_class_name);
+            new_type = scm_make_class_with_name(dsupers, slots, type_class_name);
             break;
         }
         }
@@ -786,7 +776,7 @@ scm_allocate_boxed(SCM boxed_type)
 {
     SCM_ASSERT_TYPE(SCM_SUBCLASSP(boxed_type, gig_boxed_type), boxed_type, SCM_ARG1,
                     "%allocate-boxed", "boxed type");
-    SCM s_size = scm_class_ref(boxed_type, sym_size);
+    SCM s_size = scm_get_class_size_slot(boxed_type);
 
     size_t size = scm_to_size_t(s_size);
 
@@ -795,10 +785,10 @@ scm_allocate_boxed(SCM boxed_type)
 
     void *boxed = xcalloc(1, size);
     GigTypeUnrefFunction unref;
-    unref = (GigTypeUnrefFunction)scm_to_pointer(scm_class_ref(boxed_type, sym_unref));
+    unref = (GigTypeUnrefFunction)scm_to_pointer(scm_get_class_unref_slot(boxed_type));
     SCM pointer = scm_from_pointer(boxed, unref);
 
-    return scm_call_3(make_instance_proc, boxed_type, kwd_value, pointer);
+    return scm_make_with_value(boxed_type, pointer);
 }
 
 void
@@ -847,25 +837,16 @@ gig_type_define_fundamental(GType type, SCM extra_supers,
 static void
 gig_init_types_once(void)
 {
+    init_core_oop();
     gig_fundamental_type = scm_c_private_ref("gi oop", "<GFundamental>");
     gig_boxed_type = scm_c_private_ref("gi oop", "<GBoxed>");
     gig_enum_type = scm_c_private_ref("gi oop", "<GEnum>");
     gig_flags_type = scm_c_private_ref("gi oop", "<GFlags>");
-    make_class_proc = scm_c_public_ref("oop goops", "make-class");
-    make_instance_proc = scm_c_public_ref("oop goops", "make");
     make_fundamental_proc = scm_c_private_ref("gi oop", "%make-fundamental-class");
 
-    kwd_name = scm_from_utf8_keyword("name");
-    kwd_value = scm_from_utf8_keyword("value");
-
-    sym_value = scm_from_utf8_symbol("value");
-    sym_ref = scm_from_utf8_symbol("ref");
-    sym_unref = scm_from_utf8_symbol("unref");
-    sym_size = scm_from_utf8_symbol("size");
     sym_sort_key = scm_from_utf8_symbol("sort-key");
-    sym_obarray = scm_from_utf8_symbol("obarray");
 
-    SCM getter_with_setter = scm_c_public_ref("oop goops", "<applicable-struct-with-setter>");
+    SCM getter_with_setter = scm_get_applicable_struct_with_setter_class();
 
     gtype_scm_store = keyval_new();
     name_scm_store = strval_new();
@@ -905,16 +886,16 @@ gig_init_types_once(void)
     gig_type_define_full(G_TYPE_VALUE, SCM_EOL, scm_list_1(getter_with_setter));
     gig_value_type = gig_type_get_scheme_type(G_TYPE_VALUE);
     gig_type_define_full(G_TYPE_CLOSURE, SCM_EOL,
-                         scm_list_1(scm_c_public_ref("oop goops", "<applicable-struct>")));
+                         scm_list_1(scm_get_applicable_struct_class()));
     gig_closure_type = gig_type_get_scheme_type(G_TYPE_CLOSURE);
 
-    scm_class_set_x(gig_value_type, sym_size, scm_from_size_t(sizeof(GValue)));
+    scm_set_class_size_slot(gig_value_type, scm_from_size_t(sizeof(GValue)));
 
     // value associations, do not rely on them for anything else
-    gig_type_associate(G_TYPE_STRING, scm_c_public_ref("oop goops", "<string>"));
-    SCM _scm_real = scm_c_public_ref("oop goops", "<real>");
-    SCM _scm_integer = scm_c_public_ref("oop goops", "<integer>");
-    SCM _scm_hashtable = scm_c_public_ref("oop goops", "<hashtable>");
+    gig_type_associate(G_TYPE_STRING, scm_get_string_class());
+    SCM _scm_real = scm_get_real_class();
+    SCM _scm_integer = scm_get_integer_class();
+    SCM _scm_hashtable = scm_get_hashtable_class();
     gig_type_register(G_TYPE_INT, _scm_integer);
     gig_type_register(G_TYPE_UINT, _scm_integer);
     gig_type_register(G_TYPE_LONG, _scm_integer);

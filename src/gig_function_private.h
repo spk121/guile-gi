@@ -17,15 +17,8 @@
 #define GIG_FUNCTION_PRIVATE_H
 
 extern SCM ensure_generic_proc;
-extern SCM make_proc;
-extern SCM add_method_proc;
 
 extern SCM top_type;
-extern SCM method_type;
-
-extern SCM kwd_specializers;
-extern SCM kwd_formals;
-extern SCM kwd_procedure;
 
 extern SCM sym_self;
 

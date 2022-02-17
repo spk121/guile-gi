@@ -533,7 +533,6 @@ gig_i_scm_emit(SCM self, SCM signal, SCM s_detail, SCM args)
 }
 
 static SCM sym_value;
-static SCM ensure_accessor_proc;
 
 static SCM do_define_property(const char *, SCM, SCM, SCM);
 
@@ -592,28 +591,21 @@ do_define_property(const char *public_name, SCM prop, SCM self_type, SCM value_t
     SCM sym_public_name, formals, specializers, generic, proc, setter;
 
     sym_public_name = scm_from_utf8_symbol(public_name);
-    generic = scm_call_2(ensure_accessor_proc, scm_default_definition(sym_public_name),
-                         sym_public_name);
+    generic = scm_ensure_accessor_with_name(scm_default_definition(sym_public_name), sym_public_name);
 
     // getter
     proc = scm_procedure(prop);
     formals = scm_list_1(sym_self);
     specializers = scm_list_1(self_type);
 
-    scm_call_2(add_method_proc, generic,
-               scm_call_7(make_proc, method_type,
-                          kwd_specializers, specializers,
-                          kwd_formals, formals, kwd_procedure, proc));
+    scm_add_method(generic, scm_make_method(specializers, formals, proc));
 
     // setter
     setter = scm_setter(prop);
     formals = scm_list_2(sym_self, sym_value);
     specializers = scm_list_2(self_type, value_type);
 
-    scm_call_2(add_method_proc, scm_setter(generic),
-               scm_call_7(make_proc, method_type,
-                          kwd_specializers, specializers,
-                          kwd_formals, formals, kwd_procedure, setter));
+    scm_add_method(scm_setter(generic), scm_make_method(specializers, formals, setter));
 
     scm_define(sym_public_name, generic);
     return sym_public_name;
@@ -625,8 +617,6 @@ gig_init_object()
     gig_user_object_properties = g_quark_from_static_string("GigObject::properties");
 
     sym_value = scm_from_utf8_symbol("value");
-
-    ensure_accessor_proc = scm_c_public_ref("oop goops", "ensure-accessor");
 
     scm_c_define_gsubr("%make-gobject", 1, 1, 0, gig_i_scm_make_gobject);
     scm_c_define_gsubr("%object-get-pspec", 2, 0, 0, gig_i_scm_get_pspec);

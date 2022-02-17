@@ -37,16 +37,8 @@ typedef struct _GigFunction
 } GigFunction;
 
 static keyval_t *function_cache = NULL;
-SCM ensure_generic_proc;
-SCM make_proc;
-SCM add_method_proc;
 
 SCM top_type;
-SCM method_type;
-
-SCM kwd_specializers;
-SCM kwd_formals;
-SCM kwd_procedure;
 
 SCM sym_self;
 
@@ -74,8 +66,6 @@ store_argument(int invoke_in, int invoke_out, bool inout, bool inout_free,
                GArray *cinvoke_output_arg_array);
 static void function_free(GigFunction *fn);
 static void gig_fini_function(void);
-static SCM gig_function_define1(const char *public_name, SCM proc, int opt, SCM formals,
-                                SCM specializers);
 
 static SCM proc4function(GIFunctionInfo *info, const char *name, SCM self_type,
                          int *req, int *opt, SCM *formals, SCM *specs);
@@ -123,11 +113,11 @@ gig_function_define(GType type, GICallableInfo *info, const char *_namespace, SC
     if (SCM_UNBNDP(proc))
         goto end;
 
-    def = gig_function_define1(function_name, proc, optional_input_count, formals, specializers);
+    def = scm_define_methods_from_procedure(function_name, proc, optional_input_count, formals, specializers);
     if (!SCM_UNBNDP(def))
         defs = scm_cons(def, defs);
     if (is_method) {
-        def = gig_function_define1(method_name, proc, optional_input_count, formals, specializers);
+        def = scm_define_methods_from_procedure(method_name, proc, optional_input_count, formals, specializers);
         if (!SCM_UNBNDP(def))
             defs = scm_cons(def, defs);
     }
@@ -135,41 +125,6 @@ gig_function_define(GType type, GICallableInfo *info, const char *_namespace, SC
   end:
     scm_dynwind_end();
     return defs;
-}
-
-// Given some function introspection information from a typelib file,
-// this procedure creates a SCM wrapper for that procedure in the
-// current module.
-static SCM
-gig_function_define1(const char *public_name, SCM proc, int opt, SCM formals, SCM specializers)
-{
-    g_return_val_if_fail(public_name != NULL, SCM_UNDEFINED);
-
-    SCM sym_public_name = scm_from_utf8_symbol(public_name);
-    SCM generic = scm_default_definition(sym_public_name);
-    if (!scm_is_generic(generic))
-        generic = scm_call_2(ensure_generic_proc, generic, sym_public_name);
-
-    SCM t_formals = formals, t_specializers = specializers;
-
-    do {
-        SCM mthd = scm_call_7(make_proc,
-                              method_type,
-                              kwd_specializers, t_specializers,
-                              kwd_formals, t_formals,
-                              kwd_procedure, proc);
-
-        scm_call_2(add_method_proc, generic, mthd);
-
-        if (scm_is_eq(t_formals, SCM_EOL))
-            break;
-
-        t_formals = scm_drop_right_1(t_formals);
-        t_specializers = scm_drop_right_1(t_specializers);
-    } while (opt-- > 0);
-
-    scm_define(sym_public_name, generic);
-    return sym_public_name;
 }
 
 static SCM
@@ -274,7 +229,6 @@ check_gsubr_cache(GICallableInfo *function_info, SCM self_type, int *required_in
 SCM char_type;
 SCM list_type;
 SCM string_type;
-SCM applicable_type;
 
 static SCM
 type_specializer(GigTypeMeta *meta)
@@ -290,7 +244,7 @@ type_specializer(GigTypeMeta *meta)
         case GIG_DATA_SLIST:
             return list_type;
         case GIG_DATA_CALLBACK:
-            return applicable_type;
+            return scm_get_applicable_class();
         default:
             return SCM_UNDEFINED;
         }
@@ -838,20 +792,10 @@ gig_init_function(void)
 {
     function_cache = keyval_new();
 
-    top_type = scm_c_public_ref("oop goops", "<top>");
-    method_type = scm_c_public_ref("oop goops", "<method>");
-    char_type = scm_c_public_ref("oop goops", "<char>");
-    list_type = scm_c_public_ref("oop goops", "<list>");
-    string_type = scm_c_public_ref("oop goops", "<string>");
-    applicable_type = scm_c_public_ref("oop goops", "<applicable>");
-
-    ensure_generic_proc = scm_c_public_ref("oop goops", "ensure-generic");
-    make_proc = scm_c_public_ref("oop goops", "make");
-    add_method_proc = scm_c_public_ref("oop goops", "add-method!");
-
-    kwd_specializers = scm_from_utf8_keyword("specializers");
-    kwd_formals = scm_from_utf8_keyword("formals");
-    kwd_procedure = scm_from_utf8_keyword("procedure");
+    top_type = scm_get_top_class();
+    char_type = scm_get_char_class();
+    list_type = scm_get_list_class();
+    string_type = scm_get_string_class();
 
     sym_self = scm_from_utf8_symbol("self");
 
