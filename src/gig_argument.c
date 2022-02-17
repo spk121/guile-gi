@@ -41,7 +41,7 @@
         gig_error("unhandled argument type '%s' %s:%d", gig_type_meta_describe(meta), __FILE__, __LINE__); \
     } while(false)
 
-static void *later_free(GPtrArray *must_free, GigTypeMeta *meta, void *ptr);
+static void *later_free(slist_t **must_free, GigTypeMeta *meta, void *ptr);
 
 // Fundamental types
 static void scm_to_c_interface(S2C_ARG_DECL);
@@ -94,10 +94,10 @@ static void c_list_to_scm(C2S_ARG_DECL);
 
 // Use this to register allocated data to be freed after use.
 static void *
-later_free(GPtrArray *must_free, GigTypeMeta *meta, void *ptr)
+later_free(slist_t **must_free, GigTypeMeta *meta, void *ptr)
 {
     if ((must_free != NULL) && meta->transfer != GI_TRANSFER_EVERYTHING)
-        g_ptr_array_insert(must_free, 0, ptr);
+        slist_prepend(must_free, ptr);
     return ptr;
 }
 
