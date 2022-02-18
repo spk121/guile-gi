@@ -28,8 +28,10 @@ GQuark gig_user_object_properties;
 typedef struct _GigUserObjectInitInfo
 {
     GType type;
-    GPtrArray *properties;
-    GPtrArray *signals;
+    size_t n_properties;
+    GParamSpec **properties;
+    size_t n_signals;
+    GigSignalSpec **signals;
 } GigUserObjectInitInfo;
 
 static SCM
@@ -273,8 +275,6 @@ gig_user_class_init(GObjectClass *_class, void *class_info)
 {
     GType type = G_TYPE_FROM_CLASS(_class);
     GigUserObjectInitInfo *init_info = class_info;
-    size_t n_properties = init_info->properties->len;
-    GParamSpec **properties = (GParamSpec **)init_info->properties->pdata;
 
     _class->set_property = gig_user_object_set_property;
     _class->get_property = gig_user_object_get_property;
@@ -284,10 +284,11 @@ gig_user_class_init(GObjectClass *_class, void *class_info)
     /* Since the parent type could be anything, some pointer math is
      * required to figure out where our part of the object class is
      * located. */
-    g_ptr_array_foreach(init_info->signals, (GFunc) make_new_signal, GSIZE_TO_POINTER(type));
+    for (size_t i = 0; i < init_info->n_signals; i ++)
+        make_new_signal(init_info->signals[i], GSIZE_TO_POINTER(type));
 
-    for (size_t i = 1; i <= n_properties; i++)
-        g_object_class_install_property(_class, i, properties[i - 1]);
+    for (size_t i = 0; i < init_info->n_properties; i++)
+        g_object_class_install_property(_class, i+1, init_info->properties[i]);
 }
 
 static void
@@ -315,7 +316,7 @@ gig_user_object_init(GTypeInstance *instance, void *class_ptr)
 
 static GType
 gig_user_object_define(const char *type_name,
-                       GType parent_type, GPtrArray *properties, GPtrArray *signals)
+                       GType parent_type, size_t n_properties, GParamSpec **properties, size_t n_signals, GigSignalSpec **signals)
 {
     GTypeInfo type_info;
     GigUserObjectInitInfo *class_init_info;
@@ -326,7 +327,9 @@ gig_user_object_define(const char *type_name,
 
     /* This data will needed when the class is dynamically instantiated. */
     class_init_info = xcalloc(1, sizeof(GigUserObjectInitInfo));
+    class_init_info->n_properties = n_properties;
     class_init_info->properties = properties;
+    class_init_info->n_signals = n_signals;
     class_init_info->signals = signals;
 
     type_info.class_data = class_init_info;
@@ -349,9 +352,9 @@ gig_i_scm_define_type(SCM s_type_name, SCM s_parent_type, SCM s_properties, SCM 
     char *type_name;
     GType parent_type;
     GType new_type;
-    size_t n_properties, n_signals;
-    GPtrArray *properties;
-    GPtrArray *signals;
+    size_t n_properties = 0, n_signals = 0;
+    GParamSpec **properties = NULL;
+    GigSignalSpec **signals = NULL;
 
     SCM_ASSERT(scm_is_string(s_type_name), s_type_name, SCM_ARG1, "%define-type");
     SCM_ASSERT(SCM_SUBCLASSP(s_parent_type, gig_object_type), s_parent_type, SCM_ARG2,
@@ -375,30 +378,31 @@ gig_i_scm_define_type(SCM s_type_name, SCM s_parent_type, SCM s_properties, SCM 
                     scm_is_list(s_signals),
                     s_signals, SCM_ARG4, "%define-type", "list of signal specs or #f");
 
-    properties = g_ptr_array_new();
-    signals = g_ptr_array_new_with_free_func((GDestroyNotify)gig_free_signalspec);
-
-    if (scm_is_list(s_properties)) {
+    if (scm_is_list(s_properties) && !scm_is_null(s_properties)) {
         n_properties = scm_c_length(s_properties);
+        properties = xcalloc(n_properties, sizeof(GParamSpec *));
         SCM iter = s_properties;
         for (size_t i = 0; i < n_properties; i++) {
-            GParamSpec *pspec = gig_paramspec_peek(scm_car(iter));
-            g_ptr_array_add(properties, pspec);
+            properties[i] = gig_paramspec_peek(scm_car(iter));
             iter = scm_cdr(iter);
         }
     }
 
-    if (scm_is_list(s_signals)) {
+    if (scm_is_list(s_signals) && !scm_is_null(s_signals)) {
         n_signals = scm_c_length(s_signals);
+        size_t n = 0;
+        signals = xcalloc(n_signals, sizeof(GigSignalSpec *));
+        SCM iter = s_signals;
         for (size_t i = 0; i < n_signals; i++) {
-            GigSignalSpec *sspec = NULL;
-            sspec = gig_signalspec_from_obj(scm_c_list_ref(s_signals, i));
-            if (sspec != NULL)
-                g_ptr_array_add(signals, sspec);
+            signals[n] = gig_signalspec_from_obj(scm_car(iter));
+            if (signals[n] != NULL)
+                n++;
+            iter = scm_cdr(iter);
         }
+        n_signals = n;
     }
 
-    new_type = gig_user_object_define(type_name, parent_type, properties, signals);
+    new_type = gig_user_object_define(type_name, parent_type, n_properties, properties, n_signals, signals);
     free(type_name);
     gig_type_define(new_type, SCM_UNDEFINED);
     return gig_type_get_scheme_type(new_type);
