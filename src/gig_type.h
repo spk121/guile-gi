@@ -27,7 +27,6 @@ G_BEGIN_DECLS
 extern SCM gig_enum_type;
 extern SCM gig_flags_type;
 extern SCM gig_object_type;
-extern SCM gig_interface_type;
 extern SCM gig_paramspec_type;
 extern SCM gig_value_type;
 extern SCM gig_closure_type;

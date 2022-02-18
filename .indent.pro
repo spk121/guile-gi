@@ -49,6 +49,7 @@
 -T slist_t
 -T keyval_t
 -T strval_t
+-T LogField
 
 -T ffi_arg
 -T ffi_cif

@@ -80,7 +80,6 @@ static keyval_t *scm_gtype_store = NULL;
 SCM gig_enum_type;
 SCM gig_flags_type;
 SCM gig_object_type;
-SCM gig_interface_type;
 SCM gig_paramspec_type;
 SCM gig_value_type;
 SCM gig_closure_type;
@@ -232,8 +231,7 @@ static SCM
 gig_type_associate(GType gtype, SCM stype)
 {
     gig_type_register_self(gtype, stype);
-    scm_set_object_property_x(stype, sym_sort_key,
-                              scm_from_size_t(keyval_size(gtype_scm_store)));
+    scm_set_object_property_x(stype, sym_sort_key, scm_from_size_t(keyval_size(gtype_scm_store)));
     keyval_add_entry(scm_gtype_store, SCM_UNPACK(stype), gtype);
     return scm_class_name(stype);
 }
@@ -243,7 +241,7 @@ gig_type_define_with_info(GIRegisteredTypeInfo *info, SCM dsupers, SCM slots)
 {
     if (g_registered_type_info_get_g_type(info) != G_TYPE_NONE) {
         gig_critical("gig_type_define_with_info used when GType was available, "
-                   "use gig_type_define or gig_type_define_full instead.");
+                     "use gig_type_define or gig_type_define_full instead.");
         return SCM_UNDEFINED;
     }
 
@@ -343,7 +341,7 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
 
             dsupers = scm_list_1(SCM_PACK_POINTER(sparent));
             new_type = scm_make_class_with_name(dsupers, slots, type_class_name);
- 
+
             scm_set_class_obarray_slot(new_type, obarray);
             break;
         }
@@ -851,7 +849,7 @@ gig_init_types_once(void)
     gtype_scm_store = keyval_new();
     name_scm_store = strval_new();
     scm_gtype_store = keyval_new();
-    
+
 #define A(G,S)                                  \
     do {                                        \
         SCM key = gig_type_associate(G, S);     \
@@ -885,8 +883,7 @@ gig_init_types_once(void)
 
     gig_type_define_full(G_TYPE_VALUE, SCM_EOL, scm_list_1(getter_with_setter));
     gig_value_type = gig_type_get_scheme_type(G_TYPE_VALUE);
-    gig_type_define_full(G_TYPE_CLOSURE, SCM_EOL,
-                         scm_list_1(scm_get_applicable_struct_class()));
+    gig_type_define_full(G_TYPE_CLOSURE, SCM_EOL, scm_list_1(scm_get_applicable_struct_class()));
     gig_closure_type = gig_type_get_scheme_type(G_TYPE_CLOSURE);
 
     scm_set_class_size_slot(gig_value_type, scm_from_size_t(sizeof(GValue)));
