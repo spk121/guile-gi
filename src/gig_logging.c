@@ -181,7 +181,7 @@ gig_log_custom_helper(LogLevelFlags log_level, const LogField *fields, size_t n_
                 scm_set_car_x(scm_cdr(it), scm_from_utf8_string(fields[i].value));
             else
                 scm_set_car_x(scm_cdr(it), scm_from_utf8_string(""));
-                
+
         }
         else {
             scm_set_car_x(scm_cdr(it), scm_from_pointer((void *)fields[i].value, NULL));

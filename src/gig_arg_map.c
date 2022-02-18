@@ -297,7 +297,7 @@ gig_amap_free(GigArgMap *amap)
 void
 gig_amap_dump(const char *name, const GigArgMap *amap)
 {
-    char s[100*3 + 20*4 + 1];
+    char s[100 * 3 + 20 * 4 + 1];
     size_t len;
 
     gig_debug_amap("%s - argument mapping", name ? name : amap->name);
@@ -358,8 +358,8 @@ gig_amap_s_input_count(const GigArgMap *amap, int *required, int *optional)
     *optional = amap->s_input_opt;
 }
 
- __attribute__((pure)) GigArgMapEntry *
-gig_amap_get_input_entry_by_s(GigArgMap *amap, int spos)
+__attribute__((pure))
+     GigArgMapEntry *gig_amap_get_input_entry_by_s(GigArgMap *amap, int spos)
 {
     int i = 0;
 

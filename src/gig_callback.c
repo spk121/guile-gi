@@ -51,8 +51,7 @@ static void callback_free(GigCallback *gcb);
 static void gig_fini_callback(void);
 
 static void
-convert_ffi_arg_to_giargument(void *_ffi_arg, ffi_type *arg_type, bool unpack,
-                              GIArgument *giarg)
+convert_ffi_arg_to_giargument(void *_ffi_arg, ffi_type *arg_type, bool unpack, GIArgument *giarg)
 {
     if (unpack)
         _ffi_arg = ((void **)_ffi_arg)[0];
@@ -104,7 +103,7 @@ store_output(GigArgMapEntry *entry, void ***arg, GIArgument *value)
         **(char **)arg = value->v_int8;
         break;
     case G_TYPE_UCHAR:
-        **(unsigned char **) arg = value->v_uint8;
+        **(unsigned char **)arg = value->v_uint8;
         break;
     case G_TYPE_INT:
     {
@@ -232,8 +231,9 @@ callback_binding_inner(struct callback_binding_args *args)
     size_t length = scm_c_length(s_args);
 
     if (!scm_is_empty_hook(gig_before_callback_hook))
-        scm_c_activate_hook_3(gig_before_callback_hook, scm_from_utf8_string(g_base_info_get_name(gcb->callback_info)),
-                                  gcb->s_func, s_args);
+        scm_c_activate_hook_3(gig_before_callback_hook,
+                              scm_from_utf8_string(g_base_info_get_name(gcb->callback_info)),
+                              gcb->s_func, s_args);
 
     // The actual call of the Scheme callback happens here.
     if (length < amap->s_input_req || length > amap->s_input_req + amap->s_input_opt)
@@ -349,8 +349,8 @@ c_callback_binding_inner(struct callback_binding_args *args)
 
     if (!scm_is_empty_hook(gig_before_c_callback_hook))
         scm_c_activate_hook_3(gig_before_c_callback_hook,
-                       scm_from_utf8_string(g_base_info_get_name(gcb->callback_info)),
-                                  scm_from_pointer(gcb->c_func, NULL), s_args);
+                              scm_from_utf8_string(g_base_info_get_name(gcb->callback_info)),
+                              scm_from_pointer(gcb->c_func, NULL), s_args);
 
     // Use 'name' instead of gcb->name, which is NULL for C callbacks.
     GError *error = NULL;

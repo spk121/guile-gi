@@ -35,29 +35,32 @@ typedef enum _LogWriterOutput
 
 typedef enum _LogLeveFlags
 {
-  /* log flags */
-  LOG_FLAG_RECURSION          = 1 << 0,
-  LOG_FLAG_FATAL              = 1 << 1,
+    /* log flags */
+    LOG_FLAG_RECURSION = 1 << 0,
+    LOG_FLAG_FATAL = 1 << 1,
 
-  /* GLib log levels */
-  LOG_LEVEL_ERROR             = 1 << 2,       /* always fatal */
-  LOG_LEVEL_CRITICAL          = 1 << 3,
-  LOG_LEVEL_WARNING           = 1 << 4,
-  LOG_LEVEL_MESSAGE           = 1 << 5,
-  LOG_LEVEL_INFO              = 1 << 6,
-  LOG_LEVEL_DEBUG             = 1 << 7,
+    /* GLib log levels */
+    LOG_LEVEL_ERROR = 1 << 2,   /* always fatal */
+    LOG_LEVEL_CRITICAL = 1 << 3,
+    LOG_LEVEL_WARNING = 1 << 4,
+    LOG_LEVEL_MESSAGE = 1 << 5,
+    LOG_LEVEL_INFO = 1 << 6,
+    LOG_LEVEL_DEBUG = 1 << 7,
 
-  LOG_LEVEL_MASK              = ~(LOG_FLAG_RECURSION | LOG_FLAG_FATAL),
-  LOG_FATAL_MASK              = LOG_FLAG_FATAL | LOG_LEVEL_ERROR
+    LOG_LEVEL_MASK = ~(LOG_FLAG_RECURSION | LOG_FLAG_FATAL),
+    LOG_FATAL_MASK = LOG_FLAG_FATAL | LOG_LEVEL_ERROR
 } LogLevelFlags;
 
-typedef LogWriterOutput (*LogWriterFunc) (LogLevelFlags log_level, const LogField *fields, size_t n_fields, void *user_data);
-typedef void (*DestroyNotify) (void *data);
+typedef LogWriterOutput(*LogWriterFunc) (LogLevelFlags log_level, const LogField *fields,
+                                         size_t n_fields, void *user_data);
+typedef void (*DestroyNotify)(void *data);
 
 bool log_writer_supports_color(int fd);
 void log_set_writer_func(LogWriterFunc func, void *user_data, DestroyNotify user_data_free);
-LogWriterOutput log_writer_journald (LogLevelFlags log_level, const LogField *fields, size_t n_fields, void *user_data);
-LogWriterOutput log_writer_default (LogLevelFlags log_level, const LogField *fields, size_t n_fields, void *user_data);
+LogWriterOutput log_writer_journald(LogLevelFlags log_level, const LogField *fields,
+                                    size_t n_fields, void *user_data);
+LogWriterOutput log_writer_default(LogLevelFlags log_level, const LogField *fields,
+                                   size_t n_fields, void *user_data);
 void log_structured(const char *log_domain, LogLevelFlags log_level, ...);
 
 #define assert_not_reached() (assert(0))

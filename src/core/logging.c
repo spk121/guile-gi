@@ -30,7 +30,8 @@
 #include <stdlib.h>
 #include "logging.h"
 
-LogWriterOutput log_writer_fallback (LogLevelFlags flags, const LogField *fields, size_t n_fields, void *_user_data);
+LogWriterOutput log_writer_fallback(LogLevelFlags flags, const LogField *fields, size_t n_fields,
+                                    void *_user_data);
 
 static LogWriterFunc log_writer_func = log_writer_fallback;
 static void *log_writer_user_data = NULL;
@@ -101,7 +102,7 @@ is_color_term(const char *str)
 {
     if (str == NULL)
         return false;
-    
+
     for (int i = 0; i < N_TERMINALS; i++) {
         if (strcmp(str, color_terminals[i]) == 0)
             return true;
@@ -118,23 +119,23 @@ log_writer_supports_color(int fd)
         first = 0;
         color = is_color_term(getenv("TERM"));
     }
-    
+
     if ((fd == STDOUT_FILENO || fd == STDERR_FILENO) && color)
         return true;
     return false;
 }
 
 static FILE *
-log_level_to_file (LogLevelFlags log_level)
+log_level_to_file(LogLevelFlags log_level)
 {
-  if (log_level & (LOG_LEVEL_ERROR | LOG_LEVEL_CRITICAL |
-                   LOG_LEVEL_WARNING | LOG_LEVEL_MESSAGE))
-    return stderr;
-  else
-    return stdout;
+    if (log_level & (LOG_LEVEL_ERROR | LOG_LEVEL_CRITICAL | LOG_LEVEL_WARNING | LOG_LEVEL_MESSAGE))
+        return stderr;
+    else
+        return stdout;
 }
 
-LogWriterOutput log_writer_fallback (LogLevelFlags flags, const LogField *fields, size_t n_fields, void *_user_data)
+LogWriterOutput
+log_writer_fallback(LogLevelFlags flags, const LogField *fields, size_t n_fields, void *_user_data)
 {
 #define LOG_FIELD(f) field_ref(f, fields, n_fields)
 #define ENV_MESSAGES_DEBUG (getenv("G_MESSAGES_DEBUG"))
@@ -182,7 +183,8 @@ LogWriterOutput log_writer_fallback (LogLevelFlags flags, const LogField *fields
 #undef ENV_GIG_DEBUG
 }
 
-void log_set_writer_func(LogWriterFunc func, void *_user_data, DestroyNotify _user_data_free)
+void
+log_set_writer_func(LogWriterFunc func, void *_user_data, DestroyNotify _user_data_free)
 {
     log_writer_func = func;
     log_writer_user_data = _user_data;
@@ -190,143 +192,134 @@ void log_set_writer_func(LogWriterFunc func, void *_user_data, DestroyNotify _us
 }
 
 static LogWriterOutput
-log_writer_debug (LogLevelFlags   log_level,
-                  const LogField *fields,
-                  size_t            n_fields,
-                  void *         user_data)
+log_writer_debug(LogLevelFlags log_level, const LogField *fields, size_t n_fields, void *user_data)
 {
-  FILE *stream;
-  size_t i;
+    FILE *stream;
+    size_t i;
 
-  stream = log_level_to_file (log_level);
+    stream = log_level_to_file(log_level);
 
-  for (i = 0; i < n_fields; i++)
-    {
-      const LogField *field = &fields[i];
+    for (i = 0; i < n_fields; i++) {
+        const LogField *field = &fields[i];
 
-      if (strcmp (field->key, "MESSAGE") != 0 &&
-          strcmp (field->key, "MESSAGE_ID") != 0 &&
-          strcmp (field->key, "PRIORITY") != 0 &&
-          strcmp (field->key, "CODE_FILE") != 0 &&
-          strcmp (field->key, "CODE_LINE") != 0 &&
-          strcmp (field->key, "CODE_FUNC") != 0 &&
-          strcmp (field->key, "ERRNO") != 0 &&
-          strcmp (field->key, "SYSLOG_FACILITY") != 0 &&
-          strcmp (field->key, "SYSLOG_IDENTIFIER") != 0 &&
-          strcmp (field->key, "SYSLOG_PID") != 0 &&
-          strcmp (field->key, "GLIB_DOMAIN") != 0)
-        continue;
+        if (strcmp(field->key, "MESSAGE") != 0 &&
+            strcmp(field->key, "MESSAGE_ID") != 0 &&
+            strcmp(field->key, "PRIORITY") != 0 &&
+            strcmp(field->key, "CODE_FILE") != 0 &&
+            strcmp(field->key, "CODE_LINE") != 0 &&
+            strcmp(field->key, "CODE_FUNC") != 0 &&
+            strcmp(field->key, "ERRNO") != 0 &&
+            strcmp(field->key, "SYSLOG_FACILITY") != 0 &&
+            strcmp(field->key, "SYSLOG_IDENTIFIER") != 0 &&
+            strcmp(field->key, "SYSLOG_PID") != 0 && strcmp(field->key, "GLIB_DOMAIN") != 0)
+            continue;
 
-      fputs(field->key, stream);
-      fputs("=", stream);
-      if (field->length < 0)
-          fputs (field->value, stream);
-      else
-          fwrite (field->value, 1, field->length, stream);
+        fputs(field->key, stream);
+        fputs("=", stream);
+        if (field->length < 0)
+            fputs(field->value, stream);
+        else
+            fwrite(field->value, 1, field->length, stream);
     }
 
-  fprintf(stream, "_PID=%d", getpid());
+    fprintf(stream, "_PID=%d", getpid());
 
-  return LOG_WRITER_HANDLED;
+    return LOG_WRITER_HANDLED;
 }
 
 static void
-log_structured_array (LogLevelFlags   log_level,
-                      const LogField *fields,
-                      size_t            n_fields)
+log_structured_array(LogLevelFlags log_level, const LogField *fields, size_t n_fields)
 {
-  if (n_fields == 0)
-    return;
+    if (n_fields == 0)
+        return;
 
-  // FIXME: need mutex
-  
-  log_writer_func (log_level, fields, n_fields, log_writer_user_data);
+    // FIXME: need mutex
 
-  if (log_level & LOG_FATAL_MASK)
-      exit(1);
+    log_writer_func(log_level, fields, n_fields, log_writer_user_data);
+
+    if (log_level & LOG_FATAL_MASK)
+        exit(1);
 }
 
 static const char *
-log_level_to_priority (LogLevelFlags log_level)
+log_level_to_priority(LogLevelFlags log_level)
 {
-  if (log_level & LOG_LEVEL_ERROR)
-    return "3";
-  else if (log_level & LOG_LEVEL_CRITICAL)
-    return "4";
-  else if (log_level & LOG_LEVEL_WARNING)
-    return "4";
-  else if (log_level & LOG_LEVEL_MESSAGE)
-    return "5";
-  else if (log_level & LOG_LEVEL_INFO)
-    return "6";
-  else if (log_level & LOG_LEVEL_DEBUG)
-    return "7";
+    if (log_level & LOG_LEVEL_ERROR)
+        return "3";
+    else if (log_level & LOG_LEVEL_CRITICAL)
+        return "4";
+    else if (log_level & LOG_LEVEL_WARNING)
+        return "4";
+    else if (log_level & LOG_LEVEL_MESSAGE)
+        return "5";
+    else if (log_level & LOG_LEVEL_INFO)
+        return "6";
+    else if (log_level & LOG_LEVEL_DEBUG)
+        return "7";
 
-  /* Default to LOG_NOTICE for custom log levels. */
-  return "5";
+    /* Default to LOG_NOTICE for custom log levels. */
+    return "5";
 }
 
 void
 log_structured(const char *log_domain, LogLevelFlags log_level, ...)
 {
-  va_list args;
-  char buffer[1025];
-  const char *format;
-  const char *message;
-  void *p;
-  size_t n_fields, i;
-  LogField stack_fields[16];
-  LogField *fields = stack_fields;
+    va_list args;
+    char buffer[1025];
+    const char *format;
+    const char *message;
+    void *p;
+    size_t n_fields, i;
+    LogField stack_fields[16];
+    LogField *fields = stack_fields;
 
-  va_start (args, log_level);
+    va_start(args, log_level);
 
-  /* MESSAGE and PRIORITY are a given */
-  n_fields = 2;
+    /* MESSAGE and PRIORITY are a given */
+    n_fields = 2;
 
-  if (log_domain)
-    n_fields++;
+    if (log_domain)
+        n_fields++;
 
-  for (p = va_arg (args, char *), i = n_fields;
-       strcmp (p, "MESSAGE") != 0;
-       p = va_arg (args, char *), i++)
+    for (p = va_arg(args, char *), i = n_fields;
+         strcmp(p, "MESSAGE") != 0; p = va_arg(args, char *), i++)
     {
-      LogField field;
-      const char *key = p;
-      const void *value = va_arg (args, void *);
+        LogField field;
+        const char *key = p;
+        const void *value = va_arg(args, void *);
 
-      field.key = key;
-      field.value = value;
-      field.length = -1;
+        field.key = key;
+        field.value = value;
+        field.length = -1;
 
-      if (i < 16)
-        stack_fields[i] = field;
+        if (i < 16)
+            stack_fields[i] = field;
     }
 
-  n_fields = i;
+    n_fields = i;
 
-  format = va_arg (args, char *);
+    format = va_arg(args, char *);
 
-  vsnprintf (buffer, sizeof (buffer), format, args);
-  message = buffer;
+    vsnprintf(buffer, sizeof(buffer), format, args);
+    message = buffer;
 
-  /* Add MESSAGE, PRIORITY and GLIB_DOMAIN. */
-  fields[0].key = "MESSAGE";
-  fields[0].value = message;
-  fields[0].length = -1;
+    /* Add MESSAGE, PRIORITY and GLIB_DOMAIN. */
+    fields[0].key = "MESSAGE";
+    fields[0].value = message;
+    fields[0].length = -1;
 
-  fields[1].key = "PRIORITY";
-  fields[1].value = log_level_to_priority (log_level);
-  fields[1].length = -1;
+    fields[1].key = "PRIORITY";
+    fields[1].value = log_level_to_priority(log_level);
+    fields[1].length = -1;
 
-  if (log_domain)
-    {
-      fields[2].key = "GLIB_DOMAIN";
-      fields[2].value = log_domain;
-      fields[2].length = -1;
+    if (log_domain) {
+        fields[2].key = "GLIB_DOMAIN";
+        fields[2].value = log_domain;
+        fields[2].length = -1;
     }
 
-  /* Log it. */
-  log_structured_array (log_level, fields, n_fields);
+    /* Log it. */
+    log_structured_array(log_level, fields, n_fields);
 
-  va_end (args);
+    va_end(args);
 }

@@ -19,8 +19,6 @@
 #include "core.h"
 #include <girepository.h>
 #include <glib.h>
-#include <libguile.h>
-#include <stdbool.h>
 
 // *INDENT-OFF*
 G_BEGIN_DECLS

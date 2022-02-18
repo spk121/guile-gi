@@ -176,7 +176,7 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
 
             if (len == -1 && !meta->is_zero_terminated) {
                 gig_warning("no way of determining array size of %s, coercing to pointer",
-                          g_type_name(meta->gtype));
+                            g_type_name(meta->gtype));
                 meta->gtype = G_TYPE_POINTER;
             }
         }
@@ -212,9 +212,9 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
             meta->gtype = G_TYPE_INVALID;
             meta->is_invalid = true;
             gig_warning("Unrepresentable type: %s, %s, %s",
-                      g_base_info_get_name_safe(type_info),
-                      g_base_info_get_name_safe(referenced_base_info),
-                      g_info_type_to_string(itype));
+                        g_base_info_get_name_safe(type_info),
+                        g_base_info_get_name_safe(referenced_base_info),
+                        g_info_type_to_string(itype));
             break;
         case GI_INFO_TYPE_ENUM:
         case GI_INFO_TYPE_FLAGS:
@@ -320,8 +320,7 @@ gig_type_meta_describe(const GigTypeMeta *meta)
         len += snprintf(gig_data_type_describe_buf + len, STRLEN - len,
                         " of type %s", g_type_name(G_TYPE_FUNDAMENTAL(meta->gtype)));
     if (meta->is_nullable && len < STRLEN)
-        len += snprintf(gig_data_type_describe_buf + len, STRLEN - len,
-                        " or NULL");
+        len += snprintf(gig_data_type_describe_buf + len, STRLEN - len, " or NULL");
     return gig_data_type_describe_buf;
 }
 

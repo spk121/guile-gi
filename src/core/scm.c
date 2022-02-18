@@ -76,16 +76,18 @@ scm_c_list_ref(SCM lst, size_t i)
     return scm_list_ref(lst, scm_from_size_t(i));
 }
 
-void scm_c_activate_hook_2(SCM hook, SCM a, SCM b)
+void
+scm_c_activate_hook_2(SCM hook, SCM a, SCM b)
 {
     if (scm_is_true(hook) && !scm_is_empty_hook(hook))
-        scm_c_run_hook(hook, scm_list_2(a,b));
+        scm_c_run_hook(hook, scm_list_2(a, b));
 }
 
-void scm_c_activate_hook_3(SCM hook, SCM a, SCM b, SCM c)
+void
+scm_c_activate_hook_3(SCM hook, SCM a, SCM b, SCM c)
 {
     if (scm_is_true(hook) && !scm_is_empty_hook(hook))
-        scm_c_run_hook(hook, scm_list_3(a,b,c));
+        scm_c_run_hook(hook, scm_list_3(a, b, c));
 }
 
 SCM

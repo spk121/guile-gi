@@ -226,7 +226,8 @@ make_new_signal(GigSignalSpec *signal_spec, void *user_data)
 }
 
 static void
-gig_user_object_get_property(GObject *object, unsigned property_id, GValue *value, GParamSpec *pspec)
+gig_user_object_get_property(GObject *object, unsigned property_id, GValue *value,
+                             GParamSpec *pspec)
 {
     GValue *properties = g_object_get_qdata(object, gig_user_object_properties);
     GValue *property = properties + property_id - 1;
@@ -284,11 +285,11 @@ gig_user_class_init(GObjectClass *_class, void *class_info)
     /* Since the parent type could be anything, some pointer math is
      * required to figure out where our part of the object class is
      * located. */
-    for (size_t i = 0; i < init_info->n_signals; i ++)
+    for (size_t i = 0; i < init_info->n_signals; i++)
         make_new_signal(init_info->signals[i], GSIZE_TO_POINTER(type));
 
     for (size_t i = 0; i < init_info->n_properties; i++)
-        g_object_class_install_property(_class, i+1, init_info->properties[i]);
+        g_object_class_install_property(_class, i + 1, init_info->properties[i]);
 }
 
 static void
@@ -316,7 +317,8 @@ gig_user_object_init(GTypeInstance *instance, void *class_ptr)
 
 static GType
 gig_user_object_define(const char *type_name,
-                       GType parent_type, size_t n_properties, GParamSpec **properties, size_t n_signals, GigSignalSpec **signals)
+                       GType parent_type, size_t n_properties, GParamSpec **properties,
+                       size_t n_signals, GigSignalSpec **signals)
 {
     GTypeInfo type_info;
     GigUserObjectInitInfo *class_init_info;
@@ -402,7 +404,9 @@ gig_i_scm_define_type(SCM s_type_name, SCM s_parent_type, SCM s_properties, SCM 
         n_signals = n;
     }
 
-    new_type = gig_user_object_define(type_name, parent_type, n_properties, properties, n_signals, signals);
+    new_type =
+        gig_user_object_define(type_name, parent_type, n_properties, properties, n_signals,
+                               signals);
     free(type_name);
     gig_type_define(new_type, SCM_UNDEFINED);
     return gig_type_get_scheme_type(new_type);
@@ -410,7 +414,8 @@ gig_i_scm_define_type(SCM s_type_name, SCM s_parent_type, SCM s_properties, SCM 
 
 static void
 signal_lookup(const char *proc, GObject *self,
-              SCM signal, SCM detail, unsigned *c_signal, GSignalQuery *query_info, GQuark *c_detail)
+              SCM signal, SCM detail, unsigned *c_signal, GSignalQuery *query_info,
+              GQuark *c_detail)
 {
     SCM s_name = gig_signal_ref(signal, GIG_SIGNAL_SLOT_NAME);
     char *name = scm_to_utf8_string(s_name);
@@ -595,7 +600,8 @@ do_define_property(const char *public_name, SCM prop, SCM self_type, SCM value_t
     SCM sym_public_name, formals, specializers, generic, proc, setter;
 
     sym_public_name = scm_from_utf8_symbol(public_name);
-    generic = scm_ensure_accessor_with_name(scm_default_definition(sym_public_name), sym_public_name);
+    generic =
+        scm_ensure_accessor_with_name(scm_default_definition(sym_public_name), sym_public_name);
 
     // getter
     proc = scm_procedure(prop);
