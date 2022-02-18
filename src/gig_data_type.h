@@ -18,10 +18,6 @@
 #include <glib.h>
 #include <girepository.h>
 
-// *INDENT-OFF*
-G_BEGIN_DECLS
-// *INDENT-ON*
-
 #define GIG_ARRAY_SIZE_UNKNOWN ((size_t)-1)
 
 typedef enum _GigPointerType
@@ -89,5 +85,4 @@ const char *gig_type_meta_describe(const GigTypeMeta *meta);
 void gig_data_type_free(GigTypeMeta *meta);
 void gig_init_data_type(void);
 
-G_END_DECLS
 #endif

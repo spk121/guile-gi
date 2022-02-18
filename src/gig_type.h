@@ -20,10 +20,6 @@
 #include <stdbool.h>
 #include <girepository.h>
 
-// *INDENT-OFF*
-G_BEGIN_DECLS
-// *INDENT-ON*
-
 extern SCM gig_enum_type;
 extern SCM gig_flags_type;
 extern SCM gig_object_type;
@@ -59,5 +55,4 @@ void *gig_type_peek_typed_object(SCM obj, SCM expected);
 
 GIG_API void gig_init_types(void);
 
-G_END_DECLS
 #endif

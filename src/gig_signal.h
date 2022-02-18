@@ -17,10 +17,6 @@
 #include <girepository.h>
 #include <libguile.h>
 
-// *INDENT-OFF*
-G_BEGIN_DECLS
-// *INDENT-ON*
-
 typedef struct _GigSignalSpec
 {
     char *signal_name;
@@ -56,5 +52,4 @@ GClosure *gig_signal_closure_new(SCM instance, GType g_type, const char *signal_
 
 void gig_init_signal(void);
 
-G_END_DECLS
 #endif

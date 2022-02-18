@@ -6,10 +6,6 @@
 #include "core.h"
 #include "gig_arg_map.h"
 
-// *INDENT-OFF*
-G_BEGIN_DECLS
-// *INDENT-ON*
-
 #define S2C_ARG_DECL const char *subr, int argpos,    \
         GigTypeMeta *meta, SCM object,               \
         slist_t **must_free, GIArgument *arg, size_t *size
@@ -27,6 +23,4 @@ char *gig_argument_describe_return(GITypeInfo *type_info, GITransfer transfer, b
                                    bool skip);
 
 void gig_init_argument(void);
-
-G_END_DECLS
 #endif

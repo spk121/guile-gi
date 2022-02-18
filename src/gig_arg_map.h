@@ -21,10 +21,6 @@
 #include <girepository.h>
 #include "gig_data_type.h"
 
-// *INDENT-OFF*
-G_BEGIN_DECLS
-// *INDENT-ON*
-
 // This module gathers information to help convert between 3 paradigms
 //  - arguments as they appear in GIArgInfo lists
 //  - arguments as they appear in SCM gsubr calls
@@ -157,6 +153,4 @@ bool gig_amap_output_s2c(const GigArgMap *amap, int s, int *c);
 
 bool gig_amap_child_i(const GigArgMap *amap, int i, int *ichild);
 bool gig_amap_return_child_i(const GigArgMap *amap, int *ichild);
-
-G_END_DECLS
 #endif
