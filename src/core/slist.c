@@ -20,6 +20,8 @@ void
 slist_free(slist_t **lst, void (*free_func)(void *))
 {
     slist_t *cur, *next;
+    if (lst == NULL)
+        return;
     cur = *lst;
     do {
         if (cur == NULL)

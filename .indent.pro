@@ -46,6 +46,10 @@
  */
 -T SCM
 
+-T slist_t
+-T keyval_t
+-T strval_t
+
 -T ffi_arg
 -T ffi_cif
 -T ffi_closure
