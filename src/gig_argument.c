@@ -18,14 +18,11 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <girepository.h>
-#include <glib.h>
 #include <libguile.h>
 #include "core.h"
+#include "type.h"
 #include "gig_argument.h"
 #include "gig_callback.h"
-#include "gig_flag.h"
-#include "gig_object.h"
-#include "gig_type.h"
 #include "gig_util.h"
 
 #define TRACE_C2S() gig_debug_transfer("[C2S] On line %d while handing %s of %s.", __LINE__, gig_type_meta_describe(meta), subr)

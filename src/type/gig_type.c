@@ -20,7 +20,6 @@
 #include <girepository.h>
 #include <ffi.h>
 #include "gig_type.h"
-#include "gig_util.h"
 #include "gig_object.h"
 #include "gig_type_private.h"
 
@@ -234,6 +233,20 @@ gig_type_associate(GType gtype, SCM stype)
     scm_set_object_property_x(stype, sym_sort_key, scm_from_size_t(keyval_size(gtype_scm_store)));
     keyval_add_entry(scm_gtype_store, SCM_UNPACK(stype), gtype);
     return scm_class_name(stype);
+}
+
+static char *
+g_registered_type_info_get_qualified_name(GIRegisteredTypeInfo *info)
+{
+    const char *_name = g_base_info_get_attribute(info, "c:type");
+    if (_name != NULL)
+        return xstrdup(_name);
+
+    const char *_namespace = g_base_info_get_namespace(info);
+    const char *prefix = g_irepository_get_c_prefix(NULL, _namespace);
+
+    // add initial % to ensure that the name is private
+    return concatenate3("%", prefix, g_base_info_get_name(info));
 }
 
 SCM

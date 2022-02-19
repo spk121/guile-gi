@@ -16,9 +16,7 @@
 #include "gig_object.h"
 #include "gig_value.h"
 #include "gig_type.h"
-#include "gig_argument.h"
 #include "gig_flag.h"
-#include "gig_util.h"
 
 typedef void (*handler_func)(void *);
 static SCM signal_slot_syms[GIG_SIGNAL_SLOT_COUNT];

@@ -187,17 +187,3 @@ g_base_info_get_name_safe(GIBaseInfo *info)
         break;
     }
 }
-
-char *
-g_registered_type_info_get_qualified_name(GIRegisteredTypeInfo *info)
-{
-    const char *_name = g_base_info_get_attribute(info, "c:type");
-    if (_name != NULL)
-        return xstrdup(_name);
-
-    const char *_namespace = g_base_info_get_namespace(info);
-    const char *prefix = g_irepository_get_c_prefix(NULL, _namespace);
-
-    // add initial % to ensure that the name is private
-    return concatenate3("%", prefix, g_base_info_get_name(info));
-}

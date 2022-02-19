@@ -1,0 +1,8 @@
+Everything in src/type and the scheme code in (gi type) forms the
+guile-gi types system.  It defines some GOOPS base classes, then
+provides functions to convert GObject-Introspection types into GOOPS
+types.
+
+It also provides code to define new GObject classes in scheme.
+
+src/type should depend only on src/core

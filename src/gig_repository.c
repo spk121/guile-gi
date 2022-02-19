@@ -15,12 +15,9 @@
 
 #include <libguile.h>
 #include <girepository.h>
-#include "gig_type.h"
-#include "gig_object.h"
+#include "type.h"
 #include "gig_function.h"
 #include "gig_util.h"
-#include "gig_constant.h"
-#include "gig_flag.h"
 #include "gig_repository.h"
 
 static SCM

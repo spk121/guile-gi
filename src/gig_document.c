@@ -14,10 +14,8 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <libguile.h>
-#include <glib.h>
-#include <glib-object.h>
 #include <girepository.h>
-#include "gig_type.h"
+#include "type.h"
 #include "gig_util.h"
 #include "gig_arg_map.h"
 #include "gig_repository.h"

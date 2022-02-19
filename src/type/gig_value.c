@@ -19,7 +19,6 @@
 #include "gig_type.h"
 #include "gig_object.h"
 #include "gig_flag.h"
-#include "gig_util.h"
 
 #ifndef FLT_MAX
 #define FLT_MAX 3.402823466e+38F

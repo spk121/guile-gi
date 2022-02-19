@@ -1,7 +1,6 @@
 #include "gig_closure.h"
 #include "gig_value.h"
 #include "gig_type.h"
-#include "gig_util.h"
 
 typedef struct _GigClosure GigClosure;
 

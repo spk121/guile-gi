@@ -110,21 +110,21 @@ libguile_gi_la_c_sources = \
   src/core/string.c \
   src/core/strval.c \
   src/gig_argument.c \
-  src/gig_closure.c \
+  src/type/gig_closure.c \
   src/gig_data_type.c \
-  src/gig_object.c \
-  src/gig_value.c \
-  src/gig_signal.c \
+  src/type/gig_object.c \
+  src/type/gig_value.c \
+  src/type/gig_signal.c \
   src/gig.c \
   src/gig_arg_map.c \
   src/gig_callback.c \
   src/gig_function.c \
-  src/gig_constant.c \
-  src/gig_flag.c \
+  src/type/gig_constant.c \
+  src/type/gig_flag.c \
   src/gig_repository.c \
   src/gig_document.c \
-  src/gig_type.c \
-  src/gig_type_private.c \
+  src/type/gig_type.c \
+  src/type/gig_type_private.c \
   src/gig_util.c \
   src/gig_logging.c
 
@@ -139,21 +139,22 @@ libguile_gi_la_internal_headers = \
   src/core/string.h \
   src/core/strval.h \
   src/core/visibility.h \
+  src/type.h \
   src/gig_argument.h \
-  src/gig_closure.h \
+  src/type/gig_closure.h \
   src/gig_data_type.h \
-  src/gig_object.h \
-  src/gig_value.h \
-  src/gig_signal.h \
+  src/type/gig_object.h \
+  src/type/gig_value.h \
+  src/type/gig_signal.h \
   src/gig_arg_map.h \
   src/gig_callback.h \
   src/gig_function.h \
   src/gig_function_private.h \
-  src/gig_constant.h \
-  src/gig_flag.h \
+  src/type/gig_constant.h \
+  src/type/gig_flag.h \
   src/gig_repository.h \
-  src/gig_type.h \
-  src/gig_type_private.h \
+  src/type/gig_type.h \
+  src/type/gig_type_private.h \
   src/gig_util.h \
   src/gig_logging.h
 
@@ -454,6 +455,7 @@ EXTRA_DIST = \
   README.md \
   build-aux/config.rpath \
   src/core/README \
+  src/type/README \
   docs/example-1.scm docs/gtk-3.scm docs/fdl-1.3.texi \
   docs/ex-date.scm docs/ex-gapplication.scm docs/ex-load-by-name.scm \
   docs/ex-button.scm \

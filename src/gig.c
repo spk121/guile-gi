@@ -13,23 +13,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "core.h"
 #include <girepository.h>
-#include <glib-object.h>
-#include <glib.h>
 #include <libguile.h>
+#include "core.h"
+#include "type.h"
 #include "gig_argument.h"
 #include "gig_callback.h"
-#include "gig_constant.h"
 #include "gig_data_type.h"
-#include "gig_flag.h"
 #include "gig_function.h"
-#include "gig_object.h"
 #include "gig_logging.h"
-#include "gig_signal.h"
-#include "gig_type.h"
 #include "gig_util.h"
-#include "gig_value.h"
 
 GIG_API void gig_init(void);
 

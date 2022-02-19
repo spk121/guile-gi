@@ -18,7 +18,7 @@
 
 #include <stdbool.h>
 #include <girepository.h>
-#include "core.h"
+#include "../core.h"
 
 extern SCM gig_enum_type;
 extern SCM gig_flags_type;

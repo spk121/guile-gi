@@ -18,7 +18,6 @@
 #include "gig_flag.h"
 #include "gig_type.h"
 #include "gig_type_private.h"
-#include "gig_util.h"
 
 static SCM enum_to_number;
 static SCM flags_to_number;

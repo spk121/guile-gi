@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <libguile.h>
 #include <girepository.h>
-#include "core.h"
+#include "../core.h"
 
 SCM gig_value_c2g(GValue *val);
 SCM gig_value_to_scm_basic_type(const GValue *value, GType fundamental, bool *handled);

@@ -17,11 +17,9 @@
 #include <string.h>
 #include "gig_object.h"
 #include "gig_type.h"
-#include "gig_util.h"
 #include "gig_signal.h"
 #include "gig_closure.h"
 #include "gig_value.h"
-#include "gig_function_private.h"
 
 GQuark gig_user_object_properties;
 
@@ -576,6 +574,7 @@ gig_property_define(GType type, GIPropertyInfo *info, const char *_namespace, SC
     if (prop != NULL) {
         s_prop = gig_type_transfer_object(G_PARAM_SPEC_TYPE(prop), prop, GI_TRANSFER_NOTHING);
 
+        SCM top_type = scm_get_top_class();
         def = do_define_property(long_name, s_prop, self_type, top_type);
         if (!SCM_UNBNDP(def))
             defs = scm_cons(def, defs);
@@ -595,6 +594,10 @@ gig_property_define(GType type, GIPropertyInfo *info, const char *_namespace, SC
 static SCM
 do_define_property(const char *public_name, SCM prop, SCM self_type, SCM value_type)
 {
+    static SCM sym_self = SCM_BOOL_F;
+    if (!scm_is_true(sym_self))
+        sym_self = scm_from_utf8_symbol("self");
+    
     g_return_val_if_fail(public_name != NULL, SCM_UNDEFINED);
 
     SCM sym_public_name, formals, specializers, generic, proc, setter;

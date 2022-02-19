@@ -17,7 +17,7 @@
 
 #include <girepository.h>
 #include <ffi.h>
-#include "core.h"
+#include "../core.h"
 
 typedef struct _GigBoxedFuncs
 {

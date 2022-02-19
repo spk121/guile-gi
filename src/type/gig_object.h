@@ -18,7 +18,7 @@
 
 #include <libguile.h>
 #include <girepository.h>
-#include "core.h"
+#include "../core.h"
 
 SCM gig_property_define(GType type, GIPropertyInfo *info, const char *namespace, SCM defs);
 GIG_API void gig_init_object(void);
