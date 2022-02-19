@@ -17,11 +17,10 @@
 #include <libguile.h>
 #include <libguile/hooks.h>
 #include <ffi.h>
-#include "core.h"
+#include "../core.h"
 #include "gig_argument.h"
 #include "gig_callback.h"
 #include "gig_function.h"
-#include "gig_util.h"
 
 typedef struct _GigCallback GigCallback;
 struct _GigCallback

@@ -17,7 +17,7 @@
 #include <ffi.h>
 #include <stdbool.h>
 #include <libguile/hooks.h>
-#include "type.h"
+#include "../type.h"
 #include "gig_argument.h"
 #include "gig_util.h"
 #include "gig_arg_map.h"

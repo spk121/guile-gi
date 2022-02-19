@@ -18,7 +18,7 @@
 
 #include <girepository.h>
 #include <libguile.h>
-#include "core.h"
+#include "../core.h"
 #include "gig_arg_map.h"
 
 #define S2C_ARG_DECL const char *subr, int argpos,    \

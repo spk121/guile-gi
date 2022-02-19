@@ -13,10 +13,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "core.h"
 #include <string.h>
 #include <stdio.h>
 #include <glib-object.h>
+#include "../core.h"
 #include "gig_argument.h"
 #include "gig_data_type.h"
 #include "gig_arg_map.h"

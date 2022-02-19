@@ -13,13 +13,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "core.h"
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
+#include "../core.h"
 #include "gig_arg_map.h"
 #include "gig_data_type.h"
-#include "gig_util.h"
+//#include "gig_util.h"
 
 #define gig_debug_amap(...) gig_debug_internal(LOG_LEVEL_DEBUG, "amap", __VA_ARGS__)
 

@@ -18,7 +18,7 @@
 
 #include <girepository.h>
 #include <libguile.h>
-#include "core.h"
+#include "../core.h"
 
 SCM gig_callback_to_scm(const char *name, GICallbackInfo *info, void *proc);
 void *gig_callback_to_c(const char *name, GICallbackInfo *callback_info, SCM s_func);
