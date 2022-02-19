@@ -22,7 +22,6 @@
 #include "gig_util.h"
 #include "gig_arg_map.h"
 #include "gig_function.h"
-#include "gig_function_private.h"
 
 typedef struct _GigFunction
 {

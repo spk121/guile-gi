@@ -1,0 +1,4 @@
+This folder contains the functions to define Guile wrappers to C
+functions.
+
+It is allowed to depend on src/core and src/type.

@@ -1738,8 +1738,3 @@ c_pointer_to_scm(C2S_ARG_DECL)
 }
 
 #define SCONSTX(NAME) scm_permanent_object(scm_c_define(#NAME, scm_from_int(NAME)))
-
-void
-gig_init_argument(void)
-{
-}

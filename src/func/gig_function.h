@@ -19,12 +19,15 @@
 #include <girepository.h>
 #include <libguile.h>
 #include "gig_arg_map.h"
+#include "gig_function_pub.h"
 
 typedef SCM (*GigGsubr)(void);
 
-SCM gig_function_define(GType type, GICallableInfo *info, const char *_namespace, SCM defs);
+extern SCM ensure_generic_proc;
+extern SCM top_type;
+extern SCM sym_self;
+
 SCM gig_callable_invoke(GICallableInfo *callable_info, void *callable, GigArgMap *amap,
                         const char *name, GObject *self, SCM args, GError **error);
-void gig_init_function(void);
 
 #endif

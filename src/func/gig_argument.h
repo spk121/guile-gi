@@ -37,6 +37,4 @@ char *gig_argument_describe_arg(GIArgInfo *arg_info);
 char *gig_argument_describe_return(GITypeInfo *type_info, GITransfer transfer, bool null_ok,
                                    bool skip);
 
-void gig_init_argument(void);
-
 #endif

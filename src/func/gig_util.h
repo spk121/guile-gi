@@ -17,8 +17,8 @@
 #define GIG_UTIL_H
 
 #include <girepository.h>
+#include "gig_util_pub.h"
 
-char *gig_callable_info_make_name(GICallableInfo *info, const char *prefix);
 const char *g_base_info_get_name_safe(GIBaseInfo *info);
 
 #endif
