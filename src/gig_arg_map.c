@@ -358,8 +358,9 @@ gig_amap_s_input_count(const GigArgMap *amap, int *required, int *optional)
     *optional = amap->s_input_opt;
 }
 
-__attribute__((pure))
-     GigArgMapEntry *gig_amap_get_input_entry_by_s(GigArgMap *amap, int spos)
+
+GigArgMapEntry *
+gig_amap_get_input_entry_by_s(GigArgMap *amap, int spos)
 {
     int i = 0;
 

@@ -70,8 +70,8 @@ keyval_add_entry(keyval_t *kv, uint64_t key, uint64_t val)
     }
 }
 
-__attribute__((pure))
-     uint64_t keyval_find_entry(keyval_t *kv, uint64_t key)
+uint64_t
+keyval_find_entry(keyval_t *kv, uint64_t key)
 {
     void *pB;
     keyval_item_t A;
@@ -86,8 +86,8 @@ __attribute__((pure))
 }
 
 
-__attribute__((pure))
-     int keyval_size(keyval_t *kv)
+int
+keyval_size(keyval_t *kv)
 {
     return kv->len;
 }

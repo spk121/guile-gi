@@ -80,7 +80,7 @@ struct _GigTypeMeta
 
 void gig_type_meta_init_from_arg_info(GigTypeMeta *type, GIArgInfo *ai);
 void gig_type_meta_init_from_callable_info(GigTypeMeta *type, GICallableInfo *ci);
-G_GNUC_PURE size_t gig_meta_real_item_size(const GigTypeMeta *meta);
+size_t gig_meta_real_item_size(const GigTypeMeta *meta);
 const char *gig_type_meta_describe(const GigTypeMeta *meta);
 void gig_data_type_free(GigTypeMeta *meta);
 void gig_init_data_type(void);

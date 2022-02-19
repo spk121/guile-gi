@@ -280,7 +280,7 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
     }
 }
 
-G_GNUC_PURE size_t
+size_t
 gig_meta_real_item_size(const GigTypeMeta *meta)
 {
     if (meta->gtype == G_TYPE_STRING || meta->gtype == G_TYPE_POINTER || meta->is_ptr)

@@ -20,7 +20,7 @@
 #include <girepository.h>
 #include <glib.h>
 
-G_GNUC_MALLOC char *gig_callable_info_make_name(GICallableInfo *info, const char *prefix);
+char *gig_callable_info_make_name(GICallableInfo *info, const char *prefix);
 const char *g_base_info_get_name_safe(GIBaseInfo *info);
 char *g_registered_type_info_get_qualified_name(GIRegisteredTypeInfo *info);
 

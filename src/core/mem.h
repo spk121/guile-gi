@@ -17,10 +17,9 @@
 #define X_UTIL_H
 
 #include <stddef.h>
-#define MALLOC __attribute__((malloc))
 
-MALLOC void *xcalloc(size_t nmemb, size_t siz);
-MALLOC void *xmalloc(size_t siz);
+void *xcalloc(size_t nmemb, size_t siz);
+void *xmalloc(size_t siz);
 char *xstrdup(const char *S);
 char *xstrndup(const char *S, size_t siz);
 void *xmemdup(const void *mem, size_t len);

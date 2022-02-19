@@ -30,15 +30,14 @@ extern SCM gig_closure_type;
 typedef void *(*GigTypeRefFunction)(void *);
 typedef void (*GigTypeUnrefFunction)(void *);
 
-G_GNUC_MALLOC char *gig_type_class_name_from_gtype(GType gtype);
+char *gig_type_class_name_from_gtype(GType gtype);
 
 void gig_type_register(GType gtype, SCM stype);
 SCM gig_type_define(GType gtype, SCM defs);
 SCM gig_type_define_full(GType gtype, SCM defs, SCM extra_supers);
 SCM gig_type_define_with_info(GIRegisteredTypeInfo *info, SCM supers, SCM slots);
-G_GNUC_INTERNAL void
-gig_type_define_fundamental(GType type, SCM extra_supers,
-                            GigTypeRefFunction ref, GigTypeUnrefFunction unref);
+void gig_type_define_fundamental(GType type, SCM extra_supers,
+                                 GigTypeRefFunction ref, GigTypeUnrefFunction unref);
 
 GType scm_to_gtype(SCM x);
 GType scm_to_gtype_full(SCM x, const char *subr, int argpos);
