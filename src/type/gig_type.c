@@ -20,7 +20,6 @@
 #include <girepository.h>
 #include <ffi.h>
 #include "gig_type.h"
-#include "gig_object.h"
 #include "gig_type_private.h"
 
 // In C, a GType is an integer.  It is an integer ID that maps to a

@@ -143,16 +143,21 @@ libguile_gi_la_internal_headers = \
   src/gig_argument.h \
   src/type/gig_closure.h \
   src/gig_data_type.h \
+  src/type/gig_object_pub.h \
   src/type/gig_object.h \
   src/type/gig_value.h \
+  src/type/gig_signal_pub.h \
   src/type/gig_signal.h \
   src/gig_arg_map.h \
   src/gig_callback.h \
   src/gig_function.h \
   src/gig_function_private.h \
   src/type/gig_constant.h \
+  src/type/gig_constant_pub.h \
+  src/type/gig_flag_pub.h \
   src/type/gig_flag.h \
   src/gig_repository.h \
+  src/type/gig_type_pub.h \
   src/type/gig_type.h \
   src/type/gig_type_private.h \
   src/gig_util.h \

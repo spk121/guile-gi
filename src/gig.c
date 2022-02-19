@@ -60,7 +60,6 @@ gig_init(void)
 #endif
     gig_debug("Begin libguile-gir initialization");
     gig_init_data_type();
-    gig_init_constant();
     gig_init_flag();
     gig_init_argument();
     gig_init_signal();

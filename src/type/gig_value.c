@@ -17,7 +17,6 @@
 #include <girepository.h>
 #include "gig_value.h"
 #include "gig_type.h"
-#include "gig_object.h"
 #include "gig_flag.h"
 
 #ifndef FLT_MAX

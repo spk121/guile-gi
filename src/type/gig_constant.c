@@ -89,8 +89,3 @@ gig_constant_define(GIConstantInfo *info, SCM defs)
     return scm_cons(scm_from_utf8_symbol(public_name), defs);
 }
 
-void
-gig_init_constant(void)
-{
-
-}

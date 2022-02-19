@@ -18,19 +18,9 @@
 
 #include <girepository.h>
 #include <libguile.h>
+#include "gig_flag_pub.h"
 
-int gig_enum_to_int(SCM _enum);
-unsigned gig_flags_to_uint(SCM _flags);
-SCM gig_int_to_enum(int value, GType type);
-SCM gig_uint_to_flags(unsigned value, GType type);
-SCM gig_int_to_enum_with_info(int val, GIEnumInfo *info);
-SCM gig_uint_to_flags_with_info(unsigned val, GIEnumInfo *info);
 SCM gig_symbol_to_enum(SCM type, SCM symbol);
 SCM gig_list_to_flags(SCM type, SCM symbol);
-
-SCM gig_define_enum_conversions(GIEnumInfo *info, GType type, SCM defs);
-SCM gig_define_enum(GIEnumInfo *info, SCM defs);
-
-void gig_init_flag(void);
 
 #endif

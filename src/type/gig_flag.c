@@ -15,9 +15,9 @@
 
 #include <inttypes.h>
 #include <libguile.h>
+#include "../core.h"
 #include "gig_flag.h"
 #include "gig_type.h"
-#include "gig_type_private.h"
 
 static SCM enum_to_number;
 static SCM flags_to_number;

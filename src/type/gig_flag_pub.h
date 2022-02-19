@@ -1,4 +1,4 @@
-// Copyright (C) 2019, 2020, 2022 Michael L. Gran
+// Copyright (C) 2018, 2019, 2022 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -13,32 +13,21 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef GIG_SIGNAL_H
-#define GIG_SIGNAL_H
+#ifndef GIG_FLAG_PUBLIC_H
+#define GIG_FLAG_PUBLIC_H
 
 #include <girepository.h>
 #include <libguile.h>
-#include "gig_signal_pub.h"
 
-typedef struct GigSignalSpec_
-{
-    char *signal_name;
-    GSignalFlags signal_flags;
-    GSignalAccumulator accumulator;
-    void *accu_data;
-    GType return_type;
-    unsigned n_params;
-    GType *param_types;
-} GigSignalSpec;
+SCM gig_define_enum(GIEnumInfo *info, SCM defs);
+SCM gig_define_enum_conversions(GIEnumInfo *info, GType type, SCM defs);
+int gig_enum_to_int(SCM _enum);
+unsigned gig_flags_to_uint(SCM _flags);
+SCM gig_int_to_enum(int value, GType type);
+SCM gig_int_to_enum_with_info(int val, GIEnumInfo *info);
+SCM gig_uint_to_flags(unsigned value, GType type);
+SCM gig_uint_to_flags_with_info(unsigned val, GIEnumInfo *info);
 
-extern SCM gig_signal_type;
-
-GigSignalSpec *gig_signalspec_from_obj(SCM obj);
-void gig_free_signalspec(GigSignalSpec *spec);
-
-SCM gig_signal_ref(SCM signal, GigSignalSlot slot);
-
-GClosure *gig_signal_closure_new(SCM instance, GType g_type, const char *signal_name,
-                                 SCM callback);
+void gig_init_flag(void);
 
 #endif

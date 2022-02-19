@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2022 Michael L. Gran
+// Copyright (C) 2022 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -13,9 +13,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef GIG_CONSTANT_H
-#define GIG_CONSTANT_H
+#ifndef GIG_OBJECT_PUBLIC_H
+#define GIG_OBJECT_PUBLIC_H
 
-#include "gig_constant_pub.h"
+#include <libguile.h>
+#include <girepository.h>
+#include "../core.h"
+
+SCM gig_property_define(GType type, GIPropertyInfo *info, const char *namespace, SCM defs);
+GIG_API void gig_init_object(void);
 
 #endif
