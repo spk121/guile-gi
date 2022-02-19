@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2019 Michael L. Gran
+// Copyright (C) 2018, 2019, 2022 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,6 +15,7 @@
 
 #include <libguile.h>
 #include <inttypes.h>
+#include "core.h"
 #include "gig_constant.h"
 #include "gig_util.h"
 

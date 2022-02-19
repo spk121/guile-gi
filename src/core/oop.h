@@ -1,5 +1,20 @@
-#ifndef GUILE_OOP_H
-#define GUILE_OOP_H
+// Copyright (C) 2022 Michael L. Gran
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+#ifndef CORE_OOP_H
+#define CORE_OOP_H
 
 #include <libguile.h>
 
@@ -33,4 +48,5 @@ SCM scm_set_class_unref_slot(SCM cls, SCM func);
 SCM scm_set_procedure_slot(SCM instance, SCM proc);
 
 void init_core_oop(void);
+
 #endif

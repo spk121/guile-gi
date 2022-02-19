@@ -1,13 +1,26 @@
-#ifndef _GIG_OBJECT_H_
-#define _GIG_OBJECT_H_
+// Copyright (C) 2022 Michael L. Gran
 
-#include "core.h"
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+#ifndef GIG_OBJECT_H
+#define GIG_OBJECT_H
+
 #include <libguile.h>
-#include <glib.h>
-#include <glib-object.h>
 #include <girepository.h>
+#include "core.h"
 
+SCM gig_property_define(GType type, GIPropertyInfo *info, const char *namespace, SCM defs);
 GIG_API void gig_init_object(void);
-SCM gig_property_define(GType type, GIPropertyInfo *info, const char *_namespace, SCM defs);
 
 #endif

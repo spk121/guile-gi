@@ -1,4 +1,4 @@
-// Copyright (C) 2019 Michael L. Gran
+// Copyright (C) 2019, 2022 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 
 #ifndef GIG_DATA_TYPE_H
 #define GIG_DATA_TYPE_H
-#include <glib.h>
+
 #include <girepository.h>
 
 #define GIG_ARRAY_SIZE_UNKNOWN ((size_t)-1)
@@ -30,8 +30,8 @@ typedef enum _GigPointerType
     GIG_DATA_CALLBACK
 } GigPointerType;
 
-typedef struct _GigTypeMeta GigTypeMeta;
-struct _GigTypeMeta
+typedef struct GigTypeMeta_ GigTypeMeta;
+struct GigTypeMeta_
 {
     GType gtype;
     uint16_t is_ptr:1;
@@ -72,7 +72,7 @@ struct _GigTypeMeta
     uint16_t n_params;
     union
     {
-        GigTypeMeta *params;
+        struct GigTypeMeta_ *params;
         GICallableInfo *callable_info;
         GIEnumInfo *enum_info;
     };

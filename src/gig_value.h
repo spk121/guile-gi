@@ -1,12 +1,10 @@
-#ifndef GIG_VALUE_H_
-#define GIG_VALUE_H_
+#ifndef GIG_VALUE_H
+#define GIG_VALUE_H
 
 #include <stdbool.h>
-#include "core.h"
-#include <glib.h>
 #include <libguile.h>
-#include <glib-object.h>
 #include <girepository.h>
+#include "core.h"
 
 SCM gig_value_c2g(GValue *val);
 SCM gig_value_to_scm_basic_type(const GValue *value, GType fundamental, bool *handled);

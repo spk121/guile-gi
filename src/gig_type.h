@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2019, 2020, 2021 Michael L. Gran
+// Copyright (C) 2018, 2019, 2020, 2021, 2022 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,9 +16,9 @@
 #ifndef GIG_TYPE_H
 #define GIG_TYPE_H
 
-#include "core.h"
 #include <stdbool.h>
 #include <girepository.h>
+#include "core.h"
 
 extern SCM gig_enum_type;
 extern SCM gig_flags_type;

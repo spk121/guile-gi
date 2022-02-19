@@ -12,8 +12,9 @@
 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-#ifndef GI_LOGGING_H
-#define GI_LOGGING_H
+
+#ifndef CORE_LOGGING_H
+#define CORE_LOGGING_H
 
 #include <assert.h>
 #include <stdio.h>

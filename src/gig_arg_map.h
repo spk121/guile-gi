@@ -1,4 +1,4 @@
-// Copyright (C) 2019 Michael L. Gran
+// Copyright (C) 2019, 2022 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -13,8 +13,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef GIG_AMAP_H
-#define GIG_AMAP_H
+#ifndef GIG_ARG_MAP_H
+#define GIG_ARG_MAP_H
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -153,4 +153,5 @@ bool gig_amap_output_s2c(const GigArgMap *amap, int s, int *c);
 
 bool gig_amap_child_i(const GigArgMap *amap, int i, int *ichild);
 bool gig_amap_return_child_i(const GigArgMap *amap, int *ichild);
+
 #endif

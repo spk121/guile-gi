@@ -1,4 +1,4 @@
-// Copyright (C) 2019, 2020 Michael L. Gran
+// Copyright (C) 2019, 2020, 2022 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,11 +15,9 @@
 #ifndef _GIG_TYPE_PRIVATE_H_
 #define _GIG_TYPE_PRIVATE_H_
 
-#include "core.h"
-#include <glib.h>
-#include <glib-object.h>
+#include <girepository.h>
 #include <ffi.h>
-#include <libguile.h>
+#include "core.h"
 
 typedef struct _GigBoxedFuncs
 {

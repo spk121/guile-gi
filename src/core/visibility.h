@@ -20,8 +20,8 @@
   <https://www.gnu.org/licenses/>.
 */
 
-#ifndef X_VISIBILITY_H
-#define X_VISIBILITY_H
+#ifndef CORE_VISIBILITY_H
+#define CORE_VISIBILITY_H
 
 #ifdef GIR_DLL
 

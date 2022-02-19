@@ -1,4 +1,4 @@
-// Copyright (C) 2019, 2020, 2021, 2022 Michael L. Gran
+// Copyright (C) 2022 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -13,8 +13,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef X_UTIL_H
-#define X_UTIL_H
+#ifndef CORE_MEM_H
+#define CORE_MEM_H
 
 #include <stddef.h>
 
@@ -23,4 +23,5 @@ void *xmalloc(size_t siz);
 char *xstrdup(const char *S);
 char *xstrndup(const char *S, size_t siz);
 void *xmemdup(const void *mem, size_t len);
+
 #endif

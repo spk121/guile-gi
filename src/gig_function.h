@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2019 Michael L. Gran
+// Copyright (C) 2018, 2019, 2022 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,7 +16,6 @@
 #ifndef GIG_FUNCTION_H
 #define GIG_FUNCTION_H
 
-#include <glib.h>
 #include <girepository.h>
 #include <libguile.h>
 #include "gig_arg_map.h"
