@@ -298,6 +298,12 @@ callback_binding_inner(struct callback_binding_args *args)
     return (void *)1;
 }
 
+inline static void *
+callback_binding_inner_v(void *args)
+{
+    return callback_binding_inner(args);
+}
+
 static void
 callback_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
 {
@@ -316,7 +322,7 @@ callback_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
     if (scm_is_true(scm_fluid_ref(gig_callback_thread_fluid)))
         callback_binding_inner(&args);
     else {
-        if (NULL == scm_with_guile(callback_binding_inner, &args))
+        if (NULL == scm_with_guile(callback_binding_inner_v, &args))
             scm_sad_quit();
     }
 }
@@ -367,6 +373,12 @@ c_callback_binding_inner(struct callback_binding_args *args)
     return (void *)1;
 }
 
+inline static void *
+c_callback_binding_inner_v(void *args)
+{
+    return c_callback_binding_inner(args);
+}
+
 static void
 c_callback_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
 {
@@ -385,7 +397,7 @@ c_callback_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
     if (scm_is_true(scm_fluid_ref(gig_callback_thread_fluid)))
         c_callback_binding_inner(&args);
     else {
-        if (NULL == scm_with_guile(c_callback_binding_inner, &args))
+        if (NULL == scm_with_guile(c_callback_binding_inner_v, &args))
             scm_sad_quit();
     }
 }
@@ -694,10 +706,16 @@ callback_free(GigCallback *gcb)
     free(gcb);
 }
 
+inline static void
+callback_free_v(void *gcb)
+{
+    callback_free(gcb);
+}
+
 static void
 gig_fini_callback(void)
 {
     gig_debug("Freeing callbacks");
-    slist_free(&callback_list, callback_free);
+    slist_free(&callback_list, callback_free_v);
     callback_list = NULL;
 }

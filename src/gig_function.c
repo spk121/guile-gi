@@ -212,7 +212,7 @@ check_gsubr_cache(GICallableInfo *function_info, SCM self_type, int *required_in
                   int *optional_input_count, SCM *formals, SCM *specializers)
 {
     // Check the cache to see if this function has already been created.
-    GigFunction *gfn = (GigFunction *)keyval_find_entry(function_cache, function_info);
+    GigFunction *gfn = (GigFunction *)keyval_find_entry(function_cache, (uintptr_t) function_info);
 
     if (gfn == NULL)
         return NULL;
@@ -371,7 +371,7 @@ create_gsubr(GIFunctionInfo *function_info, const char *name, SCM self_type,
                        "closure location preparation error #~A",
                        scm_list_1(scm_from_int(closure_ok)));
 
-    keyval_add_entry(function_cache, function_info, gfn);
+    keyval_add_entry(function_cache, (uintptr_t) function_info, (uintptr_t) gfn);
 
     return gfn->function_ptr;
 }
@@ -806,10 +806,17 @@ function_free(GigFunction *gfn)
     free(gfn);
 }
 
+inline static void
+function_free_v(uintptr_t gfn)
+{
+    function_free((GigFunction *)gfn);
+}
+
+
 static void
 gig_fini_function(void)
 {
     gig_debug("Freeing functions");
-    keyval_free(function_cache, NULL, function_free);
+    keyval_free(function_cache, NULL, function_free_v);
     function_cache = NULL;
 }

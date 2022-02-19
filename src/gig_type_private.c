@@ -61,8 +61,14 @@ _boxed_funcs_free(GigBoxedFuncs *funcs)
     free(funcs);
 }
 
+inline static void
+_boxed_funcs_free_v(void *funcs)
+{
+    _boxed_funcs_free(funcs);
+}
+
 void
 _free_boxed_funcs(void)
 {
-    slist_free(&_boxed_funcs, _boxed_funcs_free);
+    slist_free(&_boxed_funcs, _boxed_funcs_free_v);
 }
