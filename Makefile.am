@@ -109,6 +109,7 @@ libguile_gi_la_c_sources = \
   src/core/slist.c \
   src/core/string.c \
   src/core/strval.c \
+  src/func/gig_args_store.c \
   src/func/gig_argument.c \
   src/type/gig_closure.c \
   src/func/gig_data_type.c \
@@ -141,6 +142,7 @@ libguile_gi_la_internal_headers = \
   src/core/visibility.h \
   src/type.h \
   src/func.h \
+  src/func/gig_args_store.h \
   src/func/gig_argument.h \
   src/type/gig_closure.h \
   src/func/gig_data_type.h \
@@ -465,6 +467,7 @@ EXTRA_DIST = \
   build-aux/config.rpath \
   src/core/README \
   src/type/README \
+  src/func/README \
   docs/example-1.scm docs/gtk-3.scm docs/fdl-1.3.texi \
   docs/ex-date.scm docs/ex-gapplication.scm docs/ex-load-by-name.scm \
   docs/ex-button.scm \
