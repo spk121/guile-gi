@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2019, 2020 Michael L. Gran
+// Copyright (C) 2018, 2019, 2020, 2022 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -597,7 +597,7 @@ do_define_property(const char *public_name, SCM prop, SCM self_type, SCM value_t
     static SCM sym_self = SCM_BOOL_F;
     if (!scm_is_true(sym_self))
         sym_self = scm_from_utf8_symbol("self");
-    
+
     g_return_val_if_fail(public_name != NULL, SCM_UNDEFINED);
 
     SCM sym_public_name, formals, specializers, generic, proc, setter;

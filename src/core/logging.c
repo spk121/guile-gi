@@ -191,6 +191,7 @@ log_set_writer_func(LogWriterFunc func, void *_user_data, DestroyNotify _user_da
     log_writer_user_data_free = _user_data_free;
 }
 
+#if 0
 static LogWriterOutput
 log_writer_debug(LogLevelFlags log_level, const LogField *fields, size_t n_fields, void *user_data)
 {
@@ -226,6 +227,7 @@ log_writer_debug(LogLevelFlags log_level, const LogField *fields, size_t n_field
 
     return LOG_WRITER_HANDLED;
 }
+#endif
 
 static void
 log_structured_array(LogLevelFlags log_level, const LogField *fields, size_t n_fields)

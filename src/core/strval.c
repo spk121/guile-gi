@@ -1,3 +1,18 @@
+// Copyright (C) 2022 Michael L. Gran
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 #define _XOPEN_SOURCE 700       /* For strdup, strndup */
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,7 +40,7 @@ strval_new()
 void
 strval_free(strval_t *sv, void (*valfree)(uint64_t val))
 {
-    for(int i = 0; i < sv->len; i++) {
+    for (int i = 0; i < sv->len; i++) {
         free(sv->entries[i].key);
         if (valfree)
             valfree(sv->entries[i].val);

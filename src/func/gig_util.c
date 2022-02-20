@@ -1,4 +1,4 @@
-// Copyright (C) 2019, 2020, 2021 Michael L. Gran
+// Copyright (C) 2019, 2020, 2021, 2022 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
