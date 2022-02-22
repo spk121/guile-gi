@@ -50,7 +50,7 @@ struct GigTypeMeta_
 
     // Error status
     uint16_t is_invalid:1;      // True when one of the arguments has invalid type
-    uint16_t is_raw_array:1;
+    uint16_t unused:1;          // was uint16_t is_raw_array:1;
     uint16_t is_zero_terminated:1;
     uint16_t has_size:1;
     uint16_t is_unichar:1;

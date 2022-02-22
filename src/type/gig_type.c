@@ -68,6 +68,7 @@
  *
  */
 
+GType gig_type_c_array = G_TYPE_INVALID;
 // Maps GType to SCM
 static keyval_t *gtype_scm_store = NULL;
 // Maps string to SCM
@@ -948,6 +949,11 @@ static void
 gig_init_types_once(void)
 {
     init_core_oop();
+
+    gig_type_c_array = g_type_register_static_simple(G_TYPE_POINTER, "GigCArray", 0,    /* class size */
+                                                     NULL,      /* class init func */
+                                                     0, NULL, G_TYPE_FLAG_FINAL);
+
     gig_fundamental_type = scm_c_private_ref("gi oop", "<GFundamental>");
     gig_boxed_type = scm_c_private_ref("gi oop", "<GBoxed>");
     gig_enum_type = scm_c_private_ref("gi oop", "<GEnum>");
@@ -1051,6 +1057,7 @@ gig_init_types_once(void)
     D(G_TYPE_OBJECT);
     D(G_TYPE_STRING);
     D(G_TYPE_POINTER);
+    D(G_TYPE_PRIV_C_ARRAY);
 #undef D
 
     type_less_p_proc = scm_c_make_gsubr("type-<?", 2, 0, 0, type_less_p);

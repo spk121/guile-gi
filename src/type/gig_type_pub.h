@@ -20,6 +20,8 @@
 #include <girepository.h>
 #include "../core.h"
 
+extern GType gig_type_c_array;
+#define G_TYPE_PRIV_C_ARRAY (gig_type_c_array)
 typedef void *(*GigTypeRefFunction)(void *);
 typedef void (*GigTypeUnrefFunction)(void *);
 

@@ -63,7 +63,8 @@ static SCM proc4signal(GISignalInfo *info, const char *name, SCM self_type,
                        int *req, int *opt, SCM *formals, SCM *specs);
 
 // Returns a list of GTypes that used by this function call
-GType *gig_function_get_arg_gtypes(GICallableInfo *info, size_t *len)
+GType *
+gig_function_get_arg_gtypes(GICallableInfo *info, size_t *len)
 {
     // FIXME: should reuse this amap
     GigArgMap *amap;

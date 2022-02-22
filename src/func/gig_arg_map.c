@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "../core.h"
+#include "../type.h"
 #include "gig_arg_map.h"
 #include "gig_data_type.h"
 //#include "gig_util.h"
@@ -123,7 +124,7 @@ arg_map_apply_function_info(GigArgMap *amap, GIFunctionInfo *func_info)
 static void
 arg_map_determine_array_length_index(GigArgMap *amap, GigArgMapEntry *entry, GITypeInfo *info)
 {
-    if (entry->meta.gtype == G_TYPE_ARRAY && entry->meta.has_size) {
+    if (entry->meta.gtype == G_TYPE_PRIV_C_ARRAY && entry->meta.has_size) {
         int idx = g_type_info_get_array_length(info);
 
         assert(idx >= 0);
@@ -748,7 +749,8 @@ gig_amap_return_child_i(const GigArgMap *am, int *ichild)
 }
 
 // Returns a list of all the GTypes in the arg map
-GType *gig_amap_get_gtype_list(GigArgMap *amap, size_t *len)
+GType *
+gig_amap_get_gtype_list(GigArgMap *amap, size_t *len)
 {
     size_t n = 0;
     GType *types = xcalloc((1 + amap->len) * 3, sizeof(GType));

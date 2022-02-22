@@ -477,6 +477,8 @@ scm_to_c_pointer(S2C_ARG_DECL)
     TRACE_S2C();
     if (scm_is_false(object) && meta->is_nullable)
         arg->v_pointer = NULL;
+    else if (meta->gtype == G_TYPE_PRIV_C_ARRAY)
+        scm_to_c_native_array(S2C_ARGS);
     else if (meta->pointer_type == GIG_DATA_CALLBACK) {
         if (scm_is_procedure(object))
             arg->v_pointer = gig_callback_to_c(subr, meta->callable_info, object);
@@ -501,8 +503,6 @@ scm_to_c_boxed(S2C_ARG_DECL)
     if (meta->is_nullable && scm_is_false(object)) {
         arg->v_pointer = NULL;
     }
-    else if (meta->is_raw_array)
-        scm_to_c_native_array(S2C_ARGS);
     else if (t == G_TYPE_ARRAY)
         scm_to_c_garray(S2C_ARGS);
     else if (t == G_TYPE_BYTE_ARRAY)
@@ -684,7 +684,7 @@ scm_to_c_ptr_array(S2C_ARG_DECL)
     GIArgument _arg;
     GigTypeMeta _meta = *meta;
 
-    _meta.is_raw_array = true;
+    _meta.gtype = G_TYPE_PRIV_C_ARRAY;
 
     // Make a C array from this SCM.
     gig_argument_scm_to_c(subr, argpos, &_meta, object, NULL, &_arg, size);
@@ -940,7 +940,7 @@ scm_to_c_native_gtype_array(S2C_ARG_DECL)
     *size = scm_c_vector_length(object);
     if (meta->is_zero_terminated) {
         arg->v_pointer = malloc(sizeof(GType) * (*size + 1));
-        ((GType *) arg->v_pointer)[*size] = 0;
+        ((GType *)arg->v_pointer)[*size] = 0;
         LATER_FREE(arg->v_pointer);
     }
     else {
@@ -948,7 +948,7 @@ scm_to_c_native_gtype_array(S2C_ARG_DECL)
         LATER_FREE(arg->v_pointer);
     }
     for (size_t i = 0; i < *size; i++)
-        ((GType *) (arg->v_pointer))[i] = scm_to_gtype(scm_c_vector_ref(object, i));
+        ((GType *)(arg->v_pointer))[i] = scm_to_gtype(scm_c_vector_ref(object, i));
 }
 
 static void
@@ -958,7 +958,7 @@ scm_to_c_garray(S2C_ARG_DECL)
     GIArgument _arg;
     GigTypeMeta _meta = *meta;
 
-    _meta.is_raw_array = true;
+    _meta.gtype = G_TYPE_PRIV_C_ARRAY;
     // The GArray is going to take ownership of the array contents
     _meta.transfer = GI_TRANSFER_EVERYTHING;
 
@@ -1275,15 +1275,8 @@ c_boxed_to_scm(C2S_ARG_DECL)
     TRACE_C2S();
     if (meta->gtype == G_TYPE_BYTE_ARRAY)
         c_byte_array_to_scm(C2S_ARGS);
-    else if (meta->gtype == G_TYPE_ARRAY) {
-        if (meta->is_raw_array) {
-            if (meta->has_size)
-                meta->length = size;
-            c_native_array_to_scm(C2S_ARGS);
-        }
-        else
-            c_garray_to_scm(C2S_ARGS);
-    }
+    else if (meta->gtype == G_TYPE_ARRAY)
+        c_garray_to_scm(C2S_ARGS);
     else if (meta->gtype == G_TYPE_PTR_ARRAY)
         c_gptrarray_to_scm(C2S_ARGS);
     else if (meta->gtype == G_TYPE_HASH_TABLE)
@@ -1626,7 +1619,7 @@ c_garray_to_scm(C2S_ARG_DECL)
     GIArgument _arg;
     GArray *array = arg->v_pointer;
     _arg.v_pointer = array->data;
-    _meta.is_raw_array = true;
+    _meta.gtype = G_TYPE_PRIV_C_ARRAY;
     _meta.length = array->len;
     // The GArray retains ownership of the conents.
     _meta.transfer = GI_TRANSFER_NOTHING;
@@ -1653,7 +1646,7 @@ c_gptrarray_to_scm(C2S_ARG_DECL)
     GigTypeMeta _meta = *meta;
     GIArgument _arg;
     GPtrArray *array = arg->v_pointer;
-    _meta.is_raw_array = true;
+    _meta.gtype = G_TYPE_PRIV_C_ARRAY;
     _meta.length = array->len;
 
     // Transfer the contents out of the GPtrArray into a
@@ -1726,7 +1719,12 @@ static void
 c_pointer_to_scm(C2S_ARG_DECL)
 {
     TRACE_C2S();
-    if (meta->gtype == G_TYPE_GTYPE)
+    if (meta->gtype == G_TYPE_PRIV_C_ARRAY) {
+        if (meta->has_size)
+            meta->length = size;
+        c_native_array_to_scm(C2S_ARGS);
+    }
+    else if (meta->gtype == G_TYPE_GTYPE)
         *object = scm_from_gtype(arg->v_size);
     else if (meta->pointer_type == GIG_DATA_CALLBACK) {
         void *cb = meta->is_ptr ? *(void **)arg->v_pointer : arg->v_pointer;

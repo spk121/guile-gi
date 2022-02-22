@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <glib-object.h>
 #include "../core.h"
+#include "../type.h"
 #include "gig_argument.h"
 #include "gig_data_type.h"
 #include "gig_arg_map.h"
@@ -162,8 +163,7 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
         add_child_params(meta, type_info, 1);
 
         if (array_type == GI_ARRAY_TYPE_C) {
-            meta->gtype = G_TYPE_ARRAY;
-            meta->is_raw_array = true;
+            meta->gtype = G_TYPE_PRIV_C_ARRAY;
             meta->length = GIG_ARRAY_SIZE_UNKNOWN;
 
             if ((len = g_type_info_get_array_length(type_info)) != -1)
@@ -175,8 +175,9 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
                 meta->is_zero_terminated = true;
 
             if (len == -1 && !meta->is_zero_terminated) {
-                gig_warning("no way of determining array size of %s, coercing to pointer",
-                            g_type_name(meta->gtype));
+                gig_debug_load
+                    ("no way of determining array size of C array %s of %s, coercing to pointer",
+                     g_base_info_get_namespace(type_info), g_type_name(meta->params[0].gtype));
                 meta->gtype = G_TYPE_POINTER;
             }
         }
