@@ -374,6 +374,8 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
             if (info != NULL) {
                 if (GI_IS_STRUCT_INFO(info))
                     size = g_struct_info_get_size((GIStructInfo *) info);
+                if (GI_IS_UNION_INFO(info))
+                    size = g_union_info_get_size((GIStructInfo *) info);
                 g_base_info_unref(info);
             }
 

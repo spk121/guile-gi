@@ -186,10 +186,6 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
             break;
         }
         defs = gig_type_define(gtype, defs);
-        if (g_struct_info_get_size(info) > 0) {
-            GQuark size_quark = g_quark_from_string("size");
-            g_type_set_qdata(gtype, size_quark, GSIZE_TO_POINTER(g_struct_info_get_size(info)));
-        }
         goto recursion;
     }
     case GI_INFO_TYPE_ENUM:
@@ -251,10 +247,6 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
             break;
         }
         defs = gig_type_define(gtype, defs);
-        if (g_union_info_get_size(info) > 0) {
-            GQuark size_quark = g_quark_from_string("size");
-            g_type_set_qdata(gtype, size_quark, GSIZE_TO_POINTER(g_union_info_get_size(info)));
-        }
         goto recursion;
     }
     case GI_INFO_TYPE_VALUE:
