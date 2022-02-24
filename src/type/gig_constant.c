@@ -19,8 +19,9 @@
 #include "gig_constant.h"
 
 SCM
-gig_constant_define(GIConstantInfo *info, SCM defs)
+gig_constant_define(GIConstantInfo *info)
 {
+    SCM defs = SCM_EOL;
     const char *public_name = g_base_info_get_name(info);
 
     GITypeInfo *typeinfo;

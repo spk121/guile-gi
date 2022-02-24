@@ -79,6 +79,15 @@ scm_is_real(SCM x)
     return scm_is_true(scm_real_p(x));
 }
 
+SCM scm_append2(SCM a, SCM b)
+{
+    if (scm_is_null(a))
+        return b;
+    if (scm_is_null(b))
+        return a;
+    return scm_append(scm_list_2(a, b));
+}
+
 size_t
 scm_c_length(SCM x)
 {

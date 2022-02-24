@@ -19,7 +19,7 @@
 #include <girepository.h>
 #include <libguile.h>
 
-SCM gig_function_define(GType type, GICallableInfo *info, const char *_namespace, SCM defs);
+SCM gig_function_define(GType type, GICallableInfo *info, const char *_namespace);
 
 void gig_init_function(void);
 

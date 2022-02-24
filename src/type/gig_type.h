@@ -31,7 +31,7 @@ extern SCM gig_closure_type;
 char *gig_type_class_name_from_gtype(GType gtype);
 
 void gig_type_register(GType gtype, SCM stype);
-SCM gig_type_define_full(GType gtype, SCM defs, SCM extra_supers);
+SCM gig_type_define_full(GType gtype, SCM extra_supers);
 
 GType gig_type_get_gtype_from_obj(SCM x);
 SCM gig_type_get_scheme_type_with_info(GIRegisteredTypeInfo *info);

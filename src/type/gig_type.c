@@ -101,10 +101,10 @@ static SCM _gig_type_check_scheme_type(scm_t_bits _stype);
 // this makes a new Guile foreign object type and it stores the type
 // in our hash table of known types.
 SCM
-gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
+gig_type_define_full(GType gtype, SCM extra_supers)
 {
     assert(GSIZE_TO_POINTER(gtype) != NULL);
-
+    SCM defs = SCM_EOL;
     scm_t_bits orig_value;
     GType parent = g_type_parent(gtype);
     GType fundamental = G_TYPE_FUNDAMENTAL(gtype);
@@ -122,7 +122,7 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
                               g_type_name(gtype), reserved);
 
         if (parent != G_TYPE_INVALID)
-            gig_type_define(parent, defs);
+            defs = scm_append2(defs, gig_type_define(parent));
 
         SCM new_type = make_type_with_gtype(gtype, extra_supers);
 
@@ -159,18 +159,19 @@ gig_type_define_full(GType gtype, SCM defs, SCM extra_supers)
 }
 
 SCM
-gig_type_define(GType gtype, SCM defs)
+gig_type_define(GType gtype)
 {
-    return gig_type_define_full(gtype, defs, SCM_EOL);
+    return gig_type_define_full(gtype, SCM_EOL);
 }
 
 SCM
-gig_type_define_with_info(GIRegisteredTypeInfo *info, SCM slots, SCM defs)
+gig_type_define_with_info(GIRegisteredTypeInfo *info, SCM slots)
 {
+    SCM defs = SCM_EOL;
     if (g_registered_type_info_get_g_type(info) != G_TYPE_NONE) {
         gig_critical("gig_type_define_with_info used when GType was available, "
                      "use gig_type_define or gig_type_define_full instead.");
-        return SCM_UNDEFINED;
+        return SCM_EOL;
     }
 
     SCM existing = gig_type_get_scheme_type_with_info(info);
@@ -525,7 +526,7 @@ gig_type_get_scheme_type(GType gtype)
     if (_value)
         return _gig_type_check_scheme_type(_value);
     else {
-        gig_type_define(gtype, SCM_UNDEFINED);
+        gig_type_define(gtype);
         _value = keyval_find_entry(gtype_scm_store, gtype);
         return _gig_type_check_scheme_type(_value);
     }
@@ -990,11 +991,11 @@ gig_init_types_once(void)
 
     // derived types
 
-    gig_type_define(GI_TYPE_BASE_INFO, SCM_EOL);
+    gig_type_define(GI_TYPE_BASE_INFO);
 
-    gig_type_define_full(G_TYPE_VALUE, SCM_EOL, scm_list_1(getter_with_setter));
+    gig_type_define_full(G_TYPE_VALUE, scm_list_1(getter_with_setter));
     gig_value_type = gig_type_get_scheme_type(G_TYPE_VALUE);
-    gig_type_define_full(G_TYPE_CLOSURE, SCM_EOL, scm_list_1(scm_get_applicable_struct_class()));
+    gig_type_define_full(G_TYPE_CLOSURE, scm_list_1(scm_get_applicable_struct_class()));
     gig_closure_type = gig_type_get_scheme_type(G_TYPE_CLOSURE);
 
     scm_set_class_size_slot(gig_value_type, scm_from_size_t(sizeof(GValue)));

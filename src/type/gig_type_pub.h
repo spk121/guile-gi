@@ -23,10 +23,10 @@
 typedef void *(*GigTypeRefFunction)(void *);
 typedef void (*GigTypeUnrefFunction)(void *);
 
-SCM gig_type_define(GType gtype, SCM defs);
+SCM gig_type_define(GType gtype);
 void gig_type_define_fundamental(GType type, SCM extra_supers,
                                  GigTypeRefFunction ref, GigTypeUnrefFunction unref);
-SCM gig_type_define_with_info(GIRegisteredTypeInfo *info, SCM slots, SCM defs);
+SCM gig_type_define_with_info(GIRegisteredTypeInfo *info, SCM slots);
 SCM gig_type_get_scheme_type(GType gtype);
 void *gig_type_peek_object(SCM obj);
 bool gig_type_check_typed_object(SCM obj, SCM expected_type);

@@ -19,6 +19,6 @@
 #include <girepository.h>
 #include <libguile.h>
 
-SCM gig_constant_define(GIConstantInfo *info, SCM defs);
+SCM gig_constant_define(GIConstantInfo *info);
 
 #endif

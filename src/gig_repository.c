@@ -143,8 +143,9 @@ gig_repository_nested_infos(GIBaseInfo *base,
 }
 
 static SCM
-load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
+load_info(GIBaseInfo *info, LoadFlags flags)
 {
+    SCM defs = SCM_EOL;
     g_return_val_if_fail(info != NULL, defs);
 
     GIBaseInfo *parent = g_base_info_get_container(info);
@@ -161,10 +162,10 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
         break;
     case GI_INFO_TYPE_FUNCTION:
     case GI_INFO_TYPE_SIGNAL:
-        defs = gig_function_define(parent_gtype, info, parent_name, defs);
+        defs = scm_append2(defs, gig_function_define(parent_gtype, info, parent_name));
         break;
     case GI_INFO_TYPE_PROPERTY:
-        defs = gig_property_define(parent_gtype, info, parent_name, defs);
+        defs = scm_append2(defs, gig_property_define(parent_gtype, info, parent_name));
         break;
     case GI_INFO_TYPE_BOXED:
     {
@@ -174,7 +175,7 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
                            g_base_info_get_name(info));
             break;
         }
-        defs = gig_type_define(gtype, defs);
+        defs = scm_append2(defs, gig_type_define(gtype));
         goto recursion;
     }
     case GI_INFO_TYPE_STRUCT:
@@ -185,7 +186,7 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
                            g_base_info_get_name(info));
             break;
         }
-        defs = gig_type_define(gtype, defs);
+        defs = scm_append2(defs, gig_type_define(gtype));
         goto recursion;
     }
     case GI_INFO_TYPE_ENUM:
@@ -193,10 +194,10 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
     {
         GType gtype = g_registered_type_info_get_g_type(info);
         if (gtype == G_TYPE_NONE)
-            defs = gig_type_define_with_info(info, SCM_EOL, defs);
+            defs = scm_append2(defs, gig_type_define_with_info(info, SCM_EOL));
         else
-            defs = gig_type_define(gtype, defs);
-        defs = gig_define_enum_conversions(info, gtype, defs);
+            defs = scm_append2(defs, gig_type_define(gtype));
+        defs = scm_append2(defs, gig_define_enum_conversions(info, gtype));
         goto recursion;
     }
     case GI_INFO_TYPE_OBJECT:
@@ -221,7 +222,7 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
             gig_debug_load("%s:%s - has no parent", _namespace, g_type_name(gtype));
             gig_type_define_fundamental(gtype, SCM_EOL, g_object_ref_sink, g_object_unref);
         }
-        defs = gig_type_define(gtype, defs);
+        defs = scm_append2(defs, gig_type_define(gtype));
         goto recursion;
     }
     case GI_INFO_TYPE_INTERFACE:
@@ -232,11 +233,11 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
                            g_base_info_get_name(info));
             break;
         }
-        defs = gig_type_define(gtype, defs);
+        defs = scm_append2(defs, gig_type_define(gtype));
         goto recursion;
     }
     case GI_INFO_TYPE_CONSTANT:
-        defs = gig_constant_define(info, defs);
+        defs = scm_append2(defs, gig_constant_define(info));
         break;
     case GI_INFO_TYPE_UNION:
     {
@@ -246,7 +247,7 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
                            g_base_info_get_name(info));
             break;
         }
-        defs = gig_type_define(gtype, defs);
+        defs = scm_append2(defs, gig_type_define(gtype));
         goto recursion;
     }
     case GI_INFO_TYPE_VALUE:
@@ -282,7 +283,7 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
             if (flags & F)                                      \
                 for (int i = 0; i < N; i++) {                  \
                     GIBaseInfo *nested_info = I(info, i);       \
-                    defs = load_info(nested_info, flags, defs); \
+                    defs = scm_append2(defs, load_info(nested_info, flags)); \
                     g_base_info_unref(nested_info);             \
                 }                                               \
         } while (0)
@@ -317,7 +318,7 @@ load(SCM info, SCM flags)
 
     GIBaseInfo *base_info = (GIBaseInfo *)gig_type_peek_object(info);
 
-    return load_info(base_info, load_flags, SCM_EOL);
+    return load_info(base_info, load_flags);
 }
 
 static SCM

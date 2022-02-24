@@ -29,6 +29,7 @@ int scm_is_pointer(SCM x);
 int scm_is_procedure(SCM x);
 int scm_is_real(SCM x);
 
+SCM scm_append2(SCM a, SCM b);
 size_t scm_c_length(SCM x);
 SCM scm_c_list_ref(SCM lst, size_t i);
 void scm_c_activate_hook_2(SCM hook, SCM a, SCM b);

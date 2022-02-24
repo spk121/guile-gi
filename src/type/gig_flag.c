@@ -108,8 +108,9 @@ define_conversion(const char *fmt, const char *name, SCM proc)
 }
 
 SCM
-gig_define_enum_conversions(GIEnumInfo *info, GType type, SCM defs)
+gig_define_enum_conversions(GIEnumInfo *info, GType type)
 {
+    SCM defs = SCM_EOL;
     SCM _class;
     scm_dynwind_begin(0);
     char *cls = make_scm_name(g_base_info_get_name(info));
@@ -147,3 +148,4 @@ gig_define_enum_conversions(GIEnumInfo *info, GType type, SCM defs)
 
     return defs;
 }
+

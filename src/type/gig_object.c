@@ -406,7 +406,7 @@ gig_i_scm_define_type(SCM s_type_name, SCM s_parent_type, SCM s_properties, SCM 
         gig_user_object_define(type_name, parent_type, n_properties, properties, n_signals,
                                signals);
     free(type_name);
-    gig_type_define(new_type, SCM_UNDEFINED);
+    gig_type_define(new_type);
     return gig_type_get_scheme_type(new_type);
 }
 
@@ -544,10 +544,11 @@ static SCM sym_value;
 static SCM do_define_property(const char *, SCM, SCM, SCM);
 
 SCM
-gig_property_define(GType type, GIPropertyInfo *info, const char *_namespace, SCM defs)
+gig_property_define(GType type, GIPropertyInfo *info, const char *_namespace)
 {
     GParamSpec *prop = NULL;
     SCM s_prop, def;
+    SCM defs = SCM_EOL;
 
     const char *name = g_base_info_get_name(info);
     char *long_name;

@@ -63,10 +63,11 @@ static SCM proc4signal(GISignalInfo *info, const char *name, SCM self_type,
                        int *req, int *opt, SCM *formals, SCM *specs);
 
 SCM
-gig_function_define(GType type, GICallableInfo *info, const char *_namespace, SCM defs)
+gig_function_define(GType type, GICallableInfo *info, const char *_namespace)
 {
     scm_dynwind_begin(0);
     SCM def;
+    SCM defs = SCM_EOL;
     bool is_method = g_callable_info_is_method(info);
 
     char *function_name = NULL;
@@ -84,7 +85,7 @@ gig_function_define(GType type, GICallableInfo *info, const char *_namespace, SC
 
     if (is_method) {
         self_type = gig_type_get_scheme_type(type);
-        g_return_val_if_fail(!SCM_UNBNDP(self_type), defs);
+        g_return_val_if_fail(!SCM_UNBNDP(self_type), SCM_EOL);
         method_name = scm_dynfree(gig_callable_info_make_name(info, NULL));
         gig_debug_load("%s - shorthand for %s", method_name, function_name);
     }
