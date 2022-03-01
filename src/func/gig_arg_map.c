@@ -318,7 +318,7 @@ gig_amap_dump(const char *name, const GigArgMap *amap)
         if (entry->is_s_input)
             len += snprintf(s + len, 20, ", SCM input %d", entry->s_input_pos);
         if (entry->is_s_output)
-            len += snprintf(s + len, 20, ", S output %d", entry->c_output_pos);
+            len += snprintf(s + len, 20, ", SCM output %d", entry->s_output_pos);
         gig_debug_amap("%s", s);
         s[0] = '\0';
 
@@ -745,4 +745,22 @@ gig_amap_return_child_i(const GigArgMap *am, int *ichild)
         return false;
     *ichild = am->return_val.child->i;
     return true;
+}
+
+// Returns a list of all the GTypes in the arg map
+GType *gig_amap_get_gtype_list(GigArgMap *amap, size_t *len)
+{
+    size_t n = 0;
+    GType *types = xcalloc((1 + amap->len) * 3, sizeof(GType));
+
+    types[n++] = amap->return_val.meta.gtype;
+    for (size_t i = 0; i < amap->return_val.meta.n_params; i++)
+        types[n++] = amap->return_val.meta.params[i].gtype;
+    for (int j = 0; j < amap->len; j++) {
+        types[n++] = amap->pdata[j].meta.gtype;
+        for (size_t i = 0; i < amap->pdata[j].meta.n_params; i++)
+            types[n++] = amap->pdata[j].meta.params[i].gtype;
+    }
+    *len = n;
+    return types;
 }

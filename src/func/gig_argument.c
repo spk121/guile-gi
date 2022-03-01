@@ -1297,7 +1297,13 @@ c_interface_to_scm(C2S_ARG_DECL)
 {
     TRACE_C2S();
 
-    *object = gig_type_transfer_object(child_type(meta, arg), arg->v_pointer, meta->transfer);
+    // If the argument has a more specialized type than the function
+    // argument required, try to keep that more specialized type.
+    GType orig_type = child_type(meta, arg);
+    if(!gig_type_is_registered(orig_type))
+        gig_type_define(orig_type);
+    
+    *object = gig_type_transfer_object(orig_type, arg->v_pointer, meta->transfer);
 }
 
 static void

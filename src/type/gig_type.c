@@ -403,7 +403,7 @@ make_type_with_info(GIRegisteredTypeInfo *info, SCM slots)
 ////////////////////////////////////////////////////////////////
 
 // Returns TRUE if TYPE is contained in the hash table of known types.
-static bool
+bool
 gig_type_is_registered(GType gtype)
 {
     scm_t_bits x;

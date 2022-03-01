@@ -95,6 +95,7 @@
 -T GQuark
 -T GSignalQuery
 -T GString
+-T GType
 -T GTypeInstance
 -T GValue
 

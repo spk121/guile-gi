@@ -44,6 +44,12 @@ scm_is_class(SCM x)
 }
 
 int
+scm_is_defined(SCM x)
+{
+    return scm_is_true(scm_defined_p(x, scm_current_module()));
+}
+
+int
 scm_is_empty_hook(SCM x)
 {
     return scm_is_true(scm_hook_empty_p(x));

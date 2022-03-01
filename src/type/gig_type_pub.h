@@ -23,6 +23,8 @@
 typedef void *(*GigTypeRefFunction)(void *);
 typedef void (*GigTypeUnrefFunction)(void *);
 
+bool gig_type_is_registered(GType gtype);
+
 SCM gig_type_define(GType gtype);
 void gig_type_define_fundamental(GType type, SCM extra_supers,
                                  GigTypeRefFunction ref, GigTypeUnrefFunction unref);

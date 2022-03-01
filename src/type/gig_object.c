@@ -573,7 +573,10 @@ gig_property_define(GType type, GIPropertyInfo *info, const char *_namespace)
         gig_critical_load("%s is neither class nor interface, but we define properties, wtf?",
                           g_type_name(type));
     if (prop != NULL) {
-        s_prop = gig_type_transfer_object(G_PARAM_SPEC_TYPE(prop), prop, GI_TRANSFER_NOTHING);
+        GType prop_type = G_PARAM_SPEC_TYPE(prop);
+        if (!gig_type_is_registered(prop_type))
+            defs = scm_append2(defs, gig_type_define(prop_type));
+        s_prop = gig_type_transfer_object(prop_type, prop, GI_TRANSFER_NOTHING);
 
         SCM top_type = scm_get_top_class();
         def = do_define_property(long_name, s_prop, self_type, top_type);

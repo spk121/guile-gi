@@ -62,6 +62,22 @@ static SCM proc4function(GIFunctionInfo *info, const char *name, SCM self_type,
 static SCM proc4signal(GISignalInfo *info, const char *name, SCM self_type,
                        int *req, int *opt, SCM *formals, SCM *specs);
 
+// Returns a list of GTypes that used by this function call
+GType *gig_function_get_arg_gtypes(GICallableInfo *info, size_t *len)
+{
+    // FIXME: should reuse this amap
+    GigArgMap *amap;
+    GType *types;
+
+    amap = gig_amap_new(g_base_info_get_name(info), info);
+    *len = 0;
+    if (amap == NULL)
+        return NULL;
+    types = gig_amap_get_gtype_list(amap, len);
+    gig_amap_free(amap);
+    return types;
+}
+
 SCM
 gig_function_define(GType type, GICallableInfo *info, const char *_namespace)
 {
@@ -79,7 +95,7 @@ gig_function_define(GType type, GICallableInfo *info, const char *_namespace)
 
     gig_debug_load("%s - bound to %s %s%s%s",
                    function_name,
-                   (GI_IS_SIGNAL_INFO(info) ? "signal" : "function"),
+                   (GI_IS_SIGNAL_INFO(info) ? "signal" : (is_method ? "method" : "function")),
                    (_namespace ? _namespace : ""), (_namespace ? "." : ""),
                    g_base_info_get_name(info));
 

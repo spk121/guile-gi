@@ -77,6 +77,7 @@ void log_structured(const char *log_domain, LogLevelFlags log_level, ...);
 #define gig_debug_load(...) gig_debug_internal(LOG_LEVEL_DEBUG, "load", __VA_ARGS__)
 #define gig_warning_load(...) gig_debug_internal(LOG_LEVEL_WARNING, "load", __VA_ARGS__)
 #define gig_critical_load(...) gig_debug_internal(LOG_LEVEL_CRITICAL, "load", __VA_ARGS__)
+#define gig_error_load(...) gig_debug_internal(LOG_LEVEL_ERROR, "load", __VA_ARGS__)
 #define gig_debug(...) gig_debug_internal(LOG_LEVEL_DEBUG, "general", __VA_ARGS__)
 #define gig_warning(...) gig_debug_internal(LOG_LEVEL_WARNING, "general", __VA_ARGS__)
 #define gig_critical(...) gig_debug_internal(LOG_LEVEL_CRITICAL, "general", __VA_ARGS__)

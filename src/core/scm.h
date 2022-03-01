@@ -22,6 +22,7 @@ int scm_is_boolean(SCM x);
 int scm_is_bytevector(SCM x);
 int scm_is_char(SCM x);
 int scm_is_class(SCM x);
+int scm_is_defined(SCM x);
 int scm_is_empty_hook(SCM x);
 int scm_is_keyword(SCM x);
 int scm_is_list(SCM x);

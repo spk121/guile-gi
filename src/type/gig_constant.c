@@ -80,7 +80,8 @@ gig_constant_define(GIConstantInfo *info)
         ret = scm_from_utf8_string(value.v_string);
         break;
     default:
-        gig_critical_load("%s - unsupported type %d", public_name, typetag);
+        gig_critical_load("%s - unsupported constant type '%s'", public_name,
+                          g_type_tag_to_string(typetag));
         ret = SCM_BOOL_F;
     }
     g_constant_info_free_value(info, &value);
