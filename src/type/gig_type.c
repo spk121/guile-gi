@@ -88,7 +88,7 @@ static SCM type_less_p_proc;
 static SCM sym_sort_key;
 
 static SCM make_type_with_gtype(GType gtype, SCM extra_supers);
-static SCM make_type_with_info(GIRegisteredTypeInfo *info, SCM dsupers, SCM slots);
+static SCM make_type_with_info(GIRegisteredTypeInfo *info, SCM slots);
 static char *g_registered_type_info_get_qualified_name(GIRegisteredTypeInfo *info);
 static SCM gig_type_associate(GType gtype, SCM stype);
 static SCM _gig_type_check_scheme_type(scm_t_bits _stype);
@@ -165,7 +165,7 @@ gig_type_define(GType gtype, SCM defs)
 }
 
 SCM
-gig_type_define_with_info(GIRegisteredTypeInfo *info, SCM dsupers, SCM slots)
+gig_type_define_with_info(GIRegisteredTypeInfo *info, SCM slots, SCM defs)
 {
     if (g_registered_type_info_get_g_type(info) != G_TYPE_NONE) {
         gig_critical("gig_type_define_with_info used when GType was available, "
@@ -173,25 +173,19 @@ gig_type_define_with_info(GIRegisteredTypeInfo *info, SCM dsupers, SCM slots)
         return SCM_UNDEFINED;
     }
 
+    SCM existing = gig_type_get_scheme_type_with_info(info);
+    if (!SCM_UNBNDP(existing))
+        return scm_cons(scm_class_name(existing), defs);
+
+    SCM cls = make_type_with_info(info, slots);
+    char *name = scm_to_utf8_symbol(scm_class_name(cls));
     char *_name = g_registered_type_info_get_qualified_name(info);
-    assert(_name != NULL);
-    scm_t_bits _value = strval_find_entry(name_scm_store, _name);
-
-    SCM cls;
-    if (_value) {
-        free(_name);
-        cls = SCM_PACK(_value);
-    }
-    else {
-        cls = make_type_with_info(info, dsupers, slots);
-        char *name = scm_to_utf8_symbol(scm_class_name(cls));
-        gig_debug_load("%s - creating new type", name);
-        strval_add_entry(name_scm_store, _name, SCM_UNPACK(cls));
-        free(name);
-    }
-
+    gig_debug_load("%s - creating new type", name);
+    strval_add_entry(name_scm_store, _name, SCM_UNPACK(cls));
     free(_name);
-    return cls;
+    free(name);
+    defs = scm_cons(scm_class_name(cls), defs);
+    return defs;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -334,16 +328,72 @@ make_type_with_gtype(GType gtype, SCM extra_supers)
 }
 
 static SCM
-make_type_with_info(GIRegisteredTypeInfo *info, SCM dsupers, SCM slots)
+make_type_with_info(GIRegisteredTypeInfo *info, SCM slots)
 {
     SCM cls;
     char *_name = g_registered_type_info_get_qualified_name(info);
     char *name = bracketize(_name);
     SCM class_name = scm_from_utf8_symbol(name);
-    cls = scm_make_class_with_name(dsupers, slots, class_name);
-    free(name);
-    free(_name);
+    GIInfoType t = g_base_info_get_type(info);
 
+    switch (t) {
+    case GI_INFO_TYPE_ENUM:
+    case GI_INFO_TYPE_FLAGS:
+    {
+        int n_values;
+        SCM obarray;
+        int i;
+        SCM dsupers;
+
+        if (t == GI_INFO_TYPE_ENUM)
+            dsupers = scm_list_1(gig_enum_type);
+        else
+            dsupers = scm_list_1(gig_flags_type);
+        n_values = g_enum_info_get_n_values(info);
+        cls = scm_make_class_with_name(dsupers, slots, class_name);
+        obarray = scm_make_hash_table(scm_from_int(n_values));
+
+        i = 0;
+        while (i < n_values) {
+            GIValueInfo *vi;
+            char *_key;
+            int64_t _val;
+            SCM key, val;
+
+            vi = g_enum_info_get_value(info, i);
+            _key = make_scm_name(g_base_info_get_name(vi));
+            key = scm_from_utf8_symbol(_key);
+            _val = g_value_info_get_value(vi);
+
+            switch (t) {
+            case GI_INFO_TYPE_ENUM:
+                gig_debug_load("%s - add enum %s %d", name, _key, _val);
+                val = scm_from_int(_val);
+                break;
+            case GI_INFO_TYPE_FLAGS:
+                gig_debug_load("%s - add flag %s %u", name, _key, _val);
+                val = scm_from_uint(_val);
+                break;
+            default:
+                assert_not_reached();
+            }
+            scm_hashq_set_x(obarray, key, val);
+
+            g_base_info_unref(vi);
+            free(_key);
+            i++;
+        }
+
+        scm_set_class_obarray_slot(cls, obarray);
+        break;
+    }
+    default:
+        cls = scm_make_class_with_name(SCM_EOL, slots, class_name);
+        break;
+    }
+
+    free(_name);
+    free(name);
     return cls;
 }
 

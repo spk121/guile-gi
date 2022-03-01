@@ -193,7 +193,7 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
     {
         GType gtype = g_registered_type_info_get_g_type(info);
         if (gtype == G_TYPE_NONE)
-            defs = gig_define_enum(info, defs);
+            defs = gig_type_define_with_info(info, SCM_EOL, defs);
         else
             defs = gig_type_define(gtype, defs);
         defs = gig_define_enum_conversions(info, gtype, defs);
