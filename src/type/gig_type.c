@@ -1072,18 +1072,6 @@ gig_init_types_once(void)
     scm_c_define_gsubr("gtype-is-derivable?", 1, 0, 0, scm_type_gtype_is_derivable_p);
     scm_c_define_gsubr("gtype-is-a?", 2, 0, 0, scm_type_gtype_is_a_p);
     scm_c_define_gsubr("%allocate-boxed", 1, 0, 0, scm_allocate_boxed);
-    scm_c_export("get-gtype",
-                 "gtype-get-scheme-type",
-                 "gtype-get-name",
-                 "gtype-get-parent",
-                 "gtype-get-fundamental",
-                 "gtype-get-children",
-                 "gtype-get-interfaces",
-                 "gtype-get-depth",
-                 "gtype-is-interface?",
-                 "gtype-is-classed?",
-                 "gtype-is-instantiatable?",
-                 "gtype-is-derivable?", "gtype-is-a?", NULL);
 }
 
 void

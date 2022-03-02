@@ -36,6 +36,21 @@
             flags-projection/number
             is-registered-callback?
             get-registered-callback-closure-pointer
+
+            ;;
+            get-gtype
+            gtype-get-scheme-type
+            gtype-get-name
+            gtype-get-parent
+            gtype-get-fundamental
+            gtype-get-children
+            gtype-get-interfaces
+            gtype-get-depth
+            gtype-is-interface?
+            gtype-is-classed?
+            gtype-is-instantiatable?
+            gtype-is-derivable?
+            gtype-is-a?
             %gtype-dump-table))
 
 (eval-when (expand load eval)
