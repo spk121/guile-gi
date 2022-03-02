@@ -72,7 +72,7 @@ GType gig_type_c_array = G_TYPE_INVALID;
 // Maps GType to SCM
 static SCM gtype_hash_var = SCM_UNDEFINED;
 // Maps string to SCM
-static strval_t *name_scm_store = NULL;
+static SCM info_hash_var = SCM_UNDEFINED;
 // Maps SCM to GType
 static SCM reverse_hash_var = SCM_UNDEFINED;
 
@@ -185,7 +185,8 @@ gig_type_define_with_info(GIRegisteredTypeInfo *info, SCM slots)
     char *name = scm_to_utf8_symbol(scm_class_name(cls));
     char *_name = g_registered_type_info_get_qualified_name(info);
     gig_debug_load("%s - creating new type", name);
-    strval_add_entry(name_scm_store, _name, SCM_UNPACK(cls));
+    SCM info_hash = scm_variable_ref(info_hash_var);
+    scm_hashq_set_x(info_hash, scm_from_utf8_symbol(_name), cls);
     free(_name);
     free(name);
     defs = scm_cons(scm_class_name(cls), defs);
@@ -552,11 +553,12 @@ SCM
 gig_type_get_scheme_type_with_info(GIRegisteredTypeInfo *info)
 {
     char *_name = g_registered_type_info_get_qualified_name(info);
-    scm_t_bits value = strval_find_entry(name_scm_store, _name);
+    SCM info_hash = scm_variable_ref(info_hash_var);
+    SCM value = scm_hashq_ref(info_hash, scm_from_utf8_symbol(_name), SCM_BOOL_F);
     free(_name);
-    if (value == 0)
+    if (scm_is_false(value))
         return SCM_UNDEFINED;
-    return SCM_PACK(value);
+    return value;
 }
 
 SCM
@@ -664,7 +666,6 @@ static void
 gig_type_free_types(void)
 {
     gig_debug("Freeing gtype hash table");
-    strval_free(name_scm_store, NULL);
     _free_boxed_funcs();
 }
 
@@ -994,7 +995,8 @@ gig_init_types_once(void)
 
     gtype_hash_var = scm_make_undefined_variable();
     scm_variable_set_x(gtype_hash_var, scm_c_make_hash_table(31));
-    name_scm_store = strval_new();
+    info_hash_var = scm_make_undefined_variable();
+    scm_variable_set_x(info_hash_var, scm_c_make_hash_table(31));
     reverse_hash_var = scm_make_undefined_variable();
     scm_variable_set_x(reverse_hash_var, scm_c_make_hash_table(31));
 
