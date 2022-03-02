@@ -993,12 +993,9 @@ gig_init_types_once(void)
 
     SCM getter_with_setter = scm_get_applicable_struct_with_setter_class();
 
-    gtype_hash_var = scm_make_undefined_variable();
-    scm_variable_set_x(gtype_hash_var, scm_c_make_hash_table(31));
-    info_hash_var = scm_make_undefined_variable();
-    scm_variable_set_x(info_hash_var, scm_c_make_hash_table(31));
-    reverse_hash_var = scm_make_undefined_variable();
-    scm_variable_set_x(reverse_hash_var, scm_c_make_hash_table(31));
+    gtype_hash_var = scm_c_private_lookup("gi oop", "%gtype-hash");
+    reverse_hash_var = scm_c_private_lookup("gi oop", "%reverse-hash");
+    info_hash_var = scm_c_private_lookup("gi oop", "%info-hash");
 
 #define A(G,S)                                  \
     do {                                        \
