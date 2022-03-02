@@ -74,7 +74,7 @@ static SCM gtype_hash_var = SCM_UNDEFINED;
 // Maps string to SCM
 static strval_t *name_scm_store = NULL;
 // Maps SCM to GType
-static keyval_t *scm_gtype_store = NULL;
+static SCM reverse_hash_var = SCM_UNDEFINED;
 
 SCM gig_enum_type;
 SCM gig_flags_type;
@@ -135,8 +135,9 @@ gig_type_define_full(GType gtype, SCM extra_supers)
             scm_define(key, new_type);
             defs = scm_cons(key, defs);
         }
+        SCM reverse_hash = scm_variable_ref(reverse_hash_var);
         gig_debug_load("Hash table sizes %d %d", SCM_HASHTABLE_N_ITEMS(hash),
-                       keyval_size(scm_gtype_store));
+                       SCM_HASHTABLE_N_ITEMS(reverse_hash));
     }
     else {
         gig_debug_load("%s - type already exists for %zx %s",
@@ -487,8 +488,10 @@ scm_to_gtype_full(SCM x, const char *subr, int argpos)
 {
     if (scm_is_unsigned_integer(x, 0, SIZE_MAX))
         return scm_to_size_t(x);
-    else if (SCM_CLASSP(x))
-        return keyval_find_entry(scm_gtype_store, SCM_UNPACK(x));
+    else if (SCM_CLASSP(x)) {
+        SCM reverse_hash = scm_variable_ref(reverse_hash_var);
+        return scm_to_size_t(scm_hashq_ref(reverse_hash, x, scm_from_size_t(G_TYPE_INVALID)));
+    }
     else
         scm_wrong_type_arg_msg(subr, argpos, x, "GType integer or class");
 }
@@ -500,7 +503,9 @@ scm_from_gtype(GType x)
     SCM hash = scm_variable_ref(gtype_hash_var);
     SCM _value = scm_hashq_ref(hash, scm_from_size_t(x), SCM_BOOL_F);
     if (scm_is_true(_value)) {
-        if (keyval_find_entry(scm_gtype_store, SCM_UNPACK(_value)) != 0)
+        SCM reverse_hash = scm_variable_ref(reverse_hash_var);
+        SCM _type = scm_hashq_ref(reverse_hash, _value, SCM_BOOL_F);
+        if (scm_is_true(_type))
             return _value;
     }
     return scm_from_size_t(x);
@@ -512,12 +517,16 @@ scm_from_gtype(GType x)
 GType
 gig_type_get_gtype_from_obj(SCM x)
 {
-    GType value;
-    if ((value = keyval_find_entry(scm_gtype_store, SCM_UNPACK(x))))
-        return value;
-    else if (SCM_INSTANCEP(x) &&
-             (value = keyval_find_entry(scm_gtype_store, SCM_UNPACK(SCM_CLASS_OF(x)))))
-        return value;
+    SCM value;
+    SCM reverse_hash = scm_variable_ref(reverse_hash_var);
+    value = scm_hashq_ref(reverse_hash, x, SCM_BOOL_F);
+    if (scm_is_true(value))
+        return scm_to_size_t(value);
+    if (SCM_INSTANCEP(x)) {
+        value = scm_hashq_ref(reverse_hash, SCM_CLASS_OF(x), SCM_BOOL_F);
+        if (scm_is_true(value))
+            return scm_to_size_t(value);
+    }
 
     return G_TYPE_INVALID;
 }
@@ -645,8 +654,9 @@ gig_type_associate(GType gtype, SCM stype)
 {
     gig_type_register_self(gtype, stype);
     SCM hash = scm_variable_ref(gtype_hash_var);
+    SCM reverse_hash = scm_variable_ref(reverse_hash_var);
     scm_set_object_property_x(stype, sym_sort_key, scm_from_size_t(SCM_HASHTABLE_N_ITEMS(hash)));
-    keyval_add_entry(scm_gtype_store, SCM_UNPACK(stype), gtype);
+    scm_hashq_set_x(reverse_hash, stype, scm_from_size_t(gtype));
     return scm_class_name(stype);
 }
 
@@ -655,7 +665,6 @@ gig_type_free_types(void)
 {
     gig_debug("Freeing gtype hash table");
     strval_free(name_scm_store, NULL);
-    keyval_free(scm_gtype_store, NULL, NULL);
     _free_boxed_funcs();
 }
 
@@ -986,7 +995,8 @@ gig_init_types_once(void)
     gtype_hash_var = scm_make_undefined_variable();
     scm_variable_set_x(gtype_hash_var, scm_c_make_hash_table(31));
     name_scm_store = strval_new();
-    scm_gtype_store = keyval_new();
+    reverse_hash_var = scm_make_undefined_variable();
+    scm_variable_set_x(reverse_hash_var, scm_c_make_hash_table(31));
 
 #define A(G,S)                                  \
     do {                                        \
