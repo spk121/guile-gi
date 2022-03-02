@@ -21,7 +21,8 @@
   #:use-module (system foreign)
   #:export (<signal>
             make-signal
-            connect-after)
+            connect-after
+            %gtype-hash)
   #:re-export (connect))
 
 (eval-when (expand load eval)

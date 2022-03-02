@@ -878,36 +878,6 @@ scm_type_gtype_is_a_p(SCM gself, SCM gparent)
     return SCM_BOOL_F;
 }
 
-static SCM scm_type_dump_internal_proc;
-
-static SCM
-scm_type_dump_internal(SCM key, SCM val)
-{
-    return scm_list_3(key, scm_from_utf8_string(g_type_name(scm_to_size_t(key))), val);
-}
-
-static SCM
-scm_type_dump_type_table(void)
-{
-    return scm_hash_map_to_list(scm_type_dump_internal_proc, scm_variable_ref(gtype_hash_var));
-#if 0
-    for (int i = 0; i < gtype_scm_store->len; i++) {
-        SCM fo_type;
-        GType skey = gtype_scm_store->entries[i].key;
-        scm_t_bits value = gtype_scm_store->entries[i].val;
-
-        if (value)
-            fo_type = SCM_PACK(value);
-        else
-            fo_type = SCM_BOOL_F;
-        SCM entry =
-            scm_list_3(scm_from_size_t(skey), scm_from_utf8_string(g_type_name(skey)), fo_type);
-        list = scm_append(scm_list_2(list, scm_list_1(entry)));
-    }
-    return list;
-#endif
-}
-
 static SCM
 scm_allocate_boxed(SCM boxed_type)
 {
@@ -975,9 +945,6 @@ static void
 gig_init_types_once(void)
 {
     init_core_oop();
-
-    scm_type_dump_internal_proc =
-        scm_c_make_gsubr("%type-dump-internal", 2, 0, 0, scm_type_dump_internal);
 
     gig_type_c_array = g_type_register_static_simple(G_TYPE_POINTER, "GigCArray", 0,    /* class size */
                                                      NULL,      /* class init func */
@@ -1104,7 +1071,6 @@ gig_init_types_once(void)
     scm_c_define_gsubr("gtype-is-instantiatable?", 1, 0, 0, scm_type_gtype_is_instantiatable_p);
     scm_c_define_gsubr("gtype-is-derivable?", 1, 0, 0, scm_type_gtype_is_derivable_p);
     scm_c_define_gsubr("gtype-is-a?", 2, 0, 0, scm_type_gtype_is_a_p);
-    scm_c_define_gsubr("%gtype-dump-table", 0, 0, 0, scm_type_dump_type_table);
     scm_c_define_gsubr("%allocate-boxed", 1, 0, 0, scm_allocate_boxed);
     scm_c_export("get-gtype",
                  "gtype-get-scheme-type",
@@ -1117,7 +1083,7 @@ gig_init_types_once(void)
                  "gtype-is-interface?",
                  "gtype-is-classed?",
                  "gtype-is-instantiatable?",
-                 "gtype-is-derivable?", "gtype-is-a?", "%gtype-dump-table", NULL);
+                 "gtype-is-derivable?", "gtype-is-a?", NULL);
 }
 
 void

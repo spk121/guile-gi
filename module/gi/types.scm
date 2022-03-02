@@ -35,13 +35,23 @@
             flags-complement flags-projection flags-projection/list
             flags-projection/number
             is-registered-callback?
-            get-registered-callback-closure-pointer))
+            get-registered-callback-closure-pointer
+            %gtype-dump-table))
 
 (eval-when (expand load eval)
   (load-extension "libguile-gi" "gig_init_types")
   (load-extension "libguile-gi" "gig_init_value")
   (load-extension "libguile-gi" "gig_init_closure")
   (load-extension "libguile-gi" "gig_init_callback"))
+
+(define (%gtype-dump-table)
+  "Returns a list describing the current state of the GType to Scheme
+class mapping. Each entry is the GType, the GType name, and the scheme
+class."
+  (hash-map->list
+   (lambda (key val)
+     (list key (gtype-get-name key) val))
+   %gtype-hash))
 
 ;;; Values and Params
 
