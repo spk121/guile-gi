@@ -1051,7 +1051,8 @@ gig_init_types_once(void)
         scm_permanent_object(scm_c_define(#x, scm_from_uintptr_t(x)));  \
     } while (0)
 
-    D(G_TYPE_NONE);
+    gig_type_register(G_TYPE_NONE, SCM_UNDEFINED);
+    scm_c_define("G_TYPE_NONE", scm_from_size_t(G_TYPE_NONE));
 
     gig_type_register(G_TYPE_CHAR, scm_get_char_class());
     scm_c_define("G_TYPE_CHAR", scm_from_size_t(G_TYPE_CHAR));
@@ -1062,14 +1063,23 @@ gig_init_types_once(void)
     gig_type_register(G_TYPE_BOOLEAN, scm_get_boolean_class());
     scm_c_define("G_TYPE_BOOLEAN", scm_from_size_t(G_TYPE_BOOLEAN));
 
-    D(G_TYPE_GTYPE);
+    gig_type_define(G_TYPE_GTYPE);
+    scm_c_define("G_TYPE_GTYPE", scm_from_size_t(G_TYPE_GTYPE));
+
     gig_type_register(G_TYPE_POINTER, scm_get_foreign_class());
     scm_c_define("G_TYPE_POINTER", scm_from_size_t(G_TYPE_POINTER));
-    D(G_TYPE_PRIV_C_ARRAY);
-    D(G_TYPE_BYTE_ARRAY);
-    D(G_TYPE_ARRAY);
-    D(G_TYPE_PTR_ARRAY);
-#undef D
+
+    gig_type_define(G_TYPE_PRIV_C_ARRAY);
+    scm_c_define("G_TYPE_PRIV_C_ARRAY", scm_from_size_t(G_TYPE_PRIV_C_ARRAY));
+
+    gig_type_define(G_TYPE_ARRAY);
+    scm_c_define("G_TYPE_ARRAY", scm_from_size_t(G_TYPE_ARRAY));
+
+    gig_type_define(G_TYPE_BYTE_ARRAY);
+    scm_c_define("G_TYPE_BYTE_ARRAY", scm_from_size_t(G_TYPE_BYTE_ARRAY));
+
+    gig_type_define(G_TYPE_PTR_ARRAY);
+    scm_c_define("G_TYPE_PTR_ARRAY", scm_from_size_t(G_TYPE_PTR_ARRAY));
 
     type_less_p_proc = scm_c_make_gsubr("type-<?", 2, 0, 0, type_less_p);
 

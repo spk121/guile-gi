@@ -248,6 +248,17 @@ SCM string_type;
 static SCM
 type_specializer(GigTypeMeta *meta)
 {
+    if (meta->gtype == G_TYPE_GTYPE)
+        // This could either an unsigned integer, or an type class.
+        return SCM_UNDEFINED;
+    else if (meta->gtype == G_TYPE_PRIV_C_ARRAY
+             || meta->gtype == G_TYPE_ARRAY
+             || meta->gtype == G_TYPE_BYTE_ARRAY
+             || meta->gtype == G_TYPE_PTR_ARRAY)
+        // Lots of different ways to represent arrays: bytevectors
+        // unicode strings, etc.
+        return SCM_UNDEFINED;
+
     switch (meta->gtype) {
     case G_TYPE_POINTER:
         // special case: POINTER can also mean string, list or callback
