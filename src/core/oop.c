@@ -19,6 +19,7 @@
 static SCM applicable_type;
 static SCM applicable_struct_type;
 static SCM applicable_struct_with_setter_type;
+static SCM boolean_type;
 static SCM char_type;
 static SCM foreign_type;
 static SCM hashtable_type;
@@ -67,6 +68,12 @@ SCM
 scm_get_applicable_struct_with_setter_class(void)
 {
     return applicable_struct_with_setter_type;
+}
+
+SCM
+scm_get_boolean_class(void)
+{
+    return boolean_type;
 }
 
 SCM
@@ -160,6 +167,7 @@ scm_define_methods_from_procedure(const char *public_name, SCM proc, int opt, SC
     } while (opt-- > 0);
 
     scm_define(sym_public_name, generic);
+    char tmp[1000];
     return sym_public_name;
 }
 

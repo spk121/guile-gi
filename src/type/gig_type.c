@@ -986,9 +986,14 @@ gig_init_types_once(void)
 
     A(G_TYPE_BOXED, gig_boxed_type);
     A(G_TYPE_ENUM, gig_enum_type);
+    scm_c_define("G_TYPE_ENUM", scm_from_size_t(G_TYPE_ENUM));
+
     A(G_TYPE_FLAGS, gig_flags_type);
+    scm_c_define("G_TYPE_FLAGS", scm_from_size_t(G_TYPE_FLAGS));
 
     gig_object_type = gig_type_get_scheme_type(G_TYPE_OBJECT);
+    scm_c_define("G_TYPE_OBJECT", scm_from_size_t(G_TYPE_OBJECT));
+
     gig_paramspec_type = gig_type_get_scheme_type(G_TYPE_PARAM);
 
     // derived types
@@ -1047,13 +1052,17 @@ gig_init_types_once(void)
     } while (0)
 
     D(G_TYPE_NONE);
-    D(G_TYPE_CHAR);
-    D(G_TYPE_UCHAR);
-    D(G_TYPE_BOOLEAN);
-    D(G_TYPE_ENUM);
-    D(G_TYPE_FLAGS);
+
+    gig_type_register(G_TYPE_CHAR, scm_get_char_class());
+    scm_c_define("G_TYPE_CHAR", scm_from_size_t(G_TYPE_CHAR));
+
+    gig_type_register(G_TYPE_UCHAR, scm_get_char_class());
+    scm_c_define("G_TYPE_UCHAR", scm_from_size_t(G_TYPE_UCHAR));
+
+    gig_type_register(G_TYPE_BOOLEAN, scm_get_boolean_class());
+    scm_c_define("G_TYPE_BOOLEAN", scm_from_size_t(G_TYPE_BOOLEAN));
+
     D(G_TYPE_GTYPE);
-    D(G_TYPE_OBJECT);
     gig_type_register(G_TYPE_POINTER, scm_get_foreign_class());
     scm_c_define("G_TYPE_POINTER", scm_from_size_t(G_TYPE_POINTER));
     D(G_TYPE_PRIV_C_ARRAY);

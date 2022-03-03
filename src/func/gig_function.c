@@ -242,6 +242,9 @@ SCM char_type;
 SCM list_type;
 SCM string_type;
 
+// This computes the specializer for an argument of a method.  Notably
+// here are special cases when using the direct GType-to-SCM class
+// mapping would give unfortunate results.
 static SCM
 type_specializer(GigTypeMeta *meta)
 {
@@ -260,6 +263,11 @@ type_specializer(GigTypeMeta *meta)
         default:
             return SCM_UNDEFINED;
         }
+    case G_TYPE_CHAR:
+    case G_TYPE_UCHAR:
+        // These could be character or integers, so don't use them for
+        // specialization.
+        return SCM_UNDEFINED;
     case G_TYPE_UINT:
         // special case: Unicode characters
         if (meta->is_unichar)
@@ -297,6 +305,11 @@ make_formals(GICallableInfo *callable,
         // Don't force types on nullable input, as #f can also be used to represent
         // NULL.
         if (entry->meta.is_nullable)
+            continue;
+        // Also don't force types on char and uchar, since that could
+        // be a real character or a small integer.
+        if (entry->meta.gtype == G_TYPE_CHAR
+            || entry->meta.gtype == G_TYPE_UCHAR)
             continue;
 
         SCM s_type = type_specializer(&entry->meta);
