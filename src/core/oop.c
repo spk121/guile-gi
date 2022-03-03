@@ -20,6 +20,7 @@ static SCM applicable_type;
 static SCM applicable_struct_type;
 static SCM applicable_struct_with_setter_type;
 static SCM char_type;
+static SCM foreign_type;
 static SCM hashtable_type;
 static SCM list_type;
 static SCM method_type;
@@ -72,6 +73,12 @@ SCM
 scm_get_char_class(void)
 {
     return char_type;
+}
+
+SCM
+scm_get_foreign_class(void)
+{
+    return foreign_type;
 }
 
 SCM
@@ -283,7 +290,9 @@ init_core_oop(void)
         applicable_struct_type = scm_c_public_ref("oop goops", "<applicable-struct>");
         applicable_struct_with_setter_type =
             scm_c_public_ref("oop goops", "<applicable-struct-with-setter>");
+        boolean_type = scm_c_public_ref("oop goops", "<boolean>");
         char_type = scm_c_public_ref("oop goops", "<char>");
+        foreign_type = scm_c_public_ref("oop goops", "<foreign>");
         integer_type = scm_c_public_ref("oop goops", "<integer>");
         real_type = scm_c_public_ref("oop goops", "<real>");
         hashtable_type = scm_c_public_ref("oop goops", "<hashtable>");

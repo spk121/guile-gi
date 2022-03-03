@@ -22,6 +22,7 @@ SCM scm_get_applicable_class(void);
 SCM scm_get_applicable_struct_class(void);
 SCM scm_get_applicable_struct_with_setter_class(void);
 SCM scm_get_char_class(void);
+SCM scm_get_foreign_class(void);
 SCM scm_get_hashtable_class(void);
 SCM scm_get_integer_class(void);
 SCM scm_get_list_class(void);

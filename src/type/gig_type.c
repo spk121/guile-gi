@@ -1054,7 +1054,8 @@ gig_init_types_once(void)
     D(G_TYPE_FLAGS);
     D(G_TYPE_GTYPE);
     D(G_TYPE_OBJECT);
-    D(G_TYPE_POINTER);
+    gig_type_register(G_TYPE_POINTER, scm_get_foreign_class());
+    scm_c_define("G_TYPE_POINTER", scm_from_size_t(G_TYPE_POINTER));
     D(G_TYPE_PRIV_C_ARRAY);
     D(G_TYPE_BYTE_ARRAY);
     D(G_TYPE_ARRAY);
