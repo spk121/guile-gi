@@ -1004,25 +1004,37 @@ gig_init_types_once(void)
 
     // value associations, do not rely on them for anything else
     gig_type_associate(G_TYPE_STRING, scm_get_string_class());
+    scm_c_define("G_TYPE_STRING", scm_from_size_t(G_TYPE_STRING));
+
     SCM _scm_real = scm_get_real_class();
     SCM _scm_integer = scm_get_integer_class();
     SCM _scm_hashtable = scm_get_hashtable_class();
     gig_type_register(G_TYPE_INT, _scm_integer);
+    scm_c_define("G_TYPE_INT", scm_from_size_t(G_TYPE_INT));
+
     gig_type_register(G_TYPE_UINT, _scm_integer);
+    scm_c_define("G_TYPE_UINT", scm_from_size_t(G_TYPE_UINT));
+
     gig_type_register(G_TYPE_LONG, _scm_integer);
+    scm_c_define("G_TYPE_LONG", scm_from_size_t(G_TYPE_LONG));
+
     gig_type_register(G_TYPE_ULONG, _scm_integer);
+    scm_c_define("G_TYPE_ULONG", scm_from_size_t(G_TYPE_ULONG));
+
     gig_type_register(G_TYPE_INT64, _scm_integer);
+    scm_c_define("G_TYPE_INT64", scm_from_size_t(G_TYPE_INT64));
+
     gig_type_register(G_TYPE_UINT64, _scm_integer);
+    scm_c_define("G_TYPE_UINT64", scm_from_size_t(G_TYPE_UINT64));
 
     gig_type_register(G_TYPE_FLOAT, _scm_real);
-    gig_type_register(G_TYPE_DOUBLE, _scm_real);
+    scm_c_define("G_TYPE_FLOAT", scm_from_size_t(G_TYPE_FLOAT));
 
-    // there is no base type for string, array and all the other accepted array conversions
-    gig_type_register(G_TYPE_BYTE_ARRAY, SCM_UNDEFINED);
-    gig_type_register(G_TYPE_ARRAY, SCM_UNDEFINED);
-    gig_type_register(G_TYPE_PTR_ARRAY, SCM_UNDEFINED);
+    gig_type_register(G_TYPE_DOUBLE, _scm_real);
+    scm_c_define("G_TYPE_DOUBLE", scm_from_size_t(G_TYPE_DOUBLE));
 
     gig_type_register(G_TYPE_HASH_TABLE, _scm_hashtable);
+    scm_c_define("G_TYPE_HASH_TABLE", scm_from_size_t(G_TYPE_HASH_TABLE));
 
     atexit(gig_type_free_types);
 
@@ -1032,28 +1044,21 @@ gig_init_types_once(void)
     {                                                                   \
         gig_type_register(x, SCM_UNDEFINED);                            \
         scm_permanent_object(scm_c_define(#x, scm_from_uintptr_t(x)));  \
-        scm_c_export(#x, NULL);                                         \
     } while (0)
 
     D(G_TYPE_NONE);
     D(G_TYPE_CHAR);
     D(G_TYPE_UCHAR);
     D(G_TYPE_BOOLEAN);
-    D(G_TYPE_INT);
-    D(G_TYPE_UINT);
-    D(G_TYPE_LONG);
-    D(G_TYPE_ULONG);
-    D(G_TYPE_INT64);
-    D(G_TYPE_UINT64);
     D(G_TYPE_ENUM);
     D(G_TYPE_FLAGS);
-    D(G_TYPE_FLOAT);
-    D(G_TYPE_DOUBLE);
     D(G_TYPE_GTYPE);
     D(G_TYPE_OBJECT);
-    D(G_TYPE_STRING);
     D(G_TYPE_POINTER);
     D(G_TYPE_PRIV_C_ARRAY);
+    D(G_TYPE_BYTE_ARRAY);
+    D(G_TYPE_ARRAY);
+    D(G_TYPE_PTR_ARRAY);
 #undef D
 
     type_less_p_proc = scm_c_make_gsubr("type-<?", 2, 0, 0, type_less_p);
