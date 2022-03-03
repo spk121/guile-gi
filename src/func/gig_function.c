@@ -102,7 +102,7 @@ gig_function_define(GType type, GICallableInfo *info, const char *_namespace)
 
     if (is_method) {
         self_type = gig_type_get_scheme_type(type);
-        g_return_val_if_fail(!SCM_UNBNDP(self_type), SCM_EOL);
+        g_return_val_if_fail(!scm_is_unknown_class(self_type), SCM_EOL);
         method_name = scm_dynfree(gig_callable_info_make_name(info, NULL));
         gig_debug_load("%s - shorthand for %s", method_name, function_name);
     }
@@ -250,14 +250,13 @@ type_specializer(GigTypeMeta *meta)
 {
     if (meta->gtype == G_TYPE_GTYPE)
         // This could either an unsigned integer, or an type class.
-        return SCM_UNDEFINED;
+        return scm_get_top_class();
     else if (meta->gtype == G_TYPE_PRIV_C_ARRAY
              || meta->gtype == G_TYPE_ARRAY
-             || meta->gtype == G_TYPE_BYTE_ARRAY
-             || meta->gtype == G_TYPE_PTR_ARRAY)
+             || meta->gtype == G_TYPE_BYTE_ARRAY || meta->gtype == G_TYPE_PTR_ARRAY)
         // Lots of different ways to represent arrays: bytevectors
         // unicode strings, etc.
-        return SCM_UNDEFINED;
+        return scm_get_top_class();
 
     switch (meta->gtype) {
     case G_TYPE_POINTER:
@@ -272,7 +271,7 @@ type_specializer(GigTypeMeta *meta)
         case GIG_DATA_CALLBACK:
             return scm_get_applicable_class();
         default:
-            return SCM_UNDEFINED;
+            return scm_get_top_class();
         }
     case G_TYPE_CHAR:
     case G_TYPE_UCHAR:
@@ -319,12 +318,11 @@ make_formals(GICallableInfo *callable,
             continue;
         // Also don't force types on char and uchar, since that could
         // be a real character or a small integer.
-        if (entry->meta.gtype == G_TYPE_CHAR
-            || entry->meta.gtype == G_TYPE_UCHAR)
+        if (entry->meta.gtype == G_TYPE_CHAR || entry->meta.gtype == G_TYPE_UCHAR)
             continue;
 
         SCM s_type = type_specializer(&entry->meta);
-        if (!SCM_UNBNDP(s_type))
+        if (!scm_is_unknown_class(s_type))
             scm_set_car_x(i_specializer, s_type);
     }
 }

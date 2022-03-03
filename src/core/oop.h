@@ -30,6 +30,7 @@ SCM scm_get_list_class(void);
 SCM scm_get_real_class(void);
 SCM scm_get_method_class(void);
 SCM scm_get_string_class(void);
+SCM scm_get_unknown_class(void);
 SCM scm_get_top_class(void);
 
 SCM scm_add_method(SCM target, SCM method);
@@ -40,6 +41,7 @@ SCM scm_get_class_ref_slot(SCM cls);
 SCM scm_get_class_size_slot(SCM cls);
 SCM scm_get_class_unref_slot(SCM cls);
 SCM scm_get_value_slot(SCM instance);
+_Bool scm_is_unknown_class(SCM type);
 SCM scm_make_class_with_name(SCM supers, SCM slots, SCM name);
 SCM scm_make_with_value(SCM type, SCM value);
 SCM scm_make_method(SCM specializers, SCM formals, SCM proc);

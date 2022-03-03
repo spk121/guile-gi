@@ -28,6 +28,7 @@ static SCM method_type;
 static SCM integer_type;
 static SCM real_type;
 static SCM string_type;
+static SCM unknown_type;
 static SCM top_type;
 
 static SCM add_method_proc;
@@ -125,6 +126,12 @@ scm_get_string_class(void)
 }
 
 SCM
+scm_get_unknown_class(void)
+{
+    return unknown_type;
+}
+
+SCM
 scm_get_top_class(void)
 {
     return top_type;
@@ -205,6 +212,12 @@ SCM
 scm_get_value_slot(SCM instance)
 {
     return scm_slot_ref(instance, value_sym);
+}
+
+_Bool
+scm_is_unknown_class(SCM type)
+{
+    return scm_is_equal(type, unknown_type);
 }
 
 SCM
@@ -308,6 +321,7 @@ init_core_oop(void)
         method_type = scm_c_public_ref("oop goops", "<method>");
         string_type = scm_c_public_ref("oop goops", "<string>");
         top_type = scm_c_public_ref("oop goops", "<top>");
+        unknown_type = scm_c_public_ref("oop goops", "<unknown>");
 
         add_method_proc = scm_c_public_ref("oop goops", "add-method!");
         ensure_accessor_proc = scm_c_public_ref("oop goops", "ensure-accessor");

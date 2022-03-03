@@ -85,7 +85,8 @@ scm_is_real(SCM x)
     return scm_is_true(scm_real_p(x));
 }
 
-SCM scm_append2(SCM a, SCM b)
+SCM
+scm_append2(SCM a, SCM b)
 {
     if (scm_is_null(a))
         return b;

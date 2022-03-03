@@ -128,13 +128,12 @@ gig_type_define_full(GType gtype, SCM extra_supers)
 
         SCM new_type = make_type_with_gtype(gtype, extra_supers);
 
-        g_return_val_if_fail(!SCM_UNBNDP(new_type), defs);
+        g_return_val_if_fail(!scm_is_unknown_class(new_type), defs);
 
         SCM key = gig_type_associate(gtype, new_type);
-        if (!SCM_UNBNDP(defs)) {
-            scm_define(key, new_type);
-            defs = scm_cons(key, defs);
-        }
+        scm_define(key, new_type);
+        defs = scm_cons(key, defs);
+
         SCM reverse_hash = scm_variable_ref(reverse_hash_var);
         gig_debug_load("Hash table sizes %d %d", SCM_HASHTABLE_N_ITEMS(hash),
                        SCM_HASHTABLE_N_ITEMS(reverse_hash));
@@ -142,19 +141,13 @@ gig_type_define_full(GType gtype, SCM extra_supers)
     else {
         gig_debug_load("%s - type already exists for %zx %s",
                        _type_class_name, gtype, g_type_name(gtype));
-        if (!scm_is_true(orig_value))
-            return defs;
         SCM val = orig_value;
 
-        // FIXME: The warning below should be infrequent enough to not need silencing
         if (SCM_UNBNDP(val))
-            return defs;
-        g_return_val_if_fail(!SCM_UNBNDP(val), defs);
+            gig_critical("%s - %s is undefined", _type_class_name, g_type_name(gtype));
         SCM key = scm_class_name(val);
-        if (!SCM_UNBNDP(defs)) {
-            scm_define(key, val);
-            defs = scm_cons(key, defs);
-        }
+        scm_define(key, val);
+        defs = scm_cons(key, defs);
     }
 
     free(_type_class_name);
@@ -178,7 +171,7 @@ gig_type_define_with_info(GIRegisteredTypeInfo *info, SCM slots)
     }
 
     SCM existing = gig_type_get_scheme_type_with_info(info);
-    if (!SCM_UNBNDP(existing))
+    if (!scm_is_unknown_class(existing))
         return scm_cons(scm_class_name(existing), defs);
 
     SCM cls = make_type_with_info(info, slots);
@@ -544,7 +537,7 @@ gig_type_get_scheme_type(GType gtype)
         gig_type_define(gtype);
         _value = scm_hashq_ref(hash, scm_from_size_t(gtype), SCM_BOOL_F);
         if (scm_is_false(_value))
-            return SCM_UNDEFINED;
+            return scm_get_unknown_class();
         return _value;
     }
 }
@@ -557,7 +550,7 @@ gig_type_get_scheme_type_with_info(GIRegisteredTypeInfo *info)
     SCM value = scm_hashq_ref(info_hash, scm_from_utf8_symbol(_name), SCM_BOOL_F);
     free(_name);
     if (scm_is_false(value))
-        return SCM_UNDEFINED;
+        return scm_get_unknown_class();
     return value;
 }
 
@@ -571,6 +564,7 @@ gig_type_transfer_object(GType type, void *ptr, GITransfer transfer)
 
     SCM scm_type = gig_type_get_scheme_type(type);
     g_return_val_if_fail(scm_is_class(scm_type), SCM_BOOL_F);
+    g_return_val_if_fail(!scm_is_unknown_class(scm_type), SCM_BOOL_F);
     GigTypeRefFunction ref;
     ref = (GigTypeRefFunction)scm_to_pointer(scm_get_class_ref_slot(scm_type));
     GigTypeUnrefFunction unref;
@@ -613,7 +607,7 @@ gig_type_register_self(GType gtype, SCM stype)
 
     if (scm_is_true(pval) && scm_is_eq(stype, SCM_PACK(pval)))
         return;
-    if (scm_is_true(pval) && !SCM_UNBNDP(SCM_PACK(pval)) && SCM_UNBNDP(stype))
+    if (scm_is_true(pval) && !scm_is_unknown_class(SCM_PACK(pval)) && scm_is_unknown_class(stype))
         return;
     stype_str = scm_write_to_utf8_stringn(stype, 80);
     scm_hashq_set_x(hash, scm_from_size_t(gtype), stype);
@@ -646,7 +640,7 @@ gig_type_register(GType gtype, SCM stype)
 {
     GType parent = g_type_parent(gtype);
     if (parent != 0)
-        gig_type_register_self(parent, SCM_UNDEFINED);
+        gig_type_register_self(parent, scm_get_unknown_class());
     gig_type_register_self(gtype, stype);
 }
 
@@ -672,7 +666,7 @@ gig_type_free_types(void)
 static SCM
 _gig_type_check_scheme_type(scm_t_bits _stype)
 {
-    gig_return_val_if_fail(_stype != 0, SCM_UNDEFINED);
+    gig_return_val_if_fail(_stype != 0, scm_get_unknown_class());
     return SCM_PACK(_stype);
 }
 
