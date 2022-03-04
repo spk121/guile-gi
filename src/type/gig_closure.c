@@ -125,9 +125,9 @@ gig_closure_new(SCM callback, SCM inout_mask)
 static SCM
 invoke_closure(SCM closure, SCM return_type, SCM inout_mask, SCM args)
 {
-    SCM_ASSERT_TYPE(SCM_IS_A_P(closure, gig_closure_type), closure, SCM_ARG1, "%invoke-closure",
+    SCM_ASSERT_TYPE(SCM_IS_A_P(closure, gig_closure_type()), closure, SCM_ARG1, "%invoke-closure",
                     "closure");
-    GClosure *real_closure = gig_type_peek_typed_object(closure, gig_closure_type);
+    GClosure *real_closure = gig_type_peek_typed_object(closure, gig_closure_type());
     SCM_ASSERT_TYPE(scm_is_list(args), args, SCM_ARG2, "%invoke-closure", "list");
 
     size_t nargs = scm_c_length(args);
@@ -143,7 +143,7 @@ invoke_closure(SCM closure, SCM return_type, SCM inout_mask, SCM args)
     }
 
     for (size_t narg = 0; narg < nargs; narg++, iter = scm_cdr(iter)) {
-        const GValue *arg = gig_type_peek_typed_object(scm_car(iter), gig_value_type);
+        const GValue *arg = gig_type_peek_typed_object(scm_car(iter), gig_value_type());
         if (arg == NULL) {
             free(retval);
             goto out;

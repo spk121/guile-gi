@@ -164,6 +164,7 @@ load_info(GIBaseInfo *info, LoadFlags flags)
         break;
     case GI_INFO_TYPE_FUNCTION:
     case GI_INFO_TYPE_SIGNAL:
+    {
         // Pre-load all the types used by the function's arguments.
         GType *types;
         size_t len;
@@ -192,6 +193,7 @@ load_info(GIBaseInfo *info, LoadFlags flags)
 
         if (args_ok == true)
             defs = scm_append2(defs, gig_function_define(parent_gtype, info, parent_name));
+    }
         break;
     case GI_INFO_TYPE_PROPERTY:
         defs = scm_append2(defs, gig_property_define(parent_gtype, info, parent_name));

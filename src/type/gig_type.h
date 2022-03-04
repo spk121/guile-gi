@@ -21,12 +21,12 @@
 #include "../core.h"
 #include "gig_type_pub.h"
 
-extern SCM gig_enum_type;
-extern SCM gig_flags_type;
+SCM gig_enum_type(void);
+SCM gig_flags_type(void);
 SCM gig_object_type(void);
 SCM gig_paramspec_type(void);
-extern SCM gig_value_type;
-extern SCM gig_closure_type;
+SCM gig_value_type(void);
+SCM gig_closure_type(void);
 
 char *gig_type_class_name_from_gtype(GType gtype);
 

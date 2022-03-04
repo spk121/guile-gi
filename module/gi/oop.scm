@@ -24,7 +24,10 @@
             connect-after
             %gtype-hash
             %reverse-hash
-            %make-fundamental-class)
+            %make-fundamental-class
+            <GBoxed>
+            <GEnum>
+            <GFlags>)
   #:re-export (connect))
 
 (eval-when (expand load eval)
