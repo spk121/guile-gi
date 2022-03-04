@@ -68,7 +68,6 @@
  *
  */
 
-GType gig_type_c_array = G_TYPE_INVALID;
 // Maps GType to SCM
 static SCM gtype_hash_var = SCM_UNDEFINED;
 // Maps string to SCM
@@ -670,6 +669,18 @@ _gig_type_check_scheme_type(scm_t_bits _stype)
     return SCM_PACK(_stype);
 }
 
+GType
+gig_type_get_c_array_type()
+{
+    static GType type = 0;
+    if (type == 0)
+        type = g_type_from_name("CArray");
+    if (type == 0)
+        gig_error("CArray type is used before it is initialized");
+
+    return type;
+}
+
 ////////////////////////////////////////////////////////////////
 // GUILE API
 
@@ -935,14 +946,43 @@ gig_type_define_fundamental(GType type, SCM extra_supers,
     scm_dynwind_end();
 }
 
+static SCM
+scm_g_type_register_static_simple_unsafe(SCM parent_type, SCM name, SCM flags)
+{
+    GType ret;
+    char *str = scm_to_utf8_string(name);
+    ret = g_type_register_static_simple(scm_to_size_t(parent_type), str,
+                                        0, NULL, 0, NULL,
+                                        scm_to_int(flags));
+    free(str);
+    return scm_from_size_t(ret);
+}
+
+static SCM
+scm_g_type_name_unsafe(SCM gtype)
+{
+    return scm_from_utf8_string(g_type_name(scm_to_size_t(gtype)));
+}
+
+static SCM
+scm_g_type_parent_unsafe(SCM gtype)
+{
+    return scm_from_size_t(g_type_parent(scm_to_size_t(gtype)));
+}
+
 static void
 gig_init_types_once(void)
 {
     init_core_oop();
 
-    gig_type_c_array = g_type_register_static_simple(G_TYPE_POINTER, "GigCArray", 0,    /* class size */
-                                                     NULL,      /* class init func */
-                                                     0, NULL, G_TYPE_FLAG_FINAL);
+    scm_c_define("$G_TYPE_POINTER", scm_from_size_t(G_TYPE_POINTER));
+    scm_c_define("$G_TYPE_FLAG_FINAL", scm_from_int(G_TYPE_FLAG_FINAL));
+    scm_c_define_gsubr("$type-register-static-simple", 3, 0, 0,
+                       scm_g_type_register_static_simple_unsafe);
+    scm_c_define_gsubr("$type-name", 1, 0, 0,
+                       scm_g_type_name_unsafe);
+    scm_c_define_gsubr("$type-parent", 1, 0, 0,
+                       scm_g_type_parent_unsafe);
 
     gig_fundamental_type = scm_c_private_ref("gi oop", "<GFundamental>");
     gig_boxed_type = scm_c_private_ref("gi oop", "<GBoxed>");
@@ -1062,9 +1102,6 @@ gig_init_types_once(void)
 
     gig_type_register(G_TYPE_POINTER, scm_get_foreign_class());
     scm_c_define("G_TYPE_POINTER", scm_from_size_t(G_TYPE_POINTER));
-
-    gig_type_define(G_TYPE_PRIV_C_ARRAY);
-    scm_c_define("G_TYPE_PRIV_C_ARRAY", scm_from_size_t(G_TYPE_PRIV_C_ARRAY));
 
     gig_type_define(G_TYPE_ARRAY);
     scm_c_define("G_TYPE_ARRAY", scm_from_size_t(G_TYPE_ARRAY));

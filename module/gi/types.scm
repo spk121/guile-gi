@@ -15,10 +15,12 @@
 
 (define-module (gi types)
   #:use-module (ice-9 match)
+  #:use-module (ice-9 format)
   #:use-module (oop goops)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-2)
   #:use-module (srfi srfi-26)
+  #:use-module (srfi srfi-69)
   #:use-module (system foreign)
 
   #:use-module (gi oop)
@@ -75,6 +77,68 @@
   (load-extension "libguile-gi" "gig_init_value")
   (load-extension "libguile-gi" "gig_init_closure")
   (load-extension "libguile-gi" "gig_init_callback"))
+
+(define +debug-port+ (current-output-port))
+
+(define (type-register-self gtype stype)
+  (let ((parent ($type-parent gtype))
+        (old-stype (hashq-ref %gtype-hash gtype)))
+    (when (or (not old-stype) (not (eq? stype old-stype)))
+      (when (or (not old-stype) (and (eq? old-stype <unknown>) (not (eq? stype <unknown>))))
+        (hashq-set! %gtype-hash gtype stype)
+        (if old-stype
+            (if parent
+                (format +debug-port+
+                        "~S - re-registering a ~A type for ~x as ~S~%"
+                        ($type-name gtype)
+                        ($type-name parent)
+                        gtype
+                        stype)
+                (format +debug-port+
+                        "~S - re-registering a type for ~x as ~S~%"
+                        ($type-name gtype)
+                        gtype
+                        stype))
+            (if parent
+                (format +debug-port+
+                        "~S - registering a new ~A type for ~x as ~S~%"
+                        ($type-name gtype)
+                        ($type-name parent)
+                        gtype
+                        stype)
+                (format +debug-port+
+                        "~S - registering a new type for ~x as ~S~%"
+                        ($type-name gtype)
+                        gtype
+                        stype)))))))
+
+(define (type-register gtype stype)
+  "Make the unidirectional gtype -> stype association. This does not
+require that the stype -> gtype association is one-to-one."
+  (let ((parent ($type-parent gtype)))
+    (unless (zero? parent)
+      (type-register-self parent <unknown>))
+    (type-register-self gtype stype)))
+
+(define (type-associate gtype stype)
+  "Make a bidirectional gtype <-> stype association. Use this
+when the scheme class only maps to a single GType."
+  (type-register gtype stype)
+  (set-object-property! stype 'sort-key
+                        (hash-table-size %gtype-hash))
+  (hashq-set! %reverse-hash stype gtype))
+
+(define (type-is-registered? gtype)
+  (not (not (hashq-ref %gtype-hash gtype))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define G_TYPE_PRIV_C_ARRAY
+  ($type-register-static-simple $G_TYPE_POINTER
+                                "CArray"
+                                $G_TYPE_FLAG_FINAL))
+(type-register G_TYPE_PRIV_C_ARRAY <unknown>)
+
 
 (define (%gtype-dump-table)
   "Returns a list describing the current state of the GType to Scheme

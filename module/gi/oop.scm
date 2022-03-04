@@ -22,7 +22,8 @@
   #:export (<signal>
             make-signal
             connect-after
-            %gtype-hash)
+            %gtype-hash
+            %reverse-hash)
   #:re-export (connect))
 
 (eval-when (expand load eval)
