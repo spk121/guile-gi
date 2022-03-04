@@ -23,8 +23,8 @@
 
 extern SCM gig_enum_type;
 extern SCM gig_flags_type;
-extern SCM gig_object_type;
-extern SCM gig_paramspec_type;
+SCM gig_object_type(void);
+SCM gig_paramspec_type(void);
 extern SCM gig_value_type;
 extern SCM gig_closure_type;
 

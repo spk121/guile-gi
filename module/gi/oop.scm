@@ -23,7 +23,8 @@
             make-signal
             connect-after
             %gtype-hash
-            %reverse-hash)
+            %reverse-hash
+            %make-fundamental-class)
   #:re-export (connect))
 
 (eval-when (expand load eval)

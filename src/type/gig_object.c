@@ -48,13 +48,13 @@ gig_object_ref(GObject *object)
 static GObject *
 gig_object_peek(SCM object)
 {
-    return gig_type_peek_typed_object(object, gig_object_type);
+    return gig_type_peek_typed_object(object, gig_object_type());
 }
 
 static GParamSpec *
 gig_paramspec_peek(SCM object)
 {
-    return gig_type_peek_typed_object(object, gig_paramspec_type);
+    return gig_type_peek_typed_object(object, gig_paramspec_type());
 }
 
 static SCM
@@ -73,7 +73,7 @@ gig_i_scm_make_gobject(SCM s_gtype, SCM s_prop_keylist)
     SCM_ASSERT_TYPE(G_TYPE_IS_CLASSED(type), s_gtype, SCM_ARG1, FUNC,
                     "typeid derived from G_TYPE_OBJECT or scheme type derived from <GObject>");
 
-    if (SCM_UNBNDP(gig_type_get_scheme_type(type)))
+    if (scm_is_unknown_class(gig_type_get_scheme_type(type)))
         scm_misc_error(FUNC, "type ~S lacks introspection", scm_list_1(s_gtype));
 
     scm_dynwind_begin(0);
@@ -137,7 +137,7 @@ gig_i_scm_get_pspec(SCM self, SCM prop)
     char *name;
     GParamSpec *pspec;
 
-    SCM_ASSERT(SCM_IS_A_P(self, gig_object_type), self, SCM_ARG1, "%get-pspec");
+    SCM_ASSERT(SCM_IS_A_P(self, gig_object_type()), self, SCM_ARG1, "%get-pspec");
 
     scm_dynwind_begin(0);
     obj = gig_object_peek(self);
@@ -163,8 +163,8 @@ gig_i_scm_get_property(SCM self, SCM property)
 
     GValue value = { 0, };
 
-    SCM_ASSERT(SCM_IS_A_P(self, gig_object_type), self, SCM_ARG1, "%get-property");
-    SCM_ASSERT(SCM_IS_A_P(property, gig_paramspec_type), property, SCM_ARG2, "%get-property");
+    SCM_ASSERT(SCM_IS_A_P(self, gig_object_type()), self, SCM_ARG1, "%get-property");
+    SCM_ASSERT(SCM_IS_A_P(property, gig_paramspec_type()), property, SCM_ARG2, "%get-property");
     obj = gig_object_peek(self);
     pspec = gig_paramspec_peek(property);
     if (!pspec || pspec != get_paramspec(obj, pspec->name)) {
@@ -192,8 +192,8 @@ gig_i_scm_set_property_x(SCM self, SCM property, SCM svalue)
 
     GValue value = { 0, };
 
-    SCM_ASSERT(SCM_IS_A_P(self, gig_object_type), self, SCM_ARG1, "%set-property!");
-    SCM_ASSERT(SCM_IS_A_P(property, gig_paramspec_type), property, SCM_ARG2, "%set-property");
+    SCM_ASSERT(SCM_IS_A_P(self, gig_object_type()), self, SCM_ARG1, "%set-property!");
+    SCM_ASSERT(SCM_IS_A_P(property, gig_paramspec_type()), property, SCM_ARG2, "%set-property");
 
     obj = gig_object_peek(self);
     pspec = gig_paramspec_peek(property);
@@ -357,14 +357,14 @@ gig_i_scm_define_type(SCM s_type_name, SCM s_parent_type, SCM s_properties, SCM 
     GigSignalSpec **signals = NULL;
 
     SCM_ASSERT(scm_is_string(s_type_name), s_type_name, SCM_ARG1, "%define-type");
-    SCM_ASSERT(SCM_SUBCLASSP(s_parent_type, gig_object_type), s_parent_type, SCM_ARG2,
+    SCM_ASSERT(SCM_SUBCLASSP(s_parent_type, gig_object_type()), s_parent_type, SCM_ARG2,
                "%define-type");
 
     type_name = scm_to_utf8_string(s_type_name);
 
     parent_type = scm_to_gtype(s_parent_type);
 
-    if (SCM_UNBNDP(gig_type_get_scheme_type(parent_type)))
+    if (scm_is_unknown_class(s_parent_type))
         scm_misc_error("%define-type", "type ~S is dupe", scm_list_1(s_parent_type));
 
     SCM_UNBND_TO_BOOL_F(s_properties);
@@ -448,7 +448,7 @@ gig_i_scm_connect(SCM self, SCM signal, SCM sdetail, SCM callback, SCM s_after, 
     unsigned sigid;
     GQuark detail;
 
-    SCM_ASSERT(SCM_IS_A_P(self, gig_object_type), self, SCM_ARG1, "%connect");
+    SCM_ASSERT(SCM_IS_A_P(self, gig_object_type()), self, SCM_ARG1, "%connect");
     SCM_ASSERT(SCM_IS_A_P(signal, gig_signal_type), signal, SCM_ARG2, "%connect");
 
     obj = gig_object_peek(self);
@@ -473,7 +473,7 @@ gig_i_scm_emit(SCM self, SCM signal, SCM s_detail, SCM args)
     GQuark detail;
     SCM ret = SCM_EOL;
 
-    SCM_ASSERT(SCM_IS_A_P(self, gig_object_type), self, SCM_ARG1, "%emit");
+    SCM_ASSERT(SCM_IS_A_P(self, gig_object_type()), self, SCM_ARG1, "%emit");
     SCM_ASSERT(SCM_IS_A_P(signal, gig_signal_type), signal, SCM_ARG2, "%emit");
 
     obj = gig_object_peek(self);

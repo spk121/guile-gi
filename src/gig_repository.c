@@ -175,8 +175,7 @@ load_info(GIBaseInfo *info, LoadFlags flags)
                 typeinfo = g_irepository_find_by_gtype(NULL, types[i]);
                 if (typeinfo) {
                     gig_debug_load("%s - loading prerequisite arg type %s",
-                                   g_base_info_get_name(info),
-                                   g_type_name(types[i]));
+                                   g_base_info_get_name(info), g_type_name(types[i]));
                     defs = scm_append2(defs, load_info(typeinfo, LOAD_INFO_ONLY));
                     g_base_info_unref(typeinfo);
                 }
@@ -233,8 +232,7 @@ load_info(GIBaseInfo *info, LoadFlags flags)
             typeinfo = g_irepository_find_by_gtype(NULL, par_gtype);
             if (typeinfo) {
                 gig_debug_load("%s - loading prerequisite type %s",
-                               g_base_info_get_name(info),
-                               g_type_name(par_gtype));
+                               g_base_info_get_name(info), g_type_name(par_gtype));
                 defs = scm_append2(defs, load_info(typeinfo, LOAD_INFO_ONLY));
                 g_base_info_unref(typeinfo);
             }
@@ -262,15 +260,15 @@ load_info(GIBaseInfo *info, LoadFlags flags)
                     typeinfo = g_irepository_find_by_gtype(NULL, interfaces[n]);
                     if (typeinfo) {
                         gig_debug_load("%s - loading prerequisite interface type %s",
-                                       g_base_info_get_name(info),
-                                       g_type_name(interfaces[n]));
+                                       g_base_info_get_name(info), g_type_name(interfaces[n]));
                         defs = scm_append2(defs, load_info(typeinfo, LOAD_INFO_ONLY));
                         g_base_info_unref(typeinfo);
                     }
                     else {
                         gig_debug_load
                             ("%s - not loading %s type because its interface %s has no introspection information",
-                             g_base_info_get_name(info), g_info_type_to_string(t), g_type_name(interfaces[n]));
+                             g_base_info_get_name(info), g_info_type_to_string(t),
+                             g_type_name(interfaces[n]));
                         interface_ok = false;
                         break;
                     }

@@ -20,13 +20,12 @@
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-2)
   #:use-module (srfi srfi-26)
-  #:use-module (srfi srfi-69)
   #:use-module (system foreign)
 
   #:use-module (gi oop)
 
   #:export (<GIBaseInfo>
-            <GBoxed> <GObject>
+            <GBoxed> <GObject> <GInterface> <GParam> <GVariant>
             <GValue> transform
             <GClosure> procedure->closure
             <GEnum> <GFlags>
@@ -87,28 +86,28 @@
       (when (or (not old-stype) (and (eq? old-stype <unknown>) (not (eq? stype <unknown>))))
         (hashq-set! %gtype-hash gtype stype)
         (if old-stype
-            (if parent
-                (format +debug-port+
-                        "~S - re-registering a ~A type for ~x as ~S~%"
-                        ($type-name gtype)
-                        ($type-name parent)
-                        gtype
-                        stype)
+            (if (zero? parent)
                 (format +debug-port+
                         "~S - re-registering a type for ~x as ~S~%"
-                        ($type-name gtype)
-                        gtype
-                        stype))
-            (if parent
-                (format +debug-port+
-                        "~S - registering a new ~A type for ~x as ~S~%"
-                        ($type-name gtype)
-                        ($type-name parent)
+                        ($type-name (pk 'charlie gtype))
                         gtype
                         stype)
                 (format +debug-port+
+                        "~S - re-registering a ~A type for ~x as ~S~%"
+                        ($type-name (pk 'alpha gtype))
+                        ($type-name (pk 'bravo parent))
+                        gtype
+                        stype))
+            (if (zero? parent)
+                (format +debug-port+
                         "~S - registering a new type for ~x as ~S~%"
-                        ($type-name gtype)
+                        ($type-name (pk 'foxtrot gtype))
+                        gtype
+                        stype)
+                (format +debug-port+
+                        "~S - registering a new ~A type for ~x as ~S~%"
+                        ($type-name (pk 'delta gtype))
+                        ($type-name (pk 'echo parent))
                         gtype
                         stype)))))))
 
@@ -125,11 +124,28 @@ require that the stype -> gtype association is one-to-one."
 when the scheme class only maps to a single GType."
   (type-register gtype stype)
   (set-object-property! stype 'sort-key
-                        (hash-table-size %gtype-hash))
+                        (hash-count (const #t) %gtype-hash))
   (hashq-set! %reverse-hash stype gtype))
 
 (define (type-is-registered? gtype)
   (not (not (hashq-ref %gtype-hash gtype))))
+
+(define (type-class-name-from-gtype gtype)
+  (string-append "<"
+                 ($type-name gtype)
+                 ">"))
+
+(define (type-define-fundamental gtype supers ref unref)
+  (if (type-is-registered? gtype)
+      (begin
+        (format +debug-port+
+                "not redefining fundamental type ~S"
+                ($type-name (pk 'golf gtype)))
+        (hashq-ref %gtype-hash gtype))
+      ;; else
+      (%make-fundamental-class
+       (string->symbol (type-class-name-from-gtype gtype))
+       supers ref unref)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -139,6 +155,25 @@ when the scheme class only maps to a single GType."
                                 $G_TYPE_FLAG_FINAL))
 (type-register G_TYPE_PRIV_C_ARRAY <unknown>)
 
+
+(define <GObject> (type-define-fundamental G_TYPE_OBJECT '() $object-ref-sink-ptr
+                                           $object-unref-ptr))
+(type-associate G_TYPE_OBJECT <GObject>)
+
+(define <GInterface> (type-define-fundamental G_TYPE_INTERFACE '() $null-ptr $null-ptr))
+(type-associate G_TYPE_INTERFACE <GInterface>)
+
+(define <GParam>
+  (type-define-fundamental G_TYPE_PARAM `(,<applicable-struct-with-setter>)
+                           $param-spec-ref-sink-ptr
+                           $param-spec-unref-ptr))
+(type-associate G_TYPE_PARAM <GParam>)
+
+(define <GVariant>
+  (type-define-fundamental G_TYPE_VARIANT '()
+                           $variant-ref-sink-ptr
+                           $variant-unref-ptr))
+(type-associate G_TYPE_VARIANT <GVariant>)
 
 (define (%gtype-dump-table)
   "Returns a list describing the current state of the GType to Scheme
@@ -156,8 +191,8 @@ class."
   (slot-set! value 'procedure (cut %get value))
   (slot-set! value 'setter
              (case-lambda
-              ((v) (%set! value v))
-              ((t v) (%set-type! value t) (%set! value v)))))
+               ((v) (%set! value v))
+               ((t v) (%set-type! value t) (%set! value v)))))
 
 (define-method (transform (value <GValue>) gtype)
   (%transform value gtype))

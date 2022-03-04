@@ -148,4 +148,3 @@ gig_define_enum_conversions(GIEnumInfo *info, GType type)
 
     return defs;
 }
-

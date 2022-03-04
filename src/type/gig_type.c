@@ -77,8 +77,6 @@ static SCM reverse_hash_var = SCM_UNDEFINED;
 
 SCM gig_enum_type;
 SCM gig_flags_type;
-SCM gig_object_type;
-SCM gig_paramspec_type;
 SCM gig_value_type;
 SCM gig_closure_type;
 static SCM gig_fundamental_type;
@@ -681,6 +679,24 @@ gig_type_get_c_array_type()
     return type;
 }
 
+SCM
+gig_object_type()
+{
+    static SCM stype = SCM_BOOL_F;
+    if (scm_is_false(stype))
+        stype = gig_type_get_scheme_type(G_TYPE_OBJECT);
+    return stype;
+}
+
+SCM
+gig_paramspec_type()
+{
+    static SCM stype = SCM_BOOL_F;
+    if (scm_is_false(stype))
+        stype = gig_type_get_scheme_type(G_TYPE_PARAM);
+    return stype;
+}
+
 ////////////////////////////////////////////////////////////////
 // GUILE API
 
@@ -1004,31 +1020,25 @@ gig_init_types_once(void)
         scm_define(key, S);                     \
     } while (0)
 
+    scm_c_define("$object-ref-sink-ptr", scm_from_pointer(g_object_ref_sink, NULL));
+    scm_c_define("$object-unref-ptr", scm_from_pointer(g_object_unref, NULL));
+    scm_c_define("$param-spec-ref-sink-ptr", scm_from_pointer(g_param_spec_ref_sink, NULL));
+    scm_c_define("$param-spec-unref-ptr", scm_from_pointer(g_param_spec_unref, NULL));
+    scm_c_define("$variant-ref-sink-ptr", scm_from_pointer(g_variant_ref_sink, NULL));
+    scm_c_define("$variant-unref-ptr", scm_from_pointer(g_variant_unref, NULL));
+    scm_c_define("$null-ptr", scm_from_pointer(NULL, NULL));
+    scm_c_define("G_TYPE_OBJECT", scm_from_size_t(G_TYPE_OBJECT));
+    scm_c_define("G_TYPE_INTERFACE", scm_from_size_t(G_TYPE_INTERFACE));
+    scm_c_define("G_TYPE_PARAM", scm_from_size_t(G_TYPE_PARAM));
+    scm_c_define("G_TYPE_VARIANT", scm_from_size_t(G_TYPE_VARIANT));
+
     // fundamental types
-    gig_type_define_fundamental(G_TYPE_OBJECT, SCM_EOL,
-                                (GigTypeRefFunction)g_object_ref_sink,
-                                (GigTypeUnrefFunction)g_object_unref);
-    gig_type_define_fundamental(G_TYPE_INTERFACE, SCM_EOL, NULL, NULL);
-    gig_type_define_fundamental(G_TYPE_PARAM,
-                                scm_list_1(getter_with_setter),
-                                (GigTypeRefFunction)g_param_spec_ref_sink,
-                                (GigTypeUnrefFunction)g_param_spec_unref);
-
-    gig_type_define_fundamental(G_TYPE_VARIANT, SCM_EOL,
-                                (GigTypeRefFunction)g_variant_ref_sink,
-                                (GigTypeUnrefFunction)g_variant_unref);
-
     A(G_TYPE_BOXED, gig_boxed_type);
     A(G_TYPE_ENUM, gig_enum_type);
     scm_c_define("G_TYPE_ENUM", scm_from_size_t(G_TYPE_ENUM));
 
     A(G_TYPE_FLAGS, gig_flags_type);
     scm_c_define("G_TYPE_FLAGS", scm_from_size_t(G_TYPE_FLAGS));
-
-    gig_object_type = gig_type_get_scheme_type(G_TYPE_OBJECT);
-    scm_c_define("G_TYPE_OBJECT", scm_from_size_t(G_TYPE_OBJECT));
-
-    gig_paramspec_type = gig_type_get_scheme_type(G_TYPE_PARAM);
 
     // derived types
 
