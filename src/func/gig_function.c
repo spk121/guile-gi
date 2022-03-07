@@ -250,13 +250,13 @@ type_specializer(GigTypeMeta *meta)
 {
     if (meta->gtype == G_TYPE_GTYPE)
         // This could either an unsigned integer, or an type class.
-        return scm_get_top_class();
+        return scm_get_unknown_class();
     else if (meta->gtype == G_TYPE_PRIV_C_ARRAY
              || meta->gtype == G_TYPE_ARRAY
              || meta->gtype == G_TYPE_BYTE_ARRAY || meta->gtype == G_TYPE_PTR_ARRAY)
         // Lots of different ways to represent arrays: bytevectors
         // unicode strings, etc.
-        return scm_get_top_class();
+        return scm_get_unknown_class();
 
     switch (meta->gtype) {
     case G_TYPE_POINTER:
@@ -271,13 +271,13 @@ type_specializer(GigTypeMeta *meta)
         case GIG_DATA_CALLBACK:
             return scm_get_applicable_class();
         default:
-            return scm_get_top_class();
+            return scm_get_unknown_class();
         }
     case G_TYPE_CHAR:
     case G_TYPE_UCHAR:
         // These could be character or integers, so don't use them for
         // specialization.
-        return SCM_UNDEFINED;
+        return scm_get_unknown_class();
     case G_TYPE_UINT:
         // special case: Unicode characters
         if (meta->is_unichar)
@@ -315,10 +315,6 @@ make_formals(GICallableInfo *callable,
         // Don't force types on nullable input, as #f can also be used to represent
         // NULL.
         if (entry->meta.is_nullable)
-            continue;
-        // Also don't force types on char and uchar, since that could
-        // be a real character or a small integer.
-        if (entry->meta.gtype == G_TYPE_CHAR || entry->meta.gtype == G_TYPE_UCHAR)
             continue;
 
         SCM s_type = type_specializer(&entry->meta);
