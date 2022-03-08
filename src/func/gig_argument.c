@@ -22,7 +22,7 @@
 #include "../core.h"
 #include "../type.h"
 #include "gig_argument.h"
-#include "gig_callback.h"
+#include "gig_callback_priv.h"
 
 #define TRACE_C2S() gig_debug_transfer("[C2S] On line %d while handing %s of %s.", __LINE__, gig_type_meta_describe(meta), subr)
 #define TRACE_S2C() gig_debug_transfer("[S2C] On line %d while handing %s of %s.", __LINE__, gig_type_meta_describe(meta), subr)

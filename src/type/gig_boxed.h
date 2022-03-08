@@ -1,4 +1,4 @@
-// Copyright (C) 2019, 2020, 2021, 2022 Michael L. Gran
+// Copyright (C) 2019, 2020, 2022 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -12,12 +12,27 @@
 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-#ifndef GIG_UTIL_PUB_H
-#define GIG_UTIL_PUB_H
+#ifndef GIG_BOXED_H
+#define GIG_BOXED_H
 
 #include <girepository.h>
+#include <ffi.h>
+#include "../core.h"
 
-char *gig_callable_info_make_name(GICallableInfo *info, const char *prefix);
+typedef struct _GigBoxedFuncs
+{
+    ffi_type *atypes[1];
+
+    ffi_closure *copy_closure;
+    ffi_cif copy_cif;
+    void *copy;
+
+    ffi_closure *free_closure;
+    ffi_cif free_cif;
+    void *free;
+} GigBoxedFuncs;
+
+GigBoxedFuncs *_boxed_funcs_for_type(GType type);
+void _free_boxed_funcs(void);
 
 #endif

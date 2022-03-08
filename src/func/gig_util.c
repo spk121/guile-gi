@@ -23,7 +23,7 @@
 #include <libguile.h>
 #include <glib.h>
 #include <glib-object.h>
-#include "gig_util.h"
+#include "gig_util_priv.h"
 
 static bool is_predicate(GIFunctionInfo *info);
 static void count_args(GICallableInfo *info, int *in, int *out);

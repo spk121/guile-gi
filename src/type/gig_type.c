@@ -19,8 +19,8 @@
 #include <libguile.h>
 #include <girepository.h>
 #include <ffi.h>
-#include "gig_type.h"
-#include "gig_type_private.h"
+#include "gig_type_priv.h"
+#include "gig_boxed.h"
 
 // In C, a GType is an integer.  It is an integer ID that maps to a
 // type of GObject.

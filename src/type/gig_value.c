@@ -16,8 +16,8 @@
 #include <assert.h>
 #include <girepository.h>
 #include "gig_value.h"
-#include "gig_type.h"
-#include "gig_flag.h"
+#include "gig_type_priv.h"
+#include "gig_flag_priv.h"
 
 #ifndef FLT_MAX
 #define FLT_MAX 3.402823466e+38F

@@ -15,9 +15,9 @@
 
 #include <assert.h>
 #include <string.h>
-#include "gig_object.h"
-#include "gig_type.h"
-#include "gig_signal.h"
+#include "gig_object_priv.h"
+#include "gig_type_priv.h"
+#include "gig_signal_priv.h"
 #include "gig_closure.h"
 #include "gig_value.h"
 

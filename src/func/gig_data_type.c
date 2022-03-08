@@ -20,8 +20,8 @@
 #include "../type.h"
 #include "gig_argument.h"
 #include "gig_data_type.h"
-#include "gig_arg_map.h"
-#include "gig_util.h"
+#include "gig_arg_map_priv.h"
+#include "gig_util_priv.h"
 
 static void gig_type_meta_init_from_type_info(GigTypeMeta *type, GITypeInfo *ti);
 static void gig_type_meta_init_from_basic_type_tag(GigTypeMeta *meta, GITypeTag tag);

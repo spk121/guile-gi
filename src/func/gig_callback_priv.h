@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2022 Michael L. Gran
+// Copyright (C) 2022 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -13,12 +13,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef GIG_CONSTANT_PUBLIC_H
-#define GIG_CONSTANT_PUBLIC_H
+#ifndef GIG_CALLBACK_H
+#define GIG_CALLBACK_H
 
 #include <girepository.h>
 #include <libguile.h>
+#include "gig_callback.h"
+#include "../core.h"
 
-SCM gig_constant_define(GIConstantInfo *info);
+SCM gig_callback_to_scm(const char *name, GICallbackInfo *info, void *proc);
+void *gig_callback_to_c(const char *name, GICallbackInfo *callback_info, SCM s_func);
+
+GIG_API void gig_init_callback(void);
 
 #endif

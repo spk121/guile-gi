@@ -1,4 +1,4 @@
-// Copyright (C) 2019, 2020, 2022 Michael L. Gran
+// Copyright (C) 2018, 2019, 2022 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -12,27 +12,15 @@
 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-#ifndef _GIG_TYPE_PRIVATE_H_
-#define _GIG_TYPE_PRIVATE_H_
+
+#ifndef GIG_FLAG_PRIV_H
+#define GIG_FLAG_PRIV_H
 
 #include <girepository.h>
-#include <ffi.h>
-#include "../core.h"
+#include <libguile.h>
+#include "gig_flag.h"
 
-typedef struct _GigBoxedFuncs
-{
-    ffi_type *atypes[1];
-
-    ffi_closure *copy_closure;
-    ffi_cif copy_cif;
-    void *copy;
-
-    ffi_closure *free_closure;
-    ffi_cif free_cif;
-    void *free;
-} GigBoxedFuncs;
-
-GigBoxedFuncs *_boxed_funcs_for_type(GType type);
-void _free_boxed_funcs(void);
+SCM gig_symbol_to_enum(SCM type, SCM symbol);
+SCM gig_list_to_flags(SCM type, SCM symbol);
 
 #endif

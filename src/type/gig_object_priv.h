@@ -1,4 +1,4 @@
-// Copyright (C) 2019, 2020, 2021, 2022 Michael L. Gran
+// Copyright (C) 2022 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -13,11 +13,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef GIG_UTIL_PUB_H
-#define GIG_UTIL_PUB_H
+#ifndef GIG_OBJECT_PRIV_H
+#define GIG_OBJECT_PRIV_H
 
-#include <girepository.h>
-
-char *gig_callable_info_make_name(GICallableInfo *info, const char *prefix);
+#include "gig_object.h"
 
 #endif

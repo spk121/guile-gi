@@ -18,9 +18,9 @@
 #include <string.h>
 #include "../core.h"
 #include "../type.h"
-#include "gig_arg_map.h"
+#include "gig_arg_map_priv.h"
 #include "gig_data_type.h"
-//#include "gig_util.h"
+//#include "gig_util_priv.h"
 
 #define gig_debug_amap(...) gig_debug_internal(LOG_LEVEL_DEBUG, "amap", __VA_ARGS__)
 

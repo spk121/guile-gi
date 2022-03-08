@@ -125,7 +125,7 @@ libguile_gi_la_c_sources = \
   src/gig_repository.c \
   src/gig_document.c \
   src/type/gig_type.c \
-  src/type/gig_type_private.c \
+  src/type/gig_boxed.c \
   src/func/gig_util.c \
   src/gig_logging.c
 
@@ -146,27 +146,27 @@ libguile_gi_la_internal_headers = \
   src/func/gig_argument.h \
   src/type/gig_closure.h \
   src/func/gig_data_type.h \
-  src/type/gig_object_pub.h \
   src/type/gig_object.h \
+  src/type/gig_object_priv.h \
   src/type/gig_value.h \
-  src/type/gig_signal_pub.h \
   src/type/gig_signal.h \
-  src/func/gig_arg_map_pub.h \
+  src/type/gig_signal_priv.h \
   src/func/gig_arg_map.h \
-  src/func/gig_callback_pub.h \
+  src/func/gig_arg_map_priv.h \
   src/func/gig_callback.h \
-  src/func/gig_function_pub.h \
+  src/func/gig_callback_priv.h \
   src/func/gig_function.h \
+  src/func/gig_function_priv.h \
+  src/type/gig_constant_priv.h \
   src/type/gig_constant.h \
-  src/type/gig_constant_pub.h \
-  src/type/gig_flag_pub.h \
   src/type/gig_flag.h \
+  src/type/gig_flag_priv.h \
   src/gig_repository.h \
-  src/type/gig_type_pub.h \
   src/type/gig_type.h \
-  src/type/gig_type_private.h \
-  src/func/gig_util_pub.h \
+  src/type/gig_type_priv.h \
+  src/type/gig_boxed.h \
   src/func/gig_util.h \
+  src/func/gig_util_priv.h \
   src/gig_logging.h
 
 libguile_gi_la_SOURCES = \

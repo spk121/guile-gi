@@ -16,6 +16,9 @@
 #ifndef GIG_CONSTANT_H
 #define GIG_CONSTANT_H
 
-#include "gig_constant_pub.h"
+#include <girepository.h>
+#include <libguile.h>
+
+SCM gig_constant_define(GIConstantInfo *info);
 
 #endif

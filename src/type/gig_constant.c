@@ -16,7 +16,7 @@
 #include <libguile.h>
 #include <inttypes.h>
 #include "../core.h"
-#include "gig_constant.h"
+#include "gig_constant_priv.h"
 
 SCM
 gig_constant_define(GIConstantInfo *info)

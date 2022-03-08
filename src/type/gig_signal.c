@@ -12,10 +12,10 @@
 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-#include "gig_signal.h"
+#include "gig_signal_priv.h"
 #include "gig_value.h"
-#include "gig_type.h"
-#include "gig_flag.h"
+#include "gig_type_priv.h"
+#include "gig_flag_priv.h"
 
 typedef void (*handler_func)(void *);
 static SCM signal_slot_syms[GIG_SIGNAL_SLOT_COUNT];

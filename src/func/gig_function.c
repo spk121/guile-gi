@@ -20,9 +20,9 @@
 #include "../type.h"
 #include "gig_argument.h"
 #include "gig_args_store.h"
-#include "gig_util.h"
-#include "gig_arg_map.h"
-#include "gig_function.h"
+#include "gig_util_priv.h"
+#include "gig_arg_map_priv.h"
+#include "gig_function_priv.h"
 
 typedef struct _GigFunction
 {

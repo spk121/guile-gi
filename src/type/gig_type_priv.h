@@ -1,4 +1,4 @@
-// Copyright (C) 2022 Michael L. Gran
+// Copyright (C) 2018, 2019, 2020, 2021, 2022 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -13,14 +13,30 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef GIG_OBJECT_PUBLIC_H
-#define GIG_OBJECT_PUBLIC_H
+#ifndef GIG_TYPE_PRIV_H
+#define GIG_TYPE_PRIV_H
 
-#include <libguile.h>
+#include <stdbool.h>
 #include <girepository.h>
 #include "../core.h"
+#include "gig_type.h"
 
-SCM gig_property_define(GType type, GIPropertyInfo *info, const char *namespace);
-GIG_API void gig_init_object(void);
+SCM gig_enum_type(void);
+SCM gig_flags_type(void);
+SCM gig_object_type(void);
+SCM gig_paramspec_type(void);
+SCM gig_value_type(void);
+SCM gig_closure_type(void);
+
+char *gig_type_class_name_from_gtype(GType gtype);
+
+void gig_type_register(GType gtype, SCM stype);
+SCM gig_type_define_full(GType gtype, SCM extra_supers);
+
+GType gig_type_get_gtype_from_obj(SCM x);
+SCM gig_type_get_scheme_type_with_info(GIRegisteredTypeInfo *info);
+
+bool gig_type_check_object(SCM obj);
+void *gig_type_peek_typed_object(SCM obj, SCM expected);
 
 #endif

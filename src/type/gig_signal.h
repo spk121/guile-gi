@@ -12,33 +12,23 @@
 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
 #ifndef GIG_SIGNAL_H
 #define GIG_SIGNAL_H
 
-#include <girepository.h>
 #include <libguile.h>
-#include "gig_signal_pub.h"
 
-typedef struct GigSignalSpec_
+typedef enum
 {
-    char *signal_name;
-    GSignalFlags signal_flags;
-    GSignalAccumulator accumulator;
-    void *accu_data;
-    GType return_type;
-    unsigned n_params;
-    GType *param_types;
-} GigSignalSpec;
+    GIG_SIGNAL_SLOT_NAME,
+    GIG_SIGNAL_SLOT_FLAGS,
+    GIG_SIGNAL_SLOT_ACCUMULATOR,
+    GIG_SIGNAL_SLOT_RETURN_TYPE,
+    GIG_SIGNAL_SLOT_PARAM_TYPES,
+    GIG_SIGNAL_SLOT_OUTPUT_MASK,
+    GIG_SIGNAL_SLOT_COUNT
+} GigSignalSlot;
 
-extern SCM gig_signal_type;
-
-GigSignalSpec *gig_signalspec_from_obj(SCM obj);
-void gig_free_signalspec(GigSignalSpec *spec);
-
-SCM gig_signal_ref(SCM signal, GigSignalSlot slot);
-
-GClosure *gig_signal_closure_new(SCM instance, GType g_type, const char *signal_name,
-                                 SCM callback);
+SCM gig_make_signal(size_t n_slots, GigSignalSlot *slots, SCM *slot_values);
+void gig_init_signal(void);
 
 #endif
