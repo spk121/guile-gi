@@ -41,8 +41,10 @@ struct _GigCallback
 
 static slist_t *callback_list = NULL;
 
+#if HAVE_SCM_HOOKS
 SCM gig_before_c_callback_hook;
 SCM gig_before_callback_hook;
+#endif
 SCM gig_callback_thread_fluid;
 
 static ffi_type *amap_entry_to_ffi_type(GigArgMapEntry *entry);
@@ -229,10 +231,12 @@ callback_binding_inner(struct callback_binding_args *args)
     s_args = scm_reverse_x(s_args, SCM_EOL);
     size_t length = scm_c_length(s_args);
 
+#if HAVE_SCM_HOOKS
     if (!scm_is_empty_hook(gig_before_callback_hook))
         scm_c_activate_hook_3(gig_before_callback_hook,
                               scm_from_utf8_string(g_base_info_get_name(gcb->callback_info)),
                               gcb->s_func, s_args);
+#endif
 
     // The actual call of the Scheme callback happens here.
     if (length < amap->s_input_req || length > amap->s_input_req + amap->s_input_opt)
@@ -352,10 +356,12 @@ c_callback_binding_inner(struct callback_binding_args *args)
     if (SCM_UNBNDP(s_args))
         s_args = SCM_EOL;
 
+#if HAVE_SCM_HOOKS
     if (!scm_is_empty_hook(gig_before_c_callback_hook))
         scm_c_activate_hook_3(gig_before_c_callback_hook,
                               scm_from_utf8_string(g_base_info_get_name(gcb->callback_info)),
                               scm_from_pointer(gcb->c_func, NULL), s_args);
+#endif
 
     // Use 'name' instead of gcb->name, which is NULL for C callbacks.
     GError *error = NULL;
@@ -669,13 +675,16 @@ gig_init_callback(void)
 {
     atexit(gig_fini_callback);
 
+#if HAVE_SCM_HOOKS
     gig_before_c_callback_hook = scm_permanent_object(scm_make_hook(scm_from_size_t(3)));
     gig_before_callback_hook = scm_permanent_object(scm_make_hook(scm_from_size_t(3)));
+    scm_c_define("%before-c-callback-hook", gig_before_c_callback_hook);
+    scm_c_define("%before-callback-hook", gig_before_callback_hook);
+#endif
+
     gig_callback_thread_fluid = scm_permanent_object(scm_make_thread_local_fluid(SCM_BOOL_F));
     scm_fluid_set_x(gig_callback_thread_fluid, SCM_BOOL_T);
 
-    scm_c_define("%before-c-callback-hook", gig_before_c_callback_hook);
-    scm_c_define("%before-callback-hook", gig_before_callback_hook);
     scm_c_define("%callback-thread-fluid", gig_callback_thread_fluid);
 
     scm_c_define_gsubr("is-registered-callback?", 1, 0, 0, scm_is_registered_callback_p);

@@ -18,12 +18,20 @@
 
 #include <libguile.h>
 
+#define HAVE_SCM_HOOKS \
+    (SCM_MAJOR_VERSION > 3                                              \
+     || (SCM_MAJOR_VERSION == 3 && SCM_MINOR_VERSION > 0)               \
+     || (SCM_MAJOR_VERSION == 3 && SCM_MINOR_VERSION == 0 && SCM_MICRO_VERSION >= 7))
+
+
 int scm_is_boolean(SCM x);
 int scm_is_bytevector(SCM x);
 int scm_is_char(SCM x);
 int scm_is_class(SCM x);
 int scm_is_defined(SCM x);
+#if HAVE_SCM_HOOKS
 int scm_is_empty_hook(SCM x);
+#endif
 int scm_is_keyword(SCM x);
 int scm_is_list(SCM x);
 int scm_is_pointer(SCM x);
@@ -33,8 +41,10 @@ int scm_is_real(SCM x);
 SCM scm_append2(SCM a, SCM b);
 size_t scm_c_length(SCM x);
 SCM scm_c_list_ref(SCM lst, size_t i);
+#if HAVE_SCM_HOOKS
 void scm_c_activate_hook_2(SCM hook, SCM a, SCM b);
 void scm_c_activate_hook_3(SCM hook, SCM a, SCM b, SCM c);
+#endif
 SCM scm_current_module_definition(SCM name);
 SCM scm_drop_right_1(SCM lst);
 void *scm_dynfree(void *x);

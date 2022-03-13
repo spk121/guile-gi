@@ -586,9 +586,6 @@ gig_type_transfer_object(GType type, void *ptr, GITransfer transfer)
     return scm_make_with_value(scm_type, pointer);
 }
 
-
-
-
 static void
 gig_type_register_self(GType gtype, SCM stype)
 {
@@ -598,11 +595,9 @@ gig_type_register_self(GType gtype, SCM stype)
     SCM hash = scm_variable_ref(gtype_hash_var);
     pval = scm_hashq_ref(hash, scm_from_size_t(gtype), SCM_BOOL_F);
 
-    // #<undefined> beats NULL. Anything defined beats #<undefined>.
-
-    if (scm_is_true(pval) && scm_is_eq(stype, SCM_PACK(pval)))
+    if (scm_is_true(pval) && scm_is_eq(stype, pval))
         return;
-    if (scm_is_true(pval) && !scm_is_unknown_class(SCM_PACK(pval)) && scm_is_unknown_class(stype))
+    if (scm_is_true(pval) && !scm_is_unknown_class(pval) && scm_is_unknown_class(stype))
         return;
     stype_str = scm_write_to_utf8_stringn(stype, 80);
     scm_hashq_set_x(hash, scm_from_size_t(gtype), stype);

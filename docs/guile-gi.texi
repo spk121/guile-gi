@@ -1129,6 +1129,8 @@ The following hooks are defined
 Will be emitted before calling a function with two arguments:
 @var{name}, a string denoting the name of the called function,
 and @var{args}, a list of Scheme variables passed to that function.
+
+Requires Guile 3.0.7 or greater.
 @end defvar
 
 Since the @code{%before-function-hook} procedure is called just before
@@ -1140,6 +1142,8 @@ Will be emitted before invoking a callback with three arguments:
 @var{name}, a string denoting the name of the callback,
 @var{proc}, the Scheme procedure that will be called,
 and @var{args}, a list of Scheme variables passed to that function.
+
+Requires Guile 3.0.7 or greater.
 @end defvar
 
 @defvar %before-c-callback-hook
@@ -1147,6 +1151,8 @@ Will be emitted before invoking a C callback with three arguments:
 @var{name}, a string denoting the name of the callback,
 @var{ptr}, a pointer to the C function that will be called,
 and @var{args}, a list of Scheme variables passed to that function.
+
+Requires Guile 3.0.7 or greater.
 @end defvar
 
 Callbacks are usually called as the result of signals, and the

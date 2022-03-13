@@ -16,6 +16,16 @@
 (define n-callbacks 0)
 (define n-c-callbacks 0)
 
+(define have-hooks (or (> (string->number (major-version)) 3)
+                       (and (= (string->number (major-version)) 3)
+                            (> (string->number (minor-version)) 0))
+                       (and (= (string->number (major-version)) 3)
+                            (= (string->number (minor-version)) 0)
+                            (>= (string->number (micro-version)) 7))))
+
+(if (not have-hooks)
+    (test-skip 3))
+
 (test-assert "bind %before-function-hook"
   (begin
     (add-hook! %before-function-hook
@@ -307,6 +317,9 @@
 (test-error "call returned c callback with wrong type"
             #t
             ((return-callback) "hello"))
+
+(if (not have-hooks)
+    (test-skip 1))
 
 (test-equal "hooks ran"
   '(38 25 4)

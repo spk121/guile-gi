@@ -41,7 +41,9 @@ SCM top_type;
 
 SCM sym_self;
 
+#if HAVE_SCM_HOOKS
 SCM gig_before_function_hook;
+#endif
 
 static GigGsubr *check_gsubr_cache(GICallableInfo *function_info, SCM self_type,
                                    int *required_input_count, int *optional_input_count,
@@ -504,8 +506,10 @@ function_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
     if (SCM_UNBNDP(s_args))
         s_args = SCM_EOL;
 
+#if HAVE_SCM_HOOKS
     if (!scm_is_empty_hook(gig_before_function_hook))
         scm_c_activate_hook_2(gig_before_function_hook, scm_from_utf8_string(gfn->name), s_args);
+#endif
 
     if (g_callable_info_is_method(gfn->function_info)) {
         self = gig_type_peek_object(scm_car(s_args));
@@ -542,8 +546,11 @@ gig_init_function(void)
 
     sym_self = scm_from_utf8_symbol("self");
 
+#if HAVE_SCM_HOOKS
     gig_before_function_hook = scm_permanent_object(scm_make_hook(scm_from_size_t(2)));
     scm_c_define("%before-function-hook", gig_before_function_hook);
+#endif
+
     atexit(gig_fini_function);
 }
 

@@ -14,6 +14,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "../core.h"
+#include "gig_arg_map_priv.h"
 #include "gig_args_store.h"
 #include "gig_argument.h"
 

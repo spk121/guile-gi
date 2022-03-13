@@ -146,7 +146,7 @@ gig_value_from_scm(GValue *value, SCM obj)
     }
     case G_TYPE_ENUM:
     {
-        if (SCM_IS_A_P(obj, gig_enum_type))
+        if (SCM_IS_A_P(obj, gig_enum_type()))
             g_value_set_enum(value, gig_enum_to_int(obj));
         else if (scm_is_symbol(obj)) {
             SCM type = gig_type_get_scheme_type(value_type);
@@ -159,7 +159,7 @@ gig_value_from_scm(GValue *value, SCM obj)
     }
     case G_TYPE_FLAGS:
     {
-        if (SCM_IS_A_P(obj, gig_flags_type))
+        if (SCM_IS_A_P(obj, gig_flags_type()))
             g_value_set_flags(value, gig_flags_to_uint(obj));
         else if (scm_is_list(obj)) {
             SCM type = gig_type_get_scheme_type(value_type);
