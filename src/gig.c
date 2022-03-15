@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2019 Michael L. Gran
+// Copyright (C) 2018, 2019, 2022 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,21 +14,13 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <girepository.h>
-#include <glib-object.h>
-#include <glib.h>
 #include <libguile.h>
-#include "gig_argument.h"
-#include "gig_callback.h"
-#include "gig_constant.h"
-#include "gig_data_type.h"
-#include "gig_flag.h"
-#include "gig_function.h"
-#include "gig_object.h"
+#include "core.h"
+#include "type.h"
+#include "func.h"
 #include "gig_logging.h"
-#include "gig_signal.h"
-#include "gig_type.h"
-#include "gig_util.h"
-#include "gig_value.h"
+
+GIG_API void gig_init(void);
 
 #ifdef ENABLE_GCOV
 void __gcov_reset(void);
@@ -56,17 +48,14 @@ scm_gcov_dump(void)
 }
 #endif
 
-void
+GIG_API void
 gig_init(void)
 {
 #ifdef MTRACE
     mtrace();
 #endif
-    g_debug("Begin libguile-gir initialization");
-    gig_init_data_type();
-    gig_init_constant();
+    gig_debug("Begin libguile-gir initialization");
     gig_init_flag();
-    gig_init_argument();
     gig_init_signal();
     gig_init_callback();
     gig_init_function();
@@ -74,12 +63,12 @@ gig_init(void)
     scm_c_define_gsubr("gcov-reset", 0, 0, 0, scm_gcov_reset);
     scm_c_define_gsubr("gcov-dump", 0, 0, 0, scm_gcov_dump);
 #endif
-    g_debug("End libguile-gir initialization");
+    gig_debug("End libguile-gir initialization");
 }
 
 #ifdef STANDALONE
-gint
-main(gint argc, gchar **argv)
+int
+main(int argc, char **argv)
 {
     scm_init_guile();
 

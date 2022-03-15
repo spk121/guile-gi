@@ -21,11 +21,21 @@
   #:use-module (system foreign)
   #:export (<signal>
             make-signal
-            connect-after)
+            connect-after
+            %gtype-hash
+            %reverse-hash
+            %make-fundamental-class
+            <GBoxed>
+            <GEnum>
+            <GFlags>)
   #:re-export (connect))
 
 (eval-when (expand load eval)
   (load-extension "libguile-gi" "gig_init_object"))
+
+(define %gtype-hash (make-hash-table 31))
+(define %reverse-hash (make-hash-table 31))
+(define %info-hash (make-hash-table 31))
 
 (define-class <GFundamental> ()
   (value #:class <scm-slot>

@@ -1,4 +1,4 @@
-// Copyright (C) 2019, 2022 Michael L. Gran
+// Copyright (C) 2022 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -13,11 +13,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef GIG_LOGGING_H
-#define GIG_LOGGING_H
+#ifndef CORE_SLIST_H
+#define CORE_SLIST_H
 
-#include "core.h"
+typedef struct slist_t_
+{
+    void *data;
+    struct slist_t_ *next;
+} slist_t;
 
-GIG_API void gig_init_logging(void);
+void slist_prepend(slist_t **lst, void *data);
+void slist_free(slist_t **lst, void (*free_func)(void *));
 
 #endif

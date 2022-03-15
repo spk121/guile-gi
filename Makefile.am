@@ -101,42 +101,72 @@ examples/resources/test.gresource: AM_GRESOURCE_FLAGS = --sourcedir=$(abs_buildd
 guileextension_LTLIBRARIES = libguile-gi.la
 
 libguile_gi_la_c_sources = \
-  src/gig_argument.c \
-  src/gig_closure.c \
-  src/gig_data_type.c \
-  src/gig_object.c \
-  src/gig_value.c \
-  src/gig_signal.c \
+  src/core/keyval.c \
+  src/core/logging.c \
+  src/core/mem.c \
+  src/core/oop.c \
+  src/core/scm.c \
+  src/core/slist.c \
+  src/core/string.c \
+  src/core/strval.c \
+  src/func/gig_args_store.c \
+  src/func/gig_argument.c \
+  src/type/gig_closure.c \
+  src/func/gig_data_type.c \
+  src/type/gig_object.c \
+  src/type/gig_value.c \
+  src/type/gig_signal.c \
   src/gig.c \
-  src/gig_arg_map.c \
-  src/gig_callback.c \
-  src/gig_function.c \
-  src/gig_constant.c \
-  src/gig_flag.c \
+  src/func/gig_arg_map.c \
+  src/func/gig_callback.c \
+  src/func/gig_function.c \
+  src/type/gig_constant.c \
+  src/type/gig_flag.c \
   src/gig_repository.c \
   src/gig_document.c \
-  src/gig_type.c \
-  src/gig_type_private.c \
-  src/gig_util.c \
+  src/type/gig_type.c \
+  src/type/gig_boxed.c \
+  src/func/gig_util.c \
   src/gig_logging.c
 
 libguile_gi_la_internal_headers = \
-  src/gig_argument.h \
-  src/gig_closure.h \
-  src/gig_data_type.h \
-  src/gig_object.h \
-  src/gig_value.h \
-  src/gig_signal.h \
-  src/gig_arg_map.h \
-  src/gig_callback.h \
-  src/gig_function.h \
-  src/gig_function_private.h \
-  src/gig_constant.h \
-  src/gig_flag.h \
+  src/core.h \
+  src/core/keyval.h \
+  src/core/logging.h \
+  src/core/mem.h \
+  src/core/oop.h \
+  src/core/scm.h \
+  src/core/slist.h \
+  src/core/string.h \
+  src/core/strval.h \
+  src/core/visibility.h \
+  src/type.h \
+  src/func.h \
+  src/func/gig_args_store.h \
+  src/func/gig_argument.h \
+  src/type/gig_closure.h \
+  src/func/gig_data_type.h \
+  src/type/gig_object.h \
+  src/type/gig_object_priv.h \
+  src/type/gig_value.h \
+  src/type/gig_signal.h \
+  src/type/gig_signal_priv.h \
+  src/func/gig_arg_map.h \
+  src/func/gig_arg_map_priv.h \
+  src/func/gig_callback.h \
+  src/func/gig_callback_priv.h \
+  src/func/gig_function.h \
+  src/func/gig_function_priv.h \
+  src/type/gig_constant_priv.h \
+  src/type/gig_constant.h \
+  src/type/gig_flag.h \
+  src/type/gig_flag_priv.h \
   src/gig_repository.h \
-  src/gig_type.h \
-  src/gig_type_private.h \
-  src/gig_util.h \
+  src/type/gig_type.h \
+  src/type/gig_type_priv.h \
+  src/type/gig_boxed.h \
+  src/func/gig_util.h \
+  src/func/gig_util_priv.h \
   src/gig_logging.h
 
 libguile_gi_la_SOURCES = \
@@ -145,7 +175,8 @@ libguile_gi_la_SOURCES = \
 
 libguile_gi_la_CPPFLAGS = \
   -DG_LOG_DOMAIN=\"GuileGI\" \
-  -DG_LOG_USE_STRUCTURED
+  -DG_LOG_USE_STRUCTURED \
+  -DBUILDING_GIG
 
 if BUILDING_DLL
 libguile_gi_la_CPPFLAGS += -DGIR_DLL -DGIR_DLL_EXPORTS
@@ -157,8 +188,11 @@ if MTRACE
 libguile_gi_la_CPPFLAGS += -DMTRACE
 endif
 
+CFLAG_VISIBILITY = -fvisibility=hidden
+
 libguile_gi_la_CFLAGS = \
   -std=c11 \
+  $(CFLAG_VISIBILITY) \
   $(GUILE_CFLAGS) \
   $(GLIB_CFLAGS) \
   $(GOBJECT_CFLAGS) \
@@ -168,7 +202,6 @@ libguile_gi_la_CFLAGS = \
 libguile_gi_la_LDFLAGS = \
  -no-undefined \
  -version-info $(LIBGUILE_GI_INTERFACE) \
- -export-symbols-regex '^gig_' \
  $(GUILE_LDFLAGS)
 
 if !DLL_VERSION_INFO
@@ -432,6 +465,9 @@ CLEANFILES = \
 EXTRA_DIST = \
   README.md \
   build-aux/config.rpath \
+  src/core/README \
+  src/type/README \
+  src/func/README \
   docs/example-1.scm docs/gtk-3.scm docs/fdl-1.3.texi \
   docs/ex-date.scm docs/ex-gapplication.scm docs/ex-load-by-name.scm \
   docs/ex-button.scm \

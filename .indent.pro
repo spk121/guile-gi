@@ -46,6 +46,19 @@
  */
 -T SCM
 
+-T slist_t
+-T keyval_t
+-T strval_t
+-T LogField
+-T uint8_t
+-T uint16_t
+-T uint32_t
+-T uint64_t
+-T int8_t
+-T int16_t
+-T int32_t
+-T int64_t
+
 -T ffi_arg
 -T ffi_cif
 -T ffi_closure
@@ -82,6 +95,7 @@
 -T GQuark
 -T GSignalQuery
 -T GString
+-T GType
 -T GTypeInstance
 -T GValue
 
@@ -102,6 +116,7 @@
 
 -T GigArgMapEntry
 -T GigArgMap
+-T GigArgsStore
 -T GigBoxedFuncs
 -T GigCallback
 -T GigClosure

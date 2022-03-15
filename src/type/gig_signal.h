@@ -1,4 +1,4 @@
-// Copyright (C) 2019, 2022 Michael L. Gran
+// Copyright (C) 2019, 2020, 2022 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -12,12 +12,23 @@
 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#ifndef GIG_SIGNAL_H
+#define GIG_SIGNAL_H
 
-#ifndef GIG_LOGGING_H
-#define GIG_LOGGING_H
+#include <libguile.h>
 
-#include "core.h"
+typedef enum
+{
+    GIG_SIGNAL_SLOT_NAME,
+    GIG_SIGNAL_SLOT_FLAGS,
+    GIG_SIGNAL_SLOT_ACCUMULATOR,
+    GIG_SIGNAL_SLOT_RETURN_TYPE,
+    GIG_SIGNAL_SLOT_PARAM_TYPES,
+    GIG_SIGNAL_SLOT_OUTPUT_MASK,
+    GIG_SIGNAL_SLOT_COUNT
+} GigSignalSlot;
 
-GIG_API void gig_init_logging(void);
+SCM gig_make_signal(size_t n_slots, GigSignalSlot *slots, SCM *slot_values);
+void gig_init_signal(void);
 
 #endif

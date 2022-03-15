@@ -1,4 +1,4 @@
-// Copyright (C) 2019, 2022 Michael L. Gran
+// Copyright (C) 2022 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -13,11 +13,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef GIG_LOGGING_H
-#define GIG_LOGGING_H
+#ifndef CORE_STRING_H
+#define CORE_STRING_H
 
-#include "core.h"
-
-GIG_API void gig_init_logging(void);
+char *bracketize(const char *str);
+char *concatenate(const char *str1, const char *str2);
+char *concatenate3(const char *str1, const char *str2, const char *str3);
+char *concatenate4(const char *str1, const char *str2, const char *str3, const char *str4);
+char *decorate_string(const char *fmt, const char *str);
+char *make_scm_name(const char *gname);
+const char *skip_prefix(const char *name, const char *prefix);
+size_t strvlen(const char **x);
 
 #endif

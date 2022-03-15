@@ -15,6 +15,7 @@
 
 (define-module (gi types)
   #:use-module (ice-9 match)
+  #:use-module (ice-9 format)
   #:use-module (oop goops)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-2)
@@ -23,11 +24,11 @@
 
   #:use-module (gi oop)
 
+  #:re-export (<GBoxed> <GEnum> <GFlags>)
   #:export (<GIBaseInfo>
-            <GBoxed> <GObject>
+            <GObject> <GInterface> <GParam> <GVariant>
             <GValue> transform
             <GClosure> procedure->closure
-            <GEnum> <GFlags>
             enum->number enum->symbol number->enum symbol->enum
             flags->number flags->list number->flags list->flags flags-set?
             enum-universe
@@ -35,13 +36,226 @@
             flags-complement flags-projection flags-projection/list
             flags-projection/number
             is-registered-callback?
-            get-registered-callback-closure-pointer))
+            get-registered-callback-closure-pointer
+
+            ;;
+            G_TYPE_NONE
+            G_TYPE_CHAR
+            G_TYPE_UCHAR
+            G_TYPE_BOOLEAN
+            G_TYPE_ENUM
+            G_TYPE_OBJECT
+            G_TYPE_POINTER
+            G_TYPE_FLAGS
+            G_TYPE_STRING
+            G_TYPE_INT
+            G_TYPE_UINT
+            G_TYPE_LONG
+            G_TYPE_ULONG
+            G_TYPE_INT64
+            G_TYPE_UINT64
+            G_TYPE_FLOAT
+            G_TYPE_DOUBLE
+            get-gtype
+            gtype-get-scheme-type
+            gtype-get-name
+            gtype-get-parent
+            gtype-get-fundamental
+            gtype-get-children
+            gtype-get-interfaces
+            gtype-get-depth
+            gtype-is-interface?
+            gtype-is-classed?
+            gtype-is-instantiatable?
+            gtype-is-derivable?
+            gtype-is-a?
+            %gtype-dump-table))
 
 (eval-when (expand load eval)
   (load-extension "libguile-gi" "gig_init_types")
   (load-extension "libguile-gi" "gig_init_value")
   (load-extension "libguile-gi" "gig_init_closure")
   (load-extension "libguile-gi" "gig_init_callback"))
+
+;;(define +debug-port+ (current-output-port))
+(define +debug-port+ (%make-void-port "w"))
+
+(define (type-register-self gtype stype)
+  (let ((parent ($type-parent gtype))
+        (old-stype (hashq-ref %gtype-hash gtype)))
+    (when (or (not old-stype) (not (eq? stype old-stype)))
+      (when (or (not old-stype) (and (eq? old-stype <unknown>) (not (eq? stype <unknown>))))
+        (hashq-set! %gtype-hash gtype stype)
+        (if old-stype
+            (if (zero? parent)
+                (format +debug-port+
+                        "~S : re-registering a type for ~x as ~S~%"
+                        ($type-name gtype)
+                        gtype
+                        stype)
+                (format +debug-port+
+                        "~S : re-registering a ~A type for ~x as ~S~%"
+                        ($type-name gtype)
+                        ($type-name parent)
+                        gtype
+                        stype))
+            (if (zero? parent)
+                (format +debug-port+
+                        "~S : registering a new type for ~x as ~S~%"
+                        ($type-name gtype)
+                        gtype
+                        stype)
+                (format +debug-port+
+                        "~S : registering a new ~A type for ~x as ~S~%"
+                        ($type-name gtype)
+                        ($type-name parent)
+                        gtype
+                        stype)))))))
+
+(define (type-register gtype stype)
+  "Make the unidirectional gtype -> stype association. This does not
+require that the stype -> gtype association is one-to-one."
+  (let ((parent ($type-parent gtype)))
+    (unless (zero? parent)
+      (type-register-self parent <unknown>))
+    (type-register-self gtype stype)))
+
+(define (type-associate gtype stype)
+  "Make a bidirectional gtype <-> stype association. Use this when the
+scheme class only maps to a single GType."
+  (type-register gtype stype)
+  (set-object-property! stype 'sort-key
+                        (hash-count (const #t) %gtype-hash))
+  (hashq-set! %reverse-hash stype gtype))
+
+(define (type-is-registered? gtype)
+  (not (not (hashq-ref %gtype-hash gtype))))
+
+(define (type-class-name-from-gtype gtype)
+  (string-append "<"
+                 ($type-name gtype)
+                 ">"))
+
+(define (type-define-fundamental gtype supers ref unref)
+  (if (type-is-registered? gtype)
+      (begin
+        (format +debug-port+
+                "not redefining fundamental type ~S"
+                ($type-name gtype))
+        (hashq-ref %gtype-hash gtype))
+      ;; else
+      (%make-fundamental-class
+       (string->symbol (type-class-name-from-gtype gtype))
+       supers ref unref)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Some associations of extant scheme types
+
+(type-register G_TYPE_NONE <unknown>)
+
+(type-associate G_TYPE_STRING <string>)
+(type-register G_TYPE_INT <integer>)
+(type-register G_TYPE_UINT <integer>)
+(type-register G_TYPE_LONG <integer>)
+(type-register G_TYPE_ULONG <integer>)
+(type-register G_TYPE_INT64 <integer>)
+(type-register G_TYPE_UINT64 <integer>)
+(type-register G_TYPE_FLOAT <real>)
+(type-register G_TYPE_DOUBLE <real>)
+(type-associate G_TYPE_HASH_TABLE <hashtable>)
+(type-register G_TYPE_CHAR <char>)
+(type-register G_TYPE_UCHAR <char>)
+(type-associate G_TYPE_BOOLEAN <boolean>)
+(type-register G_TYPE_POINTER <foreign>)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Fundamental GObject type classes
+
+(type-associate G_TYPE_BOXED <GBoxed>)
+(type-associate G_TYPE_ENUM <GEnum>)
+(type-associate G_TYPE_FLAGS <GFlags>)
+
+(define G_TYPE_PRIV_C_ARRAY
+  ($type-register-static-simple G_TYPE_POINTER
+                                "CArray"
+                                G_TYPE_FLAG_ABSTRACT))
+(type-register G_TYPE_PRIV_C_ARRAY <unknown>)
+
+
+(define <GObject>
+  (type-define-fundamental G_TYPE_OBJECT '() $object-ref-sink-ptr
+                           $object-unref-ptr))
+(type-associate G_TYPE_OBJECT <GObject>)
+
+(define <GInterface>
+  (type-define-fundamental G_TYPE_INTERFACE '() $null-ptr $null-ptr))
+(type-associate G_TYPE_INTERFACE <GInterface>)
+
+(define <GParam>
+  (type-define-fundamental G_TYPE_PARAM `(,<applicable-struct-with-setter>)
+                           $param-spec-ref-sink-ptr
+                           $param-spec-unref-ptr))
+(type-associate G_TYPE_PARAM <GParam>)
+
+(define <GVariant>
+  (type-define-fundamental G_TYPE_VARIANT '()
+                           $variant-ref-sink-ptr
+                           $variant-unref-ptr))
+(type-associate G_TYPE_VARIANT <GVariant>)
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Core types that require GBoxed be ready first
+
+(define <GIBaseInfo> ($make-type-with-gtype GI_TYPE_BASE_INFO '()))
+(type-associate GI_TYPE_BASE_INFO <GIBaseInfo>)
+
+(define <GValue> ($make-type-with-gtype G_TYPE_VALUE `(,<applicable-struct-with-setter>)))
+(class-slot-set! <GValue> 'size SIZEOF_GVALUE)
+(type-associate G_TYPE_VALUE <GValue>)
+
+(define <GClosure> ($make-type-with-gtype G_TYPE_CLOSURE `(,<applicable-struct>)))
+(type-associate G_TYPE_CLOSURE <GClosure>)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Now we can use $type-define-full since all core types are defined.
+
+($type-define-full G_TYPE_GTYPE '())
+($type-define-full G_TYPE_ARRAY '())
+($type-define-full G_TYPE_BYTE_ARRAY '())
+($type-define-full G_TYPE_PTR_ARRAY '())
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define (%gtype-dump-table)
+  "Returns a list describing the current state of the GType to Scheme
+class mapping. Each entry is the GType, the GType name, and the scheme
+class."
+  (hash-map->list
+   (lambda (key val)
+     (list key (gtype-get-name key) val))
+   %gtype-hash))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Helpers
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+#|
+(define (type-check-typed-object obj expected-type)
+  (is-a? obj expected-type))
+
+(define (type-peek-typed-object obj expected-type)
+  (if (not (is-a? obj expected-type))
+      %null-pointer
+      ;; else
+      (slot-ref obj 'value)))
+
+(define (type-peek-object obj)
+  (type-peek-typed-object obj <GFundamental>))
+
+(define (type-check-object? obj)
+  (is-a? obj <GFundamental>))
+|#
 
 ;;; Values and Params
 
@@ -50,8 +264,8 @@
   (slot-set! value 'procedure (cut %get value))
   (slot-set! value 'setter
              (case-lambda
-              ((v) (%set! value v))
-              ((t v) (%set-type! value t) (%set! value v)))))
+               ((v) (%set! value v))
+               ((t v) (%set-type! value t) (%set! value v)))))
 
 (define-method (transform (value <GValue>) gtype)
   (%transform value gtype))

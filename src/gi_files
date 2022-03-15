@@ -1,0 +1,9 @@
+func/gig_arg_map.c
+func/gig_callback.c
+func/gig_data_type.c
+func/gig_function.c
+func/gig_util.c
+type/gig_constant.c
+type/gig_flag.c
+type/gig_object.c
+type/gig_type.c

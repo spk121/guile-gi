@@ -1,4 +1,4 @@
-// Copyright (C) 2019, 2022 Michael L. Gran
+// Copyright (C) 2022 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -13,11 +13,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef GIG_LOGGING_H
-#define GIG_LOGGING_H
+#ifndef GIG_OBJECT_H
+#define GIG_OBJECT_H
 
-#include "core.h"
+#include <libguile.h>
+#include <girepository.h>
+#include "../core.h"
 
-GIG_API void gig_init_logging(void);
+SCM gig_property_define(GType type, GIPropertyInfo *info, const char *namespace);
+GIG_API void gig_init_object(void);
 
 #endif

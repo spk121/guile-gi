@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2019 Michael L. Gran
+// Copyright (C) 2018, 2019, 2022 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,12 +15,8 @@
 
 #include <libguile.h>
 #include <girepository.h>
-#include "gig_type.h"
-#include "gig_object.h"
-#include "gig_function.h"
-#include "gig_util.h"
-#include "gig_constant.h"
-#include "gig_flag.h"
+#include "type.h"
+#include "func.h"
 #include "gig_repository.h"
 
 static SCM
@@ -30,14 +26,14 @@ require(SCM lib, SCM version)
     SCM_ASSERT_TYPE(SCM_UNBNDP(version) ||
                     scm_is_string(version), version, SCM_ARG2, "require", "string");
 
-    gchar *_lib, *_version = NULL;
+    char *_lib, *_version = NULL;
     GITypelib *tl;
     GError *error = NULL;
 
     scm_dynwind_begin(0);
-    _lib = scm_dynwind_or_bust("require", scm_to_utf8_string(lib));
+    _lib = scm_dynfree(scm_to_utf8_string(lib));
     if (!SCM_UNBNDP(version) && scm_is_true(version))
-        _version = scm_dynwind_or_bust("require", scm_to_utf8_string(version));
+        _version = scm_dynfree(scm_to_utf8_string(version));
 
     gig_debug_load("requiring %s-%s", _lib, _version != NULL ? _version : "latest");
     tl = g_irepository_require(NULL, _lib, _version, 0, &error);
@@ -58,11 +54,11 @@ infos(SCM lib)
     SCM_ASSERT_TYPE(scm_is_string(lib), lib, SCM_ARG1, "infos", "string");
 
     scm_dynwind_begin(0);
-    gchar *_lib = scm_dynwind_or_bust("infos", scm_to_utf8_string(lib));
-    gint n = g_irepository_get_n_infos(NULL, _lib);
+    char *_lib = scm_dynfree(scm_to_utf8_string(lib));
+    int n = g_irepository_get_n_infos(NULL, _lib);
     SCM infos = SCM_EOL;
 
-    for (gint i = 0; i < n; i++) {
+    for (int i = 0; i < n; i++) {
         GIBaseInfo *info = g_irepository_get_info(NULL, _lib, i);
         if (g_base_info_is_deprecated(info)) {
             g_base_info_unref(info);
@@ -87,11 +83,11 @@ typedef enum _LoadFlags
 
 void
 gig_repository_nested_infos(GIBaseInfo *base,
-                            gint *n_methods,
+                            int *n_methods,
                             GigRepositoryNested *method,
-                            gint *n_properties,
+                            int *n_properties,
                             GigRepositoryNested *property,
-                            gint *n_signals, GigRepositoryNested *signal)
+                            int *n_signals, GigRepositoryNested *signal)
 {
     switch (g_base_info_get_type(base)) {
     case GI_INFO_TYPE_STRUCT:
@@ -122,7 +118,7 @@ gig_repository_nested_infos(GIBaseInfo *base,
         *property = (GigRepositoryNested)g_interface_info_get_property;
         {
             GType gtype = g_registered_type_info_get_g_type(base);
-            const gchar *name = g_base_info_get_name(base);
+            const char *name = g_base_info_get_name(base);
             if (!g_type_is_a(gtype, G_TYPE_OBJECT)) {
                 if (*n_properties != 0)
                     gig_warning_load("%s - non-Object interface wants properties", name);
@@ -146,29 +142,61 @@ gig_repository_nested_infos(GIBaseInfo *base,
     }
 }
 
-SCM
-load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
+static SCM
+load_info(GIBaseInfo *info, LoadFlags flags)
 {
+    SCM defs = SCM_EOL;
     g_return_val_if_fail(info != NULL, defs);
 
     GIBaseInfo *parent = g_base_info_get_container(info);
     GType parent_gtype = G_TYPE_INVALID;
-    const gchar *parent_name = NULL;
+    const char *parent_name = NULL;
     if (parent) {
         parent_gtype = g_registered_type_info_get_g_type(parent);
         parent_name = g_base_info_get_name(parent);
     }
 
-    switch (g_base_info_get_type(info)) {
+    GIInfoType t = g_base_info_get_type(info);
+    switch (t) {
     case GI_INFO_TYPE_CALLBACK:
-        gig_debug_load("Unsupported irepository type 'CALLBACK'");
+        gig_debug_load("%s - not loading %s type because callbacks are not supported",
+                       g_base_info_get_name(info), g_info_type_to_string(t));
         break;
     case GI_INFO_TYPE_FUNCTION:
     case GI_INFO_TYPE_SIGNAL:
-        defs = gig_function_define(parent_gtype, info, parent_name, defs);
+    {
+        // Pre-load all the types used by the function's arguments.
+        GType *types;
+        size_t len;
+        bool args_ok = true;
+        types = gig_function_get_arg_gtypes(info, &len);
+        for (size_t i = 0; i < len; i++) {
+            if (!gig_type_is_registered(types[i])) {
+                GIBaseInfo *typeinfo;
+                typeinfo = g_irepository_find_by_gtype(NULL, types[i]);
+                if (typeinfo) {
+                    gig_debug_load("%s - loading prerequisite arg type %s",
+                                   g_base_info_get_name(info), g_type_name(types[i]));
+                    defs = scm_append2(defs, load_info(typeinfo, LOAD_INFO_ONLY));
+                    g_base_info_unref(typeinfo);
+                }
+                else {
+                    gig_debug_load
+                        ("%s - not loading %s because it has an argument of type %s that has no typeinfo",
+                         g_base_info_get_name(info), g_info_type_to_string(t),
+                         g_type_name(types[i]));
+                    args_ok = false;
+                }
+            }
+        }
+        free(types);
+
+        if (args_ok == true)
+            defs = scm_append2(defs, gig_function_define(parent_gtype, info, parent_name));
+    }
         break;
     case GI_INFO_TYPE_PROPERTY:
-        defs = gig_property_define(parent_gtype, info, parent_name, defs);
+        defs = scm_append2(defs, gig_property_define(parent_gtype, info, parent_name));
         break;
     case GI_INFO_TYPE_BOXED:
     {
@@ -178,21 +206,79 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
                            g_base_info_get_name(info));
             break;
         }
-        defs = gig_type_define(gtype, defs);
+        defs = scm_append2(defs, gig_type_define(gtype));
         goto recursion;
     }
     case GI_INFO_TYPE_STRUCT:
+    case GI_INFO_TYPE_UNION:
+    case GI_INFO_TYPE_INTERFACE:
+    case GI_INFO_TYPE_OBJECT:
     {
         GType gtype = g_registered_type_info_get_g_type(info);
         if (gtype == G_TYPE_NONE) {
             gig_debug_load("%s - not loading struct type because is has no GType",
                            g_base_info_get_name(info));
+            gig_debug_load("%s - not loading %s type because is has no GType",
+                           g_base_info_get_name(info), g_info_type_to_string(t));
             break;
         }
-        defs = gig_type_define(gtype, defs);
-        if (g_struct_info_get_size(info) > 0) {
-            GQuark size_quark = g_quark_from_string("size");
-            g_type_set_qdata(gtype, size_quark, GSIZE_TO_POINTER(g_struct_info_get_size(info)));
+        if (gtype == G_TYPE_INVALID) {
+            gig_debug_load("%s - not loading %s type because its GType is invalid",
+                           g_base_info_get_name(info), g_info_type_to_string(t));
+            break;
+        }
+        GType par_gtype = g_type_parent(gtype);
+        bool parent_ok = true;
+        if (par_gtype && !gig_type_is_registered(par_gtype)) {
+            GIBaseInfo *typeinfo;
+            typeinfo = g_irepository_find_by_gtype(NULL, par_gtype);
+            if (typeinfo) {
+                gig_debug_load("%s - loading prerequisite type %s",
+                               g_base_info_get_name(info), g_type_name(par_gtype));
+                defs = scm_append2(defs, load_info(typeinfo, LOAD_INFO_ONLY));
+                g_base_info_unref(typeinfo);
+            }
+            else {
+                gig_debug_load
+                    ("%s - not loading %s type because its parent %s has no introspection information",
+                     g_base_info_get_name(info), g_info_type_to_string(t), g_type_name(par_gtype));
+                parent_ok = false;
+                break;
+            }
+        }
+        if (parent_ok) {
+            GType *interfaces = NULL;
+            unsigned n_interfaces = 0;
+            bool interface_ok = true;
+
+            if (t == GI_INFO_TYPE_OBJECT)
+                interfaces = g_type_interfaces(gtype, &n_interfaces);
+            else if (t == GI_INFO_TYPE_INTERFACE)
+                interfaces = g_type_interface_prerequisites(gtype, &n_interfaces);
+
+            for (unsigned n = 0; n < n_interfaces; n++) {
+                if (interfaces[n] && !gig_type_is_registered(interfaces[n])) {
+                    GIBaseInfo *typeinfo;
+                    typeinfo = g_irepository_find_by_gtype(NULL, interfaces[n]);
+                    if (typeinfo) {
+                        gig_debug_load("%s - loading prerequisite interface type %s",
+                                       g_base_info_get_name(info), g_type_name(interfaces[n]));
+                        defs = scm_append2(defs, load_info(typeinfo, LOAD_INFO_ONLY));
+                        g_base_info_unref(typeinfo);
+                    }
+                    else {
+                        gig_debug_load
+                            ("%s - not loading %s type because its interface %s has no introspection information",
+                             g_base_info_get_name(info), g_info_type_to_string(t),
+                             g_type_name(interfaces[n]));
+                        interface_ok = false;
+                        break;
+                    }
+                }
+            }
+            free(interfaces);
+            if (interface_ok)
+                defs = scm_append2(defs, gig_type_define(gtype));
         }
         goto recursion;
     }
@@ -201,66 +287,15 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
     {
         GType gtype = g_registered_type_info_get_g_type(info);
         if (gtype == G_TYPE_NONE)
-            defs = gig_define_enum(info, defs);
+            defs = scm_append2(defs, gig_type_define_with_info(info, SCM_EOL));
         else
-            defs = gig_type_define(gtype, defs);
-        defs = gig_define_enum_conversions(info, gtype, defs);
-        goto recursion;
-    }
-    case GI_INFO_TYPE_OBJECT:
-    {
-        GType gtype = g_registered_type_info_get_g_type(info);
-        const gchar *_namespace = g_base_info_get_name(info);
-        if (gtype == G_TYPE_INVALID) {
-            gig_debug_load("%s - not loading object type because its GType is invalid",
-                           _namespace);
-            break;
-        }
-        if (gtype == G_TYPE_NONE) {
-            gig_debug_load("%s - not loading object type because is has no GType", _namespace);
-            break;
-        }
-
-        GIObjectInfo *p = g_object_info_get_parent(info);
-        gboolean has_parent = p ? TRUE : FALSE;
-        if (p)
-            g_base_info_unref(p);
-        if (!has_parent) {
-            gig_debug_load("%s:%s - has no parent", _namespace, g_type_name(gtype));
-            gig_type_define_fundamental(gtype, SCM_EOL, g_object_ref_sink, g_object_unref);
-        }
-        defs = gig_type_define(gtype, defs);
-        goto recursion;
-    }
-    case GI_INFO_TYPE_INTERFACE:
-    {
-        GType gtype = g_registered_type_info_get_g_type(info);
-        if (gtype == G_TYPE_NONE) {
-            gig_debug_load("%s - not loading interface type because is has no GType",
-                           g_base_info_get_name(info));
-            break;
-        }
-        defs = gig_type_define(gtype, defs);
+            defs = scm_append2(defs, gig_type_define(gtype));
+        defs = scm_append2(defs, gig_define_enum_conversions(info, gtype));
         goto recursion;
     }
     case GI_INFO_TYPE_CONSTANT:
-        defs = gig_constant_define(info, defs);
+        defs = scm_append2(defs, gig_constant_define(info));
         break;
-    case GI_INFO_TYPE_UNION:
-    {
-        GType gtype = g_registered_type_info_get_g_type(info);
-        if (gtype == G_TYPE_NONE) {
-            gig_debug_load("%s - not loading union type because is has no GType",
-                           g_base_info_get_name(info));
-            break;
-        }
-        defs = gig_type_define(gtype, defs);
-        if (g_union_info_get_size(info) > 0) {
-            GQuark size_quark = g_quark_from_string("size");
-            g_type_set_qdata(gtype, size_quark, GSIZE_TO_POINTER(g_union_info_get_size(info)));
-        }
-        goto recursion;
-    }
     case GI_INFO_TYPE_VALUE:
         gig_critical_load("Unsupported irepository type 'VALUE'");
         break;
@@ -292,14 +327,14 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
 #define LOAD_NESTED(F, N, I)                                    \
         do {                                                    \
             if (flags & F)                                      \
-                for (gint i = 0; i < N; i++) {                  \
+                for (int i = 0; i < N; i++) {                  \
                     GIBaseInfo *nested_info = I(info, i);       \
-                    defs = load_info(nested_info, flags, defs); \
+                    defs = scm_append2(defs, load_info(nested_info, flags)); \
                     g_base_info_unref(nested_info);             \
                 }                                               \
         } while (0)
 
-        gint n_methods, n_properties, n_signals;
+        int n_methods, n_properties, n_signals;
         GigRepositoryNested method, property, nested_signal;
 
         gig_repository_nested_infos(info, &n_methods, &method, &n_properties, &property,
@@ -311,7 +346,6 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM defs)
 #undef LOAD_NESTED
         goto end;
     }
-
 }
 
 static SCM
@@ -329,7 +363,7 @@ load(SCM info, SCM flags)
 
     GIBaseInfo *base_info = (GIBaseInfo *)gig_type_peek_object(info);
 
-    return load_info(base_info, load_flags, SCM_EOL);
+    return load_info(base_info, load_flags);
 }
 
 static SCM
@@ -338,11 +372,11 @@ info(SCM lib, SCM name)
     SCM_ASSERT_TYPE(scm_is_string(lib), lib, SCM_ARG1, "info", "string");
     SCM_ASSERT_TYPE(scm_is_string(name), name, SCM_ARG2, "info", "string");
 
-    gchar *_lib, *_name;
+    char *_lib, *_name;
     GIBaseInfo *info;
     scm_dynwind_begin(0);
-    _lib = scm_dynwind_or_bust("info", scm_to_utf8_string(lib));
-    _name = scm_dynwind_or_bust("info", scm_to_utf8_string(name));
+    _lib = scm_dynfree(scm_to_utf8_string(lib));
+    _name = scm_dynfree(scm_to_utf8_string(name));
 
     info = g_irepository_find_by_name(NULL, _lib, _name);
     if (info == NULL)
@@ -373,13 +407,13 @@ get_search_path(void)
 static SCM
 prepend_search_path(SCM s_dir)
 {
-    gchar *dir;
+    char *dir;
 
     SCM_ASSERT_TYPE(scm_is_string(s_dir), s_dir, SCM_ARG1, "prepend-search-path!", "string");
 
     dir = scm_to_utf8_string(s_dir);
     g_irepository_prepend_search_path(dir);
-    g_free(dir);
+    free(dir);
 
     return SCM_UNSPECIFIED;
 }
@@ -387,8 +421,8 @@ prepend_search_path(SCM s_dir)
 static SCM
 get_dependencies(SCM namespace)
 {
-    gchar *_namespace;
-    gchar **_dependencies;
+    char *_namespace;
+    char **_dependencies;
     int i;
     SCM dependencies = SCM_EOL;
 
@@ -402,10 +436,10 @@ get_dependencies(SCM namespace)
     while (_dependencies[i] != NULL) {
         SCM entry = scm_from_utf8_string(_dependencies[i]);
         dependencies = scm_cons(entry, dependencies);
-        g_free(_dependencies[i]);
+        free(_dependencies[i]);
         i++;
     }
-    g_free(_dependencies);
+    free(_dependencies);
     return scm_reverse_x(dependencies, SCM_EOL);
 }
 

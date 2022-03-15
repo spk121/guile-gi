@@ -1,4 +1,4 @@
-// Copyright (C) 2019, 2022 Michael L. Gran
+// Copyright (C) 2022 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -13,11 +13,28 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef GIG_LOGGING_H
-#define GIG_LOGGING_H
+#ifndef CORE_STRVAL_H
+#define CORE_STRVAL_H
 
-#include "core.h"
+#include <stdint.h>
 
-GIG_API void gig_init_logging(void);
+typedef struct strval_item_t_
+{
+    char *key;
+    uint64_t val;
+} strval_item_t;
+
+typedef struct strval_t_
+{
+    strval_item_t *entries;
+    int len;
+    int alloc;
+} strval_t;
+
+strval_t *strval_new(void);
+uint64_t strval_find_entry(strval_t *kv, const char *key);
+void strval_add_entry(strval_t *kv, const char *key, uint64_t val);
+void strval_free(strval_t *kv, void (*valfree)(uint64_t val));
+int strval_size(strval_t *kv);
 
 #endif

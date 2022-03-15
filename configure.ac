@@ -171,10 +171,7 @@ m4_define([compiler_flags_common],[ dnl
  -Wl,-z,defs dnl
  -Wl,-z,now dnl
  -Wl,-z,relro dnl
- -Wsuggest-attribute=format dnl
- -Wsuggest-attribute=malloc dnl
  -Wsuggest-attribute=noreturn dnl
- -Wsuggest-attribute=pure dnl
  -fdiagnostics-color=auto dnl
 ])
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2019, 2022 Michael L. Gran
+// Copyright (C) 2018, 2019, 2022 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -13,11 +13,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef GIG_LOGGING_H
-#define GIG_LOGGING_H
+#ifndef GIG_FLAG_H
+#define GIG_FLAG_H
 
-#include "core.h"
+#include <girepository.h>
+#include <libguile.h>
 
-GIG_API void gig_init_logging(void);
+SCM gig_define_enum_conversions(GIEnumInfo *info, GType type);
+int gig_enum_to_int(SCM _enum);
+unsigned gig_flags_to_uint(SCM _flags);
+SCM gig_int_to_enum(int value, GType type);
+SCM gig_int_to_enum_with_info(int val, GIEnumInfo *info);
+SCM gig_uint_to_flags(unsigned value, GType type);
+SCM gig_uint_to_flags_with_info(unsigned val, GIEnumInfo *info);
+
+void gig_init_flag(void);
 
 #endif

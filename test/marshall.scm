@@ -152,6 +152,9 @@
        (bytevector-s64-native-set! data 0 value)))
     struct))
 
+(test-assert "boxed struct has size slot"
+  (<= 12 (class-slot-ref <MarshallBoxedStruct> 'size)))
+
 (test-assert "array-struct-in"
   (array-struct-in (vector (make-boxed-struct 1)
                            (make-boxed-struct 2)
@@ -161,6 +164,9 @@
   (array-struct-value-in (vector (make-boxed-struct 1)
                                  (make-boxed-struct 2)
                                  (make-boxed-struct 3))))
+
+(test-assert "boxed union has size slot"
+  (<= 4 (class-slot-ref <MarshallUnion> 'size)))
 
 (test-equal "array-zero-terminated-return-struct"
   #(42 43 44)

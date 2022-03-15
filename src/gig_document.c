@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2019 Michael L. Gran
+// Copyright (C) 2018, 2019, 2022 Michael L. Gran
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,29 +14,28 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <libguile.h>
-#include <glib.h>
-#include <glib-object.h>
 #include <girepository.h>
-#include "gig_type.h"
-#include "gig_util.h"
-#include "gig_arg_map.h"
+#include "type.h"
+#include "func.h"
 #include "gig_repository.h"
 
-static void do_document(GIBaseInfo *info, const gchar *parent);
+static void do_document(GIBaseInfo *info, const char *parent);
+GIG_API void gig_init_document(void);
+
 
 static void
 document_nested(GIBaseInfo *parent)
 {
 #define DOCUMENT_NESTED(N, I)                           \
     do {                                                \
-        for (gint i = 0; i < N; i++)                    \
+        for (int i = 0; i < N; i++)                    \
             do_document(I(parent, i), _namespace);      \
     } while (0)
 
-    gchar *_namespace = gig_gname_to_scm_name(g_base_info_get_name(parent));
+    char *_namespace = make_scm_name(g_base_info_get_name(parent));
     scm_dynwind_free(_namespace);
 
-    gint n_methods, n_properties, n_signals;
+    int n_methods, n_properties, n_signals;
     GigRepositoryNested method, property, nested_signal;
 
     gig_repository_nested_infos(parent, &n_methods, &method, &n_properties, &property,
@@ -50,22 +49,22 @@ document_nested(GIBaseInfo *parent)
 }
 
 static void
-document_arg_entry(const gchar *kind, GigArgMapEntry *entry)
+document_arg_entry(const char *kind, GigArgMapEntry *entry)
 {
-    gchar *name = gig_gname_to_scm_name(entry->name);
+    char *name = make_scm_name(entry->name);
     scm_dynwind_free(name);
     scm_printf(SCM_UNDEFINED, "<%s name=\"%s\" c:name=\"%s\">", kind, name, entry->name);
     scm_printf(SCM_UNDEFINED, "</%s>", kind);
 }
 
 static void
-do_document(GIBaseInfo *info, const gchar *_namespace)
+do_document(GIBaseInfo *info, const char *_namespace)
 {
 #define FUNC "%document"
-    gchar *scheme_name;
-    const gchar *kind;
+    char *scheme_name;
+    const char *kind;
     GigArgMap *arg_map;
-    gint in, out, req, opt;
+    int in, out, req, opt;
     GIInfoType type = g_base_info_get_type(info);
 
     scm_dynwind_begin(0);
@@ -85,7 +84,7 @@ do_document(GIBaseInfo *info, const gchar *_namespace)
 
 
         scm_printf(SCM_UNDEFINED, "<%s name=\"%s\">", kind, g_base_info_get_name(info));
-        scheme_name = scm_dynwind_or_bust(FUNC, gig_callable_info_make_name(info, NULL));
+        scheme_name = scm_dynfree(gig_callable_info_make_name(info, NULL));
 
         if (g_callable_info_is_method(info))
             scm_printf(SCM_UNDEFINED, "<scheme><procedure name=\"%s\" long-name=\"%s:%s\">",
@@ -103,14 +102,14 @@ do_document(GIBaseInfo *info, const gchar *_namespace)
             scm_printf(SCM_UNDEFINED, "<argument name=\"self\">");
             scm_printf(SCM_UNDEFINED, "</argument>");
         }
-        for (gint i = 0; i < req + opt; i++) {
+        for (int i = 0; i < req + opt; i++) {
             GigArgMapEntry *entry = gig_amap_get_input_entry_by_s(arg_map, i);
             document_arg_entry("argument", entry);
         }
         if (arg_map->return_val.meta.gtype != G_TYPE_NONE)
             document_arg_entry("return", &arg_map->return_val);
 
-        for (gint i = 0; i < out; i++) {
+        for (int i = 0; i < out; i++) {
             GigArgMapEntry *entry = gig_amap_get_output_entry_by_c(arg_map, i);
             document_arg_entry("return", entry);
         }
@@ -125,14 +124,14 @@ do_document(GIBaseInfo *info, const gchar *_namespace)
             GigArgMapEntry *entry = arg_map->pdata + i;
             scm_printf(SCM_UNDEFINED, "<parameter name=\"%s\">", entry->name);
             if (entry->parent) {
-                gchar *parent = gig_gname_to_scm_name(entry->parent->name);
+                char *parent = make_scm_name(entry->parent->name);
                 scm_printf(SCM_UNDEFINED, "<inferred parent=\"%s\"/>", parent);
-                g_free(parent);
+                free(parent);
             }
             else {
-                gchar *arg = gig_gname_to_scm_name(entry->name);
+                char *arg = make_scm_name(entry->name);
                 scm_printf(SCM_UNDEFINED, "<inferred argument=\"%s\"/>", arg);
-                g_free(arg);
+                free(arg);
             }
             scm_printf(SCM_UNDEFINED, "</parameter>");
         }
@@ -164,7 +163,7 @@ do_document(GIBaseInfo *info, const gchar *_namespace)
             kind = "class";
             break;
         default:
-            g_assert_not_reached();
+            assert_not_reached();
         }
 
         scm_printf(SCM_UNDEFINED, "<%s name=\"%s\">", kind, g_base_info_get_name(info));
@@ -201,8 +200,8 @@ do_document(GIBaseInfo *info, const gchar *_namespace)
 
         document_nested(info);
 
-        gint n_values = g_enum_info_get_n_values(info);
-        for (gint i = 0; i < n_values; i++)
+        int n_values = g_enum_info_get_n_values(info);
+        for (int i = 0; i < n_values; i++)
             do_document(g_enum_info_get_value(info, i), g_base_info_get_name(info));
 
         scm_printf(SCM_UNDEFINED, "</%s>", kind);
@@ -215,7 +214,7 @@ do_document(GIBaseInfo *info, const gchar *_namespace)
     case GI_INFO_TYPE_VFUNC:
     case GI_INFO_TYPE_PROPERTY:
     {
-        const gchar *name = g_base_info_get_name(info);
+        const char *name = g_base_info_get_name(info);
         GParamFlags flags = g_property_info_get_flags(info);
         scm_printf(SCM_UNDEFINED, "<property name=\"%s\"><scheme>"
                    "<accessor name=\"%s\" long-name=\"%s:%s\" readable=\"%d\" writable=\"%d\"/>"
@@ -225,8 +224,7 @@ do_document(GIBaseInfo *info, const gchar *_namespace)
     }
     case GI_INFO_TYPE_VALUE:
     {
-        scheme_name = scm_dynwind_or_bust("%document",
-                                          gig_gname_to_scm_name(g_base_info_get_name(info)));
+        scheme_name = scm_dynfree(make_scm_name(g_base_info_get_name(info)));
         scm_printf(SCM_UNDEFINED, "<member name=\"%s\">", g_base_info_get_name(info));
         scm_printf(SCM_UNDEFINED, "<scheme><symbol name=\"%s\"", scheme_name);
         GIAttributeIter iter = { 0, };
@@ -245,7 +243,7 @@ do_document(GIBaseInfo *info, const gchar *_namespace)
     case GI_INFO_TYPE_INVALID:
     case GI_INFO_TYPE_INVALID_0:
     default:
-        g_critical("Unsupported irepository type %d", type);
+        gig_critical("Unsupported irepository type %d", type);
         break;
     }
     scm_dynwind_end();
@@ -260,7 +258,7 @@ _document(SCM info)
     return SCM_UNSPECIFIED;
 }
 
-void
+GIG_API void
 gig_init_document()
 {
     scm_c_define_gsubr("%document", 1, 0, 0, _document);
