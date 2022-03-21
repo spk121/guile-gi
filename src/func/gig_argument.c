@@ -92,7 +92,7 @@ static void c_list_to_scm(C2S_ARG_DECL);
 static void *
 later_free(slist_t **must_free, GigTypeMeta *meta, void *ptr)
 {
-    if ((must_free != NULL) && meta->transfer != GI_TRANSFER_EVERYTHING)
+    if ((must_free != NULL) && meta->transfer != GIG_TRANSFER_EVERYTHING)
         slist_prepend(must_free, ptr);
     return ptr;
 }
@@ -443,7 +443,7 @@ scm_to_c_string(S2C_ARG_DECL)
 
         // FIXME: is there any guarantee, that the bytevector
         // has the correct locale? This seems like a very ugly hack.
-        if (meta->transfer != GI_TRANSFER_EVERYTHING) {
+        if (meta->transfer != GIG_TRANSFER_EVERYTHING) {
             // But when we're using bytevectors as a possibly writable
             // location, they do need to be null terminated.
             bool terminated = false;
@@ -629,7 +629,7 @@ scm_to_c_native_immediate_array(S2C_ARG_DECL)
 
     if (scm_is_bytevector(object)) {
         *size = SCM_BYTEVECTOR_LENGTH(object) / item_size;
-        if (meta->transfer == GI_TRANSFER_EVERYTHING) {
+        if (meta->transfer == GIG_TRANSFER_EVERYTHING) {
             if (meta->is_zero_terminated) {
                 size_t len = SCM_BYTEVECTOR_LENGTH(object);
                 // Note, null terminated here.
@@ -668,7 +668,7 @@ scm_to_c_byte_array(S2C_ARG_DECL)
         void *contents = SCM_BYTEVECTOR_CONTENTS(object);
         size_t len = SCM_BYTEVECTOR_LENGTH(object);
         *size = len;
-        if (meta->transfer == GI_TRANSFER_EVERYTHING)
+        if (meta->transfer == GIG_TRANSFER_EVERYTHING)
             arg->v_pointer = g_byte_array_new_take(contents, len);
         else
             arg->v_pointer = g_byte_array_new_take(xmemdup(contents, len), len);
@@ -914,7 +914,7 @@ scm_to_c_ghashtable(S2C_ARG_DECL)
             for (int j = 0; j < 2; j++) {
                 size_t _size = GIG_ARRAY_SIZE_UNKNOWN;
                 GigTypeMeta _meta = meta->params[j];
-                _meta.transfer = GI_TRANSFER_EVERYTHING;
+                _meta.transfer = GIG_TRANSFER_EVERYTHING;
 
                 gig_argument_scm_to_c(subr, argpos, &_meta, keyval[j], must_free, &_keyval[j],
                                       &_size);
@@ -924,7 +924,7 @@ scm_to_c_ghashtable(S2C_ARG_DECL)
             g_hash_table_insert(hash, _keyval[0].v_pointer, _keyval[1].v_pointer);
         }
     }
-    if (meta->transfer == GI_TRANSFER_NOTHING) {
+    if (meta->transfer == GIG_TRANSFER_NOTHING) {
         // Later free the hash table
         ;
     }
@@ -960,7 +960,7 @@ scm_to_c_garray(S2C_ARG_DECL)
 
     _meta.gtype = G_TYPE_PRIV_C_ARRAY;
     // The GArray is going to take ownership of the array contents
-    _meta.transfer = GI_TRANSFER_EVERYTHING;
+    _meta.transfer = GIG_TRANSFER_EVERYTHING;
 
     gig_argument_scm_to_c(subr, argpos, &_meta, object, NULL, &_arg, size);
     arg->v_pointer = g_array_new(_meta.is_zero_terminated, FALSE, _meta.params[0].item_size);
@@ -993,7 +993,7 @@ scm_to_c_native_interface_array(S2C_ARG_DECL)
             }
             for (size_t i = 0; i < *size; i++) {
                 void *p = gig_type_peek_object(scm_c_vector_ref(object, i));
-                if (meta->transfer == GI_TRANSFER_EVERYTHING) {
+                if (meta->transfer == GIG_TRANSFER_EVERYTHING) {
                     if (fundamental_item_type == G_TYPE_BOXED) {
                         ((void **)(arg->v_pointer))[i] =
                             xmemdup(p, gig_meta_real_item_size(&meta->params[0]));
@@ -1020,7 +1020,7 @@ scm_to_c_native_interface_array(S2C_ARG_DECL)
                 arg->v_pointer = xcalloc(*size, real_item_size);
             for (size_t i = 0; i < *size; i++) {
                 void *p = gig_type_peek_object(scm_c_vector_ref(object, i));
-                if (meta->transfer == GI_TRANSFER_EVERYTHING)
+                if (meta->transfer == GIG_TRANSFER_EVERYTHING)
                     memcpy((char *)(arg->v_pointer) + i * real_item_size,
                            xmemdup(p, real_item_size), real_item_size);
                 else
@@ -1353,7 +1353,7 @@ c_string_to_scm(C2S_ARG_DECL)
 {
     TRACE_C2S();
     // We can't transfer strings directly, since GObject and Guile use
-    // different internal encodings.  So for GI_TRANSFER_EVERYTHGING,
+    // different internal encodings.  So for GIG_TRANSFER_EVERYTHGING,
     // we just free.
     if (meta->gtype == G_TYPE_STRING) {
         if (!arg->v_string)
@@ -1371,7 +1371,7 @@ c_string_to_scm(C2S_ARG_DECL)
                 else
                     *object = scm_from_locale_string(arg->v_string);
             }
-            if (meta->transfer == GI_TRANSFER_EVERYTHING) {
+            if (meta->transfer == GIG_TRANSFER_EVERYTHING) {
                 free(arg->v_string);
                 arg->v_string = NULL;
             }
@@ -1422,7 +1422,7 @@ c_native_array_to_scm(C2S_ARG_DECL)
             scm_misc_error(subr, "array size overflow", SCM_EOL);       \
         if (sz == 0)                                                    \
             *object = scm_make_ ## _short_type ## vector (scm_from_int(0), scm_from_int(0)); \
-        else if (meta->transfer == GI_TRANSFER_EVERYTHING)              \
+        else if (meta->transfer == GIG_TRANSFER_EVERYTHING)              \
             *object = scm_take_ ## _short_type ## vector((_type *)(arg->v_pointer), length); \
         else                                                            \
             *object = scm_take_ ## _short_type ## vector((_type *)xmemdup(arg->v_pointer, sz), length); \
@@ -1462,7 +1462,7 @@ c_native_array_to_scm(C2S_ARG_DECL)
             *object = scm_c_make_string(length, SCM_MAKE_CHAR(0));
             for (size_t k = 0; k < length; k++)
                 scm_c_string_set_x(*object, k, SCM_MAKE_CHAR(((gunichar *)(arg->v_pointer))[k]));
-            if (meta->transfer == GI_TRANSFER_EVERYTHING) {
+            if (meta->transfer == GIG_TRANSFER_EVERYTHING) {
                 free(arg->v_pointer);
                 arg->v_pointer = 0;
             }
@@ -1501,7 +1501,7 @@ c_native_array_to_scm(C2S_ARG_DECL)
         for (size_t k = 0; k < len; k++, elt += inc)
             *elt = ((gboolean *)(arg->v_pointer))[k] ? SCM_BOOL_T : SCM_BOOL_F;
         scm_array_handle_release(&handle);
-        if (meta->transfer == GI_TRANSFER_EVERYTHING) {
+        if (meta->transfer == GIG_TRANSFER_EVERYTHING) {
             free(arg->v_pointer);
             arg->v_pointer = 0;
         }
@@ -1547,7 +1547,7 @@ c_native_array_to_scm(C2S_ARG_DECL)
 
         scm_array_handle_release(&handle);
 
-        if (meta->transfer == GI_TRANSFER_EVERYTHING) {
+        if (meta->transfer == GIG_TRANSFER_EVERYTHING) {
             free(arg->v_pointer);
             arg->v_pointer = 0;
         }
@@ -1572,12 +1572,12 @@ c_native_array_to_scm(C2S_ARG_DECL)
                 else
                     *elt = scm_from_locale_string(str);
             }
-            if (meta->transfer == GI_TRANSFER_EVERYTHING) {
+            if (meta->transfer == GIG_TRANSFER_EVERYTHING) {
                 free(((char **)(arg->v_pointer))[i]);
                 ((char **)(arg->v_pointer))[i] = NULL;
             }
         }
-        if (meta->transfer != GI_TRANSFER_NOTHING) {
+        if (meta->transfer != GIG_TRANSFER_NOTHING) {
             free(arg->v_pointer);
             arg->v_pointer = NULL;
         }
@@ -1598,7 +1598,7 @@ c_byte_array_to_scm(C2S_ARG_DECL)
     GByteArray *byte_array = arg->v_pointer;
     *object = scm_c_make_bytevector(byte_array->len);
     memcpy(SCM_BYTEVECTOR_CONTENTS(*object), byte_array->data, byte_array->len);
-    if (meta->transfer == GI_TRANSFER_EVERYTHING)
+    if (meta->transfer == GIG_TRANSFER_EVERYTHING)
         g_byte_array_free(byte_array, TRUE);
     else
         g_byte_array_free(byte_array, FALSE);
@@ -1622,7 +1622,7 @@ c_garray_to_scm(C2S_ARG_DECL)
     _meta.gtype = G_TYPE_PRIV_C_ARRAY;
     _meta.length = array->len;
     // The GArray retains ownership of the conents.
-    _meta.transfer = GI_TRANSFER_NOTHING;
+    _meta.transfer = GIG_TRANSFER_NOTHING;
 
     size = array->len;
 
@@ -1630,12 +1630,12 @@ c_garray_to_scm(C2S_ARG_DECL)
 
     // Since the GArray retained ownership of the contents, we free as
     // necessary here.
-    if (meta->transfer == GI_TRANSFER_EVERYTHING) {
+    if (meta->transfer == GIG_TRANSFER_EVERYTHING) {
         if (meta->params[0].gtype == G_TYPE_STRING)
             g_array_set_clear_func(array, deep_free);
         g_array_free(array, TRUE);
     }
-    else if (meta->transfer == GI_TRANSFER_CONTAINER)
+    else if (meta->transfer == GIG_TRANSFER_CONTAINER)
         g_array_free(array, FALSE);
 }
 
@@ -1684,7 +1684,7 @@ c_ghashtable_to_scm(C2S_ARG_DECL)
         }
         scm_hash_set_x(*object, keyval[0], keyval[1]);
     }
-    if (meta->transfer != GI_TRANSFER_NOTHING)
+    if (meta->transfer != GIG_TRANSFER_NOTHING)
         g_hash_table_unref(hash);
 }
 
@@ -1706,7 +1706,7 @@ c_list_to_scm(C2S_ARG_DECL)
                               GIG_ARRAY_SIZE_UNKNOWN);
         scm_set_car_x(out_iter, _obj);
     }
-    if (meta->transfer != GI_TRANSFER_NOTHING) {
+    if (meta->transfer != GIG_TRANSFER_NOTHING) {
         if (meta->pointer_type == GIG_DATA_LIST)
             g_list_free(arg->v_pointer);
         else

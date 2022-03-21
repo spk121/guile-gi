@@ -349,7 +349,7 @@ gig_value_to_scm_basic_type(const GValue *value, GType fundamental, bool *handle
 static SCM
 gig_value_to_scm_structured_type(const GValue *value, GType fundamental, bool copy_boxed)
 {
-    GITransfer transfer = copy_boxed ? GI_TRANSFER_NOTHING : GI_TRANSFER_EVERYTHING;
+    GigTransfer transfer = copy_boxed ? GIG_TRANSFER_NOTHING : GIG_TRANSFER_EVERYTHING;
     switch (fundamental) {
     case G_TYPE_INTERFACE:
     {
@@ -491,7 +491,7 @@ gig_value_transform(SCM val, SCM type)
     GValue *new_val = xcalloc(1, sizeof(GValue));
     g_value_init(new_val, scm_to_gtype(type));
     if (g_value_transform(old_val, new_val))
-        return gig_type_transfer_object(G_TYPE_VALUE, new_val, GI_TRANSFER_EVERYTHING);
+        return gig_type_transfer_object(G_TYPE_VALUE, new_val, GIG_TRANSFER_EVERYTHING);
     else {
         free(new_val);
         scm_misc_error("%transform", "failed to transform ~A into ~A", scm_list_2(val, type));

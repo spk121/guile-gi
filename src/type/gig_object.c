@@ -35,14 +35,14 @@ typedef struct _GigUserObjectInitInfo
 static SCM
 gig_object_take(GObject *object)
 {
-    return gig_type_transfer_object(G_OBJECT_TYPE(object), object, GI_TRANSFER_EVERYTHING);
+    return gig_type_transfer_object(G_OBJECT_TYPE(object), object, GIG_TRANSFER_EVERYTHING);
 }
 
 
 static SCM
 gig_object_ref(GObject *object)
 {
-    return gig_type_transfer_object(G_OBJECT_TYPE(object), object, GI_TRANSFER_NOTHING);
+    return gig_type_transfer_object(G_OBJECT_TYPE(object), object, GIG_TRANSFER_NOTHING);
 }
 
 static GObject *
@@ -150,7 +150,7 @@ gig_i_scm_get_pspec(SCM self, SCM prop)
     }
     scm_dynwind_end();
 
-    return gig_type_transfer_object(G_PARAM_SPEC_TYPE(pspec), pspec, GI_TRANSFER_NOTHING);
+    return gig_type_transfer_object(G_PARAM_SPEC_TYPE(pspec), pspec, GIG_TRANSFER_NOTHING);
 }
 
 static SCM
@@ -576,7 +576,7 @@ gig_property_define(GType type, GIPropertyInfo *info, const char *_namespace)
         GType prop_type = G_PARAM_SPEC_TYPE(prop);
         if (!gig_type_is_registered(prop_type))
             defs = scm_append2(defs, gig_type_define(prop_type));
-        s_prop = gig_type_transfer_object(prop_type, prop, GI_TRANSFER_NOTHING);
+        s_prop = gig_type_transfer_object(prop_type, prop, GIG_TRANSFER_NOTHING);
 
         SCM top_type = scm_get_top_class();
         def = do_define_property(long_name, s_prop, self_type, top_type);

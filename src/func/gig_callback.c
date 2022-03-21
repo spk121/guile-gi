@@ -18,6 +18,7 @@
 #include <libguile/hooks.h>
 #include <ffi.h>
 #include "../core.h"
+#include "../type.h"
 #include "gig_argument.h"
 #include "gig_callback_priv.h"
 #include "gig_function_priv.h"

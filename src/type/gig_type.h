@@ -20,6 +20,13 @@
 #include <girepository.h>
 #include "../core.h"
 
+typedef enum GigTransfer_
+{
+    GIG_TRANSFER_NOTHING,
+    GIG_TRANSFER_CONTAINER,
+    GIG_TRANSFER_EVERYTHING
+} GigTransfer;
+
 GType gig_type_get_c_array_type(void);
 
 #define G_TYPE_PRIV_C_ARRAY (gig_type_get_c_array_type())
@@ -36,7 +43,7 @@ SCM gig_type_define_with_info(GIRegisteredTypeInfo *info, SCM slots);
 SCM gig_type_get_scheme_type(GType gtype);
 void *gig_type_peek_object(SCM obj);
 bool gig_type_check_typed_object(SCM obj, SCM expected_type);
-SCM gig_type_transfer_object(GType gtype, void *obj, GITransfer transfer);
+SCM gig_type_transfer_object(GType gtype, void *obj, GigTransfer transfer);
 SCM scm_from_gtype(GType x);
 GType scm_to_gtype(SCM x);
 GType scm_to_gtype_full(SCM x, const char *subr, int argpos);

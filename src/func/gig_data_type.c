@@ -26,6 +26,17 @@
 static void gig_type_meta_init_from_type_info(GigTypeMeta *type, GITypeInfo *ti);
 static void gig_type_meta_init_from_basic_type_tag(GigTypeMeta *meta, GITypeTag tag);
 
+static GigTransfer
+convert_transfer(GITransfer x)
+{
+    if (x == GI_TRANSFER_NOTHING)
+        return GIG_TRANSFER_NOTHING;
+    if (x == GI_TRANSFER_CONTAINER)
+        return GIG_TRANSFER_CONTAINER;
+    return GIG_TRANSFER_EVERYTHING;
+}
+
+
 void
 gig_type_meta_init_from_arg_info(GigTypeMeta *meta, GIArgInfo *ai)
 {
@@ -43,7 +54,7 @@ gig_type_meta_init_from_arg_info(GigTypeMeta *meta, GIArgInfo *ai)
     meta->is_optional = g_arg_info_is_optional(ai);
     meta->is_nullable = g_arg_info_may_be_null(ai);
 
-    meta->transfer = transfer;
+    meta->transfer = convert_transfer(transfer);
     g_base_info_unref(type_info);
 }
 
@@ -66,7 +77,7 @@ gig_type_meta_init_from_callable_info(GigTypeMeta *meta, GICallableInfo *ci)
     meta->is_optional = false;
     meta->is_nullable = g_callable_info_may_return_null(ci);
 
-    meta->transfer = transfer;
+    meta->transfer = convert_transfer(transfer);
     g_base_info_unref(type_info);
 }
 
@@ -88,10 +99,10 @@ add_child_params(GigTypeMeta *meta, GITypeInfo *type_info, int n)
         gig_type_meta_init_from_type_info(&meta->params[i], param_type);
         g_base_info_unref(param_type);
 
-        if (meta->transfer == GI_TRANSFER_EVERYTHING)
-            meta->params[i].transfer = GI_TRANSFER_EVERYTHING;
+        if (meta->transfer == GIG_TRANSFER_EVERYTHING)
+            meta->params[i].transfer = GIG_TRANSFER_EVERYTHING;
         else
-            meta->params[i].transfer = GI_TRANSFER_NOTHING;
+            meta->params[i].transfer = GIG_TRANSFER_NOTHING;
 
         meta->is_invalid |= meta->params[i].is_invalid;
     }

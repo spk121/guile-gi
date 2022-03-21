@@ -14,6 +14,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "../core.h"
+#include "../type.h"
 #include "gig_arg_map_priv.h"
 #include "gig_args_store.h"
 #include "gig_argument.h"
@@ -148,7 +149,7 @@ object_to_c_arg(GigArgMap *amap, int s, const char *name, SCM obj, GIArgument *i
     inout = is_in && is_out;
     if (inout) {
         gig_amap_input_s2i(amap, s, &i);
-        inout_free = (amap->pdata[i].meta.transfer == GI_TRANSFER_NOTHING);
+        inout_free = (amap->pdata[i].meta.transfer == GIG_TRANSFER_NOTHING);
     }
     else
         inout_free = false;
@@ -174,7 +175,7 @@ object_to_c_arg(GigArgMap *amap, int s, const char *name, SCM obj, GIArgument *i
 
         inout = is_in && is_out;
         if (inout)
-            inout_free = (amap->pdata[i_child].meta.transfer == GI_TRANSFER_NOTHING);
+            inout_free = (amap->pdata[i_child].meta.transfer == GIG_TRANSFER_NOTHING);
         else
             inout_free = false;
         store_argument(c_child_invoke_in, c_child_invoke_out, inout, inout_free, &size_arg,
