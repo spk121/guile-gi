@@ -39,7 +39,6 @@ bool gig_amap_input_s2i(const GigArgMap *amap, int s, int *i);
 bool gig_amap_input_c2s(const GigArgMap *amap, int c, int *s);
 bool gig_amap_input_s2c(const GigArgMap *amap, int s, int *c);
 
-bool gig_amap_output_i2c(const GigArgMap *amap, int i, int *c);
 bool gig_amap_output_i2s(const GigArgMap *amap, int i, int *s);
 bool gig_amap_output_c2i(const GigArgMap *amap, int c, int *i);
 bool gig_amap_output_s2i(const GigArgMap *amap, int s, int *i);
@@ -47,7 +46,6 @@ bool gig_amap_output_c2s(const GigArgMap *amap, int c, int *s);
 bool gig_amap_output_s2c(const GigArgMap *amap, int s, int *c);
 
 bool gig_amap_child_i(const GigArgMap *amap, int i, int *ichild);
-bool gig_amap_return_child_i(const GigArgMap *amap, int *ichild);
 
 GType *gig_amap_get_gtype_list(GigArgMap *am, size_t *len);
 

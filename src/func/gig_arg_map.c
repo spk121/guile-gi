@@ -124,17 +124,16 @@ arg_map_apply_function_info(GigArgMap *amap, GIFunctionInfo *func_info)
 static void
 arg_map_determine_array_length_index(GigArgMap *amap, GigArgMapEntry *entry, GITypeInfo *info)
 {
-    if (entry->meta.gtype == G_TYPE_PRIV_C_ARRAY && entry->meta.has_size) {
-        int idx = g_type_info_get_array_length(info);
+    if (entry->meta.gtype == G_TYPE_PRIV_C_ARRAY && entry->meta.has_length_arg) {
+        int idx = entry->meta.length_arg;
 
         assert(idx >= 0);
 
         entry->tuple = GIG_ARG_TUPLE_ARRAY;
-        entry->child = amap->pdata + idx;
-        entry->child->tuple = GIG_ARG_TUPLE_ARRAY_SIZE;
-        entry->child->presence = GIG_ARG_PRESENCE_IMPLICIT;
-        entry->child->parent = entry;
-        entry->child->is_s_output = 0;
+        GigArgMapEntry *child = amap->pdata + idx;
+        child->tuple = GIG_ARG_TUPLE_ARRAY_SIZE;
+        child->presence = GIG_ARG_PRESENCE_IMPLICIT;
+        child->is_s_output = 0;
     }
 }
 
@@ -403,8 +402,9 @@ gig_amap_output_child_c(GigArgMap *amap, int c_output_pos, int *cinvoke_output_a
     int i = 0;
     while (i < amap->len) {
         if (amap->pdata[i].is_c_output && (amap->pdata[i].c_output_pos == c_output_pos)) {
-            if (amap->pdata[i].child) {
-                *cinvoke_output_array_size_index = amap->pdata[i].child->c_output_pos;
+            if (amap->pdata[i].meta.has_length_arg) {
+                size_t idx = amap->pdata[i].meta.length_arg;
+                *cinvoke_output_array_size_index = amap->pdata[idx].c_output_pos;
                 return true;
             }
         }
@@ -486,8 +486,9 @@ gig_amap_input_s_2_child_input_c(const GigArgMap *amap, int s_input_pos, int *c_
     int i = 0;
     while (i < amap->len) {
         if (amap->pdata[i].is_s_input && (amap->pdata[i].s_input_pos == s_input_pos)) {
-            GigArgMapEntry *child = amap->pdata[i].child;
-            if (child) {
+            if (amap->pdata[i].meta.has_length_arg) {
+                size_t i_child = amap->pdata[i].meta.length_arg;
+                GigArgMapEntry *child = &amap->pdata[i_child];
                 if (child->is_c_input) {
                     *c_input_pos = child->c_input_pos;
                     return true;
@@ -512,8 +513,9 @@ gig_amap_input_s_2_child_output_c(const GigArgMap *amap, int s_input_pos, int *c
     int i = 0;
     while (i < amap->len) {
         if (amap->pdata[i].is_s_input && (amap->pdata[i].s_input_pos == s_input_pos)) {
-            GigArgMapEntry *child = amap->pdata[i].child;
-            if (child) {
+            if (amap->pdata[i].meta.has_length_arg) {
+                size_t idx = amap->pdata[i].meta.length_arg;
+                GigArgMapEntry *child = &amap->pdata[idx];
                 if (child->is_c_output) {
                     *c_output_pos = child->c_output_pos;
                     return true;
@@ -733,18 +735,20 @@ gig_amap_output_s2c(const GigArgMap *am, int spos, int *cpos)
 bool
 gig_amap_child_i(const GigArgMap *am, int i, int *ichild)
 {
-    if (am->pdata[i].child == NULL)
+    if (am->pdata[i].meta.has_length_arg == false)
         return false;
-    *ichild = am->pdata[i].child->i;
+    size_t idx = am->pdata[i].meta.length_arg;
+    *ichild = am->pdata[idx].i;
     return true;
 }
 
 bool
 gig_amap_return_child_i(const GigArgMap *am, int *ichild)
 {
-    if (am->return_val.child == NULL)
+    if (am->return_val.meta.has_length_arg == false)
         return false;
-    *ichild = am->return_val.child->i;
+    size_t idx = am->return_val.meta.length_arg;
+    *ichild = am->pdata[idx].i;
     return true;
 }
 

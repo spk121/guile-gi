@@ -159,10 +159,12 @@ object_to_c_arg(GigArgMap *amap, int s, const char *name, SCM obj, GIArgument *i
     // If this argument is an array with an associated size, store the
     // array size as well.
     if (gig_amap_input_s_2_child_input_c(amap, s, &c_child_invoke_in)) {
-        GigArgMapEntry *size_entry = entry->child;
+        GigArgMapEntry *size_entry;
         GIArgument size_arg;
         size_t dummy_size;
         int c_child_invoke_out, i_child;
+        gig_amap_input_c2i(amap, c_child_invoke_in, &i_child);
+        size_entry = &amap->pdata[i_child];
 
         gig_argument_scm_to_c(name, s, &size_entry->meta, scm_from_size_t(size),
                               free_list, &size_arg, &dummy_size);
@@ -232,9 +234,10 @@ gig_callable_return_value(GigArgMap *amap, const char *name, GObject *self, SCM 
     if (ok) {
         SCM s_return;
         size_t sz = -1;
-        if (amap->return_val.meta.has_size) {
-            size_t idx = amap->return_val.child->c_output_pos;
-            sz = out_args[idx].v_size;
+        int i_child, c_child;
+        if (gig_amap_return_child_i(amap, &i_child)) {
+            gig_amap_output_i2c(amap, i_child, &c_child);
+            sz = out_args[c_child].v_size;
         }
 
         gig_argument_c_to_scm(name, -1, &amap->return_val.meta, return_arg, &s_return, sz);
@@ -287,10 +290,11 @@ convert_output_args(GigArgMap *amap, const char *func_name, GIArgument *in, GIAr
         SCM obj;
         size_t size = GIG_ARRAY_SIZE_UNKNOWN;
 
-        if (entry->child) {
+        if (entry->meta.has_length_arg) {
+            size_t idx = entry->meta.length_arg;
             // We need to know the size argument before we can process
             // this array argument.
-            GigArgMapEntry *size_entry = entry->child;
+            GigArgMapEntry *size_entry = &amap->pdata[idx];
             GIArgument *size_arg = find_output_arg(size_entry, in, out);
             gig_argument_c_to_scm(func_name, size_entry->i, &size_entry->meta, size_arg, &obj, -1);
             size = scm_is_integer(obj) ? scm_to_int(obj) : 0;

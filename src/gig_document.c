@@ -122,18 +122,9 @@ do_document(GIBaseInfo *info, const char *_namespace)
 
         for (int i = 0; i < arg_map->len; i++) {
             GigArgMapEntry *entry = arg_map->pdata + i;
-            scm_printf(SCM_UNDEFINED, "<parameter name=\"%s\">", entry->name);
-            if (entry->parent) {
-                char *parent = make_scm_name(entry->parent->name);
-                scm_printf(SCM_UNDEFINED, "<inferred parent=\"%s\"/>", parent);
-                free(parent);
+            if (entry->presence != GIG_ARG_PRESENCE_IMPLICIT) {
+                scm_printf(SCM_UNDEFINED, "<parameter name=\"%s\"></parameter>", entry->name);
             }
-            else {
-                char *arg = make_scm_name(entry->name);
-                scm_printf(SCM_UNDEFINED, "<inferred argument=\"%s\"/>", arg);
-                free(arg);
-            }
-            scm_printf(SCM_UNDEFINED, "</parameter>");
         }
         scm_printf(SCM_UNDEFINED, "</parameters>");
         scm_printf(SCM_UNDEFINED, "</%s>", kind);

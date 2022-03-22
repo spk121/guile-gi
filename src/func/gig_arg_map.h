@@ -89,9 +89,6 @@ struct _GigArgMapEntry
     int s_output_pos;
     // When non-NULL, this is the entry of the array length argument
     // for this array argument.
-
-    GigArgMapEntry *child;
-    GigArgMapEntry *parent;
 };
 
 typedef struct _GigArgMap GigArgMap;
@@ -126,5 +123,7 @@ GigArgMapEntry *gig_amap_get_input_entry_by_s(GigArgMap *am, int spos);
 GigArgMapEntry *gig_amap_get_output_entry_by_c(GigArgMap *am, int cpos);
 void gig_amap_s_input_count(const GigArgMap *amap, int *required, int *optional);
 void gig_amap_c_count(const GigArgMap *am, int *c_input_pos, int *c_output_pos);
+bool gig_amap_return_child_i(const GigArgMap *amap, int *ichild);
+bool gig_amap_output_i2c(const GigArgMap *amap, int i, int *c);
 
 #endif

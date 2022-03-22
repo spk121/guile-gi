@@ -1402,13 +1402,13 @@ static void
 c_native_array_to_scm(C2S_ARG_DECL)
 {
     TRACE_C2S();
-    size_t length;
+    size_t length = 0;
 
-    if (meta->length != GIG_ARRAY_SIZE_UNKNOWN)
-        length = meta->length;
+    if (meta->has_fixed_size)
+        length = meta->fixed_size;
     else if (meta->is_zero_terminated)
         length = zero_terminated_array_length(meta, arg);
-    else
+    else if (meta->has_length_arg)
         length = size;
     if (length == 0 && meta->is_nullable) {
         *object = SCM_BOOL_F;
@@ -1620,11 +1620,12 @@ c_garray_to_scm(C2S_ARG_DECL)
     GArray *array = arg->v_pointer;
     _arg.v_pointer = array->data;
     _meta.gtype = G_TYPE_PRIV_C_ARRAY;
-    _meta.length = array->len;
+    _meta.has_fixed_size = true;
+    _meta.fixed_size = array->len;
     // The GArray retains ownership of the conents.
     _meta.transfer = GIG_TRANSFER_NOTHING;
 
-    size = array->len;
+    size = 0;
 
     c_native_array_to_scm(subr, argpos, &_meta, &_arg, object, size);
 
@@ -1647,11 +1648,12 @@ c_gptrarray_to_scm(C2S_ARG_DECL)
     GIArgument _arg;
     GPtrArray *array = arg->v_pointer;
     _meta.gtype = G_TYPE_PRIV_C_ARRAY;
-    _meta.length = array->len;
+    _meta.has_fixed_size = true;
+    _meta.fixed_size = array->len;
 
     // Transfer the contents out of the GPtrArray into a
     // native C array, and then on to an SCM
-    size = array->len;
+    size = 0;
     _arg.v_pointer = xmemdup(array->pdata, array->len * sizeof(void *));
     c_native_array_to_scm(subr, argpos, &_meta, &_arg, object, size);
 
@@ -1720,9 +1722,8 @@ c_pointer_to_scm(C2S_ARG_DECL)
 {
     TRACE_C2S();
     if (meta->gtype == G_TYPE_PRIV_C_ARRAY) {
-        if (meta->has_size)
-            meta->length = size;
-        c_native_array_to_scm(C2S_ARGS);
+        if (meta->has_length_arg || meta->has_fixed_size || meta->is_zero_terminated)
+            c_native_array_to_scm(C2S_ARGS);
     }
     else if (meta->gtype == G_TYPE_GTYPE)
         *object = scm_from_gtype(arg->v_size);
