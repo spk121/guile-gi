@@ -35,6 +35,7 @@ typedef struct GigTypeMeta_ GigTypeMeta;
 struct GigTypeMeta_
 {
     GType gtype;
+    char *qname;                // For flags, enums w/o a specialized GType
     uint16_t is_ptr:1;
 
     // For argument and return values
@@ -77,7 +78,6 @@ struct GigTypeMeta_
     {
         struct GigTypeMeta_ *params;
         GICallableInfo *callable_info;
-        GIEnumInfo *enum_info;
     };
 };
 

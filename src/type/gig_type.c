@@ -85,7 +85,6 @@ static SCM sym_sort_key;
 
 static SCM make_type_with_gtype(GType gtype, SCM extra_supers);
 static SCM make_type_with_info(GIRegisteredTypeInfo *info, SCM slots);
-static char *g_registered_type_info_get_qualified_name(GIRegisteredTypeInfo *info);
 static SCM gig_type_associate(GType gtype, SCM stype);
 static SCM _gig_type_check_scheme_type(scm_t_bits _stype);
 
@@ -171,7 +170,7 @@ gig_type_define_with_info(GIRegisteredTypeInfo *info, SCM slots)
 
     SCM cls = make_type_with_info(info, slots);
     char *name = scm_to_utf8_symbol(scm_class_name(cls));
-    char *_name = g_registered_type_info_get_qualified_name(info);
+    char *_name = gig_type_get_qualified_name(info);
     gig_debug_load("%s - creating new type", name);
     SCM info_hash = scm_variable_ref(info_hash_var);
     scm_hashq_set_x(info_hash, scm_from_utf8_symbol(_name), cls);
@@ -325,7 +324,7 @@ static SCM
 make_type_with_info(GIRegisteredTypeInfo *info, SCM slots)
 {
     SCM cls;
-    char *_name = g_registered_type_info_get_qualified_name(info);
+    char *_name = gig_type_get_qualified_name(info);
     char *name = bracketize(_name);
     SCM class_name = scm_from_utf8_symbol(name);
     GIInfoType t = g_base_info_get_type(info);
@@ -435,8 +434,8 @@ gig_type_check_object(SCM obj)
     return SCM_IS_A_P(obj, fundamental_type);
 }
 
-static char *
-g_registered_type_info_get_qualified_name(GIRegisteredTypeInfo *info)
+char *
+gig_type_get_qualified_name(GIRegisteredTypeInfo *info)
 {
     const char *_name = g_base_info_get_attribute(info, "c:type");
     if (_name != NULL)
@@ -540,10 +539,20 @@ gig_type_get_scheme_type(GType gtype)
 SCM
 gig_type_get_scheme_type_with_info(GIRegisteredTypeInfo *info)
 {
-    char *_name = g_registered_type_info_get_qualified_name(info);
+    char *_name = gig_type_get_qualified_name(info);
     SCM info_hash = scm_variable_ref(info_hash_var);
     SCM value = scm_hashq_ref(info_hash, scm_from_utf8_symbol(_name), SCM_BOOL_F);
     free(_name);
+    if (scm_is_false(value))
+        return scm_get_unknown_class();
+    return value;
+}
+
+SCM
+gig_type_get_scheme_type_with_qname(const char *qname)
+{
+    SCM info_hash = scm_variable_ref(info_hash_var);
+    SCM value = scm_hashq_ref(info_hash, scm_from_utf8_symbol(qname), SCM_BOOL_F);
     if (scm_is_false(value))
         return scm_get_unknown_class();
     return value;

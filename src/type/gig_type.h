@@ -40,6 +40,7 @@ SCM gig_type_define(GType gtype);
 void gig_type_define_fundamental(GType type, SCM extra_supers,
                                  GigTypeRefFunction ref, GigTypeUnrefFunction unref);
 SCM gig_type_define_with_info(GIRegisteredTypeInfo *info, SCM slots);
+char *gig_type_get_qualified_name(GIRegisteredTypeInfo *info);
 SCM gig_type_get_scheme_type(GType gtype);
 void *gig_type_peek_object(SCM obj);
 bool gig_type_check_typed_object(SCM obj, SCM expected_type);
@@ -47,6 +48,7 @@ SCM gig_type_transfer_object(GType gtype, void *obj, GigTransfer transfer);
 SCM scm_from_gtype(GType x);
 GType scm_to_gtype(SCM x);
 GType scm_to_gtype_full(SCM x, const char *subr, int argpos);
+
 
 GIG_API void gig_init_types(void);
 

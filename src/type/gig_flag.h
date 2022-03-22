@@ -24,8 +24,10 @@ int gig_enum_to_int(SCM _enum);
 unsigned gig_flags_to_uint(SCM _flags);
 SCM gig_int_to_enum(int value, GType type);
 SCM gig_int_to_enum_with_info(int val, GIEnumInfo *info);
+SCM gig_int_to_enum_with_qname(int val, const char *qname);
 SCM gig_uint_to_flags(unsigned value, GType type);
 SCM gig_uint_to_flags_with_info(unsigned val, GIEnumInfo *info);
+SCM gig_uint_to_flags_with_qname(unsigned val, const char *qname);
 
 void gig_init_flag(void);
 

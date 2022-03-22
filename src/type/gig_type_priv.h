@@ -35,6 +35,7 @@ SCM gig_type_define_full(GType gtype, SCM extra_supers);
 
 GType gig_type_get_gtype_from_obj(SCM x);
 SCM gig_type_get_scheme_type_with_info(GIRegisteredTypeInfo *info);
+SCM gig_type_get_scheme_type_with_qname(const char *qname);
 
 bool gig_type_check_object(SCM obj);
 void *gig_type_peek_typed_object(SCM obj, SCM expected);

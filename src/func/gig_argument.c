@@ -1333,13 +1333,13 @@ c_enum_to_scm(C2S_ARG_DECL)
     switch (G_TYPE_FUNDAMENTAL(meta->gtype)) {
     case G_TYPE_ENUM:
         if (meta->gtype == G_TYPE_ENUM)
-            *object = gig_int_to_enum_with_info(arg->v_int32, meta->enum_info);
+            *object = gig_int_to_enum_with_qname(arg->v_int32, meta->qname);
         else
             *object = gig_int_to_enum(arg->v_int32, meta->gtype);
         break;
     case G_TYPE_FLAGS:
         if (meta->gtype == G_TYPE_FLAGS)
-            *object = gig_uint_to_flags_with_info(arg->v_uint32, meta->enum_info);
+            *object = gig_uint_to_flags_with_qname(arg->v_uint32, meta->qname);
         else
             *object = gig_uint_to_flags(arg->v_uint32, meta->gtype);
         break;

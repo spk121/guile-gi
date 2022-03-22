@@ -235,7 +235,7 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
             // Not all enum or flag types have an associated GType
             // Hence we store the enum info for GIArgument conversions
             if (meta->gtype == G_TYPE_NONE) {
-                meta->enum_info = g_base_info_ref(referenced_base_info);
+                meta->qname = gig_type_get_qualified_name(referenced_base_info);
                 meta->gtype = itype == GI_INFO_TYPE_ENUM ? G_TYPE_ENUM : G_TYPE_FLAGS;
             }
             break;
@@ -313,8 +313,10 @@ gig_data_type_free(GigTypeMeta *meta)
         meta->callable_info)
         g_base_info_unref(meta->callable_info);
     if (((meta->gtype == G_TYPE_ENUM) || (meta->gtype == G_TYPE_FLAGS))
-        && meta->enum_info)
-        g_base_info_unref(meta->enum_info);
+        && meta->qname) {
+        free(meta->qname);
+        meta->qname = NULL;
+    }
 }
 
 #define STRLEN 128
