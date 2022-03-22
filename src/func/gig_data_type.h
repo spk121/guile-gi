@@ -21,6 +21,95 @@
 
 #define GIG_ARRAY_SIZE_UNKNOWN ((size_t)-1)
 
+/*
+gboolean
+GBoxed
+  GArray
+  GByteArray
+  GError
+  GHashTable
+  GPtrArray
+  GValue
+gchararray
+  (utf8, filename)
+gchar
+gdouble
+GEnum
+GFlags
+gfloat
+GInterface
+  GdkEvent
+  GeeLazy
+  GeePromise
+  GskRenderNode
+  GtkExpression
+gint - 16, 32, 64
+GObject
+GParam
+gpointer
+  CArray
+  gpointer - glist, gslist, GType
+guchar
+guint
+ 16, 32, 64, unichar
+GVariant
+
+
+ */
+
+// All the categories of type conversions necessary for our FFI and
+// SCM-to-C function argument conversion.
+typedef enum GigArgType_
+{
+    GIG_ARG_TYPE_UNKNOWN = 0,
+    GIG_ARG_TYPE_VOID,
+
+    // Immediate C types
+    GIG_ARG_TYPE_INT8,
+    GIG_ARG_TYPE_UINT8,
+    GIG_ARG_TYPE_INT16,
+    GIG_ARG_TYPE_UINT16,
+    GIG_ARG_TYPE_INT32,
+    GIG_ARG_TYPE_UINT32,
+    GIG_ARG_TYPE_INT64,
+    GIG_ARG_TYPE_UINT64,
+    GIG_ARG_TYPE_UNICHAR,
+    GIG_ARG_TYPE_FLOAT,
+    GIG_ARG_TYPE_DOUBLE,
+    GIG_ARG_TYPE_POINTER,
+
+    // C non-immediate types
+    GIG_ARG_TYPE_UTF8_STRING,
+    GIG_ARG_TYPE_LOCALE_STRING,
+    GIG_ARG_TYPE_ARRAY,         /* A C array. Has 1 param type */
+
+    // Immediate GLib/GObject types
+    GIG_ARG_TYPE_GBOOLEAN,      /* GLib's int-sized boolean */
+    GIG_ARG_TYPE_GTYPE,
+    GIG_ARG_TYPE_GERROR,
+    GIG_ARG_TYPE_BOXED,         /* Has a GType */
+    GIG_ARG_TYPE_INTERFACE,     /* Has a GType */
+    GIG_ARG_TYPE_OBJECT,        /* Has a GType */
+    GIG_ARG_TYPE_ENUM,          /* Has a GType or qname */
+    GIG_ARG_TYPE_FLAGS,         /* Has a GType or qname */
+    GIG_ARG_TYPE_VARIANT,
+    GIG_ARG_TYPE_VALUE,
+    GIG_ARG_TYPE_PARAM,
+    GIG_ARG_TYPE_CALLBACK,
+    GIG_ARG_TYPE_OTHER,
+
+    // GLib/GObject non-immediate types
+    GIG_ARG_TYPE_GARRAY,        /* Has 1 param type */
+    GIG_ARG_TYPE_GPTRARRAY,
+    GIG_ARG_TYPE_GBYTEARRAY,
+    GIG_ARG_TYPE_GLIST,         /* Has 1 param type */
+    GIG_ARG_TYPE_GSLIST,        /* Has 1 param type */
+    GIG_ARG_TYPE_GHASH,         /* Has 2 param types */
+} GigArgType;
+
+#define GIG_ARG_TYPE_N_ARGS (GIG_ARG_TYPE_GHASH + 1)
+
+
 typedef enum _GigPointerType
 {
     GIG_DATA_VOID = 0,
@@ -34,6 +123,7 @@ typedef enum _GigPointerType
 typedef struct GigTypeMeta_ GigTypeMeta;
 struct GigTypeMeta_
 {
+    GigArgType arg_type;
     GType gtype;
     char *qname;                // For flags, enums w/o a specialized GType
     uint16_t is_ptr:1;
@@ -62,23 +152,15 @@ struct GigTypeMeta_
     int length_arg;
     int fixed_size;
 
-    union
-    {
-        // For string and pointer types
-        GigPointerType pointer_type;
-        // For C element types
-        size_t item_size;
-    };
+    // For C element types
+    size_t item_size;
 
     GigTransfer transfer;
 
     // Subtypes and callables
     uint16_t n_params;
-    union
-    {
-        struct GigTypeMeta_ *params;
-        GICallableInfo *callable_info;
-    };
+    struct GigTypeMeta_ *params;
+    GICallableInfo *callable_info;
 };
 
 void gig_type_meta_init_from_arg_info(GigTypeMeta *type, GIArgInfo *ai);

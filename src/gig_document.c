@@ -106,7 +106,7 @@ do_document(GIBaseInfo *info, const char *_namespace)
             GigArgMapEntry *entry = gig_amap_get_input_entry_by_s(arg_map, i);
             document_arg_entry("argument", entry);
         }
-        if (arg_map->return_val.meta.gtype != G_TYPE_NONE)
+        if (arg_map->return_val.meta.arg_type > GIG_ARG_TYPE_VOID)
             document_arg_entry("return", &arg_map->return_val);
 
         for (int i = 0; i < out; i++) {

@@ -68,7 +68,6 @@ static SCM proc4signal(GISignalInfo *info, const char *name, SCM self_type,
 GType *
 gig_function_get_arg_gtypes(GICallableInfo *info, size_t *len)
 {
-    // FIXME: should reuse this amap
     GigArgMap *amap;
     GType *types;
 
@@ -250,44 +249,46 @@ SCM string_type;
 static SCM
 type_specializer(GigTypeMeta *meta)
 {
-    if (meta->gtype == G_TYPE_GTYPE)
-        // This could either an unsigned integer, or an type class.
-        return scm_get_unknown_class();
-    else if (meta->gtype == G_TYPE_PRIV_C_ARRAY
-             || meta->gtype == G_TYPE_ARRAY
-             || meta->gtype == G_TYPE_BYTE_ARRAY || meta->gtype == G_TYPE_PTR_ARRAY)
-        // Lots of different ways to represent arrays: bytevectors
-        // unicode strings, etc.
-        return scm_get_unknown_class();
+    GigArgType t = meta->arg_type;
 
-    switch (meta->gtype) {
-    case G_TYPE_POINTER:
-        // special case: POINTER can also mean string, list or callback
-        switch (meta->pointer_type) {
-        case GIG_DATA_UTF8_STRING:
-        case GIG_DATA_LOCALE_STRING:
-            return string_type;
-        case GIG_DATA_LIST:
-        case GIG_DATA_SLIST:
-            return list_type;
-        case GIG_DATA_CALLBACK:
-            return scm_get_applicable_class();
-        default:
-            return scm_get_unknown_class();
-        }
-    case G_TYPE_CHAR:
-    case G_TYPE_UCHAR:
-        // These could be character or integers, so don't use them for
-        // specialization.
+    // Return a specific class for arguments that can only have one
+    // type scheme representation.
+    switch (t) {
+    case GIG_ARG_TYPE_UNKNOWN:
+    case GIG_ARG_TYPE_VOID:
         return scm_get_unknown_class();
-    case G_TYPE_UINT:
-        // special case: Unicode characters
-        if (meta->is_unichar)
-            return char_type;
-        /* fall through */
+    case GIG_ARG_TYPE_INT8:
+    case GIG_ARG_TYPE_UINT8:
+        // either chars or integer
+        return scm_get_unknown_class();
+    case GIG_ARG_TYPE_INT16:
+    case GIG_ARG_TYPE_UINT16:
+    case GIG_ARG_TYPE_INT32:
+    case GIG_ARG_TYPE_UINT32:
+    case GIG_ARG_TYPE_INT64:
+    case GIG_ARG_TYPE_UINT64:
+        if (!meta->is_ptr)
+            return scm_get_integer_class();
+    case GIG_ARG_TYPE_FLOAT:
+    case GIG_ARG_TYPE_DOUBLE:
+        if (!meta->is_ptr)
+            return scm_get_real_class();
+    case GIG_ARG_TYPE_UTF8_STRING:
+    case GIG_ARG_TYPE_LOCALE_STRING:
+        // bytevectors or strings
+        return scm_get_unknown_class();
+    case GIG_ARG_TYPE_CALLBACK:
+        return scm_get_applicable_class();
+    case GIG_ARG_TYPE_ARRAY:
+    case GIG_ARG_TYPE_GARRAY:
+    case GIG_ARG_TYPE_GBYTEARRAY:
+    case GIG_ARG_TYPE_GPTRARRAY:
+        // a few differnt ways to represent arrays
+        return scm_get_unknown_class();
     default:
-        // usual case: refer to the already existing mapping of GType to scheme type
-        return gig_type_get_scheme_type(meta->gtype);
+        if (meta->gtype)
+            return gig_type_get_scheme_type(meta->gtype);
+        return scm_get_unknown_class();
     }
 }
 
