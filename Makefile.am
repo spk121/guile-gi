@@ -127,7 +127,9 @@ libguile_gi_la_c_sources = \
   src/type/gig_type.c \
   src/type/gig_boxed.c \
   src/func/gig_util.c \
-  src/gig_logging.c
+  src/gig_logging.c \
+  src/func/gig_lib.c \
+  src/func/gig_invoker.c
 
 libguile_gi_la_internal_headers = \
   src/core.h \
@@ -167,7 +169,9 @@ libguile_gi_la_internal_headers = \
   src/type/gig_boxed.h \
   src/func/gig_util.h \
   src/func/gig_util_priv.h \
-  src/gig_logging.h
+  src/gig_logging.h \
+  src/func/gig_lib.h \
+  src/func/gig_invoker.h
 
 libguile_gi_la_SOURCES = \
   $(libguile_gi_la_internal_headers) \

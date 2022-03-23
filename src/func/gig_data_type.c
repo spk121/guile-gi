@@ -251,7 +251,7 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
     else if (tag == GI_TYPE_TAG_INTERFACE) {
         GIBaseInfo *referenced_base_info;
         GIInfoType itype;
-        GType gtype, fundamental_gtype;
+        GType fundamental_gtype;
         GigArgMap *_amap;
 
         referenced_base_info = g_type_info_get_interface(type_info);

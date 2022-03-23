@@ -105,6 +105,8 @@ arg_map_apply_function_info(GigArgMap *amap, GIFunctionInfo *func_info)
     GIArgInfo *arg_info;
 
     n = amap->len;
+    amap->is_method = g_callable_info_is_method(func_info);
+    amap->can_throw_gerror = g_callable_info_can_throw_gerror(func_info);
 
     for (i = 0; i < n; i++) {
         arg_info = g_callable_info_get_arg(func_info, i);
