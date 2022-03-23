@@ -102,7 +102,7 @@ later_free(slist_t **must_free, GigTypeMeta *meta, void *ptr)
 #define LATER_FREE(_ptr) later_free(must_free, meta, _ptr)
 
 static GType
-child_type(GigTypeMeta *meta, GIArgument *arg)
+child_type(GigTypeMeta *meta, GigArgument *arg)
 {
     if ((arg != NULL) && (arg->v_pointer != NULL) && G_IS_OBJECT(arg->v_pointer)
         && g_type_is_a(G_OBJECT_TYPE(arg->v_pointer), meta->gtype)) {
@@ -113,7 +113,7 @@ child_type(GigTypeMeta *meta, GIArgument *arg)
 
 // This returns the number of elements (not necessarily bytes) in ARG.
 static size_t
-zero_terminated_array_length(GigTypeMeta *meta, GIArgument *arg)
+zero_terminated_array_length(GigTypeMeta *meta, GigArgument *arg)
 {
     assert(meta != NULL);
     assert(arg != NULL);
@@ -181,11 +181,11 @@ zero_terminated_array_length(GigTypeMeta *meta, GIArgument *arg)
 }
 
 //////////////////////////////////////////////////////////
-// CONVERTING SCM OBJECTS TO GIARGUMENTS
+// CONVERTING SCM OBJECTS TO GIGARGUMENTS
 //////////////////////////////////////////////////////////
 
 // This is the main entry point of the conversion of SCM objects to
-// GIArguments.
+// GigArguments.
 void
 gig_argument_scm_to_c(S2C_ARG_DECL)
 {
@@ -378,9 +378,9 @@ scm_to_c_enum(S2C_ARG_DECL)
 {
     TRACE_S2C();
     if (meta->arg_type == GIG_ARG_TYPE_ENUM)
-        arg->v_int = gig_enum_to_int(object);
+        arg->v_int32 = gig_enum_to_int(object);
     else
-        arg->v_uint = gig_flags_to_uint(object);
+        arg->v_uint32 = gig_flags_to_uint(object);
 }
 
 static void
@@ -676,7 +676,7 @@ static void
 scm_to_c_ptr_array(S2C_ARG_DECL)
 {
     TRACE_S2C();
-    GIArgument _arg;
+    GigArgument _arg;
     GigTypeMeta _meta = *meta;
 
     _meta.arg_type = GIG_ARG_TYPE_ARRAY;
@@ -707,9 +707,9 @@ typedef enum _gig_hash_key_type
 } GigHashKeyType;
 
 // This procedure converts a GHashTable's key or value to a
-// GIArgument.
+// GigArgument.
 static void
-c_hash_pointer_to_arg(GigTypeMeta *meta, void **p, GIArgument *arg)
+c_hash_pointer_to_arg(GigTypeMeta *meta, void **p, GigArgument *arg)
 {
     GigArgType t = meta->arg_type;
 
@@ -747,10 +747,10 @@ c_hash_pointer_to_arg(GigTypeMeta *meta, void **p, GIArgument *arg)
     }
 }
 
-// This procedure converts a GIArgument to a gpointer to be used as a
+// This procedure converts a GigArgument to a gpointer to be used as a
 // GHashTable's key or value.
 static void *
-arg_to_c_hash_pointer(GigTypeMeta *meta, GigHashKeyType key_type, GIArgument *arg)
+arg_to_c_hash_pointer(GigTypeMeta *meta, GigHashKeyType key_type, GigArgument *arg)
 {
     GigArgType t = meta->arg_type;
 
@@ -893,7 +893,7 @@ scm_to_c_ghashtable(S2C_ARG_DECL)
 
         for (ls = SCM_SIMPLE_VECTOR_REF(buckets, i); !scm_is_null(ls); ls = SCM_CDR(ls)) {
             handle = scm_car(ls);
-            GIArgument _keyval[2];
+            GigArgument _keyval[2];
             SCM keyval[2];
             keyval[0] = scm_car(handle);
             keyval[1] = scm_cdr(handle);
@@ -942,7 +942,7 @@ static void
 scm_to_c_garray(S2C_ARG_DECL)
 {
     TRACE_S2C();
-    GIArgument _arg;
+    GigArgument _arg;
     GigTypeMeta _meta = *meta;
 
     _meta.arg_type = GIG_ARG_TYPE_ARRAY;
@@ -1109,7 +1109,7 @@ scm_to_c_native_string_array(S2C_ARG_DECL)
 }
 
 //////////////////////////////////////////////////////////
-// CONVERTING GIARGUMENTS TO SCM OBJECTS
+// CONVERTING GIGARGUMENTS TO SCM OBJECTS
 //////////////////////////////////////////////////////////
 
 
@@ -1475,7 +1475,7 @@ c_native_array_to_scm(C2S_ARG_DECL)
 
         assert(arg->v_pointer != NULL);
 
-        GIArgument _arg = *arg;
+        GigArgument _arg = *arg;
         GigTypeMeta _meta = meta->params[0];
 
         if (t == GIG_ARG_TYPE_VALUE) {
@@ -1573,7 +1573,7 @@ c_garray_to_scm(C2S_ARG_DECL)
 {
     TRACE_C2S();
     GigTypeMeta _meta = *meta;
-    GIArgument _arg;
+    GigArgument _arg;
     GArray *array = arg->v_pointer;
     _arg.v_pointer = array->data;
     _meta.arg_type = GIG_ARG_TYPE_ARRAY;
@@ -1603,7 +1603,7 @@ c_gptrarray_to_scm(C2S_ARG_DECL)
 {
     TRACE_C2S();
     GigTypeMeta _meta = *meta;
-    GIArgument _arg;
+    GigArgument _arg;
     GPtrArray *array = arg->v_pointer;
     _meta.arg_type = GIG_ARG_TYPE_ARRAY;
     _meta.has_fixed_size = true;
@@ -1634,7 +1634,7 @@ c_ghashtable_to_scm(C2S_ARG_DECL)
         SCM keyval[2];
         for (int i = 0; i < 2; i++) {
             GigTypeMeta _meta = meta->params[i];
-            GIArgument _arg;
+            GigArgument _arg;
             void *p = ((i == 0) ? key : value);
 
             c_hash_pointer_to_arg(&_meta, p, &_arg);
@@ -1659,7 +1659,7 @@ c_list_to_scm(C2S_ARG_DECL)
 
     for (SCM out_iter = *object; slist != NULL;
          slist = g_slist_next(slist), out_iter = scm_cdr(out_iter)) {
-        GIArgument _arg;
+        GigArgument _arg;
         SCM _obj;
         _arg.v_pointer = slist->data;
         gig_argument_c_to_scm(subr, argpos, &meta->params[0], &_arg, &_obj,

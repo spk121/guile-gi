@@ -426,7 +426,7 @@ function_invoke(GIFunctionInfo *func_info, GigArgMap *amap, const char *name, GO
                   name, amap->c_input_len, amap->c_output_len);
     gig_amap_dump(name, amap);
 
-    GIArgument return_arg;
+    GigArgument return_arg;
     return_arg.v_pointer = NULL;
     ok = g_function_info_invoke(func_info, store->in_args,
                                 amap->c_input_len + (self ? 1 : 0),
@@ -444,7 +444,7 @@ gig_callable_invoke(GICallableInfo *callable_info, void *callable, GigArgMap *am
 {
     GigArgsStore *store;
     gboolean ok;
-    GIArgument return_arg;
+    GigArgument return_arg;
 
     store = gig_args_store_new(amap->c_input_len, amap->c_output_len);
     gig_args_store_initialize(store, amap, name, self, args);
@@ -477,7 +477,7 @@ gig_callable_invoke(GICallableInfo *callable_info, void *callable, GigArgMap *am
 
 // This is the core of a dynamically generated GICallable function wrapper.
 // It converts FFI arguments to SCM arguments, converts those
-// SCM arguments into GIArguments, calls the C function,
+// SCM arguments into GigArguments, calls the C function,
 // and returns the results as an SCM packed into an FFI argument.
 // Also, it converts GErrors into SCM misc-errors.
 static void

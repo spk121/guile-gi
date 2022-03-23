@@ -53,7 +53,7 @@ static void callback_free(GigCallback *gcb);
 static void gig_fini_callback(void);
 
 static void
-convert_ffi_arg_to_giargument(void *_ffi_arg, ffi_type *arg_type, bool unpack, GIArgument *giarg)
+convert_ffi_arg_to_giargument(void *_ffi_arg, ffi_type *arg_type, bool unpack, GigArgument *giarg)
 {
     if (unpack)
         _ffi_arg = ((void **)_ffi_arg)[0];
@@ -62,10 +62,20 @@ convert_ffi_arg_to_giargument(void *_ffi_arg, ffi_type *arg_type, bool unpack, G
         giarg->v_pointer = _ffi_arg;
     else if (arg_type == &ffi_type_void)
         giarg->v_pointer = _ffi_arg;
-    else if (arg_type == &ffi_type_sint)
-        giarg->v_int = *(int *)_ffi_arg;
-    else if (arg_type == &ffi_type_uint)
-        giarg->v_uint = *(unsigned *)_ffi_arg;
+    else if (arg_type == &ffi_type_sint) {
+        if (sizeof(int) == 4)
+            giarg->v_int32 = *(int32_t *)_ffi_arg;
+        else if (sizeof(int) == 8)
+            giarg->v_int64 = *(int64_t *)_ffi_arg;
+        else
+            abort();
+    }
+    else if (arg_type == &ffi_type_uint) {
+        if (sizeof(unsigned) == 4)
+            giarg->v_uint32 = *(uint32_t *)_ffi_arg;
+        else if (sizeof(unsigned) == 8)
+            giarg->v_uint64 = *(uint64_t *)_ffi_arg;
+    }
     else if (arg_type == &ffi_type_sint8)
         giarg->v_int8 = *(int8_t *)_ffi_arg;
     else if (arg_type == &ffi_type_uint8)
@@ -93,7 +103,7 @@ convert_ffi_arg_to_giargument(void *_ffi_arg, ffi_type *arg_type, bool unpack, G
 }
 
 static void
-store_output(GigArgMapEntry *entry, void ***arg, GIArgument *value)
+store_output(GigArgMapEntry *entry, void ***arg, GigArgument *value)
 {
     GigArgType t = entry->meta.arg_type;
     switch (t) {
@@ -101,7 +111,7 @@ store_output(GigArgMapEntry *entry, void ***arg, GIArgument *value)
         **arg = NULL;
         break;
     case GIG_ARG_TYPE_GBOOLEAN:
-        **(int **)arg = value->v_int;
+        **(int **)arg = value->v_gboolean;
         break;
     case GIG_ARG_TYPE_INT8:
         **(int8_t **)arg = value->v_int8;
@@ -190,11 +200,11 @@ callback_binding_inner(struct callback_binding_args *args)
     else
         callback_name = xstrdup("callback");
 
-    // Do the two-step conversion from libffi arguments to GIArgument
+    // Do the two-step conversion from libffi arguments to GigArgument
     // to SCM arguments.
     for (unsigned i = 0; i < n_args; i++) {
         SCM s_entry = SCM_BOOL_F;
-        GIArgument giarg;
+        GigArgument giarg;
 
         if (!amap->pdata[i].is_s_input)
             continue;
@@ -229,7 +239,7 @@ callback_binding_inner(struct callback_binding_args *args)
     if (scm_is_false(s_ret))
         *(ffi_arg *)ret = FALSE;
     else {
-        GIArgument giarg;
+        GigArgument giarg;
         size_t size;
         int start = 0;
 
@@ -248,7 +258,7 @@ callback_binding_inner(struct callback_binding_args *args)
             int i_child, c_child;
             if (gig_amap_return_child_i(amap, &i_child)) {
                 gig_amap_output_i2c(amap, i_child, &c_child);
-                GIArgument tmp;
+                GigArgument tmp;
                 tmp.v_int64 = size;
                 store_output(&amap->pdata[i_child], ffi_args[c_child], &tmp);
             }
@@ -269,7 +279,7 @@ callback_binding_inner(struct callback_binding_args *args)
             int i_child, c_child;
             if (gig_amap_return_child_i(amap, &i_child)) {
                 gig_amap_output_i2c(amap, i_child, &c_child);
-                GIArgument tmp;
+                GigArgument tmp;
                 tmp.v_int64 = size;
                 store_output(&amap->pdata[i_child], ffi_args[c_child], &tmp);
             }

@@ -120,6 +120,29 @@ typedef enum _GigPointerType
     GIG_DATA_CALLBACK
 } GigPointerType;
 
+// Similar to GIArgument, but, only has the types necessary for our
+// FFI and SCM-to-C argument conversion.
+typedef union GigArgument_ {
+    int8_t    v_int8;
+    uint8_t   v_uint8;
+    int16_t   v_int16;
+    uint16_t  v_uint16;
+    int32_t   v_int32;
+    uint32_t  v_uint32;
+    int64_t   v_int64;
+    uint64_t  v_uint64;
+    uint32_t v_unichar;
+    float   v_float;
+    double  v_double;
+    int v_boolean;
+    void *v_pointer;
+    char *v_string;
+    int v_gboolean;
+    size_t v_size;
+    long v_long;
+    unsigned long v_ulong;
+} GigArgument;
+
 typedef struct GigTypeMeta_ GigTypeMeta;
 struct GigTypeMeta_
 {
