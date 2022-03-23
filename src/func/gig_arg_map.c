@@ -739,8 +739,7 @@ gig_amap_child_i(const GigArgMap *am, int i, int *ichild)
 {
     if (am->pdata[i].meta.has_length_arg == false)
         return false;
-    size_t idx = am->pdata[i].meta.length_arg;
-    *ichild = am->pdata[idx].i;
+    *ichild = am->pdata[i].meta.length_arg;
     return true;
 }
 
@@ -749,8 +748,7 @@ gig_amap_return_child_i(const GigArgMap *am, int *ichild)
 {
     if (am->return_val.meta.has_length_arg == false)
         return false;
-    size_t idx = am->return_val.meta.length_arg;
-    *ichild = am->pdata[idx].i;
+    *ichild = am->return_val.meta.length_arg;
     return true;
 }
 
