@@ -24,7 +24,8 @@
 static SCM get_shared_library_list(const char *lib);
 static void constant_define(GIConstantInfo *info, SCM *defs, SCM *ils);
 static void type_define(GType gtype, SCM *defs, SCM *ils);
-static SCM property_define(GIBaseInfo *info);
+static void property_define(GIBaseInfo *info, SCM *defs, SCM *ils);
+
 
 static SCM il_output_port = SCM_UNDEFINED;
 static SCM pretty_print_func = SCM_UNDEFINED;
@@ -369,7 +370,7 @@ load_info(GIBaseInfo *info, LoadFlags flags)
     }
         break;
     case GI_INFO_TYPE_PROPERTY:
-        defs = scm_append2(defs, property_define(info));
+        property_define(info, &defs, &ils);
         break;
     case GI_INFO_TYPE_BOXED:
     {
@@ -733,8 +734,8 @@ type_define(GType gtype, SCM *defs, SCM *ils)
     *ils = scm_append2(*ils, il);
 }
 
-static SCM
-property_define(GIBaseInfo *info)
+static void
+property_define(GIBaseInfo *info, SCM *defs, SCM *ils)
 {
     GIBaseInfo *parent = g_base_info_get_container(info);
     GType parent_gtype = g_registered_type_info_get_g_type(parent);
@@ -744,9 +745,11 @@ property_define(GIBaseInfo *info)
     char *tmp = concatenate3(parent_name, ":", short_name);
     char *long_name = make_scm_name(tmp);
     free(tmp);
-
-    gig_property_define(g_type_name(parent_gtype), long_name, short_name, symbol);
-    SCM defs = scm_list_2(scm_from_utf8_symbol(long_name), scm_from_utf8_symbol(short_name));
-    free(long_name);
-    return defs;
+    SCM il = scm_list_5(scm_from_utf8_symbol("^property"),
+                        scm_from_utf8_symbol(g_type_name(parent_gtype)),
+                        scm_from_utf8_symbol(long_name),
+                        scm_from_utf8_symbol(short_name), scm_from_utf8_symbol(symbol));
+    SCM def = scm_apply(gig_il_property_func, scm_cdr(il), SCM_EOL);
+    *defs = scm_append2(*defs, def);
+    *ils = scm_append2(*ils, il);
 }

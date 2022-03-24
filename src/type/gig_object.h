@@ -20,8 +20,10 @@
 #include <girepository.h>
 #include "../core.h"
 
-SCM gig_property_define(const char *type_name, const char *long_name, const char *short_name,
-                        const char *symbol);
+extern SCM gig_il_property_func;
+
+SCM gig_il_property(SCM s_gtype_name, SCM s_long_name, SCM s_short_name, SCM s_symbol);
+
 GIG_API void gig_init_object(void);
 
 #endif

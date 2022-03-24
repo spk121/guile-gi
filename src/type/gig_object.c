@@ -21,6 +21,8 @@
 #include "gig_closure.h"
 #include "gig_value.h"
 
+SCM gig_il_property_func = SCM_UNDEFINED;
+
 GQuark gig_user_object_properties;
 
 typedef struct _GigUserObjectInitInfo
@@ -544,17 +546,33 @@ static SCM sym_value;
 static SCM do_define_property(const char *, SCM, SCM, SCM);
 
 SCM
-gig_property_define(const char *gtype_name, const char *long_name, const char *short_name,
-                    const char *symbol)
+gig_il_property(SCM s_gtype_name, SCM s_long_name, SCM s_short_name, SCM s_symbol)
 {
-    GParamSpec *prop = NULL;
-    SCM s_prop, def;
+#define FUNC_NAME "^property"
+    char *gtype_name;
+    size_t type;
+    char *long_name;
+    char *short_name;
+    char *symbol;
+    SCM self_type;
     SCM defs = SCM_EOL;
-    GType type = g_type_from_name(gtype_name);
 
-    SCM self_type = gig_type_get_scheme_type(type);
+    SCM_ASSERT_TYPE(scm_is_symbol(s_gtype_name), s_gtype_name, SCM_ARG1, FUNC_NAME, "symbol");
+    SCM_ASSERT_TYPE(scm_is_symbol(s_long_name), s_long_name, SCM_ARG2, FUNC_NAME, "symbol");
+    SCM_ASSERT_TYPE(scm_is_symbol(s_short_name), s_short_name, SCM_ARG3, FUNC_NAME, "symbol");
+    SCM_ASSERT_TYPE(scm_is_symbol(s_symbol), s_symbol, SCM_ARG4, FUNC_NAME, "symbol");
 
     scm_dynwind_begin(0);
+
+    gtype_name = scm_dynfree(scm_to_utf8_symbol(s_gtype_name));
+    type = g_type_from_name(gtype_name);
+    if (type == 0)
+        scm_misc_error(FUNC_NAME, "cannot find GType for '~A'", scm_list_1(s_gtype_name));
+    self_type = gig_type_get_scheme_type(type);
+
+    GParamSpec *prop = NULL;
+    SCM s_prop;
+    symbol = scm_dynfree(scm_to_utf8_symbol(s_symbol));
 
     if (G_TYPE_IS_CLASSED(type)) {
         GObjectClass *_class = g_type_class_ref(type);
@@ -569,27 +587,25 @@ gig_property_define(const char *gtype_name, const char *long_name, const char *s
     else
         gig_critical_load("%s is neither class nor interface, but we define properties, wtf?",
                           gtype_name);
+    long_name = scm_dynfree(scm_to_utf8_symbol(s_long_name));
     if (prop != NULL) {
         GType prop_type = G_PARAM_SPEC_TYPE(prop);
         if (!gig_type_is_registered(prop_type))
-            defs = scm_append2(defs, gig_type_define(prop_type));
+            gig_type_define(prop_type);
         s_prop = gig_type_transfer_object(prop_type, prop, GIG_TRANSFER_NOTHING);
 
         SCM top_type = scm_get_top_class();
-        def = do_define_property(long_name, s_prop, self_type, top_type);
-        if (!SCM_UNBNDP(def))
-            defs = scm_cons(def, defs);
+        defs = scm_cons(do_define_property(long_name, s_prop, self_type, top_type), defs);
         gig_debug_load("%s - bound to property %s.%s", long_name, gtype_name, symbol);
-        def = do_define_property(short_name, s_prop, self_type, top_type);
-        if (!SCM_UNBNDP(def))
-            defs = scm_cons(def, defs);
+        short_name = scm_dynfree(scm_to_utf8_symbol(s_short_name));
+        defs = scm_cons(do_define_property(short_name, s_prop, self_type, top_type), defs);
         gig_debug_load("%s - shorthand for %s", short_name, long_name);
     }
     else
         gig_warning_load("Missing property %s", long_name);
 
     scm_dynwind_end();
-    return defs;
+    return scm_reverse(defs);
 }
 
 static SCM
@@ -639,4 +655,5 @@ gig_init_object()
     scm_c_define_gsubr("%connect", 4, 2, 0, gig_i_scm_connect);
     scm_c_define_gsubr("%emit", 2, 1, 1, gig_i_scm_emit);
     scm_c_define_gsubr("%define-object-type", 2, 2, 0, gig_i_scm_define_type);
+    gig_il_property_func = scm_c_define_gsubr("^property", 4, 0, 0, gig_il_property);
 }
