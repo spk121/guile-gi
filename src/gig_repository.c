@@ -22,7 +22,45 @@
 #include "gig_repository.h"
 
 static SCM get_shared_library_list(const char *lib);
-static SCM constant_define(GIConstantInfo *info);
+static void constant_define(GIConstantInfo *info, SCM *defs, SCM *ils);
+static void type_define(GType gtype, SCM *defs, SCM *ils);
+
+static SCM il_output_port = SCM_UNDEFINED;
+static SCM pretty_print_func = SCM_UNDEFINED;
+
+static SCM
+set_il_output_port(SCM s_port)
+{
+#define FUNC_NAME "set-il-output-port!"
+    SCM_ASSERT_TYPE(scm_is_true(scm_output_port_p(s_port)), s_port,
+                    SCM_ARG1, FUNC_NAME, "output port");
+    il_output_port = s_port;
+    return SCM_UNSPECIFIED;
+#undef FUNC_NAME
+}
+
+static SCM
+output_il(SCM il)
+{
+    if (SCM_UNBNDP(il_output_port))
+        return SCM_UNSPECIFIED;
+
+    if (!scm_is_null(il)) {
+        scm_call_2(pretty_print_func, il, il_output_port);
+    }
+    return SCM_UNSPECIFIED;
+}
+
+static SCM
+output_exports(SCM defs)
+{
+    if (!scm_is_null(defs)) {
+        SCM lst = scm_cons(scm_from_utf8_symbol("export"), defs);
+        scm_call_2(pretty_print_func, lst, il_output_port);
+        scm_newline(il_output_port);
+    }
+    return SCM_UNSPECIFIED;
+}
 
 static SCM
 require(SCM s_namespace, SCM s_version)
@@ -56,7 +94,8 @@ require(SCM s_namespace, SCM s_version)
     scm_apply(gig_il_library_func, scm_cdr(il), SCM_EOL);
     scm_dynwind_end();
 
-    return il;
+    output_il(il);
+    return SCM_UNSPECIFIED;
 #undef FUNC_NAME
 }
 
@@ -245,6 +284,7 @@ static SCM
 load_info(GIBaseInfo *info, LoadFlags flags)
 {
     SCM defs = SCM_EOL;
+    SCM ils = SCM_EOL;
     g_return_val_if_fail(info != NULL, defs);
 
     GIBaseInfo *parent = g_base_info_get_container(info);
@@ -466,6 +506,8 @@ load_info(GIBaseInfo *info, LoadFlags flags)
     }
 
   end:
+    output_il(ils);
+    output_exports(defs);
     return defs;
 
   recursion:
@@ -592,6 +634,8 @@ get_dependencies(SCM namespace)
 void
 gig_init_repository()
 {
+    pretty_print_func = scm_c_public_ref("ice-9 pretty-print", "pretty-print");
+
     scm_c_define_gsubr("require", 1, 1, 0, require);
     scm_c_define_gsubr("infos", 1, 0, 0, infos);
     scm_c_define_gsubr("info", 2, 0, 0, info);
@@ -599,6 +643,7 @@ gig_init_repository()
     scm_c_define_gsubr("get-search-path", 0, 0, 0, get_search_path);
     scm_c_define_gsubr("prepend-search-path!", 1, 0, 0, prepend_search_path);
     scm_c_define_gsubr("get-dependencies", 1, 0, 0, get_dependencies);
+    scm_c_define_gsubr("set-il-output-port", 1, 0, 0, set_il_output_port);
 
 #define D(x) scm_permanent_object(scm_c_define(#x, scm_from_uint(x)))
 
@@ -609,8 +654,8 @@ gig_init_repository()
     D(LOAD_EVERYTHING);
 }
 
-static SCM
-constant_define(GIConstantInfo *info)
+static void
+constant_define(GIConstantInfo *info, SCM *defs, SCM *ils)
 {
     const char *name = g_base_info_get_name(info);
 
@@ -680,6 +725,9 @@ constant_define(GIConstantInfo *info)
     SCM s_name = scm_from_utf8_symbol(name);
     SCM il = scm_list_3(scm_from_utf8_symbol("^constant"),
                         s_name, s_value);
-    SCM defs = scm_apply(gig_il_constant_func, scm_cdr(il), SCM_EOL);
-    return scm_values(scm_list_2(defs, il));
+    SCM def = scm_apply(gig_il_constant_func, scm_cdr(il), SCM_EOL);
+    *defs = scm_append2(*defs, def);
+    *ils = scm_append2(*ils, il);
+}
+
 }

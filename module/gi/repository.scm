@@ -27,7 +27,7 @@
             load-by-name typelib->module
 
             get-search-path prepend-search-path!
-            get-dependencies
+            get-dependencies set-il-output-port
 
             LOAD_METHODS LOAD_PROPERTIES LOAD_SIGNALS
             LOAD_EVERYTHING LOAD_INFO_ONLY))
