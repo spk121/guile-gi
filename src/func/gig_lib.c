@@ -13,28 +13,57 @@ typedef struct GigSharedLib_
 static strval_t *lib_cache = NULL;
 static char errmsg[256];
 
-void
-gig_lib_add(const char *namespace_, const char *version, const char **so_list, size_t n)
+SCM
+gig_il_library(SCM s_namespace_, SCM s_version, SCM s_solist)
 {
-    int i;
+#define FUNC_NAME "^library"
+    char *namespace_;
+    int i, n;
     GigSharedLib *shlib;
+    uint64_t val;
+    SCM entry;
+
+    SCM_ASSERT_TYPE(scm_is_string(s_namespace_), s_namespace_, SCM_ARG1, FUNC_NAME, "string");
+    SCM_ASSERT_TYPE(scm_is_string(s_version), s_version, SCM_ARG2, FUNC_NAME, "string");
+    SCM_ASSERT_TYPE(scm_is_list(s_solist), s_solist, SCM_ARG3, FUNC_NAME, "list");
+
+    if (scm_is_true(scm_string_null_p(s_namespace_)))
+        scm_wrong_type_arg(FUNC_NAME, SCM_ARG1, s_namespace_);
+    n = scm_c_length(s_solist);
+    if (n == 0)
+        scm_wrong_type_arg(FUNC_NAME, SCM_ARG3, s_solist);
+    for (i = 0; i < n; i++) {
+        entry = scm_c_list_ref(s_solist, i);
+        if (!scm_is_string(entry))
+            scm_wrong_type_arg(FUNC_NAME, SCM_ARG3, s_solist);
+        if (scm_is_true(scm_string_null_p(entry)))
+            scm_wrong_type_arg(FUNC_NAME, SCM_ARG3, s_solist);
+    }
 
     if (lib_cache == NULL)
         lib_cache = strval_new();
 
+    namespace_ = scm_to_utf8_string(s_namespace_);
+    val = strval_find_entry(lib_cache, namespace_);
+    if (val != 0) {
+        gig_warning_load("library '%s' is already loaded", namespace_);
+        free(namespace_);
+        return SCM_BOOL_F;
+    }
     shlib = xcalloc(1, sizeof(GigSharedLib));
     shlib->n = n;
     shlib->files = xcalloc(n, sizeof(char *));
     shlib->handles = xcalloc(n, sizeof(void *));
     for (i = 0; i < n; i++)
-        shlib->files[i] = xstrdup(so_list[i]);
+        shlib->files[i] = scm_to_utf8_string(scm_c_list_ref(s_solist, i));
     for (i = 0; i < n; i++) {
         shlib->handles[i] = dlopen(shlib->files[i], RTLD_NOW);
         if (shlib->handles[i] == NULL)
             goto err;
     }
     strval_add_entry(lib_cache, namespace_, (uintptr_t) shlib);
-    return;
+    free(namespace_);
+    return SCM_BOOL_T;
 
   err:
     memset(errmsg, 0, 256);
@@ -45,9 +74,11 @@ gig_lib_add(const char *namespace_, const char *version, const char **so_list, s
         free(shlib->files[i]);
     }
     free(shlib);
-    scm_syserror_msg("%gig-lib-add", "dlopen ~a ~a - ~a",
-                     scm_list_3(scm_from_utf8_string(namespace_),
-                                scm_from_utf8_string(version), scm_from_utf8_string(errmsg)), 0);
+    free(namespace_);
+    scm_syserror_msg(FUNC_NAME, "dlopen ~a ~a - ~a",
+                     scm_list_3(s_namespace_, s_version, scm_from_utf8_string(errmsg)), 0);
+    return SCM_BOOL_F;
+#undef FUNC_NAME
 }
 
 void *
@@ -71,4 +102,10 @@ gig_lib_lookup(const char *namespace_, const char *symbol)
         i++;
     }
     return NULL;
+}
+
+void
+gig_lib_init(void)
+{
+    scm_c_define_gsubr("^library", 3, 0, 0, gig_il_library);
 }

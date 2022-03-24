@@ -21,7 +21,7 @@
 #include "func.h"
 #include "gig_repository.h"
 
-static char **get_shared_library_list(GIRepository * tl, const char *lib, unsigned *n);
+static SCM get_shared_library_list(const char *lib);
 
 static SCM
 require(SCM lib, SCM version)
@@ -47,42 +47,29 @@ require(SCM lib, SCM version)
         g_error_free(error);
         scm_misc_error("require", "~A", scm_list_1(err));
     }
-    unsigned n;
-    char **liblist = get_shared_library_list(NULL, _lib, &n);
-    gig_lib_add(_lib, _version, (const char **)liblist, n);
-    for (unsigned i = 0; i < n; i++)
-        free(liblist[i]);
-    free(liblist);
+    SCM liblist = get_shared_library_list(_lib);
+    gig_il_library(lib, version, liblist);
     scm_dynwind_end();
 
     return SCM_UNSPECIFIED;
 }
 
-static char **
-get_shared_library_list(GIRepository * tl, const char *lib, unsigned *n)
+static SCM
+get_shared_library_list(const char *lib)
 {
     const char *libs, *p1, *p2;
-    char **liblist;
-    int i;
-    libs = g_irepository_get_shared_library(tl, lib);
-    if (libs == NULL) {
-        *n = 0;
-        return NULL;
-    }
-    *n = 1;
-    for (i = 0; i < strlen(libs); i++)
-        if (libs[i] == ',')
-            *n = *n + 1;
-    liblist = xcalloc(*n, sizeof(char *));
+    SCM liblist = SCM_EOL;
+
+    libs = g_irepository_get_shared_library(NULL, lib);
+    if (libs == NULL)
+        return SCM_EOL;
     p1 = libs;
-    i = 0;
     while ((p2 = strchr(p1, ',')) != NULL) {
-        char *s = xstrndup(p1, p2 - p1);
-        liblist[i++] = s;
+        liblist = scm_cons(scm_from_locale_stringn(p1, p2 - p1), liblist);
         p1 = p2 + 1;
     }
-    liblist[i] = xstrdup(p1);
-    return liblist;
+    liblist = scm_cons(scm_from_locale_string(p1), liblist);
+    return scm_reverse(liblist);
 }
 
 static SCM
@@ -231,6 +218,21 @@ make_flag_enum_alist(GIRegisteredTypeInfo *info)
     }
     return scm_reverse(alist);
 }
+
+/*
+;; API
+;; (^library "lib" "version" ("lib.so.1" "lib2.so.1"))
+;; (^type <Symbol> "GType-name" (extra-supers))
+;; (^constant key val)
+;; (^typed-enum <Symbol> GTypeName key-val-list)
+;; (^typed-flags <Symbol> GTypeName key-val-list)
+;; (^enum <Symbol> qname key-val-list)
+;; (^flags <Symbol> qname key-val-list)
+;; (^property parent-type-name name type-name)
+;; (^function ...)
+;; (^method ...)
+;; (^signal ...)
+*/
 
 static SCM
 load_info(GIBaseInfo *info, LoadFlags flags)
