@@ -568,6 +568,7 @@ gig_il_property(SCM s_gtype_name, SCM s_long_name, SCM s_short_name, SCM s_symbo
     type = g_type_from_name(gtype_name);
     if (type == 0)
         scm_misc_error(FUNC_NAME, "cannot find GType for '~A'", scm_list_1(s_gtype_name));
+
     self_type = gig_type_get_scheme_type(type);
 
     GParamSpec *prop = NULL;

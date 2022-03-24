@@ -1,5 +1,4 @@
 // Copyright (C) 2018, 2019, 2022 Michael L. Gran
-
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -25,6 +24,12 @@ static SCM get_shared_library_list(const char *lib);
 static void constant_define(GIConstantInfo *info, SCM *defs, SCM *ils);
 static void type_define(GType gtype, SCM *defs, SCM *ils);
 static void property_define(GIBaseInfo *info, SCM *defs, SCM *ils);
+static void untyped_flags_define(GIRegisteredTypeInfo *info, SCM *defs, SCM *ils);
+static void untyped_enum_define(GIRegisteredTypeInfo *info, SCM *defs, SCM *ils);
+static void untyped_enum_conversions_define(GIRegisteredTypeInfo *info, SCM *defs, SCM *ils);
+static void untyped_flag_conversions_define(GIRegisteredTypeInfo *info, SCM *defs, SCM *ils);
+static void enum_conversions_define(GIRegisteredTypeInfo *info, SCM *defs, SCM *ils);
+static void flag_conversions_define(GIRegisteredTypeInfo *info, SCM *defs, SCM *ils);
 
 
 static SCM il_output_port = SCM_UNDEFINED;
@@ -56,6 +61,9 @@ output_il(SCM il)
 static SCM
 output_exports(SCM defs)
 {
+    if (SCM_UNBNDP(il_output_port))
+        return SCM_UNSPECIFIED;
+
     if (!scm_is_null(defs)) {
         SCM lst = scm_cons(scm_from_utf8_symbol("export"), defs);
         scm_call_2(pretty_print_func, lst, il_output_port);
@@ -460,12 +468,23 @@ load_info(GIBaseInfo *info, LoadFlags flags)
     case GI_INFO_TYPE_FLAGS:
     {
         GType gtype = g_registered_type_info_get_g_type(info);
-        if (gtype == G_TYPE_NONE)
-            defs = scm_append2(defs, gig_type_define_with_info(info, SCM_EOL));
-        else
+        if (gtype == G_TYPE_NONE) {
+            if (t == GI_INFO_TYPE_ENUM) {
+                untyped_enum_define(info, &defs, &ils);
+                untyped_enum_conversions_define(info, &defs, &ils);
+            }
+            else {
+                untyped_flags_define(info, &defs, &ils);
+                untyped_flag_conversions_define(info, &defs, &ils);
+            }
+        }
+        else {
             type_define(gtype, &defs, &ils);
-
-        defs = scm_append2(defs, gig_define_enum_conversions(info, gtype));
+            if (t == GI_INFO_TYPE_ENUM)
+                enum_conversions_define(info, &defs, &ils);
+            else
+                flag_conversions_define(info, &defs, &ils);
+        }
         goto recursion;
     }
     case GI_INFO_TYPE_CONSTANT:
@@ -750,6 +769,104 @@ property_define(GIBaseInfo *info, SCM *defs, SCM *ils)
                         scm_from_utf8_symbol(long_name),
                         scm_from_utf8_symbol(short_name), scm_from_utf8_symbol(symbol));
     SCM def = scm_apply(gig_il_property_func, scm_cdr(il), SCM_EOL);
+    *defs = scm_append2(*defs, def);
+    *ils = scm_append2(*ils, il);
+}
+
+static void
+untyped_flags_define(GIRegisteredTypeInfo *info, SCM *defs, SCM *ils)
+{
+    char *qname = gig_type_get_qualified_name(info);
+    SCM s_qname = scm_from_utf8_symbol(qname);
+    char *class_name = bracketize(qname);
+    SCM s_class_name = scm_from_utf8_symbol(class_name);
+    free(qname);
+    free(class_name);
+    SCM alist = make_flag_enum_alist(info);
+    SCM il = scm_list_4(scm_from_utf8_symbol("^untyped-flags"),
+                        s_class_name, s_qname, alist);
+
+    SCM def = scm_apply(gig_il_untyped_flags_func, scm_cdr(il), SCM_EOL);
+    *defs = scm_append2(*defs, def);
+    *ils = scm_append2(*ils, il);
+}
+
+static void
+untyped_enum_define(GIRegisteredTypeInfo *info, SCM *defs, SCM *ils)
+{
+    char *qname = gig_type_get_qualified_name(info);
+    SCM s_qname = scm_from_utf8_symbol(qname);
+    char *class_name = bracketize(qname);
+    SCM s_class_name = scm_from_utf8_symbol(class_name);
+    free(qname);
+    free(class_name);
+    SCM alist = make_flag_enum_alist(info);
+    SCM il = scm_list_4(scm_from_utf8_symbol("^untyped-enum"),
+                        s_class_name, s_qname, alist);
+
+    SCM def = scm_apply(gig_il_untyped_enum_func, scm_cdr(il), SCM_EOL);
+    *defs = scm_append2(*defs, def);
+    *ils = scm_append2(*ils, il);
+}
+
+static void
+untyped_enum_conversions_define(GIRegisteredTypeInfo *info, SCM *defs, SCM *ils)
+{
+    char *qname = gig_type_get_qualified_name(info);
+    SCM s_qname = scm_from_utf8_symbol(qname);
+    char *conversion_name = make_scm_name(g_base_info_get_name(info));
+    SCM s_cname = scm_from_utf8_symbol(conversion_name);
+    free(conversion_name);
+    free(qname);
+    SCM il = scm_list_3(scm_from_utf8_symbol("^untyped-enum-conv"),
+                        s_cname, s_qname);
+    SCM def = scm_apply(gig_il_untyped_enum_conversions_func, scm_cdr(il), SCM_EOL);
+    *defs = scm_append2(*defs, def);
+    *ils = scm_append2(*ils, il);
+}
+
+static void
+untyped_flag_conversions_define(GIRegisteredTypeInfo *info, SCM *defs, SCM *ils)
+{
+    char *qname = gig_type_get_qualified_name(info);
+    SCM s_qname = scm_from_utf8_symbol(qname);
+    char *conversion_name = make_scm_name(g_base_info_get_name(info));
+    SCM s_cname = scm_from_utf8_symbol(conversion_name);
+    free(conversion_name);
+    free(qname);
+    SCM il = scm_list_3(scm_from_utf8_symbol("^untyped-flags-conv"),
+                        s_cname, s_qname);
+    SCM def = scm_apply(gig_il_untyped_flag_conversions_func, scm_cdr(il), SCM_EOL);
+    *defs = scm_append2(*defs, def);
+    *ils = scm_append2(*ils, il);
+}
+
+static void
+enum_conversions_define(GIRegisteredTypeInfo *info, SCM *defs, SCM *ils)
+{
+    char *conversion_name = make_scm_name(g_base_info_get_name(info));
+    SCM s_cname = scm_from_utf8_symbol(conversion_name);
+    size_t gtype = g_registered_type_info_get_g_type(info);
+    SCM s_gtype_name = scm_from_utf8_symbol(g_type_name(gtype));
+    free(conversion_name);
+    SCM il = scm_list_3(scm_from_utf8_symbol("^enum-conv"),
+                        s_cname, s_gtype_name);
+    SCM def = scm_apply(gig_il_enum_conversions_func, scm_cdr(il), SCM_EOL);
+    *defs = scm_append2(*defs, def);
+    *ils = scm_append2(*ils, il);
+}
+
+static void
+flag_conversions_define(GIRegisteredTypeInfo *info, SCM *defs, SCM *ils)
+{
+    char *conversion_name = make_scm_name(g_base_info_get_name(info));
+    SCM s_cname = scm_from_utf8_symbol(conversion_name);
+    size_t gtype = g_registered_type_info_get_g_type(info);
+    SCM s_gtype_name = scm_from_utf8_symbol(g_type_name(gtype));
+    free(conversion_name);
+    SCM il = scm_list_3(scm_from_utf8_symbol("^-enum-conv"),
+                        s_cname, s_gtype_name);
+    SCM def = scm_apply(gig_il_flag_conversions_func, scm_cdr(il), SCM_EOL);
     *defs = scm_append2(*defs, def);
     *ils = scm_append2(*ils, il);
 }

@@ -35,11 +35,16 @@ typedef void *(*GigTypeRefFunction)(void *);
 typedef void (*GigTypeUnrefFunction)(void *);
 
 extern SCM gig_il_type_func;
+extern SCM gig_il_untyped_flags_func;
+extern SCM gig_il_untyped_enum_func;
 
 bool gig_type_is_registered(GType gtype);
 
 SCM gig_type_define(GType gtype);
 SCM gig_il_type(SCM s_name, SCM s_gtype_name);
+SCM gig_il_untyped_flags(SCM s_name, SCM s_qname, SCM alist);
+SCM gig_il_untyped_enum(SCM s_name, SCM s_qname, SCM alist);
+
 void gig_type_define_fundamental(GType type, SCM extra_supers,
                                  GigTypeRefFunction ref, GigTypeUnrefFunction unref);
 SCM gig_type_define_with_info(GIRegisteredTypeInfo *info, SCM slots);

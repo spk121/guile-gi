@@ -19,7 +19,11 @@
 #include <girepository.h>
 #include <libguile.h>
 
-SCM gig_define_enum_conversions(GIEnumInfo *info, GType type);
+extern SCM gig_il_untyped_enum_conversions_func;
+extern SCM gig_il_untyped_flag_conversions_func;
+extern SCM gig_il_enum_conversions_func;
+extern SCM gig_il_flag_conversions_func;
+
 int gig_enum_to_int(SCM _enum);
 unsigned gig_flags_to_uint(SCM _flags);
 SCM gig_int_to_enum(int value, GType type);

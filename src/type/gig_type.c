@@ -69,6 +69,9 @@
  */
 
 SCM gig_il_type_func = SCM_UNDEFINED;
+SCM gig_il_untyped_flags_func = SCM_UNDEFINED;
+SCM gig_il_untyped_enum_func = SCM_UNDEFINED;
+
 
 // Maps GType to SCM
 static SCM gtype_hash_var = SCM_UNDEFINED;
@@ -88,6 +91,7 @@ static SCM sym_sort_key;
 static SCM make_type_with_gtype(const char *type_class_name, GType gtype, SCM extra_supers);
 static SCM make_type_with_info(GIRegisteredTypeInfo *info, SCM slots);
 static SCM gig_type_associate(GType gtype, SCM stype);
+static void make_untyped_flag_enum(SCM s_class_name, SCM s_qname, SCM flags, bool is_flags);
 
 ////////////////////////////////////////////////////////////////
 // Type definition
@@ -183,6 +187,92 @@ gig_il_type(SCM s_name, SCM s_gtype_name)
     return scm_list_1(s_name);
 #undef FUNC_NAME
 }
+
+SCM
+gig_il_untyped_flags(SCM s_class_name, SCM s_qname, SCM flags)
+{
+#define FUNC_NAME "^untyped-flags"
+
+    SCM_ASSERT_TYPE(scm_is_symbol(s_class_name), s_class_name, SCM_ARG1, FUNC_NAME, "symbol");
+    SCM_ASSERT_TYPE(scm_is_symbol(s_qname), s_qname, SCM_ARG2, FUNC_NAME, "symbol");
+    SCM_ASSERT_TYPE(scm_is_list(flags), flags, SCM_ARG3, FUNC_NAME, "alist");
+
+    make_untyped_flag_enum(s_class_name, s_qname, flags, true);
+    return scm_list_1(s_class_name);
+#undef FUNC_NAME
+}
+
+SCM
+gig_il_untyped_enum(SCM s_class_name, SCM s_qname, SCM flags)
+{
+#define FUNC_NAME "^untyped-enum"
+
+    SCM_ASSERT_TYPE(scm_is_symbol(s_class_name), s_class_name, SCM_ARG1, FUNC_NAME, "symbol");
+    SCM_ASSERT_TYPE(scm_is_symbol(s_qname), s_qname, SCM_ARG2, FUNC_NAME, "symbol");
+    SCM_ASSERT_TYPE(scm_is_list(flags), flags, SCM_ARG3, FUNC_NAME, "alist");
+
+// FIXME: typecheck flags contents
+
+    make_untyped_flag_enum(s_class_name, s_qname, flags, false);
+    return scm_list_1(s_class_name);
+#undef FUNC_NAME
+}
+
+static void
+make_untyped_flag_enum(SCM s_class_name, SCM s_qname, SCM flags, bool is_flags)
+{
+    SCM cls;
+
+    SCM info_hash = scm_variable_ref(info_hash_var);
+    cls = scm_hashq_ref(info_hash, s_qname, SCM_BOOL_F);
+    char *class_name = scm_to_utf8_symbol(s_class_name);
+    char *qname = scm_to_utf8_symbol(s_qname);
+    if (scm_is_true(cls) && !scm_is_unknown_class(cls))
+        goto def;
+
+    if (!scm_is_true(cls))
+        gig_debug_load("%s - creating new flag/enum type for %s", class_name, qname);
+    else {
+        gig_debug_load("%s - existing flag/enum type for %s", class_name, qname);
+        goto def;
+    }
+
+    int n_values = scm_c_length(flags);
+    SCM obarray;
+    int i;
+    SCM dsupers;
+
+    if (is_flags)
+        dsupers = scm_list_1(gig_flags_type());
+    else
+        dsupers = scm_list_1(gig_enum_type());
+    cls = scm_make_class_with_name(dsupers, SCM_EOL, s_class_name);
+    obarray = scm_make_hash_table(scm_from_int(n_values));
+
+    i = 0;
+    SCM cur;
+    cur = flags;
+    while (!scm_is_equal(cur, SCM_EOL)) {
+        SCM key, val;
+        SCM entry;
+
+        entry = scm_car(cur);
+        key = scm_car(entry);
+        val = scm_cdr(entry);
+        scm_hashq_set_x(obarray, key, val);
+
+        cur = scm_cdr(cur);
+    }
+    scm_set_class_obarray_slot(cls, obarray);
+
+    scm_hashq_set_x(info_hash, s_qname, cls);
+
+  def:
+    scm_c_define(class_name, cls);
+    scm_c_export(class_name, NULL);
+    free(class_name);
+}
+
 
 SCM
 gig_type_define_with_info(GIRegisteredTypeInfo *info, SCM slots)
@@ -1142,6 +1232,9 @@ gig_init_types_once(void)
     scm_c_define_gsubr("$type-define-full", 2, 0, 0, scm_gig_type_define_full_unsafe);
     scm_c_define_gsubr("$make-type-with-gtype", 2, 0, 0, scm_make_type_with_gtype_unsafe);
     gig_il_type_func = scm_c_define_gsubr("^type", 2, 0, 0, gig_il_type);
+    gig_il_untyped_flags_func =
+        scm_c_define_gsubr("^untyped-flags", 3, 0, 0, gig_il_untyped_flags);
+    gig_il_untyped_enum_func = scm_c_define_gsubr("^untyped-enum", 3, 0, 0, gig_il_untyped_enum);
     scm_c_define_gsubr("get-gtype", 1, 0, 0, scm_type_get_gtype);
     scm_c_define_gsubr("gtype-get-scheme-type", 1, 0, 0, scm_type_gtype_get_scheme_type);
     scm_c_define_gsubr("gtype-get-name", 1, 0, 0, scm_type_gtype_get_name);
