@@ -31,7 +31,6 @@ static void untyped_flag_conversions_define(GIRegisteredTypeInfo *info, SCM *def
 static void enum_conversions_define(GIRegisteredTypeInfo *info, SCM *defs, SCM *ils);
 static void flag_conversions_define(GIRegisteredTypeInfo *info, SCM *defs, SCM *ils);
 
-
 static SCM il_output_port = SCM_UNDEFINED;
 static SCM pretty_print_func = SCM_UNDEFINED;
 
@@ -274,21 +273,6 @@ make_flag_enum_alist(GIRegisteredTypeInfo *info)
     return scm_reverse(alist);
 }
 
-/*
-;; API
-;; (^library "lib" "version" ("lib.so.1" "lib2.so.1"))
-;; (^type <Symbol> "GType-name" (extra-supers))
-;; (^constant key val)
-;; (^typed-enum <Symbol> GTypeName key-val-list)
-;; (^typed-flags <Symbol> GTypeName key-val-list)
-;; (^enum <Symbol> qname key-val-list)
-;; (^flags <Symbol> qname key-val-list)
-;; (^property parent-type-name name type-name)
-;; (^function ...)
-;; (^method ...)
-;; (^signal ...)
-*/
-
 static SCM
 load_info(GIBaseInfo *info, LoadFlags flags)
 {
@@ -359,17 +343,37 @@ load_info(GIBaseInfo *info, LoadFlags flags)
             if (amap != NULL) {
                 if (t == GI_INFO_TYPE_FUNCTION) {
                     symbol_name = g_function_info_get_symbol(info);
-                    defs =
-                        scm_append2(defs,
-                                    gig_function_define_full(namespace_, parent_gtype, long_name,
-                                                             short_name, symbol_name, amap));
+                    SCM il = scm_list_n(scm_from_utf8_symbol("^function"),
+                                        (namespace_ ? scm_from_utf8_symbol(namespace_) :
+                                         SCM_BOOL_F),
+                                        (parent_gtype ?
+                                         scm_from_utf8_symbol(g_type_name(parent_gtype)) :
+                                         SCM_BOOL_F),
+                                        scm_from_utf8_symbol(long_name),
+                                        scm_from_utf8_symbol(short_name),
+                                        scm_from_utf8_symbol(symbol_name),
+                                        gig_amap_to_il(amap),
+                                        SCM_UNDEFINED);
+                    SCM def = scm_apply(gig_il_function_func, scm_cdr(il), SCM_EOL);
+                    defs = scm_append2(defs, def);
+                    ils = scm_append2(ils, il);
                 }
                 else if (t == GI_INFO_TYPE_SIGNAL) {
                     symbol_name = g_base_info_get_name(info);
-                    defs =
-                        scm_append2(defs,
-                                    gig_signal_define_full(namespace_, parent_gtype, long_name,
-                                                           short_name, symbol_name, amap));
+                    SCM il = scm_list_n(scm_from_utf8_symbol("^signal"),
+                                        (namespace_ ? scm_from_utf8_symbol(namespace_) :
+                                         SCM_BOOL_F),
+                                        (parent_gtype ?
+                                         scm_from_utf8_symbol(g_type_name(parent_gtype)) :
+                                         SCM_BOOL_F),
+                                        scm_from_utf8_symbol(long_name),
+                                        scm_from_utf8_symbol(short_name),
+                                        scm_from_utf8_symbol(symbol_name),
+                                        gig_amap_to_il(amap),
+                                        SCM_UNDEFINED);
+                    SCM def = scm_apply(gig_il_signal_func, scm_cdr(il), SCM_EOL);
+                    defs = scm_append2(defs, def);
+                    ils = scm_append2(ils, il);
                 }
             }
             free(short_name);

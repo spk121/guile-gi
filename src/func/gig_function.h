@@ -19,11 +19,22 @@
 #include <girepository.h>
 #include <libguile.h>
 
+extern SCM gig_il_function_func;
+extern SCM gig_il_signal_func;
+
 GType *gig_function_get_arg_gtypes(GICallableInfo *info, size_t *len);
 SCM gig_function_define_full(const char *namespace_, size_t gtype, const char *long_name,
                              const char *short_name, const char *symbol, GigArgMap *amap);
 SCM gig_signal_define_full(const char *namespace_, size_t gtype, const char *long_name,
                            const char *short_name, const char *symbol, GigArgMap *amap);
+
+SCM
+gig_il_signal(SCM s_namespace_, SCM s_gtype_name, SCM s_long_name,
+              SCM s_short_name, SCM s_symbol_name, SCM s_amap);
+SCM
+gig_il_function(SCM s_namespace_, SCM s_gtype_name, SCM s_long_name,
+                SCM s_short_name, SCM s_symbol_name, SCM s_amap);
+
 
 void gig_init_function(void);
 

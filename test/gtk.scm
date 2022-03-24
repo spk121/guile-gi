@@ -7,15 +7,16 @@
 (define (raw-address obj)
   ((@ (gi compat) fiddle) (@ (system foreign) pointer-address) obj))
 
-(define load-by-name?
+(define (load-by-name? a b)
+  (load-by-name a b)
   (compose
    (negate null?)
    load-by-name))
 
 (if (false-if-exception (require "Gtk" "3.0"))
     (test-assert "init"
-      (and (load-by-name? "Gtk" "init_check")
-           (init-check!)))
+      (begin (load-by-name "Gtk" "init_check")
+             (init-check!)))
     (begin
       (test-expect-fail "init")
       (test-assert "init" #f)))
@@ -24,7 +25,9 @@
   (test-skip most-positive-fixnum))
 
 (test-assert "load Entry"
-  (every load-by-name? '("Gtk" "Gtk") '("Editable" "Entry")))
+  (begin
+    (every load-by-name '("Gtk" "Gtk") '("Editable" "Entry"))
+    #t))
 
 (let ((entry #f))
   (if (test-passed?)

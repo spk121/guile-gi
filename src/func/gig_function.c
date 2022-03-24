@@ -26,6 +26,9 @@
 #include "gig_lib.h"
 #include "gig_invoker.h"
 
+SCM gig_il_function_func = SCM_UNDEFINED;
+SCM gig_il_signal_func = SCM_UNDEFINED;
+
 typedef struct GigFunction_
 {
     void *address;
@@ -89,6 +92,33 @@ gig_function_get_arg_gtypes(GICallableInfo *info, size_t *len)
 }
 
 SCM
+gig_il_function(SCM s_namespace_, SCM s_gtype_name, SCM s_long_name,
+                SCM s_short_name, SCM s_symbol_name, SCM s_amap)
+{
+    char *namespace_ = NULL;
+    if (scm_is_true(s_namespace_))
+        namespace_ = scm_to_utf8_symbol(s_namespace_);
+    char *gtype_name = NULL;
+    size_t gtype = 0;
+    if (scm_is_true(s_gtype_name)) {
+        gtype_name = scm_to_utf8_symbol(s_gtype_name);
+        gtype = g_type_from_name(gtype_name);
+    }
+    char *long_name = scm_to_utf8_symbol(s_long_name);
+    char *short_name = scm_to_utf8_symbol(s_short_name);
+    char *symbol_name = scm_to_utf8_symbol(s_symbol_name);
+    GigArgMap *amap = gig_amap_new_from_il(s_amap);
+    SCM def = gig_function_define_full(namespace_, gtype, long_name, short_name,
+                                       symbol_name, amap);
+    free(symbol_name);
+    free(short_name);
+    free(long_name);
+    free(gtype_name);
+    free(namespace_);
+    return def;
+}
+
+SCM
 gig_function_define_full(const char *namespace_, size_t gtype, const char *long_name,
                          const char *short_name, const char *symbol, GigArgMap *amap)
 {
@@ -123,19 +153,48 @@ gig_function_define_full(const char *namespace_, size_t gtype, const char *long_
 
     def = scm_define_methods_from_procedure(long_name, proc, optional_input_count, formals,
                                             specializers);
-    if (!SCM_UNBNDP(def))
+    if (!SCM_UNBNDP(def)) {
         defs = scm_cons(def, defs);
+    }
 
     if (!is_toxic) {
         gig_debug_load("%s - shorthand for %s", short_name, long_name);
         def = scm_define_methods_from_procedure(short_name, proc, optional_input_count, formals,
                                                 specializers);
-        if (!SCM_UNBNDP(def))
+        if (!SCM_UNBNDP(def)) {
             defs = scm_cons(def, defs);
+        }
     }
 
   end:
     return defs;
+}
+
+SCM
+gig_il_signal(SCM s_namespace_, SCM s_gtype_name, SCM s_long_name,
+              SCM s_short_name, SCM s_symbol_name, SCM s_amap)
+{
+    char *namespace_ = NULL;
+    if (scm_is_true(s_namespace_))
+        namespace_ = scm_to_utf8_symbol(s_namespace_);
+    char *gtype_name = NULL;
+    size_t gtype = 0;
+    if (scm_is_true(s_gtype_name)) {
+        gtype_name = scm_to_utf8_symbol(s_gtype_name);
+        gtype = g_type_from_name(gtype_name);
+    }
+    char *long_name = scm_to_utf8_symbol(s_long_name);
+    char *short_name = scm_to_utf8_symbol(s_short_name);
+    char *symbol_name = scm_to_utf8_symbol(s_symbol_name);
+    GigArgMap *amap = gig_amap_new_from_il(s_amap);
+    SCM def = gig_signal_define_full(namespace_, gtype, long_name, short_name,
+                                     symbol_name, amap);
+    free(symbol_name);
+    free(short_name);
+    free(long_name);
+    free(gtype_name);
+    free(namespace_);
+    return def;
 }
 
 SCM
@@ -592,7 +651,8 @@ gig_init_function(void)
     gig_before_function_hook = scm_permanent_object(scm_make_hook(scm_from_size_t(2)));
     scm_c_define("%before-function-hook", gig_before_function_hook);
 #endif
-
+    gig_il_function_func = scm_c_define_gsubr("^function", 6, 0, 0, gig_il_function);
+    gig_il_signal_func = scm_c_define_gsubr("^signal", 6, 0, 0, gig_il_signal);
     atexit(gig_fini_function);
 }
 
