@@ -129,5 +129,8 @@ void gig_amap_c_count(const GigArgMap *am, int *c_input_pos, int *c_output_pos);
 bool gig_amap_return_child_i(const GigArgMap *amap, int *ichild);
 bool gig_amap_output_i2c(const GigArgMap *amap, int i, int *c);
 size_t *gig_amap_get_gtype_list(GigArgMap *am, size_t *len);
+GigArgMap *gig_amap_new_from_il(SCM il);
+SCM gig_amap_to_il(GigArgMap *amap);
+
 
 #endif

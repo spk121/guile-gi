@@ -188,8 +188,15 @@ struct GigTypeMeta_
     void *callable_arg_map;     // A GigArgMap : void to avoid circular ref
 };
 
+const char *gig_arg_type_name(GigArgType type);
+GigArgType gig_arg_type_from_name(const char *name);
+
 void gig_type_meta_init_from_arg_info(GigTypeMeta *type, GIArgInfo *ai);
 void gig_type_meta_init_from_callable_info(GigTypeMeta *type, GICallableInfo *ci);
+SCM gig_type_meta_to_il(GigTypeMeta *meta);
+void gig_type_meta_from_il(SCM il, GigTypeMeta *meta);
+
+
 size_t gig_meta_real_item_size(const GigTypeMeta *meta);
 const char *gig_type_meta_describe(const GigTypeMeta *meta);
 void gig_data_type_free(GigTypeMeta *meta);

@@ -774,3 +774,192 @@ gig_amap_get_gtype_list(GigArgMap *amap, size_t *len)
     *len = n;
     return types;
 }
+
+static void
+gig_amap_entry_from_il(SCM il, GigArgMapEntry *entry)
+{
+    SCM val;
+    char *str;
+
+    val = scm_assq_ref(il, scm_from_utf8_symbol("name"));
+    entry->name = scm_to_utf8_string(val);
+
+    val = scm_assq_ref(il, scm_from_utf8_symbol("meta"));
+    gig_type_meta_from_il(val, &(entry->meta));
+
+    val = scm_assq_ref(il, scm_from_utf8_symbol("s-direction"));
+    str = scm_to_utf8_symbol(val);
+    for (int i = 0; i < GIG_ARG_DIRECTION_COUNT; i++) {
+        if (strcmp(str, dir_strings[i]) == 0) {
+            entry->s_direction = (GigArgDirection) i;
+            break;
+        }
+    }
+    free(str);
+
+    val = scm_assq_ref(il, scm_from_utf8_symbol("tuple"));
+    str = scm_to_utf8_symbol(val);
+    for (int i = 0; i < GIG_ARG_TUPLE_COUNT; i++) {
+        if (strcmp(str, tuple_strings[i]) == 0) {
+            entry->tuple = (GigArgTuple) i;
+            break;
+        }
+    }
+    free(str);
+
+    val = scm_assq_ref(il, scm_from_utf8_symbol("presence"));
+    str = scm_to_utf8_symbol(val);
+    for (int i = 0; i < GIG_ARG_PRESENCE_COUNT; i++) {
+        if (strcmp(str, presence_strings[i]) == 0) {
+            entry->presence = (GigArgPresence) i;
+            break;
+        }
+    }
+    free(str);
+
+    val = scm_assq_ref(il, scm_from_utf8_symbol("i"));
+    entry->i = scm_to_int(val);
+
+    val = scm_assq_ref(il, scm_from_utf8_symbol("c-input-pos"));
+    if (scm_is_true(val)) {
+        entry->is_c_input = TRUE;
+        entry->c_input_pos = scm_to_int(val);
+    }
+
+    val = scm_assq_ref(il, scm_from_utf8_symbol("c-output-pos"));
+    if (scm_is_true(val)) {
+        entry->is_c_output = TRUE;
+        entry->c_output_pos = scm_to_int(val);
+    }
+
+    val = scm_assq_ref(il, scm_from_utf8_symbol("s-input-pos"));
+    if (scm_is_true(val)) {
+        entry->is_s_input = TRUE;
+        entry->s_input_pos = scm_to_int(val);
+    }
+
+    val = scm_assq_ref(il, scm_from_utf8_symbol("s-output-pos"));
+    if (scm_is_true(val)) {
+        entry->is_s_output = TRUE;
+        entry->s_output_pos = scm_to_int(val);
+    }
+}
+
+GigArgMap *
+gig_amap_new_from_il(SCM il)
+{
+    SCM val;
+    GigArgMap *amap = xcalloc(1, sizeof(GigArgMap));
+
+    val = scm_assq_ref(il, scm_from_utf8_symbol("name"));
+    if (scm_is_true(val))
+        amap->name = scm_to_utf8_string(val);
+    else
+        amap->name = NULL;
+    val = scm_assq_ref(il, scm_from_utf8_symbol("is-method"));
+    if (scm_is_true(val))
+        amap->is_method = scm_to_bool(val);
+    val = scm_assq_ref(il, scm_from_utf8_symbol("can-throw-gerror"));
+    if (scm_is_true(val))
+        amap->can_throw_gerror = scm_to_bool(val);
+    val = scm_assq_ref(il, scm_from_utf8_symbol("s-input-req"));
+    if (scm_is_true(val))
+        amap->s_input_req = scm_to_int(val);
+    val = scm_assq_ref(il, scm_from_utf8_symbol("s-input-opt"));
+    if (scm_is_true(val))
+        amap->s_input_opt = scm_to_int(val);
+    val = scm_assq_ref(il, scm_from_utf8_symbol("s-output-len"));
+    if (scm_is_true(val))
+        amap->s_output_len = scm_to_int(val);
+    val = scm_assq_ref(il, scm_from_utf8_symbol("c-input-len"));
+    if (scm_is_true(val))
+        amap->c_input_len = scm_to_int(val);
+    val = scm_assq_ref(il, scm_from_utf8_symbol("c-output-len"));
+    if (scm_is_true(val))
+        amap->c_output_len = scm_to_int(val);
+    // val = scm_assq_ref(il, scm_from_utf8_symbol("is-invalid"));
+    // amap->is_invalid = scm_to_bool(val);
+
+    SCM pdata_il = scm_assq_ref(il, scm_from_utf8_symbol("pdata"));
+    if (scm_is_true(pdata_il)) {
+        int len = scm_c_length(pdata_il);
+        amap->pdata = xcalloc(len, sizeof(GigArgMapEntry));
+        for (int i = 0; i < len; i++) {
+            SCM entry_il = scm_c_list_ref(pdata_il, i);
+            gig_amap_entry_from_il(entry_il, &(amap->pdata[i]));
+        }
+        amap->len = len;
+    }
+    else {
+        amap->len = 0;
+        amap->pdata = NULL;
+    }
+
+    SCM return_il = scm_assq_ref(il, scm_from_utf8_symbol("return-val"));
+    gig_amap_entry_from_il(return_il, &(amap->return_val));
+
+    return amap;
+}
+
+#define D(k,v) \
+    il = scm_cons(scm_cons(scm_from_utf8_symbol(k),(v)),il)
+#define F(x) \
+    flags = scm_cons(scm_from_utf8_symbol(x), flags);
+
+static SCM
+amap_entry_to_il(GigArgMapEntry *entry)
+{
+    SCM il = SCM_EOL;
+    D("name", scm_from_utf8_string(entry->name));
+    D("meta", gig_type_meta_to_il(&(entry->meta)));
+    D("s-direction", scm_from_utf8_symbol(dir_strings[entry->s_direction]));
+    D("tuple", scm_from_utf8_symbol(tuple_strings[entry->tuple]));
+    D("presence", scm_from_utf8_symbol(presence_strings[entry->presence]));
+    D("i", scm_from_int(entry->i));
+    if (entry->is_c_input)
+        D("c-input-pos", scm_from_int(entry->c_input_pos));
+    if (entry->is_c_output)
+        D("c-output-pos", scm_from_int(entry->c_output_pos));
+    if (entry->is_s_input)
+        D("s-input-pos", scm_from_int(entry->s_input_pos));
+    if (entry->is_s_output)
+        D("s-output-pos", scm_from_int(entry->s_output_pos));
+    return scm_reverse(il);
+}
+
+SCM
+gig_amap_to_il(GigArgMap *amap)
+{
+    SCM il = SCM_EOL;
+    if (amap->name)
+        D("name", scm_from_utf8_string(amap->name));
+    else
+        D("name", SCM_BOOL_F);
+    if (amap->is_method)
+        D("is-method", scm_from_bool(amap->is_method));
+    if (amap->can_throw_gerror)
+        D("can-throw-gerror", scm_from_bool(amap->can_throw_gerror));
+    if (amap->s_input_req)
+        D("s-input-req", scm_from_int(amap->s_input_req));
+    if (amap->s_input_opt)
+        D("s-input-opt", scm_from_int(amap->s_input_opt));
+    if (amap->s_output_len)
+        D("s-output-len", scm_from_int(amap->s_output_len));
+    if (amap->c_input_len)
+        D("c-input-len", scm_from_int(amap->c_input_len));
+    if (amap->c_output_len)
+        D("c-output-len", scm_from_int(amap->c_output_len));
+    // D("is-invalid", scm_from_bool(amap->is_invalid));
+    if (amap->len > 0) {
+        SCM pdata_il = SCM_EOL;
+        for (int i = 0; i < amap->len; i++) {
+            pdata_il =
+                scm_append(scm_list_2(pdata_il, scm_list_1(amap_entry_to_il(&(amap->pdata[i])))));
+        }
+        D("pdata", pdata_il);
+    }
+    D("return-val", amap_entry_to_il(&(amap->return_val)));
+    return scm_reverse(il);
+}
+
+#undef D
