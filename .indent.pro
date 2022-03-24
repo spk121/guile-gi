@@ -128,3 +128,4 @@
 -T GigTypeMeta
 -T GigTypeRefFunction
 -T GigTypeUnrefFunction
+-T GigArgument

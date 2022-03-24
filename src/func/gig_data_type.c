@@ -266,12 +266,14 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
                 break;
             case GI_INFO_TYPE_CALLBACK:
                 meta->arg_type = GIG_ARG_TYPE_CALLBACK;
-                meta->callable_info = g_base_info_ref(referenced_base_info);
-                _amap = gig_amap_new(NULL, meta->callable_info);
+                _amap =
+                    gig_amap_new(g_base_info_get_name(referenced_base_info), referenced_base_info);
                 if (_amap == NULL)
                     meta->is_invalid = true;
-                else
-                    gig_amap_free(_amap);
+                else {
+                    meta->callable_arg_map = _amap;
+                    meta->item_size = sizeof(void *);
+                }
                 break;
             case GI_INFO_TYPE_STRUCT:
                 meta->arg_type = GIG_ARG_TYPE_BOXED;
@@ -342,62 +344,6 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
                 meta->is_invalid = true;
                 break;
             }
-/*                
-            if (fundamental_gtype == G_TYPE_BOXED) {
-                meta->arg_type = GIG_ARG_TYPE_BOXED;
-                if (itype == GI_INFO_TYPE_STRUCT)
-                    meta->item_size = g_struct_info_get_size(referenced_base_info);
-                else if (itype == GI_INFO_TYPE_UNION)
-                    meta->item_size = g_union_info_get_size(referenced_base_info);
-                if (meta->gtype == G_TYPE_VALUE)
-                    meta->arg_type = GIG_ARG_TYPE_VALUE;
-                meta->gtype = gtype;
-            }
-            else if (fundamental_gtype == G_TYPE_ENUM) {
-            }
-            else if (fundamental_gtype == G_TYPE_FLAGS) {
-                meta->arg_type = GIG_ARG_TYPE_FLAGS;
-                meta->gtype = gtype;
-            }
-            else if (fundamental_gtype == G_TYPE_INTERFACE) {
-                meta->arg_type = GIG_ARG_TYPE_INTERFACE;
-                meta->gtype = gtype;
-            }
-            else if (fundamental_gtype == G_TYPE_OBJECT) {
-                meta->arg_type = GIG_ARG_TYPE_OBJECT;
-                meta->gtype = gtype;
-            }
-            else if (fundamental_gtype == G_TYPE_PARAM) {
-                meta->arg_type = GIG_ARG_TYPE_PARAM;
-            }
-            else if (fundamental_gtype == G_TYPE_VARIANT) {
-                meta->arg_type = GIG_ARG_TYPE_VARIANT;
-            }
-            else if (fundamental_gtype == G_TYPE_NONE) {
-                if (itype == GI_INFO_TYPE_ENUM) {
-                    meta->arg_type = GIG_ARG_TYPE_ENUM;
-                    meta->qname = gig_type_get_qualified_name(referenced_base_info);
-                }
-                else if (itype == GI_INFO_TYPE_FLAGS) {
-                    meta->arg_type = GIG_ARG_TYPE_FLAGS;
-                    meta->qname = gig_type_get_qualified_name(referenced_base_info);
-                }
-                else if (itype == GI_INFO_TYPE_CALLBACK) {
-                    meta->arg_type = GIG_ARG_TYPE_CALLBACK;
-                    meta->callable_info = g_base_info_ref(referenced_base_info);
-                    _amap = gig_amap_new(NULL, meta->callable_info);
-                    if (_amap == NULL)
-                        meta->is_invalid = true;
-                    else
-                        gig_amap_free(_amap);
-                }
-                else
-                    meta->is_invalid = true;
-            }
-            else {
-                // Newly defined fundamental types.
-            }
-            } */
         }
         assert(meta->arg_type != 0 || meta->is_invalid);
         g_base_info_unref(referenced_base_info);
@@ -405,10 +351,6 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
     else
         gig_type_meta_init_from_basic_type_tag(meta, tag);
 
-    printf("%s %s %s %s\n",
-           (meta->is_invalid ? "INVALID" : "VALID"),
-           g_type_tag_to_string(tag), arg_type_names[meta->arg_type], g_type_name(meta->gtype));
-    fflush(stdout);
     assert(meta->arg_type <= GIG_ARG_TYPE_GHASH);
     assert(meta->arg_type != 0 || meta->is_invalid);
 }
@@ -431,9 +373,8 @@ gig_data_type_free(GigTypeMeta *meta)
     if (meta->n_params > 0)
         free(meta->params);
 
-    if (meta->callable_info) {
-        g_base_info_unref(meta->callable_info);
-        meta->callable_info = NULL;
+    if (meta->callable_arg_map) {
+        gig_amap_free(meta->callable_arg_map);
     }
     free(meta->qname);
     meta->qname = NULL;

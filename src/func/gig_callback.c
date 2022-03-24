@@ -26,7 +26,6 @@
 typedef struct _GigCallback GigCallback;
 struct _GigCallback
 {
-    GICallbackInfo *callback_info;
     GigArgMap *amap;
     ffi_closure *closure;
     ffi_cif cif;
@@ -190,7 +189,7 @@ callback_binding_inner(struct callback_binding_args *args)
     scm_load_goops();
 
     assert(scm_is_procedure(gcb->s_func));
-    assert(n_args == g_callable_info_get_n_args(gcb->callback_info));
+    assert(n_args == gcb->amap->len);
     assert(gcb->amap != NULL);
 
     GigArgMap *amap = gcb->amap;
@@ -220,8 +219,7 @@ callback_binding_inner(struct callback_binding_args *args)
 #if HAVE_SCM_HOOKS
     if (!scm_is_empty_hook(gig_before_callback_hook))
         scm_c_activate_hook_3(gig_before_callback_hook,
-                              scm_from_utf8_string(g_base_info_get_name(gcb->callback_info)),
-                              gcb->s_func, s_args);
+                              scm_from_utf8_string(gcb->amap->name), gcb->s_func, s_args);
 #endif
 
     // The actual call of the Scheme callback happens here.
@@ -347,13 +345,13 @@ c_callback_binding_inner(struct callback_binding_args *args)
 #if HAVE_SCM_HOOKS
     if (!scm_is_empty_hook(gig_before_c_callback_hook))
         scm_c_activate_hook_3(gig_before_c_callback_hook,
-                              scm_from_utf8_string(g_base_info_get_name(gcb->callback_info)),
+                              scm_from_utf8_string(gcb->amap->name),
                               scm_from_pointer(gcb->c_func, NULL), s_args);
 #endif
 
     // Use 'name' instead of gcb->name, which is NULL for C callbacks.
     GError *error = NULL;
-    SCM output = gig_callable_invoke(gcb->callback_info, gcb->c_func, gcb->amap, name, NULL,
+    SCM output = gig_callable_invoke(gcb->c_func, gcb->amap, name, NULL,
                                      s_args, &error);
 
     if (error != NULL) {
@@ -395,17 +393,17 @@ c_callback_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
     }
 }
 
-// This procedure uses CALLBACK_INFO to create a dynamic FFI C closure
-// to use as an entry point to the scheme procedure S_FUNC.
+// This procedure uses AMAP to create a dynamic FFI C closure to use
+// as an entry point to the scheme procedure S_FUNC.
 static GigCallback *
-gig_callback_new(const char *name, GICallbackInfo *callback_info, SCM s_func)
+gig_callback_new(const char *name, GigArgMap *amap, SCM s_func)
 {
     assert(scm_is_procedure(s_func));
 
     GigCallback *gcb = xcalloc(1, sizeof(GigCallback));
     ffi_type **ffi_args = NULL;
     ffi_type *ffi_ret_type;
-    int n_args = g_callable_info_get_n_args(callback_info);
+    int n_args = amap->len;
 
     SCM s_name = scm_procedure_name(s_func);
     if (scm_is_symbol(s_name)) {
@@ -418,8 +416,7 @@ gig_callback_new(const char *name, GICallbackInfo *callback_info, SCM s_func)
     }
 
     gcb->s_func = s_func;
-    gcb->callback_info = g_base_info_ref(callback_info);
-    gcb->amap = gig_amap_new(gcb->name, gcb->callback_info);
+    gcb->amap = amap;
 
     // STEP 1
     // Allocate the block of memory that FFI uses to hold a closure object,
@@ -441,9 +438,7 @@ gig_callback_new(const char *name, GICallbackInfo *callback_info, SCM s_func)
             ffi_args[i] = amap_entry_to_ffi_type(&gcb->amap->pdata[i]);
     }
 
-    GITypeInfo *ret_type_info = g_callable_info_get_return_type(callback_info);
     ffi_ret_type = amap_entry_to_ffi_type(&gcb->amap->return_val);
-    g_base_info_unref(ret_type_info);
 
     // Initialize the CIF Call Interface Struct.
     ffi_status prep_ok;
@@ -469,11 +464,11 @@ gig_callback_new(const char *name, GICallbackInfo *callback_info, SCM s_func)
 }
 
 static GigCallback *
-gig_callback_new_for_callback(GICallbackInfo *info, void *c_func)
+gig_callback_new_for_callback(GigArgMap *amap, void *c_func)
 {
-    int n_args = g_callable_info_get_n_args(info);
+    int n_args = amap->len;
 
-    // we only take one arg now, the scm arg list
+    // Either zero args or all args a one SCM arg list.
     n_args = n_args == 0 ? 0 : 1;
 
     GigCallback *gcb = xcalloc(1, sizeof(GigCallback));
@@ -481,8 +476,7 @@ gig_callback_new_for_callback(GICallbackInfo *info, void *c_func)
     gcb->name = NULL;
 
     gcb->c_func = c_func;
-    gcb->callback_info = g_base_info_ref(info);
-    gcb->amap = gig_amap_new(gcb->name, gcb->callback_info);
+    gcb->amap = amap;
 
     if (n_args > 0) {
         gcb->atypes = xcalloc(1, sizeof(ffi_type *));
@@ -502,9 +496,9 @@ gig_callback_new_for_callback(GICallbackInfo *info, void *c_func)
 }
 
 void *
-gig_callback_to_c(const char *name, GICallbackInfo *cb_info, SCM s_func)
+gig_callback_to_c(const char *name, GigArgMap *amap, SCM s_func)
 {
-    assert(cb_info != NULL);
+    assert(amap != NULL);
     assert(scm_is_procedure(s_func));
 
     // Lookup s_func in the callback cache.
@@ -522,17 +516,17 @@ gig_callback_to_c(const char *name, GICallbackInfo *cb_info, SCM s_func)
 
     // Create a new entry if necessary.
     scm_gc_protect_object(s_func);
-    gcb = gig_callback_new(name, cb_info, s_func);
+    gcb = gig_callback_new(name, amap, s_func);
     slist_prepend(&callback_list, gcb);
     return gcb->callback_ptr;
 }
 
 SCM
-gig_callback_to_scm(const char *name, GICallbackInfo *info, void *callback)
+gig_callback_to_scm(const char *name, GigArgMap *amap, void *callback)
 {
     // we probably shouldn't cache this, because C callbacks can be
     // invalidated
-    GigCallback *gcb = gig_callback_new_for_callback(info, callback);
+    GigCallback *gcb = gig_callback_new_for_callback(amap, callback);
     if (gcb == NULL)
         return SCM_BOOL_F;
     char *subr_name = concatenate("c-callback:", name);
@@ -668,8 +662,8 @@ callback_free(GigCallback *gcb)
     ffi_closure_free(gcb->closure);
     gcb->closure = NULL;
 
-    gig_amap_free(gcb->amap);
-    g_base_info_unref(gcb->callback_info);
+    // gig_amap_free(gcb->amap);
+    // g_base_info_unref(gcb->callback_info);
     free(gcb->atypes);
     gcb->atypes = NULL;
 

@@ -24,9 +24,10 @@ gig_callable_prepare_invoke(GigArgMap *amap, const char *name, GObject *self, SC
                             GigArgument *in_args, GigArgument *out_args, slist_t **free_list,
                             GigArgument *out_boxes);
 static void object_list_to_c_args(GigArgMap *amap, const char *subr, SCM s_args,
-                                  GigArgument *in_args, slist_t **free_list, GigArgument *out_args);
-static void object_to_c_arg(GigArgMap *amap, int s, const char *name, SCM obj, GigArgument *in_args,
-                            slist_t **free_list, GigArgument *out_args);
+                                  GigArgument *in_args, slist_t **free_list,
+                                  GigArgument *out_args);
+static void object_to_c_arg(GigArgMap *amap, int s, const char *name, SCM obj,
+                            GigArgument *in_args, slist_t **free_list, GigArgument *out_args);
 static void store_argument(int invoke_in, int invoke_out, bool inout, bool inout_free,
                            GigArgument *arg, GigArgument *in_args, slist_t **free_list,
                            GigArgument *out_args);

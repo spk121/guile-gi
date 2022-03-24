@@ -47,6 +47,4 @@ bool gig_amap_output_s2c(const GigArgMap *amap, int s, int *c);
 
 bool gig_amap_child_i(const GigArgMap *amap, int i, int *ichild);
 
-GType *gig_amap_get_gtype_list(GigArgMap *am, size_t *len);
-
 #endif

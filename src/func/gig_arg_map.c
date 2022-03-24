@@ -753,7 +753,7 @@ gig_amap_return_child_i(const GigArgMap *am, int *ichild)
 }
 
 // Returns a list of all the GTypes in the arg map
-GType *
+size_t *
 gig_amap_get_gtype_list(GigArgMap *amap, size_t *len)
 {
     size_t n = 0;

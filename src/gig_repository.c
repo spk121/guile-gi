@@ -13,11 +13,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#include <string.h>
+#include <inttypes.h>
 #include <libguile.h>
 #include <girepository.h>
 #include "type.h"
 #include "func.h"
 #include "gig_repository.h"
+
+static char **get_shared_library_list(GIRepository * tl, const char *lib, unsigned *n);
 
 static SCM
 require(SCM lib, SCM version)
@@ -43,9 +47,42 @@ require(SCM lib, SCM version)
         g_error_free(error);
         scm_misc_error("require", "~A", scm_list_1(err));
     }
+    unsigned n;
+    char **liblist = get_shared_library_list(NULL, _lib, &n);
+    gig_lib_add(_lib, _version, (const char **)liblist, n);
+    for (unsigned i = 0; i < n; i++)
+        free(liblist[i]);
+    free(liblist);
     scm_dynwind_end();
 
     return SCM_UNSPECIFIED;
+}
+
+static char **
+get_shared_library_list(GIRepository * tl, const char *lib, unsigned *n)
+{
+    const char *libs, *p1, *p2;
+    char **liblist;
+    int i;
+    libs = g_irepository_get_shared_library(tl, lib);
+    if (libs == NULL) {
+        *n = 0;
+        return NULL;
+    }
+    *n = 1;
+    for (i = 0; i < strlen(libs); i++)
+        if (libs[i] == ',')
+            *n = *n + 1;
+    liblist = xcalloc(*n, sizeof(char *));
+    p1 = libs;
+    i = 0;
+    while ((p2 = strchr(p1, ',')) != NULL) {
+        char *s = xstrndup(p1, p2 - p1);
+        liblist[i++] = s;
+        p1 = p2 + 1;
+    }
+    liblist[i] = xstrdup(p1);
+    return liblist;
 }
 
 static SCM
@@ -143,6 +180,58 @@ gig_repository_nested_infos(GIBaseInfo *base,
     }
 }
 
+static char *
+g_registered_type_info_get_qualified_name(GIRegisteredTypeInfo *info)
+{
+    const char *_name = g_base_info_get_attribute(info, "c:type");
+    if (_name != NULL)
+        return xstrdup(_name);
+
+    const char *_namespace = g_base_info_get_namespace(info);
+    const char *prefix = g_irepository_get_c_prefix(NULL, _namespace);
+
+    // add initial % to ensure that the name is private
+    return concatenate3("%", prefix, g_base_info_get_name(info));
+}
+
+static SCM
+make_flag_enum_alist(GIRegisteredTypeInfo *info)
+{
+    GIInfoType t = g_base_info_get_type(info);
+    int n_values = g_enum_info_get_n_values(info);
+    int i = 0;
+    SCM alist = SCM_EOL;
+
+    while (i < n_values) {
+        GIValueInfo *vi;
+        char *_key;
+        int64_t _val;
+        SCM key, val;
+
+        vi = g_enum_info_get_value(info, i);
+        _key = make_scm_name(g_base_info_get_name(vi));
+        key = scm_from_utf8_symbol(_key);
+        _val = g_value_info_get_value(vi);
+
+        switch (t) {
+        case GI_INFO_TYPE_ENUM:
+            val = scm_from_int(_val);
+            break;
+        case GI_INFO_TYPE_FLAGS:
+            val = scm_from_uint(_val);
+            break;
+        default:
+            assert_not_reached();
+        }
+        alist = scm_cons(scm_cons(key, val), alist);
+
+        g_base_info_unref(vi);
+        free(_key);
+        i++;
+    }
+    return scm_reverse(alist);
+}
+
 static SCM
 load_info(GIBaseInfo *info, LoadFlags flags)
 {
@@ -166,11 +255,23 @@ load_info(GIBaseInfo *info, LoadFlags flags)
     case GI_INFO_TYPE_FUNCTION:
     case GI_INFO_TYPE_SIGNAL:
     {
-        // Pre-load all the types used by the function's arguments.
-        GType *types;
-        size_t len;
+        GType *types = NULL;
+        size_t len = 0;
         bool args_ok = true;
-        types = gig_function_get_arg_gtypes(info, &len);
+        char *long_name;
+        const char *namespace_ = g_base_info_get_namespace(info);
+        GigArgMap *amap;
+        if (parent_name)
+            long_name = gig_callable_info_make_name(info, parent_name);
+        else
+            long_name = gig_callable_info_make_name(info, namespace_);
+        amap = gig_amap_new(long_name, info);
+        if (amap)
+            types = gig_amap_get_gtype_list(amap, &len);
+        else
+            args_ok = false;
+
+        // Pre-load all the types used by the function's arguments.
         for (size_t i = 0; i < len; i++) {
             if (!gig_type_is_registered(types[i])) {
                 GIBaseInfo *typeinfo;
@@ -192,8 +293,30 @@ load_info(GIBaseInfo *info, LoadFlags flags)
         }
         free(types);
 
-        if (args_ok == true)
-            defs = scm_append2(defs, gig_function_define(parent_gtype, info, parent_name));
+        if (args_ok == true) {
+            char *short_name;
+            const char *symbol_name;
+
+            short_name = gig_callable_info_make_name(info, NULL);
+            if (amap != NULL) {
+                if (t == GI_INFO_TYPE_FUNCTION) {
+                    symbol_name = g_function_info_get_symbol(info);
+                    defs =
+                        scm_append2(defs,
+                                    gig_function_define_full(namespace_, parent_gtype, long_name,
+                                                             short_name, symbol_name, amap));
+                }
+                else if (t == GI_INFO_TYPE_SIGNAL) {
+                    symbol_name = g_base_info_get_name(info);
+                    defs =
+                        scm_append2(defs,
+                                    gig_signal_define_full(namespace_, parent_gtype, long_name,
+                                                           short_name, symbol_name, amap));
+                }
+            }
+            free(short_name);
+        }
+        free(long_name);
     }
         break;
     case GI_INFO_TYPE_PROPERTY:

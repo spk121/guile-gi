@@ -461,7 +461,7 @@ scm_to_c_pointer(S2C_ARG_DECL)
         scm_to_c_native_array(S2C_ARGS);
     else if (meta->arg_type == GIG_ARG_TYPE_CALLBACK) {
         if (scm_is_procedure(object))
-            arg->v_pointer = gig_callback_to_c(subr, meta->callable_info, object);
+            arg->v_pointer = gig_callback_to_c(subr, meta->callable_arg_map, object);
         else
             scm_wrong_type_arg_msg(subr, argpos, object, "a procedure");
     }
@@ -1688,7 +1688,7 @@ c_pointer_to_scm(C2S_ARG_DECL)
         *object = scm_from_gtype(arg->v_size);
     else if (t == GIG_ARG_TYPE_CALLBACK) {
         void *cb = meta->is_ptr ? *(void **)arg->v_pointer : arg->v_pointer;
-        *object = gig_callback_to_scm(subr, meta->callable_info, cb);
+        *object = gig_callback_to_scm(subr, meta->callable_arg_map, cb);
     }
     else if (t == GIG_ARG_TYPE_GLIST || t == GIG_ARG_TYPE_GSLIST)
         c_list_to_scm(C2S_ARGS);

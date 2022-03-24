@@ -47,8 +47,7 @@ arg_type_to_ffi_type(GigArgType type)
 // size, but long is either 4 or 8 bytes depending on the platform,
 // which is why we do this strange sign extension here.
 static void
-extract_ffi_return_value(GigArgType type, GigArgument *ffi_value,
-                         GigArgument *arg)
+extract_ffi_return_value(GigArgType type, GigArgument *ffi_value, GigArgument *arg)
 {
     if (type == GIG_ARG_TYPE_INT8)
         arg->v_int8 = (int8_t)ffi_value->v_long;
@@ -83,8 +82,8 @@ extract_ffi_return_value(GigArgType type, GigArgument *ffi_value,
 
 _Bool
 gig_invoke_func(void *function, GigArgMap *amap, const GigArgument *in_args, int n_in_args,
-            const GigArgument *out_args, int n_out_args,
-            GigArgument *return_value, GError **error)
+                const GigArgument *out_args, int n_out_args,
+                GigArgument *return_value, GError **error)
 {
     int in_pos = 0, out_pos = 0;
     int n_args, n_invoke_args;
