@@ -320,7 +320,10 @@ load_info(GIBaseInfo *info, LoadFlags flags)
     }
         break;
     case GI_INFO_TYPE_PROPERTY:
-        defs = scm_append2(defs, gig_property_define(parent_gtype, info, parent_name));
+        defs =
+            scm_append2(defs,
+                        gig_property_define(g_type_name(parent_gtype), g_base_info_get_name(info),
+                                            parent_name));
         break;
     case GI_INFO_TYPE_BOXED:
     {

@@ -544,13 +544,13 @@ static SCM sym_value;
 static SCM do_define_property(const char *, SCM, SCM, SCM);
 
 SCM
-gig_property_define(GType type, GIPropertyInfo *info, const char *_namespace)
+gig_property_define(const char *gtype_name, const char *name, const char *_namespace)
 {
     GParamSpec *prop = NULL;
     SCM s_prop, def;
     SCM defs = SCM_EOL;
+    GType type = g_type_from_name(gtype_name);
 
-    const char *name = g_base_info_get_name(info);
     char *long_name;
 
     SCM self_type = gig_type_get_scheme_type(type);
