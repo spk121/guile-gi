@@ -37,6 +37,7 @@ typedef void (*GigTypeUnrefFunction)(void *);
 bool gig_type_is_registered(GType gtype);
 
 SCM gig_type_define(GType gtype);
+SCM gig_type_define_by_name(const char *type_class_name, const char *gtype_name);
 void gig_type_define_fundamental(GType type, SCM extra_supers,
                                  GigTypeRefFunction ref, GigTypeUnrefFunction unref);
 SCM gig_type_define_with_info(GIRegisteredTypeInfo *info, SCM slots);
@@ -48,7 +49,7 @@ SCM gig_type_transfer_object(GType gtype, void *obj, GigTransfer transfer);
 SCM scm_from_gtype(GType x);
 GType scm_to_gtype(SCM x);
 GType scm_to_gtype_full(SCM x, const char *subr, int argpos);
-
+char *gig_type_class_name_from_gtype(GType gtype);
 
 GIG_API void gig_init_types(void);
 

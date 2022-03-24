@@ -83,7 +83,7 @@ static SCM make_fundamental_proc;
 static SCM type_less_p_proc;
 static SCM sym_sort_key;
 
-static SCM make_type_with_gtype(GType gtype, SCM extra_supers);
+static SCM make_type_with_gtype(const char *type_class_name, GType gtype, SCM extra_supers);
 static SCM make_type_with_info(GIRegisteredTypeInfo *info, SCM slots);
 static SCM gig_type_associate(GType gtype, SCM stype);
 
@@ -95,14 +95,13 @@ static SCM gig_type_associate(GType gtype, SCM stype);
 // this makes a new Guile foreign object type and it stores the type
 // in our hash table of known types.
 SCM
-gig_type_define_full(GType gtype, SCM extra_supers)
+gig_type_define_full(const char *_type_class_name, GType gtype, SCM extra_supers)
 {
     assert(GSIZE_TO_POINTER(gtype) != NULL);
     SCM defs = SCM_EOL;
     SCM orig_value;
     GType parent = g_type_parent(gtype);
     GType fundamental = G_TYPE_FUNDAMENTAL(gtype);
-    char *_type_class_name = gig_type_class_name_from_gtype(gtype);
 
     SCM hash = scm_variable_ref(gtype_hash_var);
     orig_value = scm_hashq_ref(hash, scm_from_size_t(gtype), SCM_BOOL_F);
@@ -119,7 +118,7 @@ gig_type_define_full(GType gtype, SCM extra_supers)
         if (parent != G_TYPE_INVALID)
             defs = scm_append2(defs, gig_type_define(parent));
 
-        SCM new_type = make_type_with_gtype(gtype, extra_supers);
+        SCM new_type = make_type_with_gtype(_type_class_name, gtype, extra_supers);
 
         g_return_val_if_fail(!scm_is_unknown_class(new_type), defs);
 
@@ -143,14 +142,26 @@ gig_type_define_full(GType gtype, SCM extra_supers)
         defs = scm_cons(key, defs);
     }
 
-    free(_type_class_name);
     return defs;
 }
 
 SCM
 gig_type_define(GType gtype)
 {
-    return gig_type_define_full(gtype, SCM_EOL);
+    char *_type_class_name = gig_type_class_name_from_gtype(gtype);
+    SCM ret;
+    ret = gig_type_define_full(_type_class_name, gtype, SCM_EOL);
+    free(_type_class_name);
+    return ret;
+}
+
+SCM
+gig_type_define_by_name(const char *type_class_name, const char *gtype_name)
+{
+    GType gtype = g_type_from_name(gtype_name);
+    SCM ret;
+    ret = gig_type_define_full(type_class_name, gtype, SCM_EOL);
+    return ret;
 }
 
 SCM
@@ -184,17 +195,15 @@ gig_type_define_with_info(GIRegisteredTypeInfo *info, SCM slots)
 ////////////////////////////////////////////////////////////////
 
 static SCM
-make_type_with_gtype(GType gtype, SCM extra_supers)
+make_type_with_gtype(const char *_type_class_name, GType gtype, SCM extra_supers)
 {
-    char *_type_class_name = gig_type_class_name_from_gtype(gtype);
-    SCM type_class_name = scm_from_utf8_symbol(_type_class_name);
-
     GType parent = g_type_parent(gtype);
     GType fundamental = g_type_fundamental(gtype);
     SCM new_type, dsupers, slots = SCM_EOL;
     SCM hash = scm_variable_ref(gtype_hash_var);
     SCM sparent = scm_hashq_ref(hash, scm_from_size_t(parent), SCM_BOOL_F);
     // g_return_val_if_fail(scm_is_true(sparent), defs);
+    SCM type_class_name = scm_from_utf8_symbol(_type_class_name);
 
     switch (fundamental) {
     case G_TYPE_ENUM:
@@ -1012,13 +1021,24 @@ scm_g_type_parent_unsafe(SCM gtype)
 static SCM
 scm_gig_type_define_full_unsafe(SCM gtype, SCM supers)
 {
-    return gig_type_define_full(scm_to_size_t(gtype), supers);
+    size_t type = scm_to_size_t(gtype);
+    char *type_class_name = gig_type_class_name_from_gtype(type);
+    SCM ret;
+    ret = gig_type_define_full(type_class_name, type, supers);
+    free(type_class_name);
+    return ret;
 }
 
 static SCM
 scm_make_type_with_gtype_unsafe(SCM gtype, SCM extra_supers)
 {
-    return make_type_with_gtype(scm_to_size_t(gtype), extra_supers);
+    size_t type = scm_to_size_t(gtype);
+    char *type_class_name = gig_type_class_name_from_gtype(type);
+    SCM ret;
+
+    ret = make_type_with_gtype(type_class_name, type, extra_supers);
+    free(type_class_name);
+    return ret;
 }
 
 static void

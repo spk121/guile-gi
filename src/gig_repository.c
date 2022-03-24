@@ -333,7 +333,9 @@ load_info(GIBaseInfo *info, LoadFlags flags)
                            g_base_info_get_name(info));
             break;
         }
-        defs = scm_append2(defs, gig_type_define(gtype));
+        char *type_class_name = gig_type_class_name_from_gtype(gtype);
+        defs = scm_append2(defs, gig_type_define_by_name(type_class_name, g_type_name(gtype)));
+        free(type_class_name);
         goto recursion;
     }
     case GI_INFO_TYPE_STRUCT:
@@ -404,8 +406,13 @@ load_info(GIBaseInfo *info, LoadFlags flags)
                 }
             }
             free(interfaces);
-            if (interface_ok)
-                defs = scm_append2(defs, gig_type_define(gtype));
+            if (interface_ok) {
+                char *type_class_name = gig_type_class_name_from_gtype(gtype);
+                defs =
+                    scm_append2(defs,
+                                gig_type_define_by_name(type_class_name, g_type_name(gtype)));
+                free(type_class_name);
+            }
         }
         goto recursion;
     }
@@ -415,8 +422,11 @@ load_info(GIBaseInfo *info, LoadFlags flags)
         GType gtype = g_registered_type_info_get_g_type(info);
         if (gtype == G_TYPE_NONE)
             defs = scm_append2(defs, gig_type_define_with_info(info, SCM_EOL));
-        else
-            defs = scm_append2(defs, gig_type_define(gtype));
+        else {
+            char *type_class_name = gig_type_class_name_from_gtype(gtype);
+            defs = scm_append2(defs, gig_type_define_by_name(type_class_name, g_type_name(gtype)));
+            free(type_class_name);
+        }
         defs = scm_append2(defs, gig_define_enum_conversions(info, gtype));
         goto recursion;
     }
