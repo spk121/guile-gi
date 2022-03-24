@@ -66,11 +66,14 @@ void log_structured(const char *log_domain, LogLevelFlags log_level, ...);
 
 #define assert_not_reached() (assert(0))
 
+#define STRINGIFY(x) STRINGIFY_INNER(x)
+#define STRINGIFY_INNER(x) #x
+
 #define gig_debug_internal(level, domain, ...)                                                    \
     do                                                                                            \
     {                                                                                             \
         log_structured(G_LOG_DOMAIN, level, "CODE_FILE", __FILE__, "CODE_LINE",                   \
-                       G_STRINGIFY(__LINE__), "CODE_FUNC", __func__, "GIG_DOMAIN", domain,        \
+                       STRINGIFY(__LINE__), "CODE_FUNC", __func__, "GIG_DOMAIN", domain, \
                        "MESSAGE", __VA_ARGS__);                                                   \
     } while (false)
 #define gig_debug_transfer(...) gig_debug_internal(LOG_LEVEL_DEBUG, "transfers", __VA_ARGS__)
