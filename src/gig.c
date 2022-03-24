@@ -60,6 +60,7 @@ gig_init(void)
     gig_init_callback();
     gig_init_function();
     gig_lib_init();
+    gig_constant_init();
 #ifdef ENABLE_GCOV
     scm_c_define_gsubr("gcov-reset", 0, 0, 0, scm_gcov_reset);
     scm_c_define_gsubr("gcov-dump", 0, 0, 0, scm_gcov_dump);
