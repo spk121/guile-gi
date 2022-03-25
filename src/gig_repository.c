@@ -24,52 +24,55 @@
 static SCM get_shared_library_list(const char *lib);
 
 static SCM
-require(SCM lib, SCM version)
+require(SCM s_namespace, SCM s_version)
 {
-    SCM_ASSERT_TYPE(scm_is_string(lib), lib, SCM_ARG1, "require", "string");
-    SCM_ASSERT_TYPE(SCM_UNBNDP(version) ||
-                    scm_is_string(version), version, SCM_ARG2, "require", "string");
+#define FUNC_NAME "require"
+    SCM_ASSERT_TYPE(scm_is_string(s_namespace), s_namespace, SCM_ARG1, FUNC_NAME, "string");
+    SCM_ASSERT_TYPE(SCM_UNBNDP(s_version) ||
+                    scm_is_string(s_version), s_version, SCM_ARG2, FUNC_NAME, "string");
 
-    char *_lib, *_version = NULL;
+    char *namespace_, *version = NULL;
     GITypelib *tl;
     GError *error = NULL;
 
     scm_dynwind_begin(0);
-    _lib = scm_dynfree(scm_to_utf8_string(lib));
-    if (!SCM_UNBNDP(version) && scm_is_true(version))
-        _version = scm_dynfree(scm_to_utf8_string(version));
+    namespace_ = scm_dynfree(scm_to_utf8_string(s_namespace));
+    if (!SCM_UNBNDP(s_version) && scm_is_true(s_version))
+        version = scm_dynfree(scm_to_utf8_string(s_version));
 
-    gig_debug_load("requiring %s-%s", _lib, _version != NULL ? _version : "latest");
-    tl = g_irepository_require(NULL, _lib, _version, 0, &error);
+    gig_debug_load("requiring %s-%s", namespace_, version != NULL ? version : "latest");
+    tl = g_irepository_require(NULL, namespace_, version, 0, &error);
 
     if (tl == NULL) {
         SCM err = scm_from_utf8_string(error->message);
         g_error_free(error);
-        scm_misc_error("require", "~A", scm_list_1(err));
+        scm_misc_error(FUNC_NAME, "~A", scm_list_1(err));
     }
-    SCM liblist = get_shared_library_list(_lib);
-    gig_il_library(lib, version, liblist);
+    SCM path_list = get_shared_library_list(namespace_);
+    gig_il_library(s_namespace, path_list);
     scm_dynwind_end();
 
     return SCM_UNSPECIFIED;
+#undef FUNC_NAME
 }
 
 static SCM
-get_shared_library_list(const char *lib)
+get_shared_library_list(const char *namespace_)
 {
-    const char *libs, *p1, *p2;
-    SCM liblist = SCM_EOL;
+    const char *csv_paths;
+    const char *start, *end;
+    SCM path_list = SCM_EOL;
 
-    libs = g_irepository_get_shared_library(NULL, lib);
-    if (libs == NULL)
+    if (namespace_ == NULL)
         return SCM_EOL;
-    p1 = libs;
-    while ((p2 = strchr(p1, ',')) != NULL) {
-        liblist = scm_cons(scm_from_locale_stringn(p1, p2 - p1), liblist);
-        p1 = p2 + 1;
+    csv_paths = g_irepository_get_shared_library(NULL, namespace_);
+    start = csv_paths;
+    while ((end = strchr(start, ',')) != NULL) {
+        path_list = scm_cons(scm_from_locale_stringn(start, end - start), path_list);
+        start = end + 1;        // Skipping over comma.
     }
-    liblist = scm_cons(scm_from_locale_string(p1), liblist);
-    return scm_reverse(liblist);
+    path_list = scm_cons(scm_from_locale_string(start), path_list);
+    return scm_reverse(path_list);
 }
 
 static SCM
