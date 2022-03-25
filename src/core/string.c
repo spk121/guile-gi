@@ -13,6 +13,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#define _GNU_SOURCE
 #include <assert.h>
 #include <ctype.h>
 #include <string.h>
@@ -23,6 +24,8 @@
 char *
 bracketize(const char *str)
 {
+    if (str == NULL || strlen(str) == 0)
+        return NULL;
     size_t len = strlen("<>") + strlen(str) + 1;
     char *str2 = malloc(len);
     if (str2 == NULL) {
@@ -36,8 +39,28 @@ bracketize(const char *str)
 char *
 concatenate(const char *str1, const char *str2)
 {
+    char *str;
+    if (str1 == NULL && str2 == NULL)
+        return NULL;
+    if (str1 == NULL && str2 != NULL) {
+        str = strdup(str2);
+        if (str == NULL) {
+            fprintf(stderr, "Out of memory\n");
+            exit(1);
+        }
+        return str;
+    }
+    if (str1 != NULL & str2 == NULL) {
+        str = strdup(str1);
+        if (str == NULL) {
+            fprintf(stderr, "Out of memory\n");
+            exit(1);
+        }
+        return str;
+    }
+
     size_t len = strlen(str1) + strlen(str2) + 1;
-    char *str = malloc(len);
+    str = malloc(len);
     if (str == NULL) {
         fprintf(stderr, "Out of memory\n");
         exit(1);
@@ -49,6 +72,13 @@ concatenate(const char *str1, const char *str2)
 char *
 concatenate3(const char *str1, const char *str2, const char *str3)
 {
+    if (str1 == NULL)
+        return concatenate(str2, str3);
+    else if (str2 == NULL)
+        return concatenate(str1, str3);
+    else if (str3 == NULL)
+        return concatenate(str1, str2);
+
     size_t len = strlen(str1) + strlen(str2) + strlen(str3) + 1;
     char *str = malloc(len);
     if (str == NULL) {
@@ -62,6 +92,16 @@ concatenate3(const char *str1, const char *str2, const char *str3)
 char *
 concatenate4(const char *str1, const char *str2, const char *str3, const char *str4)
 {
+    if (str1 == NULL)
+        return concatenate3(str2, str3, str4);
+    else if (str2 == NULL)
+        return concatenate3(str1, str3, str4);
+    else if (str3 == NULL)
+        return concatenate3(str1, str2, str4);
+    else if (str4 == NULL)
+        return concatenate3(str1, str2, str3);
+
+
     size_t len = strlen(str1) + strlen(str2) + strlen(str3) + strlen(str4) + 1;
     char *str = malloc(len);
     if (str == NULL) {
@@ -75,6 +115,9 @@ concatenate4(const char *str1, const char *str2, const char *str3, const char *s
 char *
 decorate_string(const char *fmt, const char *str)
 {
+    if (fmt == NULL || str == NULL)
+        return NULL;
+
     int len = snprintf(NULL, 0, fmt, str) + 1;
     char *out = malloc(len);
     if (out == NULL) {
