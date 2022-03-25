@@ -68,6 +68,8 @@
  *
  */
 
+SCM gig_il_type_func = SCM_UNDEFINED;
+
 // Maps GType to SCM
 static SCM gtype_hash_var = SCM_UNDEFINED;
 // Maps string to SCM
@@ -122,9 +124,10 @@ gig_type_define_full(const char *_type_class_name, GType gtype, SCM extra_supers
 
         g_return_val_if_fail(!scm_is_unknown_class(new_type), defs);
 
-        SCM key = gig_type_associate(gtype, new_type);
-        scm_define(key, new_type);
-        defs = scm_cons(key, defs);
+        gig_type_associate(gtype, new_type);
+        SCM sym = scm_from_utf8_symbol(_type_class_name);
+        scm_define(sym, new_type);
+        defs = scm_cons(sym, defs);
 
         SCM reverse_hash = scm_variable_ref(reverse_hash_var);
         gig_debug_load("Hash table sizes %d %d", SCM_HASHTABLE_N_ITEMS(hash),
@@ -137,7 +140,7 @@ gig_type_define_full(const char *_type_class_name, GType gtype, SCM extra_supers
 
         if (SCM_UNBNDP(val))
             gig_critical("%s - %s is undefined", _type_class_name, g_type_name(gtype));
-        SCM key = scm_class_name(val);
+        SCM key = scm_from_utf8_symbol(_type_class_name);
         scm_define(key, val);
         defs = scm_cons(key, defs);
     }
@@ -156,12 +159,29 @@ gig_type_define(GType gtype)
 }
 
 SCM
-gig_type_define_by_name(const char *type_class_name, const char *gtype_name)
+gig_il_type(SCM s_name, SCM s_gtype_name)
 {
-    GType gtype = g_type_from_name(gtype_name);
-    SCM ret;
-    ret = gig_type_define_full(type_class_name, gtype, SCM_EOL);
-    return ret;
+#define FUNC_NAME "^type"
+    char *gtype_name;
+    size_t gtype;
+    char *type_class_name;
+
+    SCM_ASSERT_TYPE(scm_is_symbol(s_name), s_name, SCM_ARG1, FUNC_NAME, "symbol");
+    SCM_ASSERT_TYPE(scm_is_string(s_gtype_name), s_gtype_name, SCM_ARG2, FUNC_NAME, "string");
+
+    if (scm_is_true(scm_string_null_p(s_gtype_name)))
+        scm_wrong_type_arg(FUNC_NAME, SCM_ARG2, s_gtype_name);
+
+    gtype_name = scm_to_utf8_string(s_gtype_name);
+    gtype = g_type_from_name(gtype_name);
+    free(gtype_name);
+    if (gtype == 0)
+        scm_misc_error(FUNC_NAME, "cannot find GType for '~A'", scm_list_1(s_gtype_name));
+    type_class_name = scm_to_utf8_symbol(s_name);
+    gig_type_define_full(type_class_name, gtype, SCM_EOL);
+    free(type_class_name);
+    return scm_list_1(s_name);
+#undef FUNC_NAME
 }
 
 SCM
@@ -1121,7 +1141,7 @@ gig_init_types_once(void)
 
     scm_c_define_gsubr("$type-define-full", 2, 0, 0, scm_gig_type_define_full_unsafe);
     scm_c_define_gsubr("$make-type-with-gtype", 2, 0, 0, scm_make_type_with_gtype_unsafe);
-
+    gig_il_type_func = scm_c_define_gsubr("^type", 2, 0, 0, gig_il_type);
     scm_c_define_gsubr("get-gtype", 1, 0, 0, scm_type_get_gtype);
     scm_c_define_gsubr("gtype-get-scheme-type", 1, 0, 0, scm_type_gtype_get_scheme_type);
     scm_c_define_gsubr("gtype-get-name", 1, 0, 0, scm_type_gtype_get_name);

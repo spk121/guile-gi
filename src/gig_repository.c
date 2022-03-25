@@ -57,7 +57,6 @@ output_exports(SCM defs)
     if (!scm_is_null(defs)) {
         SCM lst = scm_cons(scm_from_utf8_symbol("export"), defs);
         scm_call_2(pretty_print_func, lst, il_output_port);
-        scm_newline(il_output_port);
     }
     return SCM_UNSPECIFIED;
 }
@@ -382,9 +381,7 @@ load_info(GIBaseInfo *info, LoadFlags flags)
                            g_base_info_get_name(info));
             break;
         }
-        char *type_class_name = gig_type_class_name_from_gtype(gtype);
-        defs = scm_append2(defs, gig_type_define_by_name(type_class_name, g_type_name(gtype)));
-        free(type_class_name);
+        type_define(gtype, &defs, &ils);
         goto recursion;
     }
     case GI_INFO_TYPE_STRUCT:
@@ -455,13 +452,8 @@ load_info(GIBaseInfo *info, LoadFlags flags)
                 }
             }
             free(interfaces);
-            if (interface_ok) {
-                char *type_class_name = gig_type_class_name_from_gtype(gtype);
-                defs =
-                    scm_append2(defs,
-                                gig_type_define_by_name(type_class_name, g_type_name(gtype)));
-                free(type_class_name);
-            }
+            if (interface_ok)
+                type_define(gtype, &defs, &ils);
         }
         goto recursion;
     }
@@ -471,16 +463,14 @@ load_info(GIBaseInfo *info, LoadFlags flags)
         GType gtype = g_registered_type_info_get_g_type(info);
         if (gtype == G_TYPE_NONE)
             defs = scm_append2(defs, gig_type_define_with_info(info, SCM_EOL));
-        else {
-            char *type_class_name = gig_type_class_name_from_gtype(gtype);
-            defs = scm_append2(defs, gig_type_define_by_name(type_class_name, g_type_name(gtype)));
-            free(type_class_name);
-        }
+        else
+            type_define(gtype, &defs, &ils);
+
         defs = scm_append2(defs, gig_define_enum_conversions(info, gtype));
         goto recursion;
     }
     case GI_INFO_TYPE_CONSTANT:
-        defs = scm_append2(defs, constant_define(info));
+        constant_define(info, &defs, &ils);
         break;
     case GI_INFO_TYPE_VALUE:
         gig_critical_load("Unsupported irepository type 'VALUE'");
@@ -730,4 +720,17 @@ constant_define(GIConstantInfo *info, SCM *defs, SCM *ils)
     *ils = scm_append2(*ils, il);
 }
 
+static void
+type_define(GType gtype, SCM *defs, SCM *ils)
+{
+    char *type_class_name = gig_type_class_name_from_gtype(gtype);
+    SCM s_type_class_name = scm_from_utf8_symbol(type_class_name);
+    free(type_class_name);
+    SCM s_gtype_name = scm_from_utf8_string(g_type_name(gtype));
+    SCM il = scm_list_3(scm_from_utf8_symbol("^type"),
+                        s_type_class_name, s_gtype_name);
+    SCM def = scm_apply(gig_il_type_func, scm_cdr(il), SCM_EOL);
+
+    *defs = scm_append2(*defs, def);
+    *ils = scm_append2(*ils, il);
 }

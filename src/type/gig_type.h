@@ -34,10 +34,12 @@ GType gig_type_get_c_array_type(void);
 typedef void *(*GigTypeRefFunction)(void *);
 typedef void (*GigTypeUnrefFunction)(void *);
 
+extern SCM gig_il_type_func;
+
 bool gig_type_is_registered(GType gtype);
 
 SCM gig_type_define(GType gtype);
-SCM gig_type_define_by_name(const char *type_class_name, const char *gtype_name);
+SCM gig_il_type(SCM s_name, SCM s_gtype_name);
 void gig_type_define_fundamental(GType type, SCM extra_supers,
                                  GigTypeRefFunction ref, GigTypeUnrefFunction unref);
 SCM gig_type_define_with_info(GIRegisteredTypeInfo *info, SCM slots);
