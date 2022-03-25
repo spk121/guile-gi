@@ -3,6 +3,8 @@
 #include <dlfcn.h>
 #include <string.h>
 
+SCM gig_il_library_func = SCM_UNDEFINED;
+
 typedef struct GigSharedLib_
 {
     int n;
@@ -146,5 +148,5 @@ is_nonempty_list_of_strings(SCM lst)
 void
 gig_lib_init(void)
 {
-    scm_c_define_gsubr("^library", 2, 0, 0, gig_il_library);
+    gig_il_library_func = scm_c_define_gsubr("^library", 2, 0, 0, gig_il_library);
 }

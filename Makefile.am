@@ -401,6 +401,7 @@ endif
 TESTS = \
   test/_setup.scm \
   test/typelib.scm \
+  test/il.scm \
   test/insanity.scm \
   test/constants.scm \
   test/mem.scm \

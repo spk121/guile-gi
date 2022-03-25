@@ -49,10 +49,13 @@ require(SCM s_namespace, SCM s_version)
         scm_misc_error(FUNC_NAME, "~A", scm_list_1(err));
     }
     SCM path_list = get_shared_library_list(namespace_);
-    gig_il_library(s_namespace, path_list);
+    SCM il = scm_list_3(scm_from_utf8_symbol("^library"),
+                        s_namespace,
+                        path_list);
+    scm_apply(gig_il_library_func, scm_cdr(il), SCM_EOL);
     scm_dynwind_end();
 
-    return SCM_UNSPECIFIED;
+    return il;
 #undef FUNC_NAME
 }
 
