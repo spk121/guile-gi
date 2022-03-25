@@ -71,8 +71,13 @@ void *
 gig_lib_lookup(const char *namespace_, const char *symbol)
 {
     GigSharedLib *shlib;
-    void *handle;
+    void *address;
     int i;
+
+    assert(namespace_ != NULL);
+    assert(strlen(namespace_) > 0);
+    assert(symbol != NULL);
+    assert(strlen(symbol) > 0);
 
     if (!lib_cache)
         return NULL;
@@ -81,10 +86,10 @@ gig_lib_lookup(const char *namespace_, const char *symbol)
         return NULL;
     i = 0;
     while (i < shlib->n) {
-        handle = dlsym(shlib->handles[i], symbol);
+        address = dlsym(shlib->handles[i], symbol);
         dlerror();
-        if (handle)
-            return handle;
+        if (address)
+            return address;
         i++;
     }
     return NULL;
@@ -94,6 +99,9 @@ static GigSharedLib *
 allocate_shlib(int n)
 {
     GigSharedLib *shlib;
+    if (n == 0)
+        return NULL;
+
     shlib = xcalloc(1, sizeof(GigSharedLib));
     shlib->n = n;
     shlib->filenames = xcalloc(n, sizeof(char *));
@@ -104,6 +112,9 @@ allocate_shlib(int n)
 static void
 free_shlib(GigSharedLib * shlib)
 {
+    if (shlib == NULL)
+        return;
+
     int n = shlib->n;
     for (int i = 0; i < n; i++) {
         if (shlib->handles[i])

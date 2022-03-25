@@ -28,7 +28,7 @@
 
 typedef struct GigFunction_
 {
-    void *handle;
+    void *address;
     ffi_closure *closure;
     ffi_cif cif;
     void *function_ptr;
@@ -55,13 +55,13 @@ SCM gig_before_function_hook;
 static GigGsubr *check_gsubr_cache(const char *key, SCM self_type,
                                    int *required_input_count, int *optional_input_count,
                                    SCM *formals, SCM *specializers);
-static GigGsubr *create_gsubr(void *handle, GigArgMap *amap, const char *name, const char *key,
+static GigGsubr *create_gsubr(void *address, GigArgMap *amap, const char *name, const char *key,
                               SCM self_type, int *required_input_count, int *optional_input_count,
                               SCM *formals, SCM *specializers);
 static void make_formals(GigArgMap *, int n_inputs, SCM self_type, SCM *formals,
                          SCM *specializers);
 static void function_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data);
-static SCM function_invoke(void *handle, GigArgMap *amap, const char *name,
+static SCM function_invoke(void *address, GigArgMap *amap, const char *name,
                            GObject *object, SCM args, GError **error);
 static void function_free(GigFunction *fn);
 static void gig_fini_function(void);
@@ -214,22 +214,22 @@ proc4function(GigArgMap *amap, const char *name, SCM self_type, const char *name
 {
     char *key;
     GigGsubr *func_gsubr;
-    void *handle;
+    void *address;
 
     // Is this already defined?
     key = make_cache_key(namespace_, symbol, amap->is_method);
     func_gsubr = check_gsubr_cache(key, self_type, req, opt, formals, specializers);
 
     // Find the C function
-    handle = gig_lib_lookup(namespace_, symbol);
-    if (!handle) {
+    address = gig_lib_lookup(namespace_, symbol);
+    if (!address) {
         gig_debug_load("%s - could not find symbol %s in namespace %s", name, symbol, namespace_);
         return SCM_UNDEFINED;
     }
 
     if (!func_gsubr)
         func_gsubr =
-            create_gsubr(handle, amap, name, key, self_type, req, opt, formals, specializers);
+            create_gsubr(address, amap, name, key, self_type, req, opt, formals, specializers);
 
     if (!func_gsubr) {
         gig_debug_load("%s - could not create a gsubr", name);
@@ -404,14 +404,16 @@ make_formals(GigArgMap *argmap, int n_inputs, SCM self_type, SCM *formals, SCM *
 }
 
 static GigGsubr *
-create_gsubr(void *handle, GigArgMap *amap, const char *name, const char *key, SCM self_type,
+create_gsubr(void *address, GigArgMap *amap, const char *name, const char *key, SCM self_type,
              int *required_input_count, int *optional_input_count, SCM *formals, SCM *specializers)
 {
     GigFunction *gfn;
     ffi_type *ffi_ret_type;
 
+    assert(address != NULL);
+
     gfn = xcalloc(1, sizeof(GigFunction));
-    gfn->handle = handle;
+    gfn->address = address;
     gfn->amap = amap;
     free(gfn->name);
     gfn->name = xstrdup(name);
@@ -476,7 +478,7 @@ create_gsubr(void *handle, GigArgMap *amap, const char *name, const char *key, S
 }
 
 static SCM
-function_invoke(void *handle, GigArgMap *amap, const char *name, GObject *self,
+function_invoke(void *address, GigArgMap *amap, const char *name, GObject *self,
                 SCM args, GError **error)
 {
     GigArgsStore *store;
@@ -496,7 +498,7 @@ function_invoke(void *handle, GigArgMap *amap, const char *name, GObject *self,
 
     GigArgument return_arg;
     return_arg.v_pointer = NULL;
-    gig_invoke_func(handle, amap, store->in_args,
+    gig_invoke_func(address, amap, store->in_args,
                     amap->c_input_len + (amap->is_method ? 1 : 0),
                     store->out_args, amap->c_output_len, &return_arg, error);
     SCM ret = gig_args_store_return_value(store, amap, name, self, args, 1, &return_arg);
@@ -507,10 +509,10 @@ function_invoke(void *handle, GigArgMap *amap, const char *name, GObject *self,
 }
 
 SCM
-gig_callable_invoke(void *handle, GigArgMap *amap, const char *name, GObject *self,
+gig_callable_invoke(void *address, GigArgMap *amap, const char *name, GObject *self,
                     SCM args, GError **error)
 {
-    return function_invoke(handle, amap, name, self, args, error);
+    return function_invoke(address, amap, name, self, args, error);
 }
 
 
@@ -558,7 +560,7 @@ function_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
 
     // Then invoke the actual function
     GError *err = NULL;
-    SCM output = function_invoke(gfn->handle, gfn->amap, gfn->name, self, s_args, &err);
+    SCM output = function_invoke(gfn->address, gfn->amap, gfn->name, self, s_args, &err);
 
     // If there is a GError, write an error and exit.
     if (err) {

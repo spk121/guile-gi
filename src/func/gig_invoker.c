@@ -81,7 +81,7 @@ extract_ffi_return_value(GigArgType type, GigArgument *ffi_value, GigArgument *a
 }
 
 _Bool
-gig_invoke_func(void *function, GigArgMap *amap, const GigArgument *in_args, int n_in_args,
+gig_invoke_func(void *address, GigArgMap *amap, const GigArgument *in_args, int n_in_args,
                 const GigArgument *out_args, int n_out_args,
                 GigArgument *return_value, GError **error)
 {
@@ -194,7 +194,7 @@ gig_invoke_func(void *function, GigArgMap *amap, const GigArgument *in_args, int
         return_value_p = &(ffi_return_value.v_long);
     }
 
-    ffi_call(&cif, function, return_value_p, args);
+    ffi_call(&cif, address, return_value_p, args);
 
     bool success;
     if (local_error) {
