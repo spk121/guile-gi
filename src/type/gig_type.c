@@ -433,7 +433,19 @@ gig_type_peek_object(SCM obj)
 char *
 gig_type_class_name_from_gtype(GType gtype)
 {
-    return bracketize(g_type_name(gtype));
+    char *class_name;
+#ifdef FIX_GTYPE_CLASS_NAME_BUG
+    GIBaseInfo *info = g_irepository_find_by_gtype(NULL, gtype);
+    if (info != NULL) {
+        class_name = bracketize(g_base_info_get_name(info));
+        g_base_info_unref(info);
+    }
+    else
+        class_name = bracketize(g_type_name(gtype));
+#else
+    class_name = bracketize(g_type_name(gtype));
+#endif
+    return class_name;
 }
 
 bool
