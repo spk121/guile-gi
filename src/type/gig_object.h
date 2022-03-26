@@ -20,7 +20,8 @@
 #include <girepository.h>
 #include "../core.h"
 
-SCM gig_property_define(const char *type_name, const char *name, const char *namespace);
+SCM gig_property_define(const char *type_name, const char *long_name, const char *short_name,
+                        const char *symbol);
 GIG_API void gig_init_object(void);
 
 #endif

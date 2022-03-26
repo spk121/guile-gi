@@ -544,34 +544,31 @@ static SCM sym_value;
 static SCM do_define_property(const char *, SCM, SCM, SCM);
 
 SCM
-gig_property_define(const char *gtype_name, const char *name, const char *_namespace)
+gig_property_define(const char *gtype_name, const char *long_name, const char *short_name,
+                    const char *symbol)
 {
     GParamSpec *prop = NULL;
     SCM s_prop, def;
     SCM defs = SCM_EOL;
     GType type = g_type_from_name(gtype_name);
 
-    char *long_name;
-
     SCM self_type = gig_type_get_scheme_type(type);
 
     scm_dynwind_begin(0);
-    long_name = scm_dynfree(concatenate3(_namespace, ":", name));
-    long_name = scm_dynfree(make_scm_name(long_name));
 
     if (G_TYPE_IS_CLASSED(type)) {
         GObjectClass *_class = g_type_class_ref(type);
         scm_dynwind_unwind_handler(g_type_class_unref, _class, SCM_F_WIND_EXPLICITLY);
-        prop = g_object_class_find_property(_class, name);
+        prop = g_object_class_find_property(_class, symbol);
     }
     else if (G_TYPE_IS_INTERFACE(type)) {
         GTypeInterface *iface = g_type_default_interface_ref(type);
         scm_dynwind_unwind_handler(g_type_default_interface_unref, iface, SCM_F_WIND_EXPLICITLY);
-        prop = g_object_interface_find_property(iface, name);
+        prop = g_object_interface_find_property(iface, symbol);
     }
     else
         gig_critical_load("%s is neither class nor interface, but we define properties, wtf?",
-                          g_type_name(type));
+                          gtype_name);
     if (prop != NULL) {
         GType prop_type = G_PARAM_SPEC_TYPE(prop);
         if (!gig_type_is_registered(prop_type))
@@ -582,11 +579,11 @@ gig_property_define(const char *gtype_name, const char *name, const char *_names
         def = do_define_property(long_name, s_prop, self_type, top_type);
         if (!SCM_UNBNDP(def))
             defs = scm_cons(def, defs);
-        gig_debug_load("%s - bound to property %s.%s", long_name, g_type_name(type), name);
-        def = do_define_property(name, s_prop, self_type, top_type);
+        gig_debug_load("%s - bound to property %s.%s", long_name, gtype_name, symbol);
+        def = do_define_property(short_name, s_prop, self_type, top_type);
         if (!SCM_UNBNDP(def))
             defs = scm_cons(def, defs);
-        gig_debug_load("%s - shorthand for %s", name, long_name);
+        gig_debug_load("%s - shorthand for %s", short_name, long_name);
     }
     else
         gig_warning_load("Missing property %s", long_name);
