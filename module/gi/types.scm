@@ -25,8 +25,7 @@
   #:use-module (gi oop)
 
   #:re-export (<GBoxed> <GEnum> <GFlags>)
-  #:export (<GIBaseInfo>
-            <GObject> <GInterface> <GParam> <GVariant>
+  #:export (<GObject> <GInterface> <GParam> <GVariant>
             <GValue> transform
             <GClosure> procedure->closure
             enum->number enum->symbol number->enum symbol->enum
@@ -206,9 +205,6 @@ scheme class only maps to a single GType."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Core types that require GBoxed be ready first
-
-(define <GIBaseInfo> ($make-type-with-gtype GI_TYPE_BASE_INFO '()))
-(type-associate GI_TYPE_BASE_INFO <GIBaseInfo>)
 
 (define <GValue> ($make-type-with-gtype G_TYPE_VALUE `(,<applicable-struct-with-setter>) SIZEOF_GVALUE))
 (type-associate G_TYPE_VALUE <GValue>)

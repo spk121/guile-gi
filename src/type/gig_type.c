@@ -1197,7 +1197,6 @@ gig_init_types_once(void)
     scm_c_define("G_TYPE_VALUE", scm_from_size_t(G_TYPE_VALUE));
     scm_c_define("G_TYPE_VARIANT", scm_from_size_t(G_TYPE_VARIANT));
 
-    scm_c_define("GI_TYPE_BASE_INFO", scm_from_size_t(g_base_info_gtype_get_type()));
     scm_c_define("G_TYPE_FLAG_ABSTRACT", scm_from_int(G_TYPE_FLAG_ABSTRACT));
     scm_c_define("SIZEOF_GVALUE", scm_from_size_t(sizeof(GValue)));
 

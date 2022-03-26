@@ -22,9 +22,11 @@
   #:use-module (gi types)
   #:use-module (gi core-generics)
   #:re-export (load)
-  #:export (require
+  #:export (<baseinfo>
+            require
             infos info
             load-by-name typelib->module
+
 
             get-search-path prepend-search-path!
             get-dependencies set-il-output-port
@@ -35,10 +37,10 @@
 (eval-when (expand load eval)
   (load-extension "libguile-gi" "gig_init_repository"))
 
-(define-method (load (info <GIBaseInfo>))
+(define-method (load (info <baseinfo>))
   (%load-info info LOAD_EVERYTHING))
 
-(define-method (load (info <GIBaseInfo>) flags)
+(define-method (load (info <baseinfo>) flags)
   (%load-info info flags))
 
 (define* (load-by-name lib name #:optional (flags LOAD_EVERYTHING))

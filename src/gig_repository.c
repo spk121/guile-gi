@@ -30,9 +30,11 @@ static void untyped_enum_conversions_define(GIRegisteredTypeInfo *info, SCM *def
 static void untyped_flag_conversions_define(GIRegisteredTypeInfo *info, SCM *defs, SCM *ils);
 static void enum_conversions_define(GIRegisteredTypeInfo *info, SCM *defs, SCM *ils);
 static void flag_conversions_define(GIRegisteredTypeInfo *info, SCM *defs, SCM *ils);
+static SCM make_baseinfo_fo(GIBaseInfo *info);
 
 static SCM il_output_port = SCM_UNDEFINED;
 static SCM pretty_print_func = SCM_UNDEFINED;
+static SCM baseinfo_fo_type = SCM_UNDEFINED;
 
 static SCM
 set_il_output_port(SCM s_port)
@@ -142,9 +144,7 @@ infos(SCM lib)
             g_base_info_unref(info);
             continue;
         }
-        infos =
-            scm_cons(gig_type_transfer_object(GI_TYPE_BASE_INFO, info, GIG_TRANSFER_EVERYTHING),
-                     infos);
+        infos = scm_cons(make_baseinfo_fo(info), infos);
     }
     scm_dynwind_end();
 
@@ -572,7 +572,7 @@ load(SCM info, SCM flags)
     else
         load_flags = scm_to_uint(flags);
 
-    GIBaseInfo *base_info = (GIBaseInfo *)gig_type_peek_object(info);
+    GIBaseInfo *base_info = (GIBaseInfo *)SCM_SMOB_DATA(info);
 
     return load_info(base_info, load_flags);
 }
@@ -596,7 +596,7 @@ info(SCM lib, SCM name)
                        scm_list_2(name, lib));
     scm_dynwind_end();
 
-    return gig_type_transfer_object(GI_TYPE_BASE_INFO, info, GIG_TRANSFER_EVERYTHING);
+    return make_baseinfo_fo(info);
 }
 
 static SCM
@@ -652,29 +652,6 @@ get_dependencies(SCM namespace)
     }
     free(_dependencies);
     return scm_reverse_x(dependencies, SCM_EOL);
-}
-
-void
-gig_init_repository()
-{
-    pretty_print_func = scm_c_public_ref("ice-9 pretty-print", "pretty-print");
-
-    scm_c_define_gsubr("require", 1, 1, 0, require);
-    scm_c_define_gsubr("infos", 1, 0, 0, infos);
-    scm_c_define_gsubr("info", 2, 0, 0, info);
-    scm_c_define_gsubr("%load-info", 1, 1, 0, load);
-    scm_c_define_gsubr("get-search-path", 0, 0, 0, get_search_path);
-    scm_c_define_gsubr("prepend-search-path!", 1, 0, 0, prepend_search_path);
-    scm_c_define_gsubr("get-dependencies", 1, 0, 0, get_dependencies);
-    scm_c_define_gsubr("set-il-output-port", 1, 0, 0, set_il_output_port);
-
-#define D(x) scm_permanent_object(scm_c_define(#x, scm_from_uint(x)))
-
-    D(LOAD_INFO_ONLY);
-    D(LOAD_METHODS);
-    D(LOAD_PROPERTIES);
-    D(LOAD_SIGNALS);
-    D(LOAD_EVERYTHING);
 }
 
 static void
@@ -888,4 +865,46 @@ flag_conversions_define(GIRegisteredTypeInfo *info, SCM *defs, SCM *ils)
     SCM def = scm_apply(gig_il_flag_conversions_func, scm_cdr(il), SCM_EOL);
     *defs = scm_append2(*defs, def);
     *ils = scm_append2(*ils, il);
+}
+
+static SCM
+make_baseinfo_fo(GIBaseInfo *info)
+{
+    g_base_info_ref(info);
+    return scm_make_foreign_object_1(baseinfo_fo_type, info);
+}
+
+static void
+gc_free_baseinfo(SCM x)
+{
+    GIBaseInfo *info = scm_foreign_object_ref(x, 0);
+    g_base_info_unref(info);
+}
+
+void
+gig_init_repository()
+{
+    pretty_print_func = scm_c_public_ref("ice-9 pretty-print", "pretty-print");
+
+    baseinfo_fo_type = scm_make_foreign_object_type(scm_from_utf8_symbol("baseinfo"),
+                                                    scm_list_1(scm_from_utf8_symbol("ptr")),
+                                                    gc_free_baseinfo);
+    scm_c_define("<baseinfo>", baseinfo_fo_type);
+
+    scm_c_define_gsubr("require", 1, 1, 0, require);
+    scm_c_define_gsubr("infos", 1, 0, 0, infos);
+    scm_c_define_gsubr("info", 2, 0, 0, info);
+    scm_c_define_gsubr("%load-info", 1, 1, 0, load);
+    scm_c_define_gsubr("get-search-path", 0, 0, 0, get_search_path);
+    scm_c_define_gsubr("prepend-search-path!", 1, 0, 0, prepend_search_path);
+    scm_c_define_gsubr("get-dependencies", 1, 0, 0, get_dependencies);
+    scm_c_define_gsubr("set-il-output-port", 1, 0, 0, set_il_output_port);
+
+#define D(x) scm_permanent_object(scm_c_define(#x, scm_from_uint(x)))
+
+    D(LOAD_INFO_ONLY);
+    D(LOAD_METHODS);
+    D(LOAD_PROPERTIES);
+    D(LOAD_SIGNALS);
+    D(LOAD_EVERYTHING);
 }

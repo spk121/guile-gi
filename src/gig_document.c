@@ -244,7 +244,7 @@ do_document(GIBaseInfo *info, const char *_namespace)
 static SCM
 _document(SCM info)
 {
-    GIBaseInfo *real_info = (GIBaseInfo *)gig_type_peek_object(info);
+    GIBaseInfo *real_info = (GIBaseInfo *)scm_foreign_object_ref(info, 0);
     do_document(real_info, NULL);
     return SCM_UNSPECIFIED;
 }
