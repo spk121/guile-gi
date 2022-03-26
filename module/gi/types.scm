@@ -210,8 +210,7 @@ scheme class only maps to a single GType."
 (define <GIBaseInfo> ($make-type-with-gtype GI_TYPE_BASE_INFO '()))
 (type-associate GI_TYPE_BASE_INFO <GIBaseInfo>)
 
-(define <GValue> ($make-type-with-gtype G_TYPE_VALUE `(,<applicable-struct-with-setter>)))
-(class-slot-set! <GValue> 'size SIZEOF_GVALUE)
+(define <GValue> ($make-type-with-gtype G_TYPE_VALUE `(,<applicable-struct-with-setter>) SIZEOF_GVALUE))
 (type-associate G_TYPE_VALUE <GValue>)
 
 (define <GClosure> ($make-type-with-gtype G_TYPE_CLOSURE `(,<applicable-struct>)))

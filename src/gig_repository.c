@@ -22,7 +22,7 @@
 
 static SCM get_shared_library_list(const char *lib);
 static void constant_define(GIConstantInfo *info, SCM *defs, SCM *ils);
-static void type_define(GType gtype, SCM *defs, SCM *ils);
+static void type_define(GType gtype, size_t size, SCM *defs, SCM *ils);
 static void property_define(GIBaseInfo *info, SCM *defs, SCM *ils);
 static void untyped_flags_define(GIRegisteredTypeInfo *info, SCM *defs, SCM *ils);
 static void untyped_enum_define(GIRegisteredTypeInfo *info, SCM *defs, SCM *ils);
@@ -392,7 +392,12 @@ load_info(GIBaseInfo *info, LoadFlags flags)
                            g_base_info_get_name(info));
             break;
         }
-        type_define(gtype, &defs, &ils);
+        size_t size = 0;
+        if (GI_IS_STRUCT_INFO(info))
+            size = g_struct_info_get_size((GIStructInfo *) info);
+        if (GI_IS_UNION_INFO(info))
+            size = g_union_info_get_size((GIStructInfo *) info);
+        type_define(gtype, size, &defs, &ils);
         goto recursion;
     }
     case GI_INFO_TYPE_STRUCT:
@@ -463,8 +468,14 @@ load_info(GIBaseInfo *info, LoadFlags flags)
                 }
             }
             free(interfaces);
-            if (interface_ok)
-                type_define(gtype, &defs, &ils);
+            if (interface_ok) {
+                size_t size = 0;
+                if (t == GI_INFO_TYPE_STRUCT)
+                    size = g_struct_info_get_size((GIStructInfo *) info);
+                if (t == GI_INFO_TYPE_UNION)
+                    size = g_union_info_get_size((GIStructInfo *) info);
+                type_define(gtype, size, &defs, &ils);
+            }
         }
         goto recursion;
     }
@@ -483,7 +494,7 @@ load_info(GIBaseInfo *info, LoadFlags flags)
             }
         }
         else {
-            type_define(gtype, &defs, &ils);
+            type_define(gtype, 0, &defs, &ils);
             if (t == GI_INFO_TYPE_ENUM)
                 enum_conversions_define(info, &defs, &ils);
             else
@@ -743,14 +754,18 @@ constant_define(GIConstantInfo *info, SCM *defs, SCM *ils)
 }
 
 static void
-type_define(GType gtype, SCM *defs, SCM *ils)
+type_define(GType gtype, size_t size, SCM *defs, SCM *ils)
 {
     char *type_class_name = gig_type_class_name_from_gtype(gtype);
     SCM s_type_class_name = scm_from_utf8_symbol(type_class_name);
     free(type_class_name);
     SCM s_gtype_name = scm_from_utf8_string(g_type_name(gtype));
-    SCM il = scm_list_3(scm_from_utf8_symbol("^type"),
-                        s_type_class_name, s_gtype_name);
+    SCM il;
+    if (size)
+        il = scm_list_4(scm_from_utf8_symbol("^type"),
+                        s_type_class_name, s_gtype_name, scm_from_size_t(size));
+    else
+        il = scm_list_3(scm_from_utf8_symbol("^type"), s_type_class_name, s_gtype_name);
     SCM def = scm_apply(gig_il_type_func, scm_cdr(il), SCM_EOL);
 
     *defs = scm_append2(*defs, def);

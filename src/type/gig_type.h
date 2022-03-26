@@ -41,7 +41,7 @@ extern SCM gig_il_untyped_enum_func;
 bool gig_type_is_registered(GType gtype);
 
 SCM gig_type_define(GType gtype);
-SCM gig_il_type(SCM s_name, SCM s_gtype_name);
+SCM gig_il_type(SCM s_name, SCM s_gtype_name, SCM boxed_size);
 SCM gig_il_untyped_flags(SCM s_name, SCM s_qname, SCM alist);
 SCM gig_il_untyped_enum(SCM s_name, SCM s_qname, SCM alist);
 

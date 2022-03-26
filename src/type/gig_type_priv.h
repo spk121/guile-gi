@@ -29,7 +29,8 @@ SCM gig_value_type(void);
 SCM gig_closure_type(void);
 
 void gig_type_register(GType gtype, SCM stype);
-SCM gig_type_define_full(const char *type_class_name, GType gtype, SCM extra_supers);
+SCM gig_type_define_full(const char *type_class_name, GType gtype, SCM extra_supers,
+                         size_t boxed_size);
 
 GType gig_type_get_gtype_from_obj(SCM x);
 SCM gig_type_get_scheme_type_with_info(GIRegisteredTypeInfo *info);
