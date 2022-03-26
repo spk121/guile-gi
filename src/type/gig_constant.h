@@ -17,8 +17,9 @@
 #define GIG_CONSTANT_H
 
 #include <libguile.h>
+#include "../core.h"
 
-extern SCM gig_il_constant_func;
+GIG_API extern SCM gig_il_constant_func;
 
 SCM gig_il_constant(SCM s_name, SCM s_value);
 void gig_constant_init(void);

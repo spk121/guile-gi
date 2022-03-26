@@ -17,8 +17,8 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <girepository.h>
 #include <libguile.h>
+#include <glib.h>
 #include "../core.h"
 #include "../type.h"
 #include "gig_argument.h"
@@ -393,7 +393,7 @@ scm_to_c_real(S2C_ARG_DECL)
         scm_wrong_type_arg_msg(subr, argpos, object, "real");
 
     if (t == GIG_ARG_TYPE_FLOAT) {
-        gdouble dtmp = scm_to_double(object);
+        double dtmp = scm_to_double(object);
         if (dtmp > FLT_MAX || dtmp < -FLT_MAX)
             scm_out_of_range(subr, object);
         arg->v_float = (float)dtmp;

@@ -17,7 +17,7 @@
 #define GIG_TYPE_PRIV_H
 
 #include <stdbool.h>
-#include <girepository.h>
+#include <glib.h>
 #include "../core.h"
 #include "gig_type.h"
 
@@ -33,7 +33,6 @@ SCM gig_type_define_full(const char *type_class_name, GType gtype, SCM extra_sup
                          size_t boxed_size);
 
 GType gig_type_get_gtype_from_obj(SCM x);
-SCM gig_type_get_scheme_type_with_info(GIRegisteredTypeInfo *info);
 SCM gig_type_get_scheme_type_with_qname(const char *qname);
 
 bool gig_type_check_object(SCM obj);

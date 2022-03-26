@@ -17,10 +17,9 @@
 #define GIG_OBJECT_H
 
 #include <libguile.h>
-#include <girepository.h>
 #include "../core.h"
 
-extern SCM gig_il_property_func;
+GIG_API extern SCM gig_il_property_func;
 
 SCM gig_il_property(SCM s_gtype_name, SCM s_long_name, SCM s_short_name, SCM s_symbol);
 

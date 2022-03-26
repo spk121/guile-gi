@@ -17,8 +17,9 @@
 #define GIG_TYPE_H
 
 #include <stdbool.h>
-#include <girepository.h>
 #include "../core.h"
+#include <glib.h>
+#include <glib-object.h>
 
 typedef enum GigTransfer_
 {
@@ -34,9 +35,9 @@ GType gig_type_get_c_array_type(void);
 typedef void *(*GigTypeRefFunction)(void *);
 typedef void (*GigTypeUnrefFunction)(void *);
 
-extern SCM gig_il_type_func;
-extern SCM gig_il_untyped_flags_func;
-extern SCM gig_il_untyped_enum_func;
+GIG_API extern SCM gig_il_type_func;
+GIG_API extern SCM gig_il_untyped_flags_func;
+GIG_API extern SCM gig_il_untyped_enum_func;
 
 bool gig_type_is_registered(GType gtype);
 
@@ -47,8 +48,6 @@ SCM gig_il_untyped_enum(SCM s_name, SCM s_qname, SCM alist);
 
 void gig_type_define_fundamental(GType type, SCM extra_supers,
                                  GigTypeRefFunction ref, GigTypeUnrefFunction unref);
-SCM gig_type_define_with_info(GIRegisteredTypeInfo *info, SCM slots);
-char *gig_type_get_qualified_name(GIRegisteredTypeInfo *info);
 SCM gig_type_get_scheme_type(GType gtype);
 void *gig_type_peek_object(SCM obj);
 bool gig_type_check_typed_object(SCM obj, SCM expected_type);

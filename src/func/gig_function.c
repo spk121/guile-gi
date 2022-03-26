@@ -75,22 +75,6 @@ static SCM proc4function(GigArgMap *amap, const char *name, SCM self_type,
 static SCM proc4signal(GigArgMap *amap, const char *name, const char *symbol, SCM self_type,
                        int *req, int *opt, SCM *formals, SCM *specs);
 
-// Returns a list of GTypes that used by this function call
-GType *
-gig_function_get_arg_gtypes(GICallableInfo *info, size_t *len)
-{
-    GigArgMap *amap;
-    GType *types;
-
-    amap = gig_amap_new(g_base_info_get_name(info), info);
-    *len = 0;
-    if (amap == NULL)
-        return NULL;
-    types = gig_amap_get_gtype_list(amap, len);
-    gig_amap_free(amap);
-    return types;
-}
-
 SCM
 gig_il_function(SCM s_namespace_, SCM s_gtype_name, SCM s_long_name,
                 SCM s_short_name, SCM s_symbol_name, SCM s_amap)

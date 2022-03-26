@@ -36,7 +36,7 @@
             ->docbook))
 
 (eval-when (expand load eval)
-  (load-extension "libguile-gi" "gig_init_document"))
+  (load-extension "libguile-giparse" "gig_init_document"))
 
 ;;; XML Parsing
 

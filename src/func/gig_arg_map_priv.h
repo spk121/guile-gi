@@ -18,11 +18,8 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <girepository.h>
 #include "gig_arg_map.h"
 #include "gig_data_type.h"
-
-void gig_amap_dump(const char *name, const GigArgMap *am);
 
 bool gig_amap_output_child_c(GigArgMap *am, int c_output_pos,
                              int *cinvoke_output_array_size_index);

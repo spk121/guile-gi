@@ -16,7 +16,7 @@
 #ifndef GIG_FUNCTION_H
 #define GIG_FUNCTION_H
 
-#include <girepository.h>
+#include <glib-object.h>
 #include <libguile.h>
 #include "gig_arg_map.h"
 #include "gig_function.h"

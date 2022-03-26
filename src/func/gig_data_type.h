@@ -16,7 +16,6 @@
 #ifndef GIG_DATA_TYPE_H
 #define GIG_DATA_TYPE_H
 
-#include <girepository.h>
 #include "../type.h"
 
 #define GIG_ARRAY_SIZE_UNKNOWN ((size_t)-1)
@@ -191,8 +190,7 @@ struct GigTypeMeta_
 const char *gig_arg_type_name(GigArgType type);
 GigArgType gig_arg_type_from_name(const char *name);
 
-void gig_type_meta_init_from_arg_info(GigTypeMeta *type, GIArgInfo *ai);
-void gig_type_meta_init_from_callable_info(GigTypeMeta *type, GICallableInfo *ci);
+void gig_meta_add_params(GigTypeMeta *meta, int n);
 SCM gig_type_meta_to_il(GigTypeMeta *meta);
 void gig_type_meta_from_il(SCM il, GigTypeMeta *meta);
 

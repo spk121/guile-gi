@@ -16,7 +16,6 @@
 #ifndef GIG_FLAG_PRIV_H
 #define GIG_FLAG_PRIV_H
 
-#include <girepository.h>
 #include <libguile.h>
 #include "gig_flag.h"
 

@@ -15,8 +15,8 @@
 #ifndef GIG_BOXED_H
 #define GIG_BOXED_H
 
-#include <girepository.h>
 #include <ffi.h>
+#include <glib-object.h>
 #include "../core.h"
 
 typedef struct _GigBoxedFuncs

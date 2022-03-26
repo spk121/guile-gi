@@ -75,7 +75,7 @@ do_document(GIBaseInfo *info, const char *_namespace)
         else
             kind = "function";
 
-        arg_map = gig_amap_new(NULL, info);
+        arg_map = callable_info_make_amap(info, NULL);
         if (arg_map)
             scm_dynwind_unwind_handler((scm_t_pointer_finalizer) gig_amap_free,
                                        arg_map, SCM_F_WIND_EXPLICITLY);
@@ -84,7 +84,7 @@ do_document(GIBaseInfo *info, const char *_namespace)
 
 
         scm_printf(SCM_UNDEFINED, "<%s name=\"%s\">", kind, g_base_info_get_name(info));
-        scheme_name = scm_dynfree(gig_callable_info_make_name(info, NULL));
+        scheme_name = scm_dynfree(callable_info_make_name(info, NULL));
 
         if (g_callable_info_is_method(info))
             scm_printf(SCM_UNDEFINED, "<scheme><procedure name=\"%s\" long-name=\"%s:%s\">",

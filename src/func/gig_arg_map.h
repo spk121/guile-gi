@@ -18,7 +18,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <girepository.h>
 #include "gig_data_type.h"
 
 // This module gathers information to help convert between 3 paradigms
@@ -120,8 +119,9 @@ struct _GigArgMap
     GigArgMapEntry return_val;
 };
 
-GigArgMap *gig_amap_new(const char *name, GICallableInfo *function_info);
-void gig_amap_free(GigArgMap *am);
+GigArgMap *gig_amap_allocate(size_t n);
+void gig_amap_dump(const char *name, const GigArgMap *am);
+GIG_API void gig_amap_free(GigArgMap *am);
 GigArgMapEntry *gig_amap_get_input_entry_by_s(GigArgMap *am, int spos);
 GigArgMapEntry *gig_amap_get_output_entry_by_c(GigArgMap *am, int cpos);
 void gig_amap_s_input_count(const GigArgMap *amap, int *required, int *optional);

@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 #include <libguile.h>
-#include <girepository.h>
+#include <glib-object.h>
 #include "../core.h"
 
 SCM gig_value_c2g(GValue *val);

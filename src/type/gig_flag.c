@@ -65,27 +65,11 @@ gig_uint_to_flags(unsigned v, GType gtype)
 }
 
 SCM
-gig_int_to_enum_with_info(int v, GIEnumInfo *info)
-{
-    SCM type = gig_type_get_scheme_type_with_info(info);
-    SCM val = scm_from_int(v);
-    return scm_call_2(number_to_enum, type, val);
-}
-
-SCM
 gig_int_to_enum_with_qname(int v, const char *qname)
 {
     SCM type = gig_type_get_scheme_type_with_qname(qname);
     SCM val = scm_from_int(v);
     return scm_call_2(number_to_enum, type, val);
-}
-
-SCM
-gig_uint_to_flags_with_info(unsigned v, GIEnumInfo *info)
-{
-    SCM type = gig_type_get_scheme_type_with_info(info);
-    SCM val = scm_from_uint(v);
-    return scm_call_2(number_to_flags, type, val);
 }
 
 SCM

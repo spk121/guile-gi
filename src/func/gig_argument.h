@@ -16,7 +16,6 @@
 #ifndef GIG_ARGUMENT_H
 #define GIG_ARGUMENT_H
 
-#include <girepository.h>
 #include <libguile.h>
 #include "../core.h"
 #include "gig_arg_map.h"

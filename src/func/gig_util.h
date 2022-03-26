@@ -16,8 +16,4 @@
 #ifndef GIG_UTIL_PUB_H
 #define GIG_UTIL_PUB_H
 
-#include <girepository.h>
-
-char *gig_callable_info_make_name(GICallableInfo *info, const char *prefix);
-
 #endif

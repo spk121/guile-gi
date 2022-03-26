@@ -16,8 +16,8 @@
 #ifndef GIG_SIGNAL_PRIV_H
 #define GIG_SIGNAL_PRIV_H
 
-#include <girepository.h>
 #include <libguile.h>
+#include <glib-object.h>
 #include "gig_signal.h"
 
 typedef struct GigSignalSpec_

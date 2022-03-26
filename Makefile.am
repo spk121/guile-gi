@@ -100,7 +100,7 @@ examples/resources/test.gresource: AM_GRESOURCE_FLAGS = --sourcedir=$(abs_buildd
 
 guileextension_LTLIBRARIES = libguile-gi.la libguile-giparse.la
 
-CFLAG_VISIBILITY = -fvisibility=hidden
+# CFLAG_VISIBILITY = -fvisibility=hidden
 
 #################
 #  libguile-gi  #
@@ -128,8 +128,6 @@ libguile_gi_la_c_sources = \
   src/func/gig_function.c \
   src/type/gig_constant.c \
   src/type/gig_flag.c \
-  src/gig_repository.c \
-  src/gig_document.c \
   src/type/gig_type.c \
   src/type/gig_boxed.c \
   src/func/gig_util.c \
@@ -169,7 +167,6 @@ libguile_gi_la_internal_headers = \
   src/type/gig_constant.h \
   src/type/gig_flag.h \
   src/type/gig_flag_priv.h \
-  src/gig_repository.h \
   src/type/gig_type.h \
   src/type/gig_type_priv.h \
   src/type/gig_boxed.h \
@@ -221,7 +218,6 @@ endif
 
 libguile_gi_la_LIBADD = \
  $(GUILE_LIBS) \
- $(GOBJECT_INTROSPECTION_LIBS) \
  $(GLIB_LIBS) \
  $(GOBJECT_LIBS) \
  $(FFI_LIBS)
@@ -231,81 +227,15 @@ libguile_gi_la_LIBADD = \
 ######################
 
 libguile_giparse_la_c_sources = \
-  src/core/keyval.c \
-  src/core/logging.c \
-  src/core/mem.c \
-  src/core/oop.c \
-  src/core/scm.c \
-  src/core/slist.c \
-  src/core/string.c \
-  src/core/strval.c \
-  src/func/gig_args_store.c \
-  src/func/gig_argument.c \
-  src/type/gig_closure.c \
-  src/func/gig_data_type.c \
-  src/type/gig_object.c \
-  src/type/gig_value.c \
-  src/type/gig_signal.c \
-  src/gig.c \
-  src/func/gig_arg_map.c \
-  src/func/gig_callback.c \
-  src/func/gig_function.c \
-  src/type/gig_constant.c \
-  src/type/gig_flag.c \
   src/gig_repository.c \
-  src/gig_document.c \
-  src/type/gig_type.c \
-  src/type/gig_boxed.c \
-  src/func/gig_util.c \
-  src/gig_logging.c \
-  src/func/gig_lib.c \
-  src/func/gig_invoker.c
+  src/gig_document.c
 
 libguile_giparse_la_internal_headers = \
-  src/core.h \
-  src/core/keyval.h \
-  src/core/logging.h \
-  src/core/mem.h \
-  src/core/oop.h \
-  src/core/scm.h \
-  src/core/slist.h \
-  src/core/string.h \
-  src/core/strval.h \
-  src/core/visibility.h \
-  src/type.h \
-  src/func.h \
-  src/func/gig_args_store.h \
-  src/func/gig_argument.h \
-  src/type/gig_closure.h \
-  src/func/gig_data_type.h \
-  src/type/gig_object.h \
-  src/type/gig_object_priv.h \
-  src/type/gig_value.h \
-  src/type/gig_signal.h \
-  src/type/gig_signal_priv.h \
-  src/func/gig_arg_map.h \
-  src/func/gig_arg_map_priv.h \
-  src/func/gig_callback.h \
-  src/func/gig_callback_priv.h \
-  src/func/gig_function.h \
-  src/func/gig_function_priv.h \
-  src/type/gig_constant_priv.h \
-  src/type/gig_constant.h \
-  src/type/gig_flag.h \
-  src/type/gig_flag_priv.h \
-  src/gig_repository.h \
-  src/type/gig_type.h \
-  src/type/gig_type_priv.h \
-  src/type/gig_boxed.h \
-  src/func/gig_util.h \
-  src/func/gig_util_priv.h \
-  src/gig_logging.h \
-  src/func/gig_lib.h \
-  src/func/gig_invoker.h
+  src/gig_repository.h
 
 libguile_giparse_la_SOURCES = \
-  $(libguile_gi_la_internal_headers) \
-  $(libguile_gi_la_c_sources)
+  $(libguile_giparse_la_internal_headers) \
+  $(libguile_giparse_la_c_sources)
 
 libguile_giparse_la_CPPFLAGS = \
   -DG_LOG_DOMAIN=\"GuileGI\" \
@@ -519,12 +449,14 @@ EVERYTHING_TESTS = \
 
 TESTS_LTDLOPEN = \
   -dlopen ${top_builddir}/libguile-gi.la \
+  -dlopen ${top_builddir}/libguile-giparse.la \
   -dlopen ${top_builddir}/test/libeverything-1.0.la \
   -dlopen ${top_builddir}/test/libmarshall-1.0.la \
   -dlopen ${top_builddir}/test/libextra-1.0.la
 else
 EVERYTHING_TESTS =
-TESTS_LTDLOPEN = -dlopen ${top_builddir}/libguile-gi.la
+TESTS_LTDLOPEN = -dlopen ${top_builddir}/libguile-gi.la \
+  -dlopen ${top_builddir}/libguile-giparse.la
 endif
 
 TESTS = \

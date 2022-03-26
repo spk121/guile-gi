@@ -17,7 +17,6 @@
 #include <assert.h>
 #include <stdio.h>
 #include <libguile.h>
-#include <girepository.h>
 #include <ffi.h>
 #include "gig_type_priv.h"
 #include "gig_boxed.h"
@@ -90,7 +89,6 @@ static SCM sym_sort_key;
 
 static SCM make_type_with_gtype(const char *type_class_name, GType gtype, SCM extra_supers,
                                 size_t boxed_size);
-static SCM make_type_with_info(GIRegisteredTypeInfo *info, SCM slots);
 static SCM gig_type_associate(GType gtype, SCM stype);
 static void make_untyped_flag_enum(SCM s_class_name, SCM s_qname, SCM flags, bool is_flags);
 
@@ -243,7 +241,6 @@ make_untyped_flag_enum(SCM s_class_name, SCM s_qname, SCM flags, bool is_flags)
 
     int n_values = scm_c_length(flags);
     SCM obarray;
-    int i;
     SCM dsupers;
 
     if (is_flags)
@@ -253,7 +250,6 @@ make_untyped_flag_enum(SCM s_class_name, SCM s_qname, SCM flags, bool is_flags)
     cls = scm_make_class_with_name(dsupers, SCM_EOL, s_class_name);
     obarray = scm_make_hash_table(scm_from_int(n_values));
 
-    i = 0;
     SCM cur;
     cur = flags;
     while (!scm_is_equal(cur, SCM_EOL)) {
@@ -275,33 +271,6 @@ make_untyped_flag_enum(SCM s_class_name, SCM s_qname, SCM flags, bool is_flags)
     scm_c_define(class_name, cls);
     scm_c_export(class_name, NULL);
     free(class_name);
-}
-
-
-SCM
-gig_type_define_with_info(GIRegisteredTypeInfo *info, SCM slots)
-{
-    SCM defs = SCM_EOL;
-    if (g_registered_type_info_get_g_type(info) != G_TYPE_NONE) {
-        gig_critical("gig_type_define_with_info used when GType was available, "
-                     "use gig_type_define or gig_type_define_full instead.");
-        return SCM_EOL;
-    }
-
-    SCM existing = gig_type_get_scheme_type_with_info(info);
-    if (!scm_is_unknown_class(existing))
-        return scm_cons(scm_class_name(existing), defs);
-
-    SCM cls = make_type_with_info(info, slots);
-    char *name = scm_to_utf8_symbol(scm_class_name(cls));
-    char *_name = gig_type_get_qualified_name(info);
-    gig_debug_load("%s - creating new type", name);
-    SCM info_hash = scm_variable_ref(info_hash_var);
-    scm_hashq_set_x(info_hash, scm_from_utf8_symbol(_name), cls);
-    free(_name);
-    free(name);
-    defs = scm_cons(scm_class_name(cls), defs);
-    return defs;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -430,76 +399,6 @@ make_type_with_gtype(const char *_type_class_name, GType gtype, SCM extra_supers
     return new_type;
 }
 
-static SCM
-make_type_with_info(GIRegisteredTypeInfo *info, SCM slots)
-{
-    SCM cls;
-    char *_name = gig_type_get_qualified_name(info);
-    char *name = bracketize(_name);
-    SCM class_name = scm_from_utf8_symbol(name);
-    GIInfoType t = g_base_info_get_type(info);
-
-    switch (t) {
-    case GI_INFO_TYPE_ENUM:
-    case GI_INFO_TYPE_FLAGS:
-    {
-        int n_values;
-        SCM obarray;
-        int i;
-        SCM dsupers;
-
-        if (t == GI_INFO_TYPE_ENUM)
-            dsupers = scm_list_1(gig_enum_type());
-        else
-            dsupers = scm_list_1(gig_flags_type());
-        n_values = g_enum_info_get_n_values(info);
-        cls = scm_make_class_with_name(dsupers, slots, class_name);
-        obarray = scm_make_hash_table(scm_from_int(n_values));
-
-        i = 0;
-        while (i < n_values) {
-            GIValueInfo *vi;
-            char *_key;
-            int64_t _val;
-            SCM key, val;
-
-            vi = g_enum_info_get_value(info, i);
-            _key = make_scm_name(g_base_info_get_name(vi));
-            key = scm_from_utf8_symbol(_key);
-            _val = g_value_info_get_value(vi);
-
-            switch (t) {
-            case GI_INFO_TYPE_ENUM:
-                gig_debug_load("%s - add enum %s %d", name, _key, _val);
-                val = scm_from_int(_val);
-                break;
-            case GI_INFO_TYPE_FLAGS:
-                gig_debug_load("%s - add flag %s %u", name, _key, _val);
-                val = scm_from_uint(_val);
-                break;
-            default:
-                assert_not_reached();
-            }
-            scm_hashq_set_x(obarray, key, val);
-
-            g_base_info_unref(vi);
-            free(_key);
-            i++;
-        }
-
-        scm_set_class_obarray_slot(cls, obarray);
-        break;
-    }
-    default:
-        cls = scm_make_class_with_name(SCM_EOL, slots, class_name);
-        break;
-    }
-
-    free(_name);
-    free(name);
-    return cls;
-}
-
 ////////////////////////////////////////////////////////////////
 // Helpers
 ////////////////////////////////////////////////////////////////
@@ -554,20 +453,6 @@ bool
 gig_type_check_object(SCM obj)
 {
     return SCM_IS_A_P(obj, fundamental_type);
-}
-
-char *
-gig_type_get_qualified_name(GIRegisteredTypeInfo *info)
-{
-    const char *_name = g_base_info_get_attribute(info, "c:type");
-    if (_name != NULL)
-        return xstrdup(_name);
-
-    const char *_namespace = g_base_info_get_namespace(info);
-    const char *prefix = g_irepository_get_c_prefix(NULL, _namespace);
-
-    // add initial % to ensure that the name is private
-    return concatenate3("%", prefix, g_base_info_get_name(info));
 }
 
 static SCM
@@ -656,18 +541,6 @@ gig_type_get_scheme_type(GType gtype)
             return scm_get_unknown_class();
         return _value;
     }
-}
-
-SCM
-gig_type_get_scheme_type_with_info(GIRegisteredTypeInfo *info)
-{
-    char *_name = gig_type_get_qualified_name(info);
-    SCM info_hash = scm_variable_ref(info_hash_var);
-    SCM value = scm_hashq_ref(info_hash, scm_from_utf8_symbol(_name), SCM_BOOL_F);
-    free(_name);
-    if (scm_is_false(value))
-        return scm_get_unknown_class();
-    return value;
 }
 
 SCM
@@ -1072,14 +945,15 @@ void
 gig_type_define_fundamental(GType type, SCM extra_supers,
                             GigTypeRefFunction ref, GigTypeUnrefFunction unref)
 {
-    GIBaseInfo *info;
-
     if (gig_type_is_registered(type)) {
         gig_warning("not redefining fundamental type %s", g_type_name(type));
         return;
     }
 
     assert(scm_is_true(scm_module_public_interface(scm_current_module())));
+
+#if 0
+    GIBaseInfo *info;
 
     info = g_irepository_find_by_gtype(NULL, type);
     if (info != NULL) {
@@ -1095,6 +969,7 @@ gig_type_define_fundamental(GType type, SCM extra_supers,
         }
         g_base_info_unref(info);
     }
+#endif
 
     scm_dynwind_begin(0);
     char *class_name = scm_dynfree(gig_type_class_name_from_gtype(type));

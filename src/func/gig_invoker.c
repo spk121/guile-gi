@@ -99,10 +99,7 @@ gig_invoke_func(void *address, GigArgMap *amap, const GigArgument *in_args, int 
     n_args = amap->len;
     if (amap->is_method) {
         if (n_in_args == 0) {
-            g_set_error(error,
-                        G_INVOKE_ERROR,
-                        G_INVOKE_ERROR_ARGUMENT_MISMATCH,
-                        "Too few \"in\" arguments (handling this)");
+            scm_misc_error("c-ffi-invoker", "too few \"in\" arguments", SCM_EOL);
         }
         n_invoke_args = n_args + 1;
         in_pos++;
@@ -126,10 +123,7 @@ gig_invoke_func(void *address, GigArgMap *amap, const GigArgument *in_args, int 
         if (amap->pdata[i].meta.is_in && !amap->pdata[i].meta.is_out) {
             atypes[i + offset] = arg_type_to_ffi_type(amap->pdata[i].meta.arg_type);
             if (in_pos >= n_in_args) {
-                g_set_error(error,
-                            G_INVOKE_ERROR,
-                            G_INVOKE_ERROR_ARGUMENT_MISMATCH,
-                            "Too few \"in\" arguments (handling in)");
+                scm_misc_error("c-ffi-invoker", "too few \"in\" arguments", SCM_EOL);
             }
 
             args[i + offset] = (void *)&in_args[in_pos];
@@ -138,10 +132,7 @@ gig_invoke_func(void *address, GigArgMap *amap, const GigArgument *in_args, int 
         else if (!amap->pdata[i].meta.is_in && amap->pdata[i].meta.is_out) {
             atypes[i + offset] = &ffi_type_pointer;
             if (out_pos >= n_out_args) {
-                g_set_error(error,
-                            G_INVOKE_ERROR,
-                            G_INVOKE_ERROR_ARGUMENT_MISMATCH,
-                            "Too few \"out\" arguments (handling out)");
+                scm_misc_error("c-ffi-invoker", "too few \"out\" arguments", SCM_EOL);
             }
 
             args[i + offset] = (void *)&out_args[out_pos];
@@ -150,17 +141,11 @@ gig_invoke_func(void *address, GigArgMap *amap, const GigArgument *in_args, int 
         else if (amap->pdata[i].meta.is_in && amap->pdata[i].meta.is_out) {
             atypes[i + offset] = &ffi_type_pointer;
             if (in_pos >= n_in_args) {
-                g_set_error(error,
-                            G_INVOKE_ERROR,
-                            G_INVOKE_ERROR_ARGUMENT_MISMATCH,
-                            "Too few \"in\" arguments (handling inout)");
+                scm_misc_error("c-ffi-invoker", "too few \"in\" arguments", SCM_EOL);
             }
 
             if (out_pos >= n_out_args) {
-                g_set_error(error,
-                            G_INVOKE_ERROR,
-                            G_INVOKE_ERROR_ARGUMENT_MISMATCH,
-                            "Too few \"out\" arguments (handling inout)");
+                scm_misc_error("c-ffi-invoker", "too few \"in\" arguments", SCM_EOL);
             }
             args[i + offset] = (void *)&in_args[in_pos];
             in_pos++;

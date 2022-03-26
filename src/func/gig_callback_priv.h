@@ -16,7 +16,6 @@
 #ifndef GIG_CALLBACK_H
 #define GIG_CALLBACK_H
 
-#include <girepository.h>
 #include <libguile.h>
 #include "gig_callback.h"
 #include "../core.h"

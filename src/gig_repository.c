@@ -32,6 +32,21 @@ static void enum_conversions_define(GIRegisteredTypeInfo *info, SCM *defs, SCM *
 static void flag_conversions_define(GIRegisteredTypeInfo *info, SCM *defs, SCM *ils);
 static SCM make_baseinfo_fo(GIBaseInfo *info);
 
+// utilities
+static void arg_map_compute_c_invoke_positions(GigArgMap *amap);
+static void arg_map_compute_s_call_positions(GigArgMap *amap);
+static void arg_map_determine_argument_presence(GigArgMap *amap, GICallableInfo *info);
+static char *base_info_get_qualified_name(GIRegisteredTypeInfo *info);
+static bool callable_info_is_destructive(GICallableInfo *info);
+static bool callable_info_is_predicate(GICallableInfo *info);
+GigArgMap *callable_info_make_amap(GICallableInfo *function_info, const char *name);
+static GigTransfer convert_transfer(GITransfer x);
+static void type_meta_add_child_params(GigTypeMeta *meta, GITypeInfo *type_info, int n);
+static void type_meta_init_from_basic_type_tag(GigTypeMeta *meta, GITypeTag tag);
+static void type_meta_init_from_callable_info(GigTypeMeta *meta, GICallableInfo *ci);
+
+
+
 static SCM il_output_port = SCM_UNDEFINED;
 static SCM pretty_print_func = SCM_UNDEFINED;
 static SCM baseinfo_fo_type = SCM_UNDEFINED;
@@ -221,20 +236,6 @@ gig_repository_nested_infos(GIBaseInfo *base,
     }
 }
 
-static char *
-g_registered_type_info_get_qualified_name(GIRegisteredTypeInfo *info)
-{
-    const char *_name = g_base_info_get_attribute(info, "c:type");
-    if (_name != NULL)
-        return xstrdup(_name);
-
-    const char *_namespace = g_base_info_get_namespace(info);
-    const char *prefix = g_irepository_get_c_prefix(NULL, _namespace);
-
-    // add initial % to ensure that the name is private
-    return concatenate3("%", prefix, g_base_info_get_name(info));
-}
-
 static SCM
 make_flag_enum_alist(GIRegisteredTypeInfo *info)
 {
@@ -304,10 +305,10 @@ load_info(GIBaseInfo *info, LoadFlags flags)
         const char *namespace_ = g_base_info_get_namespace(info);
         GigArgMap *amap;
         if (parent_name)
-            long_name = gig_callable_info_make_name(info, parent_name);
+            long_name = callable_info_make_name(info, parent_name);
         else
-            long_name = gig_callable_info_make_name(info, namespace_);
-        amap = gig_amap_new(long_name, info);
+            long_name = callable_info_make_name(info, namespace_);
+        amap = callable_info_make_amap(info, long_name);
         if (amap)
             types = gig_amap_get_gtype_list(amap, &len);
         else
@@ -339,7 +340,7 @@ load_info(GIBaseInfo *info, LoadFlags flags)
             char *short_name;
             const char *symbol_name;
 
-            short_name = gig_callable_info_make_name(info, NULL);
+            short_name = callable_info_make_name(info, NULL);
             if (amap != NULL) {
                 if (t == GI_INFO_TYPE_FUNCTION) {
                     symbol_name = g_function_info_get_symbol(info);
@@ -772,7 +773,7 @@ property_define(GIBaseInfo *info, SCM *defs, SCM *ils)
 static void
 untyped_flags_define(GIRegisteredTypeInfo *info, SCM *defs, SCM *ils)
 {
-    char *qname = gig_type_get_qualified_name(info);
+    char *qname = base_info_get_qualified_name(info);
     SCM s_qname = scm_from_utf8_symbol(qname);
     char *class_name = bracketize(qname);
     SCM s_class_name = scm_from_utf8_symbol(class_name);
@@ -790,7 +791,7 @@ untyped_flags_define(GIRegisteredTypeInfo *info, SCM *defs, SCM *ils)
 static void
 untyped_enum_define(GIRegisteredTypeInfo *info, SCM *defs, SCM *ils)
 {
-    char *qname = gig_type_get_qualified_name(info);
+    char *qname = base_info_get_qualified_name(info);
     SCM s_qname = scm_from_utf8_symbol(qname);
     char *class_name = bracketize(qname);
     SCM s_class_name = scm_from_utf8_symbol(class_name);
@@ -808,7 +809,7 @@ untyped_enum_define(GIRegisteredTypeInfo *info, SCM *defs, SCM *ils)
 static void
 untyped_enum_conversions_define(GIRegisteredTypeInfo *info, SCM *defs, SCM *ils)
 {
-    char *qname = gig_type_get_qualified_name(info);
+    char *qname = base_info_get_qualified_name(info);
     SCM s_qname = scm_from_utf8_symbol(qname);
     char *conversion_name = make_scm_name(g_base_info_get_name(info));
     SCM s_cname = scm_from_utf8_symbol(conversion_name);
@@ -824,7 +825,7 @@ untyped_enum_conversions_define(GIRegisteredTypeInfo *info, SCM *defs, SCM *ils)
 static void
 untyped_flag_conversions_define(GIRegisteredTypeInfo *info, SCM *defs, SCM *ils)
 {
-    char *qname = gig_type_get_qualified_name(info);
+    char *qname = base_info_get_qualified_name(info);
     SCM s_qname = scm_from_utf8_symbol(qname);
     char *conversion_name = make_scm_name(g_base_info_get_name(info));
     SCM s_cname = scm_from_utf8_symbol(conversion_name);
@@ -907,4 +908,684 @@ gig_init_repository()
     D(LOAD_PROPERTIES);
     D(LOAD_SIGNALS);
     D(LOAD_EVERYTHING);
+}
+
+static void
+gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
+{
+    GITypeTag tag = g_type_info_get_tag(type_info);
+    meta->is_ptr = g_type_info_is_pointer(type_info);
+
+    if (tag == GI_TYPE_TAG_VOID) {
+        if (meta->is_ptr)
+            meta->arg_type = GIG_ARG_TYPE_POINTER;
+        else
+            meta->arg_type = GIG_ARG_TYPE_VOID;
+    }
+    else if (tag == GI_TYPE_TAG_ARRAY) {
+        GIArrayType array_type = g_type_info_get_array_type(type_info);
+        type_meta_add_child_params(meta, type_info, 1);
+
+        switch (array_type) {
+        case GI_ARRAY_TYPE_C:
+        {
+            meta->arg_type = GIG_ARG_TYPE_ARRAY;
+            int length_arg = g_type_info_get_array_length(type_info);
+            int fixed_size = g_type_info_get_array_fixed_size(type_info);
+
+            if (length_arg != -1) {
+                meta->has_length_arg = true;
+                meta->length_arg = length_arg;
+            }
+            if (fixed_size != -1) {
+                meta->has_fixed_size = true;
+                meta->fixed_size = fixed_size;
+            }
+            if (g_type_info_is_zero_terminated(type_info))
+                meta->is_zero_terminated = true;
+            if (!meta->has_length_arg && !meta->has_fixed_size && !meta->is_zero_terminated) {
+                gig_debug_load
+                    ("no way of determining array size of C array %s of %s, coercing to pointer",
+                     g_base_info_get_namespace(type_info), g_type_name(meta->params[0].gtype));
+                meta->arg_type = GIG_ARG_TYPE_POINTER;
+            }
+        }
+            break;
+        case GI_ARRAY_TYPE_ARRAY:
+            meta->arg_type = GIG_ARG_TYPE_GARRAY;
+            break;
+        case GI_ARRAY_TYPE_BYTE_ARRAY:
+            meta->arg_type = GIG_ARG_TYPE_GBYTEARRAY;
+            break;
+        case GI_ARRAY_TYPE_PTR_ARRAY:
+            meta->arg_type = GIG_ARG_TYPE_GPTRARRAY;
+            break;
+        }
+    }
+    else if (tag == GI_TYPE_TAG_GHASH) {
+        meta->arg_type = GIG_ARG_TYPE_GHASH;
+        meta->item_size = sizeof(GHashTable *);
+        type_meta_add_child_params(meta, type_info, 2);
+    }
+    else if (tag == GI_TYPE_TAG_GLIST) {
+        meta->arg_type = GIG_ARG_TYPE_GLIST;
+        type_meta_add_child_params(meta, type_info, 1);
+    }
+    else if (tag == GI_TYPE_TAG_GSLIST) {
+        meta->arg_type = GIG_ARG_TYPE_GSLIST;
+        type_meta_add_child_params(meta, type_info, 1);
+    }
+    else if (tag == GI_TYPE_TAG_INTERFACE) {
+        GIBaseInfo *referenced_base_info;
+        GIInfoType itype;
+        GType fundamental_gtype;
+        GigArgMap *_amap;
+
+        referenced_base_info = g_type_info_get_interface(type_info);
+        if (referenced_base_info == NULL)
+            meta->is_invalid = true;
+        else {
+            itype = g_base_info_get_type(referenced_base_info);
+            switch (itype) {
+            case GI_INFO_TYPE_INVALID:
+            case GI_INFO_TYPE_FUNCTION:
+                meta->is_invalid = true;
+                break;
+            case GI_INFO_TYPE_CALLBACK:
+                meta->arg_type = GIG_ARG_TYPE_CALLBACK;
+                _amap =
+                    callable_info_make_amap(referenced_base_info, g_base_info_get_name(referenced_base_info));
+                if (_amap == NULL)
+                    meta->is_invalid = true;
+                else {
+                    meta->callable_arg_map = _amap;
+                    meta->item_size = sizeof(void *);
+                }
+                break;
+            case GI_INFO_TYPE_STRUCT:
+                meta->arg_type = GIG_ARG_TYPE_BOXED;
+                meta->item_size = g_struct_info_get_size(referenced_base_info);
+                meta->gtype = g_registered_type_info_get_g_type(referenced_base_info);
+                break;
+            case GI_INFO_TYPE_BOXED:
+                meta->is_invalid = true;
+                break;
+            case GI_INFO_TYPE_ENUM:
+                meta->arg_type = GIG_ARG_TYPE_ENUM;
+                meta->gtype = g_registered_type_info_get_g_type(referenced_base_info);
+                if (meta->gtype == G_TYPE_NONE) {
+                    meta->qname = base_info_get_qualified_name(referenced_base_info);
+                    meta->gtype = G_TYPE_INVALID;
+                }
+                break;
+            case GI_INFO_TYPE_FLAGS:
+                meta->arg_type = GIG_ARG_TYPE_FLAGS;
+                meta->gtype = g_registered_type_info_get_g_type(referenced_base_info);
+                if (meta->gtype == G_TYPE_NONE) {
+                    meta->qname = base_info_get_qualified_name(referenced_base_info);
+                    meta->gtype = G_TYPE_INVALID;
+                }
+                break;
+            case GI_INFO_TYPE_OBJECT:
+                meta->arg_type = GIG_ARG_TYPE_OBJECT;
+                meta->gtype = g_registered_type_info_get_g_type(referenced_base_info);
+                break;
+            case GI_INFO_TYPE_INTERFACE:
+                meta->arg_type = GIG_ARG_TYPE_INTERFACE;
+                meta->gtype = g_registered_type_info_get_g_type(referenced_base_info);
+                fundamental_gtype = G_TYPE_FUNDAMENTAL(meta->gtype);
+                if (fundamental_gtype == G_TYPE_BOXED) {
+                    meta->arg_type = GIG_ARG_TYPE_BOXED;
+                    meta->item_size = g_struct_info_get_size(referenced_base_info);
+                }
+                else if (fundamental_gtype == G_TYPE_INTERFACE)
+                    meta->arg_type = GIG_ARG_TYPE_INTERFACE;
+                else {
+                    printf("FOOBAR\n");
+                    meta->is_invalid = true;
+                }
+                break;
+            case GI_INFO_TYPE_CONSTANT:
+            case GI_INFO_TYPE_INVALID_0:
+                meta->is_invalid = true;
+            case GI_INFO_TYPE_UNION:
+                meta->arg_type = GIG_ARG_TYPE_BOXED;
+                meta->item_size = g_union_info_get_size(referenced_base_info);
+                meta->gtype = g_registered_type_info_get_g_type(referenced_base_info);
+                break;
+            case GI_INFO_TYPE_VALUE:
+                meta->arg_type = GIG_ARG_TYPE_VALUE;
+                meta->gtype = g_registered_type_info_get_g_type(referenced_base_info);
+                break;
+            case GI_INFO_TYPE_SIGNAL:
+            case GI_INFO_TYPE_VFUNC:
+            case GI_INFO_TYPE_PROPERTY:
+            case GI_INFO_TYPE_FIELD:
+            case GI_INFO_TYPE_ARG:
+                meta->is_invalid = true;
+                break;
+            case GI_INFO_TYPE_TYPE:
+                meta->arg_type = GIG_ARG_TYPE_GTYPE;
+                break;
+            case GI_INFO_TYPE_UNRESOLVED:
+                meta->is_invalid = true;
+                break;
+            }
+        }
+        assert(meta->arg_type != 0 || meta->is_invalid);
+        g_base_info_unref(referenced_base_info);
+    }
+    else
+        type_meta_init_from_basic_type_tag(meta, tag);
+
+    assert(meta->arg_type <= GIG_ARG_TYPE_GHASH);
+    assert(meta->arg_type != 0 || meta->is_invalid);
+}
+
+void
+gig_type_meta_init_from_arg_info(GigTypeMeta *meta, GIArgInfo *ai)
+{
+    GITypeInfo *type_info = g_arg_info_get_type(ai);
+    GIDirection dir = g_arg_info_get_direction(ai);
+    GITransfer transfer = g_arg_info_get_ownership_transfer(ai);
+
+    gig_type_meta_init_from_type_info(meta, type_info);
+
+    meta->is_in = (dir == GI_DIRECTION_IN || dir == GI_DIRECTION_INOUT);
+    meta->is_out = (dir == GI_DIRECTION_OUT || dir == GI_DIRECTION_INOUT);
+    meta->is_skip = g_arg_info_is_skip(ai);
+
+    meta->is_caller_allocates = g_arg_info_is_caller_allocates(ai);
+    meta->is_optional = g_arg_info_is_optional(ai);
+    meta->is_nullable = g_arg_info_may_be_null(ai);
+
+    meta->transfer = convert_transfer(transfer);
+    g_base_info_unref(type_info);
+}
+
+static void
+arg_map_apply_function_info(GigArgMap *amap, GIFunctionInfo *func_info)
+{
+    int i, n;
+    GIArgInfo *arg_info;
+
+    n = amap->len;
+    amap->is_method = g_callable_info_is_method(func_info);
+    amap->can_throw_gerror = g_callable_info_can_throw_gerror(func_info);
+
+    for (i = 0; i < n; i++) {
+        arg_info = g_callable_info_get_arg(func_info, i);
+        gig_type_meta_init_from_arg_info(&amap->pdata[i].meta, arg_info);
+        free(amap->pdata[i].name);
+        amap->pdata[i].name = xstrdup(g_base_info_get_name(arg_info));
+        g_base_info_unref(arg_info);
+        amap->is_invalid |= amap->pdata[i].meta.is_invalid;
+    }
+
+    type_meta_init_from_callable_info(&amap->return_val.meta, func_info);
+    free(amap->return_val.name);
+    amap->return_val.name = xstrdup("%return");
+    amap->is_invalid |= amap->return_val.meta.is_invalid;
+}
+
+
+
+
+
+// Returns a list of GTypes that used by this function call
+GType *
+gig_function_get_arg_gtypes(GICallableInfo *info, size_t *len)
+{
+    GigArgMap *amap;
+    GType *types;
+
+    amap = callable_info_make_amap(info, g_base_info_get_name(info));
+    *len = 0;
+    if (amap == NULL)
+        return NULL;
+    types = gig_amap_get_gtype_list(amap, len);
+    gig_amap_free(amap);
+    return types;
+}
+
+// This procedure counts the number of arguments that the
+// GObject Introspection FFI call is expecting.
+static void
+count_args(GICallableInfo *info, int *in, int *out)
+{
+    // Count the number of required input arguments, and store
+    // the arg info in a newly allocate array.
+    int n_args = g_callable_info_get_n_args(info);
+    int n_input_args = 0;
+    int n_output_args = 0;
+
+    for (int i = 0; i < n_args; i++) {
+        GIArgInfo *ai = g_callable_info_get_arg(info, i);
+        GIDirection dir = g_arg_info_get_direction(ai);
+        g_base_info_unref(ai);
+
+        if (dir == GI_DIRECTION_IN)
+            n_input_args++;
+        else if (dir == GI_DIRECTION_OUT)
+            n_output_args++;
+        else if (dir == GI_DIRECTION_INOUT) {
+            n_input_args++;
+            n_output_args++;
+        }
+    }
+    *in = n_input_args;
+    *out = n_output_args;
+}
+
+const char *
+g_base_info_get_name_safe(GIBaseInfo *info)
+{
+    GIInfoType type = g_base_info_get_type(info);
+    switch (type) {
+    case GI_INFO_TYPE_FUNCTION:
+    case GI_INFO_TYPE_CALLBACK:
+    case GI_INFO_TYPE_STRUCT:
+    case GI_INFO_TYPE_BOXED:
+    case GI_INFO_TYPE_ENUM:
+    case GI_INFO_TYPE_FLAGS:
+    case GI_INFO_TYPE_OBJECT:
+    case GI_INFO_TYPE_INTERFACE:
+    case GI_INFO_TYPE_CONSTANT:
+    case GI_INFO_TYPE_UNION:
+    case GI_INFO_TYPE_VALUE:
+    case GI_INFO_TYPE_SIGNAL:
+    case GI_INFO_TYPE_PROPERTY:
+    case GI_INFO_TYPE_VFUNC:
+    case GI_INFO_TYPE_FIELD:
+    case GI_INFO_TYPE_ARG:
+    case GI_INFO_TYPE_UNRESOLVED:
+        return g_base_info_get_name(info);
+        break;
+    case GI_INFO_TYPE_TYPE:
+    default:
+        return "(unnamed)";
+        break;
+    }
+}
+
+
+
+
+static void
+arg_map_determine_array_length_index(GigArgMap *amap, GigArgMapEntry *entry, GITypeInfo *info)
+{
+    if (entry->meta.arg_type == GIG_ARG_TYPE_ARRAY && entry->meta.has_length_arg) {
+        int idx = entry->meta.length_arg;
+
+        assert(idx >= 0);
+
+        entry->tuple = GIG_ARG_TUPLE_ARRAY;
+        GigArgMapEntry *child = amap->pdata + idx;
+        child->tuple = GIG_ARG_TUPLE_ARRAY_SIZE;
+        child->presence = GIG_ARG_PRESENCE_IMPLICIT;
+        child->is_s_output = 0;
+    }
+}
+
+////////////////////////////////////////////////////////////////
+
+static void
+arg_map_compute_c_invoke_positions(GigArgMap *amap)
+{
+    int i, n;
+    GigArgMapEntry *entry;
+    n = amap->len;
+
+    int c_input_pos = 0;
+    int c_output_pos = 0;
+    for (i = 0; i < n; i++) {
+        entry = &amap->pdata[i];
+
+        // Here we find the positions of this argument in the
+        // g_function_info_invoke call.  Also, some output parameters
+        // require a SCM container to be passed in to the SCM GSubr
+        // call.
+        if (entry->meta.is_in && !entry->meta.is_out) {
+            entry->s_direction = GIG_ARG_DIRECTION_INPUT;
+            entry->is_c_input = 1;
+            entry->c_input_pos = c_input_pos++;
+        }
+        else if (entry->meta.is_in && entry->meta.is_out) {
+            entry->s_direction = GIG_ARG_DIRECTION_INOUT;
+            entry->is_c_input = 1;
+            entry->c_input_pos = c_input_pos++;
+            entry->is_c_output = 1;
+            entry->c_output_pos = c_output_pos++;
+        }
+        else if (entry->meta.is_out && entry->meta.is_caller_allocates) {
+            entry->s_direction = GIG_ARG_DIRECTION_PREALLOCATED_OUTPUT;
+            entry->is_c_output = 1;
+            entry->c_output_pos = c_output_pos++;
+        }
+        else {
+            entry->s_direction = GIG_ARG_DIRECTION_OUTPUT;
+            entry->is_c_output = 1;
+            entry->c_output_pos = c_output_pos++;
+        }
+    }
+
+    if (amap->return_val.meta.is_out)
+        amap->return_val.s_direction = GIG_ARG_DIRECTION_OUTPUT;
+    else
+        amap->return_val.s_direction = GIG_ARG_DIRECTION_VOID;
+
+    amap->c_input_len = c_input_pos;
+    amap->c_output_len = c_output_pos;
+}
+
+static void
+arg_map_compute_s_call_positions(GigArgMap *amap)
+{
+    int i, n;
+    GigArgMapEntry *entry;
+    n = amap->len;
+
+    int s_input_pos = 0;
+    int s_output_pos = 0;
+    // We now can decide where these arguments appear in the SCM GSubr
+    // call.
+    for (i = 0; i < n; i++) {
+        entry = &amap->pdata[i];
+
+        // TODO: Why check entry->tuple instead of entry->presence?
+        //       The latter appears to be buggy in some way.
+        if (entry->tuple == GIG_ARG_TUPLE_ARRAY_SIZE)
+            continue;
+
+        switch (entry->s_direction) {
+        case GIG_ARG_DIRECTION_INPUT:
+        case GIG_ARG_DIRECTION_INOUT:
+        case GIG_ARG_DIRECTION_PREALLOCATED_OUTPUT:
+            entry->is_s_input = 1;
+            entry->s_input_pos = s_input_pos++;
+            if (entry->presence == GIG_ARG_PRESENCE_REQUIRED)
+                amap->s_input_req++;
+            else if (entry->presence == GIG_ARG_PRESENCE_OPTIONAL)
+                amap->s_input_opt++;
+
+            if (entry->s_direction == GIG_ARG_DIRECTION_INPUT)
+                break;
+            /* fallthrough */
+        case GIG_ARG_DIRECTION_OUTPUT:
+            entry->is_s_output = 1;
+            entry->s_output_pos = s_output_pos++;
+            break;
+        default:
+            assert_not_reached();
+        }
+    }
+
+    amap->s_output_len = s_output_pos;
+    assert(amap->s_input_req + amap->s_input_opt == s_input_pos);
+}
+
+static void
+arg_map_determine_argument_presence(GigArgMap *amap, GICallableInfo *info)
+{
+    GigArgMapEntry *entry;
+    bool opt_flag = true;
+    int i, n;
+
+    n = amap->len;
+
+    // may-be-null parameters at the end of the C call can be made
+    // optional parameters in the gsubr call.
+    for (i = n - 1; i >= 0; i--) {
+        entry = &amap->pdata[i];
+        entry->tuple = GIG_ARG_TUPLE_SINGLETON;
+        if (entry->meta.is_in || (entry->meta.is_out && entry->meta.is_caller_allocates)) {
+            if (opt_flag && entry->meta.is_nullable)
+                entry->presence = GIG_ARG_PRESENCE_OPTIONAL;
+            else {
+                entry->presence = GIG_ARG_PRESENCE_REQUIRED;
+                opt_flag = false;
+            }
+        }
+        else {
+            entry->presence = GIG_ARG_PRESENCE_IMPLICIT;
+        }
+    }
+
+    // In C, if there is an array defined as a pointer and a
+    // length parameter, it becomes a single S parameter.
+    for (i = 0; i < n; i++) {
+        entry = amap->pdata + i;
+        GIArgInfo *a = g_callable_info_get_arg(info, i);
+        GITypeInfo *t = g_arg_info_get_type(a);
+        arg_map_determine_array_length_index(amap, entry, t);
+        g_base_info_unref(t);
+        g_base_info_unref(a);
+    }
+
+    amap->return_val.tuple = GIG_ARG_TUPLE_SINGLETON;
+    GITypeInfo *return_type = g_callable_info_get_return_type(info);
+    arg_map_determine_array_length_index(amap, &amap->return_val, return_type);
+    g_base_info_unref(return_type);
+}
+
+static char *
+base_info_get_qualified_name(GIRegisteredTypeInfo *info)
+{
+    const char *_name = g_base_info_get_attribute(info, "c:type");
+    if (_name != NULL)
+        return xstrdup(_name);
+
+    const char *_namespace = g_base_info_get_namespace(info);
+    const char *prefix = g_irepository_get_c_prefix(NULL, _namespace);
+
+    // add initial % to ensure that the name is private
+    return concatenate3("%", prefix, g_base_info_get_name(info));
+}
+
+static bool
+callable_info_is_destructive(GICallableInfo *info)
+{
+    bool destructive = false;
+    int n_args = g_callable_info_get_n_args(info);
+
+    for (int i = 0; i < n_args; i++) {
+        GIArgInfo *ai = g_callable_info_get_arg(info, i);
+        GITypeInfo *ti = g_arg_info_get_type(ai);
+        bool is_trivial;
+
+        switch (g_type_info_get_tag(ti)) {
+        case GI_TYPE_TAG_BOOLEAN:
+        case GI_TYPE_TAG_DOUBLE:
+        case GI_TYPE_TAG_FLOAT:
+        case GI_TYPE_TAG_GTYPE:
+        case GI_TYPE_TAG_INT8:
+        case GI_TYPE_TAG_INT16:
+        case GI_TYPE_TAG_INT32:
+        case GI_TYPE_TAG_INT64:
+        case GI_TYPE_TAG_UINT8:
+        case GI_TYPE_TAG_UINT16:
+        case GI_TYPE_TAG_UINT32:
+        case GI_TYPE_TAG_UINT64:
+        case GI_TYPE_TAG_UNICHAR:
+            is_trivial = true;
+            break;
+        default:
+            is_trivial = false;
+        }
+        g_base_info_unref(ti);
+
+        if (!is_trivial) {
+            destructive |= g_arg_info_is_caller_allocates(ai);
+            destructive |= (g_arg_info_get_direction(ai) == GI_DIRECTION_INOUT);
+        }
+        g_base_info_unref(ai);
+    }
+
+    return destructive;
+}
+
+// Returns TRUE if this function returns a single boolean.
+static bool
+callable_info_is_predicate(GICallableInfo *info)
+{
+    bool predicate = false;
+    GITypeInfo *return_type;
+
+    if (GI_IS_SIGNAL_INFO(info))
+        return false;
+
+    return_type = g_callable_info_get_return_type(info);
+
+    if (g_type_info_get_tag(return_type) == GI_TYPE_TAG_BOOLEAN
+        && !g_type_info_is_pointer(return_type)) {
+        int in, out;
+
+        count_args(info, &in, &out);
+        if (out == 0)
+            predicate = true;
+    }
+    g_base_info_unref(return_type);
+    return predicate;
+}
+
+// Gather information on how to map Scheme arguments to C arguments.
+GigArgMap *
+callable_info_make_amap(GICallableInfo *function_info, const char *name)
+{
+    GigArgMap *amap;
+    size_t n;
+
+    n = g_callable_info_get_n_args(function_info);
+    amap = gig_amap_allocate(n);
+    free(amap->name);
+    amap->name = xstrdup(g_base_info_get_name(function_info));
+    arg_map_apply_function_info(amap, function_info);
+    if (amap->is_invalid) {
+        gig_amap_free(amap);
+        return NULL;
+    }
+    arg_map_determine_argument_presence(amap, function_info);
+    arg_map_compute_c_invoke_positions(amap);
+    arg_map_compute_s_call_positions(amap);
+    gig_amap_dump(name, amap);
+    return amap;
+}
+
+// For function and method names, we want a lowercase string of the
+// form 'func-name-with-hyphens'
+char *
+callable_info_make_name(GICallableInfo *info, const char *prefix)
+{
+    char *name, *str1 = NULL, *str2 = NULL;
+    bool predicate, destructive;
+
+    predicate = callable_info_is_predicate(info);
+    destructive = callable_info_is_destructive(info);
+    if (prefix)
+        str1 = make_scm_name(prefix);
+    str2 = make_scm_name(g_base_info_get_name(info));
+    if (!prefix) {
+        if (destructive)
+            name = concatenate(str2, "!");
+        else if (predicate)
+            name = concatenate(str2, "?");
+        else
+            return str2;
+    }
+    else {
+        if (destructive)
+            name = concatenate4(str1, ":", str2, "!");
+        else if (predicate)
+            name = concatenate4(str1, ":", str2, "?");
+        else
+            name = concatenate3(str1, ":", str2);
+    }
+    free(str1);
+    free(str2);
+    return name;
+}
+
+static GigTransfer
+convert_transfer(GITransfer x)
+{
+    if (x == GI_TRANSFER_NOTHING)
+        return GIG_TRANSFER_NOTHING;
+    if (x == GI_TRANSFER_CONTAINER)
+        return GIG_TRANSFER_CONTAINER;
+    return GIG_TRANSFER_EVERYTHING;
+}
+
+static void
+type_meta_add_child_params(GigTypeMeta *meta, GITypeInfo *type_info, int n)
+{
+    GITypeInfo *param_type;
+    gig_meta_add_params(meta, n);
+
+    for (int i = 0; i < n; i++) {
+        param_type = g_type_info_get_param_type((GITypeInfo *)type_info, i);
+        gig_type_meta_init_from_type_info(&meta->params[i], param_type);
+        g_base_info_unref(param_type);
+
+        if (meta->transfer == GIG_TRANSFER_EVERYTHING)
+            meta->params[i].transfer = GIG_TRANSFER_EVERYTHING;
+        else
+            meta->params[i].transfer = GIG_TRANSFER_NOTHING;
+
+        meta->is_invalid |= meta->params[i].is_invalid;
+    }
+}
+
+static void
+type_meta_init_from_basic_type_tag(GigTypeMeta *meta, GITypeTag tag)
+{
+#define T(TYPETAG,ATYPE,CTYPE)                  \
+    do {                                        \
+        if (tag == TYPETAG) {                   \
+            meta->arg_type = ATYPE;             \
+            meta->item_size = sizeof (CTYPE);   \
+            return;                             \
+        }                                       \
+    } while(false)
+
+    T(GI_TYPE_TAG_BOOLEAN, GIG_ARG_TYPE_GBOOLEAN, gboolean);
+    T(GI_TYPE_TAG_DOUBLE, GIG_ARG_TYPE_DOUBLE, double);
+    T(GI_TYPE_TAG_FLOAT, GIG_ARG_TYPE_FLOAT, float);
+    T(GI_TYPE_TAG_GTYPE, GIG_ARG_TYPE_GTYPE, GType);
+    T(GI_TYPE_TAG_INT8, GIG_ARG_TYPE_INT8, int8_t);
+    T(GI_TYPE_TAG_INT16, GIG_ARG_TYPE_INT16, int16_t);
+    T(GI_TYPE_TAG_INT32, GIG_ARG_TYPE_INT32, int32_t);
+    T(GI_TYPE_TAG_INT64, GIG_ARG_TYPE_INT64, int64_t);
+    T(GI_TYPE_TAG_UINT8, GIG_ARG_TYPE_UINT8, uint8_t);
+    T(GI_TYPE_TAG_UINT16, GIG_ARG_TYPE_UINT16, uint16_t);
+    T(GI_TYPE_TAG_UINT32, GIG_ARG_TYPE_UINT32, uint32_t);
+    T(GI_TYPE_TAG_UINT64, GIG_ARG_TYPE_UINT64, uint64_t);
+    T(GI_TYPE_TAG_UNICHAR, GIG_ARG_TYPE_UNICHAR, uint32_t);
+    T(GI_TYPE_TAG_UTF8, GIG_ARG_TYPE_UTF8_STRING, char *);
+    T(GI_TYPE_TAG_FILENAME, GIG_ARG_TYPE_LOCALE_STRING, char *);
+    T(GI_TYPE_TAG_ERROR, GIG_ARG_TYPE_GERROR, GError);
+    gig_error("unhandled type '%s' %s %d", g_type_tag_to_string(tag), __FILE__, __LINE__);
+#undef T
+}
+
+void
+type_meta_init_from_callable_info(GigTypeMeta *meta, GICallableInfo *ci)
+{
+    GITypeInfo *type_info = g_callable_info_get_return_type(ci);
+    GITransfer transfer = g_callable_info_get_caller_owns(ci);
+
+    gig_type_meta_init_from_type_info(meta, type_info);
+
+    meta->is_in = false;
+    if (meta->arg_type != GIG_ARG_TYPE_UNKNOWN && meta->arg_type != GIG_ARG_TYPE_VOID)
+        meta->is_out = true;
+    else
+        meta->is_out = false;
+    meta->is_skip = g_callable_info_skip_return(ci);
+
+    meta->is_caller_allocates = false;
+    meta->is_optional = false;
+    meta->is_nullable = g_callable_info_may_return_null(ci);
+
+    meta->transfer = convert_transfer(transfer);
+    g_base_info_unref(type_info);
 }

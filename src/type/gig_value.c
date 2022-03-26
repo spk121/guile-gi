@@ -14,7 +14,6 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <assert.h>
-#include <girepository.h>
 #include "gig_value.h"
 #include "gig_type_priv.h"
 #include "gig_flag_priv.h"

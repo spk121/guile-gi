@@ -35,7 +35,7 @@
             LOAD_EVERYTHING LOAD_INFO_ONLY))
 
 (eval-when (expand load eval)
-  (load-extension "libguile-gi" "gig_init_repository"))
+  (load-extension "libguile-giparse" "gig_init_repository"))
 
 (define-method (load (info <baseinfo>))
   (%load-info info LOAD_EVERYTHING))
