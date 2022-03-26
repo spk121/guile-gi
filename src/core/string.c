@@ -50,7 +50,7 @@ concatenate(const char *str1, const char *str2)
         }
         return str;
     }
-    if (str1 != NULL & str2 == NULL) {
+    if (str1 != NULL && str2 == NULL) {
         str = strdup(str1);
         if (str == NULL) {
             fprintf(stderr, "Out of memory\n");
