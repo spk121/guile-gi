@@ -1043,18 +1043,14 @@ gig_init_types_once(void)
 {
     init_core_oop();
 
-    scm_c_define("G_TYPE_ARRAY", scm_from_size_t(G_TYPE_ARRAY));
     scm_c_define("G_TYPE_BOOLEAN", scm_from_size_t(G_TYPE_BOOLEAN));
     scm_c_define("G_TYPE_BOXED", scm_from_size_t(G_TYPE_BOXED));
-    scm_c_define("G_TYPE_BYTE_ARRAY", scm_from_size_t(G_TYPE_BYTE_ARRAY));
     scm_c_define("G_TYPE_CHAR", scm_from_size_t(G_TYPE_CHAR));
     scm_c_define("G_TYPE_CLOSURE", scm_from_size_t(G_TYPE_CLOSURE));
     scm_c_define("G_TYPE_DOUBLE", scm_from_size_t(G_TYPE_DOUBLE));
     scm_c_define("G_TYPE_ENUM", scm_from_size_t(G_TYPE_ENUM));
     scm_c_define("G_TYPE_FLAGS", scm_from_size_t(G_TYPE_FLAGS));
     scm_c_define("G_TYPE_FLOAT", scm_from_size_t(G_TYPE_FLOAT));
-    scm_c_define("G_TYPE_GTYPE", scm_from_size_t(G_TYPE_GTYPE));
-    scm_c_define("G_TYPE_HASH_TABLE", scm_from_size_t(G_TYPE_HASH_TABLE));
     scm_c_define("G_TYPE_INT", scm_from_size_t(G_TYPE_INT));
     scm_c_define("G_TYPE_INT64", scm_from_size_t(G_TYPE_INT64));
     scm_c_define("G_TYPE_INTERFACE", scm_from_size_t(G_TYPE_INTERFACE));
@@ -1063,7 +1059,6 @@ gig_init_types_once(void)
     scm_c_define("G_TYPE_OBJECT", scm_from_size_t(G_TYPE_OBJECT));
     scm_c_define("G_TYPE_PARAM", scm_from_size_t(G_TYPE_PARAM));
     scm_c_define("G_TYPE_POINTER", scm_from_size_t(G_TYPE_POINTER));
-    scm_c_define("G_TYPE_PTR_ARRAY", scm_from_size_t(G_TYPE_PTR_ARRAY));
     scm_c_define("G_TYPE_STRING", scm_from_size_t(G_TYPE_STRING));
     scm_c_define("G_TYPE_UCHAR", scm_from_size_t(G_TYPE_UCHAR));
     scm_c_define("G_TYPE_UINT", scm_from_size_t(G_TYPE_UINT));

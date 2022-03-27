@@ -161,7 +161,6 @@ scheme class only maps to a single GType."
 (type-register G_TYPE_UINT64 <integer>)
 (type-register G_TYPE_FLOAT <real>)
 (type-register G_TYPE_DOUBLE <real>)
-(type-associate G_TYPE_HASH_TABLE <hashtable>)
 (type-register G_TYPE_CHAR <char>)
 (type-register G_TYPE_UCHAR <char>)
 (type-associate G_TYPE_BOOLEAN <boolean>)
@@ -211,14 +210,6 @@ scheme class only maps to a single GType."
 
 (define <GClosure> ($make-type-with-gtype G_TYPE_CLOSURE `(,<applicable-struct>)))
 (type-associate G_TYPE_CLOSURE <GClosure>)
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Now we can use $type-define-full since all core types are defined.
-
-($type-define-full G_TYPE_GTYPE '())
-($type-define-full G_TYPE_ARRAY '())
-($type-define-full G_TYPE_BYTE_ARRAY '())
-($type-define-full G_TYPE_PTR_ARRAY '())
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
