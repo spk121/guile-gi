@@ -1001,18 +1001,14 @@ scm_gig_type_define_full_unsafe(SCM gtype, SCM supers, SCM boxed_size)
 }
 
 static SCM
-scm_make_type_with_gtype_unsafe(SCM gtype, SCM extra_supers, SCM boxed_size)
+scm_add_copy_free_slot_funcs(SCM new_type, SCM gtype)
 {
     size_t type = scm_to_size_t(gtype);
-    char *type_class_name = gig_type_class_name_from_gtype(type);
-    SCM ret;
-    size_t size = 0;
-    if (!SCM_UNBNDP(boxed_size))
-        size = scm_to_size_t(boxed_size);
+    GigBoxedFuncs *funcs = _boxed_funcs_for_type(type);
 
-    ret = make_type_with_gtype(type_class_name, type, extra_supers, size);
-    free(type_class_name);
-    return ret;
+    scm_set_class_ref_slot(new_type, scm_from_pointer(funcs->copy, NULL));
+    scm_set_class_unref_slot(new_type, scm_from_pointer(funcs->free, NULL));
+    return SCM_UNSPECIFIED;
 }
 
 static void
@@ -1074,7 +1070,7 @@ gig_init_types_once(void)
     scm_c_define_gsubr("$type-parent", 1, 0, 0, scm_g_type_parent_unsafe);
 
     scm_c_define_gsubr("$type-define-full", 2, 1, 0, scm_gig_type_define_full_unsafe);
-    scm_c_define_gsubr("$make-type-with-gtype", 2, 1, 0, scm_make_type_with_gtype_unsafe);
+    scm_c_define_gsubr("$add-copy/free-slot-funcs!", 2, 0, 0, scm_add_copy_free_slot_funcs);
     gig_il_type_func = scm_c_define_gsubr("^type", 2, 1, 0, gig_il_type);
     gig_il_untyped_flags_func =
         scm_c_define_gsubr("^untyped-flags", 3, 0, 0, gig_il_untyped_flags);

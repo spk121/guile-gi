@@ -196,12 +196,16 @@ scheme class only maps to a single GType."
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Core types that require GBoxed be ready first
+;; Special <GBoxed> types that we treat as core types.  G_TYPE_VALUE
+;; and G_TYPE_CLOSURE are only known after dlopening libgobject.
 
-(define <GValue> ($make-type-with-gtype G_TYPE_VALUE `(,<applicable-struct-with-setter>) SIZEOF_GVALUE))
+(define-class <GValue> (<GBoxed> <applicable-struct-with-setter>))
+(class-slot-set! <GValue> 'size SIZEOF_GVALUE)
+($add-copy/free-slot-funcs! <GValue> G_TYPE_VALUE)
 (type-associate G_TYPE_VALUE <GValue>)
 
-(define <GClosure> ($make-type-with-gtype G_TYPE_CLOSURE `(,<applicable-struct>)))
+(define-class <GClosure> (<GBoxed> <applicable-struct>))
+($add-copy/free-slot-funcs! <GClosure> G_TYPE_CLOSURE)
 (type-associate G_TYPE_CLOSURE <GClosure>)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
