@@ -657,18 +657,6 @@ gig_type_free_types(void)
     _free_boxed_funcs();
 }
 
-GType
-gig_type_get_c_array_type()
-{
-    static GType type = 0;
-    if (type == 0)
-        type = g_type_from_name("CArray");
-    if (type == 0)
-        gig_error("CArray type is used before it is initialized");
-
-    return type;
-}
-
 SCM
 gig_object_type()
 {
@@ -987,17 +975,6 @@ gig_type_define_fundamental(GType type, SCM extra_supers,
 }
 
 static SCM
-scm_g_type_register_static_simple_unsafe(SCM parent_type, SCM name, SCM flags)
-{
-    GType ret;
-    char *str = scm_to_utf8_string(name);
-    ret = g_type_register_static_simple(scm_to_size_t(parent_type), str,
-                                        0, NULL, 0, NULL, scm_to_int(flags));
-    free(str);
-    return scm_from_size_t(ret);
-}
-
-static SCM
 scm_g_type_name_unsafe(SCM gtype)
 {
     return scm_from_utf8_string(g_type_name(scm_to_size_t(gtype)));
@@ -1093,8 +1070,6 @@ gig_init_types_once(void)
 
     type_less_p_proc = scm_c_make_gsubr("type-<?", 2, 0, 0, type_less_p);
 
-    scm_c_define_gsubr("$type-register-static-simple", 3, 0, 0,
-                       scm_g_type_register_static_simple_unsafe);
     scm_c_define_gsubr("$type-name", 1, 0, 0, scm_g_type_name_unsafe);
     scm_c_define_gsubr("$type-parent", 1, 0, 0, scm_g_type_parent_unsafe);
 

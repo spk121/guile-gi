@@ -28,10 +28,6 @@ typedef enum GigTransfer_
     GIG_TRANSFER_EVERYTHING
 } GigTransfer;
 
-GType gig_type_get_c_array_type(void);
-
-#define G_TYPE_PRIV_C_ARRAY (gig_type_get_c_array_type())
-
 typedef void *(*GigTypeRefFunction)(void *);
 typedef void (*GigTypeUnrefFunction)(void *);
 

@@ -173,13 +173,6 @@ scheme class only maps to a single GType."
 (type-associate G_TYPE_ENUM <GEnum>)
 (type-associate G_TYPE_FLAGS <GFlags>)
 
-(define G_TYPE_PRIV_C_ARRAY
-  ($type-register-static-simple G_TYPE_POINTER
-                                "CArray"
-                                G_TYPE_FLAG_ABSTRACT))
-(type-register G_TYPE_PRIV_C_ARRAY <unknown>)
-
-
 (define <GObject>
   (type-define-fundamental G_TYPE_OBJECT '() $object-ref-sink-ptr
                            $object-unref-ptr))
