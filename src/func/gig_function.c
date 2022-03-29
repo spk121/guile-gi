@@ -80,6 +80,7 @@ SCM
 gig_il_function(SCM s_namespace_, SCM s_gtype_name, SCM s_long_name,
                 SCM s_short_name, SCM s_symbol_name, SCM s_amap)
 {
+    GIG_INIT_CHECK();
     char *namespace_ = NULL;
     if (scm_is_true(s_namespace_))
         namespace_ = scm_to_utf8_symbol(s_namespace_);
@@ -159,6 +160,7 @@ SCM
 gig_il_signal(SCM s_namespace_, SCM s_gtype_name, SCM s_long_name,
               SCM s_short_name, SCM s_symbol_name, SCM s_amap)
 {
+    GIG_INIT_CHECK();
     char *namespace_ = NULL;
     if (scm_is_true(s_namespace_))
         namespace_ = scm_to_utf8_symbol(s_namespace_);

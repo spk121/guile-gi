@@ -13,6 +13,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#include "../gig_glib.h"
 #include "gig_closure.h"
 #include "gig_value.h"
 #include "gig_type_priv.h"
@@ -125,6 +126,8 @@ gig_closure_new(SCM callback, SCM inout_mask)
 static SCM
 invoke_closure(SCM closure, SCM return_type, SCM inout_mask, SCM args)
 {
+    GIG_INIT_CHECK();
+
     SCM_ASSERT_TYPE(SCM_IS_A_P(closure, gig_closure_type()), closure, SCM_ARG1, "%invoke-closure",
                     "closure");
     GClosure *real_closure = gig_type_peek_typed_object(closure, gig_closure_type());
@@ -199,6 +202,8 @@ invoke_closure(SCM closure, SCM return_type, SCM inout_mask, SCM args)
 static SCM
 procedure_to_closure(SCM procedure, SCM inout_mask)
 {
+    GIG_INIT_CHECK();
+
     SCM_ASSERT_TYPE(scm_is_procedure(procedure), procedure, SCM_ARG1,
                     "procedure->closure", "procedure");
     SCM_ASSERT_TYPE(SCM_UNBNDP(inout_mask) ||

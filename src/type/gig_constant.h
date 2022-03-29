@@ -22,6 +22,6 @@
 GIG_API extern SCM gig_il_constant_func;
 
 SCM gig_il_constant(SCM s_name, SCM s_value);
-void gig_constant_init(void);
+void gig_init_constant(void);
 
 #endif

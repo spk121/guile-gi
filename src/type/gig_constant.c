@@ -30,7 +30,7 @@ gig_il_constant(SCM s_name, SCM s_value)
 }
 
 void
-gig_constant_init()
+gig_init_constant()
 {
     gig_il_constant_func = scm_c_define_gsubr("^constant", 2, 0, 0, gig_il_constant);
 }

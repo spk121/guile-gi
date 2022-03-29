@@ -174,11 +174,8 @@ gig_make_signal(size_t n_slots, GigSignalSlot *slots, SCM *slot_values)
 }
 
 void
-gig_init_signal()
+gig_init_signal_stage1()
 {
-    gig_signal_type = scm_c_public_ref("gi oop", "<signal>");
-    make_signal_proc = scm_c_public_ref("gi oop", "make-signal");
-
     signal_slot_syms[GIG_SIGNAL_SLOT_NAME] = scm_from_utf8_symbol("name");
     signal_slot_syms[GIG_SIGNAL_SLOT_FLAGS] = scm_from_utf8_symbol("flags");
     signal_slot_syms[GIG_SIGNAL_SLOT_ACCUMULATOR] = scm_from_utf8_symbol("accumulator");
@@ -189,4 +186,11 @@ gig_init_signal()
     signal_accu_first_wins = scm_from_utf8_symbol("first-wins");
     signal_accu_true_handled = scm_from_utf8_symbol("true-handled");
 
+}
+
+void
+gig_init_signal_stage2()
+{
+    gig_signal_type = scm_c_public_ref("gi runtime", "<signal>");
+    make_signal_proc = scm_c_public_ref("gi runtime", "make-signal");
 }

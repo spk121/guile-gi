@@ -16,6 +16,7 @@
 #include <inttypes.h>
 #include <libguile.h>
 #include "../core.h"
+#include "../gig_glib.h"
 #include "gig_flag_priv.h"
 #include "gig_type_priv.h"
 
@@ -106,6 +107,7 @@ define_conversion(const char *fmt, const char *name, SCM proc)
 static SCM
 gig_il_untyped_enum_conversions(SCM s_conversion_name, SCM s_qname)
 {
+    GIG_INIT_CHECK();
     SCM defs;
     char *cls = scm_to_utf8_symbol(s_conversion_name);
     char *qname = scm_to_utf8_symbol(s_qname);
@@ -118,6 +120,7 @@ gig_il_untyped_enum_conversions(SCM s_conversion_name, SCM s_qname)
 static SCM
 gig_il_untyped_flag_conversions(SCM s_conversion_name, SCM s_qname)
 {
+    GIG_INIT_CHECK();
     SCM def;
     char *cls = scm_to_utf8_symbol(s_conversion_name);
     char *qname = scm_to_utf8_symbol(s_qname);
@@ -130,6 +133,7 @@ gig_il_untyped_flag_conversions(SCM s_conversion_name, SCM s_qname)
 static SCM
 gig_il_flag_conversions(SCM s_conversion_name, SCM s_gtype_name)
 {
+    GIG_INIT_CHECK();
     SCM def;
     char *cls = scm_to_utf8_symbol(s_conversion_name);
     char *gtype_name = scm_to_utf8_symbol(s_gtype_name);
@@ -143,6 +147,7 @@ gig_il_flag_conversions(SCM s_conversion_name, SCM s_gtype_name)
 static SCM
 gig_il_enum_conversions(SCM s_conversion_name, SCM s_gtype_name)
 {
+    GIG_INIT_CHECK();
     SCM def;
     char *cls = scm_to_utf8_symbol(s_conversion_name);
     char *gtype_name = scm_to_utf8_symbol(s_gtype_name);
@@ -193,17 +198,8 @@ gig_define_enum_conversions(const char *cls, const char *qname, GType type, bool
 }
 
 void
-gig_init_flag(void)
+gig_init_flag_stage1(void)
 {
-    enum_to_number = scm_c_public_ref("gi types", "enum->number");
-    flags_to_number = scm_c_public_ref("gi types", "flags->number");
-    number_to_enum = scm_c_public_ref("gi types", "number->enum");
-    enum_to_symbol = scm_c_public_ref("gi types", "enum->symbol");
-    symbol_to_enum = scm_c_public_ref("gi types", "symbol->enum");
-    number_to_flags = scm_c_public_ref("gi types", "number->flags");
-    list_to_flags = scm_c_public_ref("gi types", "list->flags");
-    flags_to_list = scm_c_public_ref("gi types", "flags->list");
-
     gig_il_untyped_enum_conversions_func
         = scm_c_define_gsubr("^untyped-enum-conv", 2, 0, 0, gig_il_untyped_enum_conversions);
     gig_il_untyped_flag_conversions_func
@@ -212,4 +208,17 @@ gig_init_flag(void)
         = scm_c_define_gsubr("^enum-conv", 2, 0, 0, gig_il_enum_conversions);
     gig_il_flag_conversions_func
         = scm_c_define_gsubr("^flags-conv", 2, 0, 0, gig_il_flag_conversions);
+}
+
+void
+gig_init_flag_stage2(void)
+{
+    enum_to_number = scm_c_public_ref("gi runtime", "enum->number");
+    flags_to_number = scm_c_public_ref("gi runtime", "flags->number");
+    number_to_enum = scm_c_public_ref("gi runtime", "number->enum");
+    enum_to_symbol = scm_c_public_ref("gi runtime", "enum->symbol");
+    symbol_to_enum = scm_c_public_ref("gi runtime", "symbol->enum");
+    number_to_flags = scm_c_public_ref("gi runtime", "number->flags");
+    list_to_flags = scm_c_public_ref("gi runtime", "list->flags");
+    flags_to_list = scm_c_public_ref("gi runtime", "flags->list");
 }

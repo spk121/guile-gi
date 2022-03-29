@@ -14,11 +14,11 @@
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 (define-module (gi)
   #:use-module (gi core-generics)
-  #:use-module (gi oop)
   #:use-module (gi types)
   #:use-module (gi repository)
   #:use-module (oop goops)
   #:use-module (srfi srfi-26)
+  #:use-module (gi runtime)
   #:re-export (<signal>
                make-signal
                connect
@@ -50,7 +50,6 @@
             %before-callback-hook
             %before-c-callback-hook))
 
-(load-extension "libguile-gi" "gig_init")
 
 (define (subclass? type-a type-b)
   (memq type-b (class-precedence-list type-a)))
@@ -115,9 +114,9 @@
 (define (%new type . rest)
   (cond
    ((subclass? type <GObject>)
-    ((@@ (gi oop) %make-gobject) type rest))
+    ((@@ (gi runtime) %make-gobject) type rest))
    ((subclass? type <GBoxed>)
-    ((@@ (gi types) %allocate-boxed) type))
+    ((@@ (gi runtime) %allocate-boxed) type))
    ((subclass? type <GEnum>)
     (error "use symbol->enum or number->enum instead"))
    ((subclass? type <GFlags>)
@@ -128,7 +127,7 @@
 (define (register-type name parent . rest)
   (cond
    ((subclass? parent <GObject>)
-    (apply (@@ (gi oop) %define-object-type) name parent rest))
+    (apply (@@ (gi runtime) %define-object-type) name parent rest))
    (else
     (error "cannot define class with parent ~A" parent))))
 

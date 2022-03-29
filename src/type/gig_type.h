@@ -53,6 +53,7 @@ GType scm_to_gtype(SCM x);
 GType scm_to_gtype_full(SCM x, const char *subr, int argpos);
 char *gig_type_class_name_from_gtype(GType gtype);
 
-GIG_API void gig_init_types(void);
+void gig_init_type_stage1(void);
+void gig_init_type_stage2(void);
 
 #endif

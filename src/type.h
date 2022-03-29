@@ -5,4 +5,6 @@
 #include "type/gig_object.h"
 #include "type/gig_signal.h"
 #include "type/gig_type.h"
+#include "type/gig_closure.h"
+#include "type/gig_value.h"
 #endif

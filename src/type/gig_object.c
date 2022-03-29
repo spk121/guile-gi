@@ -63,6 +63,7 @@ gig_paramspec_peek(SCM object)
 static SCM
 gig_i_scm_make_gobject(SCM s_gtype, SCM s_prop_keylist)
 {
+    GIG_INIT_CHECK();
 #define FUNC "%make-gobject"
     GType type;
     GObject *obj;
@@ -136,6 +137,7 @@ get_paramspec(const GObject *self, const char *prop)
 static SCM
 gig_i_scm_get_pspec(SCM self, SCM prop)
 {
+    GIG_INIT_CHECK();
     GObject *obj;
     char *name;
     GParamSpec *pspec;
@@ -159,6 +161,7 @@ gig_i_scm_get_pspec(SCM self, SCM prop)
 static SCM
 gig_i_scm_get_property(SCM self, SCM property)
 {
+    GIG_INIT_CHECK();
     SCM ret;
 
     GParamSpec *pspec;
@@ -190,6 +193,7 @@ gig_i_scm_get_property(SCM self, SCM property)
 static SCM
 gig_i_scm_set_property_x(SCM self, SCM property, SCM svalue)
 {
+    GIG_INIT_CHECK();
     GParamSpec *pspec;
     GObject *obj;
 
@@ -352,6 +356,7 @@ gig_user_object_define(const char *type_name,
 static SCM
 gig_i_scm_define_type(SCM s_type_name, SCM s_parent_type, SCM s_properties, SCM s_signals)
 {
+    GIG_INIT_CHECK();
     char *type_name;
     GType parent_type;
     GType new_type;
@@ -443,6 +448,7 @@ signal_lookup(const char *proc, GObject *self,
 static SCM
 gig_i_scm_connect(SCM self, SCM signal, SCM sdetail, SCM callback, SCM s_after, SCM reserved)
 {
+    GIG_INIT_CHECK();
     GObject *obj;
     bool after;
     GClosure *closure;
@@ -469,6 +475,7 @@ gig_i_scm_connect(SCM self, SCM signal, SCM sdetail, SCM callback, SCM s_after, 
 static SCM
 gig_i_scm_emit(SCM self, SCM signal, SCM s_detail, SCM args)
 {
+    GIG_INIT_CHECK();
     GObject *obj;
     GValue *values, retval = G_VALUE_INIT;
     GSignalQuery query_info;
@@ -644,11 +651,8 @@ do_define_property(const char *public_name, SCM prop, SCM self_type, SCM value_t
 }
 
 void
-gig_init_object()
+gig_init_object_stage1()
 {
-    gig_user_object_properties = G.quark_from_static_string("GigObject::properties");
-
-    
     sym_value = scm_from_utf8_symbol("value");
 
     scm_c_define_gsubr("%make-gobject", 1, 1, 0, gig_i_scm_make_gobject);
@@ -659,4 +663,10 @@ gig_init_object()
     scm_c_define_gsubr("%emit", 2, 1, 1, gig_i_scm_emit);
     scm_c_define_gsubr("%define-object-type", 2, 2, 0, gig_i_scm_define_type);
     gig_il_property_func = scm_c_define_gsubr("^property", 4, 0, 0, gig_il_property);
+}
+
+void
+gig_init_object_stage2()
+{
+    gig_user_object_properties = G.quark_from_static_string("GigObject::properties");
 }

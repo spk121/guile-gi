@@ -18,8 +18,10 @@
 #include "type.h"
 #include "func.h"
 #include "gig_logging.h"
+#include "gig_glib.h"
 
 GIG_API void gig_init(void);
+static void gig_init_stage2(void);
 
 #ifdef ENABLE_GCOV
 void __gcov_reset(void);
@@ -47,26 +49,55 @@ scm_gcov_dump(void)
 }
 #endif
 
-GIG_API void
-gig_init(void)
+static SCM
+scm_il_initialize()
 {
-#ifdef MTRACE
-    mtrace();
-#endif
-    gig_debug("Begin libguile-gir initialization");
-    gig_init_dlsyms(NULL);
-    gig_init_flag();
-    gig_init_signal();
+    if (!gig_glib_initialize())
+        scm_misc_error("^initialize", "GObject and GLib libraries have not been loaded", SCM_EOL);
+    gig_init_stage2();
+    return SCM_EOL;
+}
+
+
+
+// Initialization that requires no GLib/GObject functionality.
+// Enough to export the ^library and ^initialize
+// IL functions, as well as stubs for the other IL functions.
+GIG_API void
+gig_init_stage1(void)
+{
+    // Order matters
+    init_core_oop();
+    gig_init_logging();
+
     gig_init_callback();
+    gig_init_closure();
+    gig_init_constant();
+    gig_init_flag_stage1();
     gig_init_function();
-    gig_lib_init();
-    gig_constant_init();
-    gig_init_object();
+    gig_init_glib();
+    gig_init_lib();
+    gig_init_object_stage1();
+    gig_init_type_stage1();
+    gig_init_signal_stage1();
+    gig_init_value();
+    scm_c_define_gsubr("^initialize", 0, 0, 0, scm_il_initialize);
 #ifdef ENABLE_GCOV
     scm_c_define_gsubr("gcov-reset", 0, 0, 0, scm_gcov_reset);
     scm_c_define_gsubr("gcov-dump", 0, 0, 0, scm_gcov_dump);
 #endif
-    gig_debug("End libguile-gir initialization");
+}
+
+static void
+gig_init_stage2(void)
+{
+#ifdef MTRACE
+    mtrace();
+#endif
+    gig_init_flag_stage2();
+    gig_init_object_stage2();
+    gig_init_signal_stage2();
+    gig_init_type_stage2();
 }
 
 #ifdef STANDALONE

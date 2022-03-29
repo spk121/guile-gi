@@ -19,6 +19,7 @@
 #include <ffi.h>
 #include "../core.h"
 #include "../type.h"
+#include "../gig_glib.h"
 #include "gig_argument.h"
 #include "gig_callback_priv.h"
 #include "gig_function_priv.h"
@@ -596,6 +597,8 @@ amap_entry_to_ffi_type(GigArgMapEntry *entry)
 static SCM
 scm_is_registered_callback_p(SCM s_proc)
 {
+    GIG_INIT_CHECK();
+
     if (!scm_is_procedure(s_proc))
         scm_wrong_type_arg_msg("is-registered-callback?", 0, s_proc, "procedure");
 
@@ -616,6 +619,8 @@ scm_is_registered_callback_p(SCM s_proc)
 static SCM
 scm_get_registered_callback_closure_pointer(SCM s_proc)
 {
+    GIG_INIT_CHECK();
+
     if (!scm_is_procedure(s_proc))
         scm_wrong_type_arg_msg("get-registered-callback-closure-pointer", 0, s_proc, "procedure");
 

@@ -122,7 +122,6 @@ libguile_gi_la_c_sources = \
   src/type/gig_object.c \
   src/type/gig_value.c \
   src/type/gig_signal.c \
-  src/gig.c \
   src/func/gig_arg_map.c \
   src/func/gig_callback.c \
   src/func/gig_function.c \
@@ -134,7 +133,9 @@ libguile_gi_la_c_sources = \
   src/gig_logging.c \
   src/func/gig_lib.c \
   src/func/gig_invoker.c \
-  src/gig_glib.c
+  src/gig_glib.c \
+  src/gig_runtime.c
+
 
 libguile_gi_la_internal_headers = \
   src/core.h \
@@ -318,7 +319,7 @@ dist_pkgguilesite_DATA = \
   module/gi/core-generics.scm \
   module/gi/documentation.scm \
   module/gi/logging.scm \
-  module/gi/oop.scm \
+  module/gi/runtime.scm \
   module/gi/parser.scm \
   module/gi/repository.scm \
   module/gi/types.scm \

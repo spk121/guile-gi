@@ -4,25 +4,23 @@
 #include <stdbool.h>
 #include <glib-object.h>
 
-bool gig_init_dlsyms(void *handle);
-
 struct vtable
 {
     gchar *(*array_free)(GArray *, gboolean);
     GArray *(*array_new)(gboolean, gboolean, guint);
-    void (*array_set_clear_func)(GArray *, void(*)(void *));
+    void (*array_set_clear_func)(GArray *, void (*)(void *));
     void *(*boxed_copy)(GType, const void *);
     void (*boxed_free)(GType, void *);
     guint8 *(*byte_array_free)(GByteArray *, gboolean);
     GByteArray *(*byte_array_new_take)(guint8 *, gsize);
-    void (*closure_add_invalidate_notifier)(GClosure *, void *, void(*)(void *, GClosure *));
+    void (*closure_add_invalidate_notifier)(GClosure *, void *, void (*)(void *, GClosure *));
     GType (*closure_get_type)(void);
     void (*closure_invoke)(GClosure *, GValue *, guint, const GValue *, void *);
     GClosure *(*closure_new_simple)(guint, void *);
     GClosure *(*closure_ref)(GClosure *);
     void (*closure_set_marshal)(GClosure *,
-                                void(*)(GClosure *, GValue *, guint, const GValue *, void *,
-                                        void *));
+                                void (*)(GClosure *, GValue *, guint, const GValue *, void *,
+                                         void *));
     void (*closure_sink)(GClosure *);
     gboolean (*direct_equal)(const void *, const void *);
     guint (*direct_hash)(const void *);
@@ -33,9 +31,9 @@ struct vtable
     gboolean (*hash_table_insert)(GHashTable *, void *, void *);
     void (*hash_table_iter_init)(GHashTableIter *, GHashTable *);
     gboolean (*hash_table_iter_next)(GHashTableIter *, void **, void **);
-    GHashTable *(*hash_table_new_full)(guint(*)(const void *),
-                                       gboolean(*)(const void *, const void *), void(*)(void *),
-                                       void(*)(void *));
+    GHashTable *(*hash_table_new_full)(guint (*)(const void *),
+                                       gboolean (*)(const void *, const void *), void (*)(void *),
+                                       void (*)(void *));
     guint (*hash_table_size)(GHashTable *);
     void (*hash_table_unref)(GHashTable *);
     gboolean (*int64_equal)(const void *, const void *);
@@ -75,9 +73,9 @@ struct vtable
     guint (*signal_lookup)(const char *, GType);
     const gchar *(*signal_name)(guint);
     guint (*signal_newv)(const gchar *, GType, GSignalFlags, GClosure *,
-                         gboolean(*)(GSignalInvocationHint *, GValue *, const GValue *, void *),
-                         void *, void(*)(GClosure *, GValue *, guint, const GValue *, void *,
-                                         void *), GType, guint, GType *);
+                         gboolean (*)(GSignalInvocationHint *, GValue *, const GValue *, void *),
+                         void *, void (*)(GClosure *, GValue *, guint, const GValue *, void *,
+                                          void *), GType, guint, GType *);
     void (*signal_query)(guint, GSignalQuery *);
     void (*slist_free)(GSList *);
     guint (*slist_length)(GSList *);
@@ -152,6 +150,16 @@ struct vtable
 };
 
 extern struct vtable G;
+extern int gig_initialized;
+int gig_glib_initialize(void);
+
+void gig_init_glib(void);
+
+#define GIG_INIT_CHECK()                        \
+    do {                                                                \
+        if(!gig_initialized)                                            \
+            scm_misc_error(NULL, "guile-gi has not been initialized", SCM_EOL); \
+    } while(0)
 
 #if 0
 // I wonder what the stability of this API is? This seems

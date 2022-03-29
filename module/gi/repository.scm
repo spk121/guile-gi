@@ -20,11 +20,12 @@
   #:use-module (system foreign)
 
   #:use-module (gi parser)
-  #:use-module (gi types)
+  #:use-module (gi runtime)
   #:use-module (gi core-generics)
   #:re-export (<GIBaseInfo>
                LOAD_METHODS LOAD_PROPERTIES LOAD_SIGNALS
-            LOAD_EVERYTHING LOAD_INFO_ONLY)
+               LOAD_EVERYTHING LOAD_INFO_ONLY
+               )
   #:export (require
             infos info
             load-by-name typelib->module
@@ -37,18 +38,19 @@
 
 (define-method (load (info <GIBaseInfo>))
   (parser-add-info! *parser* info LOAD_EVERYTHING)
-  (for-each eval (parser-take-output! *parser*)))
+  (for-each runtime-eval (parser-take-output! *parser*)))
 
 (define-method (load (info <GIBaseInfo>) flags)
   (parser-add-info! *parser* info flags)
-  (for-each eval (parser-take-output! *parser*)))
+  (for-each runtime-eval (parser-take-output! *parser*)))
 
 (define* (load-by-name lib name #:optional (flags LOAD_EVERYTHING))
   (parser-add-info! *parser*
                     (namespace-info-by-name lib name))
-  (for-each eval (parser-take-output! *parser*)))
+  (for-each runtime-eval (parser-take-output! *parser*)))
 
-(define require namespace-load)
+(define* (require namespace #:optional (version ""))
+  (parser-add-namespace! *parser* namespace version))
 
 (define (infos lib)
   (namespace-infos lib))
@@ -79,7 +81,8 @@
      (for-each (lambda (i)
                  (parser-add-info! *parser* i LOAD_EVERYTHING))
                (namespace-infos lib))
-     (module-export! module
-                     (append-map! il-load (parser-take-output! *parser*)))))
-
+     (let* ((cmds (parser-take-output! *parser*))
+            (syms (append-map runtime-eval cmds)))
+       (module-export! module syms))))
+       
   module)

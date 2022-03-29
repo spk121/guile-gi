@@ -23,6 +23,7 @@ GIG_API extern SCM gig_il_property_func;
 
 SCM gig_il_property(SCM s_gtype_name, SCM s_long_name, SCM s_short_name, SCM s_symbol);
 
-GIG_API void gig_init_object(void);
+void gig_init_object_stage1(void);
+void gig_init_object_stage2(void);
 
 #endif

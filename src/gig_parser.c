@@ -933,7 +933,7 @@ flag_conversions_define(GIRegisteredTypeInfo *info, SCM *ils)
     size_t gtype = g_registered_type_info_get_g_type(info);
     SCM s_gtype_name = scm_from_utf8_symbol(g_type_name(gtype));
     free(conversion_name);
-    SCM il = scm_list_3(scm_from_utf8_symbol("^-enum-conv"),
+    SCM il = scm_list_3(scm_from_utf8_symbol("^flags-conv"),
                         s_cname, s_gtype_name);
     *ils = scm_cons(il, *ils);
 }

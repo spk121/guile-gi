@@ -119,7 +119,7 @@ Returns value is unspecified. Throws on failure."
                  (list parser) (list parser)))
     
     (let ((lst (namespace-load namespace version)))
-      (vector-set! parser 1
+      (vector-set! parser 2
                    (cons (list '^library
                                namespace
                                (namespace-version namespace)
@@ -138,14 +138,15 @@ Returns value is unspecified. Throws on failure."
   "Returns a list of procedure calls that the runtime can use to
 dynamically load types and functions. Removes that information from
 the parser state object."
-    (unless (is-parser? parser)
-      (scm-error 'wrong-type-arg "parser-add-info!" "not a parser state object: ~S"
-                 (list parser) (list parser)))
 
-    (let ((output (append
+  (unless (is-parser? parser)
+    (scm-error 'wrong-type-arg "parser-add-info!" "not a parser state object: ~S"
+               (list parser) (list parser)))
+
+  (let ((output (append
                  (reverse (vector-ref parser 2))
                  (list (list '^initialize))
                  (reverse (vector-ref parser 3)))))
-    (vector-set! parser 2 '())
+    ;; (vector-set! parser 2 '())
     (vector-set! parser 3 '())
     output))

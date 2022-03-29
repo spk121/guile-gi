@@ -194,10 +194,8 @@ void gig_meta_add_params(GigTypeMeta *meta, int n);
 SCM gig_type_meta_to_il(GigTypeMeta *meta);
 void gig_type_meta_from_il(SCM il, GigTypeMeta *meta);
 
-
 size_t gig_meta_real_item_size(const GigTypeMeta *meta);
 const char *gig_type_meta_describe(const GigTypeMeta *meta);
 void gig_data_type_free(GigTypeMeta *meta);
-void gig_init_data_type(void);
 
 #endif

@@ -3,11 +3,13 @@
 #include <stdbool.h>
 #include <dlfcn.h>
 #include <glib-object.h>
+#include "func.h"
 #include "gig_glib.h"
 
 //#define DYNAMIC_GLIB
 
 struct vtable G;
+int gig_initialized = 0;
 
 void
 xdlsym(void **p, void *handle, const char *name, int *successes, int *attempts)
@@ -19,8 +21,8 @@ xdlsym(void **p, void *handle, const char *name, int *successes, int *attempts)
         *successes = *successes + 1;
 }
 
-bool
-gig_init_dlsyms(void *handle)
+static bool
+init_dlsyms(void *handle)
 {
     int i = 0, n = 0;
 
@@ -169,4 +171,30 @@ gig_init_dlsyms(void *handle)
     D(variant_ref_sink);
     D(variant_unref);
     return (i == n);
+}
+
+int
+gig_glib_initialize()
+{
+    void **handles;
+    int i = 0;
+    int ready = 0;
+
+    if (gig_initialized)
+        return 1;
+
+    handles = gig_lib_all_handles();
+    while (handles[i] != NULL) {
+        if (init_dlsyms(handles[i])) {
+            gig_initialized = 1;
+            break;
+        }
+        i++;
+    }
+    return gig_initialized;
+}
+
+void
+gig_init_glib()
+{
 }

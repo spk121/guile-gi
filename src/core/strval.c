@@ -40,7 +40,9 @@ strval_new()
 void
 strval_free(strval_t *sv, void (*valfree)(uint64_t val))
 {
-    for(int i = 0; i < sv->len; i++) {
+    if (sv == NULL)
+        return;
+    for (int i = 0; i < sv->len; i++) {
         free(sv->entries[i].key);
         if (valfree)
             valfree(sv->entries[i].val);

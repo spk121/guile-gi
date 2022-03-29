@@ -18,6 +18,6 @@
 
 #include "core.h"
 
-GIG_API void gig_init_logging(void);
+void gig_init_logging(void);
 
 #endif

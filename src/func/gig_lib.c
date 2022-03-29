@@ -3,8 +3,6 @@
 #include <dlfcn.h>
 #include <string.h>
 
-SCM gig_il_library_func = SCM_UNDEFINED;
-
 typedef struct GigSharedLib_
 {
     int n;
@@ -19,8 +17,8 @@ static bool is_nonempty_list_of_strings(SCM lst);
 static strval_t *lib_cache = NULL;
 static char errmsg[256];
 
-SCM
-gig_il_library(SCM s_namespace_, SCM s_path_list)
+static SCM
+gig_il_library(SCM s_namespace_, SCM s_version, SCM s_path_list)
 {
 #define FUNC_NAME "^library"
     char *namespace_;
@@ -56,7 +54,7 @@ gig_il_library(SCM s_namespace_, SCM s_path_list)
     strval_add_entry(lib_cache, namespace_, (uintptr_t) shlib);
     gig_debug_load("dynamically loaded namespace '%s'", namespace_);
     free(namespace_);
-    return SCM_BOOL_T;
+    return SCM_EOL;
 
   err:
     memset(errmsg, 0, 256);
@@ -65,7 +63,7 @@ gig_il_library(SCM s_namespace_, SCM s_path_list)
     free(namespace_);
     scm_syserror_msg(FUNC_NAME, "failed to dynamically load namespace '~a' - ~a",
                      scm_list_2(s_namespace_, scm_from_utf8_string(errmsg)), 0);
-    return SCM_BOOL_F;
+    return SCM_EOL;
 #undef FUNC_NAME
 }
 
@@ -95,6 +93,28 @@ gig_lib_lookup(const char *namespace_, const char *symbol)
         i++;
     }
     return NULL;
+}
+
+void **
+gig_lib_all_handles()
+{
+    void **handles;
+    int i, j, n;
+
+    n = 0;
+    for (j = 0; j < lib_cache->len; j++) {
+        GigSharedLib *shlib = (GigSharedLib *) lib_cache->entries[j].val;
+        n += shlib->n;
+    }
+    handles = (void **)xcalloc(n + 1, sizeof(void *));
+    n = 0;
+    for (j = 0; j < lib_cache->len; j++) {
+        GigSharedLib *shlib = (GigSharedLib *) lib_cache->entries[j].val;
+        for (i = 0; i < shlib->n; i++) {
+            handles[n++] = shlib->handles[i];
+        }
+    }
+    return handles;
 }
 
 static GigSharedLib *
@@ -146,7 +166,7 @@ is_nonempty_list_of_strings(SCM lst)
 }
 
 void
-gig_lib_init(void)
+gig_init_lib(void)
 {
-    gig_il_library_func = scm_c_define_gsubr("^library", 2, 0, 0, gig_il_library);
+    scm_c_define_gsubr("^library", 3, 0, 0, gig_il_library);
 }
