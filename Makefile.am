@@ -229,11 +229,33 @@ libguile_gi_la_LIBADD = \
 ######################
 
 libguile_giparse_la_c_sources = \
-  src/gig_repository.c \
+  src/core/keyval.c \
+  src/core/logging.c \
+  src/core/mem.c \
+  src/core/oop.c \
+  src/core/scm.c \
+  src/core/slist.c \
+  src/core/string.c \
+  src/core/strval.c \
+  src/func/gig_arg_map.c \
+  src/func/gig_data_type.c \
+  src/gig_parser.c \
   src/gig_document.c
 
 libguile_giparse_la_internal_headers = \
-  src/gig_repository.h
+  src/core.h \
+  src/core/keyval.h \
+  src/core/logging.h \
+  src/core/mem.h \
+  src/core/oop.h \
+  src/core/scm.h \
+  src/core/slist.h \
+  src/core/string.h \
+  src/core/strval.h \
+  src/core/visibility.h \
+  src/core/func/gig_arg_map.h \
+  src/core/func/gig_data_type.h \
+  src/gig_parser.h
 
 libguile_giparse_la_SOURCES = \
   $(libguile_giparse_la_internal_headers) \
@@ -279,10 +301,7 @@ endif
 libguile_giparse_la_LIBADD = \
  $(GUILE_LIBS) \
  $(GOBJECT_INTROSPECTION_LIBS) \
- $(GLIB_LIBS) \
- $(GOBJECT_LIBS) \
- $(FFI_LIBS) \
- libguile-gi.la
+ $(FFI_LIBS)
 
 #################
 # Guile Modules #
@@ -295,11 +314,12 @@ nodist_pkgguilesite_DATA = \
   module/gi/config.scm
 
 dist_pkgguilesite_DATA = \
-  module/gi/core-generics.scm \
   module/gi/compat.scm \
+  module/gi/core-generics.scm \
   module/gi/documentation.scm \
   module/gi/logging.scm \
   module/gi/oop.scm \
+  module/gi/parser.scm \
   module/gi/repository.scm \
   module/gi/types.scm \
   module/gi/util.scm

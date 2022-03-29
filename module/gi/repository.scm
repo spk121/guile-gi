@@ -19,32 +19,45 @@
   #:use-module (srfi srfi-1)
   #:use-module (system foreign)
 
+  #:use-module (gi parser)
   #:use-module (gi types)
   #:use-module (gi core-generics)
-  #:re-export (load)
-  #:export (<baseinfo>
-            require
+  #:re-export (<GIBaseInfo>
+               LOAD_METHODS LOAD_PROPERTIES LOAD_SIGNALS
+            LOAD_EVERYTHING LOAD_INFO_ONLY)
+  #:export (require
             infos info
             load-by-name typelib->module
 
-
             get-search-path prepend-search-path!
-            get-dependencies set-il-output-port
+            get-dependencies
+            ))
 
-            LOAD_METHODS LOAD_PROPERTIES LOAD_SIGNALS
-            LOAD_EVERYTHING LOAD_INFO_ONLY))
+(define *parser* (new-parser))
 
-(eval-when (expand load eval)
-  (load-extension "libguile-giparse" "gig_init_repository"))
+(define-method (load (info <GIBaseInfo>))
+  (parser-add-info! *parser* info LOAD_EVERYTHING)
+  (for-each eval (parser-take-output! *parser*)))
 
-(define-method (load (info <baseinfo>))
-  (%load-info info LOAD_EVERYTHING))
-
-(define-method (load (info <baseinfo>) flags)
-  (%load-info info flags))
+(define-method (load (info <GIBaseInfo>) flags)
+  (parser-add-info! *parser* info flags)
+  (for-each eval (parser-take-output! *parser*)))
 
 (define* (load-by-name lib name #:optional (flags LOAD_EVERYTHING))
-  (load (info lib name) flags))
+  (parser-add-info! *parser*
+                    (namespace-info-by-name lib name))
+  (for-each eval (parser-take-output! *parser*)))
+
+(define require namespace-load)
+
+(define (infos lib)
+  (namespace-infos lib))
+
+(define get-search-path irepository-search-path)
+
+(define prepend-search-path! irepository-prepend-search-path)
+
+(define get-dependencies namespace-dependencies)
 
 (define* (typelib->module module lib #:optional version)
   (require lib version)
@@ -63,6 +76,10 @@
   (save-module-excursion
    (lambda ()
      (set-current-module module)
-     (module-export! module (append-map! load (infos lib)))))
+     (for-each (lambda (i)
+                 (parser-add-info! *parser* i LOAD_EVERYTHING))
+               (namespace-infos lib))
+     (module-export! module
+                     (append-map! il-load (parser-take-output! *parser*)))))
 
   module)

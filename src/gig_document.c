@@ -17,7 +17,7 @@
 #include <girepository.h>
 #include "type.h"
 #include "func.h"
-#include "gig_repository.h"
+#include "gig_parser.h"
 
 static void do_document(GIBaseInfo *info, const char *parent);
 GIG_API void gig_init_document(void);

@@ -29,7 +29,7 @@
   #:use-module ((sxml xpath) #:prefix xpath:)
   #:use-module (gi config)
   #:use-module (gi types)
-  #:use-module ((gi repository) #:select (<baseinfo> infos require))
+  #:use-module ((gi repository) #:select (<GIBaseInfo> infos require))
   #:export (parse
             typelib gir
             ->guile-procedures.txt
@@ -194,7 +194,7 @@
     (parser (if (string? string-or-port) (open-input-string string-or-port) string-or-port)
             '())))
 
-(define-method (%info (info <baseinfo>))
+(define-method (%info (info <GIBaseInfo>))
   (let ((doc (with-output-to-string (lambda () (%document info)))))
     doc))
 

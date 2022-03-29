@@ -16,20 +16,21 @@
 #include <inttypes.h>
 #include <libguile.h>
 #include <girepository.h>
+#include "core.h"
 #include "type.h"
 #include "func.h"
-#include "gig_repository.h"
+#include "gig_parser.h"
 
 static SCM get_shared_library_list(const char *lib);
-static void constant_define(GIConstantInfo *info, SCM *defs, SCM *ils);
-static void type_define(GType gtype, size_t size, SCM *defs, SCM *ils);
-static void property_define(GIBaseInfo *info, SCM *defs, SCM *ils);
-static void untyped_flags_define(GIRegisteredTypeInfo *info, SCM *defs, SCM *ils);
-static void untyped_enum_define(GIRegisteredTypeInfo *info, SCM *defs, SCM *ils);
-static void untyped_enum_conversions_define(GIRegisteredTypeInfo *info, SCM *defs, SCM *ils);
-static void untyped_flag_conversions_define(GIRegisteredTypeInfo *info, SCM *defs, SCM *ils);
-static void enum_conversions_define(GIRegisteredTypeInfo *info, SCM *defs, SCM *ils);
-static void flag_conversions_define(GIRegisteredTypeInfo *info, SCM *defs, SCM *ils);
+static void constant_define(GIConstantInfo *info, SCM *ils);
+static void type_define(GType gtype, size_t size, SCM *ils);
+static void property_define(GIBaseInfo *info, SCM *ils);
+static void untyped_flags_define(GIRegisteredTypeInfo *info, SCM *ils);
+static void untyped_enum_define(GIRegisteredTypeInfo *info, SCM *ils);
+static void untyped_enum_conversions_define(GIRegisteredTypeInfo *info, SCM *ils);
+static void untyped_flag_conversions_define(GIRegisteredTypeInfo *info, SCM *ils);
+static void enum_conversions_define(GIRegisteredTypeInfo *info, SCM *ils);
+static void flag_conversions_define(GIRegisteredTypeInfo *info, SCM *ils);
 static SCM make_baseinfo_fo(GIBaseInfo *info);
 
 // utilities
@@ -45,46 +46,184 @@ static void type_meta_add_child_params(GigTypeMeta *meta, GITypeInfo *type_info,
 static void type_meta_init_from_basic_type_tag(GigTypeMeta *meta, GITypeTag tag);
 static void type_meta_init_from_callable_info(GigTypeMeta *meta, GICallableInfo *ci);
 
-
-
-static SCM il_output_port = SCM_UNDEFINED;
-static SCM pretty_print_func = SCM_UNDEFINED;
 static SCM baseinfo_fo_type = SCM_UNDEFINED;
 
 static SCM
-set_il_output_port(SCM s_port)
+scm_irepository_search_path(void)
 {
-#define FUNC_NAME "set-il-output-port!"
-    SCM_ASSERT_TYPE(scm_is_true(scm_output_port_p(s_port)), s_port,
-                    SCM_ARG1, FUNC_NAME, "output port");
-    il_output_port = s_port;
+    GSList *slist = g_irepository_get_search_path();
+    SCM entry;
+    SCM output = SCM_EOL;
+
+    if (slist == NULL)
+        return SCM_EOL;
+    do {
+        entry = scm_from_utf8_string(slist->data);
+        output = scm_cons(entry, output);
+    } while ((slist = g_slist_next(slist)));
+    return scm_reverse_x(output, SCM_EOL);
+}
+
+static SCM
+scm_irepository_prepend_search_path(SCM s_dir)
+{
+#define FUNC_NAME "irepository-prepend-search-path"
+    char *dir;
+
+    SCM_ASSERT_TYPE(scm_is_string(s_dir), s_dir, SCM_ARG1, "prepend-search-path!", "string");
+
+    dir = scm_to_utf8_string(s_dir);
+    g_irepository_prepend_search_path(dir);
+    free(dir);
+
     return SCM_UNSPECIFIED;
 #undef FUNC_NAME
 }
 
 static SCM
-output_il(SCM il)
+scm_namespace_load(SCM s_namespace, SCM s_version)
 {
-    if (SCM_UNBNDP(il_output_port))
-        return SCM_UNSPECIFIED;
+#define FUNC_NAME "namespace-load"
+    SCM_ASSERT_TYPE(scm_is_string(s_namespace), s_namespace, SCM_ARG1, FUNC_NAME, "string");
+    SCM_ASSERT_TYPE(scm_is_string(s_version), s_version, SCM_ARG2, FUNC_NAME, "string");
 
-    if (!scm_is_null(il)) {
-        scm_call_2(pretty_print_func, il, il_output_port);
+    char *namespace_, *version = NULL;
+    GITypelib *tl;
+    GError *error = NULL;
+
+    scm_dynwind_begin(0);
+    namespace_ = scm_dynfree(scm_to_utf8_string(s_namespace));
+    if (scm_is_false(scm_string_null_p(s_version)))
+        version = scm_dynfree(scm_to_utf8_string(s_version));
+    
+    gig_debug_load("requiring %s-%s", namespace_, version != NULL ? version : "latest");
+    tl = g_irepository_require(NULL, namespace_, version, 0, &error);
+
+    if (tl == NULL) {
+        SCM err = scm_from_utf8_string(error->message);
+        g_error_free(error);
+        scm_misc_error(FUNC_NAME, "~A", scm_list_1(err));
     }
+    scm_dynwind_end();
     return SCM_UNSPECIFIED;
+#undef FUNC_NAME
 }
 
 static SCM
-output_exports(SCM defs)
+scm_namespace_version(SCM s_namespace)
 {
-    if (SCM_UNBNDP(il_output_port))
-        return SCM_UNSPECIFIED;
+#define FUNC_NAME "namespace-version"
+    SCM_ASSERT_TYPE(scm_is_string(s_namespace), s_namespace, SCM_ARG1, FUNC_NAME, "string");
 
-    if (!scm_is_null(defs)) {
-        SCM lst = scm_cons(scm_from_utf8_symbol("export"), defs);
-        scm_call_2(pretty_print_func, lst, il_output_port);
+    char *namespace_;
+    const char *version;
+
+    scm_dynwind_begin(0);
+    namespace_ = scm_dynfree(scm_to_utf8_string(s_namespace));
+    version = g_irepository_get_version(NULL, namespace_);
+
+    if (version == NULL)
+        scm_misc_error(FUNC_NAME, "namespace '~A' is not loaded", scm_list_1(s_namespace));
+    scm_dynwind_end();
+    return scm_from_utf8_string(version);
+    
+#undef FUNC_NAME
+}
+
+static SCM
+scm_namespace_shared_library(SCM s_namespace)
+{
+#define FUNC_NAME "namespace-shared-library"
+    SCM_ASSERT_TYPE(scm_is_string(s_namespace), s_namespace, SCM_ARG1, FUNC_NAME, "string");
+
+    char *namespace_;
+
+    scm_dynwind_begin(0);
+    namespace_ = scm_dynfree(scm_to_utf8_string(s_namespace));
+
+    const char *csv_paths;
+    const char *start, *end;
+    SCM path_list = SCM_EOL;
+
+    csv_paths = g_irepository_get_shared_library(NULL, namespace_);
+    if (csv_paths == NULL)
+        scm_misc_error(FUNC_NAME, "namespace '~A' is not loaded", scm_list_1(s_namespace));
+    start = csv_paths;
+    while ((end = strchr(start, ',')) != NULL) {
+        path_list = scm_cons(scm_from_locale_stringn(start, end - start), path_list);
+        start = end + 1;        // Skipping over comma.
     }
-    return SCM_UNSPECIFIED;
+    path_list = scm_cons(scm_from_locale_string(start), path_list);
+    scm_dynwind_end();
+    return scm_reverse(path_list);
+#undef FUNC_NAME
+}
+
+static SCM
+scm_namespace_infos(SCM s_namespace)
+{
+#define FUNC_NAME "namespace-infos"
+    SCM_ASSERT_TYPE(scm_is_string(s_namespace), s_namespace, SCM_ARG1, FUNC_NAME, "string");
+
+    scm_dynwind_begin(0);
+    char *namespace_ = scm_dynfree(scm_to_utf8_string(s_namespace));
+    int n = g_irepository_get_n_infos(NULL, namespace_);
+    SCM infos = SCM_EOL;
+
+    for (int i = 0; i < n; i++) {
+        GIBaseInfo *info = g_irepository_get_info(NULL, namespace_, i);
+        if (g_base_info_is_deprecated(info)) {
+            g_base_info_unref(info);
+            continue;
+        }
+        infos = scm_cons(make_baseinfo_fo(info), infos);
+    }
+    scm_dynwind_end();
+
+    return scm_reverse_x(infos, SCM_EOL);
+#undef FUNC_NAME
+}
+
+static SCM
+scm_namespace_info_by_name(SCM s_namespace, SCM s_name)
+{
+#define FUNC_NAME "namespace-info-by-name"
+    SCM_ASSERT_TYPE(scm_is_string(s_namespace), s_namespace, SCM_ARG1, FUNC_NAME, "string");
+    SCM_ASSERT_TYPE(scm_is_string(s_name), s_name, SCM_ARG2, FUNC_NAME, "string");
+
+    scm_dynwind_begin(0);
+    char *namespace_ = scm_dynfree(scm_to_utf8_string(s_namespace));
+    char *name = scm_dynfree(scm_to_utf8_string(s_name));
+    GIBaseInfo *info = g_irepository_find_by_name(NULL, namespace_, name);
+    scm_dynwind_end();
+    if (info == NULL)
+        scm_misc_error(FUNC_NAME,
+                       "could not load ~A from ~A, did you forget to require or perhaps misspell?",
+                       scm_list_2(s_name, s_namespace));
+    return scm_make_foreign_object_1(baseinfo_fo_type, info);
+#undef FUNC_NAME
+}
+
+static SCM
+scm_info_name(SCM s_info)
+{
+#define FUNC_NAME "info-name"
+    scm_assert_foreign_object_type(baseinfo_fo_type, s_info);
+    GIBaseInfo *info = scm_foreign_object_ref(s_info, 0);
+    const char *name = g_base_info_get_name(info);
+    return scm_from_utf8_string(name);
+#undef FUNC_NAME
+}
+
+static SCM
+scm_info_namespace(SCM s_info)
+{
+#define FUNC_NAME "info-namespace"
+    scm_assert_foreign_object_type(baseinfo_fo_type, s_info);
+    GIBaseInfo *info = scm_foreign_object_ref(s_info, 0);
+    const char *namespace_ = g_base_info_get_namespace(info);
+    return scm_from_utf8_string(namespace_);
+#undef FUNC_NAME
 }
 
 static SCM
@@ -116,11 +255,8 @@ require(SCM s_namespace, SCM s_version)
     SCM il = scm_list_3(scm_from_utf8_symbol("^library"),
                         s_namespace,
                         path_list);
-    scm_apply(gig_il_library_func, scm_cdr(il), SCM_EOL);
     scm_dynwind_end();
-
-    output_il(il);
-    return SCM_UNSPECIFIED;
+    return il;
 #undef FUNC_NAME
 }
 
@@ -143,28 +279,6 @@ get_shared_library_list(const char *namespace_)
     return scm_reverse(path_list);
 }
 
-static SCM
-infos(SCM lib)
-{
-    SCM_ASSERT_TYPE(scm_is_string(lib), lib, SCM_ARG1, "infos", "string");
-
-    scm_dynwind_begin(0);
-    char *_lib = scm_dynfree(scm_to_utf8_string(lib));
-    int n = g_irepository_get_n_infos(NULL, _lib);
-    SCM infos = SCM_EOL;
-
-    for (int i = 0; i < n; i++) {
-        GIBaseInfo *info = g_irepository_get_info(NULL, _lib, i);
-        if (g_base_info_is_deprecated(info)) {
-            g_base_info_unref(info);
-            continue;
-        }
-        infos = scm_cons(make_baseinfo_fo(info), infos);
-    }
-    scm_dynwind_end();
-
-    return scm_reverse_x(infos, SCM_EOL);
-}
 
 typedef enum _LoadFlags
 {
@@ -275,12 +389,15 @@ make_flag_enum_alist(GIRegisteredTypeInfo *info)
 }
 
 static SCM
-load_info(GIBaseInfo *info, LoadFlags flags)
+load_info(GIBaseInfo *info, LoadFlags flags, SCM *s_types, SCM *ils)
 {
-    SCM defs = SCM_EOL;
-    SCM ils = SCM_EOL;
-    g_return_val_if_fail(info != NULL, defs);
+    assert(info != NULL);
 
+#define IS_REGISTERED(x) \
+    scm_is_true(scm_member(scm_from_size_t(x), *s_types))
+#define REGISTER(x) \
+    *s_types = scm_cons(scm_from_size_t(x), *s_types)
+        
     GIBaseInfo *parent = g_base_info_get_container(info);
     GType parent_gtype = G_TYPE_INVALID;
     const char *parent_name = NULL;
@@ -316,13 +433,13 @@ load_info(GIBaseInfo *info, LoadFlags flags)
 
         // Pre-load all the types used by the function's arguments.
         for (size_t i = 0; i < len; i++) {
-            if (!gig_type_is_registered(types[i])) {
+            if (!IS_REGISTERED(types[i])) {
                 GIBaseInfo *typeinfo;
                 typeinfo = g_irepository_find_by_gtype(NULL, types[i]);
                 if (typeinfo) {
                     gig_debug_load("%s - loading prerequisite arg type %s",
                                    g_base_info_get_name(info), g_type_name(types[i]));
-                    defs = scm_append2(defs, load_info(typeinfo, LOAD_INFO_ONLY));
+                    SCM il = load_info(typeinfo, LOAD_INFO_ONLY, s_types, ils);
                     g_base_info_unref(typeinfo);
                 }
                 else {
@@ -355,9 +472,7 @@ load_info(GIBaseInfo *info, LoadFlags flags)
                                         scm_from_utf8_symbol(symbol_name),
                                         gig_amap_to_il(amap),
                                         SCM_UNDEFINED);
-                    SCM def = scm_apply(gig_il_function_func, scm_cdr(il), SCM_EOL);
-                    defs = scm_append2(defs, def);
-                    ils = scm_append2(ils, il);
+                    *ils = scm_cons(il, *ils);
                 }
                 else if (t == GI_INFO_TYPE_SIGNAL) {
                     symbol_name = g_base_info_get_name(info);
@@ -372,9 +487,7 @@ load_info(GIBaseInfo *info, LoadFlags flags)
                                         scm_from_utf8_symbol(symbol_name),
                                         gig_amap_to_il(amap),
                                         SCM_UNDEFINED);
-                    SCM def = scm_apply(gig_il_signal_func, scm_cdr(il), SCM_EOL);
-                    defs = scm_append2(defs, def);
-                    ils = scm_append2(ils, il);
+                    *ils = scm_cons(il, *ils);
                 }
             }
             free(short_name);
@@ -383,7 +496,7 @@ load_info(GIBaseInfo *info, LoadFlags flags)
     }
         break;
     case GI_INFO_TYPE_PROPERTY:
-        property_define(info, &defs, &ils);
+        property_define(info, ils);
         break;
     case GI_INFO_TYPE_BOXED:
     {
@@ -398,7 +511,8 @@ load_info(GIBaseInfo *info, LoadFlags flags)
             size = g_struct_info_get_size((GIStructInfo *) info);
         if (GI_IS_UNION_INFO(info))
             size = g_union_info_get_size((GIStructInfo *) info);
-        type_define(gtype, size, &defs, &ils);
+        type_define(gtype, size, ils);
+        REGISTER(gtype);
         goto recursion;
     }
     case GI_INFO_TYPE_STRUCT:
@@ -421,13 +535,14 @@ load_info(GIBaseInfo *info, LoadFlags flags)
         }
         GType par_gtype = g_type_parent(gtype);
         bool parent_ok = true;
-        if (par_gtype && !gig_type_is_registered(par_gtype)) {
+        if (par_gtype && !IS_REGISTERED(par_gtype)) {
             GIBaseInfo *typeinfo;
             typeinfo = g_irepository_find_by_gtype(NULL, par_gtype);
             if (typeinfo) {
                 gig_debug_load("%s - loading prerequisite type %s",
                                g_base_info_get_name(info), g_type_name(par_gtype));
-                defs = scm_append2(defs, load_info(typeinfo, LOAD_INFO_ONLY));
+                
+                SCM il = load_info(typeinfo, LOAD_INFO_ONLY, s_types, ils);
                 g_base_info_unref(typeinfo);
             }
             else {
@@ -449,13 +564,13 @@ load_info(GIBaseInfo *info, LoadFlags flags)
                 interfaces = g_type_interface_prerequisites(gtype, &n_interfaces);
 
             for (unsigned n = 0; n < n_interfaces; n++) {
-                if (interfaces[n] && !gig_type_is_registered(interfaces[n])) {
+                if (interfaces[n] && !IS_REGISTERED(interfaces[n])) {
                     GIBaseInfo *typeinfo;
                     typeinfo = g_irepository_find_by_gtype(NULL, interfaces[n]);
                     if (typeinfo) {
                         gig_debug_load("%s - loading prerequisite interface type %s",
                                        g_base_info_get_name(info), g_type_name(interfaces[n]));
-                        defs = scm_append2(defs, load_info(typeinfo, LOAD_INFO_ONLY));
+                        SCM il = load_info(typeinfo, LOAD_INFO_ONLY, s_types, ils);
                         g_base_info_unref(typeinfo);
                     }
                     else {
@@ -475,7 +590,8 @@ load_info(GIBaseInfo *info, LoadFlags flags)
                     size = g_struct_info_get_size((GIStructInfo *) info);
                 if (t == GI_INFO_TYPE_UNION)
                     size = g_union_info_get_size((GIStructInfo *) info);
-                type_define(gtype, size, &defs, &ils);
+                type_define(gtype, size, ils);
+                REGISTER(gtype);
             }
         }
         goto recursion;
@@ -486,25 +602,26 @@ load_info(GIBaseInfo *info, LoadFlags flags)
         GType gtype = g_registered_type_info_get_g_type(info);
         if (gtype == G_TYPE_NONE) {
             if (t == GI_INFO_TYPE_ENUM) {
-                untyped_enum_define(info, &defs, &ils);
-                untyped_enum_conversions_define(info, &defs, &ils);
+                untyped_enum_define(info, ils);
+                untyped_enum_conversions_define(info, ils);
             }
             else {
-                untyped_flags_define(info, &defs, &ils);
-                untyped_flag_conversions_define(info, &defs, &ils);
+                untyped_flags_define(info, ils);
+                untyped_flag_conversions_define(info, ils);
             }
         }
         else {
-            type_define(gtype, 0, &defs, &ils);
+            type_define(gtype, 0, ils);
+            REGISTER(gtype);
             if (t == GI_INFO_TYPE_ENUM)
-                enum_conversions_define(info, &defs, &ils);
+                enum_conversions_define(info, ils);
             else
-                flag_conversions_define(info, &defs, &ils);
+                flag_conversions_define(info, ils);
         }
         goto recursion;
     }
     case GI_INFO_TYPE_CONSTANT:
-        constant_define(info, &defs, &ils);
+        constant_define(info, ils);
         break;
     case GI_INFO_TYPE_VALUE:
         gig_critical_load("Unsupported irepository type 'VALUE'");
@@ -530,9 +647,9 @@ load_info(GIBaseInfo *info, LoadFlags flags)
     }
 
   end:
-    output_il(ils);
-    output_exports(defs);
-    return defs;
+    // output_il(ils);
+    // output_exports(defs);
+    return SCM_UNSPECIFIED;
 
   recursion:
     {
@@ -541,7 +658,7 @@ load_info(GIBaseInfo *info, LoadFlags flags)
             if (flags & F)                                      \
                 for (int i = 0; i < N; i++) {                  \
                     GIBaseInfo *nested_info = I(info, i);       \
-                    defs = scm_append2(defs, load_info(nested_info, flags)); \
+                    load_info(nested_info, flags, s_types, ils);     \
                     g_base_info_unref(nested_info);             \
                 }                                               \
         } while (0)
@@ -561,102 +678,52 @@ load_info(GIBaseInfo *info, LoadFlags flags)
 }
 
 static SCM
-load(SCM info, SCM flags)
+scm_parser_add_info_x(SCM s_parser, SCM s_info, SCM s_flags)
 {
-    SCM_ASSERT_TYPE(SCM_UNBNDP(flags) ||
-                    scm_is_unsigned_integer(flags, 0, LOAD_EVERYTHING), flags, SCM_ARG2, "load",
-                    "integer");
+    SCM_ASSERT_TYPE(scm_is_unsigned_integer(s_flags, 0, LOAD_EVERYTHING), s_flags, SCM_ARG2, "parser-add-info!", "integer");
 
-    LoadFlags load_flags;
-    if (SCM_UNBNDP(flags))
-        load_flags = LOAD_EVERYTHING;
-    else
-        load_flags = scm_to_uint(flags);
+    LoadFlags flags;
+    flags = scm_to_uint(s_flags);
 
-    GIBaseInfo *base_info = (GIBaseInfo *)SCM_SMOB_DATA(info);
+    SCM s_types = scm_c_vector_ref(s_parser, 1);
+    SCM s_ils = scm_c_vector_ref(s_parser, 3);
+    GIBaseInfo *base_info = scm_foreign_object_ref(s_info, 0);
 
-    return load_info(base_info, load_flags);
-}
-
-static SCM
-info(SCM lib, SCM name)
-{
-    SCM_ASSERT_TYPE(scm_is_string(lib), lib, SCM_ARG1, "info", "string");
-    SCM_ASSERT_TYPE(scm_is_string(name), name, SCM_ARG2, "info", "string");
-
-    char *_lib, *_name;
-    GIBaseInfo *info;
-    scm_dynwind_begin(0);
-    _lib = scm_dynfree(scm_to_utf8_string(lib));
-    _name = scm_dynfree(scm_to_utf8_string(name));
-
-    info = g_irepository_find_by_name(NULL, _lib, _name);
-    if (info == NULL)
-        scm_misc_error("info",
-                       "could not load ~A from ~A, did you forget to require or perhaps misspell?",
-                       scm_list_2(name, lib));
-    scm_dynwind_end();
-
-    return make_baseinfo_fo(info);
-}
-
-static SCM
-get_search_path(void)
-{
-    GSList *slist = g_irepository_get_search_path();
-    SCM entry;
-    SCM output = SCM_EOL;
-
-    if (slist == NULL)
-        return SCM_EOL;
-    do {
-        entry = scm_from_utf8_string(slist->data);
-        output = scm_cons(entry, output);
-    } while ((slist = g_slist_next(slist)));
-    return scm_reverse_x(output, SCM_EOL);
-}
-
-static SCM
-prepend_search_path(SCM s_dir)
-{
-    char *dir;
-
-    SCM_ASSERT_TYPE(scm_is_string(s_dir), s_dir, SCM_ARG1, "prepend-search-path!", "string");
-
-    dir = scm_to_utf8_string(s_dir);
-    g_irepository_prepend_search_path(dir);
-    free(dir);
-
+    load_info(base_info, flags, &s_types, &s_ils);
+    scm_c_vector_set_x(s_parser, 1, s_types);
+    scm_c_vector_set_x(s_parser, 3, s_ils);
     return SCM_UNSPECIFIED;
 }
 
 static SCM
-get_dependencies(SCM namespace)
+scm_namespace_dependencies(SCM s_namespace)
 {
-    char *_namespace;
-    char **_dependencies;
+#define FUNC_NAME "namespace-dependencies"
+    char *namespace_;
+    char **dependencies;
     int i;
-    SCM dependencies = SCM_EOL;
+    SCM s_dependencies = SCM_EOL;
 
-    SCM_ASSERT_TYPE(scm_is_string(namespace), namespace, SCM_ARG1, "get-dependencies", "string");
-    _namespace = scm_to_utf8_string(namespace);
-    _dependencies = g_irepository_get_dependencies(NULL, _namespace);
-    free(_namespace);
-    if (_dependencies == NULL)
+    SCM_ASSERT_TYPE(scm_is_string(s_namespace), s_namespace, SCM_ARG1, FUNC_NAME, "string");
+    namespace_ = scm_to_utf8_string(s_namespace);
+    dependencies = g_irepository_get_dependencies(NULL, namespace_);
+    free(namespace_);
+    if (dependencies == NULL)
         return SCM_EOL;
     i = 0;
-    while (_dependencies[i] != NULL) {
-        SCM entry = scm_from_utf8_string(_dependencies[i]);
-        dependencies = scm_cons(entry, dependencies);
-        free(_dependencies[i]);
+    while (dependencies[i] != NULL) {
+        SCM entry = scm_from_utf8_string(dependencies[i]);
+        s_dependencies = scm_cons(entry, s_dependencies);
+        free(dependencies[i]);
         i++;
     }
-    free(_dependencies);
-    return scm_reverse_x(dependencies, SCM_EOL);
+    free(dependencies);
+    return scm_reverse_x(s_dependencies, SCM_EOL);
+#undef FUNC_NAME
 }
 
 static void
-constant_define(GIConstantInfo *info, SCM *defs, SCM *ils)
+constant_define(GIConstantInfo *info, SCM *ils)
 {
     const char *name = g_base_info_get_name(info);
 
@@ -726,15 +793,31 @@ constant_define(GIConstantInfo *info, SCM *defs, SCM *ils)
     SCM s_name = scm_from_utf8_symbol(name);
     SCM il = scm_list_3(scm_from_utf8_symbol("^constant"),
                         s_name, s_value);
-    SCM def = scm_apply(gig_il_constant_func, scm_cdr(il), SCM_EOL);
-    *defs = scm_append2(*defs, def);
-    *ils = scm_append2(*ils, il);
+    *ils = scm_cons(il, *ils);
+}
+
+static char *
+type_class_name_from_gtype(GType gtype)
+{
+    char *class_name;
+#ifdef FIX_GTYPE_CLASS_NAME_BUG
+    GIBaseInfo *info = g_irepository_find_by_gtype(NULL, gtype);
+    if (info != NULL) {
+        class_name = bracketize(g_base_info_get_name(info));
+        g_base_info_unref(info);
+    }
+    else
+        class_name = bracketize(g_type_name(gtype));
+#else
+    class_name = bracketize(g_type_name(gtype));
+#endif
+    return class_name;
 }
 
 static void
-type_define(GType gtype, size_t size, SCM *defs, SCM *ils)
+type_define(GType gtype, size_t size, SCM *ils)
 {
-    char *type_class_name = gig_type_class_name_from_gtype(gtype);
+    char *type_class_name = type_class_name_from_gtype(gtype);
     SCM s_type_class_name = scm_from_utf8_symbol(type_class_name);
     free(type_class_name);
     SCM s_gtype_name = scm_from_utf8_string(g_type_name(gtype));
@@ -744,14 +827,13 @@ type_define(GType gtype, size_t size, SCM *defs, SCM *ils)
                         s_type_class_name, s_gtype_name, scm_from_size_t(size));
     else
         il = scm_list_3(scm_from_utf8_symbol("^type"), s_type_class_name, s_gtype_name);
-    SCM def = scm_apply(gig_il_type_func, scm_cdr(il), SCM_EOL);
 
-    *defs = scm_append2(*defs, def);
-    *ils = scm_append2(*ils, il);
+    // *defs = scm_append2(*defs, def);
+    *ils = scm_cons(il, *ils);
 }
 
 static void
-property_define(GIBaseInfo *info, SCM *defs, SCM *ils)
+property_define(GIBaseInfo *info, SCM *ils)
 {
     GIBaseInfo *parent = g_base_info_get_container(info);
     GType parent_gtype = g_registered_type_info_get_g_type(parent);
@@ -765,49 +847,45 @@ property_define(GIBaseInfo *info, SCM *defs, SCM *ils)
                         scm_from_utf8_symbol(g_type_name(parent_gtype)),
                         scm_from_utf8_symbol(long_name),
                         scm_from_utf8_symbol(short_name), scm_from_utf8_symbol(symbol));
-    SCM def = scm_apply(gig_il_property_func, scm_cdr(il), SCM_EOL);
-    *defs = scm_append2(*defs, def);
-    *ils = scm_append2(*ils, il);
+    *ils = scm_cons(il, *ils);
 }
 
 static void
-untyped_flags_define(GIRegisteredTypeInfo *info, SCM *defs, SCM *ils)
+untyped_flags_define(GIRegisteredTypeInfo *info, SCM *ils)
 {
     char *qname = base_info_get_qualified_name(info);
+    SCM il = SCM_EOL;
     SCM s_qname = scm_from_utf8_symbol(qname);
     char *class_name = bracketize(qname);
     SCM s_class_name = scm_from_utf8_symbol(class_name);
-    free(qname);
     free(class_name);
     SCM alist = make_flag_enum_alist(info);
-    SCM il = scm_list_4(scm_from_utf8_symbol("^untyped-flags"),
-                        s_class_name, s_qname, alist);
-
-    SCM def = scm_apply(gig_il_untyped_flags_func, scm_cdr(il), SCM_EOL);
-    *defs = scm_append2(*defs, def);
-    *ils = scm_append2(*ils, il);
+    il = scm_list_4(scm_from_utf8_symbol("^untyped-flags"),
+                    s_class_name, s_qname, alist);
+    
+    free(qname);
+    *ils = scm_cons(il, *ils);
 }
 
 static void
-untyped_enum_define(GIRegisteredTypeInfo *info, SCM *defs, SCM *ils)
+untyped_enum_define(GIRegisteredTypeInfo *info, SCM *ils)
 {
     char *qname = base_info_get_qualified_name(info);
+    SCM il = SCM_EOL;
     SCM s_qname = scm_from_utf8_symbol(qname);
     char *class_name = bracketize(qname);
     SCM s_class_name = scm_from_utf8_symbol(class_name);
-    free(qname);
     free(class_name);
     SCM alist = make_flag_enum_alist(info);
-    SCM il = scm_list_4(scm_from_utf8_symbol("^untyped-enum"),
-                        s_class_name, s_qname, alist);
+    il = scm_list_4(scm_from_utf8_symbol("^untyped-enum"),
+                    s_class_name, s_qname, alist);
 
-    SCM def = scm_apply(gig_il_untyped_enum_func, scm_cdr(il), SCM_EOL);
-    *defs = scm_append2(*defs, def);
-    *ils = scm_append2(*ils, il);
+    free(qname);
+    *ils = scm_cons(il, *ils);
 }
 
 static void
-untyped_enum_conversions_define(GIRegisteredTypeInfo *info, SCM *defs, SCM *ils)
+untyped_enum_conversions_define(GIRegisteredTypeInfo *info, SCM *ils)
 {
     char *qname = base_info_get_qualified_name(info);
     SCM s_qname = scm_from_utf8_symbol(qname);
@@ -817,13 +895,11 @@ untyped_enum_conversions_define(GIRegisteredTypeInfo *info, SCM *defs, SCM *ils)
     free(qname);
     SCM il = scm_list_3(scm_from_utf8_symbol("^untyped-enum-conv"),
                         s_cname, s_qname);
-    SCM def = scm_apply(gig_il_untyped_enum_conversions_func, scm_cdr(il), SCM_EOL);
-    *defs = scm_append2(*defs, def);
-    *ils = scm_append2(*ils, il);
+    *ils = scm_cons(il, *ils);
 }
 
 static void
-untyped_flag_conversions_define(GIRegisteredTypeInfo *info, SCM *defs, SCM *ils)
+untyped_flag_conversions_define(GIRegisteredTypeInfo *info, SCM *ils)
 {
     char *qname = base_info_get_qualified_name(info);
     SCM s_qname = scm_from_utf8_symbol(qname);
@@ -833,13 +909,11 @@ untyped_flag_conversions_define(GIRegisteredTypeInfo *info, SCM *defs, SCM *ils)
     free(qname);
     SCM il = scm_list_3(scm_from_utf8_symbol("^untyped-flags-conv"),
                         s_cname, s_qname);
-    SCM def = scm_apply(gig_il_untyped_flag_conversions_func, scm_cdr(il), SCM_EOL);
-    *defs = scm_append2(*defs, def);
-    *ils = scm_append2(*ils, il);
+    *ils = scm_cons(il, *ils);
 }
 
 static void
-enum_conversions_define(GIRegisteredTypeInfo *info, SCM *defs, SCM *ils)
+enum_conversions_define(GIRegisteredTypeInfo *info, SCM *ils)
 {
     char *conversion_name = make_scm_name(g_base_info_get_name(info));
     SCM s_cname = scm_from_utf8_symbol(conversion_name);
@@ -848,13 +922,11 @@ enum_conversions_define(GIRegisteredTypeInfo *info, SCM *defs, SCM *ils)
     free(conversion_name);
     SCM il = scm_list_3(scm_from_utf8_symbol("^enum-conv"),
                         s_cname, s_gtype_name);
-    SCM def = scm_apply(gig_il_enum_conversions_func, scm_cdr(il), SCM_EOL);
-    *defs = scm_append2(*defs, def);
-    *ils = scm_append2(*ils, il);
+    *ils = scm_cons(il, *ils);
 }
 
 static void
-flag_conversions_define(GIRegisteredTypeInfo *info, SCM *defs, SCM *ils)
+flag_conversions_define(GIRegisteredTypeInfo *info, SCM *ils)
 {
     char *conversion_name = make_scm_name(g_base_info_get_name(info));
     SCM s_cname = scm_from_utf8_symbol(conversion_name);
@@ -863,9 +935,7 @@ flag_conversions_define(GIRegisteredTypeInfo *info, SCM *defs, SCM *ils)
     free(conversion_name);
     SCM il = scm_list_3(scm_from_utf8_symbol("^-enum-conv"),
                         s_cname, s_gtype_name);
-    SCM def = scm_apply(gig_il_flag_conversions_func, scm_cdr(il), SCM_EOL);
-    *defs = scm_append2(*defs, def);
-    *ils = scm_append2(*ils, il);
+    *ils = scm_cons(il, *ils);
 }
 
 static SCM
@@ -883,23 +953,27 @@ gc_free_baseinfo(SCM x)
 }
 
 void
-gig_init_repository()
+gig_init_parser()
 {
-    pretty_print_func = scm_c_public_ref("ice-9 pretty-print", "pretty-print");
-
-    baseinfo_fo_type = scm_make_foreign_object_type(scm_from_utf8_symbol("baseinfo"),
+    baseinfo_fo_type = scm_make_foreign_object_type(scm_from_utf8_symbol("<GIBaseInfo>"),
                                                     scm_list_1(scm_from_utf8_symbol("ptr")),
                                                     gc_free_baseinfo);
-    scm_c_define("<baseinfo>", baseinfo_fo_type);
+    scm_c_define("<GIBaseInfo>", baseinfo_fo_type);
 
     scm_c_define_gsubr("require", 1, 1, 0, require);
-    scm_c_define_gsubr("infos", 1, 0, 0, infos);
-    scm_c_define_gsubr("info", 2, 0, 0, info);
-    scm_c_define_gsubr("%load-info", 1, 1, 0, load);
-    scm_c_define_gsubr("get-search-path", 0, 0, 0, get_search_path);
-    scm_c_define_gsubr("prepend-search-path!", 1, 0, 0, prepend_search_path);
-    scm_c_define_gsubr("get-dependencies", 1, 0, 0, get_dependencies);
-    scm_c_define_gsubr("set-il-output-port", 1, 0, 0, set_il_output_port);
+    scm_c_define_gsubr("%irepository-search-path", 0, 0, 0, scm_irepository_search_path);
+    scm_c_define_gsubr("%irepository-prepend-search-path", 1, 0, 0, scm_irepository_prepend_search_path);
+    scm_c_define_gsubr("%namespace-load", 2, 0, 1, scm_namespace_load);
+    scm_c_define_gsubr("%namespace-version", 1, 0, 0, scm_namespace_version);
+    scm_c_define_gsubr("%namespace-shared-library", 1, 0, 0, scm_namespace_shared_library);
+    scm_c_define_gsubr("%namespace-infos", 1, 0, 0, scm_namespace_infos);
+    scm_c_define_gsubr("%namespace-info-by-name", 2, 0, 0, scm_namespace_info_by_name);
+    scm_c_define_gsubr("%namespace-dependencies", 1, 0, 0, scm_namespace_dependencies);
+    scm_c_define_gsubr("%info-name", 1, 0, 0, scm_info_name);
+    scm_c_define_gsubr("%info-namespace", 1, 0, 0, scm_info_namespace);
+    // scm_c_define_gsubr("get-all-info", 1, 0, 0, get_all_info);
+    // scm_c_define_gsubr("get-info-by-name", 2, 0, 0, get_info_by_name);
+    scm_c_define_gsubr("%parser-add-info!", 3, 0, 0, scm_parser_add_info_x);
 
 #define D(x) scm_permanent_object(scm_c_define(#x, scm_from_uint(x)))
 

@@ -50,6 +50,8 @@
             %before-callback-hook
             %before-c-callback-hook))
 
+(load-extension "libguile-gi" "gig_init")
+
 (define (subclass? type-a type-b)
   (memq type-b (class-precedence-list type-a)))
 
@@ -109,8 +111,6 @@
          #`(eval-when (expand load eval)
              #,@module-defs
              (use-modules #,@module-uses)))))))
-
-(load-extension "libguile-gi" "gig_init")
 
 (define (%new type . rest)
   (cond
