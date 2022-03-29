@@ -54,6 +54,7 @@ gig_init(void)
     mtrace();
 #endif
     gig_debug("Begin libguile-gir initialization");
+    gig_init_dlsyms(NULL);
     gig_init_flag();
     gig_init_signal();
     gig_init_callback();

@@ -5,7 +5,7 @@
 #include <glib-object.h>
 #include "gig_glib.h"
 
-#define DYNAMIC_GLIB
+//#define DYNAMIC_GLIB
 
 struct vtable G;
 

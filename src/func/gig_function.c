@@ -18,6 +18,7 @@
 #include <stdbool.h>
 #include <libguile/hooks.h>
 #include "../type.h"
+#include "../gig_glib.h"
 #include "gig_argument.h"
 #include "gig_args_store.h"
 #include "gig_util_priv.h"
@@ -86,7 +87,7 @@ gig_il_function(SCM s_namespace_, SCM s_gtype_name, SCM s_long_name,
     size_t gtype = 0;
     if (scm_is_true(s_gtype_name)) {
         gtype_name = scm_to_utf8_symbol(s_gtype_name);
-        gtype = g_type_from_name(gtype_name);
+        gtype = G.type_from_name(gtype_name);
     }
     char *long_name = scm_to_utf8_symbol(s_long_name);
     char *short_name = scm_to_utf8_symbol(s_short_name);
@@ -125,7 +126,7 @@ gig_function_define_full(const char *namespace_, size_t gtype, const char *long_
                    (amap->is_method ? "method" : "function"),
                    (namespace_ ? namespace_ : ""),
                    (namespace_ ? " " : ""),
-                   (gtype > 4 ? g_type_name(gtype) : ""), (gtype > 4 ? " " : ""), symbol);
+                   (gtype > 4 ? G.type_name(gtype) : ""), (gtype > 4 ? " " : ""), symbol);
 
     if (amap->is_method)
         self_type = gig_type_get_scheme_type(gtype);
@@ -165,7 +166,7 @@ gig_il_signal(SCM s_namespace_, SCM s_gtype_name, SCM s_long_name,
     size_t gtype = 0;
     if (scm_is_true(s_gtype_name)) {
         gtype_name = scm_to_utf8_symbol(s_gtype_name);
-        gtype = g_type_from_name(gtype_name);
+        gtype = G.type_from_name(gtype_name);
     }
     char *long_name = scm_to_utf8_symbol(s_long_name);
     char *short_name = scm_to_utf8_symbol(s_short_name);
@@ -195,7 +196,7 @@ gig_signal_define_full(const char *namespace_, size_t gtype, const char *long_na
                    long_name,
                    (namespace_ ? namespace_ : ""),
                    (namespace_ ? " " : ""),
-                   (gtype > 4 ? g_type_name(gtype) : ""), (gtype > 4 ? " " : ""), symbol);
+                   (gtype > 4 ? G.type_name(gtype) : ""), (gtype > 4 ? " " : ""), symbol);
     gig_debug_load("%s - shorthand for %s", short_name, long_name);
 
     self_type = gig_type_get_scheme_type(gtype);
@@ -610,7 +611,7 @@ function_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
         char str[256];
         memset(str, 0, 256);
         strncpy(str, err->message, 255);
-        g_error_free(err);
+        G.error_free(err);
 
         scm_misc_error(gfn->name, str, SCM_EOL);
         g_return_if_reached();

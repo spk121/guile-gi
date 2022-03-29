@@ -20,6 +20,7 @@
 #include <ffi.h>
 #include "gig_type_priv.h"
 #include "gig_boxed.h"
+#include "../gig_glib.h"
 
 // In C, a GType is an integer.  It is an integer ID that maps to a
 // type of GObject.
@@ -106,7 +107,7 @@ gig_type_define_full(const char *_type_class_name, GType gtype, SCM extra_supers
     assert(GSIZE_TO_POINTER(gtype) != NULL);
     SCM defs = SCM_EOL;
     SCM orig_value;
-    GType parent = g_type_parent(gtype);
+    GType parent = G.type_parent(gtype);
     GType fundamental = G_TYPE_FUNDAMENTAL(gtype);
 
     SCM hash = scm_variable_ref(gtype_hash_var);
@@ -114,12 +115,12 @@ gig_type_define_full(const char *_type_class_name, GType gtype, SCM extra_supers
 
     if (!scm_is_true(orig_value)) {
         gig_debug_load("%s - creating new %s type for %zx %s",
-                       _type_class_name, g_type_name(fundamental), gtype, g_type_name(gtype));
+                       _type_class_name, G.type_name(fundamental), gtype, g_type_name(gtype));
 
-        GType reserved = g_type_from_name(g_type_name(gtype));
+        GType reserved = G.type_from_name(G.type_name(gtype));
         if (reserved != 0 && reserved != gtype)
             gig_critical_load("%s - %s already has %zx as registered GType", _type_class_name,
-                              g_type_name(gtype), reserved);
+                              G.type_name(gtype), reserved);
 
         if (parent != G_TYPE_INVALID)
             defs = scm_append2(defs, gig_type_define(parent));
@@ -139,11 +140,11 @@ gig_type_define_full(const char *_type_class_name, GType gtype, SCM extra_supers
     }
     else {
         gig_debug_load("%s - type already exists for %zx %s",
-                       _type_class_name, gtype, g_type_name(gtype));
+                       _type_class_name, gtype, G.type_name(gtype));
         SCM val = orig_value;
 
         if (SCM_UNBNDP(val))
-            gig_critical("%s - %s is undefined", _type_class_name, g_type_name(gtype));
+            gig_critical("%s - %s is undefined", _type_class_name, G.type_name(gtype));
         SCM key = scm_from_utf8_symbol(_type_class_name);
         scm_define(key, val);
         defs = scm_cons(key, defs);
@@ -179,7 +180,7 @@ gig_il_type(SCM s_name, SCM s_gtype_name, SCM s_boxed_size)
     if (!SCM_UNBNDP(s_boxed_size))
         boxed_size = scm_to_size_t(s_boxed_size);
     gtype_name = scm_to_utf8_string(s_gtype_name);
-    gtype = g_type_from_name(gtype_name);
+    gtype = G.type_from_name(gtype_name);
     free(gtype_name);
     if (gtype == 0)
         scm_misc_error(FUNC_NAME, "cannot find GType for '~A'", scm_list_1(s_gtype_name));
@@ -281,8 +282,8 @@ static SCM
 make_type_with_gtype(const char *_type_class_name, GType gtype, SCM extra_supers,
                      size_t boxed_size)
 {
-    GType parent = g_type_parent(gtype);
-    GType fundamental = g_type_fundamental(gtype);
+    GType parent = G.type_parent(gtype);
+    GType fundamental = G.type_fundamental(gtype);
     SCM new_type, dsupers, slots = SCM_EOL;
     SCM hash = scm_variable_ref(gtype_hash_var);
     SCM sparent = scm_hashq_ref(hash, scm_from_size_t(parent), SCM_BOOL_F);
@@ -292,7 +293,7 @@ make_type_with_gtype(const char *_type_class_name, GType gtype, SCM extra_supers
     switch (fundamental) {
     case G_TYPE_ENUM:
     {
-        GEnumClass *_class = g_type_class_ref(gtype);
+        GEnumClass *_class = G.type_class_ref(gtype);
         SCM size = scm_from_uint(_class->n_values);
         SCM obarray = scm_make_hash_table(size);
 
@@ -304,7 +305,7 @@ make_type_with_gtype(const char *_type_class_name, GType gtype, SCM extra_supers
                            _class->values[i].value);
             scm_hashq_set_x(obarray, key, value);
         }
-        g_type_class_unref(_class);
+        G.type_class_unref(_class);
 
         dsupers = scm_list_1(sparent);
         new_type = scm_make_class_with_name(dsupers, slots, type_class_name);
@@ -315,7 +316,7 @@ make_type_with_gtype(const char *_type_class_name, GType gtype, SCM extra_supers
 
     case G_TYPE_FLAGS:
     {
-        GFlagsClass *_class = g_type_class_ref(gtype);
+        GFlagsClass *_class = G.type_class_ref(gtype);
         SCM size = scm_from_uint(_class->n_values);
         SCM obarray = scm_make_hash_table(size);
 
@@ -327,7 +328,7 @@ make_type_with_gtype(const char *_type_class_name, GType gtype, SCM extra_supers
                            _class->values[i].value);
             scm_hashq_set_x(obarray, key, value);
         }
-        g_type_class_unref(_class);
+        G.type_class_unref(_class);
 
         dsupers = scm_list_1(sparent);
         new_type = scm_make_class_with_name(dsupers, slots, type_class_name);
@@ -357,9 +358,9 @@ make_type_with_gtype(const char *_type_class_name, GType gtype, SCM extra_supers
         GType *interfaces = NULL;
         unsigned n_interfaces = 0;
         if (fundamental == G_TYPE_OBJECT)
-            interfaces = g_type_interfaces(gtype, &n_interfaces);
+            interfaces = G.type_interfaces(gtype, &n_interfaces);
         else if (fundamental == G_TYPE_INTERFACE)
-            interfaces = g_type_interface_prerequisites(gtype, &n_interfaces);
+            interfaces = G.type_interface_prerequisites(gtype, &n_interfaces);
 
         if (parent == G_TYPE_INTERFACE)
             dsupers = extra_supers;
@@ -381,7 +382,7 @@ make_type_with_gtype(const char *_type_class_name, GType gtype, SCM extra_supers
     {
         GType *interfaces = NULL;
         unsigned n_interfaces = 0;
-        interfaces = g_type_interfaces(gtype, &n_interfaces);
+        interfaces = G.type_interfaces(gtype, &n_interfaces);
         if (scm_is_true(sparent))
             dsupers = scm_cons(sparent, extra_supers);
         else
@@ -442,9 +443,9 @@ gig_type_class_name_from_gtype(GType gtype)
         g_base_info_unref(info);
     }
     else
-        class_name = bracketize(g_type_name(gtype));
+        class_name = bracketize(G.type_name(gtype));
 #else
-    class_name = bracketize(g_type_name(gtype));
+    class_name = bracketize(G.type_name(gtype));
 #endif
     return class_name;
 }
@@ -559,7 +560,7 @@ gig_type_transfer_object(GType type, void *ptr, GigTransfer transfer)
     if (G_TYPE_IS_CLASSED(type))
         type = G_OBJECT_TYPE(ptr);
 
-    gig_debug_transfer("gig_type_transfer_object(%s, %p, %d)", g_type_name(type), ptr, transfer);
+    gig_debug_transfer("gig_type_transfer_object(%s, %p, %d)", G.type_name(type), ptr, transfer);
 
     SCM scm_type = gig_type_get_scheme_type(type);
     g_return_val_if_fail(scm_is_class(scm_type), SCM_BOOL_F);
@@ -575,7 +576,7 @@ gig_type_transfer_object(GType type, void *ptr, GigTransfer transfer)
         if (ref)
             pointer = scm_from_pointer(ref(ptr), unref);
         else {
-            gig_debug_transfer("%s has no ref function", g_type_name(type));
+            gig_debug_transfer("%s has no ref function", G.type_name(type));
             pointer = scm_from_pointer(ptr, unref);
         }
         break;
@@ -593,7 +594,7 @@ gig_type_transfer_object(GType type, void *ptr, GigTransfer transfer)
 static void
 gig_type_register_self(GType gtype, SCM stype)
 {
-    GType parent = g_type_parent(gtype);
+    GType parent = G.type_parent(gtype);
     SCM pval;
     char *stype_str = NULL, *old_stype_str = NULL;
     SCM hash = scm_variable_ref(gtype_hash_var);
@@ -607,19 +608,19 @@ gig_type_register_self(GType gtype, SCM stype)
     scm_hashq_set_x(hash, scm_from_size_t(gtype), stype);
     if (!scm_is_true(pval)) {
         if (parent)
-            gig_debug_load("%s - registering a new %s type for %zx as %s", g_type_name(gtype),
-                           g_type_name(parent), gtype, stype_str);
+            gig_debug_load("%s - registering a new %s type for %zx as %s", G.type_name(gtype),
+                           G.type_name(parent), gtype, stype_str);
         else
-            gig_debug_load("%s - registering a new type for %zx as %s", g_type_name(gtype), gtype,
+            gig_debug_load("%s - registering a new type for %zx as %s", G.type_name(gtype), gtype,
                            stype_str);
     }
     else {
         old_stype_str = scm_write_to_utf8_stringn(pval, 80);
         if (parent)
-            gig_debug_load("%s - re-registering %s type for %zx from %s to %s", g_type_name(gtype),
-                           g_type_name(parent), gtype, old_stype_str, stype_str);
+            gig_debug_load("%s - re-registering %s type for %zx from %s to %s", G.type_name(gtype),
+                           G.type_name(parent), gtype, old_stype_str, stype_str);
         else
-            gig_debug_load("%s - re-registering type for %zx from %s to %s", g_type_name(gtype),
+            gig_debug_load("%s - re-registering type for %zx from %s to %s", G.type_name(gtype),
                            gtype, old_stype_str, stype_str);
         free(old_stype_str);
     }
@@ -632,7 +633,7 @@ gig_type_register_self(GType gtype, SCM stype)
 void
 gig_type_register(GType gtype, SCM stype)
 {
-    GType parent = g_type_parent(gtype);
+    GType parent = G.type_parent(gtype);
     if (parent != 0)
         gig_type_register_self(parent, scm_get_unknown_class());
     gig_type_register_self(gtype, stype);
@@ -740,7 +741,7 @@ scm_type_gtype_get_name(SCM s_gtype)
     SCM_ASSERT_TYPE(scm_is_integer(s_gtype), s_gtype, SCM_ARG1, "gtype-get-name", "integer");
     GType type = scm_to_uintptr_t(s_gtype);
     if (gig_type_is_registered(type))
-        return scm_from_utf8_string(g_type_name(type));
+        return scm_from_utf8_string(G.type_name(type));
 
     return scm_from_utf8_string("invalid");
 }
@@ -754,7 +755,7 @@ scm_type_gtype_get_parent(SCM s_gtype)
     GType type = scm_to_uintptr_t(s_gtype);
 
     if (gig_type_is_registered(type))
-        return scm_from_uintptr_t(g_type_parent(type));
+        return scm_from_uintptr_t(G.type_parent(type));
     return SCM_BOOL_F;
 }
 
@@ -768,7 +769,7 @@ scm_type_gtype_get_fundamental(SCM s_gtype)
     GType type = scm_to_uintptr_t(s_gtype);
 
     if (gig_type_is_registered(type))
-        return scm_from_uintptr_t(g_type_fundamental(type));
+        return scm_from_uintptr_t(G.type_fundamental(type));
     return SCM_BOOL_F;
 }
 
@@ -787,7 +788,7 @@ scm_type_gtype_get_children(SCM s_gtype)
         unsigned n_children, i;
         SCM entry;
 
-        children = g_type_children(type, &n_children);
+        children = G.type_children(type, &n_children);
         for (i = 0; i < n_children; i++) {
             entry = scm_from_uintptr_t(children[i]);
             ret = scm_append(scm_list_2(ret, scm_list_1(entry)));
@@ -813,7 +814,7 @@ scm_type_gtype_get_interfaces(SCM s_gtype)
         unsigned n_interfaces, i;
         SCM entry;
 
-        interfaces = g_type_interfaces(type, &n_interfaces);
+        interfaces = G.type_interfaces(type, &n_interfaces);
         for (i = 0; i < n_interfaces; i++) {
             entry = scm_from_uintptr_t(interfaces[i]);
             ret = scm_append(scm_list_2(ret, scm_list_1(entry)));
@@ -833,7 +834,7 @@ scm_type_gtype_get_depth(SCM s_gtype)
     GType type = scm_to_uintptr_t(s_gtype);
 
     if (gig_type_is_registered(type))
-        return scm_from_uint(g_type_depth(type));
+        return scm_from_uint(G.type_depth(type));
     return SCM_BOOL_F;
 }
 
@@ -903,7 +904,7 @@ scm_type_gtype_is_a_p(SCM gself, SCM gparent)
     parent = scm_to_uintptr_t(gparent);
 
     if (gig_type_is_registered(self) && gig_type_is_registered(parent))
-        return scm_from_bool(g_type_is_a(self, parent));
+        return scm_from_bool(G.type_is_a(self, parent));
     return SCM_BOOL_F;
 }
 
@@ -913,7 +914,7 @@ scm_allocate_boxed(SCM type)
     SCM_ASSERT_TYPE(SCM_SUBCLASSP(type, boxed_type), type, SCM_ARG1,
                     "%allocate-boxed", "boxed type");
     size_t typ = gig_type_get_gtype_from_obj(type);
-    printf(".... %s\n", g_type_name(typ));
+    printf(".... %s\n", G.type_name(typ));
     SCM s_size = scm_get_class_size_slot(type);
 
     size_t size = scm_to_size_t(s_size);
@@ -934,7 +935,7 @@ gig_type_define_fundamental(GType type, SCM extra_supers,
                             GigTypeRefFunction ref, GigTypeUnrefFunction unref)
 {
     if (gig_type_is_registered(type)) {
-        gig_warning("not redefining fundamental type %s", g_type_name(type));
+        gig_warning("not redefining fundamental type %s", G.type_name(type));
         return;
     }
 
@@ -977,13 +978,13 @@ gig_type_define_fundamental(GType type, SCM extra_supers,
 static SCM
 scm_g_type_name_unsafe(SCM gtype)
 {
-    return scm_from_utf8_string(g_type_name(scm_to_size_t(gtype)));
+    return scm_from_utf8_string(G.type_name(scm_to_size_t(gtype)));
 }
 
 static SCM
 scm_g_type_parent_unsafe(SCM gtype)
 {
-    return scm_from_size_t(g_type_parent(scm_to_size_t(gtype)));
+    return scm_from_size_t(G.type_parent(scm_to_size_t(gtype)));
 }
 
 static SCM
@@ -1043,12 +1044,12 @@ gig_init_types_once(void)
     scm_c_define("G_TYPE_FLAG_ABSTRACT", scm_from_int(G_TYPE_FLAG_ABSTRACT));
     scm_c_define("SIZEOF_GVALUE", scm_from_size_t(sizeof(GValue)));
 
-    scm_c_define("$object-ref-sink-ptr", scm_from_pointer(g_object_ref_sink, NULL));
-    scm_c_define("$object-unref-ptr", scm_from_pointer(g_object_unref, NULL));
-    scm_c_define("$param-spec-ref-sink-ptr", scm_from_pointer(g_param_spec_ref_sink, NULL));
-    scm_c_define("$param-spec-unref-ptr", scm_from_pointer(g_param_spec_unref, NULL));
-    scm_c_define("$variant-ref-sink-ptr", scm_from_pointer(g_variant_ref_sink, NULL));
-    scm_c_define("$variant-unref-ptr", scm_from_pointer(g_variant_unref, NULL));
+    scm_c_define("$object-ref-sink-ptr", scm_from_pointer(G.object_ref_sink, NULL));
+    scm_c_define("$object-unref-ptr", scm_from_pointer(G.object_unref, NULL));
+    scm_c_define("$param-spec-ref-sink-ptr", scm_from_pointer(G.param_spec_ref_sink, NULL));
+    scm_c_define("$param-spec-unref-ptr", scm_from_pointer(G.param_spec_unref, NULL));
+    scm_c_define("$variant-ref-sink-ptr", scm_from_pointer(G.variant_ref_sink, NULL));
+    scm_c_define("$variant-unref-ptr", scm_from_pointer(G.variant_unref, NULL));
     scm_c_define("$null-ptr", scm_from_pointer(NULL, NULL));
 
 
@@ -1096,9 +1097,10 @@ gig_init_types_once(void)
 void
 gig_init_types()
 {
-    static size_t type_init;
-    if (g_once_init_enter(&type_init)) {
+    static size_t type_init = 1;
+    if (type_init == 1) {
+        gig_init_dlsyms(NULL);
         gig_init_types_once();
-        g_once_init_leave(&type_init, 1);
+        type_init = 0;
     }
 }

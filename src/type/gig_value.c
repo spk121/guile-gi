@@ -17,6 +17,7 @@
 #include "gig_value.h"
 #include "gig_type_priv.h"
 #include "gig_flag_priv.h"
+#include "../gig_glib.h"
 
 #ifndef FLT_MAX
 #define FLT_MAX 3.402823466e+38F
@@ -325,7 +326,7 @@ gig_value_to_scm_basic_type(const GValue *value, GType fundamental, bool *handle
     case G_TYPE_FLAGS:
         return gig_uint_to_flags(g_value_get_flags(value), G_VALUE_TYPE(value));
     case G_TYPE_FLOAT:
-        return scm_from_double(g_value_get_float(value));
+        return scm_from_double(G.value_get_float(value));
     case G_TYPE_DOUBLE:
         return scm_from_double(g_value_get_double(value));
     case G_TYPE_STRING:

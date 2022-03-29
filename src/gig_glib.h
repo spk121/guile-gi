@@ -153,4 +153,32 @@ struct vtable
 
 extern struct vtable G;
 
+#if 0
+// I wonder what the stability of this API is? This seems
+// risky.
+#define GIG_TYPE_PARAM_CHAR          (G.param_spec_types[0])
+#define GIG_TYPE_PARAM_UCHAR         (G.param_spec_types[1])
+#define GIG_TYPE_PARAM_BOOLEAN           (G.param_spec_types[2])
+#define GIG_TYPE_PARAM_INT           (G.param_spec_types[3])
+#define GIG_TYPE_PARAM_UINT          (G.param_spec_types[4])
+#define GIG_TYPE_PARAM_LONG          (G.param_spec_types[5])
+#define GIG_TYPE_PARAM_ULONG         (G.param_spec_types[6])
+#define GIG_TYPE_PARAM_INT64         (G.param_spec_types[7])
+#define GIG_TYPE_PARAM_UINT64        (G.param_spec_types[8])
+#define GIG_TYPE_PARAM_UNICHAR           (G.param_spec_types[9])
+#define GIG_TYPE_PARAM_ENUM          (G.param_spec_types[10])
+#define GIG_TYPE_PARAM_FLAGS         (G.param_spec_types[11])
+#define GIG_TYPE_PARAM_FLOAT         (G.param_spec_types[12])
+#define GIG_TYPE_PARAM_DOUBLE        (G.param_spec_types[13])
+#define GIG_TYPE_PARAM_STRING        (G.param_spec_types[14])
+#define GIG_TYPE_PARAM_PARAM         (G.param_spec_types[15])
+#define GIG_TYPE_PARAM_BOXED         (G.param_spec_types[16])
+#define GIG_TYPE_PARAM_POINTER           (G.param_spec_types[17])
+#define GIG_TYPE_PARAM_VALUE_ARRAY       (G.param_spec_types[18])
+#define GIG_TYPE_PARAM_OBJECT        (G.param_spec_types[19])
+#define GIG_TYPE_PARAM_OVERRIDE          (G.param_spec_types[20])
+#define GIG_TYPE_PARAM_GTYPE         (G.param_spec_types[21])
+#define GIG_TYPE_PARAM_VARIANT                (G.param_spec_types[22])
+#endif
+
 #endif

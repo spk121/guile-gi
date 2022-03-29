@@ -12,6 +12,7 @@
 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#include "../gig_glib.h"
 #include "gig_signal_priv.h"
 #include "gig_value.h"
 #include "gig_type_priv.h"
@@ -117,7 +118,7 @@ gig_signalspec_from_obj(SCM obj)
             scm_misc_error("%scm->signalspec",
                            "signal ~A must return a value to use the first-wins accumulator",
                            scm_list_1(scm_from_utf8_string(spec->signal_name)));
-        spec->accumulator = g_signal_accumulator_first_wins;
+        spec->accumulator = G.signal_accumulator_first_wins;
         spec->accu_data = NULL;
     }
     else if (scm_is_eq(saccu, signal_accu_true_handled)) {
@@ -125,7 +126,7 @@ gig_signalspec_from_obj(SCM obj)
             scm_misc_error("%scm->signalspec",
                            "signal ~A must have a boolean return type to use the true-handled accumulator",
                            scm_list_1(scm_from_utf8_string(spec->signal_name)));
-        spec->accumulator = g_signal_accumulator_true_handled;
+        spec->accumulator = G.signal_accumulator_true_handled;
         spec->accu_data = NULL;
     }
     else if (scm_is_procedure(saccu)) {

@@ -1218,7 +1218,7 @@ gig_function_get_arg_gtypes(GICallableInfo *info, size_t *len)
     if (amap == NULL)
         return NULL;
     types = gig_amap_get_gtype_list(amap, len);
-    gig_amap_free(amap);
+    //gig_amap_free(amap);
     return types;
 }
 
@@ -1535,7 +1535,7 @@ callable_info_make_amap(GICallableInfo *function_info, const char *name)
     amap->name = xstrdup(g_base_info_get_name(function_info));
     arg_map_apply_function_info(amap, function_info);
     if (amap->is_invalid) {
-        gig_amap_free(amap);
+        //gig_amap_free(amap);
         return NULL;
     }
     arg_map_determine_argument_presence(amap, function_info);
