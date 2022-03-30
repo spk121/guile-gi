@@ -265,7 +265,8 @@ libguile_giparse_la_SOURCES = \
 libguile_giparse_la_CPPFLAGS = \
   -DG_LOG_DOMAIN=\"GuileGI\" \
   -DG_LOG_USE_STRUCTURED \
-  -DBUILDING_GIG
+  -DBUILDING_GIG \
+  -DGIG_PARSER
 
 if BUILDING_DLL
 libguile_giparse_la_CPPFLAGS += -DGIR_DLL -DGIR_DLL_EXPORTS

@@ -15,6 +15,7 @@
 
 #include <assert.h>
 #include "../core.h"
+#include "../gig_glib.h"
 #include "gig_boxed.h"
 
 static slist_t *_boxed_funcs = NULL;
@@ -22,17 +23,19 @@ static slist_t *_boxed_funcs = NULL;
 static void
 _boxed_copy(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
 {
+    GIG_INIT_CHECK();
     GType type = GPOINTER_TO_SIZE(user_data);
-    gig_debug_transfer("boxed_copy(%s, %p)", g_type_name(type), *(void **)ffi_args[0]);
-    *(ffi_arg *)ret = (ffi_arg)g_boxed_copy(type, *(void **)ffi_args[0]);
+    gig_debug_transfer("boxed_copy(%s, %p)", G.type_name(type), *(void **)ffi_args[0]);
+    *(ffi_arg *)ret = (ffi_arg)G.boxed_copy(type, *(void **)ffi_args[0]);
 }
 
 static void
 _boxed_free(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
 {
+    GIG_INIT_CHECK();
     GType type = GPOINTER_TO_SIZE(user_data);
-    gig_debug_transfer("boxed_free(%s, %p)", g_type_name(type), *(void **)ffi_args[0]);
-    g_boxed_free(type, *(void **)ffi_args[0]);
+    gig_debug_transfer("boxed_free(%s, %p)", G.type_name(type), *(void **)ffi_args[0]);
+    G.boxed_free(type, *(void **)ffi_args[0]);
 }
 
 GigBoxedFuncs *

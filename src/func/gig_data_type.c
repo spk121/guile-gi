@@ -22,6 +22,9 @@
 #include "gig_data_type.h"
 #include "gig_arg_map_priv.h"
 #include "gig_util_priv.h"
+#ifndef GIG_PARSER
+#include "../gig_glib.h"
+#endif
 
 static char arg_type_names[GIG_ARG_TYPE_N_ARGS][64] = {
     [GIG_ARG_TYPE_UNKNOWN] = "unknown",
@@ -150,6 +153,7 @@ gig_type_meta_to_il(GigTypeMeta *meta)
 }
 
 
+#ifndef GIG_PARSER
 void
 gig_type_meta_from_il(SCM il, GigTypeMeta *meta)
 {
@@ -162,7 +166,7 @@ gig_type_meta_from_il(SCM il, GigTypeMeta *meta)
     val = scm_assq_ref(il, scm_from_utf8_symbol("gtype-name"));
     if (scm_is_true(val)) {
         str = scm_to_utf8_string(val);
-        meta->gtype = g_type_from_name(str);
+        meta->gtype = G.type_from_name(str);
         free(str);
     }
     val = scm_assq_ref(il, scm_from_utf8_symbol("qualified-name"));
@@ -229,6 +233,7 @@ gig_type_meta_from_il(SCM il, GigTypeMeta *meta)
     if (scm_is_true(val))
         meta->callable_arg_map = gig_amap_new_from_il(val);
 }
+#endif
 
 void
 gig_meta_add_params(GigTypeMeta *meta, int n)
@@ -265,6 +270,7 @@ gig_data_type_free(GigTypeMeta *meta)
 #define STRLEN 128
 char gig_data_type_describe_buf[STRLEN];
 
+#ifndef GIG_PARSER
 const char *
 gig_type_meta_describe(const GigTypeMeta *meta)
 {
@@ -272,7 +278,7 @@ gig_type_meta_describe(const GigTypeMeta *meta)
     const char *gtype_name = NULL;
     assert(meta->arg_type < GIG_ARG_TYPE_N_ARGS);
     if (meta->gtype)
-        gtype_name = g_type_name(meta->gtype);
+        gtype_name = G.type_name(meta->gtype);
     len = snprintf(gig_data_type_describe_buf, STRLEN,
                    "%s%s%s%s%s",
                    (meta->is_ptr ? "pointer to " : ""),
@@ -283,5 +289,6 @@ gig_type_meta_describe(const GigTypeMeta *meta)
         snprintf(gig_data_type_describe_buf + len, STRLEN - len, " or NULL");
     return gig_data_type_describe_buf;
 }
+#endif
 
 #undef STRLEN

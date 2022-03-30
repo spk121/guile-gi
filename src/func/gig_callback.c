@@ -357,7 +357,7 @@ c_callback_binding_inner(struct callback_binding_args *args)
 
     if (error != NULL) {
         SCM err = scm_from_utf8_string(error->message);
-        g_error_free(error);
+        G.error_free(error);
         scm_misc_error("gi:c-callback", "~A", scm_list_1(err));
     }
 

@@ -82,12 +82,11 @@
             G_TYPE_VALUE
             G_TYPE_VARIANT
             SIZEOF_GVALUE
+            SIZEOF_GCLOSURE
             type-<?
-            $type-name
-            $type-parent
-            $type-define-full
-            $add-copy/free-slot-funcs!
             ^type
+            ^sized-type
+            ^custom-type
             ^untyped-flags
             ^untyped-enum
             get-gtype
@@ -114,22 +113,22 @@
 
             ;; Locally
             runtime-eval
-            <GBoxed> <GObject> <GInterface> <GParam>
+            <GFundamental> <GBoxed> <GObject> <GInterface> <GParam>
             <GVariant>
-               <GValue> transform
-               <GClosure> procedure->closure
-               <GEnum> <GFlags>
-               enum->number enum->symbol number->enum symbol->enum
-               flags->number flags->list number->flags list->flags flags-set?
-               enum-universe
-               flags-mask flags-union flags-intersection flags-difference
-               flags-complement flags-projection flags-projection/list
-               flags-projection/number
-               is-registered-callback?
-               get-registered-callback-closure-pointer
+            <GValue> transform
+            <GClosure> procedure->closure
+            <GEnum> <GFlags>
+            enum->number enum->symbol number->enum symbol->enum
+            flags->number flags->list number->flags list->flags flags-set?
+            enum-universe
+            flags-mask flags-union flags-intersection flags-difference
+            flags-complement flags-projection flags-projection/list
+            flags-projection/number
+            is-registered-callback?
+            get-registered-callback-closure-pointer
 
-               <signal> make-signal
-               connect connect-after
+            <signal> make-signal
+            connect connect-after
             ))
 
 (eval-when (expand load eval)
@@ -151,8 +150,9 @@
     ^untyped-flags
     ^untyped-flags-conv
     ))
-             
+
 (define (runtime-eval expr)
+  (pk 'eval expr)
   (let ((sym (car expr))
         (args (cdr expr)))
     (cond
@@ -185,22 +185,83 @@
      (else
       (error "unknown expression '~S'" sym)))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; GType and SCM class associations
+
 (define %gtype-hash #f)
 (define %reverse-hash #f)
 (define %info-hash #f)
+
+;;(define +debug-port+ (current-output-port))
+(define +debug-port+ (%make-void-port "w"))
+
+(define (type-register-self gtype stype)
+  (let ((parent ($type-parent gtype))
+        (old-stype (hashq-ref %gtype-hash gtype)))
+    (when (or (not old-stype) (not (eq? stype old-stype)))
+      (when (or (not old-stype) (and (eq? old-stype <unknown>) (not (eq? stype <unknown>))))
+        (hashq-set! %gtype-hash gtype stype)
+        (if old-stype
+            (if (zero? parent)
+                (format +debug-port+
+                        "~S : re-registering a type for ~x as ~S~%"
+                        ($type-name gtype)
+                        gtype
+                        stype)
+                (format +debug-port+
+                        "~S : re-registering a ~A type for ~x as ~S~%"
+                        ($type-name gtype)
+                        ($type-name parent)
+                        gtype
+                        stype))
+            (if (zero? parent)
+                (format +debug-port+
+                        "~S : registering a new type for ~x as ~S~%"
+                        ($type-name gtype)
+                        gtype
+                        stype)
+                (format +debug-port+
+                        "~S : registering a new ~A type for ~x as ~S~%"
+                        ($type-name gtype)
+                        ($type-name parent)
+                        gtype
+                        stype)))))))
+
+(define (type-register gtype stype)
+  "Make the unidirectional gtype -> stype association. This does not
+require that the stype -> gtype association is one-to-one."
+  (let ((parent ($type-parent gtype)))
+    (unless (zero? parent)
+      (type-register-self parent <unknown>))
+    (type-register-self gtype stype)))
+
+(define (type-associate gtype stype)
+  "Make a bidirectional gtype <-> stype association. Use this when the
+scheme class only maps to a single GType."
+  (type-register gtype stype)
+  (set-object-property! stype 'sort-key
+                        (hash-count (const #t) %gtype-hash))
+  (hashq-set! %reverse-hash stype gtype))
+
+(define (type-is-registered? gtype)
+  (not (not (hashq-ref %gtype-hash gtype))))
+
+(define (%gtype-dump-table)
+  "Returns a list describing the current state of the GType to Scheme
+class mapping. Each entry is the GType, the GType name, and the scheme
+class."
+  (hash-map->list
+   (lambda (key val)
+     (list key (gtype-get-name key) val))
+   %gtype-hash))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; <GFundamental>
 
 (define-class <GFundamental> ()
   (value #:class <scm-slot>
          #:init-keyword #:value
          #:init-value %null-pointer))
-
-(define-class <GBoxed> (<GFundamental>)
-  (ref #:allocation #:each-subclass
-       #:init-value (const %null-pointer))
-  (unref #:allocation #:each-subclass
-         #:init-value (const %null-pointer))
-  (size #:allocation #:each-subclass
-        #:init-value 0))
 
 (define (%make-fundamental-class type dsupers ref unref)
   (make-class (cons <GFundamental> dsupers)
@@ -209,6 +270,20 @@
                 (unref #:allocation #:class
                        #:init-value ,unref))
               #:name type))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Boxed
+
+(define-class <GBoxed> (<GFundamental>)
+  (ref #:allocation #:each-subclass
+       #:init-value %null-pointer)
+  (unref #:allocation #:each-subclass
+         #:init-value %null-pointer)
+  (size #:allocation #:each-subclass
+        #:init-value 0))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; signal
 
 (define-class <signal> (<applicable-struct>)
   (name #:init-keyword #:name)
@@ -281,180 +356,72 @@
   (apply connect-1 obj signal handler #:after? #t #:detail detail rest))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;
-
-#|
-  #:re-export (<GBoxed> <GEnum> <GFlags>)
-  #:export (<GObject> <GInterface> <GParam> <GVariant>
-            <GValue> transform
-            <GClosure> procedure->closure
-            enum->number enum->symbol number->enum symbol->enum
-            flags->number flags->list number->flags list->flags flags-set?
-            enum-universe
-            flags-mask flags-union flags-intersection flags-difference
-            flags-complement flags-projection flags-projection/list
-            flags-projection/number
-            is-registered-callback?
-            get-registered-callback-closure-pointer
-
-            ;;
-            G_TYPE_NONE
-            G_TYPE_CHAR
-            G_TYPE_UCHAR
-            G_TYPE_BOOLEAN
-            G_TYPE_ENUM
-            G_TYPE_OBJECT
-            G_TYPE_POINTER
-            G_TYPE_FLAGS
-            G_TYPE_STRING
-            G_TYPE_INT
-            G_TYPE_UINT
-            G_TYPE_LONG
-            G_TYPE_ULONG
-            G_TYPE_INT64
-            G_TYPE_UINT64
-            G_TYPE_FLOAT
-            G_TYPE_DOUBLE
-            get-gtype
-            gtype-get-scheme-type
-            gtype-get-name
-            gtype-get-parent
-            gtype-get-fundamental
-            gtype-get-children
-            gtype-get-interfaces
-            gtype-get-depth
-            gtype-is-interface?
-            gtype-is-classed?
-            gtype-is-instantiatable?
-            gtype-is-derivable?
-            gtype-is-a?
-            %gtype-dump-table))
-|#
-
-;;(define +debug-port+ (current-output-port))
-(define +debug-port+ (%make-void-port "w"))
-
-(define (type-register-self gtype stype)
-  (let ((parent ($type-parent gtype))
-        (old-stype (hashq-ref %gtype-hash gtype)))
-    (when (or (not old-stype) (not (eq? stype old-stype)))
-      (when (or (not old-stype) (and (eq? old-stype <unknown>) (not (eq? stype <unknown>))))
-        (hashq-set! %gtype-hash gtype stype)
-        (if old-stype
-            (if (zero? parent)
-                (format +debug-port+
-                        "~S : re-registering a type for ~x as ~S~%"
-                        ($type-name gtype)
-                        gtype
-                        stype)
-                (format +debug-port+
-                        "~S : re-registering a ~A type for ~x as ~S~%"
-                        ($type-name gtype)
-                        ($type-name parent)
-                        gtype
-                        stype))
-            (if (zero? parent)
-                (format +debug-port+
-                        "~S : registering a new type for ~x as ~S~%"
-                        ($type-name gtype)
-                        gtype
-                        stype)
-                (format +debug-port+
-                        "~S : registering a new ~A type for ~x as ~S~%"
-                        ($type-name gtype)
-                        ($type-name parent)
-                        gtype
-                        stype)))))))
-
-(define (type-register gtype stype)
-  "Make the unidirectional gtype -> stype association. This does not
-require that the stype -> gtype association is one-to-one."
-  (let ((parent ($type-parent gtype)))
-    (unless (zero? parent)
-      (type-register-self parent <unknown>))
-    (type-register-self gtype stype)))
-
-(define (type-associate gtype stype)
-  "Make a bidirectional gtype <-> stype association. Use this when the
-scheme class only maps to a single GType."
-  (type-register gtype stype)
-  (set-object-property! stype 'sort-key
-                        (hash-count (const #t) %gtype-hash))
-  (hashq-set! %reverse-hash stype gtype))
-
-(define (type-is-registered? gtype)
-  (not (not (hashq-ref %gtype-hash gtype))))
-
-(define (type-class-name-from-gtype gtype)
-  (string-append "<"
-                 ($type-name gtype)
-                 ">"))
-
-(define (type-define-fundamental gtype supers ref unref)
-  (if (type-is-registered? gtype)
-      (begin
-        (format +debug-port+
-                "not redefining fundamental type ~S"
-                ($type-name gtype))
-        (hashq-ref %gtype-hash gtype))
-      ;; else
-      (%make-fundamental-class
-       (string->symbol (type-class-name-from-gtype gtype))
-       supers ref unref)))
-
-(define-class <GObject> (<GFundamental>)
-  (ref #:allocation #:each-subclass
-       #:init-value (const %null-pointer))
-  (unref #:allocation #:each-subclass
-         #:init-value (const %null-pointer)))
+;; Interface
 
 (define-class <GInterface> (<GFundamental>)
   (ref #:allocation #:each-subclass
-       #:init-value (const %null-pointer))
+       #:init-value %null-pointer)
   (unref #:allocation #:each-subclass
-         #:init-value (const %null-pointer)))
+         #:init-value %null-pointer))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Object
+
+;; A bit of indirection since we can't know the pointer to
+;; ref/unref functions until GLib/GObject is loaded
+(define %gobject-ref %null-pointer)
+(define %gobject-unref %null-pointer)
+
+(define-class <GObject> (<GFundamental>)
+  (ref #:allocation #:each-subclass
+       #:init-value (lambda () %gobject-ref))
+  (unref #:allocation #:each-subclass
+         #:init-value (lambda () %gobject-unref)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Variant
+
+(define %gvariant-ref %null-pointer)
+(define %gvariant-unref %null-pointer)
 
 (define-class <GVariant> (<GFundamental>)
   (ref #:allocation #:each-subclass
-       #:init-value (const %null-pointer))
+       #:init-value (lambda () %gvariant-ref))
   (unref #:allocation #:each-subclass
-         #:init-value (const %null-pointer)))
+         #:init-value (lambda () %gvariant-unref)))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(define (%gtype-dump-table)
-  "Returns a list describing the current state of the GType to Scheme
-class mapping. Each entry is the GType, the GType name, and the scheme
-class."
-  (hash-map->list
-   (lambda (key val)
-     (list key (gtype-get-name key) val))
-   %gtype-hash))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Helpers
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 #|
 (define (type-check-typed-object obj expected-type)
-  (is-a? obj expected-type))
+(is-a? obj expected-type))
 
 (define (type-peek-typed-object obj expected-type)
-  (if (not (is-a? obj expected-type))
-      %null-pointer
-      ;; else
-      (slot-ref obj 'value)))
+(if (not (is-a? obj expected-type))
+%null-pointer
+;; else
+(slot-ref obj 'value)))
 
 (define (type-peek-object obj)
-  (type-peek-typed-object obj <GFundamental>))
+(type-peek-typed-object obj <GFundamental>))
 
 (define (type-check-object? obj)
-  (is-a? obj <GFundamental>))
+(is-a? obj <GFundamental>))
 |#
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Values and Params
 
-(define-class <GValue> (<GBoxed> <applicable-struct-with-setter>))
+(define %gvalue-ref %null-pointer)
+(define %gvalue-unref %null-pointer)
+
+(define-class <GValue> (<GBoxed> <applicable-struct-with-setter>)
+  (size #:allocation #:each-subclass
+        #:init-value SIZEOF_GVALUE)
+  (ref #:allocation #:each-subclass
+       #:init-value (lambda () %gvalue-ref))
+  (unref #:allocation #:each-subclass
+         #:init-value (lambda () %gvalue-unref)))
 
 (define-method (initialize (value <GValue>) initargs)
   (next-method)
@@ -467,20 +434,32 @@ class."
 (define-method (transform (value <GValue>) gtype)
   (%transform value gtype))
 
+(define %gparam-ref %null-pointer)
+(define %gparam-unref %null-pointer)
 (define-class <GParam> (<GFundamental> <applicable-struct-with-setter>)
   (ref #:allocation #:each-subclass
-       #:init-value (const %null-pointer))
+       #:init-value (lambda () %gparam-ref))
   (unref #:allocation #:each-subclass
-         #:init-value (const %null-pointer)))
-  
+         #:init-value (lambda () %gparam-unref)))
+
 (define-method (initialize (pspec <GParam>) initargs)
   (next-method)
   (slot-set! pspec 'procedure (cut %get-property <> pspec))
   (slot-set! pspec 'setter (cut %set-property! <> pspec <>)))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Closures
 
-(define-class <GClosure> (<GBoxed> <applicable-struct>))
+(define %gclosure-ref %null-pointer)
+(define %gclosure-unref %null-pointer)
+
+(define-class <GClosure> (<GBoxed> <applicable-struct>)
+  (size #:allocation #:each-subclass
+        #:init-value SIZEOF_GCLOSURE)
+  (ref #:allocation #:each-subclass
+       #:init-value (lambda () %gclosure-ref))
+  (unref #:allocation #:each-subclass
+         #:init-value (lambda () %gclosure-unref)))
 
 (define-method (initialize (closure <GClosure>) initargs)
   (next-method)
@@ -491,7 +470,8 @@ class."
                ((type args ...)
                 (%invoke-closure closure type #f args)))))
 
-;;; Enum conversions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Enums
 
 (define-class <GEnum> (<GFundamental>)
   (obarray #:allocation #:each-subclass
@@ -554,7 +534,7 @@ class."
 (define-method (number->enum (class <class>))
   (lambda (number) (number->enum class number)))
 
-;;; Flag conversions
+;;; Flags
 
 (define-class <GFlags> (<GFundamental>)
   (obarray #:allocation #:each-subclass
@@ -767,6 +747,7 @@ class."
   (type-register G_TYPE_UCHAR <char>)
   (type-associate G_TYPE_BOOLEAN <boolean>)
   (type-register G_TYPE_POINTER <foreign>)
+
   (type-associate G_TYPE_BOXED <GBoxed>)
   (type-associate G_TYPE_ENUM <GEnum>)
   (type-associate G_TYPE_FLAGS <GFlags>)

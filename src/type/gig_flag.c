@@ -137,7 +137,7 @@ gig_il_flag_conversions(SCM s_conversion_name, SCM s_gtype_name)
     SCM def;
     char *cls = scm_to_utf8_symbol(s_conversion_name);
     char *gtype_name = scm_to_utf8_symbol(s_gtype_name);
-    size_t type = g_type_from_name(gtype_name);
+    size_t type = G.type_from_name(gtype_name);
     free(gtype_name);
     def = gig_define_enum_conversions(cls, NULL, type, true);
     free(cls);
@@ -151,7 +151,7 @@ gig_il_enum_conversions(SCM s_conversion_name, SCM s_gtype_name)
     SCM def;
     char *cls = scm_to_utf8_symbol(s_conversion_name);
     char *gtype_name = scm_to_utf8_symbol(s_gtype_name);
-    size_t type = g_type_from_name(gtype_name);
+    size_t type = G.type_from_name(gtype_name);
     free(gtype_name);
     def = gig_define_enum_conversions(cls, NULL, type, false);
     free(cls);

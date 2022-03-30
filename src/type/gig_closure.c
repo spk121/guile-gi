@@ -48,6 +48,8 @@ static void
 _gig_closure_marshal(GClosure *closure, GValue *ret, unsigned n_params, const GValue *params,
                      void *hint, void *marshal_data)
 {
+    GIG_INIT_CHECK();
+    
     GigClosure *pc = (GigClosure *)closure;
     SCM args = scm_make_list(scm_from_uint(n_params), SCM_UNDEFINED);
 
@@ -56,13 +58,13 @@ _gig_closure_marshal(GClosure *closure, GValue *ret, unsigned n_params, const GV
         scm_set_car_x(iter, gig_value_as_scm(params + i, TRUE));
     SCM _ret = scm_apply_0(pc->callback, args);
 
-    if (G_IS_VALUE(ret) && gig_value_from_scm(ret, scm_c_value_ref(_ret, 0)) != 0) {
+    if (G.type_check_value(ret) && gig_value_from_scm(ret, scm_c_value_ref(_ret, 0)) != 0) {
         GType ret_type = G_VALUE_TYPE(ret);
 
         if (ret_type == G_TYPE_INVALID)
             scm_misc_error(NULL, "failed to convert return value to invalid type", SCM_EOL);
         else {
-            const char *type_name = g_type_name(ret_type);
+            const char *type_name = G.type_name(ret_type);
             if (type_name)
                 scm_misc_error(NULL, "failed to convert value to ~S",
                                scm_list_1(scm_from_utf8_string(type_name)));
@@ -76,7 +78,7 @@ _gig_closure_marshal(GClosure *closure, GValue *ret, unsigned n_params, const GV
         ssize_t pos = 0, inc;
         scm_t_array_handle handle;
         const uint32_t *bits;
-        idx = G_IS_VALUE(ret) ? 1 : 0;
+        idx = G.type_check_value(ret) ? 1 : 0;
 
         if (nvalues - idx > n_params)
             scm_misc_error(NULL, "~S returned more values than we can unpack",
@@ -110,10 +112,12 @@ _gig_closure_marshal(GClosure *closure, GValue *ret, unsigned n_params, const GV
 GClosure *
 gig_closure_new(SCM callback, SCM inout_mask)
 {
-    GClosure *closure = g_closure_new_simple(sizeof(GigClosure), NULL);
+    GIG_INIT_CHECK();
+    
+    GClosure *closure = G.closure_new_simple(sizeof(GigClosure), NULL);
     GigClosure *gig_closure = (GigClosure *)closure;
-    g_closure_add_invalidate_notifier(closure, NULL, _gig_closure_invalidate);
-    g_closure_set_marshal(closure, _gig_closure_marshal);
+    G.closure_add_invalidate_notifier(closure, NULL, _gig_closure_invalidate);
+    G.closure_set_marshal(closure, _gig_closure_marshal);
     // FIXME: what about garbage collection?
     gig_closure->callback = scm_gc_protect_object(callback);
     if (SCM_UNBNDP(inout_mask) || scm_is_false(inout_mask))
@@ -139,7 +143,7 @@ invoke_closure(SCM closure, SCM return_type, SCM inout_mask, SCM args)
     SCM ret = SCM_UNDEFINED;
     SCM iter = args;
 
-    g_value_init(retval, scm_to_gtype(return_type));
+    G.value_init(retval, scm_to_gtype(return_type));
     if (G_VALUE_TYPE(retval) == G_TYPE_INVALID) {
         free(retval);
         goto out;
@@ -151,12 +155,12 @@ invoke_closure(SCM closure, SCM return_type, SCM inout_mask, SCM args)
             free(retval);
             goto out;
         }
-        g_value_init(params + narg, G_VALUE_TYPE(arg));
-        g_value_copy(arg, params + narg);
+        G.value_init(params + narg, G_VALUE_TYPE(arg));
+        G.value_copy(arg, params + narg);
     }
 
-    g_closure_invoke(real_closure, retval, nargs, params, NULL);
-    ret = gig_type_transfer_object(G_TYPE_VALUE, retval, GIG_TRANSFER_EVERYTHING);
+    G.closure_invoke(real_closure, retval, nargs, params, NULL);
+    ret = gig_type_transfer_object(G.value_get_type(), retval, GIG_TRANSFER_EVERYTHING);
 
     if (scm_is_bitvector(inout_mask)) {
         ret = scm_cons(ret, SCM_EOL);
@@ -180,11 +184,11 @@ invoke_closure(SCM closure, SCM return_type, SCM inout_mask, SCM args)
             size_t mask = 1L << (pos % 32);
 
             if (bits[word_pos] & mask) {
-                g_value_init(out + idx, G_VALUE_TYPE(params + i));
-                g_value_copy(params + i, out + idx);
+                G.value_init(out + idx, G_VALUE_TYPE(params + i));
+                G.value_copy(params + i, out + idx);
                 ret =
                     scm_cons(gig_type_transfer_object
-                             (G_TYPE_VALUE, out + idx, GIG_TRANSFER_EVERYTHING), ret);
+                             (G.value_get_type(), out + idx, GIG_TRANSFER_EVERYTHING), ret);
                 idx++;
             }
         }
@@ -194,7 +198,7 @@ invoke_closure(SCM closure, SCM return_type, SCM inout_mask, SCM args)
 
   out:
     for (size_t narg = 0; narg < nargs; narg++)
-        g_value_unset(params + narg);
+        G.value_unset(params + narg);
     free(params);
     return ret;
 }
@@ -210,9 +214,9 @@ procedure_to_closure(SCM procedure, SCM inout_mask)
                     scm_is_bitvector(inout_mask), procedure, SCM_ARG2,
                     "procedure->closure", "bitvector");
     GClosure *cls = gig_closure_new(procedure, inout_mask);
-    g_closure_ref(cls);
-    g_closure_sink(cls);
-    return gig_type_transfer_object(G_TYPE_CLOSURE, cls, GIG_TRANSFER_EVERYTHING);
+    G.closure_ref(cls);
+    G.closure_sink(cls);
+    return gig_type_transfer_object(G.closure_get_type(), cls, GIG_TRANSFER_EVERYTHING);
 }
 
 void

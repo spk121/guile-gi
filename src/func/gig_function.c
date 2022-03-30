@@ -478,8 +478,8 @@ create_gsubr(void *address, GigArgMap *amap, const char *name, const char *key, 
     // address.
     gfn->closure = ffi_closure_alloc(sizeof(ffi_closure), &(gfn->function_ptr));
 
-    g_return_val_if_fail(gfn->closure != NULL, NULL);
-    g_return_val_if_fail(gfn->function_ptr != NULL, NULL);
+    // g_return_val_if_fail(gfn->closure != NULL, NULL);
+    // g_return_val_if_fail(gfn->function_ptr != NULL, NULL);
 
     // STEP 2
     // Next, we begin to construct an FFI_CIF to describe the function
@@ -616,7 +616,7 @@ function_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
         G.error_free(err);
 
         scm_misc_error(gfn->name, str, SCM_EOL);
-        g_return_if_reached();
+        // g_return_if_reached();
     }
 
     *(ffi_arg *)ret = SCM_UNPACK(output);

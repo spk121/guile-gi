@@ -161,7 +161,6 @@ void gig_init_glib(void);
             scm_misc_error(NULL, "guile-gi has not been initialized", SCM_EOL); \
     } while(0)
 
-#if 0
 // I wonder what the stability of this API is? This seems
 // risky.
 #define GIG_TYPE_PARAM_CHAR          (G.param_spec_types[0])
@@ -187,6 +186,5 @@ void gig_init_glib(void);
 #define GIG_TYPE_PARAM_OVERRIDE          (G.param_spec_types[20])
 #define GIG_TYPE_PARAM_GTYPE         (G.param_spec_types[21])
 #define GIG_TYPE_PARAM_VARIANT                (G.param_spec_types[22])
-#endif
 
 #endif

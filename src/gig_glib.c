@@ -6,7 +6,7 @@
 #include "func.h"
 #include "gig_glib.h"
 
-//#define DYNAMIC_GLIB
+#define DYNAMIC_GLIB
 
 struct vtable G;
 int gig_initialized = 0;

@@ -105,7 +105,8 @@ later_free(slist_t **must_free, GigTypeMeta *meta, void *ptr)
 static GType
 child_type(GigTypeMeta *meta, GigArgument *arg)
 {
-    if ((arg != NULL) && (arg->v_pointer != NULL) && G_IS_OBJECT(arg->v_pointer)
+    if ((arg != NULL) && (arg->v_pointer != NULL)
+        && G.type_check_instance_is_fundamentally_a(arg->v_pointer, G_TYPE_OBJECT)
         && G.type_is_a(G_OBJECT_TYPE(arg->v_pointer), meta->gtype)) {
         return G_OBJECT_TYPE(arg->v_pointer);
     }
@@ -273,8 +274,8 @@ scm_to_c_interface(S2C_ARG_DECL)
     if (meta->is_nullable && scm_is_false(object))
         arg->v_pointer = NULL;
     else
-        arg->v_pointer = G_TYPE_CHECK_INSTANCE_CAST(gig_type_peek_object(object),
-                                                    meta->gtype, void);
+        arg->v_pointer = G.type_check_instance_cast(gig_type_peek_object(object),
+                                                    meta->gtype);
 }
 
 static void
@@ -963,7 +964,7 @@ scm_to_c_native_interface_array(S2C_ARG_DECL)
     TRACE_S2C();
 #define FUNC_NAME "%object->c-native-interface-array-arg"
     GType item_type = meta->params[0].gtype;
-    GType fundamental_item_type = G_TYPE_FUNDAMENTAL(item_type);
+    GType fundamental_item_type = G.type_fundamental(item_type);
     if (fundamental_item_type == G_TYPE_OBJECT || fundamental_item_type == G_TYPE_BOXED
         || fundamental_item_type == G_TYPE_INTERFACE || fundamental_item_type == G_TYPE_VARIANT) {
         // If we are a Struct or Object, we need to look up

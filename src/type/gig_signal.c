@@ -48,13 +48,15 @@ scm_signal_accu(GSignalInvocationHint * ihint,
         return true;
     case 1:
         if (!scm_is_eq(result, SCM_UNSPECIFIED))
-            g_return_val_if_fail(!gig_value_from_scm(seed, result), FALSE);
+            if(gig_value_from_scm(seed, result))
+                return FALSE;
         return true;
     case 2:
     {
         bool ret = scm_is_true(scm_c_value_ref(result, 0));
         SCM next_seed = scm_c_value_ref(result, 1);
-        g_return_val_if_fail(!gig_value_from_scm(seed, next_seed), false);
+        if (gig_value_from_scm(seed, next_seed))
+            return false;
         return ret;
     }
     default:

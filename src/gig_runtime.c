@@ -58,8 +58,6 @@ scm_il_initialize()
     return SCM_EOL;
 }
 
-
-
 // Initialization that requires no GLib/GObject functionality.
 // Enough to export the ^library and ^initialize
 // IL functions, as well as stubs for the other IL functions.

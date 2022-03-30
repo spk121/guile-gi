@@ -183,7 +183,7 @@ gig_invoke_func(void *address, GigArgMap *amap, const GigArgument *in_args, int 
 
     bool success;
     if (local_error) {
-        g_propagate_error(error, local_error);
+        // g_propagate_error(error, local_error);
         success = false;
     }
     else {

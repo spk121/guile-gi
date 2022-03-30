@@ -23,7 +23,7 @@
 
 static SCM get_shared_library_list(const char *lib);
 static void constant_define(GIConstantInfo *info, SCM *ils);
-static void type_define(GType gtype, size_t size, SCM *ils);
+static void type_define(GIRegisteredTypeInfo *info, GType gtype, size_t size, SCM *ils);
 static void property_define(GIBaseInfo *info, SCM *ils);
 static void untyped_flags_define(GIRegisteredTypeInfo *info, SCM *ils);
 static void untyped_enum_define(GIRegisteredTypeInfo *info, SCM *ils);
@@ -511,7 +511,7 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM *s_types, SCM *ils)
             size = g_struct_info_get_size((GIStructInfo *) info);
         if (GI_IS_UNION_INFO(info))
             size = g_union_info_get_size((GIStructInfo *) info);
-        type_define(gtype, size, ils);
+        type_define(info, gtype, size, ils);
         REGISTER(gtype);
         goto recursion;
     }
@@ -535,7 +535,12 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM *s_types, SCM *ils)
         }
         GType par_gtype = g_type_parent(gtype);
         bool parent_ok = true;
-        if (par_gtype && !IS_REGISTERED(par_gtype)) {
+        if (par_gtype == G_TYPE_BOXED
+            || par_gtype == G_TYPE_OBJECT
+            || par_gtype == G_TYPE_INTERFACE) {
+            parent_ok = true;
+        }
+        else if (par_gtype && !IS_REGISTERED(par_gtype)) {
             GIBaseInfo *typeinfo;
             typeinfo = g_irepository_find_by_gtype(NULL, par_gtype);
             if (typeinfo) {
@@ -590,7 +595,7 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM *s_types, SCM *ils)
                     size = g_struct_info_get_size((GIStructInfo *) info);
                 if (t == GI_INFO_TYPE_UNION)
                     size = g_union_info_get_size((GIStructInfo *) info);
-                type_define(gtype, size, ils);
+                type_define(info, gtype, size, ils);
                 REGISTER(gtype);
             }
         }
@@ -611,7 +616,7 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM *s_types, SCM *ils)
             }
         }
         else {
-            type_define(gtype, 0, ils);
+            type_define(info, gtype, 0, ils);
             REGISTER(gtype);
             if (t == GI_INFO_TYPE_ENUM)
                 enum_conversions_define(info, ils);
@@ -815,20 +820,47 @@ type_class_name_from_gtype(GType gtype)
 }
 
 static void
-type_define(GType gtype, size_t size, SCM *ils)
+type_define(GIRegisteredTypeInfo *info, GType gtype, size_t size, SCM *ils)
 {
     char *type_class_name = type_class_name_from_gtype(gtype);
     SCM s_type_class_name = scm_from_utf8_symbol(type_class_name);
     free(type_class_name);
     SCM s_gtype_name = scm_from_utf8_string(g_type_name(gtype));
+    const char *namespace_ = g_base_info_get_namespace(info);
+    SCM s_namespace = namespace_ ? scm_from_utf8_symbol(namespace_) : SCM_BOOL_F;
+        
+    
+    
+    const char *ref = NULL;
+    const char *unref = NULL;
+    SCM s_ref = SCM_BOOL_F;
+    SCM s_unref = SCM_BOOL_F;
+    bool custom = false;
+    
+    if(GI_IS_OBJECT_INFO(info)) {
+        ref = g_object_info_get_ref_function(info);
+        unref = g_object_info_get_unref_function(info);
+        if (ref && unref) {
+            s_ref = scm_from_utf8_string(ref);
+            s_unref = scm_from_utf8_string(unref);
+            custom = true;
+        }
+    }
+    
     SCM il;
-    if (size)
+    if (!custom && !size)
         il = scm_list_4(scm_from_utf8_symbol("^type"),
+                        s_namespace,
+                        s_type_class_name, s_gtype_name);
+    else if (!custom && size)
+        il = scm_list_5(scm_from_utf8_symbol("^sized-type"),
+                        s_namespace,
                         s_type_class_name, s_gtype_name, scm_from_size_t(size));
-    else
-        il = scm_list_3(scm_from_utf8_symbol("^type"), s_type_class_name, s_gtype_name);
-
-    // *defs = scm_append2(*defs, def);
+    else if (custom && !size)
+        il = scm_list_n(scm_from_utf8_symbol("^custom-type"),
+                        s_namespace,
+                        s_type_class_name, s_gtype_name,
+                        s_ref, s_unref, SCM_UNDEFINED);
     *ils = scm_cons(il, *ils);
 }
 
@@ -982,6 +1014,7 @@ gig_init_parser()
     D(LOAD_PROPERTIES);
     D(LOAD_SIGNALS);
     D(LOAD_EVERYTHING);
+#undef D
 }
 
 static void

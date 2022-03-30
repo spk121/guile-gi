@@ -34,6 +34,7 @@
                G_TYPE_BOOLEAN
                G_TYPE_INT G_TYPE_UINT
                G_TYPE_INT64 G_TYPE_UINT64
+               G_TYPE_LONG G_TYPE_ULONG
                G_TYPE_ENUM G_TYPE_FLAGS
                G_TYPE_FLOAT G_TYPE_DOUBLE
                G_TYPE_OBJECT G_TYPE_STRING

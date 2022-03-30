@@ -42,8 +42,6 @@ SCM gig_il_type(SCM s_name, SCM s_gtype_name, SCM boxed_size);
 SCM gig_il_untyped_flags(SCM s_name, SCM s_qname, SCM alist);
 SCM gig_il_untyped_enum(SCM s_name, SCM s_qname, SCM alist);
 
-void gig_type_define_fundamental(GType type, SCM extra_supers,
-                                 GigTypeRefFunction ref, GigTypeUnrefFunction unref);
 SCM gig_type_get_scheme_type(GType gtype);
 void *gig_type_peek_object(SCM obj);
 bool gig_type_check_typed_object(SCM obj, SCM expected_type);

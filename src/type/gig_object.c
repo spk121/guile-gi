@@ -74,7 +74,7 @@ gig_i_scm_make_gobject(SCM s_gtype, SCM s_prop_keylist)
 
     type = scm_to_gtype(s_gtype);
 
-    SCM_ASSERT_TYPE(G_TYPE_IS_CLASSED(type), s_gtype, SCM_ARG1, FUNC,
+    SCM_ASSERT_TYPE(G.type_test_flags(type, G_TYPE_FLAG_CLASSED), s_gtype, SCM_ARG1, FUNC,
                     "typeid derived from G_TYPE_OBJECT or scheme type derived from <GObject>");
 
     if (scm_is_unknown_class(gig_type_get_scheme_type(type)))
@@ -106,7 +106,7 @@ gig_i_scm_make_gobject(SCM s_gtype, SCM s_prop_keylist)
             }
             else {
                 GValue *value = &values[i];
-                G.value_init(value, G_PARAM_SPEC_VALUE_TYPE(pspec));
+                G.value_init(value, pspec->value_type);
                 if (gig_value_from_scm(value, s_value))
                     scm_misc_error(FUNC, "unable to convert parameter ~S", scm_list_1(s_value));
             }
@@ -182,7 +182,7 @@ gig_i_scm_get_property(SCM self, SCM property)
         scm_misc_error("%get-property", "property ~A is not readable", scm_list_1(property));
     }
 
-    G.value_init(&value, G_PARAM_SPEC_VALUE_TYPE(pspec));
+    G.value_init(&value, pspec->value_type);
     G.object_get_property(obj, pspec->name, &value);
     ret = gig_value_param_as_scm(&value, TRUE, pspec);
     G.value_unset(&value);
@@ -213,7 +213,7 @@ gig_i_scm_set_property_x(SCM self, SCM property, SCM svalue)
         scm_misc_error("%set-property!", "property ~A is not writable", scm_list_1(property));
     }
 
-    G.value_init(&value, G_PARAM_SPEC_VALUE_TYPE(pspec));
+    G.value_init(&value, pspec->value_type);
     gig_value_from_scm_with_error(&value, svalue, "%set-property!", SCM_ARG3);
     G.object_set_property(obj, pspec->name, &value);
 
@@ -258,13 +258,13 @@ gig_user_object_dispose(GObject *object)
     type = G_OBJECT_TYPE(object);
     parent_type = G.type_parent(type);
 
-    assert(G_TYPE_IS_CLASSED(type));
-    assert(G_TYPE_IS_CLASSED(parent_type));
+    assert(G.type_test_flags(type, G_TYPE_FLAG_CLASSED));
+    assert(G.type_test_flags(parent_type, G_TYPE_FLAG_CLASSED));
 
     gig_debug("dispose is currently just calling the parent's dispose");
     gig_debug("disposing parent type");
     _parent_class = G.type_class_ref(parent_type);
-    parent_class = G_OBJECT_CLASS(_parent_class);
+    parent_class = G.type_check_class_cast(_parent_class, G_TYPE_OBJECT);
 
     parent_class->dispose(object);
 
@@ -310,7 +310,7 @@ gig_user_object_init(GTypeInstance *instance, void *class_ptr)
     properties = G.object_class_list_properties(class_ptr, &n_properties);
 
     GValue *instance_properties = xcalloc(n_properties, sizeof(GValue));
-    G.object_set_qdata(G_OBJECT(instance), gig_user_object_properties, instance_properties);
+    G.object_set_qdata((GObject *) instance, gig_user_object_properties, instance_properties);
 
     for (unsigned i = 0; i < n_properties; i++) {
         const GValue *_default;
@@ -583,12 +583,12 @@ gig_il_property(SCM s_gtype_name, SCM s_long_name, SCM s_short_name, SCM s_symbo
     SCM s_prop;
     symbol = scm_dynfree(scm_to_utf8_symbol(s_symbol));
 
-    if (G_TYPE_IS_CLASSED(type)) {
+    if (G.type_test_flags(type, G_TYPE_FLAG_CLASSED)) {
         GObjectClass *_class = G.type_class_ref(type);
         scm_dynwind_unwind_handler(G.type_class_unref, _class, SCM_F_WIND_EXPLICITLY);
         prop = G.object_class_find_property(_class, symbol);
     }
-    else if (G_TYPE_IS_INTERFACE(type)) {
+    else if (G.type_fundamental(type) == G_TYPE_INTERFACE) {
         GTypeInterface *iface = G.type_default_interface_ref(type);
         scm_dynwind_unwind_handler(G.type_default_interface_unref, iface, SCM_F_WIND_EXPLICITLY);
         prop = G.object_interface_find_property(iface, symbol);
@@ -624,7 +624,8 @@ do_define_property(const char *public_name, SCM prop, SCM self_type, SCM value_t
     if (!scm_is_true(sym_self))
         sym_self = scm_from_utf8_symbol("self");
 
-    g_return_val_if_fail(public_name != NULL, SCM_UNDEFINED);
+    if (public_name == NULL)
+        return SCM_UNDEFINED;
 
     SCM sym_public_name, formals, specializers, generic, proc, setter;
 
