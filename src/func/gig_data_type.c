@@ -85,6 +85,7 @@ gig_arg_type_from_name(const char *name)
     return GIG_ARG_TYPE_UNKNOWN;
 }
 
+#ifdef GIG_PARSER
 SCM
 gig_type_meta_to_il(GigTypeMeta *meta)
 {
@@ -151,7 +152,7 @@ gig_type_meta_to_il(GigTypeMeta *meta)
         D("callable-info", gig_amap_to_il(meta->callable_arg_map));
     return scm_reverse(il);
 }
-
+#endif
 
 #ifndef GIG_PARSER
 void

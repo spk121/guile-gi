@@ -184,6 +184,11 @@ gig_glib_initialize()
         return 1;
 
     handles = gig_lib_all_handles();
+    if (handles == NULL) {
+        assert(gig_initialized == 0);
+        return gig_initialized;
+    }
+
     while (handles[i] != NULL) {
         if (init_dlsyms(handles[i])) {
             gig_initialized = 1;

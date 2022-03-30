@@ -29,12 +29,16 @@
   #:export (require
             infos info
             load-by-name typelib->module
+            reset-repository
 
             get-search-path prepend-search-path!
             get-dependencies
             ))
 
 (define *parser* (new-parser))
+
+(define (reset-repository)
+  (set! *parser* (new-parser)))
 
 (define-method (load (info <GIBaseInfo>))
   (parser-add-info! *parser* info LOAD_EVERYTHING)
@@ -81,8 +85,14 @@
      (for-each (lambda (i)
                  (parser-add-info! *parser* i LOAD_EVERYTHING))
                (namespace-infos lib))
-     (let* ((cmds (parser-take-output! *parser*))
-            (syms (append-map runtime-eval cmds)))
-       (module-export! module syms))))
+     (let ((cmds (parser-take-output! *parser*)))
+       (when #t
+         (for-each (lambda (entry)
+                     (unless (list? entry)
+                       (error "non-list export symbol entry '~A'" entry)))
+                   cmds))
+       
+       (let ((syms (append-map runtime-eval cmds)))
+         (module-export! module syms)))))
        
   module)

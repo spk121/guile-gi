@@ -274,8 +274,7 @@ scm_to_c_interface(S2C_ARG_DECL)
     if (meta->is_nullable && scm_is_false(object))
         arg->v_pointer = NULL;
     else
-        arg->v_pointer = G.type_check_instance_cast(gig_type_peek_object(object),
-                                                    meta->gtype);
+        arg->v_pointer = G.type_check_instance_cast(gig_type_peek_object(object), meta->gtype);
 }
 
 static void

@@ -8,10 +8,13 @@
 (define %test-symbol '<GMainLoop>)
 (define %test-lib '("GLib" "2.0"))
 
+
 (test-assert "typelib->module"
   (let* ((module (apply typelib->module '(test typelib->module) %test-lib))
          (iface (module-public-interface module)))
     (module-defined? iface %test-symbol)))
+
+(reset-repository)
 
 (test-assert "use-typelibs"
   (begin

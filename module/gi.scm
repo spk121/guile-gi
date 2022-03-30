@@ -43,13 +43,14 @@
                <GObject> <GInterface> <GParam> <GBoxed>
                <GVariant> <GValue> <GClosure>
                enum->number flags->number
-               transform procedure->closure)
+               transform procedure->closure
+               %before-function-hook
+               %before-callback-hook
+               %before-c-callback-hook)
   #:replace ((%new . make))
   #:export (use-typelibs
             register-type
-            %before-function-hook
-            %before-callback-hook
-            %before-c-callback-hook))
+            ))
 
 
 (define (subclass? type-a type-b)

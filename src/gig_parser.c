@@ -45,6 +45,7 @@ static GigTransfer convert_transfer(GITransfer x);
 static void type_meta_add_child_params(GigTypeMeta *meta, GITypeInfo *type_info, int n);
 static void type_meta_init_from_basic_type_tag(GigTypeMeta *meta, GITypeTag tag);
 static void type_meta_init_from_callable_info(GigTypeMeta *meta, GICallableInfo *ci);
+static SCM type_meta_to_il(GigTypeMeta *meta);
 
 static SCM baseinfo_fo_type = SCM_UNDEFINED;
 
@@ -393,9 +394,9 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM *s_types, SCM *ils)
 {
     assert(info != NULL);
 
-#define IS_REGISTERED(x) \
+#define IS_REGISTERED(x)                                    \
     scm_is_true(scm_member(scm_from_size_t(x), *s_types))
-#define REGISTER(x) \
+#define REGISTER(x)                                     \
     *s_types = scm_cons(scm_from_size_t(x), *s_types)
         
     GIBaseInfo *parent = g_base_info_get_container(info);
@@ -494,25 +495,27 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM *s_types, SCM *ils)
         }
         free(long_name);
     }
-        break;
+    break;
     case GI_INFO_TYPE_PROPERTY:
         property_define(info, ils);
         break;
     case GI_INFO_TYPE_BOXED:
     {
         GType gtype = g_registered_type_info_get_g_type(info);
-        if (gtype == G_TYPE_NONE) {
-            gig_debug_load("%s - not loading boxed type because is has no GType",
-                           g_base_info_get_name(info));
-            break;
+        if (!IS_REGISTERED(gtype)) {
+            if (gtype == G_TYPE_NONE) {
+                gig_debug_load("%s - not loading boxed type because is has no GType",
+                               g_base_info_get_name(info));
+                break;
+            }
+            size_t size = 0;
+            if (GI_IS_STRUCT_INFO(info))
+                size = g_struct_info_get_size((GIStructInfo *) info);
+            if (GI_IS_UNION_INFO(info))
+                size = g_union_info_get_size((GIStructInfo *) info);
+            type_define(info, gtype, size, ils);
+            REGISTER(gtype);
         }
-        size_t size = 0;
-        if (GI_IS_STRUCT_INFO(info))
-            size = g_struct_info_get_size((GIStructInfo *) info);
-        if (GI_IS_UNION_INFO(info))
-            size = g_union_info_get_size((GIStructInfo *) info);
-        type_define(info, gtype, size, ils);
-        REGISTER(gtype);
         goto recursion;
     }
     case GI_INFO_TYPE_STRUCT:
@@ -521,82 +524,84 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM *s_types, SCM *ils)
     case GI_INFO_TYPE_OBJECT:
     {
         GType gtype = g_registered_type_info_get_g_type(info);
-        if (gtype == G_TYPE_NONE) {
-            gig_debug_load("%s - not loading struct type because is has no GType",
-                           g_base_info_get_name(info));
-            gig_debug_load("%s - not loading %s type because is has no GType",
-                           g_base_info_get_name(info), g_info_type_to_string(t));
-            break;
-        }
-        if (gtype == G_TYPE_INVALID) {
-            gig_debug_load("%s - not loading %s type because its GType is invalid",
-                           g_base_info_get_name(info), g_info_type_to_string(t));
-            break;
-        }
-        GType par_gtype = g_type_parent(gtype);
-        bool parent_ok = true;
-        if (par_gtype == G_TYPE_BOXED
-            || par_gtype == G_TYPE_OBJECT
-            || par_gtype == G_TYPE_INTERFACE) {
-            parent_ok = true;
-        }
-        else if (par_gtype && !IS_REGISTERED(par_gtype)) {
-            GIBaseInfo *typeinfo;
-            typeinfo = g_irepository_find_by_gtype(NULL, par_gtype);
-            if (typeinfo) {
-                gig_debug_load("%s - loading prerequisite type %s",
-                               g_base_info_get_name(info), g_type_name(par_gtype));
-                
-                SCM il = load_info(typeinfo, LOAD_INFO_ONLY, s_types, ils);
-                g_base_info_unref(typeinfo);
-            }
-            else {
-                gig_debug_load
-                    ("%s - not loading %s type because its parent %s has no introspection information",
-                     g_base_info_get_name(info), g_info_type_to_string(t), g_type_name(par_gtype));
-                parent_ok = false;
+        if (!IS_REGISTERED(gtype)) {
+            if (gtype == G_TYPE_NONE) {
+                gig_debug_load("%s - not loading struct type because is has no GType",
+                               g_base_info_get_name(info));
+                gig_debug_load("%s - not loading %s type because is has no GType",
+                               g_base_info_get_name(info), g_info_type_to_string(t));
                 break;
             }
-        }
-        if (parent_ok) {
-            GType *interfaces = NULL;
-            unsigned n_interfaces = 0;
-            bool interface_ok = true;
-
-            if (t == GI_INFO_TYPE_OBJECT)
-                interfaces = g_type_interfaces(gtype, &n_interfaces);
-            else if (t == GI_INFO_TYPE_INTERFACE)
-                interfaces = g_type_interface_prerequisites(gtype, &n_interfaces);
-
-            for (unsigned n = 0; n < n_interfaces; n++) {
-                if (interfaces[n] && !IS_REGISTERED(interfaces[n])) {
-                    GIBaseInfo *typeinfo;
-                    typeinfo = g_irepository_find_by_gtype(NULL, interfaces[n]);
-                    if (typeinfo) {
-                        gig_debug_load("%s - loading prerequisite interface type %s",
-                                       g_base_info_get_name(info), g_type_name(interfaces[n]));
-                        SCM il = load_info(typeinfo, LOAD_INFO_ONLY, s_types, ils);
-                        g_base_info_unref(typeinfo);
-                    }
-                    else {
-                        gig_debug_load
-                            ("%s - not loading %s type because its interface %s has no introspection information",
-                             g_base_info_get_name(info), g_info_type_to_string(t),
-                             g_type_name(interfaces[n]));
-                        interface_ok = false;
-                        break;
-                    }
+            if (gtype == G_TYPE_INVALID) {
+                gig_debug_load("%s - not loading %s type because its GType is invalid",
+                               g_base_info_get_name(info), g_info_type_to_string(t));
+                break;
+            }
+            GType par_gtype = g_type_parent(gtype);
+            bool parent_ok = true;
+            if (par_gtype == G_TYPE_BOXED
+                || par_gtype == G_TYPE_OBJECT
+                || par_gtype == G_TYPE_INTERFACE) {
+                parent_ok = true;
+            }
+            else if (par_gtype && !IS_REGISTERED(par_gtype)) {
+                GIBaseInfo *typeinfo;
+                typeinfo = g_irepository_find_by_gtype(NULL, par_gtype);
+                if (typeinfo) {
+                    gig_debug_load("%s - loading prerequisite type %s",
+                                   g_base_info_get_name(info), g_type_name(par_gtype));
+                
+                    SCM il = load_info(typeinfo, LOAD_INFO_ONLY, s_types, ils);
+                    g_base_info_unref(typeinfo);
+                }
+                else {
+                    gig_debug_load
+                        ("%s - not loading %s type because its parent %s has no introspection information",
+                         g_base_info_get_name(info), g_info_type_to_string(t), g_type_name(par_gtype));
+                    parent_ok = false;
+                    break;
                 }
             }
-            free(interfaces);
-            if (interface_ok) {
-                size_t size = 0;
-                if (t == GI_INFO_TYPE_STRUCT)
-                    size = g_struct_info_get_size((GIStructInfo *) info);
-                if (t == GI_INFO_TYPE_UNION)
-                    size = g_union_info_get_size((GIStructInfo *) info);
-                type_define(info, gtype, size, ils);
-                REGISTER(gtype);
+            if (parent_ok) {
+                GType *interfaces = NULL;
+                unsigned n_interfaces = 0;
+                bool interface_ok = true;
+
+                if (t == GI_INFO_TYPE_OBJECT)
+                    interfaces = g_type_interfaces(gtype, &n_interfaces);
+                else if (t == GI_INFO_TYPE_INTERFACE)
+                    interfaces = g_type_interface_prerequisites(gtype, &n_interfaces);
+
+                for (unsigned n = 0; n < n_interfaces; n++) {
+                    if (interfaces[n] && !IS_REGISTERED(interfaces[n])) {
+                        GIBaseInfo *typeinfo;
+                        typeinfo = g_irepository_find_by_gtype(NULL, interfaces[n]);
+                        if (typeinfo) {
+                            gig_debug_load("%s - loading prerequisite interface type %s",
+                                           g_base_info_get_name(info), g_type_name(interfaces[n]));
+                            SCM il = load_info(typeinfo, LOAD_INFO_ONLY, s_types, ils);
+                            g_base_info_unref(typeinfo);
+                        }
+                        else {
+                            gig_debug_load
+                                ("%s - not loading %s type because its interface %s has no introspection information",
+                                 g_base_info_get_name(info), g_info_type_to_string(t),
+                                 g_type_name(interfaces[n]));
+                            interface_ok = false;
+                            break;
+                        }
+                    }
+                }
+                free(interfaces);
+                if (interface_ok) {
+                    size_t size = 0;
+                    if (t == GI_INFO_TYPE_STRUCT)
+                        size = g_struct_info_get_size((GIStructInfo *) info);
+                    if (t == GI_INFO_TYPE_UNION)
+                        size = g_union_info_get_size((GIStructInfo *) info);
+                    type_define(info, gtype, size, ils);
+                    REGISTER(gtype);
+                }
             }
         }
         goto recursion;
@@ -616,12 +621,14 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM *s_types, SCM *ils)
             }
         }
         else {
-            type_define(info, gtype, 0, ils);
-            REGISTER(gtype);
-            if (t == GI_INFO_TYPE_ENUM)
-                enum_conversions_define(info, ils);
-            else
-                flag_conversions_define(info, ils);
+            if (!IS_REGISTERED(gtype)) {
+                type_define(info, gtype, 0, ils);
+                REGISTER(gtype);
+                if (t == GI_INFO_TYPE_ENUM)
+                    enum_conversions_define(info, ils);
+                else
+                    flag_conversions_define(info, ils);
+            }
         }
         goto recursion;
     }
@@ -651,21 +658,21 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM *s_types, SCM *ils)
         break;
     }
 
-  end:
+end:
     // output_il(ils);
     // output_exports(defs);
     return SCM_UNSPECIFIED;
 
-  recursion:
+recursion:
     {
-#define LOAD_NESTED(F, N, I)                                    \
-        do {                                                    \
-            if (flags & F)                                      \
-                for (int i = 0; i < N; i++) {                  \
-                    GIBaseInfo *nested_info = I(info, i);       \
-                    load_info(nested_info, flags, s_types, ils);     \
-                    g_base_info_unref(nested_info);             \
-                }                                               \
+#define LOAD_NESTED(F, N, I)                                        \
+        do {                                                        \
+            if (flags & F)                                          \
+                for (int i = 0; i < N; i++) {                       \
+                    GIBaseInfo *nested_info = I(info, i);           \
+                    load_info(nested_info, flags, s_types, ils);    \
+                    g_base_info_unref(nested_info);                 \
+                }                                                   \
         } while (0)
 
         int n_methods, n_properties, n_signals;
@@ -694,6 +701,16 @@ scm_parser_add_info_x(SCM s_parser, SCM s_info, SCM s_flags)
     SCM s_ils = scm_c_vector_ref(s_parser, 3);
     GIBaseInfo *base_info = scm_foreign_object_ref(s_info, 0);
 
+#ifdef DEBUG
+    if (!scm_is_true(s_ils))
+        scm_misc_error("parser-add-info!", "internal error #f IL", SCM_EOL);
+    if (!scm_is_list(s_ils))
+        scm_misc_error("parser-add-info!", "internal error non-list IL", SCM_EOL);
+    for (int i = 0; i < scm_c_length(s_ils); i ++)
+        if (!scm_is_list(scm_c_list_ref(s_ils, i)))
+            scm_misc_error("parser-add-info!", "internal error non-list entry IL", SCM_EOL);
+#endif
+            
     load_info(base_info, flags, &s_types, &s_ils);
     scm_c_vector_set_x(s_parser, 1, s_types);
     scm_c_vector_set_x(s_parser, 3, s_ils);
@@ -1057,7 +1074,7 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
                 meta->arg_type = GIG_ARG_TYPE_POINTER;
             }
         }
-            break;
+        break;
         case GI_ARRAY_TYPE_ARRAY:
             meta->arg_type = GIG_ARG_TYPE_GARRAY;
             break;
@@ -1574,7 +1591,6 @@ callable_info_make_amap(GICallableInfo *function_info, const char *name)
     arg_map_determine_argument_presence(amap, function_info);
     arg_map_compute_c_invoke_positions(amap);
     arg_map_compute_s_call_positions(amap);
-    gig_amap_dump(name, amap);
     return amap;
 }
 
@@ -1696,3 +1712,71 @@ type_meta_init_from_callable_info(GigTypeMeta *meta, GICallableInfo *ci)
     meta->transfer = convert_transfer(transfer);
     g_base_info_unref(type_info);
 }
+
+static SCM
+type_meta_to_il(GigTypeMeta *meta)
+{
+    SCM il = SCM_EOL;
+    SCM flags = SCM_EOL;
+#define D(k,v)                                              \
+    il = scm_cons(scm_cons(scm_from_utf8_symbol(k),(v)),il)
+#define F(x)                                            \
+    flags = scm_cons(scm_from_utf8_symbol(x), flags);
+
+    D("arg-type", scm_from_utf8_symbol(gig_arg_type_name(meta->arg_type)));
+
+    if (meta->gtype)
+        D("gtype-name", scm_from_utf8_string(g_type_name(meta->gtype)));
+    if (meta->qname)
+        D("qualified-name", scm_from_utf8_string(meta->qname));
+    if (meta->is_ptr)
+        F("ptr");
+    if (meta->is_in)
+        F("in");
+    if (meta->is_out)
+        F("out")
+            if (meta->is_skip)
+                F("skip");
+    if (meta->is_caller_allocates)
+        F("preallocated");
+    if (meta->is_optional)
+        F("optional");
+    if (meta->is_nullable)
+        F("nullable");
+    if (meta->is_invalid)
+        F("invalid");
+    if (meta->is_zero_terminated)
+        F("zero-terminated");
+    if (meta->has_length_arg)
+        F("sized");
+    if (meta->has_fixed_size)
+        F("fixed-size");
+    if (!scm_is_null(flags))
+        D("flags", scm_reverse(flags));
+    if (meta->length_arg != 0)
+        D("length-arg", scm_from_int(meta->length_arg));
+    if (meta->fixed_size != 0)
+        D("fixed-size", scm_from_int(meta->fixed_size));
+    if (meta->item_size != 0)
+        D("item-size", scm_from_size_t(meta->item_size));
+    if (meta->transfer == GIG_TRANSFER_NOTHING)
+        D("transfer", scm_from_utf8_symbol("nothing"));
+    else if (meta->transfer == GIG_TRANSFER_CONTAINER)
+        D("transfer", scm_from_utf8_symbol("container"));
+    else if (meta->transfer == GIG_TRANSFER_EVERYTHING)
+        D("transfer", scm_from_utf8_symbol("everything"));
+
+    if (meta->n_params > 0) {
+        SCM param_il = SCM_EOL;
+        for (int i = 0; i < meta->n_params; i++) {
+            param_il =
+                scm_append(scm_list_2
+                           (param_il, scm_list_1(type_meta_to_il(&(meta->params[i])))));
+        }
+        D("params", param_il);
+    }
+    else if (meta->arg_type == GIG_ARG_TYPE_CALLBACK)
+        D("callable-info", gig_amap_to_il(meta->callable_arg_map));
+    return scm_reverse(il);
+}
+

@@ -85,11 +85,13 @@ static SCM type_less_p_proc;
 static SCM sym_sort_key;
 
 static SCM make_type_with_gtype(const char *type_class_name, GType gtype, SCM extra_supers,
-                                size_t boxed_size, GigTypeRefFunction *reffunc, GigTypeUnrefFunction *unreffunc);
+                                size_t boxed_size, GigTypeRefFunction *reffunc,
+                                GigTypeUnrefFunction *unreffunc);
 static SCM gig_type_associate(GType gtype, SCM stype);
 static void make_untyped_flag_enum(SCM s_class_name, SCM s_qname, SCM flags, bool is_flags);
 static SCM type_define_full(const char *type_class_name, GType gtype, SCM extra_supers,
-                            size_t boxed_size, GigTypeRefFunction *reffunc, GigTypeUnrefFunction *unreffunc);
+                            size_t boxed_size, GigTypeRefFunction *reffunc,
+                            GigTypeUnrefFunction *unreffunc);
 
 ////////////////////////////////////////////////////////////////
 // Type definition
@@ -100,7 +102,7 @@ static SCM type_define_full(const char *type_class_name, GType gtype, SCM extra_
 // in our hash table of known types.
 static SCM
 type_define_full(const char *_type_class_name, GType gtype, SCM extra_supers,
-                     size_t boxed_size, GigTypeRefFunction *reffunc, GigTypeUnrefFunction *unreffunc)
+                 size_t boxed_size, GigTypeRefFunction *reffunc, GigTypeUnrefFunction *unreffunc)
 {
     assert(GSIZE_TO_POINTER(gtype) != NULL);
     SCM defs = SCM_EOL;
@@ -123,9 +125,11 @@ type_define_full(const char *_type_class_name, GType gtype, SCM extra_supers,
         if (parent != G_TYPE_INVALID)
             defs = scm_append2(defs, gig_type_define(parent));
 
-        SCM new_type = make_type_with_gtype(_type_class_name, gtype, extra_supers, boxed_size, reffunc, unreffunc);
+        SCM new_type =
+            make_type_with_gtype(_type_class_name, gtype, extra_supers, boxed_size, reffunc,
+                                 unreffunc);
 
-        if(scm_is_unknown_class(new_type))
+        if (scm_is_unknown_class(new_type))
             return defs;
 
         gig_type_associate(gtype, new_type);
@@ -188,7 +192,7 @@ SCM
 gig_il_sized_type(SCM s_namespace, SCM s_name, SCM s_gtype_name, SCM s_boxed_size)
 {
     GIG_INIT_CHECK();
-#define FUNC_NAME "^sized_type"
+#define FUNC_NAME "^sized-type"
     SCM_ASSERT_TYPE(scm_is_symbol(s_name), s_name, SCM_ARG2, FUNC_NAME, "symbol");
     SCM_ASSERT_TYPE(scm_is_string(s_gtype_name), s_gtype_name, SCM_ARG3, FUNC_NAME, "string");
 
@@ -208,10 +212,11 @@ gig_il_sized_type(SCM s_namespace, SCM s_name, SCM s_gtype_name, SCM s_boxed_siz
 }
 
 SCM
-gig_il_custom_type(SCM s_namespace, SCM s_name, SCM s_gtype_name, SCM s_ref_func_name, SCM s_unref_func_name)
+gig_il_custom_type(SCM s_namespace, SCM s_name, SCM s_gtype_name, SCM s_ref_func_name,
+                   SCM s_unref_func_name)
 {
     GIG_INIT_CHECK();
-#define FUNC_NAME "^sized_type"
+#define FUNC_NAME "^custom-type"
     SCM_ASSERT_TYPE(scm_is_symbol(s_name), s_name, SCM_ARG2, FUNC_NAME, "symbol");
     SCM_ASSERT_TYPE(scm_is_string(s_gtype_name), s_gtype_name, SCM_ARG3, FUNC_NAME, "string");
 
@@ -219,24 +224,30 @@ gig_il_custom_type(SCM s_namespace, SCM s_name, SCM s_gtype_name, SCM s_ref_func
         scm_wrong_type_arg(FUNC_NAME, SCM_ARG2, s_gtype_name);
 
     scm_dynwind_begin(0);
-    
+
     char *gtype_name = scm_dynfree(scm_to_utf8_string(s_gtype_name));
     size_t gtype = G.type_from_name(gtype_name);
-    free(gtype_name);
     if (gtype == 0)
         scm_misc_error(FUNC_NAME, "cannot find GType for '~A'", scm_list_1(s_gtype_name));
-    char *type_class_name = scm_dynfree(scm_to_utf8_symbol(s_name));
-    char *namespace_ = scm_dynfree(scm_to_utf8_symbol(s_namespace));
-    char *ref_func_name = scm_dynfree(scm_to_utf8_string(s_ref_func_name));
-    char *unref_func_name = scm_dynfree(scm_to_utf8_string(s_unref_func_name));
-    GigTypeRefFunction *ref_func = gig_lib_lookup(namespace_, ref_func_name);
-    GigTypeUnrefFunction *unref_func = gig_lib_lookup(namespace_, unref_func_name);
-    if (!ref_func)
-        scm_misc_error(FUNC_NAME, "cannot find reference func '~A' for '~A' in '~A'", scm_list_3(s_ref_func_name, s_name, s_namespace));
-    if (!unref_func)
-        scm_misc_error(FUNC_NAME, "cannot find dereference func '~A' for '~A' in '~A'", scm_list_3(s_unref_func_name, s_name, s_namespace));
 
-    type_define_full(type_class_name, gtype, SCM_EOL, 0, ref_func, unref_func);
+    SCM hash = scm_variable_ref(gtype_hash_var);
+    SCM orig_value = scm_hashq_ref(hash, scm_from_size_t(gtype), SCM_BOOL_F);
+    if (!scm_is_true(orig_value)) {
+        char *type_class_name = scm_dynfree(scm_to_utf8_symbol(s_name));
+        char *namespace_ = scm_dynfree(scm_to_utf8_symbol(s_namespace));
+        char *ref_func_name = scm_dynfree(scm_to_utf8_string(s_ref_func_name));
+        char *unref_func_name = scm_dynfree(scm_to_utf8_string(s_unref_func_name));
+        GigTypeRefFunction *ref_func = gig_lib_lookup(namespace_, ref_func_name);
+        GigTypeUnrefFunction *unref_func = gig_lib_lookup(namespace_, unref_func_name);
+        if (!ref_func)
+            scm_misc_error(FUNC_NAME, "cannot find reference func '~A' for '~A' in '~A'",
+                           scm_list_3(s_ref_func_name, s_name, s_namespace));
+        if (!unref_func)
+            scm_misc_error(FUNC_NAME, "cannot find dereference func '~A' for '~A' in '~A'",
+                           scm_list_3(s_unref_func_name, s_name, s_namespace));
+
+        type_define_full(type_class_name, gtype, SCM_EOL, 0, ref_func, unref_func);
+    }
     scm_dynwind_end();
     return scm_list_1(s_name);
 #undef FUNC_NAME
@@ -333,7 +344,8 @@ make_untyped_flag_enum(SCM s_class_name, SCM s_qname, SCM flags, bool is_flags)
 
 static SCM
 make_type_with_gtype(const char *_type_class_name, GType gtype, SCM extra_supers,
-                     size_t boxed_size, GigTypeRefFunction *reffunc, GigTypeUnrefFunction *unreffunc)
+                     size_t boxed_size, GigTypeRefFunction *reffunc,
+                     GigTypeUnrefFunction *unreffunc)
 {
     GType parent = G.type_parent(gtype);
     GType fundamental = G.type_fundamental(gtype);
@@ -393,6 +405,7 @@ make_type_with_gtype(const char *_type_class_name, GType gtype, SCM extra_supers
     case G_TYPE_BOXED:
     {
         dsupers = scm_cons(sparent, extra_supers);
+        dsupers = scm_sort_x(dsupers, type_less_p_proc);
         new_type = scm_make_class_with_name(dsupers, slots, type_class_name);
 
         GigBoxedFuncs *funcs = _boxed_funcs_for_type(gtype);
@@ -424,12 +437,13 @@ make_type_with_gtype(const char *_type_class_name, GType gtype, SCM extra_supers
             dsupers = scm_cons(gig_type_get_scheme_type(interfaces[n]), dsupers);
         free(interfaces);
 
-        scm_set_class_ref_slot(new_type, scm_from_pointer(reffunc, NULL));
-        scm_set_class_unref_slot(new_type, scm_from_pointer(unreffunc, NULL));
-        
         // dsupers need to be sorted, or else Guile will barf
         dsupers = scm_sort_x(dsupers, type_less_p_proc);
         new_type = scm_make_class_with_name(dsupers, slots, type_class_name);
+        if (fundamental == G_TYPE_OBJECT) {
+            scm_set_class_ref_slot(new_type, scm_from_pointer(reffunc, NULL));
+            scm_set_class_unref_slot(new_type, scm_from_pointer(unreffunc, NULL));
+        }
         break;
 
     }
@@ -450,8 +464,8 @@ make_type_with_gtype(const char *_type_class_name, GType gtype, SCM extra_supers
 
         dsupers = scm_sort_x(dsupers, type_less_p_proc);
         new_type = scm_make_class_with_name(dsupers, slots, type_class_name);
-        scm_set_class_ref_slot(new_type, scm_from_pointer(reffunc, NULL));
-        scm_set_class_unref_slot(new_type, scm_from_pointer(unreffunc, NULL));
+        gig_critical_load("%s - this category of fundamental type is unimplemented",
+                          _type_class_name);
         break;
     }
     }
@@ -615,7 +629,7 @@ gig_type_get_scheme_type_with_qname(const char *qname)
 static void *
 unpack_thunk_or_pointer(SCM x)
 {
-    if (scm_is_true(scm_pointer_p(x)))
+    if (scm_is_pointer(x))
         return scm_to_pointer(x);
     else if (scm_is_procedure(x))
         return scm_to_pointer(scm_call_0(x));
@@ -872,12 +886,12 @@ scm_type_gtype_get_children(SCM s_gtype)
         children = G.type_children(type, &n_children);
         for (i = 0; i < n_children; i++) {
             entry = scm_from_uintptr_t(children[i]);
-            ret = scm_append(scm_list_2(ret, scm_list_1(entry)));
+            ret = scm_cons(entry, ret);
         }
         free(children);
     }
 
-    return ret;
+    return scm_reverse(ret);
 }
 
 // Given a Guile integer that is a GType, this returns a list of Guile
@@ -1109,13 +1123,17 @@ gig_init_type_stage2()
     enum_type = scm_c_private_ref("gi runtime", "<GEnum>");
     flags_type = scm_c_private_ref("gi runtime", "<GFlags>");
     make_fundamental_proc = scm_c_private_ref("gi runtime", "%make-fundamental-class");
-    
+    SCM value_type = scm_c_private_ref("gi runtime", "<GValue>");
+    SCM closure_type = scm_c_private_ref("gi runtime", "<GClosure>");
+
     gtype_hash_var = scm_c_private_lookup("gi runtime", "%gtype-hash");
     reverse_hash_var = scm_c_private_lookup("gi runtime", "%reverse-hash");
     info_hash_var = scm_c_private_lookup("gi runtime", "%info-hash");
 
     scm_c_define("G_TYPE_VALUE", scm_from_size_t(G.value_get_type()));
     scm_c_define("G_TYPE_CLOSURE", scm_from_size_t(G.closure_get_type()));
+    gig_type_associate(G.value_get_type(), value_type);
+    gig_type_associate(G.closure_get_type(), closure_type);
 
     SCM gobject_ref = scm_c_private_lookup("gi runtime", "%gobject-ref");
     scm_variable_set_x(gobject_ref, scm_from_pointer(G.object_ref_sink, NULL));
@@ -1134,7 +1152,7 @@ gig_init_type_stage2()
 
     SCM gvariant_unref = scm_c_private_lookup("gi runtime", "%gvariant-unref");
     scm_variable_set_x(gparam_unref, scm_from_pointer(G.variant_unref, NULL));
-    
+
     SCM gvalue_type = scm_c_private_ref("gi runtime", "<GValue>");
     scm_add_copy_free_slot_funcs(gvalue_type, scm_from_size_t(G.value_get_type()));
     SCM gclosure_type = scm_c_private_ref("gi runtime", "<GClosure>");

@@ -310,7 +310,7 @@ gig_user_object_init(GTypeInstance *instance, void *class_ptr)
     properties = G.object_class_list_properties(class_ptr, &n_properties);
 
     GValue *instance_properties = xcalloc(n_properties, sizeof(GValue));
-    G.object_set_qdata((GObject *) instance, gig_user_object_properties, instance_properties);
+    G.object_set_qdata((GObject *)instance, gig_user_object_properties, instance_properties);
 
     for (unsigned i = 0; i < n_properties; i++) {
         const GValue *_default;

@@ -49,7 +49,7 @@ _gig_closure_marshal(GClosure *closure, GValue *ret, unsigned n_params, const GV
                      void *hint, void *marshal_data)
 {
     GIG_INIT_CHECK();
-    
+
     GigClosure *pc = (GigClosure *)closure;
     SCM args = scm_make_list(scm_from_uint(n_params), SCM_UNDEFINED);
 
@@ -113,7 +113,7 @@ GClosure *
 gig_closure_new(SCM callback, SCM inout_mask)
 {
     GIG_INIT_CHECK();
-    
+
     GClosure *closure = G.closure_new_simple(sizeof(GigClosure), NULL);
     GigClosure *gig_closure = (GigClosure *)closure;
     G.closure_add_invalidate_notifier(closure, NULL, _gig_closure_invalidate);

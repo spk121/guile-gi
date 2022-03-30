@@ -48,7 +48,7 @@ scm_signal_accu(GSignalInvocationHint * ihint,
         return true;
     case 1:
         if (!scm_is_eq(result, SCM_UNSPECIFIED))
-            if(gig_value_from_scm(seed, result))
+            if (gig_value_from_scm(seed, result))
                 return FALSE;
         return true;
     case 2:

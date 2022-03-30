@@ -351,7 +351,7 @@ static SCM
 gig_value_to_scm_structured_type(const GValue *value, GType fundamental, bool copy_boxed)
 {
     GIG_INIT_CHECK();
-    
+
     GigTransfer transfer = copy_boxed ? GIG_TRANSFER_NOTHING : GIG_TRANSFER_EVERYTHING;
     switch (fundamental) {
     case G_TYPE_INTERFACE:
@@ -484,7 +484,8 @@ gig_value_set_type(SCM where, SCM what)
 {
     GIG_INIT_CHECK();
     GType type = scm_to_gtype(what);
-    SCM_ASSERT_TYPE(!G.type_test_flags(type, G_TYPE_FLAG_ABSTRACT), what, SCM_ARG2, "%set-type!", "instantiable GType");
+    SCM_ASSERT_TYPE(!G.type_test_flags(type, G_TYPE_FLAG_ABSTRACT), what, SCM_ARG2, "%set-type!",
+                    "instantiable GType");
     GValue *value = gig_type_peek_typed_object(where, gig_value_type());
     G.value_unset(value);
     G.value_init(value, type);

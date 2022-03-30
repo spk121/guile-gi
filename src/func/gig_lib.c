@@ -40,7 +40,7 @@ gig_il_library(SCM s_namespace_, SCM s_version, SCM s_path_list)
     if (strval_find_entry(lib_cache, namespace_) != 0) {
         gig_debug_load("namespace '%s' is already dynamically loaded", namespace_);
         free(namespace_);
-        return SCM_BOOL_F;
+        return SCM_EOL;
     }
     n = scm_c_length(s_path_list);
     shlib = allocate_shlib(n);
@@ -100,6 +100,9 @@ gig_lib_all_handles()
 {
     void **handles;
     int i, j, n;
+
+    if (lib_cache == NULL)
+        return NULL;
 
     n = 0;
     for (j = 0; j < lib_cache->len; j++) {

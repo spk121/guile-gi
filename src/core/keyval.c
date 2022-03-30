@@ -36,9 +36,9 @@ keyval_new()
 }
 
 void
-keyval_free(keyval_t *kv, void (*keyfree)(uint64_t key), void(*valfree)(uint64_t val))
+keyval_free(keyval_t *kv, void (*keyfree)(uint64_t key), void (*valfree)(uint64_t val))
 {
-    for(int i = 0; i < kv->len; i++) {
+    for (int i = 0; i < kv->len; i++) {
         if (keyfree)
             keyfree(kv->entries[i].key);
         if (valfree)

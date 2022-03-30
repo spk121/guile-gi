@@ -27,10 +27,9 @@
   #:use-module ((gi core-generics) #:select (connect))
   #:export (;; main
             ^initialize
-            ;; logging
-            install-port-logger!
-            install-journal-logger!
-            install-custom-logger!
+            ;; callback
+            %before-c-callback-hook
+            %before-callback-hook
             ;; closure
             procedure->closure
             %invoke-closure
@@ -48,6 +47,10 @@
             ;; glib
             ;; lib
             ^library
+            ;; logging
+            install-port-logger!
+            install-journal-logger!
+            install-custom-logger!
             ;; object
             %make-gobject
             %gobject-get-pspec
@@ -94,10 +97,10 @@
             gtype-get-name
             gtype-get-parent
             gtype-get-fundamental
-            gtype-get-childnre
+            gtype-get-children
             gtype-get-interfaces
             gtype-get-depth
-            gtype-is-interfaced?
+            gtype-is-interface?
             gtype-is-classed?
             gtype-is-instantiatable?
             gtype-is-derivable?
@@ -110,7 +113,7 @@
             %set!
             %set-type!
             %transform
-
+            
             ;; Locally
             runtime-eval
             <GFundamental> <GBoxed> <GObject> <GInterface> <GParam>
@@ -145,6 +148,8 @@
     ^property
     ^signal
     ^type
+    ^boxed-type
+    ^custom-type
     ^untyped-enum
     ^untyped-enum-conv
     ^untyped-flags
@@ -152,45 +157,58 @@
     ))
 
 (define (runtime-eval expr)
-  (pk 'eval expr)
+  ;; (pk 'eval expr)
   (let ((sym (car expr))
         (args (cdr expr)))
-    (cond
-     ((eq? sym '^constant)
-      (apply ^constant args))
-     ((eq? sym '^enum-conv)
-      (apply ^enum-conv args))
-     ((eq? sym '^flags-conv)
-      (apply ^flags-conv args))
-     ((eq? sym '^function)
-      (apply ^function args))
-     ((eq? sym '^initialize)
-      (apply ^initialize args))
-     ((eq? sym '^library)
-      (apply ^library args))
-     ((eq? sym '^property)
-      (apply ^property args))
-     ((eq? sym '^signal)
-      (apply ^signal args))
-     ((eq? sym '^type)
-      (apply ^type args))
-     ((eq? sym '^untyped-enum)
-      (apply ^untyped-enum args))
-     ((eq? sym '^untyped-enum-conv)
-      (apply ^untyped-enum-conv args))
-     ((eq? sym '^untyped-flags)
-      (apply ^untyped-flags args))
-     ((eq? sym '^untyped-flags-conv)
-      (apply ^untyped-flags-conv args))
-     (else
-      (error "unknown expression '~S'" sym)))))
+    (let ((defs
+            (cond
+             ((eq? sym '^constant)
+              (apply ^constant args))
+             ((eq? sym '^custom-type)
+              (apply ^custom-type args))
+             ((eq? sym '^enum-conv)
+              (apply ^enum-conv args))
+             ((eq? sym '^flags-conv)
+              (apply ^flags-conv args))
+             ((eq? sym '^function)
+              (apply ^function args))
+             ((eq? sym '^initialize)
+              (apply ^initialize args))
+             ((eq? sym '^library)
+              (apply ^library args))
+             ((eq? sym '^property)
+              (apply ^property args))
+             ((eq? sym '^signal)
+              (apply ^signal args))
+             ((eq? sym '^sized-type)
+              (apply ^sized-type args))
+             ((eq? sym '^type)
+              (apply ^type (pk 'ZOOP args)))
+             ((eq? sym '^untyped-enum)
+              (apply ^untyped-enum args))
+             ((eq? sym '^untyped-enum-conv)
+              (apply ^untyped-enum-conv args))
+             ((eq? sym '^untyped-flags)
+              (apply ^untyped-flags args))
+             ((eq? sym '^untyped-flags-conv)
+              (apply ^untyped-flags-conv args))
+             (else
+              (error "unknown expression '~S'" sym)))))
+      (if (not (list? defs))
+          (error "bad return from internal function ~S: ~S"
+                 sym defs)
+          ;; else
+          defs))))
+
+
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; GType and SCM class associations
 
-(define %gtype-hash #f)
-(define %reverse-hash #f)
-(define %info-hash #f)
+(define %gtype-hash (make-hash-table 31))
+(define %reverse-hash (make-hash-table 31))
+(define %info-hash (make-hash-table 31))
 
 ;;(define +debug-port+ (current-output-port))
 (define +debug-port+ (%make-void-port "w"))
@@ -728,10 +746,6 @@ class."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (initialize-stage2)
-  (set! %gtype-hash (make-hash-table 31))
-  (set! %reverse-hash (make-hash-table 31))
-  (set! %info-hash (make-hash-table 31))
-
   (type-register G_TYPE_NONE <unknown>)
 
   (type-associate G_TYPE_STRING <string>)
@@ -753,6 +767,6 @@ class."
   (type-associate G_TYPE_FLAGS <GFlags>)
   (type-associate G_TYPE_OBJECT <GObject>)
   (type-associate G_TYPE_INTERFACE <GInterface>)
-  (type-associate G_TYPE_VALUE <GValue>)
-  (type-associate G_TYPE_CLOSURE <GClosure>)
-  (type-associate G_TYPE_PARAM <GParam>))
+  (type-associate G_TYPE_PARAM <GParam>)
+  (type-associate G_TYPE_VARIANT <GVariant>)
+  )

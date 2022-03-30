@@ -695,6 +695,8 @@ gig_amap_new_from_il(SCM il)
     return amap;
 }
 
+#ifdef GIG_PARSER
+
 #define D(k,v) \
     il = scm_cons(scm_cons(scm_from_utf8_symbol(k),(v)),il)
 #define F(x) \
@@ -757,3 +759,5 @@ gig_amap_to_il(GigArgMap *amap)
 }
 
 #undef D
+
+#endif
