@@ -35,4 +35,18 @@
                flags-complement flags-projection flags-projection/list
                flags-projection/number
                is-registered-callback?
-               get-registered-callback-closure-pointer))
+               get-registered-callback-closure-pointer
+
+               gtype-get-name
+               gtype-get-scheme-type
+               gtype-get-parent
+               gtype-is-a?
+               gtype-get-children
+               gtype-get-fundamental
+               %gtype-dump-table
+               gtype-get-interfaces
+               gtype-get-depth
+               gtype-is-interface?
+               gtype-is-classed?
+               gtype-is-instantiatable?
+               gtype-is-derivable?))
