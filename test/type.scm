@@ -4,6 +4,8 @@
 
 (test-begin "type")
 
+(use-typelibs ("GObject" "2.0"))
+
 (test-equal "G_TYPE_LONG name"
   "glong"
   (gtype-get-name G_TYPE_LONG))
