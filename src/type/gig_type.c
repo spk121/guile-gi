@@ -332,7 +332,7 @@ make_untyped_flag_enum(SCM s_class_name, SCM s_qname, SCM flags, bool is_flags)
 
     scm_hashq_set_x(info_hash, s_qname, cls);
 
-  def:
+def:
     scm_c_define(class_name, cls);
     scm_c_export(class_name, NULL);
     free(class_name);
@@ -1062,102 +1062,110 @@ scm_add_copy_free_slot_funcs(SCM new_type, SCM gtype)
 void
 gig_init_type_stage1(void)
 {
-    scm_c_define("G_TYPE_BOOLEAN", scm_from_size_t(G_TYPE_BOOLEAN));
-    scm_c_define("G_TYPE_BOXED", scm_from_size_t(G_TYPE_BOXED));
-    scm_c_define("G_TYPE_CHAR", scm_from_size_t(G_TYPE_CHAR));
-    scm_c_define("G_TYPE_DOUBLE", scm_from_size_t(G_TYPE_DOUBLE));
-    scm_c_define("G_TYPE_ENUM", scm_from_size_t(G_TYPE_ENUM));
-    scm_c_define("G_TYPE_FLAGS", scm_from_size_t(G_TYPE_FLAGS));
-    scm_c_define("G_TYPE_FLOAT", scm_from_size_t(G_TYPE_FLOAT));
-    scm_c_define("G_TYPE_INT", scm_from_size_t(G_TYPE_INT));
-    scm_c_define("G_TYPE_INT64", scm_from_size_t(G_TYPE_INT64));
-    scm_c_define("G_TYPE_INTERFACE", scm_from_size_t(G_TYPE_INTERFACE));
-    scm_c_define("G_TYPE_LONG", scm_from_size_t(G_TYPE_LONG));
-    scm_c_define("G_TYPE_NONE", scm_from_size_t(G_TYPE_NONE));
-    scm_c_define("G_TYPE_OBJECT", scm_from_size_t(G_TYPE_OBJECT));
-    scm_c_define("G_TYPE_PARAM", scm_from_size_t(G_TYPE_PARAM));
-    scm_c_define("G_TYPE_POINTER", scm_from_size_t(G_TYPE_POINTER));
-    scm_c_define("G_TYPE_STRING", scm_from_size_t(G_TYPE_STRING));
-    scm_c_define("G_TYPE_UCHAR", scm_from_size_t(G_TYPE_UCHAR));
-    scm_c_define("G_TYPE_UINT", scm_from_size_t(G_TYPE_UINT));
-    scm_c_define("G_TYPE_UINT64", scm_from_size_t(G_TYPE_UINT64));
-    scm_c_define("G_TYPE_ULONG", scm_from_size_t(G_TYPE_ULONG));
-    scm_c_define("G_TYPE_VARIANT", scm_from_size_t(G_TYPE_VARIANT));
-    scm_c_define("SIZEOF_GVALUE", scm_from_size_t(sizeof(GValue)));
-    scm_c_define("SIZEOF_GCLOSURE", scm_from_size_t(sizeof(GClosure)));
+    static int first = 1;
+    if (first) {
+        first = 0;
+        scm_c_define("G_TYPE_BOOLEAN", scm_from_size_t(G_TYPE_BOOLEAN));
+        scm_c_define("G_TYPE_BOXED", scm_from_size_t(G_TYPE_BOXED));
+        scm_c_define("G_TYPE_CHAR", scm_from_size_t(G_TYPE_CHAR));
+        scm_c_define("G_TYPE_DOUBLE", scm_from_size_t(G_TYPE_DOUBLE));
+        scm_c_define("G_TYPE_ENUM", scm_from_size_t(G_TYPE_ENUM));
+        scm_c_define("G_TYPE_FLAGS", scm_from_size_t(G_TYPE_FLAGS));
+        scm_c_define("G_TYPE_FLOAT", scm_from_size_t(G_TYPE_FLOAT));
+        scm_c_define("G_TYPE_INT", scm_from_size_t(G_TYPE_INT));
+        scm_c_define("G_TYPE_INT64", scm_from_size_t(G_TYPE_INT64));
+        scm_c_define("G_TYPE_INTERFACE", scm_from_size_t(G_TYPE_INTERFACE));
+        scm_c_define("G_TYPE_LONG", scm_from_size_t(G_TYPE_LONG));
+        scm_c_define("G_TYPE_NONE", scm_from_size_t(G_TYPE_NONE));
+        scm_c_define("G_TYPE_OBJECT", scm_from_size_t(G_TYPE_OBJECT));
+        scm_c_define("G_TYPE_PARAM", scm_from_size_t(G_TYPE_PARAM));
+        scm_c_define("G_TYPE_POINTER", scm_from_size_t(G_TYPE_POINTER));
+        scm_c_define("G_TYPE_STRING", scm_from_size_t(G_TYPE_STRING));
+        scm_c_define("G_TYPE_UCHAR", scm_from_size_t(G_TYPE_UCHAR));
+        scm_c_define("G_TYPE_UINT", scm_from_size_t(G_TYPE_UINT));
+        scm_c_define("G_TYPE_UINT64", scm_from_size_t(G_TYPE_UINT64));
+        scm_c_define("G_TYPE_ULONG", scm_from_size_t(G_TYPE_ULONG));
+        scm_c_define("G_TYPE_VARIANT", scm_from_size_t(G_TYPE_VARIANT));
+        scm_c_define("SIZEOF_GVALUE", scm_from_size_t(sizeof(GValue)));
+        scm_c_define("SIZEOF_GCLOSURE", scm_from_size_t(sizeof(GClosure)));
 
-    sym_sort_key = scm_from_utf8_symbol("sort-key");
-    type_less_p_proc = scm_c_make_gsubr("type-<?", 2, 0, 0, type_less_p);
+        sym_sort_key = scm_from_utf8_symbol("sort-key");
+        type_less_p_proc = scm_c_make_gsubr("type-<?", 2, 0, 0, type_less_p);
 
-    scm_c_define_gsubr("$type-name", 1, 0, 0, scm_g_type_name_unsafe);
-    scm_c_define_gsubr("$type-parent", 1, 0, 0, scm_g_type_parent_unsafe);
+        scm_c_define_gsubr("$type-name", 1, 0, 0, scm_g_type_name_unsafe);
+        scm_c_define_gsubr("$type-parent", 1, 0, 0, scm_g_type_parent_unsafe);
 
-    scm_c_define_gsubr("^type", 3, 0, 0, gig_il_type);
-    scm_c_define_gsubr("^sized-type", 4, 0, 0, gig_il_sized_type);
-    scm_c_define_gsubr("^custom-type", 5, 0, 0, gig_il_custom_type);
-    scm_c_define_gsubr("^untyped-flags", 3, 0, 0, gig_il_untyped_flags);
-    scm_c_define_gsubr("^untyped-enum", 3, 0, 0, gig_il_untyped_enum);
-    scm_c_define_gsubr("get-gtype", 1, 0, 0, scm_type_get_gtype);
-    scm_c_define_gsubr("gtype-get-scheme-type", 1, 0, 0, scm_type_gtype_get_scheme_type);
-    scm_c_define_gsubr("gtype-get-name", 1, 0, 0, scm_type_gtype_get_name);
-    scm_c_define_gsubr("gtype-get-parent", 1, 0, 0, scm_type_gtype_get_parent);
-    scm_c_define_gsubr("gtype-get-fundamental", 1, 0, 0, scm_type_gtype_get_fundamental);
-    scm_c_define_gsubr("gtype-get-children", 1, 0, 0, scm_type_gtype_get_children);
-    scm_c_define_gsubr("gtype-get-interfaces", 1, 0, 0, scm_type_gtype_get_interfaces);
-    scm_c_define_gsubr("gtype-get-depth", 1, 0, 0, scm_type_gtype_get_depth);
-    scm_c_define_gsubr("gtype-is-interface?", 1, 0, 0, scm_type_gtype_is_interface_p);
-    scm_c_define_gsubr("gtype-is-classed?", 1, 0, 0, scm_type_gtype_is_classed_p);
-    scm_c_define_gsubr("gtype-is-instantiatable?", 1, 0, 0, scm_type_gtype_is_instantiatable_p);
-    scm_c_define_gsubr("gtype-is-derivable?", 1, 0, 0, scm_type_gtype_is_derivable_p);
-    scm_c_define_gsubr("gtype-is-a?", 2, 0, 0, scm_type_gtype_is_a_p);
-    scm_c_define_gsubr("%allocate-boxed", 1, 0, 0, scm_allocate_boxed);
+        scm_c_define_gsubr("^type", 3, 0, 0, gig_il_type);
+        scm_c_define_gsubr("^sized-type", 4, 0, 0, gig_il_sized_type);
+        scm_c_define_gsubr("^custom-type", 5, 0, 0, gig_il_custom_type);
+        scm_c_define_gsubr("^untyped-flags", 3, 0, 0, gig_il_untyped_flags);
+        scm_c_define_gsubr("^untyped-enum", 3, 0, 0, gig_il_untyped_enum);
+        scm_c_define_gsubr("get-gtype", 1, 0, 0, scm_type_get_gtype);
+        scm_c_define_gsubr("gtype-get-scheme-type", 1, 0, 0, scm_type_gtype_get_scheme_type);
+        scm_c_define_gsubr("gtype-get-name", 1, 0, 0, scm_type_gtype_get_name);
+        scm_c_define_gsubr("gtype-get-parent", 1, 0, 0, scm_type_gtype_get_parent);
+        scm_c_define_gsubr("gtype-get-fundamental", 1, 0, 0, scm_type_gtype_get_fundamental);
+        scm_c_define_gsubr("gtype-get-children", 1, 0, 0, scm_type_gtype_get_children);
+        scm_c_define_gsubr("gtype-get-interfaces", 1, 0, 0, scm_type_gtype_get_interfaces);
+        scm_c_define_gsubr("gtype-get-depth", 1, 0, 0, scm_type_gtype_get_depth);
+        scm_c_define_gsubr("gtype-is-interface?", 1, 0, 0, scm_type_gtype_is_interface_p);
+        scm_c_define_gsubr("gtype-is-classed?", 1, 0, 0, scm_type_gtype_is_classed_p);
+        scm_c_define_gsubr("gtype-is-instantiatable?", 1, 0, 0, scm_type_gtype_is_instantiatable_p);
+        scm_c_define_gsubr("gtype-is-derivable?", 1, 0, 0, scm_type_gtype_is_derivable_p);
+        scm_c_define_gsubr("gtype-is-a?", 2, 0, 0, scm_type_gtype_is_a_p);
+        scm_c_define_gsubr("%allocate-boxed", 1, 0, 0, scm_allocate_boxed);
 
-    atexit(gig_type_free_types);
+        atexit(gig_type_free_types);
+    }
 }
 
 void
 gig_init_type_stage2()
 {
-    fundamental_type = scm_c_private_ref("gi runtime", "<GFundamental>");
-    boxed_type = scm_c_private_ref("gi runtime", "<GBoxed>");
-    enum_type = scm_c_private_ref("gi runtime", "<GEnum>");
-    flags_type = scm_c_private_ref("gi runtime", "<GFlags>");
-    make_fundamental_proc = scm_c_private_ref("gi runtime", "%make-fundamental-class");
-    SCM value_type = scm_c_private_ref("gi runtime", "<GValue>");
-    SCM closure_type = scm_c_private_ref("gi runtime", "<GClosure>");
+    static int first = 1;
+    if (first) {
+        first = 0;
+        fundamental_type = scm_c_private_ref("gi runtime", "<GFundamental>");
+        boxed_type = scm_c_private_ref("gi runtime", "<GBoxed>");
+        enum_type = scm_c_private_ref("gi runtime", "<GEnum>");
+        flags_type = scm_c_private_ref("gi runtime", "<GFlags>");
+        make_fundamental_proc = scm_c_private_ref("gi runtime", "%make-fundamental-class");
+        SCM value_type = scm_c_private_ref("gi runtime", "<GValue>");
+        SCM closure_type = scm_c_private_ref("gi runtime", "<GClosure>");
 
-    gtype_hash_var = scm_c_private_lookup("gi runtime", "%gtype-hash");
-    reverse_hash_var = scm_c_private_lookup("gi runtime", "%reverse-hash");
-    info_hash_var = scm_c_private_lookup("gi runtime", "%info-hash");
+        gtype_hash_var = scm_c_private_lookup("gi runtime", "%gtype-hash");
+        reverse_hash_var = scm_c_private_lookup("gi runtime", "%reverse-hash");
+        info_hash_var = scm_c_private_lookup("gi runtime", "%info-hash");
 
-    scm_c_define("G_TYPE_VALUE", scm_from_size_t(G.value_get_type()));
-    scm_c_define("G_TYPE_CLOSURE", scm_from_size_t(G.closure_get_type()));
-    gig_type_associate(G.value_get_type(), value_type);
-    gig_type_associate(G.closure_get_type(), closure_type);
+        scm_c_define("G_TYPE_VALUE", scm_from_size_t(G.value_get_type()));
+        scm_c_define("G_TYPE_CLOSURE", scm_from_size_t(G.closure_get_type()));
+        gig_type_associate(G.value_get_type(), value_type);
+        gig_type_associate(G.closure_get_type(), closure_type);
 
-    SCM gobject_ref = scm_c_private_lookup("gi runtime", "%gobject-ref");
-    scm_variable_set_x(gobject_ref, scm_from_pointer(G.object_ref_sink, NULL));
+        SCM gobject_ref = scm_c_private_lookup("gi runtime", "%gobject-ref");
+        scm_variable_set_x(gobject_ref, scm_from_pointer(G.object_ref_sink, NULL));
 
-    SCM gobject_unref = scm_c_private_lookup("gi runtime", "%gobject-unref");
-    scm_variable_set_x(gobject_unref, scm_from_pointer(G.object_unref, NULL));
+        SCM gobject_unref = scm_c_private_lookup("gi runtime", "%gobject-unref");
+        scm_variable_set_x(gobject_unref, scm_from_pointer(G.object_unref, NULL));
 
-    SCM gparam_ref = scm_c_private_lookup("gi runtime", "%gparam-ref");
-    scm_variable_set_x(gparam_ref, scm_from_pointer(G.param_spec_ref_sink, NULL));
+        SCM gparam_ref = scm_c_private_lookup("gi runtime", "%gparam-ref");
+        scm_variable_set_x(gparam_ref, scm_from_pointer(G.param_spec_ref_sink, NULL));
 
-    SCM gparam_unref = scm_c_private_lookup("gi runtime", "%gparam-unref");
-    scm_variable_set_x(gparam_unref, scm_from_pointer(G.param_spec_unref, NULL));
+        SCM gparam_unref = scm_c_private_lookup("gi runtime", "%gparam-unref");
+        scm_variable_set_x(gparam_unref, scm_from_pointer(G.param_spec_unref, NULL));
 
-    SCM gvariant_ref = scm_c_private_lookup("gi runtime", "%gvariant-ref");
-    scm_variable_set_x(gparam_ref, scm_from_pointer(G.variant_ref_sink, NULL));
+        SCM gvariant_ref = scm_c_private_lookup("gi runtime", "%gvariant-ref");
+        scm_variable_set_x(gparam_ref, scm_from_pointer(G.variant_ref_sink, NULL));
 
-    SCM gvariant_unref = scm_c_private_lookup("gi runtime", "%gvariant-unref");
-    scm_variable_set_x(gparam_unref, scm_from_pointer(G.variant_unref, NULL));
+        SCM gvariant_unref = scm_c_private_lookup("gi runtime", "%gvariant-unref");
+        scm_variable_set_x(gparam_unref, scm_from_pointer(G.variant_unref, NULL));
 
-    SCM gvalue_type = scm_c_private_ref("gi runtime", "<GValue>");
-    scm_add_copy_free_slot_funcs(gvalue_type, scm_from_size_t(G.value_get_type()));
-    SCM gclosure_type = scm_c_private_ref("gi runtime", "<GClosure>");
-    scm_add_copy_free_slot_funcs(gclosure_type, scm_from_size_t(G.closure_get_type()));
+        SCM gvalue_type = scm_c_private_ref("gi runtime", "<GValue>");
+        scm_add_copy_free_slot_funcs(gvalue_type, scm_from_size_t(G.value_get_type()));
+        SCM gclosure_type = scm_c_private_ref("gi runtime", "<GClosure>");
+        scm_add_copy_free_slot_funcs(gclosure_type, scm_from_size_t(G.closure_get_type()));
 
-    SCM init_stage2_proc = scm_c_private_ref("gi runtime", "initialize-stage2");
-    scm_call_0(init_stage2_proc);
+        SCM init_stage2_proc = scm_c_private_ref("gi runtime", "initialize-stage2");
+        scm_call_0(init_stage2_proc);
+    }
 }
