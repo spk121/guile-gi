@@ -192,3 +192,17 @@ gig_invoke_func(void *address, GigArgMap *amap, const GigArgument *in_args, int 
     }
     return success;
 }
+
+GType
+gig_invoke_get_type_func(void *address)
+{
+    ffi_type *rtype;
+    ffi_cif cif;
+    GType return_value;
+
+    rtype = arg_type_to_ffi_type(GIG_ARG_TYPE_GTYPE);
+    ffi_prep_cif(&cif, FFI_DEFAULT_ABI, 0, rtype, NULL);
+    ffi_call(&cif, address, &return_value, NULL);
+    return return_value;
+}
+

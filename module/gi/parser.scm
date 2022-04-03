@@ -27,6 +27,7 @@
             namespace-infos
             namespace-info-by-name
             namespace-dependencies
+            namespace-immediate-dependencies
 
             info-name
             info-namespace
@@ -84,6 +85,10 @@ returns a <GIBaseInfo>. Otherwise, returns #f."
   "Returns a list of all versioned dependencies for this namespace."
    (%namespace-dependencies namespace))
 
+(define (namespace-immediate-dependencies namespace)
+  "Returns a list of the immediate versioned dependencies for this namespace."
+   (%namespace-immediate-dependencies namespace))
+
 (define (info-name info)
   "Returns, as a string, the internal name field of a <GIBaseInfo> object,
 which is often the name of an associated C function or a GObject type."
@@ -134,7 +139,20 @@ Returns value is unspecified. Throws on failure."
 
     (%parser-add-info! parser info flags))
 
-(define (parser-take-output! parser)
+(define (qwote output)
+  (map (lambda (cmd)
+         (cons
+          (car cmd)
+          (map (lambda (entry)
+                 (cond
+                  ((or (symbol? entry) (list? entry))
+                   (list 'quote entry))
+                  (else
+                   entry)))
+               (cdr cmd))))
+       output))
+            
+(define* (parser-take-output! parser #:optional (quote? #f))
   "Returns a list of procedure calls that the runtime can use to
 dynamically load types and functions. Removes that information from
 the parser state object."
@@ -149,4 +167,6 @@ the parser state object."
                  (reverse (vector-ref parser 3)))))
     ;; (vector-set! parser 2 '())
     (vector-set! parser 3 '())
-    output))
+    (if quote?
+        (qwote output)
+        output)))

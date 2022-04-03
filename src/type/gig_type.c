@@ -166,22 +166,50 @@ gig_type_define(GType gtype)
     return ret;
 }
 
+static GType
+lookup_gtype(SCM s_namespace, SCM s_gtype_name, SCM s_initializer)
+{
+    char *initializer;
+    char *namespace_;
+    char *gtype_name;
+    GType type = 0;
+    GType (*func_ptr)(void);    
+    
+    // For the fundamental types, looking up by name works always.
+    gtype_name = scm_to_utf8_string(s_gtype_name);
+    type = g_type_from_name(gtype_name);
+    free(gtype_name);
+
+    // When dynamically binding to a shared object library, GObject
+    // types may not be initialized or searchable by g_type_get_name
+    // until g_XXXX_get_type is called.
+    if (type == 0) {
+        initializer = scm_to_utf8_string(s_initializer);
+        namespace_ = scm_to_utf8_symbol(s_namespace);
+        func_ptr = gig_lib_lookup(namespace_, initializer);
+        free(namespace_);
+        free(initializer);
+        if (func_ptr)
+            type = func_ptr();
+    }
+    return type;
+}
+
 SCM
-gig_il_type(SCM s_namespace, SCM s_name, SCM s_gtype_name)
+gig_il_type(SCM s_namespace, SCM s_name, SCM s_gtype_name, SCM s_initializer)
 {
     GIG_INIT_CHECK();
 #define FUNC_NAME "^type"
     SCM_ASSERT_TYPE(scm_is_symbol(s_name), s_name, SCM_ARG2, FUNC_NAME, "symbol");
     SCM_ASSERT_TYPE(scm_is_string(s_gtype_name), s_gtype_name, SCM_ARG3, FUNC_NAME, "string");
 
-    if (scm_is_true(scm_string_null_p(s_gtype_name)))
-        scm_wrong_type_arg(FUNC_NAME, SCM_ARG2, s_gtype_name);
-    char *gtype_name = scm_to_utf8_string(s_gtype_name);
-    size_t gtype = G.type_from_name(gtype_name);
-    free(gtype_name);
+    GType gtype;
+    char *type_class_name;
+    
+    gtype = lookup_gtype(s_namespace, s_gtype_name, s_initializer);
     if (gtype == 0)
         scm_misc_error(FUNC_NAME, "cannot find GType for '~A'", scm_list_1(s_gtype_name));
-    char *type_class_name = scm_to_utf8_symbol(s_name);
+    type_class_name = scm_to_utf8_symbol(s_name);
     type_define_full(type_class_name, gtype, SCM_EOL, 0, NULL, NULL);
     free(type_class_name);
     return scm_list_1(s_name);
@@ -189,7 +217,7 @@ gig_il_type(SCM s_namespace, SCM s_name, SCM s_gtype_name)
 }
 
 SCM
-gig_il_sized_type(SCM s_namespace, SCM s_name, SCM s_gtype_name, SCM s_boxed_size)
+gig_il_sized_type(SCM s_namespace, SCM s_name, SCM s_gtype_name, SCM s_initializer, SCM s_boxed_size)
 {
     GIG_INIT_CHECK();
 #define FUNC_NAME "^sized-type"
@@ -198,13 +226,15 @@ gig_il_sized_type(SCM s_namespace, SCM s_name, SCM s_gtype_name, SCM s_boxed_siz
 
     if (scm_is_true(scm_string_null_p(s_gtype_name)))
         scm_wrong_type_arg(FUNC_NAME, SCM_ARG2, s_gtype_name);
-    size_t boxed_size = scm_to_size_t(s_boxed_size);
-    char *gtype_name = scm_to_utf8_string(s_gtype_name);
-    size_t gtype = G.type_from_name(gtype_name);
-    free(gtype_name);
+
+    size_t gtype, boxed_size;
+    char *type_class_name;
+    gtype = lookup_gtype(s_namespace, s_gtype_name, s_initializer);
     if (gtype == 0)
         scm_misc_error(FUNC_NAME, "cannot find GType for '~A'", scm_list_1(s_gtype_name));
-    char *type_class_name = scm_to_utf8_symbol(s_name);
+
+    boxed_size = scm_to_size_t(s_boxed_size);
+    type_class_name = scm_to_utf8_symbol(s_name);
     type_define_full(type_class_name, gtype, SCM_EOL, boxed_size, NULL, NULL);
     free(type_class_name);
     return scm_list_1(s_name);
@@ -212,7 +242,7 @@ gig_il_sized_type(SCM s_namespace, SCM s_name, SCM s_gtype_name, SCM s_boxed_siz
 }
 
 SCM
-gig_il_custom_type(SCM s_namespace, SCM s_name, SCM s_gtype_name, SCM s_ref_func_name,
+gig_il_custom_type(SCM s_namespace, SCM s_name, SCM s_gtype_name, SCM s_initializer, SCM s_ref_func_name,
                    SCM s_unref_func_name)
 {
     GIG_INIT_CHECK();
@@ -220,15 +250,16 @@ gig_il_custom_type(SCM s_namespace, SCM s_name, SCM s_gtype_name, SCM s_ref_func
     SCM_ASSERT_TYPE(scm_is_symbol(s_name), s_name, SCM_ARG2, FUNC_NAME, "symbol");
     SCM_ASSERT_TYPE(scm_is_string(s_gtype_name), s_gtype_name, SCM_ARG3, FUNC_NAME, "string");
 
+    size_t gtype;
+    
     if (scm_is_true(scm_string_null_p(s_gtype_name)))
         scm_wrong_type_arg(FUNC_NAME, SCM_ARG2, s_gtype_name);
 
-    scm_dynwind_begin(0);
-
-    char *gtype_name = scm_dynfree(scm_to_utf8_string(s_gtype_name));
-    size_t gtype = G.type_from_name(gtype_name);
+    gtype = lookup_gtype(s_namespace, s_gtype_name, s_initializer);
     if (gtype == 0)
         scm_misc_error(FUNC_NAME, "cannot find GType for '~A'", scm_list_1(s_gtype_name));
+
+    scm_dynwind_begin(0);
 
     SCM hash = scm_variable_ref(gtype_hash_var);
     SCM orig_value = scm_hashq_ref(hash, scm_from_size_t(gtype), SCM_BOOL_F);
@@ -838,6 +869,20 @@ scm_type_gtype_get_name(SCM s_gtype)
     return scm_from_utf8_string("invalid");
 }
 
+// Given an integer that is a GType, this returns a Guile string of
+// the type's name.
+static SCM
+scm_type_gtype_from_name(SCM s_name)
+{
+#define FUNC_NAME "gtype-from-name"
+    GIG_INIT_CHECK();
+    SCM_ASSERT_TYPE(scm_is_string(s_name), s_name, SCM_ARG1, FUNC_NAME, "string");
+    char *name = scm_to_utf8_string(s_name);
+    GType type = g_type_from_name(name);
+    free(name);
+    return scm_from_size_t(type);
+}
+
 // Given a Guile integer that is a GType, this returns a Guile integer
 // that is the GType of this type's parent.
 static SCM
@@ -1095,13 +1140,14 @@ gig_init_type_stage1(void)
         scm_c_define_gsubr("$type-name", 1, 0, 0, scm_g_type_name_unsafe);
         scm_c_define_gsubr("$type-parent", 1, 0, 0, scm_g_type_parent_unsafe);
 
-        scm_c_define_gsubr("^type", 3, 0, 0, gig_il_type);
-        scm_c_define_gsubr("^sized-type", 4, 0, 0, gig_il_sized_type);
-        scm_c_define_gsubr("^custom-type", 5, 0, 0, gig_il_custom_type);
+        scm_c_define_gsubr("^type", 4, 0, 0, gig_il_type);
+        scm_c_define_gsubr("^sized-type", 5, 0, 0, gig_il_sized_type);
+        scm_c_define_gsubr("^custom-type", 6, 0, 0, gig_il_custom_type);
         scm_c_define_gsubr("^untyped-flags", 3, 0, 0, gig_il_untyped_flags);
         scm_c_define_gsubr("^untyped-enum", 3, 0, 0, gig_il_untyped_enum);
         scm_c_define_gsubr("get-gtype", 1, 0, 0, scm_type_get_gtype);
         scm_c_define_gsubr("gtype-get-scheme-type", 1, 0, 0, scm_type_gtype_get_scheme_type);
+        scm_c_define_gsubr("gtype-from-name", 1, 0, 0, scm_type_gtype_from_name);
         scm_c_define_gsubr("gtype-get-name", 1, 0, 0, scm_type_gtype_get_name);
         scm_c_define_gsubr("gtype-get-parent", 1, 0, 0, scm_type_gtype_get_parent);
         scm_c_define_gsubr("gtype-get-fundamental", 1, 0, 0, scm_type_gtype_get_fundamental);

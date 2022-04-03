@@ -7,4 +7,6 @@
 _Bool gig_invoke_func(void *address, GigArgMap *amap, const GigArgument *in_args, int n_in_args,
                       const GigArgument *out_args, int n_out_args,
                       GigArgument *return_value, GError **error);
+GType
+gig_invoke_get_type_func(void *address);
 #endif
