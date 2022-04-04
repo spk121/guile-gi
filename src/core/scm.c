@@ -130,7 +130,7 @@ scm_current_module_definition(SCM name)
 {
     SCM variable;
     variable = scm_module_variable(scm_current_module(), name);
-    if (scm_is_true(variable))
+    if (scm_is_true(variable) && scm_is_true(scm_variable_bound_p(variable)))
         return scm_variable_ref(variable);
     return SCM_BOOL_F;
 }

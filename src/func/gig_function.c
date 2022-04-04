@@ -80,16 +80,22 @@ SCM
 gig_il_function(SCM s_namespace_, SCM s_gtype_name, SCM s_long_name,
                 SCM s_short_name, SCM s_symbol_name, SCM s_amap)
 {
+#define FUNC_NAME "^function"
     GIG_INIT_CHECK();
-    char *namespace_ = NULL;
-    if (scm_is_true(s_namespace_))
-        namespace_ = scm_to_utf8_symbol(s_namespace_);
-    char *gtype_name = NULL;
     size_t gtype = 0;
+    char *gtype_name = NULL;
     if (scm_is_true(s_gtype_name)) {
         gtype_name = scm_to_utf8_symbol(s_gtype_name);
         gtype = G.type_from_name(gtype_name);
+        if (gtype == 0) {
+            free(gtype_name);
+            scm_misc_error(FUNC_NAME, "cannot find GType for ~A needed by ~A", scm_list_2(s_gtype_name,
+                               s_long_name));
+        }
     }
+    char *namespace_ = NULL;
+    if (scm_is_true(s_namespace_))
+        namespace_ = scm_to_utf8_symbol(s_namespace_);
     char *long_name = scm_to_utf8_symbol(s_long_name);
     char *short_name = scm_to_utf8_symbol(s_short_name);
     char *symbol_name = scm_to_utf8_symbol(s_symbol_name);
@@ -102,6 +108,7 @@ gig_il_function(SCM s_namespace_, SCM s_gtype_name, SCM s_long_name,
     free(gtype_name);
     free(namespace_);
     return def;
+#undef FUNC_NAME
 }
 
 SCM

@@ -190,6 +190,45 @@ gig_i_scm_get_property(SCM self, SCM property)
     return ret;
 }
 
+#if 0
+static SCM
+gig_i_scm_object_properties(SCM self)
+{
+    GIG_INIT_CHECK();
+#define FUNC_NAME "object-properties"
+    SCM_ASSERT(SCM_IS_A_P(self, gig_object_type()), self, SCM_ARG1, FUNC_NAME);
+
+    GObject *obj;
+    obj = gig_object_peek(self);
+    GObjectClass *oclass = G_OBJECT_GET_CLASS(obj);
+    GParamSpec **properties;
+    unsigned n_properties;
+    GValue *values;
+    SCM lst = SCM_EOL;
+    properties = G.object_class_list_properties(oclass, &n_properties);
+    if (n_properties == 0)
+        return SCM_EOL;
+    values = xcalloc(n_properties, sizeof(GValue));
+    for (unsigned i = 0; i < n_properties; i ++) {
+        GValue value = { 0, };
+        SCM key, val;
+        key = scm_from_utf8_symbol(properties[i]->name);
+        if(properties[i]->flags & G_PARAM_READABLE) {
+            G.value_init(&value, properties[i]->value_type);
+            G.object_get_property(obj, properties[i]->name, &value);
+            val = gig_value_param_as_scm(&value, TRUE, properties[i]);
+            G.value_unset(&value);
+        }
+        else
+            val = scm_from_utf8_symbol("unreadable");
+        lst = scm_cons(scm_cons(key, val), lst);
+    }
+    free(properties);
+    return lst;
+#undef FUNC_NAME
+}
+#endif
+
 static SCM
 gig_i_scm_set_property_x(SCM self, SCM property, SCM svalue)
 {
@@ -663,6 +702,7 @@ gig_init_object_stage1()
     scm_c_define_gsubr("%connect", 4, 2, 0, gig_i_scm_connect);
     scm_c_define_gsubr("%emit", 2, 1, 1, gig_i_scm_emit);
     scm_c_define_gsubr("%define-object-type", 2, 2, 0, gig_i_scm_define_type);
+    // scm_c_define_gsubr("gobject-properties", 1, 0, 0, gig_i_scm_object_properties);
     gig_il_property_func = scm_c_define_gsubr("^property", 4, 0, 0, gig_il_property);
 }
 

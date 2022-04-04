@@ -13,18 +13,17 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 ;; Here we export everything allocated in the C runtime.
 
 (define-module (gi runtime)
-  #:use-module (ice-9 format)
+  ;; #:use-module (ice-9 format)
   #:use-module (oop goops)
   #:use-module (system foreign)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-2)
   #:use-module (srfi srfi-26)
   #:use-module (ice-9 match)
-  #:use-module ((gi core-generics) #:select (connect))
+  #:replace (connect)
   #:export (;; main
             ^initialize
             ;; callback
@@ -60,6 +59,7 @@
             %emit
             %define-object-type
             ^property
+            gobject-properties
             ;; type
             G_TYPE_BOOLEAN
             G_TYPE_BOXED
@@ -95,6 +95,7 @@
             get-gtype
             gtype-get-scheme-type
             gtype-get-name
+            gtype-from-name
             gtype-get-parent
             gtype-get-fundamental
             gtype-get-children
@@ -116,6 +117,7 @@
             
             ;; Locally
             runtime-eval
+            export-all
             <GFundamental> <GBoxed> <GObject> <GInterface> <GParam>
             <GVariant>
             <GValue> transform
@@ -129,32 +131,13 @@
             flags-projection/number
             is-registered-callback?
             get-registered-callback-closure-pointer
-
+            %gtype-dump-table
             <signal> make-signal
-            connect connect-after
+            connect-after
             ))
 
 (eval-when (expand load eval)
   (load-extension "libguile-gi" "gig_init_stage1"))
-
-(define *IL*
-  '(
-    ^constant
-    ^enum-conv
-    ^flags-conv
-    ^function
-    ^initialize
-    ^library
-    ^property
-    ^signal
-    ^type
-    ^boxed-type
-    ^custom-type
-    ^untyped-enum
-    ^untyped-enum-conv
-    ^untyped-flags
-    ^untyped-flags-conv
-    ))
 
 (define (runtime-eval expr)
   ;; (pk 'eval expr)
@@ -183,7 +166,7 @@
              ((eq? sym '^sized-type)
               (apply ^sized-type args))
              ((eq? sym '^type)
-              (apply ^type (pk 'ZOOP args)))
+              (apply ^type args))
              ((eq? sym '^untyped-enum)
               (apply ^untyped-enum args))
              ((eq? sym '^untyped-enum-conv)
@@ -200,8 +183,11 @@
           ;; else
           defs))))
 
-
-
+(define (export-all module)
+  (hash-for-each
+   (lambda (sym val)
+     (export sym))
+   (module-obarray module)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; GType and SCM class associations
@@ -219,7 +205,7 @@
     (when (or (not old-stype) (not (eq? stype old-stype)))
       (when (or (not old-stype) (and (eq? old-stype <unknown>) (not (eq? stype <unknown>))))
         (hashq-set! %gtype-hash gtype stype)
-        (if old-stype
+        #;(if old-stype
             (if (zero? parent)
                 (format +debug-port+
                         "~S : re-registering a type for ~x as ~S~%"
@@ -348,6 +334,8 @@ class."
     (if real-signal
         (%connect obj real-signal detail handler after?)
         (error "~S has no signal in ~S" obj signal))))
+
+(ensure-generic (@ (guile) connect))
 
 (define-method (connect obj (signal <generic>) (handler <procedure>) . rest)
   (apply connect-1 obj signal handler rest))

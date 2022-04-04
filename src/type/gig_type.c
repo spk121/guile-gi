@@ -207,8 +207,12 @@ gig_il_type(SCM s_namespace, SCM s_name, SCM s_gtype_name, SCM s_initializer)
     char *type_class_name;
     
     gtype = lookup_gtype(s_namespace, s_gtype_name, s_initializer);
-    if (gtype == 0)
-        scm_misc_error(FUNC_NAME, "cannot find GType for '~A'", scm_list_1(s_gtype_name));
+    if (gtype == 0) {
+        char *gtype_name = scm_to_utf8_string(s_gtype_name);
+        gig_critical_load("^type - cannot find GType for %s\n", gtype_name);
+        free(gtype_name);
+        return scm_list_1(scm_get_unknown_class());
+    }
     type_class_name = scm_to_utf8_symbol(s_name);
     type_define_full(type_class_name, gtype, SCM_EOL, 0, NULL, NULL);
     free(type_class_name);
@@ -230,9 +234,12 @@ gig_il_sized_type(SCM s_namespace, SCM s_name, SCM s_gtype_name, SCM s_initializ
     size_t gtype, boxed_size;
     char *type_class_name;
     gtype = lookup_gtype(s_namespace, s_gtype_name, s_initializer);
-    if (gtype == 0)
-        scm_misc_error(FUNC_NAME, "cannot find GType for '~A'", scm_list_1(s_gtype_name));
-
+    if (gtype == 0) {
+        char *gtype_name = scm_to_utf8_string(s_gtype_name);
+        gig_critical_load("^sized-type - cannot find GType for %s\n", gtype_name);
+        free(gtype_name);
+        return scm_list_1(scm_get_unknown_class());
+    }
     boxed_size = scm_to_size_t(s_boxed_size);
     type_class_name = scm_to_utf8_symbol(s_name);
     type_define_full(type_class_name, gtype, SCM_EOL, boxed_size, NULL, NULL);
@@ -256,9 +263,12 @@ gig_il_custom_type(SCM s_namespace, SCM s_name, SCM s_gtype_name, SCM s_initiali
         scm_wrong_type_arg(FUNC_NAME, SCM_ARG2, s_gtype_name);
 
     gtype = lookup_gtype(s_namespace, s_gtype_name, s_initializer);
-    if (gtype == 0)
-        scm_misc_error(FUNC_NAME, "cannot find GType for '~A'", scm_list_1(s_gtype_name));
-
+    if (gtype == 0) {
+        char *gtype_name = scm_to_utf8_string(s_gtype_name);
+        gig_critical_load("^sized-type - cannot find GType for %s\n", gtype_name);
+        free(gtype_name);
+        return scm_list_1(scm_get_unknown_class());
+    }
     scm_dynwind_begin(0);
 
     SCM hash = scm_variable_ref(gtype_hash_var);

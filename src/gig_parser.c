@@ -97,7 +97,6 @@ scm_namespace_load(SCM s_namespace, SCM s_version)
     if (scm_is_false(scm_string_null_p(s_version)))
         version = scm_dynfree(scm_to_utf8_string(s_version));
     
-    gig_debug_load("requiring %s-%s", namespace_, version != NULL ? version : "latest");
     tl = g_irepository_require(NULL, namespace_, version, 0, &error);
 
     if (tl == NULL) {
@@ -426,6 +425,8 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM *s_types, SCM *ils)
             long_name = callable_info_make_name(info, parent_name);
         else
             long_name = callable_info_make_name(info, namespace_);
+        if (strcmp(long_name, "entry:im-context-filter-keypress?") == 0)
+            printf(".");
         amap = callable_info_make_amap(info, long_name);
         if (amap)
             types = gig_amap_get_gtype_list(amap, &len);
@@ -513,6 +514,8 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM *s_types, SCM *ils)
                 size = g_struct_info_get_size((GIStructInfo *) info);
             if (GI_IS_UNION_INFO(info))
                 size = g_union_info_get_size((GIStructInfo *) info);
+            gig_debug_load("%s - parsing new type %s",
+                           g_base_info_get_name(info), g_type_name(gtype));
             type_define(info, gtype, size, ils);
             REGISTER(gtype);
         }
@@ -583,22 +586,54 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM *s_types, SCM *ils)
                             g_base_info_unref(typeinfo);
                         }
                         else {
+#if 0                            
+                            // Hmm, GtkCssProvider has private interfaces w/o GTypes, like
+                            // GtkStyleProviderPrivate, so maybe this check is too strict.
                             gig_debug_load
                                 ("%s - not loading %s type because its interface %s has no introspection information",
                                  g_base_info_get_name(info), g_info_type_to_string(t),
                                  g_type_name(interfaces[n]));
                             interface_ok = false;
+#endif                            
                             break;
                         }
                     }
                 }
                 free(interfaces);
                 if (interface_ok) {
+                    if (t == GI_INFO_TYPE_OBJECT) {
+                        int n_properties;
+                        n_properties = g_object_info_get_n_properties(info);
+                        if (n_properties > 0) {
+                            GIPropertyInfo *pinfo;
+                            for (int i = 0; i < n_properties; i ++) {
+                                pinfo = g_object_info_get_property(info, i);
+                                GITypeInfo *tinfo = g_property_info_get_type(pinfo);
+                                GITypeTag ttag = g_type_info_get_tag(tinfo);
+                                if (ttag == GI_TYPE_TAG_INTERFACE) {
+                                    GIBaseInfo *t_interface_info = g_type_info_get_interface(tinfo);
+                                    GType t_interface_type = g_registered_type_info_get_g_type(t_interface_info);
+                                    static int recur = 0;
+                                    if (!recur++ && !IS_REGISTERED(t_interface_type)) {
+                                        gig_debug_load("%s - loading prerequisite Param type %s",
+                                                       g_base_info_get_name(t_interface_info), g_type_name(t_interface_type));
+                                        
+                                        load_info(t_interface_info, LOAD_INFO_ONLY, s_types, ils);
+                                    }
+                                    g_base_info_unref(t_interface_info);
+                                }
+                                g_base_info_unref(tinfo);
+                                g_base_info_unref(pinfo);
+                            }
+                        }
+                    }
                     size_t size = 0;
                     if (t == GI_INFO_TYPE_STRUCT)
                         size = g_struct_info_get_size((GIStructInfo *) info);
                     if (t == GI_INFO_TYPE_UNION)
                         size = g_union_info_get_size((GIStructInfo *) info);
+                    gig_debug_load("%s - parsing new type %s",
+                                   g_base_info_get_name(info), g_type_name(gtype));
                     type_define(info, gtype, size, ils);
                     REGISTER(gtype);
                 }
@@ -622,6 +657,8 @@ load_info(GIBaseInfo *info, LoadFlags flags, SCM *s_types, SCM *ils)
         }
         else {
             if (!IS_REGISTERED(gtype)) {
+                gig_debug_load("%s - parsing new type %s",
+                               g_base_info_get_name(info), g_type_name(gtype));
                 type_define(info, gtype, 0, ils);
                 REGISTER(gtype);
                 if (t == GI_INFO_TYPE_ENUM)
@@ -744,6 +781,33 @@ scm_namespace_dependencies(SCM s_namespace)
 #undef FUNC_NAME
 }
 
+static SCM
+scm_namespace_immediate_dependencies(SCM s_namespace)
+{
+#define FUNC_NAME "namespace-immediate-dependencies"
+    char *namespace_;
+    char **dependencies;
+    int i;
+    SCM s_dependencies = SCM_EOL;
+
+    SCM_ASSERT_TYPE(scm_is_string(s_namespace), s_namespace, SCM_ARG1, FUNC_NAME, "string");
+    namespace_ = scm_to_utf8_string(s_namespace);
+    dependencies = g_irepository_get_immediate_dependencies(NULL, namespace_);
+    free(namespace_);
+    if (dependencies == NULL)
+        return SCM_EOL;
+    i = 0;
+    while (dependencies[i] != NULL) {
+        SCM entry = scm_from_utf8_string(dependencies[i]);
+        s_dependencies = scm_cons(entry, s_dependencies);
+        free(dependencies[i]);
+        i++;
+    }
+    free(dependencies);
+    return scm_reverse_x(s_dependencies, SCM_EOL);
+#undef FUNC_NAME
+}
+
 static void
 constant_define(GIConstantInfo *info, SCM *ils)
 {
@@ -846,14 +910,18 @@ type_define(GIRegisteredTypeInfo *info, GType gtype, size_t size, SCM *ils)
     const char *namespace_ = g_base_info_get_namespace(info);
     SCM s_namespace = namespace_ ? scm_from_utf8_symbol(namespace_) : SCM_BOOL_F;
         
-    
-    
     const char *ref = NULL;
     const char *unref = NULL;
+    const char *init = NULL;
+    SCM s_init = SCM_BOOL_F;
     SCM s_ref = SCM_BOOL_F;
     SCM s_unref = SCM_BOOL_F;
     bool custom = false;
     
+    init = g_registered_type_info_get_type_init(info);
+    if (init)
+        s_init = scm_from_utf8_string(init);
+        
     if(GI_IS_OBJECT_INFO(info)) {
         ref = g_object_info_get_ref_function(info);
         unref = g_object_info_get_unref_function(info);
@@ -866,17 +934,18 @@ type_define(GIRegisteredTypeInfo *info, GType gtype, size_t size, SCM *ils)
     
     SCM il;
     if (!custom && !size)
-        il = scm_list_4(scm_from_utf8_symbol("^type"),
+        il = scm_list_5(scm_from_utf8_symbol("^type"),
                         s_namespace,
-                        s_type_class_name, s_gtype_name);
+                        s_type_class_name, s_gtype_name, s_init);
     else if (!custom && size)
-        il = scm_list_5(scm_from_utf8_symbol("^sized-type"),
+        il = scm_list_n(scm_from_utf8_symbol("^sized-type"),
                         s_namespace,
-                        s_type_class_name, s_gtype_name, scm_from_size_t(size));
+                        s_type_class_name, s_gtype_name, s_init, scm_from_size_t(size),
+                        SCM_UNDEFINED);
     else if (custom && !size)
         il = scm_list_n(scm_from_utf8_symbol("^custom-type"),
                         s_namespace,
-                        s_type_class_name, s_gtype_name,
+                        s_type_class_name, s_gtype_name, s_init,
                         s_ref, s_unref, SCM_UNDEFINED);
     *ils = scm_cons(il, *ils);
 }
@@ -1018,6 +1087,7 @@ gig_init_parser()
     scm_c_define_gsubr("%namespace-infos", 1, 0, 0, scm_namespace_infos);
     scm_c_define_gsubr("%namespace-info-by-name", 2, 0, 0, scm_namespace_info_by_name);
     scm_c_define_gsubr("%namespace-dependencies", 1, 0, 0, scm_namespace_dependencies);
+    scm_c_define_gsubr("%namespace-immediate-dependencies", 1, 0, 0, scm_namespace_immediate_dependencies);
     scm_c_define_gsubr("%info-name", 1, 0, 0, scm_info_name);
     scm_c_define_gsubr("%info-namespace", 1, 0, 0, scm_info_namespace);
     // scm_c_define_gsubr("get-all-info", 1, 0, 0, get_all_info);

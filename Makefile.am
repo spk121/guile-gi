@@ -221,8 +221,6 @@ endif
 
 libguile_gi_la_LIBADD = \
  $(GUILE_LIBS) \
- $(GLIB_LIBS) \
- $(GOBJECT_LIBS) \
  $(FFI_LIBS)
 
 ######################

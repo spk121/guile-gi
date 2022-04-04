@@ -18,10 +18,9 @@
   #:use-module (oop goops)
   #:use-module (srfi srfi-1)
   #:use-module (system foreign)
-
+  #:use-module (gi core-generics)
   #:use-module (gi parser)
   #:use-module (gi runtime)
-  #:use-module (gi core-generics)
   #:re-export (<GIBaseInfo>
                LOAD_METHODS LOAD_PROPERTIES LOAD_SIGNALS
                LOAD_EVERYTHING LOAD_INFO_ONLY
