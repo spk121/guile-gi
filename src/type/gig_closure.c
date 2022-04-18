@@ -153,7 +153,7 @@ invoke_closure(SCM closure, SCM return_type, SCM inout_mask, SCM args)
     }
 
     g_closure_invoke(real_closure, retval, nargs, params, NULL);
-    ret = gig_type_transfer_object(G_TYPE_VALUE, retval, GI_TRANSFER_EVERYTHING);
+    ret = gig_type_transfer_object(G_TYPE_VALUE, retval, GIG_TRANSFER_EVERYTHING);
 
     if (scm_is_bitvector(inout_mask)) {
         ret = scm_cons(ret, SCM_EOL);
@@ -181,7 +181,7 @@ invoke_closure(SCM closure, SCM return_type, SCM inout_mask, SCM args)
                 g_value_copy(params + i, out + idx);
                 ret =
                     scm_cons(gig_type_transfer_object
-                             (G_TYPE_VALUE, out + idx, GI_TRANSFER_EVERYTHING), ret);
+                             (G_TYPE_VALUE, out + idx, GIG_TRANSFER_EVERYTHING), ret);
                 idx++;
             }
         }
@@ -207,7 +207,7 @@ procedure_to_closure(SCM procedure, SCM inout_mask)
     GClosure *cls = gig_closure_new(procedure, inout_mask);
     g_closure_ref(cls);
     g_closure_sink(cls);
-    return gig_type_transfer_object(G_TYPE_CLOSURE, cls, GI_TRANSFER_EVERYTHING);
+    return gig_type_transfer_object(G_TYPE_CLOSURE, cls, GIG_TRANSFER_EVERYTHING);
 }
 
 void

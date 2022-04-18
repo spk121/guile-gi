@@ -550,7 +550,7 @@ gig_type_get_scheme_type_with_info(GIRegisteredTypeInfo *info)
 }
 
 SCM
-gig_type_transfer_object(GType type, void *ptr, GITransfer transfer)
+gig_type_transfer_object(GType type, void *ptr, GigTransfer transfer)
 {
     if (G_TYPE_IS_CLASSED(type))
         type = G_OBJECT_TYPE(ptr);
@@ -567,7 +567,7 @@ gig_type_transfer_object(GType type, void *ptr, GITransfer transfer)
 
     SCM pointer;
     switch (transfer) {
-    case GI_TRANSFER_NOTHING:
+    case GIG_TRANSFER_NOTHING:
         if (ref)
             pointer = scm_from_pointer(ref(ptr), unref);
         else {
@@ -576,8 +576,8 @@ gig_type_transfer_object(GType type, void *ptr, GITransfer transfer)
         }
         break;
 
-    case GI_TRANSFER_CONTAINER:
-    case GI_TRANSFER_EVERYTHING:
+    case GIG_TRANSFER_CONTAINER:
+    case GIG_TRANSFER_EVERYTHING:
     default:
         pointer = scm_from_pointer(ptr, unref);
         break;
@@ -991,8 +991,7 @@ scm_g_type_register_static_simple_unsafe(SCM parent_type, SCM name, SCM flags)
     GType ret;
     char *str = scm_to_utf8_string(name);
     ret = g_type_register_static_simple(scm_to_size_t(parent_type), str,
-                                        0, NULL, 0, NULL,
-                                        scm_to_int(flags));
+                                        0, NULL, 0, NULL, scm_to_int(flags));
     free(str);
     return scm_from_size_t(ret);
 }
@@ -1084,10 +1083,8 @@ gig_init_types_once(void)
 
     scm_c_define_gsubr("$type-register-static-simple", 3, 0, 0,
                        scm_g_type_register_static_simple_unsafe);
-    scm_c_define_gsubr("$type-name", 1, 0, 0,
-                       scm_g_type_name_unsafe);
-    scm_c_define_gsubr("$type-parent", 1, 0, 0,
-                       scm_g_type_parent_unsafe);
+    scm_c_define_gsubr("$type-name", 1, 0, 0, scm_g_type_name_unsafe);
+    scm_c_define_gsubr("$type-parent", 1, 0, 0, scm_g_type_parent_unsafe);
 
     scm_c_define_gsubr("$type-define-full", 2, 0, 0, scm_gig_type_define_full_unsafe);
     scm_c_define_gsubr("$make-type-with-gtype", 2, 0, 0, scm_make_type_with_gtype_unsafe);

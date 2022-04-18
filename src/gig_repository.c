@@ -64,7 +64,7 @@ infos(SCM lib)
             g_base_info_unref(info);
             continue;
         }
-        infos = scm_cons(gig_type_transfer_object(GI_TYPE_BASE_INFO, info, GI_TRANSFER_EVERYTHING),
+        infos = scm_cons(gig_type_transfer_object(GI_TYPE_BASE_INFO, info, GIG_TRANSFER_EVERYTHING),
                          infos);
     }
     scm_dynwind_end();
@@ -385,7 +385,7 @@ info(SCM lib, SCM name)
                        scm_list_2(name, lib));
     scm_dynwind_end();
 
-    return gig_type_transfer_object(GI_TYPE_BASE_INFO, info, GI_TRANSFER_EVERYTHING);
+    return gig_type_transfer_object(GI_TYPE_BASE_INFO, info, GIG_TRANSFER_EVERYTHING);
 }
 
 static SCM

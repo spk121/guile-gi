@@ -17,6 +17,7 @@
 #define GIG_DATA_TYPE_H
 
 #include <girepository.h>
+#include "../type.h"
 
 #define GIG_ARRAY_SIZE_UNKNOWN ((size_t)-1)
 
@@ -68,7 +69,7 @@ struct GigTypeMeta_
         size_t item_size;
     };
 
-    GITransfer transfer;
+    GigTransfer transfer;
 
     // Subtypes and callables
     uint16_t n_params;
