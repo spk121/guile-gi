@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script
 
-#    Copyright (C) 2018, 2019, 2020 Michael L. Gran
+#    Copyright (C) 2018, 2019, 2020, 2022 Michael L. Gran
 
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -34,6 +34,8 @@ AC_CONFIG_MACRO_DIR([m4])
 
 LIBGUILE_GI_INTERFACE="6:1:0"
 AC_SUBST([LIBGUILE_GI_INTERFACE])
+LIBGUILE_GIPARSE_INTERFACE="0:0:0"
+AC_SUBST([LIBGUILE_GIPARSE_INTERFACE])
 
 ################
 # Check for programs
