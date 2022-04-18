@@ -246,8 +246,8 @@ libguile_giparse_la_internal_headers = \
   src/core/string.h \
   src/core/strval.h \
   src/core/visibility.h \
-  src/core/func/gig_arg_map.h \
-  src/core/func/gig_data_type.h \
+  src/func/gig_arg_map.h \
+  src/func/gig_data_type.h \
   src/gig_repository.h
 
 libguile_giparse_la_SOURCES = \
