@@ -1,6 +1,7 @@
 (use-modules (gi)
              (gi types)
-             (gi repository) (srfi srfi-64) (oop goops)
+             (gi repository) (srfi srfi-26)
+             (srfi srfi-64) (oop goops)
              (ice-9 hash-table)
              (ice-9 receive)
              (system foreign))
