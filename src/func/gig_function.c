@@ -348,7 +348,7 @@ create_gsubr(GIFunctionInfo *function_info, const char *name, SCM self_type,
 
     gig_amap_s_input_count(gfn->amap, required_input_count, optional_input_count);
 
-    if (g_callable_info_is_method(gfn->function_info))
+    if (amap->is_method)
         (*required_input_count)++;
 
     make_formals(gfn->function_info, gfn->amap, *required_input_count + *optional_input_count,
@@ -463,8 +463,8 @@ gig_callable_invoke(GICallableInfo *callable_info, void *callable, GigArgMap *am
                                 amap->c_input_len + (self != NULL ? 1 : 0),
                                 store->out_args,
                                 amap->c_output_len, &return_arg,
-                                g_callable_info_is_method(callable_info),
-                                g_callable_info_can_throw_gerror(callable_info), error);
+                                amap->is_method,
+                                amap->can_throw_gerror, error);
 
     SCM ret = gig_args_store_return_value(store, amap, name, self, args, ok, &return_arg);
 

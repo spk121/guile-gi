@@ -105,6 +105,8 @@ arg_map_apply_function_info(GigArgMap *amap, GIFunctionInfo *func_info)
     GIArgInfo *arg_info;
 
     n = amap->len;
+    amap->is_method = g_callable_info_is_method(func_info);
+    amap->can_throw_gerror = g_callable_info_can_throw_gerror(func_info);
 
     for (i = 0; i < n; i++) {
         arg_info = g_callable_info_get_arg(func_info, i);
@@ -302,6 +304,9 @@ gig_amap_dump(const char *name, const GigArgMap *amap)
     size_t len;
 
     gig_debug_amap("%s - argument mapping", name ? name : amap->name);
+    gig_debug_amap("  is_method: %s, can_throw_gerror: %s\n",
+                   (amap->is_method ? "TRUE": "FALSE"),
+                   (amap->can_throw_gerror ? "TRUE" : "FALSE"));
     gig_debug_amap(" SCM inputs required: %d, optional: %d, outputs: %d", amap->s_input_req,
                    amap->s_input_opt, amap->s_output_len);
     gig_debug_amap(" C inputs: %d, outputs: %d", amap->c_input_len, amap->c_output_len);

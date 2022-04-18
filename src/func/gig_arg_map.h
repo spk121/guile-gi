@@ -99,6 +99,9 @@ struct _GigArgMap
 {
     char *name;
 
+    bool is_method;
+    bool can_throw_gerror;
+
     // S arguments.
     int s_input_req;
     int s_input_opt;
