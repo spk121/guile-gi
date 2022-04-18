@@ -123,10 +123,16 @@ do_document(GIBaseInfo *info, const char *_namespace)
         for (int i = 0; i < arg_map->len; i++) {
             GigArgMapEntry *entry = arg_map->pdata + i;
             scm_printf(SCM_UNDEFINED, "<parameter name=\"%s\">", entry->name);
-            if (entry->parent) {
-                char *parent = make_scm_name(entry->parent->name);
-                scm_printf(SCM_UNDEFINED, "<inferred parent=\"%s\"/>", parent);
-                free(parent);
+            if (entry->presence == GIG_ARG_PRESENCE_IMPLICIT) {
+                for(int j = 0; j < arg_map->len; j ++) {
+                    if (arg_map->pdata[j].meta.has_length_arg
+                        && arg_map->pdata[j].meta.length_arg == i) {
+                        char *parent = make_scm_name(arg_map->pdata[j].name);
+                        scm_printf(SCM_UNDEFINED, "<inferred parent=\"%s\"/>", parent);
+                        free(parent);
+                        break;
+                    }
+                }
             }
             else {
                 char *arg = make_scm_name(entry->name);
