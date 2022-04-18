@@ -231,9 +231,10 @@ gig_callable_return_value(GigArgMap *amap, const char *name, GObject *self, SCM 
     if (ok) {
         SCM s_return;
         size_t sz = -1;
-        if (amap->return_val.meta.has_size) {
-            size_t idx = amap->return_val.child->c_output_pos;
-            sz = out_args[idx].v_size;
+        int i_child, c_child;
+        if (gig_amap_return_child_i(amap, &i_child)) {
+            gig_amap_output_i2c(amap, i_child, &c_child);
+            sz = out_args[c_child].v_int64;
         }
 
         gig_argument_c_to_scm(name, -1, &amap->return_val.meta, return_arg, &s_return, sz);

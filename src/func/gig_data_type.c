@@ -164,17 +164,20 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
 
         if (array_type == GI_ARRAY_TYPE_C) {
             meta->gtype = G_TYPE_PRIV_C_ARRAY;
-            meta->length = GIG_ARRAY_SIZE_UNKNOWN;
 
-            if ((len = g_type_info_get_array_length(type_info)) != -1)
-                meta->has_size = true;
-            else if ((len = g_type_info_get_array_fixed_size(type_info)) != -1)
-                meta->length = len;
-
+            if ((len = g_type_info_get_array_length(type_info)) != -1) {
+                meta->has_length_arg = true;
+                meta->length_arg = len;
+            }
+            if ((len = g_type_info_get_array_fixed_size(type_info)) != -1) {
+                meta->has_fixed_size = true;
+                meta->fixed_size = len;
+            }
+            // Note that an array can have a length arg or a fixed
+            // size and also be zero terminated.
             if (g_type_info_is_zero_terminated(type_info))
                 meta->is_zero_terminated = true;
-
-            if (len == -1 && !meta->is_zero_terminated) {
+            if (!meta->has_length_arg && !meta->has_fixed_size && !meta->is_zero_terminated) {
                 gig_debug_load
                     ("no way of determining array size of C array %s of %s, coercing to pointer",
                      g_base_info_get_namespace(type_info), g_type_name(meta->params[0].gtype));

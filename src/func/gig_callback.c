@@ -269,11 +269,12 @@ callback_binding_inner(struct callback_binding_args *args)
                                   &size);
             store_output(&(amap->return_val), (void ***)&ret, &giarg);
 
-            if (amap->return_val.meta.has_size) {
-                size_t c_output_pos = amap->return_val.child->c_output_pos;
+            int i_child, c_child;
+            if (gig_amap_return_child_i(amap, &i_child)) {
+                gig_amap_output_i2c(amap, i_child, &c_child);
                 GIArgument tmp;
                 tmp.v_int64 = size;
-                store_output(amap->return_val.child, ffi_args[c_output_pos], &tmp);
+                store_output(&amap->pdata[i_child], ffi_args[c_child], &tmp);
             }
         }
 
@@ -289,11 +290,13 @@ callback_binding_inner(struct callback_binding_args *args)
                                   &size);
             store_output(entry, ffi_args[c_output_pos], &giarg);
 
-            if (amap->return_val.meta.has_size) {
-                size_t size_pos = entry->child->c_output_pos;
+            int i_output, i_child, c_child;
+            gig_amap_output_c2i(amap, c_output_pos, &i_output);
+            if (gig_amap_child_i(amap, i_output, &i_child)) {
+                gig_amap_output_i2c(amap, i_child, &c_child);
                 GIArgument tmp;
                 tmp.v_int64 = size;
-                store_output(entry->child, ffi_args[size_pos], &tmp);
+                store_output(&amap->pdata[i_child], ffi_args[c_child], &tmp);
             }
         }
     }

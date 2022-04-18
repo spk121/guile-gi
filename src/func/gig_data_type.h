@@ -50,18 +50,20 @@ struct GigTypeMeta_
 
     // Error status
     uint16_t is_invalid:1;      // True when one of the arguments has invalid type
-    uint16_t unused:1;          // was uint16_t is_raw_array:1;
     uint16_t is_zero_terminated:1;
-    uint16_t has_size:1;
+    uint16_t has_length_arg:1;
+    uint16_t has_fixed_size:1;
     uint16_t is_unichar:1;
     uint16_t padding1:4;
+
+    // For C array types
+    int length_arg;
+    int fixed_size;
 
     union
     {
         // For string and pointer types
         GigPointerType pointer_type;
-        // For C array types
-        size_t length;
         // For C element types
         size_t item_size;
     };

@@ -130,4 +130,11 @@ GigArgMapEntry *gig_amap_get_output_entry_by_c(GigArgMap *am, int cpos);
 void gig_amap_s_input_count(const GigArgMap *amap, int *required, int *optional);
 void gig_amap_c_count(const GigArgMap *am, int *c_input_pos, int *c_output_pos);
 
+bool gig_amap_output_i2c(const GigArgMap *amap, int i, int *c);
+bool gig_amap_output_c2i(const GigArgMap *amap, int c, int *i);
+
+bool gig_amap_child_i(const GigArgMap *amap, int i, int *ichild);
+bool gig_amap_return_child_i(const GigArgMap *am, int *ichild);
+
+
 #endif

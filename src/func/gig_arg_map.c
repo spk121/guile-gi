@@ -126,8 +126,8 @@ arg_map_apply_function_info(GigArgMap *amap, GIFunctionInfo *func_info)
 static void
 arg_map_determine_array_length_index(GigArgMap *amap, GigArgMapEntry *entry, GITypeInfo *info)
 {
-    if (entry->meta.gtype == G_TYPE_PRIV_C_ARRAY && entry->meta.has_size) {
-        int idx = g_type_info_get_array_length(info);
+    if (entry->meta.gtype == G_TYPE_PRIV_C_ARRAY && entry->meta.has_length_arg) {
+        int idx = entry->meta.length_arg;
 
         assert(idx >= 0);
 
@@ -305,7 +305,7 @@ gig_amap_dump(const char *name, const GigArgMap *amap)
 
     gig_debug_amap("%s - argument mapping", name ? name : amap->name);
     gig_debug_amap("  is_method: %s, can_throw_gerror: %s\n",
-                   (amap->is_method ? "TRUE": "FALSE"),
+                   (amap->is_method ? "TRUE" : "FALSE"),
                    (amap->can_throw_gerror ? "TRUE" : "FALSE"));
     gig_debug_amap(" SCM inputs required: %d, optional: %d, outputs: %d", amap->s_input_req,
                    amap->s_input_opt, amap->s_output_len);
