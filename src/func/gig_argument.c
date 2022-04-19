@@ -44,6 +44,7 @@ static void scm_to_c_interface(S2C_ARG_DECL);
 static void scm_to_c_char(S2C_ARG_DECL);
 static void scm_to_c_boolean(S2C_ARG_DECL);
 static void scm_to_c_integer(S2C_ARG_DECL);
+static void scm_to_c_unichar(S2C_ARG_DECL);
 static void scm_to_c_enum(S2C_ARG_DECL);
 static void scm_to_c_real(S2C_ARG_DECL);
 static void scm_to_c_string(S2C_ARG_DECL);
@@ -71,6 +72,7 @@ static void c_interface_to_scm(C2S_ARG_DECL);
 static void c_char_to_scm(C2S_ARG_DECL);
 static void c_boolean_to_scm(C2S_ARG_DECL);
 static void c_integer_to_scm(C2S_ARG_DECL);
+static void c_unichar_to_scm(C2S_ARG_DECL);
 static void c_enum_to_scm(C2S_ARG_DECL);
 static void c_real_to_scm(C2S_ARG_DECL);
 static void c_string_to_scm(C2S_ARG_DECL);
@@ -218,6 +220,9 @@ gig_argument_scm_to_c(S2C_ARG_DECL)
     case GIG_ARG_TYPE_UINT64:
         scm_to_c_integer(S2C_ARGS);
         break;
+    case GIG_ARG_TYPE_UNICHAR:
+        scm_to_c_unichar(S2C_ARGS);
+        break;
     case GIG_ARG_TYPE_ENUM:
     case GIG_ARG_TYPE_FLAGS:
         scm_to_c_enum(S2C_ARGS);
@@ -308,57 +313,59 @@ scm_to_c_boolean(S2C_ARG_DECL)
 }
 
 static void
+scm_to_c_unichar(S2C_ARG_DECL)
+{
+    if (scm_is_char(object))
+        arg->v_uint32 = SCM_CHAR(object);
+    else if (scm_is_unsigned_integer(object, 0, SCM_CODEPOINT_MAX))
+        arg->v_uint32 = scm_to_uint32(object);
+    else
+        scm_wrong_type_arg_msg(subr, argpos, object, "char");
+}
+
+static void
 scm_to_c_integer(S2C_ARG_DECL)
 {
     TRACE_S2C();
     GigArgType t = meta->arg_type;
-    if (meta->is_unichar) {
-        if (scm_is_char(object))
-            arg->v_uint32 = SCM_CHAR(object);
-        else if (scm_is_unsigned_integer(object, 0, SCM_CODEPOINT_MAX))
-            arg->v_uint32 = scm_to_uint32(object);
-        else
-            scm_wrong_type_arg_msg(subr, argpos, object, "char");
-    }
-    else {
-#define T(t,min,max)                                                    \
-        do {                                                            \
-            if (!scm_is_signed_integer(object, min, max))               \
-                scm_wrong_type_arg_msg(subr, argpos, object, #t);       \
-            arg->v_ ## t = scm_to_ ## t(object);                        \
-        } while (0)
-#define UT(t,min,max)                                                   \
-        do {                                                            \
-            if (!scm_is_unsigned_integer(object, min, max))             \
-                scm_wrong_type_arg_msg(subr, argpos, object, #t);       \
-            arg->v_ ## t = scm_to_ ## t(object);                        \
-        } while (0)
 
-        switch (t) {
-        case GIG_ARG_TYPE_INT16:
-            T(int16, INT16_MIN, INT16_MAX);
-            break;
-        case GIG_ARG_TYPE_INT32:
-            T(int32, INT32_MIN, INT32_MAX);
-            break;
-        case GIG_ARG_TYPE_INT64:
-            T(int64, INT64_MIN, INT64_MAX);
-            break;
-        case GIG_ARG_TYPE_UINT16:
-            UT(uint16, 0, UINT16_MAX);
-            break;
-        case GIG_ARG_TYPE_UINT32:
-            UT(uint32, 0, UINT32_MAX);
-            break;
-        case GIG_ARG_TYPE_UINT64:
-            UT(uint64, 0, UINT64_MAX);
-            break;
-        default:
-            UNHANDLED;
-        }
+#define T(t,min,max)                                                    \
+    do {                                                                \
+        if (!scm_is_signed_integer(object, min, max))                   \
+            scm_wrong_type_arg_msg(subr, argpos, object, #t);           \
+        arg->v_ ## t = scm_to_ ## t(object);                            \
+    } while (0)
+#define UT(t,min,max)                                                   \
+    do {                                                                \
+        if (!scm_is_unsigned_integer(object, min, max))                 \
+            scm_wrong_type_arg_msg(subr, argpos, object, #t);           \
+        arg->v_ ## t = scm_to_ ## t(object);                            \
+    } while (0)
+
+    switch (t) {
+    case GIG_ARG_TYPE_INT16:
+        T(int16, INT16_MIN, INT16_MAX);
+        break;
+    case GIG_ARG_TYPE_INT32:
+        T(int32, INT32_MIN, INT32_MAX);
+        break;
+    case GIG_ARG_TYPE_INT64:
+        T(int64, INT64_MIN, INT64_MAX);
+        break;
+    case GIG_ARG_TYPE_UINT16:
+        UT(uint16, 0, UINT16_MAX);
+        break;
+    case GIG_ARG_TYPE_UINT32:
+        UT(uint32, 0, UINT32_MAX);
+        break;
+    case GIG_ARG_TYPE_UINT64:
+        UT(uint64, 0, UINT64_MAX);
+        break;
+    default:
+        UNHANDLED;
+    }
 #undef T
 #undef UT
-    }
 }
 
 static void
@@ -530,7 +537,7 @@ scm_to_c_native_array(S2C_ARG_DECL)
 
     if (item_type == GIG_ARG_TYPE_BOOLEAN)
         scm_to_c_native_boolean_array(S2C_ARGS);
-    else if (meta->params[0].is_unichar)
+    else if (item_type == GIG_ARG_TYPE_UNICHAR)
         scm_to_c_native_unichar_array(S2C_ARGS);
     else if (item_type == GIG_ARG_TYPE_INT8
              || item_type == GIG_ARG_TYPE_UINT8
@@ -1137,6 +1144,9 @@ gig_argument_c_to_scm(C2S_ARG_DECL)
     case GIG_ARG_TYPE_UINT64:
         c_integer_to_scm(C2S_ARGS);
         break;
+    case GIG_ARG_TYPE_UNICHAR:
+        c_unichar_to_scm(C2S_ARGS);
+        break;
     case GIG_ARG_TYPE_ENUM:
     case GIG_ARG_TYPE_FLAGS:
         c_enum_to_scm(C2S_ARGS);
@@ -1187,34 +1197,36 @@ c_boolean_to_scm(C2S_ARG_DECL)
 }
 
 static void
+c_unichar_to_scm(C2S_ARG_DECL)
+{
+    *object = SCM_MAKE_CHAR(arg->v_uint32);
+}
+
+static void
 c_integer_to_scm(C2S_ARG_DECL)
 {
     TRACE_C2S();
-    if (meta->is_unichar)
-        *object = SCM_MAKE_CHAR(arg->v_uint32);
-    else {
-        switch (meta->arg_type) {
-        case GIG_ARG_TYPE_INT16:
-            *object = scm_from_int16(arg->v_int16);
-            break;
-        case GIG_ARG_TYPE_INT32:
-            *object = scm_from_int32(arg->v_int32);
-            break;
-        case GIG_ARG_TYPE_INT64:
-            *object = scm_from_int64(arg->v_int64);
-            break;
-        case GIG_ARG_TYPE_UINT16:
-            *object = scm_from_uint16(arg->v_uint16);
-            break;
-        case GIG_ARG_TYPE_UINT32:
-            *object = scm_from_uint32(arg->v_uint32);
-            break;
-        case GIG_ARG_TYPE_UINT64:
-            *object = scm_from_uint64(arg->v_uint64);
-            break;
-        default:
-            UNHANDLED;
-        }
+    switch (meta->arg_type) {
+    case GIG_ARG_TYPE_INT16:
+        *object = scm_from_int16(arg->v_int16);
+        break;
+    case GIG_ARG_TYPE_INT32:
+        *object = scm_from_int32(arg->v_int32);
+        break;
+    case GIG_ARG_TYPE_INT64:
+        *object = scm_from_int64(arg->v_int64);
+        break;
+    case GIG_ARG_TYPE_UINT16:
+        *object = scm_from_uint16(arg->v_uint16);
+        break;
+    case GIG_ARG_TYPE_UINT32:
+        *object = scm_from_uint32(arg->v_uint32);
+        break;
+    case GIG_ARG_TYPE_UINT64:
+        *object = scm_from_uint64(arg->v_uint64);
+        break;
+    default:
+        UNHANDLED;
     }
 }
 
@@ -1410,18 +1422,17 @@ c_native_array_to_scm(C2S_ARG_DECL)
     case GIG_ARG_TYPE_INT32:
         TRANSFER(gint32, s32);
         break;
-    case GIG_ARG_TYPE_UINT32:
-        if (meta->params[0].is_unichar) {
-            *object = scm_c_make_string(length, SCM_MAKE_CHAR(0));
-            for (size_t k = 0; k < length; k++)
-                scm_c_string_set_x(*object, k, SCM_MAKE_CHAR(((gunichar *)(arg->v_pointer))[k]));
-            if (meta->transfer == GIG_TRANSFER_EVERYTHING) {
-                free(arg->v_pointer);
-                arg->v_pointer = 0;
-            }
+    case GIG_ARG_TYPE_UNICHAR:
+        *object = scm_c_make_string(length, SCM_MAKE_CHAR(0));
+        for (size_t k = 0; k < length; k++)
+            scm_c_string_set_x(*object, k, SCM_MAKE_CHAR(((gunichar *)(arg->v_pointer))[k]));
+        if (meta->transfer == GIG_TRANSFER_EVERYTHING) {
+            free(arg->v_pointer);
+            arg->v_pointer = 0;
         }
-        else
-            TRANSFER(guint32, u32);
+        break;
+    case GIG_ARG_TYPE_UINT32:
+        TRANSFER(guint32, u32);
         break;
     case GIG_ARG_TYPE_INT64:
         TRANSFER(gint64, s64);

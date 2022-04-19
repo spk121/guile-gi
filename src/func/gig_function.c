@@ -286,10 +286,9 @@ type_specializer(GigTypeMeta *meta)
     case GIG_ARG_TYPE_UINT32:
     case GIG_ARG_TYPE_INT64:
     case GIG_ARG_TYPE_UINT64:
-        // special case: Unicode characters
-        if (meta->is_unichar)
-            return char_type;
         return scm_get_integer_class();
+    case GIG_ARG_TYPE_UNICHAR:
+        return char_type;
     case GIG_ARG_TYPE_FLOAT:
     case GIG_ARG_TYPE_DOUBLE:
         return scm_get_real_class();

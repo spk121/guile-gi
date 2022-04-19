@@ -132,12 +132,7 @@ gig_type_meta_init_from_basic_type_tag(GigTypeMeta *meta, GITypeTag tag)
     T(GI_TYPE_TAG_UINT16, GIG_ARG_TYPE_UINT16, uint16_t);
     T(GI_TYPE_TAG_UINT32, GIG_ARG_TYPE_UINT32, uint32_t);
     T(GI_TYPE_TAG_UINT64, GIG_ARG_TYPE_UINT64, uint64_t);
-    if (tag == GI_TYPE_TAG_UNICHAR) {
-        meta->arg_type = GIG_ARG_TYPE_UINT32;
-        meta->item_size = sizeof(gunichar);
-        meta->is_unichar = true;
-        return;
-    }
+    T(GI_TYPE_TAG_UNICHAR, GIG_ARG_TYPE_UNICHAR, gunichar);
     if (tag == GI_TYPE_TAG_UTF8) {
         meta->arg_type = GIG_ARG_TYPE_STRING;
         meta->string_type = GIG_STRING_UTF8;

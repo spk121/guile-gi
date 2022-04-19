@@ -37,6 +37,7 @@ typedef enum GigArgType_
     GIG_ARG_TYPE_UINT32,
     GIG_ARG_TYPE_INT64,
     GIG_ARG_TYPE_UINT64,
+    GIG_ARG_TYPE_UNICHAR,
     GIG_ARG_TYPE_ENUM,
     GIG_ARG_TYPE_FLAGS,
     GIG_ARG_TYPE_FLOAT,
@@ -104,7 +105,6 @@ struct GigTypeMeta_
     uint16_t is_zero_terminated:1;
     uint16_t has_length_arg:1;
     uint16_t has_fixed_size:1;
-    uint16_t is_unichar:1;
     uint16_t padding1:4;
 
     // For C array types

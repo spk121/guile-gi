@@ -117,6 +117,7 @@ store_output(GigArgMapEntry *entry, void ***arg, GIArgument *value)
     case GIG_ARG_TYPE_UINT16:
         **(uint16_t **)arg = value->v_uint16;
         break;
+    case GIG_ARG_TYPE_UNICHAR:
     case GIG_ARG_TYPE_UINT32:
         **(uint32_t **)arg = value->v_uint32;
         break;
@@ -560,6 +561,8 @@ amap_entry_to_ffi_type(GigArgMapEntry *entry)
         else if (t == GIG_ARG_TYPE_UINT16)
             return &ffi_type_uint16;
         else if (t == GIG_ARG_TYPE_UINT32)
+            return &ffi_type_uint32;
+        else if (t == GIG_ARG_TYPE_UNICHAR)
             return &ffi_type_uint32;
         else if (t == GIG_ARG_TYPE_UINT64)
             return &ffi_type_uint64;
