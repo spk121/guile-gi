@@ -21,19 +21,69 @@
 
 #define GIG_ARRAY_SIZE_UNKNOWN ((size_t)-1)
 
+// All the categories of type conversions necessary for our FFI and
+// SCM-to-C function argument conversion.
+typedef enum GigArgType_
+{
+    GIG_ARG_TYPE_INVALID,
+    GIG_ARG_TYPE_NONE,
+    GIG_ARG_TYPE_INTERFACE,
+    GIG_ARG_TYPE_CHAR,          /* Always signed */
+    GIG_ARG_TYPE_UCHAR,
+    GIG_ARG_TYPE_BOOLEAN,
+    GIG_ARG_TYPE_INT,
+    GIG_ARG_TYPE_UINT,
+    GIG_ARG_TYPE_LONG,
+    GIG_ARG_TYPE_ULONG,
+    GIG_ARG_TYPE_INT64,
+    GIG_ARG_TYPE_UINT64,
+    GIG_ARG_TYPE_ENUM,
+    GIG_ARG_TYPE_FLAGS,
+    GIG_ARG_TYPE_FLOAT,
+    GIG_ARG_TYPE_DOUBLE,
+    GIG_ARG_TYPE_STRING,
+    GIG_ARG_TYPE_POINTER,
+    GIG_ARG_TYPE_BOXED,
+    GIG_ARG_TYPE_PARAM,
+    GIG_ARG_TYPE_OBJECT,
+    GIG_ARG_TYPE_VARIANT,
+    GIG_ARG_TYPE_OTHER
+} GigArgType;
+
+#define GIG_ARG_TYPE_N_ARGS (GIG_ARG_TYPE_GHASH + 1)
+
 typedef enum _GigPointerType
 {
-    GIG_DATA_VOID = 0,
-    GIG_DATA_UTF8_STRING,
-    GIG_DATA_LOCALE_STRING,
-    GIG_DATA_LIST,
-    GIG_DATA_SLIST,
-    GIG_DATA_CALLBACK
+    GIG_POINTER_VOID = 0,
+    GIG_POINTER_C_ARRAY,
+    GIG_POINTER_GTYPE,
+    GIG_POINTER_LIST,
+    GIG_POINTER_SLIST,
+    GIG_POINTER_CALLBACK
 } GigPointerType;
+
+typedef enum _GigBoxedType
+{
+    GIG_BOXED_VOID,
+    GIG_BOXED_GERROR,
+    GIG_BOXED_GARRAY,
+    GIG_BOXED_BYTE_ARRAY,
+    GIG_BOXED_PTR_ARRAY,
+    GIG_BOXED_HASH_TABLE,
+    GIG_BOXED_VALUE
+} GigBoxedType;
+
+typedef enum _GigStringType
+{
+    GIG_STRING_VOID,
+    GIG_STRING_LOCALE,
+    GIG_STRING_UTF8
+} GigStringType;
 
 typedef struct GigTypeMeta_ GigTypeMeta;
 struct GigTypeMeta_
 {
+    GigArgType arg_type;
     GType gtype;
     uint16_t is_ptr:1;
 
@@ -63,11 +113,12 @@ struct GigTypeMeta_
 
     union
     {
-        // For string and pointer types
         GigPointerType pointer_type;
-        // For C element types
-        size_t item_size;
+        GigBoxedType boxed_type;
+        GigStringType string_type;
     };
+    // For C element types
+    size_t item_size;
 
     GigTransfer transfer;
 

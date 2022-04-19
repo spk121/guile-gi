@@ -250,44 +250,54 @@ SCM string_type;
 static SCM
 type_specializer(GigTypeMeta *meta)
 {
-    if (meta->gtype == G_TYPE_GTYPE)
+    if (meta->arg_type == GIG_ARG_TYPE_POINTER && meta->pointer_type == GIG_POINTER_GTYPE)
         // This could either an unsigned integer, or an type class.
         return scm_get_unknown_class();
-    else if (meta->gtype == G_TYPE_PRIV_C_ARRAY
-             || meta->gtype == G_TYPE_ARRAY
-             || meta->gtype == G_TYPE_BYTE_ARRAY || meta->gtype == G_TYPE_PTR_ARRAY)
+    else if ((meta->arg_type == GIG_ARG_TYPE_POINTER && meta->pointer_type == GIG_POINTER_C_ARRAY)
+             || (meta->arg_type == GIG_ARG_TYPE_BOXED && meta->boxed_type == GIG_BOXED_GARRAY)
+             || (meta->arg_type == GIG_ARG_TYPE_BOXED && meta->boxed_type == GIG_BOXED_BYTE_ARRAY)
+             || (meta->arg_type == GIG_ARG_TYPE_BOXED && meta->boxed_type == GIG_BOXED_PTR_ARRAY))
         // Lots of different ways to represent arrays: bytevectors
         // unicode strings, etc.
         return scm_get_unknown_class();
 
-    switch (meta->gtype) {
-    case G_TYPE_POINTER:
+    switch (meta->arg_type) {
+    case GIG_ARG_TYPE_POINTER:
         // special case: POINTER can also mean string, list or callback
         switch (meta->pointer_type) {
-        case GIG_DATA_UTF8_STRING:
-        case GIG_DATA_LOCALE_STRING:
-            return string_type;
-        case GIG_DATA_LIST:
-        case GIG_DATA_SLIST:
+        case GIG_POINTER_LIST:
+        case GIG_POINTER_SLIST:
             return list_type;
-        case GIG_DATA_CALLBACK:
+        case GIG_POINTER_CALLBACK:
             return scm_get_applicable_class();
         default:
             return scm_get_unknown_class();
         }
-    case G_TYPE_CHAR:
-    case G_TYPE_UCHAR:
+    case GIG_ARG_TYPE_STRING:
+        return string_type;
+    case GIG_ARG_TYPE_CHAR:
+    case GIG_ARG_TYPE_UCHAR:
         // These could be character or integers, so don't use them for
         // specialization.
         return scm_get_unknown_class();
-    case G_TYPE_UINT:
+    case GIG_ARG_TYPE_INT:
+    case GIG_ARG_TYPE_UINT:
+    case GIG_ARG_TYPE_INT64:
+    case GIG_ARG_TYPE_UINT64:
+    case GIG_ARG_TYPE_LONG:
+    case GIG_ARG_TYPE_ULONG:
         // special case: Unicode characters
         if (meta->is_unichar)
             return char_type;
-        /* fall through */
+        return scm_get_integer_class();
+    case GIG_ARG_TYPE_FLOAT:
+    case GIG_ARG_TYPE_DOUBLE:
+        return scm_get_real_class();
     default:
         // usual case: refer to the already existing mapping of GType to scheme type
-        return gig_type_get_scheme_type(meta->gtype);
+        if (meta->gtype)
+            return gig_type_get_scheme_type(meta->gtype);
+        return scm_get_unknown_class();
     }
 }
 
@@ -463,8 +473,7 @@ gig_callable_invoke(GICallableInfo *callable_info, void *callable, GigArgMap *am
                                 amap->c_input_len + (self != NULL ? 1 : 0),
                                 store->out_args,
                                 amap->c_output_len, &return_arg,
-                                amap->is_method,
-                                amap->can_throw_gerror, error);
+                                amap->is_method, amap->can_throw_gerror, error);
 
     SCM ret = gig_args_store_return_value(store, amap, name, self, args, ok, &return_arg);
 

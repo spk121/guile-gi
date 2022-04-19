@@ -126,7 +126,8 @@ arg_map_apply_function_info(GigArgMap *amap, GIFunctionInfo *func_info)
 static void
 arg_map_determine_array_length_index(GigArgMap *amap, GigArgMapEntry *entry, GITypeInfo *info)
 {
-    if (entry->meta.gtype == G_TYPE_PRIV_C_ARRAY && entry->meta.has_length_arg) {
+    if (entry->meta.arg_type == GIG_ARG_TYPE_POINTER
+        && entry->meta.pointer_type == GIG_POINTER_C_ARRAY && entry->meta.has_length_arg) {
         int idx = entry->meta.length_arg;
 
         assert(idx >= 0);
@@ -762,13 +763,17 @@ gig_amap_get_gtype_list(GigArgMap *amap, size_t *len)
     size_t n = 0;
     GType *types = xcalloc((1 + amap->len) * 3, sizeof(GType));
 
-    types[n++] = amap->return_val.meta.gtype;
+    if (amap->return_val.meta.gtype)
+        types[n++] = amap->return_val.meta.gtype;
     for (size_t i = 0; i < amap->return_val.meta.n_params; i++)
-        types[n++] = amap->return_val.meta.params[i].gtype;
+        if (amap->return_val.meta.params[i].gtype)
+            types[n++] = amap->return_val.meta.params[i].gtype;
     for (int j = 0; j < amap->len; j++) {
-        types[n++] = amap->pdata[j].meta.gtype;
+        if (amap->pdata[j].meta.gtype)
+            types[n++] = amap->pdata[j].meta.gtype;
         for (size_t i = 0; i < amap->pdata[j].meta.n_params; i++)
-            types[n++] = amap->pdata[j].meta.params[i].gtype;
+            if (amap->pdata[j].meta.params[i].gtype)
+                types[n++] = amap->pdata[j].meta.params[i].gtype;
     }
     *len = n;
     return types;

@@ -94,19 +94,19 @@ convert_ffi_arg_to_giargument(void *_ffi_arg, ffi_type *arg_type, bool unpack, G
 static void
 store_output(GigArgMapEntry *entry, void ***arg, GIArgument *value)
 {
-    GType gtype = G_TYPE_FUNDAMENTAL(entry->meta.gtype);
+    GigArgType t = entry->meta.arg_type;
     size_t item_size = entry->meta.item_size;
-    switch (gtype) {
-    case G_TYPE_BOOLEAN:
+    switch (t) {
+    case GIG_ARG_TYPE_BOOLEAN:
         **(int **)arg = value->v_int;
         break;
-    case G_TYPE_CHAR:
+    case GIG_ARG_TYPE_CHAR:
         **(char **)arg = value->v_int8;
         break;
-    case G_TYPE_UCHAR:
+    case GIG_ARG_TYPE_UCHAR:
         **(unsigned char **)arg = value->v_uint8;
         break;
-    case G_TYPE_INT:
+    case GIG_ARG_TYPE_INT:
     {
         switch (item_size) {
         case 1:
@@ -126,7 +126,7 @@ store_output(GigArgMapEntry *entry, void ***arg, GIArgument *value)
         }
         break;
     }
-    case G_TYPE_UINT:
+    case GIG_ARG_TYPE_UINT:
     {
         switch (entry->meta.item_size) {
         case 1:
@@ -146,24 +146,24 @@ store_output(GigArgMapEntry *entry, void ***arg, GIArgument *value)
         }
         break;
     }
-    case G_TYPE_INT64:
+    case GIG_ARG_TYPE_INT64:
         **(int64_t **)arg = value->v_int64;
         break;
-    case G_TYPE_UINT64:
+    case GIG_ARG_TYPE_UINT64:
         **(uint64_t **)arg = value->v_uint64;
         break;
-    case G_TYPE_FLOAT:
+    case GIG_ARG_TYPE_FLOAT:
         **(float **)arg = value->v_float;
         break;
-    case G_TYPE_DOUBLE:
+    case GIG_ARG_TYPE_DOUBLE:
         **(double **)arg = value->v_double;
         break;
-    case G_TYPE_STRING:
+    case GIG_ARG_TYPE_STRING:
         **(char ***)arg = value->v_string;
         break;
-    case G_TYPE_POINTER:
-    case G_TYPE_BOXED:
-    case G_TYPE_OBJECT:
+    case GIG_ARG_TYPE_POINTER:
+    case GIG_ARG_TYPE_BOXED:
+    case GIG_ARG_TYPE_OBJECT:
         **(char ***)arg = value->v_pointer;
         break;
     default:
@@ -262,7 +262,7 @@ callback_binding_inner(struct callback_binding_args *args)
         int in, out, n_values = (int)n_values_;
         gig_amap_c_count(amap, &in, &out);
 
-        if (amap->return_val.meta.gtype != G_TYPE_NONE) {
+        if (amap->return_val.meta.arg_type != GIG_ARG_TYPE_NONE) {
             start = 1;
             SCM real_ret = scm_c_value_ref(s_ret, 0);
             gig_argument_scm_to_c(callback_name, 0, &amap->return_val.meta, real_ret, NULL, &giarg,
@@ -571,16 +571,16 @@ amap_entry_to_ffi_type(GigArgMapEntry *entry)
     if (entry->meta.is_ptr)
         return &ffi_type_pointer;
     else {
-        GType fundamental_type = G_TYPE_FUNDAMENTAL(entry->meta.gtype);
-        if (fundamental_type == G_TYPE_NONE)
+        GigArgType t = entry->meta.arg_type;
+        if (t == GIG_ARG_TYPE_NONE)
             return &ffi_type_void;
-        else if (fundamental_type == G_TYPE_BOOLEAN)
+        else if (t == GIG_ARG_TYPE_BOOLEAN)
             return &ffi_type_sint;
-        else if (fundamental_type == G_TYPE_CHAR)
+        else if (t == GIG_ARG_TYPE_CHAR)
             return &ffi_type_sint8;
-        else if (fundamental_type == G_TYPE_UCHAR)
+        else if (t == GIG_ARG_TYPE_UCHAR)
             return &ffi_type_uint8;
-        else if (fundamental_type == G_TYPE_INT)
+        else if (t == GIG_ARG_TYPE_INT)
             switch (entry->meta.item_size) {
             case 1:
                 return &ffi_type_sint8;
@@ -593,7 +593,7 @@ amap_entry_to_ffi_type(GigArgMapEntry *entry)
             default:
                 assert_not_reached();
             }
-        else if (fundamental_type == G_TYPE_UINT)
+        else if (t == GIG_ARG_TYPE_UINT)
             switch (entry->meta.item_size) {
             case 1:
                 return &ffi_type_uint8;
@@ -606,15 +606,15 @@ amap_entry_to_ffi_type(GigArgMapEntry *entry)
             default:
                 assert_not_reached();
             }
-        else if (fundamental_type == G_TYPE_INT64)
+        else if (t == GIG_ARG_TYPE_INT64)
             return &ffi_type_sint64;
-        else if (fundamental_type == G_TYPE_UINT64)
+        else if (t == GIG_ARG_TYPE_UINT64)
             return &ffi_type_uint64;
-        else if (fundamental_type == G_TYPE_FLOAT)
+        else if (t == GIG_ARG_TYPE_FLOAT)
             return &ffi_type_float;
-        else if (fundamental_type == G_TYPE_DOUBLE)
+        else if (t == GIG_ARG_TYPE_DOUBLE)
             return &ffi_type_double;
-        else if (fundamental_type == G_TYPE_GTYPE)
+        else if (t == GIG_ARG_TYPE_POINTER && entry->meta.pointer_type == GIG_POINTER_GTYPE)
             switch (entry->meta.item_size) {
             case 4:
                 return &ffi_type_sint32;
@@ -623,9 +623,9 @@ amap_entry_to_ffi_type(GigArgMapEntry *entry)
             default:
                 assert_not_reached();
             }
-        else if (fundamental_type == G_TYPE_FLAGS)
+        else if (t == GIG_ARG_TYPE_FLAGS)
             return &ffi_type_uint32;
-        else if (fundamental_type == G_TYPE_ENUM)
+        else if (t == GIG_ARG_TYPE_ENUM)
             return &ffi_type_sint32;
         else
             assert_not_reached();

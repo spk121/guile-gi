@@ -68,7 +68,7 @@ gig_type_meta_init_from_callable_info(GigTypeMeta *meta, GICallableInfo *ci)
     gig_type_meta_init_from_type_info(meta, type_info);
 
     meta->is_in = false;
-    if (meta->gtype != G_TYPE_NONE && meta->gtype != G_TYPE_INVALID)
+    if (meta->arg_type != GIG_ARG_TYPE_NONE && meta->arg_type != GIG_ARG_TYPE_INVALID)
         meta->is_out = true;
     else
         meta->is_out = false;
@@ -115,41 +115,53 @@ gig_type_meta_init_from_basic_type_tag(GigTypeMeta *meta, GITypeTag tag)
 #define T(TYPETAG,GTYPE,CTYPE)                  \
     do {                                        \
         if (tag == TYPETAG) {                   \
-            meta->gtype = GTYPE;                \
+            meta->arg_type = GTYPE;                \
             meta->item_size = sizeof (CTYPE);   \
             return;                             \
         }                                       \
     } while(false)
 
-    T(GI_TYPE_TAG_BOOLEAN, G_TYPE_BOOLEAN, gboolean);
-    T(GI_TYPE_TAG_DOUBLE, G_TYPE_DOUBLE, double);
-    T(GI_TYPE_TAG_FLOAT, G_TYPE_FLOAT, float);
-    T(GI_TYPE_TAG_GTYPE, G_TYPE_GTYPE, GType);
-    T(GI_TYPE_TAG_INT8, G_TYPE_CHAR, int8_t);
-    T(GI_TYPE_TAG_INT16, G_TYPE_INT, int16_t);
-    T(GI_TYPE_TAG_INT32, G_TYPE_INT, int32_t);
-    T(GI_TYPE_TAG_INT64, G_TYPE_INT, int64_t);
-    T(GI_TYPE_TAG_UINT8, G_TYPE_UCHAR, uint8_t);
-    T(GI_TYPE_TAG_UINT16, G_TYPE_UINT, uint16_t);
-    T(GI_TYPE_TAG_UINT32, G_TYPE_UINT, uint32_t);
-    T(GI_TYPE_TAG_UINT64, G_TYPE_UINT, uint64_t);
+    T(GI_TYPE_TAG_BOOLEAN, GIG_ARG_TYPE_BOOLEAN, gboolean);
+    T(GI_TYPE_TAG_DOUBLE, GIG_ARG_TYPE_DOUBLE, double);
+    T(GI_TYPE_TAG_FLOAT, GIG_ARG_TYPE_FLOAT, float);
+    T(GI_TYPE_TAG_INT8, GIG_ARG_TYPE_CHAR, int8_t);
+    T(GI_TYPE_TAG_INT16, GIG_ARG_TYPE_INT, int16_t);
+    T(GI_TYPE_TAG_INT32, GIG_ARG_TYPE_INT, int32_t);
+    T(GI_TYPE_TAG_INT64, GIG_ARG_TYPE_INT, int64_t);
+    T(GI_TYPE_TAG_UINT8, GIG_ARG_TYPE_UCHAR, uint8_t);
+    T(GI_TYPE_TAG_UINT16, GIG_ARG_TYPE_UINT, uint16_t);
+    T(GI_TYPE_TAG_UINT32, GIG_ARG_TYPE_UINT, uint32_t);
+    T(GI_TYPE_TAG_UINT64, GIG_ARG_TYPE_UINT, uint64_t);
     if (tag == GI_TYPE_TAG_UNICHAR) {
-        meta->gtype = G_TYPE_UINT;
+        meta->arg_type = GIG_ARG_TYPE_UINT;
         meta->item_size = sizeof(gunichar);
         meta->is_unichar = true;
         return;
     }
     if (tag == GI_TYPE_TAG_UTF8) {
-        meta->gtype = G_TYPE_STRING;
-        meta->pointer_type = GIG_DATA_UTF8_STRING;
+        meta->arg_type = GIG_ARG_TYPE_STRING;
+        meta->string_type = GIG_STRING_UTF8;
+        meta->item_size = sizeof(char *);
         return;
     }
     if (tag == GI_TYPE_TAG_FILENAME) {
-        meta->gtype = G_TYPE_STRING;
-        meta->pointer_type = GIG_DATA_LOCALE_STRING;
+        meta->arg_type = GIG_ARG_TYPE_STRING;
+        meta->string_type = GIG_STRING_LOCALE;
+        meta->item_size = sizeof(char *);
         return;
     }
-    T(GI_TYPE_TAG_ERROR, G_TYPE_ERROR, GError);
+    if (tag == GI_TYPE_TAG_GTYPE) {
+        meta->arg_type = GIG_ARG_TYPE_POINTER;
+        meta->pointer_type = GIG_POINTER_GTYPE;
+        meta->item_size = sizeof(GType);
+        return;
+    }
+    if (tag == GI_TYPE_TAG_ERROR) {
+        meta->arg_type = GIG_ARG_TYPE_BOXED;
+        meta->boxed_type = GIG_BOXED_GERROR;
+        meta->item_size = sizeof(GError);
+        return;
+    }
     gig_error("unhandled type '%s' %s %d", g_type_tag_to_string(tag), __FILE__, __LINE__);
 #undef T
 }
@@ -162,9 +174,9 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
 
     if (tag == GI_TYPE_TAG_VOID) {
         if (meta->is_ptr)
-            meta->gtype = G_TYPE_POINTER;
+            meta->arg_type = GIG_ARG_TYPE_POINTER;
         else
-            meta->gtype = G_TYPE_NONE;
+            meta->arg_type = GIG_ARG_TYPE_NONE;
         // Also sets pointer_type to VOID, which is exactly, what we want
         meta->item_size = 0;
     }
@@ -175,7 +187,8 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
         add_child_params(meta, type_info, 1);
 
         if (array_type == GI_ARRAY_TYPE_C) {
-            meta->gtype = G_TYPE_PRIV_C_ARRAY;
+            meta->arg_type = GIG_ARG_TYPE_POINTER;
+            meta->pointer_type = GIG_POINTER_C_ARRAY;
 
             if ((len = g_type_info_get_array_length(type_info)) != -1) {
                 meta->has_length_arg = true;
@@ -192,32 +205,40 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
             if (!meta->has_length_arg && !meta->has_fixed_size && !meta->is_zero_terminated) {
                 gig_debug_load
                     ("no way of determining array size of C array %s of %s, coercing to pointer",
-                     g_base_info_get_namespace(type_info), g_type_name(meta->params[0].gtype));
-                meta->gtype = G_TYPE_POINTER;
+                     g_base_info_get_namespace(type_info), g_base_info_get_name(type_info));
+                meta->arg_type = GIG_ARG_TYPE_POINTER;
+                meta->pointer_type = GIG_POINTER_VOID;
             }
         }
-        else if (array_type == GI_ARRAY_TYPE_ARRAY)
-            meta->gtype = G_TYPE_ARRAY;
-        else if (array_type == GI_ARRAY_TYPE_BYTE_ARRAY)
-            meta->gtype = G_TYPE_BYTE_ARRAY;
-        else if (array_type == GI_ARRAY_TYPE_PTR_ARRAY)
-            meta->gtype = G_TYPE_PTR_ARRAY;
+        else if (array_type == GI_ARRAY_TYPE_ARRAY) {
+            meta->arg_type = GIG_ARG_TYPE_BOXED;
+            meta->boxed_type = GIG_BOXED_GARRAY;
+        }
+        else if (array_type == GI_ARRAY_TYPE_BYTE_ARRAY) {
+            meta->arg_type = GIG_ARG_TYPE_BOXED;
+            meta->boxed_type = GIG_BOXED_BYTE_ARRAY;
+        }
+        else if (array_type == GI_ARRAY_TYPE_PTR_ARRAY) {
+            meta->arg_type = GIG_ARG_TYPE_BOXED;
+            meta->boxed_type = GIG_BOXED_PTR_ARRAY;
+        }
         else
             assert_not_reached();
     }
     else if (tag == GI_TYPE_TAG_GHASH) {
-        meta->gtype = G_TYPE_HASH_TABLE;
+        meta->arg_type = GIG_ARG_TYPE_BOXED;
+        meta->boxed_type = GIG_BOXED_HASH_TABLE;
         meta->item_size = sizeof(GHashTable *);
         add_child_params(meta, type_info, 2);
     }
     else if (tag == GI_TYPE_TAG_GLIST) {
-        meta->gtype = G_TYPE_POINTER;
-        meta->pointer_type = GIG_DATA_LIST;
+        meta->arg_type = GIG_ARG_TYPE_POINTER;
+        meta->pointer_type = GIG_POINTER_LIST;
         add_child_params(meta, type_info, 1);
     }
     else if (tag == GI_TYPE_TAG_GSLIST) {
-        meta->gtype = G_TYPE_POINTER;
-        meta->pointer_type = GIG_DATA_SLIST;
+        meta->arg_type = GIG_ARG_TYPE_POINTER;
+        meta->pointer_type = GIG_POINTER_SLIST;
         add_child_params(meta, type_info, 1);
     }
     else if (tag == GI_TYPE_TAG_INTERFACE) {
@@ -225,7 +246,7 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
         GIInfoType itype = g_base_info_get_type(referenced_base_info);
         switch (itype) {
         case GI_INFO_TYPE_UNRESOLVED:
-            meta->gtype = G_TYPE_INVALID;
+            meta->arg_type = GIG_ARG_TYPE_INVALID;
             meta->is_invalid = true;
             gig_warning("Unrepresentable type: %s, %s, %s",
                         g_base_info_get_name_safe(type_info),
@@ -234,6 +255,10 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
             break;
         case GI_INFO_TYPE_ENUM:
         case GI_INFO_TYPE_FLAGS:
+            if (itype == GI_INFO_TYPE_ENUM)
+                meta->arg_type = GIG_ARG_TYPE_ENUM;
+            else
+                meta->arg_type = GIG_ARG_TYPE_FLAGS;
             meta->gtype = g_registered_type_info_get_g_type(referenced_base_info);
             // Not all enum or flag types have an associated GType
             // Hence we store the enum info for GIArgument conversions
@@ -247,7 +272,23 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
         case GI_INFO_TYPE_UNION:
         case GI_INFO_TYPE_OBJECT:
         case GI_INFO_TYPE_INTERFACE:
+            if (itype == GI_INFO_TYPE_STRUCT || itype == GI_INFO_TYPE_UNION)
+                meta->arg_type = GIG_ARG_TYPE_BOXED;
+            else if (itype == GI_INFO_TYPE_OBJECT)
+                meta->arg_type = GIG_ARG_TYPE_OBJECT;
+            else
+                meta->arg_type = GIG_ARG_TYPE_INTERFACE;
+
             meta->gtype = g_registered_type_info_get_g_type(referenced_base_info);
+            if (meta->gtype == G_TYPE_VARIANT) {
+                meta->arg_type = GIG_ARG_TYPE_VARIANT;
+                meta->gtype = 0;
+            }
+            else if (meta->gtype == G_TYPE_VALUE) {
+                meta->boxed_type = GIG_BOXED_VALUE;
+                meta->gtype = 0;
+            }
+
             if (itype == GI_INFO_TYPE_STRUCT)
                 meta->item_size = g_struct_info_get_size(referenced_base_info);
             else if (itype == GI_INFO_TYPE_UNION)
@@ -258,8 +299,8 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
             break;
         case GI_INFO_TYPE_CALLBACK:
         {
-            meta->gtype = G_TYPE_POINTER;
-            meta->pointer_type = GIG_DATA_CALLBACK;
+            meta->arg_type = GIG_ARG_TYPE_POINTER;
+            meta->pointer_type = GIG_POINTER_CALLBACK;
             meta->callable_info = g_base_info_ref(referenced_base_info);
             // TODO: Find a way to reuse this amap, so that computing it is not a waste
             GigArgMap *_amap = gig_amap_new(NULL, meta->callable_info);
@@ -271,6 +312,7 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
             break;
         default:
             if (GI_IS_REGISTERED_TYPE_INFO(referenced_base_info)) {
+                meta->arg_type = GIG_ARG_TYPE_OTHER;
                 meta->gtype = g_registered_type_info_get_g_type(referenced_base_info);
                 if (meta->gtype == G_TYPE_NONE)
                     meta->is_invalid = true;
@@ -287,11 +329,13 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
         gig_type_meta_init_from_basic_type_tag(meta, tag);
 
     // FIXME: how did we get here?
-    if (meta->gtype == 0) {
-        if (meta->is_ptr)
-            meta->gtype = G_TYPE_POINTER;
+    if (meta->arg_type == 0) {
+        if (meta->is_ptr) {
+            meta->arg_type = GIG_ARG_TYPE_POINTER;
+            meta->pointer_type = GIG_POINTER_VOID;
+        }
         else
-            meta->gtype = G_TYPE_NONE;
+            meta->arg_type = GIG_ARG_TYPE_NONE;
         meta->item_size = 0;
     }
 }
@@ -299,7 +343,8 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
 size_t
 gig_meta_real_item_size(const GigTypeMeta *meta)
 {
-    if (meta->gtype == G_TYPE_STRING || meta->gtype == G_TYPE_POINTER || meta->is_ptr)
+    if (meta->arg_type == GIG_ARG_TYPE_STRING || meta->arg_type == GIG_ARG_TYPE_POINTER ||
+        meta->is_ptr)
         return sizeof(void *);
     return meta->item_size;
 }
@@ -312,10 +357,10 @@ gig_data_type_free(GigTypeMeta *meta)
     if (meta->n_params > 0)
         free(meta->params);
 
-    if ((meta->gtype == G_TYPE_POINTER) && (meta->pointer_type == GIG_DATA_CALLBACK) &&
+    if ((meta->arg_type == GIG_ARG_TYPE_POINTER) && (meta->pointer_type == GIG_POINTER_CALLBACK) &&
         meta->callable_info)
         g_base_info_unref(meta->callable_info);
-    if (((meta->gtype == G_TYPE_ENUM) || (meta->gtype == G_TYPE_FLAGS))
+    if (((meta->arg_type == GIG_ARG_TYPE_ENUM) || (meta->arg_type == GIG_ARG_TYPE_FLAGS))
         && meta->enum_info)
         g_base_info_unref(meta->enum_info);
 }
