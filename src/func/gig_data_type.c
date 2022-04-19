@@ -124,16 +124,16 @@ gig_type_meta_init_from_basic_type_tag(GigTypeMeta *meta, GITypeTag tag)
     T(GI_TYPE_TAG_BOOLEAN, GIG_ARG_TYPE_BOOLEAN, gboolean);
     T(GI_TYPE_TAG_DOUBLE, GIG_ARG_TYPE_DOUBLE, double);
     T(GI_TYPE_TAG_FLOAT, GIG_ARG_TYPE_FLOAT, float);
-    T(GI_TYPE_TAG_INT8, GIG_ARG_TYPE_CHAR, int8_t);
-    T(GI_TYPE_TAG_INT16, GIG_ARG_TYPE_INT, int16_t);
-    T(GI_TYPE_TAG_INT32, GIG_ARG_TYPE_INT, int32_t);
-    T(GI_TYPE_TAG_INT64, GIG_ARG_TYPE_INT, int64_t);
-    T(GI_TYPE_TAG_UINT8, GIG_ARG_TYPE_UCHAR, uint8_t);
-    T(GI_TYPE_TAG_UINT16, GIG_ARG_TYPE_UINT, uint16_t);
-    T(GI_TYPE_TAG_UINT32, GIG_ARG_TYPE_UINT, uint32_t);
-    T(GI_TYPE_TAG_UINT64, GIG_ARG_TYPE_UINT, uint64_t);
+    T(GI_TYPE_TAG_INT8, GIG_ARG_TYPE_INT8, int8_t);
+    T(GI_TYPE_TAG_INT16, GIG_ARG_TYPE_INT16, int16_t);
+    T(GI_TYPE_TAG_INT32, GIG_ARG_TYPE_INT32, int32_t);
+    T(GI_TYPE_TAG_INT64, GIG_ARG_TYPE_INT64, int64_t);
+    T(GI_TYPE_TAG_UINT8, GIG_ARG_TYPE_UINT8, uint8_t);
+    T(GI_TYPE_TAG_UINT16, GIG_ARG_TYPE_UINT16, uint16_t);
+    T(GI_TYPE_TAG_UINT32, GIG_ARG_TYPE_UINT32, uint32_t);
+    T(GI_TYPE_TAG_UINT64, GIG_ARG_TYPE_UINT64, uint64_t);
     if (tag == GI_TYPE_TAG_UNICHAR) {
-        meta->arg_type = GIG_ARG_TYPE_UINT;
+        meta->arg_type = GIG_ARG_TYPE_UINT32;
         meta->item_size = sizeof(gunichar);
         meta->is_unichar = true;
         return;

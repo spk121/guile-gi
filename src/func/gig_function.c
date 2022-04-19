@@ -275,17 +275,17 @@ type_specializer(GigTypeMeta *meta)
         }
     case GIG_ARG_TYPE_STRING:
         return string_type;
-    case GIG_ARG_TYPE_CHAR:
-    case GIG_ARG_TYPE_UCHAR:
+    case GIG_ARG_TYPE_INT8:
+    case GIG_ARG_TYPE_UINT8:
         // These could be character or integers, so don't use them for
         // specialization.
         return scm_get_unknown_class();
-    case GIG_ARG_TYPE_INT:
-    case GIG_ARG_TYPE_UINT:
+    case GIG_ARG_TYPE_INT16:
+    case GIG_ARG_TYPE_UINT16:
+    case GIG_ARG_TYPE_INT32:
+    case GIG_ARG_TYPE_UINT32:
     case GIG_ARG_TYPE_INT64:
     case GIG_ARG_TYPE_UINT64:
-    case GIG_ARG_TYPE_LONG:
-    case GIG_ARG_TYPE_ULONG:
         // special case: Unicode characters
         if (meta->is_unichar)
             return char_type;

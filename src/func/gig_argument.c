@@ -203,17 +203,17 @@ gig_argument_scm_to_c(S2C_ARG_DECL)
     case GIG_ARG_TYPE_INTERFACE:
         scm_to_c_interface(S2C_ARGS);
         break;
-    case GIG_ARG_TYPE_CHAR:
-    case GIG_ARG_TYPE_UCHAR:
+    case GIG_ARG_TYPE_INT8:
+    case GIG_ARG_TYPE_UINT8:
         scm_to_c_char(S2C_ARGS);
         break;
     case GIG_ARG_TYPE_BOOLEAN:
         scm_to_c_boolean(S2C_ARGS);
         break;
-    case GIG_ARG_TYPE_INT:
-    case GIG_ARG_TYPE_UINT:
-    case GIG_ARG_TYPE_LONG:
-    case GIG_ARG_TYPE_ULONG:
+    case GIG_ARG_TYPE_INT16:
+    case GIG_ARG_TYPE_UINT16:
+    case GIG_ARG_TYPE_INT32:
+    case GIG_ARG_TYPE_UINT32:
     case GIG_ARG_TYPE_INT64:
     case GIG_ARG_TYPE_UINT64:
         scm_to_c_integer(S2C_ARGS);
@@ -271,7 +271,7 @@ scm_to_c_char(S2C_ARG_DECL)
     if (!scm_is_integer(object) && !scm_is_char(object))
         scm_wrong_type_arg_msg(subr, argpos, object, "int8");
 
-    if (t == GIG_ARG_TYPE_CHAR) {
+    if (t == GIG_ARG_TYPE_INT8) {
         if (scm_is_char(object)) {
             if (SCM_CHAR(object) > 255)
                 scm_out_of_range(subr, object);
@@ -283,7 +283,7 @@ scm_to_c_char(S2C_ARG_DECL)
         else
             arg->v_int8 = scm_to_int8(object);
     }
-    else if (t == GIG_ARG_TYPE_UCHAR) {
+    else if (t == GIG_ARG_TYPE_UINT8) {
         if (scm_is_char(object)) {
             if (SCM_CHAR(object) > 255)
                 scm_out_of_range(subr, object);
@@ -312,79 +312,53 @@ scm_to_c_integer(S2C_ARG_DECL)
 {
     TRACE_S2C();
     GigArgType t = meta->arg_type;
-    if (t == GIG_ARG_TYPE_INT) {
+    if (meta->is_unichar) {
+        if (scm_is_char(object))
+            arg->v_uint32 = SCM_CHAR(object);
+        else if (scm_is_unsigned_integer(object, 0, SCM_CODEPOINT_MAX))
+            arg->v_uint32 = scm_to_uint32(object);
+        else
+            scm_wrong_type_arg_msg(subr, argpos, object, "char");
+    }
+    else {
 #define T(t,min,max)                                                    \
         do {                                                            \
             if (!scm_is_signed_integer(object, min, max))               \
                 scm_wrong_type_arg_msg(subr, argpos, object, #t);       \
             arg->v_ ## t = scm_to_ ## t(object);                        \
-        } while (0)                                                     \
-
-        switch (meta->item_size) {
-        case 1:
-            T(int8, INT8_MIN, INT8_MAX);
-            break;
-        case 2:
-            T(int16, INT16_MIN, INT16_MAX);
-            break;
-        case 4:
-            T(int32, INT32_MIN, INT32_MAX);
-            break;
-        case 8:
-            // future-proofing for int == int64
-            T(int64, INT64_MIN, INT64_MAX);
-            break;
-        }
-#undef T
-    }
-
-    else if (t == GIG_ARG_TYPE_UINT) {
-#define T(t,min,max)                                                    \
+        } while (0)
+#define UT(t,min,max)                                                   \
         do {                                                            \
             if (!scm_is_unsigned_integer(object, min, max))             \
                 scm_wrong_type_arg_msg(subr, argpos, object, #t);       \
             arg->v_ ## t = scm_to_ ## t(object);                        \
-        } while (0)                                                     \
+        } while (0)
 
-        if (meta->is_unichar) {
-            if (scm_is_char(object))
-                arg->v_uint32 = SCM_CHAR(object);
-            else if (scm_is_unsigned_integer(object, 0, SCM_CODEPOINT_MAX))
-                arg->v_uint32 = scm_to_uint32(object);
-            else
-                scm_wrong_type_arg_msg(subr, argpos, object, "char");
+        switch (t) {
+        case GIG_ARG_TYPE_INT16:
+            T(int16, INT16_MIN, INT16_MAX);
+            break;
+        case GIG_ARG_TYPE_INT32:
+            T(int32, INT32_MIN, INT32_MAX);
+            break;
+        case GIG_ARG_TYPE_INT64:
+            T(int64, INT64_MIN, INT64_MAX);
+            break;
+        case GIG_ARG_TYPE_UINT16:
+            UT(uint16, 0, UINT16_MAX);
+            break;
+        case GIG_ARG_TYPE_UINT32:
+            UT(uint32, 0, UINT32_MAX);
+            break;
+        case GIG_ARG_TYPE_UINT64:
+            UT(uint64, 0, UINT64_MAX);
+            break;
+        default:
+            UNHANDLED;
         }
-        else
-            switch (meta->item_size) {
-            case 1:
-                T(uint8, 0, UINT8_MAX);
-                break;
-            case 2:
-                T(uint16, 0, UINT16_MAX);
-                break;
-            case 4:
-                T(uint32, 0, UINT32_MAX);
-                break;
-            case 8:
-                // future-proofing for uint == uint64
-                T(uint64, 0, UINT64_MAX);
-                break;
-            }
 #undef T
+#undef UT
     }
-
-    else if (t == GIG_ARG_TYPE_INT64) {
-        if (!scm_is_signed_integer(object, INT64_MIN, INT64_MAX))
-            scm_wrong_type_arg_msg(subr, argpos, object, "int64");
-        arg->v_int64 = scm_to_int64(object);
-    }
-    else if (t == GIG_ARG_TYPE_UINT64) {
-        if (!scm_is_unsigned_integer(object, 0, UINT64_MAX))
-            scm_wrong_type_arg_msg(subr, argpos, object, "uint64");
-        arg->v_uint64 = scm_to_uint64(object);
-    }
-    else
-        UNHANDLED;
 }
 
 static void
@@ -558,10 +532,12 @@ scm_to_c_native_array(S2C_ARG_DECL)
         scm_to_c_native_boolean_array(S2C_ARGS);
     else if (meta->params[0].is_unichar)
         scm_to_c_native_unichar_array(S2C_ARGS);
-    else if (item_type == GIG_ARG_TYPE_CHAR
-             || item_type == GIG_ARG_TYPE_UCHAR
-             || item_type == GIG_ARG_TYPE_INT
-             || item_type == GIG_ARG_TYPE_UINT
+    else if (item_type == GIG_ARG_TYPE_INT8
+             || item_type == GIG_ARG_TYPE_UINT8
+             || item_type == GIG_ARG_TYPE_INT16
+             || item_type == GIG_ARG_TYPE_UINT16
+             || item_type == GIG_ARG_TYPE_INT32
+             || item_type == GIG_ARG_TYPE_UINT32
              || item_type == GIG_ARG_TYPE_INT64
              || item_type == GIG_ARG_TYPE_UINT64
              || item_type == GIG_ARG_TYPE_FLOAT || item_type == GIG_ARG_TYPE_DOUBLE)
@@ -726,24 +702,17 @@ static void
 c_hash_pointer_to_arg(GigTypeMeta *meta, void **p, GIArgument *arg)
 {
     if (!meta->is_ptr) {
-        if (meta->arg_type == GIG_ARG_TYPE_INT && meta->item_size <= 4) {
+        if (meta->arg_type == GIG_ARG_TYPE_INT32) {
             // 4-byte INT types are packed into the pointer storage,
             // but with intptr_t sign extension.
             int x = GPOINTER_TO_INT(p);
-            if (meta->item_size == 1)
-                arg->v_int8 = x;
-            else if (meta->item_size == 2)
-                arg->v_int16 = x;
-            else if (meta->item_size == 4)
-                arg->v_int32 = x;
-            else
-                assert_not_reached();
+            arg->v_int32 = x;
         }
-        // 8-byte INT, INT64, DOUBLE and FLOAT are stored by
+        // 8-byte INT64, DOUBLE and FLOAT are stored by
         // reference, even if they would fit in a pointer.
-        else if (meta->arg_type == GIG_ARG_TYPE_INT || meta->arg_type == GIG_ARG_TYPE_INT64)
+        else if (meta->arg_type == GIG_ARG_TYPE_INT64)
             arg->v_int64 = *(int64_t *)p;
-        else if (meta->arg_type == GIG_ARG_TYPE_UINT || meta->arg_type == GIG_ARG_TYPE_UINT64)
+        else if (meta->arg_type == GIG_ARG_TYPE_UINT64)
             arg->v_uint64 = *(uint64_t *)p;
         else if (meta->arg_type == GIG_ARG_TYPE_FLOAT)
             arg->v_float = *(float *)p;
@@ -766,11 +735,11 @@ arg_to_c_hash_pointer(GigTypeMeta *meta, GigHashKeyType key_type, GIArgument *ar
     if (key_type == GIG_HASH_INT) {
         // GHashTables apparently expect that negative integers have
         // intptr_t sign extension.
-        if (meta->item_size == 1)
+        if (meta->arg_type == GIG_ARG_TYPE_INT8)
             return GINT_TO_POINTER(arg->v_int8);
-        else if (meta->item_size == 2)
+        else if (meta->arg_type == GIG_ARG_TYPE_INT16)
             return GINT_TO_POINTER(arg->v_int16);
-        else if (meta->item_size == 4)
+        else if (meta->arg_type == GIG_ARG_TYPE_INT32)
             return GINT_TO_POINTER(arg->v_int32);
         else
             assert_not_reached();
@@ -778,12 +747,12 @@ arg_to_c_hash_pointer(GigTypeMeta *meta, GigHashKeyType key_type, GIArgument *ar
     else if (key_type == GIG_HASH_INT64) {
         // GHashTables expect int64_t to be passed by reference, even
         // if they fit in a pointer.
-        if (meta->arg_type == GIG_ARG_TYPE_INT || meta->arg_type == GIG_ARG_TYPE_INT64) {
+        if (meta->arg_type == GIG_ARG_TYPE_INT32 || meta->arg_type == GIG_ARG_TYPE_INT64) {
             int64_t *p = xmalloc(sizeof(int64_t));
             *p = arg->v_int64;
             return p;
         }
-        else if (meta->arg_type == GIG_ARG_TYPE_UINT || meta->arg_type == GIG_ARG_TYPE_UINT64) {
+        else if (meta->arg_type == GIG_ARG_TYPE_UINT32 || meta->arg_type == GIG_ARG_TYPE_UINT64) {
             uint64_t *p = xmalloc(sizeof(uint64_t));
             *p = arg->v_uint64;
             return p;
@@ -816,7 +785,6 @@ scm_to_c_ghashtable(S2C_ARG_DECL)
     TRACE_S2C();
     bool is_ptr;
     GigArgType type;
-    size_t siz;
     GHashFunc hash_func;
     GEqualFunc equal_func;
     GigHashKeyType key_type = GIG_HASH_INVALID;
@@ -826,9 +794,8 @@ scm_to_c_ghashtable(S2C_ARG_DECL)
 
     is_ptr = meta->params[0].is_ptr;
     type = meta->params[0].arg_type;
-    siz = meta->params[0].item_size;
     if (!is_ptr) {
-        if (type == GIG_ARG_TYPE_INT && siz <= 4) {
+        if (type == GIG_ARG_TYPE_INT16 || type == GIG_ARG_TYPE_INT32) {
             // INT types are packed into the pointer storage
             key_type = GIG_HASH_INT;
             hash_func = g_direct_hash;
@@ -836,7 +803,7 @@ scm_to_c_ghashtable(S2C_ARG_DECL)
         }
         // INT64, DOUBLE are stored by reference, even if they would
         // fit in a pointer.
-        else if (type == GIG_ARG_TYPE_INT || type == GIG_ARG_TYPE_INT64) {
+        else if (type == GIG_ARG_TYPE_INT64) {
             key_type = GIG_HASH_INT64;
             hash_func = g_int64_hash;
             equal_func = g_int64_equal;
@@ -879,12 +846,10 @@ scm_to_c_ghashtable(S2C_ARG_DECL)
 
     is_ptr = meta->params[1].is_ptr;
     type = meta->params[1].arg_type;
-    siz = meta->params[1].item_size;
     if (!is_ptr) {
-        if ((type == GIG_ARG_TYPE_INT || type == GIG_ARG_TYPE_UINT) && siz <= 4)
+        if ((type == GIG_ARG_TYPE_INT32 || type == GIG_ARG_TYPE_UINT32))
             val_type = GIG_HASH_INT;
-        else if (type == GIG_ARG_TYPE_INT || type == GIG_ARG_TYPE_UINT ||
-                 type == GIG_ARG_TYPE_INT64 || type == GIG_ARG_TYPE_UINT64) {
+        else if (type == GIG_ARG_TYPE_INT64 || type == GIG_ARG_TYPE_UINT64) {
             val_type = GIG_HASH_INT64;
             val_destroy_func = free;
         }
@@ -1157,17 +1122,17 @@ gig_argument_c_to_scm(C2S_ARG_DECL)
     case GIG_ARG_TYPE_INTERFACE:
         c_interface_to_scm(C2S_ARGS);
         break;
-    case GIG_ARG_TYPE_CHAR:
-    case GIG_ARG_TYPE_UCHAR:
+    case GIG_ARG_TYPE_INT8:
+    case GIG_ARG_TYPE_UINT8:
         c_char_to_scm(C2S_ARGS);
         break;
     case GIG_ARG_TYPE_BOOLEAN:
         c_boolean_to_scm(C2S_ARGS);
         break;
-    case GIG_ARG_TYPE_INT:
-    case GIG_ARG_TYPE_UINT:
-    case GIG_ARG_TYPE_LONG:
-    case GIG_ARG_TYPE_ULONG:
+    case GIG_ARG_TYPE_INT16:
+    case GIG_ARG_TYPE_UINT16:
+    case GIG_ARG_TYPE_INT32:
+    case GIG_ARG_TYPE_UINT32:
     case GIG_ARG_TYPE_INT64:
     case GIG_ARG_TYPE_UINT64:
         c_integer_to_scm(C2S_ARGS);
@@ -1208,9 +1173,9 @@ static void
 c_char_to_scm(C2S_ARG_DECL)
 {
     TRACE_C2S();
-    if (meta->arg_type == GIG_ARG_TYPE_CHAR)
+    if (meta->arg_type == GIG_ARG_TYPE_INT8)
         *object = scm_from_int8(arg->v_int8);
-    else if (meta->arg_type == GIG_ARG_TYPE_UCHAR)
+    else if (meta->arg_type == GIG_ARG_TYPE_UINT8)
         *object = scm_from_uint8(arg->v_uint8);
 }
 
@@ -1225,47 +1190,32 @@ static void
 c_integer_to_scm(C2S_ARG_DECL)
 {
     TRACE_C2S();
-    if (meta->arg_type == GIG_ARG_TYPE_INT) {
-        switch (meta->item_size) {
-        case 1:
-            *object = scm_from_int8(arg->v_int8);
-            break;
-        case 2:
+    if (meta->is_unichar)
+        *object = SCM_MAKE_CHAR(arg->v_uint32);
+    else {
+        switch (meta->arg_type) {
+        case GIG_ARG_TYPE_INT16:
             *object = scm_from_int16(arg->v_int16);
             break;
-        case 4:
+        case GIG_ARG_TYPE_INT32:
             *object = scm_from_int32(arg->v_int32);
             break;
-        case 8:
+        case GIG_ARG_TYPE_INT64:
             *object = scm_from_int64(arg->v_int64);
             break;
+        case GIG_ARG_TYPE_UINT16:
+            *object = scm_from_uint16(arg->v_uint16);
+            break;
+        case GIG_ARG_TYPE_UINT32:
+            *object = scm_from_uint32(arg->v_uint32);
+            break;
+        case GIG_ARG_TYPE_UINT64:
+            *object = scm_from_uint64(arg->v_uint64);
+            break;
+        default:
+            UNHANDLED;
         }
     }
-    else if (meta->arg_type == GIG_ARG_TYPE_UINT) {
-        if (meta->is_unichar)
-            *object = SCM_MAKE_CHAR(arg->v_uint32);
-        else
-            switch (meta->item_size) {
-            case 1:
-                *object = scm_from_uint8(arg->v_uint8);
-                break;
-            case 2:
-                *object = scm_from_uint16(arg->v_uint16);
-                break;
-            case 4:
-                *object = scm_from_uint32(arg->v_uint32);
-                break;
-            case 8:
-                *object = scm_from_uint64(arg->v_uint64);
-                break;
-            }
-    }
-    else if (meta->arg_type == GIG_ARG_TYPE_INT64)
-        *object = scm_from_int64(arg->v_int64);
-    else if (meta->arg_type == GIG_ARG_TYPE_UINT64)
-        *object = scm_from_uint64(arg->v_uint64);
-    else
-        UNHANDLED;
 }
 
 static void
@@ -1445,34 +1395,22 @@ c_native_array_to_scm(C2S_ARG_DECL)
 
     GigArgType t = meta->params[0].arg_type;
     switch (t) {
-    case GIG_ARG_TYPE_CHAR:
+    case GIG_ARG_TYPE_INT8:
         TRANSFER(gint8, s8);
         break;
-    case GIG_ARG_TYPE_UCHAR:
+    case GIG_ARG_TYPE_UINT8:
         TRANSFER(guint8, u8);
         break;
-    case GIG_ARG_TYPE_INT:
-#define DO_TRANSFER(n, m)                       \
-        case n:                                 \
-            TRANSFER(gint ## m, s ## m);        \
-            break;
-
-        switch (meta->params[0].item_size) {
-            DO_TRANSFER(1, 8);
-            DO_TRANSFER(2, 16);
-            DO_TRANSFER(4, 32);
-            DO_TRANSFER(8, 64);
-        default:
-            UNHANDLED;
-        }
-#undef DO_TRANSFER
+    case GIG_ARG_TYPE_INT16:
+        TRANSFER(gint16, s16);
         break;
-    case GIG_ARG_TYPE_UINT:
-#define DO_TRANSFER(n, m)                       \
-        case n:                                 \
-            TRANSFER(guint ## m, u ## m);       \
-            break;
-
+    case GIG_ARG_TYPE_UINT16:
+        TRANSFER(guint16, u16);
+        break;
+    case GIG_ARG_TYPE_INT32:
+        TRANSFER(gint32, s32);
+        break;
+    case GIG_ARG_TYPE_UINT32:
         if (meta->params[0].is_unichar) {
             *object = scm_c_make_string(length, SCM_MAKE_CHAR(0));
             for (size_t k = 0; k < length; k++)
@@ -1483,16 +1421,8 @@ c_native_array_to_scm(C2S_ARG_DECL)
             }
         }
         else
-            switch (meta->params[0].item_size) {
-                DO_TRANSFER(1, 8);
-                DO_TRANSFER(2, 16);
-                DO_TRANSFER(4, 32);
-                DO_TRANSFER(8, 64);
-            default:
-                UNHANDLED;
-            }
+            TRANSFER(guint32, u32);
         break;
-#undef DO_TRANSFER
     case GIG_ARG_TYPE_INT64:
         TRANSFER(gint64, s64);
         break;

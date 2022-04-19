@@ -95,59 +95,30 @@ static void
 store_output(GigArgMapEntry *entry, void ***arg, GIArgument *value)
 {
     GigArgType t = entry->meta.arg_type;
-    size_t item_size = entry->meta.item_size;
     switch (t) {
     case GIG_ARG_TYPE_BOOLEAN:
         **(int **)arg = value->v_int;
         break;
-    case GIG_ARG_TYPE_CHAR:
+    case GIG_ARG_TYPE_INT8:
         **(char **)arg = value->v_int8;
         break;
-    case GIG_ARG_TYPE_UCHAR:
+    case GIG_ARG_TYPE_UINT8:
         **(unsigned char **)arg = value->v_uint8;
         break;
-    case GIG_ARG_TYPE_INT:
-    {
-        switch (item_size) {
-        case 1:
-            **(int8_t **)arg = value->v_int8;
-            break;
-        case 2:
-            **(int16_t **)arg = value->v_int16;
-            break;
-        case 4:
-            **(int32_t **)arg = value->v_int32;
-            break;
-        case 8:
-            **(int64_t **)arg = value->v_int64;
-            break;
-        default:
-            assert_not_reached();
-        }
+    case GIG_ARG_TYPE_INT16:
+        **(int16_t **)arg = value->v_int16;
         break;
-    }
-    case GIG_ARG_TYPE_UINT:
-    {
-        switch (entry->meta.item_size) {
-        case 1:
-            **(uint8_t **)arg = value->v_uint8;
-            break;
-        case 2:
-            **(uint16_t **)arg = value->v_uint16;
-            break;
-        case 4:
-            **(uint32_t **)arg = value->v_uint32;
-            break;
-        case 8:
-            **(uint64_t **)arg = value->v_uint64;
-            break;
-        default:
-            assert_not_reached();
-        }
+    case GIG_ARG_TYPE_INT32:
+        **(int32_t **)arg = value->v_int32;
         break;
-    }
     case GIG_ARG_TYPE_INT64:
         **(int64_t **)arg = value->v_int64;
+        break;
+    case GIG_ARG_TYPE_UINT16:
+        **(uint16_t **)arg = value->v_uint16;
+        break;
+    case GIG_ARG_TYPE_UINT32:
+        **(uint32_t **)arg = value->v_uint32;
         break;
     case GIG_ARG_TYPE_UINT64:
         **(uint64_t **)arg = value->v_uint64;
@@ -576,38 +547,20 @@ amap_entry_to_ffi_type(GigArgMapEntry *entry)
             return &ffi_type_void;
         else if (t == GIG_ARG_TYPE_BOOLEAN)
             return &ffi_type_sint;
-        else if (t == GIG_ARG_TYPE_CHAR)
+        else if (t == GIG_ARG_TYPE_INT8)
             return &ffi_type_sint8;
-        else if (t == GIG_ARG_TYPE_UCHAR)
+        else if (t == GIG_ARG_TYPE_UINT8)
             return &ffi_type_uint8;
-        else if (t == GIG_ARG_TYPE_INT)
-            switch (entry->meta.item_size) {
-            case 1:
-                return &ffi_type_sint8;
-            case 2:
-                return &ffi_type_sint16;
-            case 4:
-                return &ffi_type_sint32;
-            case 8:
-                return &ffi_type_sint64;
-            default:
-                assert_not_reached();
-            }
-        else if (t == GIG_ARG_TYPE_UINT)
-            switch (entry->meta.item_size) {
-            case 1:
-                return &ffi_type_uint8;
-            case 2:
-                return &ffi_type_uint16;
-            case 4:
-                return &ffi_type_uint32;
-            case 8:
-                return &ffi_type_uint64;
-            default:
-                assert_not_reached();
-            }
+        else if (t == GIG_ARG_TYPE_INT16)
+            return &ffi_type_sint16;
+        else if (t == GIG_ARG_TYPE_INT32)
+            return &ffi_type_sint32;
         else if (t == GIG_ARG_TYPE_INT64)
             return &ffi_type_sint64;
+        else if (t == GIG_ARG_TYPE_UINT16)
+            return &ffi_type_uint16;
+        else if (t == GIG_ARG_TYPE_UINT32)
+            return &ffi_type_uint32;
         else if (t == GIG_ARG_TYPE_UINT64)
             return &ffi_type_uint64;
         else if (t == GIG_ARG_TYPE_FLOAT)
@@ -630,6 +583,7 @@ amap_entry_to_ffi_type(GigArgMapEntry *entry)
         else
             assert_not_reached();
     }
+    return &ffi_type_pointer;
 }
 
 static SCM
