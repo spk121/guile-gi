@@ -24,7 +24,7 @@
 // This module gathers information to help convert between 3 paradigms
 //  - arguments as they appear in GIArgInfo lists
 //  - arguments as they appear in SCM gsubr calls
-//  - arguments as they appear in g_function_info_invoke calls
+//  - arguments as they appear in gig_invoke_func calls
 typedef enum
 {
     GIG_ARG_DIRECTION_VOID,
@@ -79,9 +79,9 @@ struct _GigArgMapEntry
     uint8_t padding:4;
 
     int i;
-    // This arg's position in input args of g_function_info_invoke
+    // This arg's position in input args of gig_invoke_func
     int c_input_pos;
-    // This arg's position in the output args of g_function_info_invoke
+    // This arg's position in the output args of gig_invoke_func
     int c_output_pos;
     // This arg's position in the Scheme GSubr
     int s_input_pos;

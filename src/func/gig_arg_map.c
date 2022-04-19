@@ -197,9 +197,8 @@ arg_map_compute_c_invoke_positions(GigArgMap *amap)
         entry = &amap->pdata[i];
 
         // Here we find the positions of this argument in the
-        // g_function_info_invoke call.  Also, some output parameters
-        // require a SCM container to be passed in to the SCM GSubr
-        // call.
+        // gig_invoke_func call.  Also, some output parameters require
+        // a SCM container to be passed in to the SCM GSubr call.
         if (entry->meta.is_in && !entry->meta.is_out) {
             entry->s_direction = GIG_ARG_DIRECTION_INPUT;
             entry->is_c_input = 1;

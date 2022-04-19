@@ -23,6 +23,7 @@
 #include "gig_util_priv.h"
 #include "gig_arg_map_priv.h"
 #include "gig_function_priv.h"
+#include "gig_invoker.h"
 
 typedef struct _GigFunction
 {
@@ -54,7 +55,7 @@ static GigGsubr *create_gsubr(GIFunctionInfo *function_info, const char *name, S
 static void make_formals(GICallableInfo *, GigArgMap *, int n_inputs, SCM self_type,
                          SCM *formals, SCM *specializers);
 static void function_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data);
-static SCM function_invoke(GIFunctionInfo *info, GigArgMap *amap, const char *name,
+static SCM function_invoke(void *func, GigArgMap *amap, const char *name,
                            GObject *object, SCM args, GError **error);
 static void function_free(GigFunction *fn);
 static void gig_fini_function(void);
@@ -415,7 +416,7 @@ create_gsubr(GIFunctionInfo *function_info, const char *name, SCM self_type,
 }
 
 static SCM
-function_invoke(GIFunctionInfo *func_info, GigArgMap *amap, const char *name, GObject *self,
+function_invoke(void *func, GigArgMap *amap, const char *name, GObject *self,
                 SCM args, GError **error)
 {
     GigArgsStore *store;
@@ -436,9 +437,9 @@ function_invoke(GIFunctionInfo *func_info, GigArgMap *amap, const char *name, GO
 
     GIArgument return_arg;
     return_arg.v_pointer = NULL;
-    ok = g_function_info_invoke(func_info, store->in_args,
-                                amap->c_input_len + (self ? 1 : 0),
-                                store->out_args, amap->c_output_len, &return_arg, error);
+    ok = gig_invoke_func(func, amap, store->in_args, amap->c_input_len + (self ? 1 : 0),
+                         store->out_args, amap->c_output_len, &return_arg, error);
+
     SCM ret = gig_args_store_return_value(store, amap, name, self, args, ok, &return_arg);
 
     gig_args_store_free(store);
@@ -450,34 +451,7 @@ SCM
 gig_callable_invoke(GICallableInfo *callable_info, void *callable, GigArgMap *amap,
                     const char *name, GObject *self, SCM args, GError **error)
 {
-    GigArgsStore *store;
-    gboolean ok;
-    GIArgument return_arg;
-
-    store = gig_args_store_new(amap->c_input_len, amap->c_output_len);
-    gig_args_store_initialize(store, amap, name, self, args);
-
-    // Make the actual call.
-    // Use GObject's ffi to call the C function.
-    if (self != NULL)
-        gig_debug("%s - calling with self plus %d input and %d output arguments",
-                  name, amap->c_input_len, amap->c_output_len);
-    else
-        gig_debug("%s - calling with %d input and %d output arguments",
-                  name, amap->c_input_len, amap->c_output_len);
-    gig_amap_dump(name, amap);
-
-    ok = g_callable_info_invoke(callable_info, callable,
-                                store->in_args,
-                                amap->c_input_len + (self != NULL ? 1 : 0),
-                                store->out_args,
-                                amap->c_output_len, &return_arg,
-                                amap->is_method, amap->can_throw_gerror, error);
-
-    SCM ret = gig_args_store_return_value(store, amap, name, self, args, ok, &return_arg);
-
-    gig_args_store_free(store);
-
+    SCM ret = function_invoke(callable, amap, name, self, args, error);
     return ret;
 }
 
@@ -525,8 +499,15 @@ function_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
     }
 
     // Then invoke the actual function
+    const gchar *symbol;
+    gpointer func;
+
+    symbol = g_function_info_get_symbol(gfn->function_info);
+
+    g_typelib_symbol(g_base_info_get_typelib((GIBaseInfo *)gfn->function_info), symbol, &func);
+
     GError *err = NULL;
-    SCM output = function_invoke(gfn->function_info, gfn->amap, gfn->name, self, s_args, &err);
+    SCM output = function_invoke(func, gfn->amap, gfn->name, self, s_args, &err);
 
     // If there is a GError, write an error and exit.
     if (err) {
