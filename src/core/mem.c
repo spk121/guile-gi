@@ -76,10 +76,16 @@ char *
 xstrndup(const char *S, size_t siz)
 {
     char *x;
-    x = strndup(S, siz);
+    size_t len;
+    len = strlen (S);
+    if (len < siz)
+	len = siz;
+    x = malloc (len + 1);
     if (x == NULL) {
         fprintf(stderr, "Out of memory\n");
         exit(1);
     }
+    memcpy (x, S, len);
+    x[len] = '\0';
     return x;
 }
