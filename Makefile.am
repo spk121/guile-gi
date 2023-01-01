@@ -210,6 +210,12 @@ libguile_gi_la_LDFLAGS = \
  -version-info $(LIBGUILE_GI_INTERFACE) \
  $(GUILE_LDFLAGS)
 
+# On Windows, make sure the DLL is installed into the
+# $guileextensiondir and not into $guileextensiondir/../bin
+if BUILDING_DLL
+libguile_gi_la_LDFLAGS += -bindir $(DESTDIR)$(guileextensiondir)
+endif
+
 if !DLL_VERSION_INFO
 libguile_gi_la_LDFLAGS += -avoid-version
 endif
