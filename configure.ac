@@ -51,6 +51,27 @@ dnl AC_PROG_SED
 
 # from guile.m4
 GUILE_PKG([3.0 2.2])
+
+if test "$GUILE" = ""; then
+AC_MSG_CHECKING(for guile executable using pkg-config)
+GUILE=`$PKG_CONFIG --print-errors --variable=guile guile-$GUILE_EFFECTIVE_VERSION`
+AC_MSG_RESULT($GUILE)
+if test "$GUILE" = ""; then
+  AC_MSG_FAILURE(guile not found)
+fi
+fi
+AC_SUBST(GUILE)
+
+if test "$GUILD" = ""; then
+AC_MSG_CHECKING(for guild using pkg-config)
+GUILD=`$PKG_CONFIG --print-errors --variable=guild guile-$GUILE_EFFECTIVE_VERSION`
+AC_MSG_RESULT($GUILD)
+if test "$GUILD" = ""; then
+  AC_MSG_FAILURE(guild not found)
+fi
+fi
+AC_SUBST(GUILD)
+
 GUILE_PROGS
 GUILE_FLAGS
 GUILE_SITE_DIR
