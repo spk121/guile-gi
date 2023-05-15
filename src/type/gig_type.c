@@ -177,7 +177,7 @@ lookup_gtype(SCM s_namespace, SCM s_gtype_name, SCM s_initializer)
     
     // For the fundamental types, looking up by name works always.
     gtype_name = scm_to_utf8_string(s_gtype_name);
-    type = g_type_from_name(gtype_name);
+    type = G.type_from_name(gtype_name);
     free(gtype_name);
 
     // When dynamically binding to a shared object library, GObject
@@ -186,6 +186,7 @@ lookup_gtype(SCM s_namespace, SCM s_gtype_name, SCM s_initializer)
     if (type == 0) {
         initializer = scm_to_utf8_string(s_initializer);
         namespace_ = scm_to_utf8_symbol(s_namespace);
+        
         func_ptr = gig_lib_lookup(namespace_, initializer);
         free(namespace_);
         free(initializer);
@@ -496,8 +497,12 @@ make_type_with_gtype(const char *_type_class_name, GType gtype, SCM extra_supers
         interfaces = G.type_interfaces(gtype, &n_interfaces);
         if (scm_is_true(sparent))
             dsupers = scm_cons(sparent, extra_supers);
-        else
+        else {
             dsupers = scm_cons(fundamental_type, extra_supers);
+            if (n_interfaces == 0)
+                gig_critical_load("%s - this type has no parent or interfaces",
+                                  _type_class_name);
+        }
 
         for (unsigned n = 0; n < n_interfaces; n++)
             dsupers = scm_cons(gig_type_get_scheme_type(interfaces[n]), dsupers);
@@ -505,8 +510,6 @@ make_type_with_gtype(const char *_type_class_name, GType gtype, SCM extra_supers
 
         dsupers = scm_sort_x(dsupers, type_less_p_proc);
         new_type = scm_make_class_with_name(dsupers, slots, type_class_name);
-        gig_critical_load("%s - this category of fundamental type is unimplemented",
-                          _type_class_name);
         break;
     }
     }
@@ -888,7 +891,7 @@ scm_type_gtype_from_name(SCM s_name)
     GIG_INIT_CHECK();
     SCM_ASSERT_TYPE(scm_is_string(s_name), s_name, SCM_ARG1, FUNC_NAME, "string");
     char *name = scm_to_utf8_string(s_name);
-    GType type = g_type_from_name(name);
+    GType type = G.type_from_name(name);
     free(name);
     return scm_from_size_t(type);
 }
@@ -1211,10 +1214,10 @@ gig_init_type_stage2()
         scm_variable_set_x(gparam_unref, scm_from_pointer(G.param_spec_unref, NULL));
 
         SCM gvariant_ref = scm_c_private_lookup("gi runtime", "%gvariant-ref");
-        scm_variable_set_x(gparam_ref, scm_from_pointer(G.variant_ref_sink, NULL));
+        scm_variable_set_x(gvariant_ref, scm_from_pointer(G.variant_ref_sink, NULL));
 
         SCM gvariant_unref = scm_c_private_lookup("gi runtime", "%gvariant-unref");
-        scm_variable_set_x(gparam_unref, scm_from_pointer(G.variant_unref, NULL));
+        scm_variable_set_x(gvariant_unref, scm_from_pointer(G.variant_unref, NULL));
 
         SCM gvalue_type = scm_c_private_ref("gi runtime", "<GValue>");
         scm_add_copy_free_slot_funcs(gvalue_type, scm_from_size_t(G.value_get_type()));
