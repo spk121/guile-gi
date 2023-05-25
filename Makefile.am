@@ -219,9 +219,12 @@ if COVERAGE
 libguile_gi_la_LDFLAGS += --coverage -Wl,--dynamic-list-data
 endif
 
+# FIXME: remove GOBJECT_LIBS when dynamic loading is working
+
 libguile_gi_la_LIBADD = \
  $(GUILE_LIBS) \
- $(FFI_LIBS)
+ $(FFI_LIBS)  \
+ $(GOBJECT_LIBS)
 
 ######################
 #  libguile-giparse  #

@@ -31,6 +31,6 @@ void gig_repository_nested_infos(GIBaseInfo *base,
 GigArgMap *callable_info_make_amap(GICallableInfo *function_info, const char *name);
 char *callable_info_make_name(GICallableInfo *info, const char *prefix);
 
-GIG_API void gig_init_repository(void);
+GIG_API void gig_init_parser(void);
 
 #endif
