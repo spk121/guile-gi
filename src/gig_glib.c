@@ -1,10 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <dlfcn.h>
 #include <glib-object.h>
 #include "func.h"
 #include "gig_glib.h"
+
+#ifdef __MINGW32__
+#else
+#include <dlfcn.h>
+#endif
 
 #define DYNAMIC_GLIB
 
@@ -15,7 +19,11 @@ void
 xdlsym(void **p, void *handle, const char *name, int *successes, int *attempts)
 {
     if (*p == NULL)
+#ifdef __MINGW32__
+	*p = GetProcAddress(handle, name);
+#else	
         *p = dlsym(handle, name);
+#endif
     *attempts = *attempts + 1;
     if (*p != NULL)
         *successes = *successes + 1;
@@ -28,14 +36,18 @@ init_dlsyms(void *handle)
 
 #ifdef DYNAMIC_GLIB
 #define D(name) \
-    xdlsym(&G.name, handle, "g_" # name, &i, &n)
+    xdlsym((void **)(&G.name), handle, "g_" # name, &i, &n)
 #else
 #define D(name) \
     G.name = g_ ## name
 #endif
 
 #ifdef DYNAMIC_GLIB
+#ifdef __MINGW32__
+    handle = LoadLibrary("libgobject-2.0");
+#else
     handle = dlopen("libgobject-2.0.so", RTLD_NOW);
+#endif
 #endif
 
     D(array_free);

@@ -21,7 +21,7 @@ dnl Process this file with autoconf to produce a configure script
 AC_INIT([Guile GI], [0.3.2], [spk121@yahoo.com], [guile_gi])
 
 AC_CONFIG_AUX_DIR([build-aux])
-AC_CONFIG_SRCDIR([src/gig.c])
+AC_CONFIG_SRCDIR([src/gig_runtime.c])
 AM_INIT_AUTOMAKE
 
 AC_PREREQ([2.63])

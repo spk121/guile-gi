@@ -177,7 +177,7 @@ lookup_gtype(SCM s_namespace, SCM s_gtype_name, SCM s_initializer)
     
     // For the fundamental types, looking up by name works always.
     gtype_name = scm_to_utf8_string(s_gtype_name);
-    type = g_type_from_name(gtype_name);
+    type = G.type_from_name(gtype_name);
     free(gtype_name);
 
     // When dynamically binding to a shared object library, GObject
@@ -888,7 +888,7 @@ scm_type_gtype_from_name(SCM s_name)
     GIG_INIT_CHECK();
     SCM_ASSERT_TYPE(scm_is_string(s_name), s_name, SCM_ARG1, FUNC_NAME, "string");
     char *name = scm_to_utf8_string(s_name);
-    GType type = g_type_from_name(name);
+    GType type = G.type_from_name(name);
     free(name);
     return scm_from_size_t(type);
 }
