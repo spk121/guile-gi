@@ -5,9 +5,10 @@
 
 (test-begin "typelib")
 
+(require "GObject" "2.0")
+
 (define %test-symbol '<GMainLoop>)
 (define %test-lib '("GLib" "2.0"))
-
 
 (test-assert "typelib->module"
   (let* ((module (apply typelib->module '(test typelib->module) %test-lib))

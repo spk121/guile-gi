@@ -102,8 +102,12 @@ gig_amap_dump(const char *name, const GigArgMap *amap)
     gig_debug_amap(" C inputs: %d, outputs: %d", amap->c_input_len, amap->c_output_len);
     for (int i = 0; i < amap->len; i++) {
         const GigArgMapEntry *entry = &amap->pdata[i];
+#ifdef GIG_PARSER
+        len = snprintf(s, 100, " Arg %d: '%s'", i, entry->name);
+#else
         len = snprintf(s, 100, " Arg %d: '%s' %s",
                        i, entry->name, gig_type_meta_describe(&entry->meta));
+#endif
         len += snprintf(s + len, 100, ", %s, %s, %s",
                         dir_strings[entry->s_direction],
                         tuple_strings[entry->tuple], presence_strings[entry->presence]);
@@ -120,15 +124,23 @@ gig_amap_dump(const char *name, const GigArgMap *amap)
 
         if (amap->pdata[i].meta.n_params > 0) {
             GigTypeMeta *m2 = &amap->pdata[i].meta.params[0];
+#ifdef GIG_PARSER
+	    len = 0;
+#else
             len = snprintf(s, 100, "    Item Type: %s", gig_type_meta_describe(m2));
+#endif
             gig_debug_amap("%s", s);
             s[0] = '\0';
         }
     }
     if (amap->return_val.meta.gtype != G_TYPE_NONE) {
         const GigArgMapEntry *entry = &amap->return_val;
+#ifdef GIG_PARSER
+        len = snprintf(s, 100, " Return: '%s'", entry->name);
+#else
         len = snprintf(s, 100, " Return: '%s' %s",
                        entry->name, gig_type_meta_describe(&entry->meta));
+#endif
         len += snprintf(s + len, 100, ", %s, %s, %s",
                         dir_strings[entry->s_direction],
                         tuple_strings[entry->tuple], presence_strings[entry->presence]);
@@ -136,7 +148,11 @@ gig_amap_dump(const char *name, const GigArgMap *amap)
         s[0] = '\0';
         if (amap->return_val.meta.n_params > 0) {
             GigTypeMeta *m2 = &amap->return_val.meta.params[0];
+#ifdef GIG_PARSER
+	    len = 0;
+#else
             len = snprintf(s, 100, "    Item Type: %s", gig_type_meta_describe(m2));
+#endif
             gig_debug_amap("%s", s);
             s[0] = '\0';
         }
@@ -569,6 +585,7 @@ gig_amap_get_gtype_list(GigArgMap *amap, size_t *len)
     return types;
 }
 
+#ifndef GIG_PARSER
 static void
 gig_amap_entry_from_il(SCM il, GigArgMapEntry *entry)
 {
@@ -694,6 +711,7 @@ gig_amap_new_from_il(SCM il)
 
     return amap;
 }
+#endif
 
 #ifdef GIG_PARSER
 

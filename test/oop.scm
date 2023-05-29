@@ -4,6 +4,8 @@
 
 (test-begin "oop")
 
+(require "GObject" "2.0")
+(require "GLib" "2.0")
 (use-typelibs (("GObject" "2.0") #:renamer (protect register-type)))
 
 (define test-param #f)

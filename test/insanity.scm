@@ -8,6 +8,8 @@
   (save-module-excursion
    (lambda ()
      (set-current-module m)
+     (require "GObject")
+     (require "GLib")
      (load-by-name "GObject" "Object")
      (load-by-name "GObject" "Value")
      (load-by-name "GObject" "Closure")))

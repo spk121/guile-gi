@@ -223,7 +223,7 @@
        (display sym) (newline))
      (sort syms string<?))))
 
-(define (contents port lib info-names header?)
+(define (contents port lib allow-list header?)
   (let ((p (new-parser))
         (exports '())
         (str (open-output-string)))
@@ -231,10 +231,10 @@
       (lambda ()
         (parser-add-namespace! p (first lib) (second lib))
         (for-each (lambda (i)
-                    (if (null? info-names)
+                    (if (null? allow-list)
                         (parser-add-info! p i LOAD_EVERYTHING)
                         ;; else
-                        (when (member (info-name i) info-names)
+                        (when (member (info-name i) allow-list)
                           ;; FIXME: we could handle regex symbols, perhaps.
                           (parser-add-info! p i LOAD_EVERYTHING))))
                   (namespace-infos (first lib)))
@@ -266,7 +266,7 @@
         (write x)
         (newline)))))
 
-(define (makelib lib path info-names overwrite no-header?)
+(define (makelib lib path allow-list overwrite no-header?)
   (let ((namespace (first lib))
         (version (second lib)))
     (let ((filename (string-append
@@ -282,7 +282,7 @@
           (let ((port (open-file filename "w")))
             (unless no-header?
               (header port lib))
-            (contents port lib info-names (not no-header?))
+            (contents port lib allow-list (not no-header?))
             (close port))))))
 
 (define (parse . args)
@@ -296,7 +296,7 @@
           (symbol-str (option-ref p 'symbols #f))
           (symbol-file (option-ref p 'symbol-file #f))
           (dump? (option-ref p 'dump #f))
-          (info-names '()))
+          (allow-list '()))
       (cond
        (help-wanted?
         (display-help))
@@ -308,7 +308,7 @@
           (dump (list namespace (namespace-version namespace)))
           (exit EXIT_SUCCESS))
         (when symbol-str
-          (set! info-names
+          (set! allow-list
             (string-split symbol-str
                           (->char-set " ,;"))))
         (when symbol-file
@@ -321,7 +321,7 @@
                           (break)
                           ;; else
                           (unless (string-null? cur)
-                            (set! info-names (cons cur info-names))))))))
+                            (set! allow-list (cons cur allow-list))))))))
               ;; else
               (begin
                 (format (current-error-port)
@@ -344,7 +344,7 @@
                (libs (cons (list namespace (namespace-version namespace))
                            dependencies)))
           (for-each (lambda (lib)
-                      (makelib lib outdir info-names overwrite? no-header?))
+                      (makelib lib outdir allow-list overwrite? no-header?))
                     libs)
       )))
       #t)

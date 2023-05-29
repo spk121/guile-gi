@@ -98,7 +98,7 @@ examples/resources/test.gresource: AM_GRESOURCE_FLAGS = --sourcedir=$(abs_buildd
 #  LTLIBRARIES  #
 #################
 
-guileextension_LTLIBRARIES = libguile-gi.la libguile-giparse.la
+guileextension_LTLIBRARIES = libguile-gi.la libguile-giparse.la libguile-girepository.la
 
 # CFLAG_VISIBILITY = -fvisibility=hidden
 
@@ -219,9 +219,12 @@ if COVERAGE
 libguile_gi_la_LDFLAGS += --coverage -Wl,--dynamic-list-data
 endif
 
+# FIXME: remove GOBJECT_LIBS when dynamic loading is working
+
 libguile_gi_la_LIBADD = \
  $(GUILE_LIBS) \
- $(FFI_LIBS)
+ $(FFI_LIBS)  \
+ $(GOBJECT_LIBS)
 
 ######################
 #  libguile-giparse  #
@@ -302,6 +305,54 @@ libguile_giparse_la_LIBADD = \
  $(GUILE_LIBS) \
  $(GOBJECT_INTROSPECTION_LIBS) \
  $(FFI_LIBS)
+
+######################
+#  libguile-girepository  #
+######################
+
+libguile_girepository_la_c_sources = \
+  src/parser/gig_girepository.c
+
+libguile_girepository_la_SOURCES = \
+  $(libguile_girepository_la_c_sources)
+
+libguile_girepository_la_CPPFLAGS = \
+  -DG_LOG_DOMAIN=\"GuileGIrepository\" \
+  -DBUILDING_GIG \
+  -DGIG_PARSER
+
+if BUILDING_DLL
+libguile_girepository_la_CPPFLAGS += -DGIR_DLL -DGIR_DLL_EXPORTS
+endif
+if COVERAGE
+libguile_girepository_la_CPPFLAGS += -DENABLE_GCOV --coverage
+endif
+if MTRACE
+libguile_girepository_la_CPPFLAGS += -DMTRACE
+endif
+
+libguile_girepository_la_CFLAGS = \
+  -std=c2x \
+  $(CFLAG_VISIBILITY) \
+  $(GUILE_CFLAGS) \
+  $(GLIB_CFLAGS) \
+  $(GOBJECT_CFLAGS) \
+  $(GOBJECT_INTROSPECTION_CFLAGS)
+
+libguile_girepository_la_LDFLAGS = \
+ -no-undefined \
+ -version-info 1:0:0 \
+ $(GUILE_LDFLAGS) \
+ $(GOBJECT_INTROSPECTION_LIBS)
+
+if !DLL_VERSION_INFO
+libguile_girepository_la_LDFLAGS += -avoid-version
+endif
+
+libguile_girepository_la_LIBADD = \
+ $(GUILE_LIBS) \
+ $(GOBJECT_INTROSPECTION_LIBS)
+
 
 #################
 # Guile Modules #

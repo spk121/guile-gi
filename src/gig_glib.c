@@ -1,12 +1,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <dlfcn.h>
 #include <glib-object.h>
 #include "func.h"
 #include "gig_glib.h"
 
-#define DYNAMIC_GLIB
+#ifdef __MINGW32__
+#else
+#include <dlfcn.h>
+#endif
+
+// #define DYNAMIC_GLIB
 
 struct vtable G;
 int gig_initialized = 0;
@@ -14,8 +18,13 @@ int gig_initialized = 0;
 void
 xdlsym(void **p, void *handle, const char *name, int *successes, int *attempts)
 {
+#ifdef __MINGW32__
+    if (*p == NULL)
+	*p = GetProcAddress(handle, name);
+#else	
     if (*p == NULL)
         *p = dlsym(handle, name);
+#endif
     *attempts = *attempts + 1;
     if (*p != NULL)
         *successes = *successes + 1;
@@ -27,15 +36,22 @@ init_dlsyms(void *handle)
     int i = 0, n = 0;
 
 #ifdef DYNAMIC_GLIB
-#define D(name) \
-    xdlsym(&G.name, handle, "g_" # name, &i, &n)
+
+#ifdef __MINGW32__
+    if (handle == NULL)
+	handle = LoadLibrary("gobject-2.0");
 #else
+    if (handle == NULL)
+	handle = dlopen("libgobject-2.0.so", RTLD_NOW);
+#endif
+	
+#define D(name) \
+    xdlsym((void **)(&G.name), handle, "g_" # name, &i, &n)
+#else
+    
 #define D(name) \
     G.name = g_ ## name
-#endif
-
-#ifdef DYNAMIC_GLIB
-    handle = dlopen("libgobject-2.0.so", RTLD_NOW);
+    
 #endif
 
     D(array_free);

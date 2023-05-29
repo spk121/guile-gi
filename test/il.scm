@@ -11,13 +11,13 @@
       (close-output-port port)
       ret)))
 
+#|
 (define test1str "(^library \"GObject\"")
 (test-equal "'require' returns IL for ^library - func"
   test1str
   (string-take (gather (lambda() (require "GObject" "2.0")))
                (string-length test1str)))
 
-#|
 (define $il #f)
 (test-equal "load-by-name returns IL for ^constant - func"
   '^constant

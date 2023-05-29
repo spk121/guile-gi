@@ -1,7 +1,11 @@
 #include "../core.h"
 #include "gig_lib.h"
-#include <dlfcn.h>
 #include <string.h>
+#ifdef __MINGW32__
+#include <windows.h>
+#else
+#include <dlfcn.h>
+#endif
 
 typedef struct GigSharedLib_
 {
@@ -16,6 +20,25 @@ static bool is_nonempty_list_of_strings(SCM lst);
 
 static strval_t *lib_cache = NULL;
 static char errmsg[256];
+
+#ifdef __MINGW32__
+static const char *
+dlerror ()
+{
+    static char msg1[256], msg2[256];
+    DWORD dw = GetLastError ();
+    FormatMessage (FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+		   NULL,
+		   dw,
+		   MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT),
+		   (LPTSTR) msg1, 256, NULL);
+    if (dw == 0)
+	return NULL;
+
+    snprintf (msg2, 255, "error %ld: %s", (long) dw, msg1);
+    return msg2;
+}
+#endif
 
 static SCM
 gig_il_library(SCM s_namespace_, SCM s_version, SCM s_path_list)
@@ -47,7 +70,11 @@ gig_il_library(SCM s_namespace_, SCM s_version, SCM s_path_list)
     for (i = 0; i < n; i++)
         shlib->filenames[i] = scm_to_locale_string(scm_c_list_ref(s_path_list, i));
     for (i = 0; i < n; i++) {
+#ifdef __MINGW32__
+        shlib->handles[i] = LoadLibrary(shlib->filenames[i]);
+#else
         shlib->handles[i] = dlopen(shlib->filenames[i], RTLD_NOW);
+#endif
         if (shlib->handles[i] == NULL)
             goto err;
     }
@@ -58,7 +85,24 @@ gig_il_library(SCM s_namespace_, SCM s_version, SCM s_path_list)
 
   err:
     memset(errmsg, 0, 256);
+#ifdef __MINGW32__
+    {
+#define DLERROR_LEN 80
+	static char dlerror_str[DLERROR_LEN + 1];
+	DWORD dw = GetLastError ();
+	FormatMessage (FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+		       NULL,
+		       dw,
+		       MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT),
+		       (LPTSTR) dlerror_str, DLERROR_LEN, NULL);
+	if (dw == 0)
+	    snprintf (errmsg, 255, "No error");
+	else
+	    snprintf (errmsg, 255, "error %ld: %s", (long) dw, dlerror_str);
+    }
+#else    
     strncpy(errmsg, dlerror(), 255);
+#endif
     free_shlib(shlib);
     free(namespace_);
     scm_syserror_msg(FUNC_NAME, "failed to dynamically load namespace '~a' - ~a",
@@ -86,7 +130,11 @@ gig_lib_lookup(const char *namespace_, const char *symbol)
         return NULL;
     i = 0;
     while (i < shlib->n) {
+#ifdef __MINGW32__
+	address = GetProcAddress (shlib->handles[i], symbol);
+#else
         address = dlsym(shlib->handles[i], symbol);
+#endif
         dlerror();
         if (address)
             return address;
@@ -143,7 +191,11 @@ free_shlib(GigSharedLib * shlib)
     int n = shlib->n;
     for (int i = 0; i < n; i++) {
         if (shlib->handles[i])
+#ifdef __MINGW32__
+            FreeLibrary(shlib->handles[i]);
+#else
             dlclose(shlib->handles[i]);
+#endif
         free(shlib->filenames[i]);
     }
     free(shlib);

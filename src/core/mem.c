@@ -72,6 +72,22 @@ xstrdup(const char *S)
     return x;
 }
 
+#ifdef __MINGW32__
+static char *
+strndup (char const *s, size_t n)
+{
+  size_t len = strnlen (s, n);
+  char *new = malloc (len + 1);
+
+  if (new == NULL)
+    return NULL;
+
+  new[len] = '\0';
+  return memcpy (new, s, len);
+}
+#endif
+
+
 char *
 xstrndup(const char *S, size_t siz)
 {
