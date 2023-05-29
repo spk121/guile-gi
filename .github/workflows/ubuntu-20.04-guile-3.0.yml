@@ -1,4 +1,4 @@
-name: Ubuntu Bionic w/ Guile 2.2
+name: Ubuntu 20.04 w/ Guile 3.0
 
 on:
   push:
@@ -9,14 +9,14 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
 
     steps:
     - uses: actions/checkout@v2
     - name: env
       run: export LANG=C.UTF-8 TERM=dumb VERBOSE=true DEBIAN_FRONTEND=noninteractive TZ=America/Los_Angeles
     - name: install packages
-      run: sudo apt-get install -y libgirepository1.0-dev guile-2.2-dev gnulib texlive
+      run: sudo apt-get install -y libgirepository1.0-dev guile-3.0-dev gnulib texlive
     - name: look for guile
       run: ls -l /usr/bin/gu*
     - name: make dist directory
@@ -24,7 +24,7 @@ jobs:
     - name: bootstrap
       run: ./bootstrap
     - name: configure
-      run: GUILD=/usr/bin/guild ./configure --enable-hardening --with-gnu-filesystem-hierarchy --prefix=`pwd`/dist 
+      run: ./configure --enable-hardening --with-gnu-filesystem-hierarchy --prefix=`pwd`/dist
     - name: make
       run: make
     - name: make check
@@ -35,7 +35,7 @@ jobs:
     - name: make install
       run: make install
     - name: make distcheck
-      run: GUILD=/usr/bin/guild make distcheck
+      run: make distcheck
     - name: Archive production artifacts
       uses: actions/upload-artifact@v2
       with:
