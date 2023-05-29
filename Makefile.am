@@ -95,10 +95,16 @@ examples/resources/test.gresource: AM_GRESOURCE_FLAGS = --sourcedir=$(abs_buildd
 	$(GLIB_COMPILE_RESOURCES) $(AM_GRESOURCE_FLAGS) $(GRESOURCE_FLAGS) --target=$@ $<
 
 #################
-#  libguile-gi  #
+#  LTLIBRARIES  #
 #################
 
-guileextension_LTLIBRARIES = libguile-gi.la
+guileextension_LTLIBRARIES = libguile-gi.la libguile-girepository.la
+
+# CFLAG_VISIBILITY = -fvisibility=hidden
+
+#################
+#  libguile-gi  #
+#################
 
 libguile_gi_la_c_sources = \
   src/core/keyval.c \
@@ -219,6 +225,54 @@ libguile_gi_la_LIBADD = \
  $(GOBJECT_LIBS) \
  $(FFI_LIBS)
 
+######################
+#  libguile-girepository  #
+######################
+
+libguile_girepository_la_c_sources = \
+  src/parser/gig_girepository.c
+
+libguile_girepository_la_SOURCES = \
+  $(libguile_girepository_la_c_sources)
+
+libguile_girepository_la_CPPFLAGS = \
+  -DG_LOG_DOMAIN=\"GuileGIrepository\" \
+  -DBUILDING_GIG \
+  -DGIG_PARSER
+
+if BUILDING_DLL
+libguile_girepository_la_CPPFLAGS += -DGIR_DLL -DGIR_DLL_EXPORTS
+endif
+if COVERAGE
+libguile_girepository_la_CPPFLAGS += -DENABLE_GCOV --coverage
+endif
+if MTRACE
+libguile_girepository_la_CPPFLAGS += -DMTRACE
+endif
+
+libguile_girepository_la_CFLAGS = \
+  -std=c2x \
+  $(CFLAG_VISIBILITY) \
+  $(GUILE_CFLAGS) \
+  $(GLIB_CFLAGS) \
+  $(GOBJECT_CFLAGS) \
+  $(GOBJECT_INTROSPECTION_CFLAGS)
+
+libguile_girepository_la_LDFLAGS = \
+ -no-undefined \
+ -version-info 1:0:0 \
+ $(GUILE_LDFLAGS) \
+ $(GOBJECT_INTROSPECTION_LIBS)
+
+if !DLL_VERSION_INFO
+libguile_girepository_la_LDFLAGS += -avoid-version
+endif
+
+libguile_girepository_la_LIBADD = \
+ $(GUILE_LIBS) \
+ $(GOBJECT_INTROSPECTION_LIBS)
+
+
 #################
 # Guile Modules #
 #################
@@ -237,7 +291,8 @@ dist_pkgguilesite_DATA = \
   module/gi/oop.scm \
   module/gi/repository.scm \
   module/gi/types.scm \
-  module/gi/util.scm
+  module/gi/util.scm \
+  module/gi/girepository.scm
 
 dist_scriptguilesite_DATA = \
   module/scripts/gi-gtkdoc.scm
