@@ -22,6 +22,7 @@ jobs:
           base-devel
           git
           autotools
+          gperf
           mingw-w64-i686-toolchain
           mingw-w64-i686-gc
           mingw-w64-i686-libtool
