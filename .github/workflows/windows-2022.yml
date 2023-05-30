@@ -1,0 +1,80 @@
+name: Windows 2022 MinGW
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: windows-2022
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+    - uses: actions/checkout@v3
+    - uses: msys2/setup-msys2@v2
+      with:
+        msystem: MINGW32
+        update: false
+        install: >-
+          base-devel
+          git
+          mingw-w64-i686-toolchain
+          mingw-w64-i686-gc
+          mingw-w64-i686-libtool
+          mingw-w64-i686-libunistring
+          mingw-w64-i686-gobject-introspection
+    - name: make dist directory
+      run: mkdir `pwd`/dist
+    - name: check out the local directory
+      run: ls -lR
+    - name: clone guile
+      run: git clone https://github.com/spk121/guile.git --depth 1
+    - name: bootstrap guile
+      run: cd guile; autoreconf -vif; cd ..
+    - name: configure guile
+      run: cd guile; ./configure --without-threads --enable-jit=no --prefix=`pwd`/../dist; cd ..
+    - name: build guile
+      run: cd guile; make -j; cd ..
+    - name: install guile
+      run: cd guile; make install; cd ..
+    - name: see what happened
+      run: ls -lR dist
+    - name: Archive production artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: guile-dist
+        path: dist
+    - name: get guile.m4
+      run: cp guile/meta/guile.m4 m4
+    - name: autoreconf
+      run: ACLOCAL_PATH=`pwd`/dist/share/aclocal autoreconf -vif
+    - name: configure
+      run: ACLOCAL_PATH=`pwd`/dist/share/aclocal PKG_CONFIG_PATH=`pwd`/dist/lib/pkgconfig LD_LIBRARY_PATH=`pwd`/dist/lib:$LD_LIBRARY_PATH PATH=`pwd`/dist/bin:$PATH ./configure CPPFLAGS=-I`pwd`/dist/include --prefix=`pwd`/dist
+    - name: make
+      run: make
+    - name: make check
+      run: make check
+    - name: make install
+      run: make install
+    - name: make distcheck
+      run: PKG_CONFIG_PATH=`pwd`/dist/lib/pkgconfig make distcheck
+    - name: Archive production artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: dist
+        path: dist
+    - name: Uncompress tarballs
+      run: gunzip *.tar.gz
+    - name: Archive tarball
+      uses: actions/upload-artifact@v3
+      with:
+        name: tarball
+        path: guile_plotutils*tar
+    - name: Archive test logs
+      uses: actions/upload-artifact@v3
+      with:
+        name: logs
+        path: test-suite.log
