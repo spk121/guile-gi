@@ -21,6 +21,7 @@ jobs:
         install: >-
           base-devel
           git
+	  autoconf2.71
           mingw-w64-i686-toolchain
           mingw-w64-i686-gc
           mingw-w64-i686-libtool
