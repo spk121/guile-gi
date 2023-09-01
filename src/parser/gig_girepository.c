@@ -100,23 +100,99 @@ gc_free_gibaseinfo (SCM x)
 // Utilities
 ////////////////////////////////////////////////////////////////
 
-static SCM
-c_strings_to_scheme_and_free (char **c_strs)
+#define MAX_STRING_LIST_LEN 1000
+
+static bool
+is_ascii_alnum_dash_dot(char *str)
 {
-    int i = 0;
-    SCM ret = SCM_EOL;
-    while (c_strs[i] != nullptr) {
-        ret = scm_cons(scm_from_utf8_string(c_strs[i]),ret);
-        i++;
+    size_t len = strlen(str);
+    bool valid = true;
+    for (size_t i = 0; i < len; i ++) {
+        char c = str[i];
+        if (!((c >= u8'0' && c <= u8'9')
+              || (c >= u8'a' && c <= u8'z')
+              || (c >= u8'A' && c <= u8'Z')
+              || c == u8'-'
+              || c == u8'.')) {
+            valid = false;
+            break;
+        }
     }
-    i = 0;
-    while (c_strs[i] != nullptr) {
-        free(c_strs[i]);
-        i++;
-    }
-    free(c_strs);
-    return scm_reverse(ret);
+    return valid;
 }
+
+static bool
+is_valid_namespace_char(char c)
+{
+    return ((c >= u8'0' && c <= u8'9')
+            || (c >= u8'a' && c <= u8'z')
+            || (c >= u8'A' && c <= u8'Z')
+            || c == u8'-'
+            || c == u8'.');
+}
+
+
+static size_t
+get_null_terminated_array_len(void **arr)
+{
+    size_t i = 0;
+    while(arr[i] != nullptr) {
+        i++;
+        if (i == SIZE_MAX - 1)
+            abort();
+    }
+    return i;
+}
+
+static size_t
+strvlen(char **arr)
+{
+    size_t i = 0;
+    while(arr[i] != nullptr) {
+        i++;
+        if (i == SIZE_MAX - 1)
+            abort();
+    }
+    return i;
+}
+
+static void
+free_arrayn(void **arr, size_t n)
+{
+    for (size_t i = 0; i < n; i ++)
+        free(arr[i]);
+    free(arr);
+}
+
+#define freev(x) _Generic((x),                 \
+                          char: char8freev)(x)
+static void
+char8freev(char **arr)
+{
+    size_t i = 0;
+    if (arr == nullptr)
+        return;
+    while(arr[i] != nullptr) {
+        free(arr[i]);
+        arr[i] = nullptr;
+        i++;
+    }
+    free(arr);
+    arr = nullptr;
+}
+
+
+static SCM
+utf8_arrayn_to_scheme_list (char **c_strs, size_t n)
+{
+    SCM ret = SCM_EOL;
+
+    for (size_t i = n; i > 0; i --) {
+        ret = scm_cons(scm_from_utf8_string(c_strs[i - 1]),ret);
+    }
+}
+
+typedef void(*scm_unwind_handler_t)(void *);
 
 ////////////////////////////////////////////////////////////////
 // GIRepository functions
@@ -124,52 +200,99 @@ c_strings_to_scheme_and_free (char **c_strs)
 SCM
 gig_irepository_get_dependencies(SCM s_namespace)
 {
-    char *c_namespace = scm_to_utf8_string(s_namespace);
-    char **c_dependencies;
+    char *c_namespace;
+    gchar **c_dependencies;
+    size_t len;
+    SCM ret = SCM_EOL;
 
-    c_dependencies = g_irepository_get_dependencies(nullptr, c_namespace);
-    free(c_namespace);
-    return c_strings_to_scheme_and_free(c_dependencies);
+    scm_dynwind_begin(0);
+    c_namespace = scm_to_utf8_string(s_namespace);
+    scm_dynwind_free(c_namespace);
+
+    c_dependencies = g_irepository_get_dependencies(NULL, c_namespace);
+    scm_dynwind_unwind_handler((scm_unwind_handler_t) char8freev, c_dependencies, SCM_F_WIND_EXPLICITLY);
+    len = strvlen(c_dependencies);
+    if (len > 0)
+        ret = utf8_arrayn_to_scheme_list(c_dependencies, len);
+    scm_dynwind_end();
+
+    return ret;
 }
 
 SCM
 gig_irepository_get_immediate_dependencies(SCM s_namespace)
 {
-    char *c_namespace = scm_to_utf8_string(s_namespace);
-    char **c_dependencies;
+    char *c_namespace;
+    gchar **c_dependencies;
+    size_t len;
+    SCM ret = SCM_EOL;
 
-    c_dependencies = g_irepository_get_immediate_dependencies(nullptr,
-                                                              c_namespace);
-    free(c_namespace);
-    return c_strings_to_scheme_and_free(c_dependencies);
+    scm_dynwind_begin(0);
+    c_namespace = scm_to_utf8_string(s_namespace);
+    scm_dynwind_free(c_namespace);
+    c_dependencies = g_irepository_get_immediate_dependencies(NULL, c_namespace);
+    scm_dynwind_unwind_handler((scm_unwind_handler_t) char8freev,
+                               c_dependencies, SCM_F_WIND_EXPLICITLY);
+    len = strvlen(c_dependencies);
+    if (len > 0)
+        ret = utf8_arrayn_to_scheme_list(c_dependencies, len);
+    scm_dynwind_end();
+
+    return ret;
 }
 
 SCM
 gig_irepository_get_loaded_namespaces()
 {
-    char **c_namespaces = g_irepository_get_loaded_namespaces(nullptr);
-    return c_strings_to_scheme_and_free(c_namespaces);
+    gchar **c_namespaces;
+    SCM ret = SCM_EOL;
+    size_t len;
+
+    scm_dynwind_begin(0);
+    c_namespaces = g_irepository_get_loaded_namespaces(nullptr);
+    scm_dynwind_unwind_handler((scm_unwind_handler_t) char8freev,
+                               c_namespaces, SCM_F_WIND_EXPLICITLY);
+    if (c_namespaces == nullptr)
+        return SCM_EOL;
+    len = strvlen(c_namespaces);
+    if (len == 0) {
+        return SCM_EOL;
+    }
+    ret = utf8_arrayn_to_scheme_list(c_namespaces, len);
+    scm_dynwind_end();
+
+    return ret;
 }
 
 SCM
 gig_irepository_get_n_infos(SCM s_namespace)
 {
-    char *c_namespace = scm_to_utf8_string(s_namespace);
+    char *c_namespace = nullptr;
+    int c_n;
 
-    int c_n = g_irepository_get_n_infos(nullptr, c_namespace);
-    free (c_namespace);
+    scm_dynwind_begin(0);
+    c_namespace = scm_to_utf8_string(s_namespace);
+    scm_dynwind_free(c_namespace);
+    c_n = g_irepository_get_n_infos(nullptr, c_namespace);
+    scm_dynwind_end();
+
     return scm_from_int (c_n);
 }
 
 SCM
 gig_irepository_get_info(SCM s_namespace, SCM s_index)
 {
-    char *c_namespace = scm_to_utf8_string(s_namespace);
-    int c_index = scm_to_int(s_index);
+    char *c_namespace;
     GIBaseInfo *c_info;
+    int c_index;
 
+    scm_dynwind_begin(0);
+    c_namespace = scm_to_utf8_string(s_namespace);
+    scm_dynwind_free(c_namespace);
+    c_index = scm_to_int(s_index);
     c_info = g_irepository_get_info(nullptr, c_namespace, c_index);
-    free(c_namespace);
+    scm_dynwind_end();
+
     return _scm_from_gibaseinfo(c_info);
 }
 
@@ -178,41 +301,52 @@ gig_irepository_get_info(SCM s_namespace, SCM s_index)
 SCM
 gig_irepository_enumerate_versions(SCM s_namespace)
 {
-    char *c_namespace = scm_to_utf8_string(s_namespace);
+    char *c_namespace;
     GList *c_lst, *c_lst_cur;
-
-    c_lst = g_irepository_enumerate_versions(nullptr, c_namespace);
-    free (c_namespace);
-
     SCM ret = SCM_EOL;
+
+    scm_dynwind_begin(0);
+    c_namespace = scm_to_utf8_string(s_namespace);
+    scm_dynwind_free(c_namespace);
+    c_lst = g_irepository_enumerate_versions(nullptr, c_namespace);
+    scm_dynwind_unwind_handler((scm_unwind_handler_t) g_list_free_full,
+                               c_lst, SCM_F_WIND_EXPLICITLY);
     c_lst_cur = c_lst;
     while (c_lst_cur != nullptr) {
-        ret = scm_cons(scm_from_utf8_string(c_lst_cur->data),ret);
+        ret = scm_cons(scm_from_utf8_string(c_lst_cur->data), ret);
         c_lst_cur = c_lst_cur->next;
     }
-    g_list_free_full(c_lst, free);
+    scm_dynwind_end();
     return scm_reverse(ret);
 }
 
 SCM
 gig_irepository_prepend_library_path(SCM s_directory)
 {
-    char *c_directory = scm_to_utf8_string(s_directory);
+    char *c_directory;
 
-    // FIXME: string should be in filesystem's filename encoding.
+    scm_dynwind_begin(0);
+    c_directory = scm_to_locale_string(s_directory);
+    scm_dynwind_free(c_directory);
+    // String is in locale encoding since it is a filename
     g_irepository_prepend_library_path(c_directory);
-    free(c_directory);
+    scm_dynwind_end();
+
     return SCM_UNSPECIFIED;
 }
 
 SCM
 gig_irepository_prepend_search_path(SCM s_directory)
 {
-    char *c_directory = scm_to_utf8_string(s_directory);
+    char *c_directory;
 
-    // FIXME: string should be in filesystem's filename encoding.
+    scm_dynwind_begin(0);
+    c_directory = scm_to_locale_string(s_directory);
+    scm_dynwind_free(c_directory);
+    // Using a locale string since it is a filename
     g_irepository_prepend_search_path(c_directory);
-    free(c_directory);
+    scm_dynwind_end();
+
     return SCM_UNSPECIFIED;
 }
 
@@ -226,7 +360,8 @@ gig_irepository_get_search_path()
     SCM ret = SCM_EOL;
     c_lst_cur = c_lst;
     while (c_lst_cur != nullptr) {
-        ret = scm_cons(scm_from_utf8_string(c_lst_cur->data),ret);
+        // A locale string since it is a filename
+        ret = scm_cons(scm_from_locale_string(c_lst_cur->data),ret);
         c_lst_cur = c_lst_cur->next;
     }
 
@@ -239,52 +374,78 @@ gig_irepository_get_search_path()
 SCM
 gig_irepository_get_typelib_path(SCM s_namespace)
 {
-    char *c_namespace = scm_to_utf8_string(s_namespace);
-    const char *c_path = g_irepository_get_typelib_path(nullptr, c_namespace);
-    free (c_namespace);
+    char *c_namespace;
+    const char *c_path;
+
+    scm_dynwind_begin(0);
+    // A locale string since it is a filename
+    c_namespace = scm_to_locale_string(s_namespace);
+    scm_dynwind_free(c_namespace);
+    c_path = g_irepository_get_typelib_path(nullptr, c_namespace);
+    scm_dynwind_end();
 
     if (c_path == nullptr)
         return SCM_BOOL_F;
-    return scm_from_utf8_string(c_path);
+    return scm_from_locale_string(c_path);
 }
 
 SCM
 gig_irepository_is_registered(SCM s_namespace, SCM s_version)
 {
-    char *c_namespace = scm_to_utf8_string(s_namespace);
-    char *c_version = scm_to_utf8_string(s_version);
-    gboolean c_ret = g_irepository_is_registered(nullptr,
-                                                 c_namespace,
-                                                 c_version);
-    free (c_version);
-    free(c_namespace);
+    char *c_namespace, *c_version;
+    gboolean c_ret;
+
+    scm_dynwind_begin(0);
+    c_namespace = scm_to_utf8_string(s_namespace);
+    scm_dynwind_free(c_namespace);
+    if (scm_is_true(s_version))
+    {
+        c_version = scm_to_utf8_string(s_version);
+        c_ret = g_irepository_is_registered(nullptr,
+                                            c_namespace,
+                                            c_version);
+        free(c_version);
+    }
+    else
+    {
+        c_ret = g_irepository_is_registered(nullptr,
+                                            c_namespace,
+                                            NULL);
+    }
+    scm_dynwind_end();
+
     return scm_from_bool(c_ret);
 }
 
 SCM
 gig_irepository_require(SCM s_namespace, SCM s_version, SCM s_flags)
 {
-    char *c_namespace = scm_to_utf8_string(s_namespace);
-    char *c_version = nullptr;
-    int c_flags = scm_to_int(s_flags);
+    char *c_namespace, *c_version = nullptr;
+    int c_flags;
     GError *error = nullptr;
+
+    scm_dynwind_begin(0);
+    c_namespace = scm_to_utf8_string(s_namespace);
+    scm_dynwind_free(c_namespace);
+
+    c_flags = scm_to_int(s_flags);
 
     if (scm_is_false(s_version))
         g_irepository_require(nullptr, c_namespace, nullptr, c_flags, &error);
     else {
         c_version = scm_to_utf8_string(s_version);
+        scm_dynwind_free(c_version);
         g_irepository_require(nullptr,
                               c_namespace, c_version, c_flags, &error);
-        free(c_namespace);
     }
-    free(c_version);
 
     if (error != nullptr) {
         SCM err = scm_from_utf8_string(error->message);
         g_error_free(error);
-        scm_misc_error("irepository-require", "~A", scm_list_1(err));
+        scm_misc_error("%require", "~A", scm_list_1(err));
     }
     // Not returning GITypelib since they are useless
+    scm_dynwind_end();
     return SCM_UNSPECIFIED;
 }
 
@@ -292,24 +453,30 @@ SCM
 gig_irepository_require_private(SCM s_typelib_dir,
                                 SCM s_namespace, SCM s_version, SCM s_flags)
 {
-    char *c_typelib_dir = scm_to_utf8_string(s_typelib_dir);
-    char *c_namespace = scm_to_utf8_string(s_namespace);
-    char *c_version = scm_to_utf8_string(s_namespace);
-    int c_flags = scm_to_int(s_flags);
+    char *c_typelib_dir, *c_namespace, *c_version;
+    int c_flags;
     GError *error = nullptr;
+
+    scm_dynwind_begin(0);
+    c_typelib_dir = scm_to_utf8_string(s_typelib_dir);
+    scm_dynwind_free(c_typelib_dir);
+    c_namespace = scm_to_utf8_string(s_namespace);
+    scm_dynwind_free(c_namespace);
+    c_version = scm_to_utf8_string(s_namespace);
+    scm_dynwind_free(c_version);
+    c_flags = scm_to_int(s_flags);
 
     g_irepository_require_private(nullptr,
                                   c_typelib_dir,
                                   c_namespace, c_version, c_flags, &error);
-    free(c_typelib_dir);
-    free(c_namespace);
-    free(c_version);
 
     if (error != nullptr) {
         SCM err = scm_from_utf8_string(error->message);
         g_error_free(error);
-        scm_misc_error("irepository-require-private", "~A", scm_list_1(err));
+        scm_misc_error("%require-private", "~A", scm_list_1(err));
     }
+
+    scm_dynwind_end();
     // Not returning GITypelib since they are useless
     return SCM_UNSPECIFIED;
 }
@@ -317,9 +484,15 @@ gig_irepository_require_private(SCM s_typelib_dir,
 SCM
 gig_irepository_get_c_prefix(SCM s_namespace)
 {
-    char *c_namespace = scm_to_utf8_string(s_namespace);
-    const char *c_ret = g_irepository_get_c_prefix(nullptr, c_namespace);
-    free(c_namespace);
+    char *c_namespace;
+    const char *c_ret;
+
+    scm_dynwind_begin(0);
+    c_namespace = scm_to_utf8_string(s_namespace);
+    scm_dynwind_free(c_namespace);
+    c_ret = g_irepository_get_c_prefix(nullptr, c_namespace);
+    scm_dynwind_end();
+
     if (c_ret == nullptr)
         return SCM_BOOL_F;
     return scm_from_utf8_string(c_ret);
@@ -328,9 +501,15 @@ gig_irepository_get_c_prefix(SCM s_namespace)
 SCM
 gig_irepository_get_shared_library(SCM s_namespace)
 {
-    char *c_namespace = scm_to_utf8_string(s_namespace);
-    const char *c_ret = g_irepository_get_shared_library(nullptr, c_namespace);
-    free(c_namespace);
+    char *c_namespace;
+    const char *c_ret;
+
+    scm_dynwind_begin(0);
+    c_namespace = scm_to_utf8_string(s_namespace);
+    scm_dynwind_free(c_namespace);
+    c_ret = g_irepository_get_shared_library(nullptr, c_namespace);
+    scm_dynwind_end();
+
     if (c_ret == nullptr)
         return SCM_BOOL_F;
     return scm_from_utf8_string(c_ret);
@@ -339,9 +518,15 @@ gig_irepository_get_shared_library(SCM s_namespace)
 SCM
 gig_irepository_get_version(SCM s_namespace)
 {
-    char *c_namespace = scm_to_utf8_string(s_namespace);
-    const char *c_ret = g_irepository_get_version(nullptr, c_namespace);
-    free(c_namespace);
+    char *c_namespace;
+    const char *c_ret;
+
+    scm_dynwind_begin(0);
+    c_namespace = scm_to_utf8_string(s_namespace);
+    scm_dynwind_free(c_namespace);
+    c_ret = g_irepository_get_version(nullptr, c_namespace);
+    scm_dynwind_end();
+
     if (c_ret == nullptr)
         return SCM_BOOL_F;
     return scm_from_utf8_string(c_ret);
@@ -372,13 +557,18 @@ gig_irepository_find_by_error_domain (SCM s_quark)
 SCM
 gig_irepository_find_by_name(SCM s_namespace, SCM s_name)
 {
-    char *c_namespace = scm_to_utf8_string(s_namespace);
-    char *c_name = scm_to_utf8_string(s_name);
-    GIBaseInfo *c_info = g_irepository_find_by_name(nullptr,
-                                                    c_namespace,
-                                                    c_name);
-    free(c_namespace);
-    free(c_name);
+    char *c_namespace, *c_name;
+    GIBaseInfo *c_info;
+
+    scm_dynwind_begin(0);
+    c_namespace = scm_to_utf8_string(s_namespace);
+    scm_dynwind_free(c_namespace);
+    c_name = scm_to_utf8_string(s_name);
+    scm_dynwind_free(c_name);
+    c_info = g_irepository_find_by_name(nullptr,
+                                        c_namespace,
+                                        c_name);
+    scm_dynwind_end();
     if (c_info != nullptr)
         return _scm_from_gibaseinfo(c_info);
     return SCM_BOOL_F;
@@ -406,6 +596,12 @@ gig_irepository_get_object_gtype_interfaces(SCM s_gtype)
 // gi_cclosure_marshal_generic is not useful
 
 SCM gig_IREPOSITORY_LOAD_FLAG_LAZY;
+
+// G_IREPOSITORY_ERROR not useful because we do all the GError
+// handling here.
+
+// enum GIRepositoryError not useful because we do all the GError
+// handling here.
 
 ////////////////////////////////////////////////////////////////
 // Version info
@@ -551,10 +747,17 @@ gig_base_info_get_name(SCM s_info)
 SCM
 gig_base_info_get_attribute(SCM s_info, SCM s_name)
 {
-    GIBaseInfo *c_info = _scm_to_gibaseinfo(s_info);
-    char *c_name = scm_to_utf8_string(s_name);
-    const char *c_attribute = g_base_info_get_attribute(c_info, c_name);
-    free(c_name);
+    char *c_name;
+    const char *c_attribute;
+    GIBaseInfo *c_info;
+
+    c_info = _scm_to_gibaseinfo(s_info);
+    scm_dynwind_begin(0);
+    c_name = scm_to_utf8_string(s_name);
+    scm_dynwind_free(c_name);
+    c_attribute = g_base_info_get_attribute(c_info, c_name);
+    scm_dynwind_end();
+
     if (c_attribute == nullptr)
         return SCM_BOOL_F;
     return scm_from_utf8_string(c_attribute);
@@ -671,10 +874,17 @@ gig_callable_info_get_instance_ownership_transfer(SCM s_info)
 SCM
 gig_callable_info_get_return_attribute(SCM s_info, SCM s_name)
 {
-    GIBaseInfo *c_info = _scm_to_gibaseinfo(s_info);
-    char *c_name = scm_to_utf8_string(s_name);
-    const char *c_attr = g_callable_info_get_return_attribute(c_info, c_name);
-    free(c_name);
+    char *c_name;
+    const char *c_attr;
+    GIBaseInfo *c_info;
+
+    c_info = _scm_to_gibaseinfo(s_info);
+    scm_dynwind_begin(0);
+    c_name = scm_to_utf8_string(s_name);
+    scm_dynwind_free(c_name);
+    c_attr = g_callable_info_get_return_attribute(c_info, c_name);
+    scm_dynwind_end();
+
     if (c_attr == nullptr)
         return SCM_BOOL_F;
     return scm_from_utf8_string(c_attr);
@@ -828,9 +1038,28 @@ gig_signal_info_true_stops_emit(SCM s_info)
     return scm_from_bool(g_signal_info_true_stops_emit(c_info));
 }
 
+SCM gig_SIGNAL_RUN_FIRST;
+SCM gig_SIGNAL_RUN_LAST;
+SCM gig_SIGNAL_RUN_CLEANUP;
+SCM gig_SIGNAL_NO_RECURSE;
+SCM gig_SIGNAL_DETAILED;
+SCM gig_SIGNAL_ACTION;
+SCM gig_SIGNAL_NO_HOOKS;
+SCM gig_SIGNAL_MUST_COLLECT;
+SCM gig_SIGNAL_DEPRECATED;
+SCM gig_SIGNAL_ACCUMULATOR_FIRST_RUN;
+
+
 ////////////////////////////////////////////////////////////////
 // GIVFuncInfo
 ////////////////////////////////////////////////////////////////
+
+SCM
+gig_is_vfunc_info(SCM s_info)
+{
+    GIBaseInfo *c_info = _scm_to_gibaseinfo(s_info);
+    return scm_from_bool(GI_IS_VFUNC_INFO(c_info));
+}
 
 
 SCM
@@ -867,7 +1096,7 @@ gig_vfunc_info_get_invoker(SCM s_info)
     return _scm_from_gibaseinfo(c_ret);
 }
 
-// g_vfunc_info_get_addres is not useful
+// g_vfunc_info_get_address is not useful
 // g_vfunc_info_invoke is not useful
 
 SCM gig_VFUNC_MUST_CHAIN_UP;
@@ -906,14 +1135,14 @@ gig_registered_type_info_get_type_init(SCM s_info)
     return scm_from_utf8_string(c_name);
 }
 
-// g_registered_type_info_get_g_type is not useful because GTypes are not constant
-// But knowing if it has a GType is useful.
+// g_registered_type_info_get_g_type is not useful because GTypes are
+// not constant. But knowing if it has a GType is useful.
 SCM
-gig_registered_type_info_has_g_type(SCM s_info)
+gig_registered_type_info_get_g_type(SCM s_info)
 {
     GIBaseInfo *c_info = _scm_to_gibaseinfo(s_info);
     GType type = g_registered_type_info_get_g_type(c_info);
-    return scm_from_bool(type != G_TYPE_NONE);
+    return scm_from_size_t(type);
 }
 
 
@@ -926,13 +1155,6 @@ gig_is_enum_info(SCM s_info)
 {
     GIBaseInfo *c_info = _scm_to_gibaseinfo(s_info);
     return scm_from_bool(GI_IS_ENUM_INFO(c_info));
-}
-
-SCM
-gig_is_value_info(SCM s_info)
-{
-    GIBaseInfo *c_info = _scm_to_gibaseinfo(s_info);
-    return scm_from_bool(GI_IS_VALUE_INFO(c_info));
 }
 
 SCM
@@ -974,6 +1196,13 @@ gig_enum_info_get_method(SCM s_info, SCM s_n)
 }
 
 SCM
+gig_enum_info_get_storage_type(SCM s_info)
+{
+    GIBaseInfo *c_info = _scm_to_gibaseinfo(s_info);
+    return _scm_from_gibaseinfo(c_info);
+}
+
+SCM
 gig_enum_info_get_error_domain(SCM s_info)
 {
     GIBaseInfo *c_info = _scm_to_gibaseinfo(s_info);
@@ -982,6 +1211,27 @@ gig_enum_info_get_error_domain(SCM s_info)
         return SCM_BOOL_F;
     return scm_from_utf8_string(c_ret);
 }
+
+////////////////////////////////////////////////////////////////
+// GIValueInfo
+////////////////////////////////////////////////////////////////
+
+SCM
+gig_is_value_info(SCM s_info)
+{
+    GIBaseInfo *c_info = _scm_to_gibaseinfo(s_info);
+    return scm_from_bool(GI_IS_VALUE_INFO(c_info));
+}
+
+SCM
+gig_value_info_get_value(SCM s_info)
+{
+    GIBaseInfo *c_info = _scm_to_gibaseinfo(s_info);
+    gint64 c_ret = g_value_info_get_value(c_info);
+    return scm_from_int64(c_ret);
+}
+
+
 
 ////////////////////////////////////////////////////////////////
 // GIStructInfo
@@ -1097,6 +1347,13 @@ gig_struct_info_find_method(SCM s_info, SCM s_name)
 ////////////////////////////////////////////////////////////////
 
 SCM
+gig_is_union_info(SCM s_info)
+{
+    GIBaseInfo *c_info = _scm_to_gibaseinfo(s_info);
+    return scm_from_bool(GI_IS_UNION_INFO(c_info));
+}
+
+SCM
 gig_union_info_get_n_fields(SCM s_info)
 {
     GIBaseInfo *c_info = _scm_to_gibaseinfo(s_info);
@@ -1209,10 +1466,18 @@ SCM gig_object_info_get_abstract(SCM s_info)
     return scm_from_bool(g_object_info_get_abstract(c_info));
 }
 
-SCM gig_object_info_get_fundamental(SCM s_info)
+SCM
+gig_object_info_get_fundamental(SCM s_info)
 {
     GIBaseInfo *c_info = _scm_to_gibaseinfo(s_info);
     return scm_from_bool(g_object_info_get_fundamental(c_info));
+}
+
+SCM
+gig_object_info_get_final(SCM s_info)
+{
+    GIBaseInfo *c_info = _scm_to_gibaseinfo(s_info);
+    return scm_from_bool(g_object_info_get_final(c_info));
 }
 
 SCM
@@ -1330,7 +1595,19 @@ gig_object_info_find_method(SCM s_info, SCM s_name)
     return _scm_from_gibaseinfo(c_ret);
 }
 
-// g_object_info_find_method_using_interfaces is not useful
+SCM
+gig_object_info_find_method_using_interfaces(SCM s_info, SCM s_name)
+{
+    GIBaseInfo *c_info = _scm_to_gibaseinfo(s_info);
+    char *c_name = scm_to_utf8_string(s_name);
+    GIBaseInfo *c_ret;
+    GIObjectInfo *c_implementor;
+    c_ret = g_object_info_find_method_using_interfaces(c_info, c_name, &c_implementor);
+    free(c_name);
+    if (c_ret == nullptr)
+        return scm_cons(SCM_BOOL_F, SCM_BOOL_F);
+    return scm_cons(_scm_from_gibaseinfo(c_ret), _scm_from_gibaseinfo(c_implementor));
+}
 
 SCM
 gig_object_info_get_n_properties(SCM s_info)
@@ -1418,8 +1695,29 @@ gig_object_info_find_vfunc(SCM s_info, SCM s_name)
     return _scm_from_gibaseinfo(c_ret);
 }
 
-// g_object_info_find_vfunc_using_intefaces is not useful
-// g_object_info_get_class_struct  Is this useful?
+SCM
+gig_object_info_find_vfunc_using_interfaces(SCM s_info, SCM s_name)
+{
+    GIBaseInfo *c_info = _scm_to_gibaseinfo(s_info);
+    char *c_name = scm_to_utf8_string(s_name);
+    GIBaseInfo *c_ret;
+    GIObjectInfo *c_implementor;
+    c_ret = g_object_info_find_vfunc_using_interfaces(c_info, c_name, &c_implementor);
+    free(c_name);
+    if (c_ret == nullptr)
+        return scm_cons(SCM_BOOL_F, SCM_BOOL_F);
+    return scm_cons(_scm_from_gibaseinfo(c_ret), _scm_from_gibaseinfo(c_implementor));
+}
+
+SCM
+gig_object_info_get_class_struct(SCM s_info)
+{
+    GIBaseInfo *c_info = _scm_to_gibaseinfo(s_info);
+    GIStructInfo *c_struct = g_object_info_get_class_struct(c_info);
+    if (c_struct == nullptr)
+        return SCM_BOOL_F;
+    return _scm_from_gibaseinfo(c_struct);
+}
 
 SCM
 gig_object_info_get_ref_function(SCM s_info)
@@ -1626,7 +1924,16 @@ gig_interface_info_get_constant(SCM s_info, SCM s_index)
     return _scm_from_gibaseinfo(c_ret);
 }
 
-// g_interface_info_get_iface_struct is probably not useful
+SCM
+gig_interface_info_get_iface_struct(SCM s_info)
+{
+    GIBaseInfo *c_info = _scm_to_gibaseinfo(s_info);
+    GIStructInfo *c_ret;
+    c_ret = g_interface_info_get_iface_struct(c_info);
+    if(c_ret == nullptr)
+        return SCM_BOOL_F;
+    return _scm_from_gibaseinfo(c_ret);
+}
 
 ////////////////////////////////////////////////////////////////
 // GIArgInfo
@@ -1903,6 +2210,18 @@ gig_property_info_get_setter(SCM s_info)
 }
 #endif
 
+SCM gig_PARAM_READABLE;
+SCM gig_PARAM_WRITABLE;
+SCM gig_PARAM_READWRITE;
+SCM gig_PARAM_CONSTRUCT;
+SCM gig_PARAM_CONSTRUCT_ONLY;
+SCM gig_PARAM_LAX_VALIDATION;
+SCM gig_PARAM_STATIC_NAME;
+SCM gig_PARAM_STATIC_NICK;
+SCM gig_PARAM_STATIC_BLURB;
+SCM gig_PARAM_EXPLICIT_NOTIFY;
+SCM gig_PARAM_DEPRECATED;
+
 ////////////////////////////////////////////////////////////////
 // GITypeInfo
 ////////////////////////////////////////////////////////////////
@@ -1992,57 +2311,59 @@ gig_init_girepository ()
         scm_c_define_gsubr ("gibaseinfo?", 1, 0, 0, gig_is_gibaseinfo_p);
         scm_c_define_gsubr ("gibaseinfo=?", 2, 0, 0, gig_gibaseinfo_equalp);
 
-        scm_c_define_gsubr ("irepository-get-dependencies", 1, 0, 0,
+        scm_c_define_gsubr ("%irepository-get-dependencies", 1, 0, 0,
                             gig_irepository_get_dependencies);
-        scm_c_define_gsubr ("irepository-get-immediate-dependencies", 1, 0, 0,
+        scm_c_define_gsubr ("%irepository-get-immediate-dependencies", 1, 0, 0,
                             gig_irepository_get_immediate_dependencies);
-        scm_c_define_gsubr ("irepository-get-loaded-namespaces", 0, 0, 0,
+        scm_c_define_gsubr ("%irepository-get-loaded-namespaces", 0, 0, 0,
                             gig_irepository_get_loaded_namespaces);
-        scm_c_define_gsubr ("irepository-get-n-infos", 1, 0, 0,
+        scm_c_define_gsubr ("%irepository-get-n-infos", 1, 0, 0,
                             gig_irepository_get_n_infos);
-        scm_c_define_gsubr ("irepository-get-info", 2, 0, 0,
+        scm_c_define_gsubr ("%irepository-get-info", 2, 0, 0,
                             gig_irepository_get_info);
-        scm_c_define_gsubr ("irepository-enumerate-versions", 1, 0, 0,
+        scm_c_define_gsubr ("%irepository-enumerate-versions", 1, 0, 0,
                             gig_irepository_enumerate_versions);
-        scm_c_define_gsubr ("irepository-prepend-library-path", 1, 0, 0,
+        scm_c_define_gsubr ("%irepository-prepend-library-path", 1, 0, 0,
                             gig_irepository_prepend_library_path);
-        scm_c_define_gsubr ("irepository-get-search-path", 0, 0, 0,
+        scm_c_define_gsubr ("%irepository-prepend-search-path", 1, 0, 0,
+                            gig_irepository_prepend_search_path);
+        scm_c_define_gsubr ("%irepository-get-search-path", 0, 0, 0,
                             gig_irepository_get_search_path);
-        scm_c_define_gsubr ("irepository-get-typelib-path", 1, 0, 0,
+        scm_c_define_gsubr ("%irepository-get-typelib-path", 1, 0, 0,
                             gig_irepository_get_typelib_path);
-        scm_c_define_gsubr ("irepository-is-registered?", 2, 0, 0,
+        scm_c_define_gsubr ("%irepository-is-registered", 2, 0, 0,
                             gig_irepository_is_registered);
-        scm_c_define_gsubr ("irepository-require", 3, 0, 0,
+        scm_c_define_gsubr ("%irepository-require", 3, 0, 0,
                             gig_irepository_require);
-        scm_c_define_gsubr ("irepository-require-private", 4, 0, 0,
+        scm_c_define_gsubr ("%irepository-require-private", 4, 0, 0,
                             gig_irepository_require_private);
-        scm_c_define_gsubr ("irepository-get-c-prefix", 1, 0, 0,
+        scm_c_define_gsubr ("%irepository-get-c-prefix", 1, 0, 0,
                             gig_irepository_get_c_prefix);
-        scm_c_define_gsubr ("irepository-get-shared-libraries", 1, 0, 0,
+        scm_c_define_gsubr ("%irepository-get-shared-library", 1, 0, 0,
                             gig_irepository_get_shared_library);
-        scm_c_define_gsubr ("irepository-get-version", 1, 0, 0,
+        scm_c_define_gsubr ("%irepository-get-version", 1, 0, 0,
                             gig_irepository_get_version);
-        scm_c_define_gsubr ("irepository-find-by-gtype", 1, 0, 0,
+        scm_c_define_gsubr ("%irepository-find-by-gtype", 1, 0, 0,
                             gig_irepository_find_by_gtype);
-        scm_c_define_gsubr ("irepository-find-by-error-domain", 1, 0, 0,
+        scm_c_define_gsubr ("%irepository-find-by-error-domain", 1, 0, 0,
                             gig_irepository_find_by_error_domain);
-        scm_c_define_gsubr ("irepository-find-by-name", 2, 0, 0,
+        scm_c_define_gsubr ("%irepository-find-by-name", 2, 0, 0,
                             gig_irepository_find_by_name);
-        scm_c_define_gsubr ("irepository-get-object-gtype-interfaces", 1, 0, 0,
+        scm_c_define_gsubr ("%irepository-get-object-gtype-interfaces", 1, 0, 0,
                             gig_irepository_get_object_gtype_interfaces);
 
-        gig_IREPOSITORY_LOAD_FLAG_LAZY = flag("IREPOSITORY_LOAD_FLAG_LAZY",
+        gig_IREPOSITORY_LOAD_FLAG_LAZY = flag("%LOAD_FLAG_LAZY",
                                               G_IREPOSITORY_LOAD_FLAG_LAZY);
 
 #if GI_CHECK_VERSION(1,72,0)
-        scm_c_define_gsubr ("type-tag-is-basic?", 1, 0, 0,
+        scm_c_define_gsubr ("%type-tag-is-basic", 1, 0, 0,
                             gig_type_tag_is_basic);
-        scm_c_define_gsubr ("type-tag-is-container?", 1, 0, 0,
+        scm_c_define_gsubr ("%type-tag-is-container", 1, 0, 0,
                             gig_type_tag_is_container);
-        scm_c_define_gsubr ("type-tag-is-numeric?", 1, 0, 0,
+        scm_c_define_gsubr ("%type-tag-is-numeric", 1, 0, 0,
                             gig_type_tag_is_numeric);
 #endif
-        scm_c_define_gsubr ("type-tag-to-string", 1, 0, 0,
+        scm_c_define_gsubr ("%type-tag-to-string", 1, 0, 0,
                             gig_type_tag_to_string);
 
         gig_TYPE_TAG_VOID = flag("TYPE_TAG_VOID", GI_TYPE_TAG_VOID);
@@ -2068,392 +2389,439 @@ gig_init_girepository ()
         gig_TYPE_TAG_GHASH = flag("TYPE_TAG_GHASH", GI_TYPE_TAG_GHASH);
         gig_TYPE_TAG_ERROR = flag("TYPE_TAG_ERROR", GI_TYPE_TAG_ERROR);
         gig_TYPE_TAG_UNICHAR = flag("TYPE_TAG_UNICHAR", GI_TYPE_TAG_UNICHAR);
-        gig_ARRAY_TYPE_C = flag("ARRAY_TYPE_C", GI_ARRAY_TYPE_C);
-        gig_ARRAY_TYPE_ARRAY = flag("ARRAY_TYPE_ARRAY", GI_ARRAY_TYPE_ARRAY);
-        gig_ARRAY_TYPE_PTR_ARRAY = flag("ARRAY_TYPE_PTR_ARRAY",
+        gig_ARRAY_TYPE_C = flag("%ARRAY_TYPE_C", GI_ARRAY_TYPE_C);
+        gig_ARRAY_TYPE_ARRAY = flag("%ARRAY_TYPE_ARRAY", GI_ARRAY_TYPE_ARRAY);
+        gig_ARRAY_TYPE_PTR_ARRAY = flag("%ARRAY_TYPE_PTR_ARRAY",
                                         GI_ARRAY_TYPE_PTR_ARRAY);
-        gig_ARRAY_TYPE_BYTE_ARRAY = flag("ARRAY_TYPE_BYTE_ARRAY",
+        gig_ARRAY_TYPE_BYTE_ARRAY = flag("%ARRAY_TYPE_BYTE_ARRAY",
                                          GI_ARRAY_TYPE_BYTE_ARRAY);
         gig_TYPE_TAG_N_TYPES = flag("TYPE_TAG_N_TYPES", GI_TYPE_TAG_N_TYPES);
 
-        scm_c_define_gsubr ("get-major-version", 0, 0, 0,
+        scm_c_define_gsubr ("%get-major-version", 0, 0, 0,
                             gig_get_major_version);
-        scm_c_define_gsubr ("get-minor-version", 0, 0, 0,
+        scm_c_define_gsubr ("%get-minor-version", 0, 0, 0,
                             gig_get_minor_version);
-        scm_c_define_gsubr ("get-micro-version", 0, 0, 0,
+        scm_c_define_gsubr ("%get-micro-version", 0, 0, 0,
                             gig_get_micro_version);
-        scm_c_define_gsubr ("check-version", 3, 0, 0,
+        scm_c_define_gsubr ("%check-version", 3, 0, 0,
                             gig_check_version);
         gig_MAJOR_VERSION = flag("MAJOR_VERSION", GI_MAJOR_VERSION);
         gig_MINOR_VERSION = flag("MINOR_VERSION", GI_MINOR_VERSION);
         gig_MICRO_VERSION = flag("MICRO_VERSION", GI_MICRO_VERSION);
 
-        scm_c_define_gsubr ("base-info-equal?", 2, 0, 0,
+        scm_c_define_gsubr ("base-info-equal", 2, 0, 0,
                             gig_base_info_equal);
-        scm_c_define_gsubr ("base-info-get-type", 1, 0, 0,
+        scm_c_define_gsubr ("%base-info-get-type", 1, 0, 0,
                             gig_base_info_get_type);
-        scm_c_define_gsubr ("base-info-get-namespace", 1, 0, 0,
+        scm_c_define_gsubr ("%base-info-get-namespace", 1, 0, 0,
                             gig_base_info_get_namespace);
-        scm_c_define_gsubr ("base-info-get-name", 1, 0, 0,
+        scm_c_define_gsubr ("%base-info-get-name", 1, 0, 0,
                             gig_base_info_get_name);
-        scm_c_define_gsubr ("base-info-get-attribute", 2, 0, 0,
+        scm_c_define_gsubr ("%base-info-get-attribute", 2, 0, 0,
                             gig_base_info_get_attribute);
-        scm_c_define_gsubr ("base-info-get-attributes", 1, 0, 0,
+        scm_c_define_gsubr ("%base-info-get-attributes", 1, 0, 0,
                             gig_base_info_get_attributes);
-        scm_c_define_gsubr ("base-info-get-container", 1, 0, 0,
+        scm_c_define_gsubr ("%base-info-get-container", 1, 0, 0,
                             gig_base_info_get_container);
-        scm_c_define_gsubr ("base-info-is-deprecated?", 1, 0, 0,
+        scm_c_define_gsubr ("%base-info-is-deprecated", 1, 0, 0,
                             gig_base_info_is_deprecated);
-        scm_c_define_gsubr ("info-type-to-string", 1, 0, 0,
+        scm_c_define_gsubr ("%info-type-to-string", 1, 0, 0,
                             gig_info_type_to_string);
-        gig_INFO_TYPE_INVALID = flag("INFO_TYPE_INVALID", GI_INFO_TYPE_INVALID);
-        gig_INFO_TYPE_FUNCTION = flag("INFO_TYPE_FUNCTION",
+        gig_INFO_TYPE_INVALID = flag("%INFO_TYPE_INVALID", GI_INFO_TYPE_INVALID);
+        gig_INFO_TYPE_FUNCTION = flag("%INFO_TYPE_FUNCTION",
                                       GI_INFO_TYPE_FUNCTION);
-        gig_INFO_TYPE_CALLBACK = flag("INFO_TYPE_CALLBACK",
+        gig_INFO_TYPE_CALLBACK = flag("%INFO_TYPE_CALLBACK",
                                       GI_INFO_TYPE_CALLBACK);
-        gig_INFO_TYPE_STRUCT = flag("INFO_TYPE_STRUCT", GI_INFO_TYPE_STRUCT);
-        gig_INFO_TYPE_BOXED = flag("INFO_TYPE_BOXED", GI_INFO_TYPE_BOXED);
-        gig_INFO_TYPE_ENUM = flag("INFO_TYPE_ENUM", GI_INFO_TYPE_ENUM);
-        gig_INFO_TYPE_FLAGS = flag("INFO_TYPE_FLAGS", GI_INFO_TYPE_FLAGS);
-        gig_INFO_TYPE_OBJECT = flag("INFO_TYPE_OBJECT", GI_INFO_TYPE_OBJECT);
-        gig_INFO_TYPE_INTERFACE = flag("INFO_TYPE_INTERFACE",
+        gig_INFO_TYPE_STRUCT = flag("%INFO_TYPE_STRUCT", GI_INFO_TYPE_STRUCT);
+        gig_INFO_TYPE_BOXED = flag("%INFO_TYPE_BOXED", GI_INFO_TYPE_BOXED);
+        gig_INFO_TYPE_ENUM = flag("%INFO_TYPE_ENUM", GI_INFO_TYPE_ENUM);
+        gig_INFO_TYPE_FLAGS = flag("%INFO_TYPE_FLAGS", GI_INFO_TYPE_FLAGS);
+        gig_INFO_TYPE_OBJECT = flag("%INFO_TYPE_OBJECT", GI_INFO_TYPE_OBJECT);
+        gig_INFO_TYPE_INTERFACE = flag("%INFO_TYPE_INTERFACE",
                                        GI_INFO_TYPE_INTERFACE);
-        gig_INFO_TYPE_CONSTANT = flag("INFO_TYPE_CONSTANT",
+        gig_INFO_TYPE_CONSTANT = flag("%INFO_TYPE_CONSTANT",
                                       GI_INFO_TYPE_CONSTANT);
-        gig_INFO_TYPE_INVALID_0 = flag("INFO_TYPE_INVALID_0",
+        gig_INFO_TYPE_INVALID_0 = flag("%INFO_TYPE_INVALID_0",
                                        GI_INFO_TYPE_INVALID_0);
-        gig_INFO_TYPE_UNION = flag("INFO_TYPE_UNION", GI_INFO_TYPE_UNION);
-        gig_INFO_TYPE_VALUE = flag("INFO_TYPE_VALUE", GI_INFO_TYPE_VALUE);
-        gig_INFO_TYPE_SIGNAL = flag("INFO_TYPE_SIGNAL", GI_INFO_TYPE_SIGNAL);
-        gig_INFO_TYPE_VFUNC = flag("INFO_TYPE_VFUNC", GI_INFO_TYPE_VFUNC);
-        gig_INFO_TYPE_PROPERTY = flag("INFO_TYPE_PROPERTY",
+        gig_INFO_TYPE_UNION = flag("%INFO_TYPE_UNION", GI_INFO_TYPE_UNION);
+        gig_INFO_TYPE_VALUE = flag("%INFO_TYPE_VALUE", GI_INFO_TYPE_VALUE);
+        gig_INFO_TYPE_SIGNAL = flag("%INFO_TYPE_SIGNAL", GI_INFO_TYPE_SIGNAL);
+        gig_INFO_TYPE_VFUNC = flag("%INFO_TYPE_VFUNC", GI_INFO_TYPE_VFUNC);
+        gig_INFO_TYPE_PROPERTY = flag("%INFO_TYPE_PROPERTY",
                                       GI_INFO_TYPE_PROPERTY);
-        gig_INFO_TYPE_FIELD = flag("INFO_TYPE_FIELD", GI_INFO_TYPE_FIELD);
-        gig_INFO_TYPE_ARG = flag("INFO_TYPE_ARG", GI_INFO_TYPE_ARG);
-        gig_INFO_TYPE_TYPE = flag("INFO_TYPE_TYPE", GI_INFO_TYPE_TYPE);
-        gig_INFO_TYPE_UNRESOLVED = flag("INFO_TYPE_UNRESOLVED",
+        gig_INFO_TYPE_FIELD = flag("%INFO_TYPE_FIELD", GI_INFO_TYPE_FIELD);
+        gig_INFO_TYPE_ARG = flag("%INFO_TYPE_ARG", GI_INFO_TYPE_ARG);
+        gig_INFO_TYPE_TYPE = flag("%INFO_TYPE_TYPE", GI_INFO_TYPE_TYPE);
+        gig_INFO_TYPE_UNRESOLVED = flag("%INFO_TYPE_UNRESOLVED",
                                         GI_INFO_TYPE_UNRESOLVED);
 
-        scm_c_define_gsubr ("is-callable-info?", 1, 0, 0,
+        scm_c_define_gsubr ("%is-callable-info", 1, 0, 0,
                             gig_is_callable_info);
-        scm_c_define_gsubr ("callable-info-can-throw-gerror?", 1, 0, 0,
+        scm_c_define_gsubr ("%callable-info-can-throw-gerror", 1, 0, 0,
                             gig_callable_info_can_throw_gerror);
-        scm_c_define_gsubr ("callable-info-get-n-args", 1, 0, 0,
+        scm_c_define_gsubr ("%callable-info-get-n-args", 1, 0, 0,
                             gig_callable_info_get_n_args);
-        scm_c_define_gsubr ("callable-info-get-arg", 2, 0, 0,
+        scm_c_define_gsubr ("%callable-info-get-arg", 2, 0, 0,
                             gig_callable_info_get_n_args);
-        scm_c_define_gsubr ("callable-info-get-caller-owns", 1, 0, 0,
+        scm_c_define_gsubr ("%callable-info-get-caller-owns", 1, 0, 0,
                             gig_callable_info_get_caller_owns);
-        scm_c_define_gsubr ("callable-info-get-instance-ownership-transfer",
+        scm_c_define_gsubr ("%callable-info-get-instance-ownership-transfer",
                             1, 0, 0,
                             gig_callable_info_get_instance_ownership_transfer);
-        scm_c_define_gsubr ("callable-info-get-return-attribute", 2, 0, 0,
+        scm_c_define_gsubr ("%callable-info-get-return-attribute", 2, 0, 0,
                             gig_callable_info_get_return_attribute);
-        scm_c_define_gsubr ("callable-info-get-return-type", 1, 0, 0,
+        scm_c_define_gsubr ("%callable-info-get-return-type", 1, 0, 0,
                             gig_callable_info_get_return_type);
-        scm_c_define_gsubr ("callable-info-is-method?", 1, 0, 0,
+        scm_c_define_gsubr ("%callable-info-is-method", 1, 0, 0,
                             gig_callable_info_is_method);
-        scm_c_define_gsubr ("callable-info-get-return-attributes", 1, 0, 0,
+        scm_c_define_gsubr ("%callable-info-get-return-attributes", 1, 0, 0,
                             gig_callable_info_get_return_attributes);
-        scm_c_define_gsubr ("callable-info-may-return-null?", 1, 0, 0,
+        scm_c_define_gsubr ("%callable-info-may-return-null", 1, 0, 0,
                             gig_callable_info_may_return_null);
-        scm_c_define_gsubr ("callable-info-skip-return?", 1, 0, 0,
+        scm_c_define_gsubr ("%callable-info-skip-return", 1, 0, 0,
                             gig_callable_info_skip_return);
 
-        scm_c_define_gsubr ("is-function-info?", 1, 0, 0,
+        scm_c_define_gsubr ("%is-function-info", 1, 0, 0,
                             gig_is_function_info);
-        scm_c_define_gsubr ("function-info-get-flags", 1, 0, 0,
+        scm_c_define_gsubr ("%function-info-get-flags", 1, 0, 0,
                             gig_function_info_get_flags);
-        scm_c_define_gsubr ("function-info-get-property", 1, 0, 0,
+        scm_c_define_gsubr ("%function-info-get-property", 1, 0, 0,
                             gig_function_info_get_property);
-        scm_c_define_gsubr ("function-info-get-symbol", 1, 0, 0,
+        scm_c_define_gsubr ("%function-info-get-symbol", 1, 0, 0,
                             gig_function_info_get_symbol);
-        scm_c_define_gsubr ("function-info-get-vfunc", 1, 0, 0,
+        scm_c_define_gsubr ("%function-info-get-vfunc", 1, 0, 0,
                             gig_function_info_get_vfunc);
 
-        gig_FUNCTION_IS_METHOD = flag("FUNCTION_IS_METHOD",
+        gig_FUNCTION_IS_METHOD = flag("%FUNCTION_IS_METHOD",
                                       GI_FUNCTION_IS_METHOD);
-        gig_FUNCTION_IS_CONSTRUCTOR = flag("FUNCTION_IS_CONSTRUCTOR",
+        gig_FUNCTION_IS_CONSTRUCTOR = flag("%FUNCTION_IS_CONSTRUCTOR",
                                            GI_FUNCTION_IS_CONSTRUCTOR);
-        gig_FUNCTION_IS_GETTER = flag("FUNCTION_IS_GETTER",
+        gig_FUNCTION_IS_GETTER = flag("%FUNCTION_IS_GETTER",
                                       GI_FUNCTION_IS_GETTER);
-        gig_FUNCTION_IS_SETTER = flag("FUNCTION_IS_SETTER", GI_FUNCTION_IS_SETTER);
-        gig_FUNCTION_VRAPS_VFUNC = flag("FUNCTION_WRAPS_VFUNC", GI_FUNCTION_WRAPS_VFUNC);
-        gig_FUNCTION_THROWS = flag("FUNCTION_THROWS", GI_FUNCTION_THROWS);
+        gig_FUNCTION_IS_SETTER = flag("%FUNCTION_IS_SETTER", GI_FUNCTION_IS_SETTER);
+        gig_FUNCTION_VRAPS_VFUNC = flag("%FUNCTION_WRAPS_VFUNC", GI_FUNCTION_WRAPS_VFUNC);
+        gig_FUNCTION_THROWS = flag("%FUNCTION_THROWS", GI_FUNCTION_THROWS);
 
-        scm_c_define_gsubr ("is-signal-info?", 1, 0, 0,
+        scm_c_define_gsubr ("%is-signal-info", 1, 0, 0,
                             gig_is_signal_info);
-        scm_c_define_gsubr ("signal-info-get-flags", 1, 0, 0,
+        scm_c_define_gsubr ("%signal-info-get-flags", 1, 0, 0,
                             gig_signal_info_get_flags);
-        scm_c_define_gsubr ("signal-info-get-class-closure", 1, 0, 0,
+        scm_c_define_gsubr ("%signal-info-get-class-closure", 1, 0, 0,
                             gig_signal_info_get_class_closure);
-        scm_c_define_gsubr ("signal-info-true-stops-emit?", 1, 0, 0,
+        scm_c_define_gsubr ("%signal-info-true-stops-emit", 1, 0, 0,
                             gig_signal_info_true_stops_emit);
 
-        scm_c_define_gsubr ("vfunc-info-get-flags", 1, 0, 0,
+        gig_SIGNAL_RUN_FIRST = flag("%SIGNAL_RUN_FIRST", G_SIGNAL_RUN_FIRST);
+        gig_SIGNAL_RUN_LAST = flag("%SIGNAL_RUN_LAST", G_SIGNAL_RUN_LAST);
+        gig_SIGNAL_RUN_CLEANUP = flag("%SIGNAL_RUN_CLEANUP", G_SIGNAL_RUN_CLEANUP);
+        gig_SIGNAL_NO_RECURSE = flag("%SIGNAL_NO_RECURSE", G_SIGNAL_NO_RECURSE);
+        gig_SIGNAL_DETAILED = flag("%SIGNAL_DETAILED", G_SIGNAL_DETAILED);
+        gig_SIGNAL_ACTION = flag("%SIGNAL_ACTION", G_SIGNAL_ACTION);
+        gig_SIGNAL_NO_HOOKS = flag("%SIGNAL_NO_HOOKS", G_SIGNAL_NO_HOOKS);
+        gig_SIGNAL_MUST_COLLECT = flag("%SIGNAL_MUST_COLLECT", G_SIGNAL_MUST_COLLECT);
+        gig_SIGNAL_DEPRECATED = flag("%SIGNAL_DEPRECATED", G_SIGNAL_DEPRECATED);
+        gig_SIGNAL_ACCUMULATOR_FIRST_RUN = flag("%SIGNAL_ACCUMULATOR_FIRST_RUN", G_SIGNAL_ACCUMULATOR_FIRST_RUN);
+
+        scm_c_define_gsubr ("%is-vfunc-info", 1, 0, 0,
+                            gig_is_vfunc_info);
+        scm_c_define_gsubr ("%vfunc-info-get-flags", 1, 0, 0,
                             gig_vfunc_info_get_flags);
-        scm_c_define_gsubr ("vfunc-info-get-offset", 1, 0, 0,
+        scm_c_define_gsubr ("%vfunc-info-get-offset", 1, 0, 0,
                             gig_vfunc_info_get_offset);
-        scm_c_define_gsubr ("vfunc-info-get-signal", 1, 0, 0,
+        scm_c_define_gsubr ("%vfunc-info-get-signal", 1, 0, 0,
                             gig_vfunc_info_get_signal);
-        scm_c_define_gsubr ("vfunc-info-get-invoker", 1, 0, 0,
+        scm_c_define_gsubr ("%vfunc-info-get-invoker", 1, 0, 0,
                             gig_vfunc_info_get_invoker);
 
-        gig_VFUNC_MUST_CHAIN_UP = flag("VFUNC_MUST_CHAIN_UP",
+        gig_VFUNC_MUST_CHAIN_UP = flag("%VFUNC_MUST_CHAIN_UP",
                                        GI_VFUNC_MUST_CHAIN_UP);
-        gig_VFUNC_MUST_OVERRIDE = flag("VFUNC_MUST_OVERRIDE",
+        gig_VFUNC_MUST_OVERRIDE = flag("%VFUNC_MUST_OVERRIDE",
                                        GI_VFUNC_MUST_OVERRIDE);
-        gig_VFUNC_MUST_NOT_OVERRIDE = flag("VFUNC_MUST_NOT_OVERRIDE",
+        gig_VFUNC_MUST_NOT_OVERRIDE = flag("%VFUNC_MUST_NOT_OVERRIDE",
                                            GI_VFUNC_MUST_NOT_OVERRIDE);
-        gig_VFUNC_THROWS = flag("VFUNC_THROWS", GI_VFUNC_THROWS);
+        gig_VFUNC_THROWS = flag("%VFUNC_THROWS", GI_VFUNC_THROWS);
 
-        scm_c_define_gsubr ("is-registered-type-info?", 1, 0, 0,
+        scm_c_define_gsubr ("%is-registered-type-info", 1, 0, 0,
                             gig_is_registered_type_info);
-        scm_c_define_gsubr ("registered-type-info-get-type-name", 1, 0, 0,
+        scm_c_define_gsubr ("%registered-type-info-get-type-name", 1, 0, 0,
                             gig_registered_type_info_get_type_name);
-        scm_c_define_gsubr ("registered-type-info-get-type-init", 1, 0, 0,
+        scm_c_define_gsubr ("%registered-type-info-get-type-init", 1, 0, 0,
                             gig_registered_type_info_get_type_init);
-        scm_c_define_gsubr ("registered-type-info-has-g-type", 1, 0, 0,
-                            gig_registered_type_info_has_g_type);
+        scm_c_define_gsubr ("%registered-type-info-get-g-type", 1, 0, 0,
+                            gig_registered_type_info_get_g_type);
 
-        scm_c_define_gsubr ("is-enum-info?", 1, 0, 0,
+        scm_c_define_gsubr ("%is-enum-info", 1, 0, 0,
                             gig_is_enum_info);
-        scm_c_define_gsubr ("is-value-info?", 1, 0, 0,
-                            gig_is_value_info);
-        scm_c_define_gsubr ("enum-info-get-n-values", 1, 0, 0,
+        scm_c_define_gsubr ("%enum-info-get-n-values", 1, 0, 0,
                             gig_enum_info_get_n_values);
-        scm_c_define_gsubr ("enum-info-get-value", 2, 0, 0,
+        scm_c_define_gsubr ("%enum-info-get-value", 2, 0, 0,
                             gig_enum_info_get_value);
-        scm_c_define_gsubr ("enum-info-get-n-methods", 1, 0, 0,
+        scm_c_define_gsubr ("%enum-info-get-n-methods", 1, 0, 0,
                             gig_enum_info_get_n_methods);
-        scm_c_define_gsubr ("enum-info-get-method", 2, 0, 0,
+        scm_c_define_gsubr ("%enum-info-get-method", 2, 0, 0,
                             gig_enum_info_get_method);
-        scm_c_define_gsubr ("enum-info-get-error-domain", 1, 0, 0,
+        scm_c_define_gsubr ("%enum-info-get-storage-type", 1, 0, 0,
+                            gig_enum_info_get_storage_type);
+        scm_c_define_gsubr ("%enum-info-get-error-domain", 1, 0, 0,
                             gig_enum_info_get_error_domain);
+        scm_c_define_gsubr ("%is-value-info", 1, 0, 0,
+                            gig_is_value_info);
+        scm_c_define_gsubr ("%value-info-get-value", 1, 0, 0,
+                            gig_value_info_get_value);
 
-        scm_c_define_gsubr ("is-struct-info?", 1, 0, 0,
-                            gig_is_enum_info);
-        scm_c_define_gsubr ("struct-info-find-field", 2, 0, 0,
+        scm_c_define_gsubr ("%is-struct-info", 1, 0, 0,
+                            gig_is_struct_info);
+        scm_c_define_gsubr ("%struct-info-find-field", 2, 0, 0,
                             gig_struct_info_find_field);
-        scm_c_define_gsubr ("struct-info-get-alignment", 1, 0, 0,
+        scm_c_define_gsubr ("%struct-info-get-alignment", 1, 0, 0,
                             gig_struct_info_get_alignment);
-        scm_c_define_gsubr ("struct-info-get-size", 1, 0, 0,
+        scm_c_define_gsubr ("%struct-info-get-size", 1, 0, 0,
                             gig_struct_info_get_size);
-        scm_c_define_gsubr ("struct-info-is-gtype-struct?", 1, 0, 0,
+        scm_c_define_gsubr ("%struct-info-is-gtype-struct", 1, 0, 0,
                             gig_struct_info_is_gtype_struct);
-        scm_c_define_gsubr ("struct-info-is-foreign?", 1, 0, 0,
+        scm_c_define_gsubr ("%struct-info-is-foreign", 1, 0, 0,
                             gig_struct_info_is_foreign);
-        scm_c_define_gsubr ("struct-info-get-n-fields", 1, 0, 0,
+        scm_c_define_gsubr ("%struct-info-get-n-fields", 1, 0, 0,
                             gig_struct_info_get_n_fields);
-        scm_c_define_gsubr ("struct-info-get-field", 2, 0, 0,
+        scm_c_define_gsubr ("%struct-info-get-field", 2, 0, 0,
                             gig_struct_info_get_field);
-        scm_c_define_gsubr ("struct-info-get-n-methods", 1, 0, 0,
+        scm_c_define_gsubr ("%struct-info-get-n-methods", 1, 0, 0,
                             gig_struct_info_get_n_methods);
-        scm_c_define_gsubr ("struct-info-get-method", 2, 0, 0,
+        scm_c_define_gsubr ("%struct-info-get-method", 2, 0, 0,
                             gig_struct_info_get_method);
-        scm_c_define_gsubr ("struct-info-find-method", 2, 0, 0,
+        scm_c_define_gsubr ("%struct-info-find-method", 2, 0, 0,
                             gig_struct_info_find_method);
 
-        scm_c_define_gsubr ("union-info-get-n-fields", 1, 0, 0,
+        scm_c_define_gsubr ("%is-union-info", 1, 0, 0,
+                            gig_is_union_info);
+        scm_c_define_gsubr ("%union-info-get-n-fields", 1, 0, 0,
                             gig_union_info_get_n_fields);
-        scm_c_define_gsubr ("union-info-get-field", 2, 0, 0,
+        scm_c_define_gsubr ("%union-info-get-field", 2, 0, 0,
                             gig_union_info_get_field);
-        scm_c_define_gsubr ("union-info-get-n-methods", 1, 0, 0,
+        scm_c_define_gsubr ("%union-info-get-n-methods", 1, 0, 0,
                             gig_union_info_get_n_methods);
-        scm_c_define_gsubr ("union-info-get-method", 2, 0, 0,
+        scm_c_define_gsubr ("%union-info-get-method", 2, 0, 0,
                             gig_union_info_get_method);
-        scm_c_define_gsubr ("union-info-is-discriminated", 1, 0, 0,
+        scm_c_define_gsubr ("%union-info-is-discriminated", 1, 0, 0,
                             gig_union_info_is_discriminated);
-        scm_c_define_gsubr ("union-info-get-discriminator-offset", 1, 0, 0,
+        scm_c_define_gsubr ("%union-info-get-discriminator-offset", 1, 0, 0,
                             gig_union_info_get_discriminator_offset);
-        scm_c_define_gsubr ("union-info-get-discriminator-type", 1, 0, 0,
+        scm_c_define_gsubr ("%union-info-get-discriminator-type", 1, 0, 0,
                             gig_union_info_get_discriminator_type);
-        scm_c_define_gsubr ("union-info-get-discriminator", 2, 0, 0,
+        scm_c_define_gsubr ("%union-info-get-discriminator", 2, 0, 0,
                             gig_union_info_get_discriminator);
-        scm_c_define_gsubr ("union-info-find-method", 2, 0, 0,
+        scm_c_define_gsubr ("%union-info-find-method", 2, 0, 0,
                             gig_union_info_find_method);
-        scm_c_define_gsubr ("union-info-get-size", 1, 0, 0,
+        scm_c_define_gsubr ("%union-info-get-size", 1, 0, 0,
                             gig_union_info_get_size);
-        scm_c_define_gsubr ("union-info-get-alignment", 1, 0, 0,
+        scm_c_define_gsubr ("%union-info-get-alignment", 1, 0, 0,
                             gig_union_info_get_alignment);
 
-        scm_c_define_gsubr ("is-object-info?", 1, 0, 0,
+        scm_c_define_gsubr ("%is-object-info", 1, 0, 0,
                             gig_is_object_info);
-        scm_c_define_gsubr ("object-info-get-abstract?", 1, 0, 0,
+        scm_c_define_gsubr ("%object-info-get-abstract", 1, 0, 0,
                             gig_object_info_get_abstract);
-        scm_c_define_gsubr ("object-info-get-fundamental", 1, 0, 0,
+        scm_c_define_gsubr ("%object-info-get-fundamental", 1, 0, 0,
                             gig_object_info_get_fundamental);
-        scm_c_define_gsubr ("object-info-get-parent", 1, 0, 0,
+        scm_c_define_gsubr ("%object-info-get-final", 1, 0, 0,
+                            gig_object_info_get_final);
+        scm_c_define_gsubr ("%object-info-get-parent", 1, 0, 0,
                             gig_object_info_get_parent);
-        scm_c_define_gsubr ("object-info-get-type-name", 1, 0, 0,
+        scm_c_define_gsubr ("%object-info-get-type-name", 1, 0, 0,
                             gig_object_info_get_type_name);
-        scm_c_define_gsubr ("object-info-get-type-init", 1, 0, 0,
+        scm_c_define_gsubr ("%object-info-get-type-init", 1, 0, 0,
                             gig_object_info_get_type_init);
-        scm_c_define_gsubr ("object-info-get-n-constants", 1, 0, 0,
+        scm_c_define_gsubr ("%object-info-get-n-constants", 1, 0, 0,
                             gig_object_info_get_n_constants);
-        scm_c_define_gsubr ("object-info-get-constant", 2, 0, 0,
+        scm_c_define_gsubr ("%object-info-get-constant", 2, 0, 0,
                             gig_object_info_get_constant);
-        scm_c_define_gsubr ("object-info-get-n-fields", 1, 0, 0,
+        scm_c_define_gsubr ("%object-info-get-n-fields", 1, 0, 0,
                             gig_object_info_get_n_fields);
-        scm_c_define_gsubr ("object-info-get-field", 2, 0, 0,
+        scm_c_define_gsubr ("%object-info-get-field", 2, 0, 0,
                             gig_object_info_get_field);
-        scm_c_define_gsubr ("object-info-get-n-interfaces", 1, 0, 0,
+        scm_c_define_gsubr ("%object-info-get-n-interfaces", 1, 0, 0,
                             gig_object_info_get_n_interfaces);
-        scm_c_define_gsubr ("object-info-get-interface", 2, 0, 0,
+        scm_c_define_gsubr ("%object-info-get-interface", 2, 0, 0,
                             gig_object_info_get_interface);
-        scm_c_define_gsubr ("object-info-get-n-methods", 1, 0, 0,
+        scm_c_define_gsubr ("%object-info-get-n-methods", 1, 0, 0,
                             gig_object_info_get_n_methods);
-        scm_c_define_gsubr ("object-info-get-method", 2, 0, 0,
+        scm_c_define_gsubr ("%object-info-get-method", 2, 0, 0,
                             gig_object_info_get_method);
-        scm_c_define_gsubr ("object-info-find-method", 2, 0, 0,
+        scm_c_define_gsubr ("%object-info-find-method", 2, 0, 0,
                             gig_object_info_find_method);
-        scm_c_define_gsubr ("object-info-get-n-properties", 1, 0, 0,
+        scm_c_define_gsubr ("%object-info-find-method-using-interfaces", 2, 0, 0,
+                            gig_object_info_find_method_using_interfaces);
+        scm_c_define_gsubr ("%object-info-get-n-properties", 1, 0, 0,
                             gig_object_info_get_n_properties);
-        scm_c_define_gsubr ("object-info-get-property", 2, 0, 0,
+        scm_c_define_gsubr ("%object-info-get-property", 2, 0, 0,
                             gig_object_info_get_property);
-        scm_c_define_gsubr ("object-info-get-n-signals", 1, 0, 0,
+        scm_c_define_gsubr ("%object-info-get-n-signals", 1, 0, 0,
                             gig_object_info_get_n_signals);
-        scm_c_define_gsubr ("object-info-get-signal", 2, 0, 0,
+        scm_c_define_gsubr ("%object-info-get-signal", 2, 0, 0,
                             gig_object_info_get_signal);
-        scm_c_define_gsubr ("object-info-find-signal", 2, 0, 0,
+        scm_c_define_gsubr ("%object-info-find-signal", 2, 0, 0,
                             gig_object_info_find_signal);
-        scm_c_define_gsubr ("object-info-get-n-vfuncs", 1, 0, 0,
+        scm_c_define_gsubr ("%object-info-get-n-vfuncs", 1, 0, 0,
                             gig_object_info_get_n_vfuncs);
-        scm_c_define_gsubr ("object-info-get-vfunc", 2, 0, 0,
+        scm_c_define_gsubr ("%object-info-get-vfunc", 2, 0, 0,
                             gig_object_info_get_vfunc);
-        scm_c_define_gsubr ("object-info-find-vfunc", 2, 0, 0,
+        scm_c_define_gsubr ("%object-info-find-vfunc", 2, 0, 0,
                             gig_object_info_find_vfunc);
-        scm_c_define_gsubr ("object-info-get-ref-function", 1, 0, 0,
+        scm_c_define_gsubr ("%object-info-find-vfunc-using-interfaces", 2, 0, 0,
+                            gig_object_info_find_vfunc_using_interfaces);
+        scm_c_define_gsubr ("%object-info-get-class-struct", 1, 0, 0,
+                            gig_object_info_get_class_struct);
+        scm_c_define_gsubr ("%object-info-get-ref-function", 1, 0, 0,
                             gig_object_info_get_ref_function);
-        scm_c_define_gsubr ("object-info-get-unref-function", 1, 0, 0,
+        scm_c_define_gsubr ("%object-info-get-unref-function", 1, 0, 0,
                             gig_object_info_get_unref_function);
-        scm_c_define_gsubr ("object-info-get-set-value-function", 1, 0, 0,
+        scm_c_define_gsubr ("%object-info-get-set-value-function", 1, 0, 0,
                             gig_object_info_get_set_value_function);
-        scm_c_define_gsubr ("object-info-get-get-value-function", 1, 0, 0,
+        scm_c_define_gsubr ("%object-info-get-get-value-function", 1, 0, 0,
                             gig_object_info_get_get_value_function);
 
-        scm_c_define_gsubr ("is-interface-info?", 1, 0, 0,
+        scm_c_define_gsubr ("%is-interface-info", 1, 0, 0,
                             gig_is_interface_info);
-        scm_c_define_gsubr ("interface-info-get-n-prerequisites", 1, 0, 0,
+        scm_c_define_gsubr ("%interface-info-get-n-prerequisites", 1, 0, 0,
                             gig_interface_info_get_n_prerequisites);
-        scm_c_define_gsubr ("interface-info-get-prerequisite", 2, 0, 0,
+        scm_c_define_gsubr ("%interface-info-get-prerequisite", 2, 0, 0,
                             gig_interface_info_get_prerequisite);
-        scm_c_define_gsubr ("interface-info-get-n-properties", 1, 0, 0,
+        scm_c_define_gsubr ("%interface-info-get-n-properties", 1, 0, 0,
                             gig_interface_info_get_n_properties);
-        scm_c_define_gsubr ("interface-info-get-property", 2, 0, 0,
+        scm_c_define_gsubr ("%interface-info-get-property", 2, 0, 0,
                             gig_interface_info_get_property);
-        scm_c_define_gsubr ("interface-info-get-n-methods", 1, 0, 0,
+        scm_c_define_gsubr ("%interface-info-get-n-methods", 1, 0, 0,
                             gig_interface_info_get_n_methods);
-        scm_c_define_gsubr ("interface-info-get-method", 2, 0, 0,
+        scm_c_define_gsubr ("%interface-info-get-method", 2, 0, 0,
                             gig_interface_info_get_method);
-        scm_c_define_gsubr ("interface-info-find-method", 2, 0, 0,
+        scm_c_define_gsubr ("%interface-info-find-method", 2, 0, 0,
                             gig_interface_info_find_method);
-        scm_c_define_gsubr ("interface-info-get-n-signals", 1, 0, 0,
+        scm_c_define_gsubr ("%interface-info-get-n-signals", 1, 0, 0,
                             gig_interface_info_get_n_signals);
-        scm_c_define_gsubr ("interface-info-get-signal", 2, 0, 0,
+        scm_c_define_gsubr ("%interface-info-get-signal", 2, 0, 0,
                             gig_interface_info_get_signal);
-        scm_c_define_gsubr ("interface-info-find-signal", 2, 0, 0,
+        scm_c_define_gsubr ("%interface-info-find-signal", 2, 0, 0,
                             gig_interface_info_find_signal);
-        scm_c_define_gsubr ("interface-info-get-n-vfuncs", 1, 0, 0,
+        scm_c_define_gsubr ("%interface-info-get-n-vfuncs", 1, 0, 0,
                             gig_interface_info_get_n_vfuncs);
-        scm_c_define_gsubr ("interface-info-get-vfunc", 2, 0, 0,
+        scm_c_define_gsubr ("%interface-info-get-vfunc", 2, 0, 0,
                             gig_interface_info_get_vfunc);
-        scm_c_define_gsubr ("interface-info-find-vfunc", 2, 0, 0,
+        scm_c_define_gsubr ("%interface-info-find-vfunc", 2, 0, 0,
                             gig_interface_info_find_vfunc);
-        scm_c_define_gsubr ("interface-info-get-n-constants", 1, 0, 0,
+        scm_c_define_gsubr ("%interface-info-get-n-constants", 1, 0, 0,
                             gig_interface_info_get_n_constants);
-        scm_c_define_gsubr ("interface-info-get-constant", 2, 0, 0,
+        scm_c_define_gsubr ("%interface-info-get-constant", 2, 0, 0,
                             gig_interface_info_get_constant);
+        scm_c_define_gsubr ("%interface-info-get-iface-struct", 1, 0, 0,
+                            gig_interface_info_get_iface_struct);
 
-        scm_c_define_gsubr ("is-arg-info?", 1, 0, 0,
+        scm_c_define_gsubr ("%is-arg-info", 1, 0, 0,
                             gig_is_arg_info);
-        scm_c_define_gsubr ("arg-info-get-closure", 1, 0, 0,
+        scm_c_define_gsubr ("%arg-info-get-closure", 1, 0, 0,
                             gig_arg_info_get_closure);
-        scm_c_define_gsubr ("arg-info-get-destroy", 1, 0, 0,
+        scm_c_define_gsubr ("%arg-info-get-destroy", 1, 0, 0,
                             gig_arg_info_get_destroy);
-        scm_c_define_gsubr ("arg-info-get-ownership-transfer", 1, 0, 0,
+        scm_c_define_gsubr ("%arg-info-get-direction", 1, 0, 0,
+                            gig_arg_info_get_direction);
+        scm_c_define_gsubr ("%arg-info-get-ownership-transfer", 1, 0, 0,
                             gig_arg_info_get_ownership_transfer);
-        scm_c_define_gsubr ("arg-info-get-scope", 1, 0, 0,
+        scm_c_define_gsubr ("%arg-info-get-scope", 1, 0, 0,
                             gig_arg_info_get_scope);
-        scm_c_define_gsubr ("arg-info-get-type", 1, 0, 0,
+        scm_c_define_gsubr ("%arg-info-get-type", 1, 0, 0,
                             gig_arg_info_get_type);
-        scm_c_define_gsubr ("arg-info-may-be-null?", 1, 0, 0,
+        scm_c_define_gsubr ("%arg-info-may-be-null", 1, 0, 0,
                             gig_arg_info_may_be_null);
-        scm_c_define_gsubr ("arg-info-is-caller-allocates?", 1, 0, 0,
+        scm_c_define_gsubr ("%arg-info-is-caller-allocates", 1, 0, 0,
                             gig_arg_info_is_caller_allocates);
-        scm_c_define_gsubr ("arg-info-is-optional?", 1, 0, 0,
+        scm_c_define_gsubr ("%arg-info-is-optional", 1, 0, 0,
                             gig_arg_info_is_optional);
-        scm_c_define_gsubr ("arg-info-is-return-value?", 1, 0, 0,
+        scm_c_define_gsubr ("%arg-info-is-return-value", 1, 0, 0,
                             gig_arg_info_is_return_value);
-        scm_c_define_gsubr ("arg-info-is-skip?", 1, 0, 0,
+        scm_c_define_gsubr ("%arg-info-is-skip", 1, 0, 0,
                             gig_arg_info_is_skip);
 
-        gig_DIRECTION_IN = flag("DIRECTION_IN", GI_DIRECTION_IN);
-        gig_DIRECTION_OUT = flag("DIRECTION_OUT", GI_DIRECTION_OUT);
-        gig_DIRECTION_INOUT = flag("DIRECTION_INOUT", GI_DIRECTION_INOUT);
-        gig_SCOPE_TYPE_INVALID = flag("SCOPE_TYPE_INVALID",
+        gig_DIRECTION_IN = flag("%DIRECTION_IN", GI_DIRECTION_IN);
+        gig_DIRECTION_OUT = flag("%DIRECTION_OUT", GI_DIRECTION_OUT);
+        gig_DIRECTION_INOUT = flag("%DIRECTION_INOUT", GI_DIRECTION_INOUT);
+
+        gig_SCOPE_TYPE_INVALID = flag("%SCOPE_TYPE_INVALID",
                                       GI_SCOPE_TYPE_INVALID);
-        gig_SCOPE_TYPE_CALL = flag("SCOPE_TYPE_CALL", GI_SCOPE_TYPE_CALL);
-        gig_SCOPE_TYPE_ASYNC = flag("SCOPE_TYPE_ASYNC", GI_SCOPE_TYPE_ASYNC);
-        gig_SCOPE_TYPE_NOTIFIED = flag("SCOPE_TYPE_NOTIFIED",
+        gig_SCOPE_TYPE_CALL = flag("%SCOPE_TYPE_CALL", GI_SCOPE_TYPE_CALL);
+        gig_SCOPE_TYPE_ASYNC = flag("%SCOPE_TYPE_ASYNC", GI_SCOPE_TYPE_ASYNC);
+        gig_SCOPE_TYPE_NOTIFIED = flag("%SCOPE_TYPE_NOTIFIED",
                                        GI_SCOPE_TYPE_NOTIFIED);
-        gig_TRANSFER_NOTHING = flag("TRANSFER_NOTHING", GI_TRANSFER_NOTHING);
-        gig_TRANSFER_CONTAINER = flag("TRANSFER_CONTAINER",
+        gig_SCOPE_TYPE_FOREVER = flag("%SCOPE_TYPE_FOREVER",
+                                       GI_SCOPE_TYPE_FOREVER);
+
+        gig_TRANSFER_NOTHING = flag("%TRANSFER_NOTHING", GI_TRANSFER_NOTHING);
+        gig_TRANSFER_CONTAINER = flag("%TRANSFER_CONTAINER",
                                       GI_TRANSFER_CONTAINER);
-        gig_TRANSFER_EVERYTHING = flag("TRANSFER_EVERYTHING",
+        gig_TRANSFER_EVERYTHING = flag("%TRANSFER_EVERYTHING",
                                        GI_TRANSFER_EVERYTHING);
 
-        scm_c_define_gsubr ("is-constant-info?", 1, 0, 0,
+        scm_c_define_gsubr ("%is-constant-info", 1, 0, 0,
                             gig_is_constant_info);
-        scm_c_define_gsubr ("constant-info-get-type", 1, 0, 0,
+        scm_c_define_gsubr ("%constant-info-get-type", 1, 0, 0,
                             gig_constant_info_get_type);
-        scm_c_define_gsubr ("constant-info-get-value", 1, 0, 0,
+        scm_c_define_gsubr ("%constant-info-get-value", 1, 0, 0,
                             gig_constant_info_get_value);
 
-        scm_c_define_gsubr ("is-field-info?", 1, 0, 0,
+        scm_c_define_gsubr ("%is-field-info", 1, 0, 0,
                             gig_is_field_info);
-        scm_c_define_gsubr ("field-info-get-flags", 1, 0, 0,
+        scm_c_define_gsubr ("%field-info-get-flags", 1, 0, 0,
                             gig_field_info_get_flags);
-        scm_c_define_gsubr ("field-info-get-offset", 1, 0, 0,
+        scm_c_define_gsubr ("%field-info-get-offset", 1, 0, 0,
                             gig_field_info_get_offset);
-        scm_c_define_gsubr ("field-info-get-size", 1, 0, 0,
+        scm_c_define_gsubr ("%field-info-get-size", 1, 0, 0,
                             gig_field_info_get_size);
-        scm_c_define_gsubr ("field-info-get-type", 1, 0, 0,
+        scm_c_define_gsubr ("%field-info-get-type", 1, 0, 0,
                             gig_field_info_get_type);
-        gig_FIELD_IS_WRITABLE = flag("FIELD_IS_WRITABLE", GI_FIELD_IS_WRITABLE);
-        gig_FIELD_IS_READABLE = flag("FIELD_IS_READABLE", GI_FIELD_IS_READABLE);
-        scm_c_define_gsubr ("is-property-info?", 1, 0, 0,
+        gig_FIELD_IS_WRITABLE = flag("%FIELD_IS_WRITABLE", GI_FIELD_IS_WRITABLE);
+        gig_FIELD_IS_READABLE = flag("%FIELD_IS_READABLE", GI_FIELD_IS_READABLE);
+        scm_c_define_gsubr ("%is-property-info", 1, 0, 0,
                             gig_is_property_info);
-        scm_c_define_gsubr ("property-info-get-flags", 1, 0, 0,
+        scm_c_define_gsubr ("%property-info-get-flags", 1, 0, 0,
                             gig_property_info_get_flags);
-        scm_c_define_gsubr ("property-info-get-ownership-transfer", 1, 0, 0,
+        scm_c_define_gsubr ("%property-info-get-ownership-transfer", 1, 0, 0,
                             gig_property_info_get_ownership_transfer);
-        scm_c_define_gsubr ("property-info-get-type", 1, 0, 0,
+        scm_c_define_gsubr ("%property-info-get-type", 1, 0, 0,
                             gig_property_info_get_type);
 #if GI_CHECK_VERSION(1,70,0)
-        scm_c_define_gsubr ("property-info-get-getter", 1, 0, 0,
+        scm_c_define_gsubr ("%property-info-get-getter", 1, 0, 0,
                             gig_property_info_get_getter);
-        scm_c_define_gsubr ("property-info-get-setter", 1, 0, 0,
+        scm_c_define_gsubr ("%property-info-get-setter", 1, 0, 0,
                             gig_property_info_get_setter);
 #endif
 
-        scm_c_define_gsubr ("is-type-info?", 1, 0, 0,
+        gig_PARAM_READABLE = flag("%PARAM_READABLE", G_PARAM_READABLE);
+        gig_PARAM_WRITABLE = flag("%PARAM_WRITABLE", G_PARAM_WRITABLE);
+        gig_PARAM_READWRITE = flag("%PARAM_READWRITE", G_PARAM_READWRITE);
+        gig_PARAM_CONSTRUCT = flag("%PARAM_CONSTRUCT", G_PARAM_CONSTRUCT);
+        gig_PARAM_CONSTRUCT_ONLY = flag("%PARAM_CONSTRUCT_ONLY", G_PARAM_CONSTRUCT_ONLY);
+        gig_PARAM_LAX_VALIDATION = flag("%PARAM_LAX_VALIDATION", G_PARAM_LAX_VALIDATION);
+        gig_PARAM_STATIC_NAME = flag("%PARAM_STATIC_NAME", G_PARAM_STATIC_NAME);
+        gig_PARAM_STATIC_NICK = flag("%PARAM_STATIC_NICK", G_PARAM_STATIC_NICK);
+        gig_PARAM_STATIC_BLURB = flag("%PARAM_STATIC_BLURB", G_PARAM_STATIC_BLURB);
+        gig_PARAM_EXPLICIT_NOTIFY = flag("%PARAM_EXPLICIT_NOTIFY", G_PARAM_EXPLICIT_NOTIFY);
+        gig_PARAM_DEPRECATED = flag("%PARAM_DEPRECATED", G_PARAM_DEPRECATED);
+
+        scm_c_define_gsubr ("%is-type-info", 1, 0, 0,
                             gig_is_type_info);
-        scm_c_define_gsubr ("type-info-is-pointer", 1, 0, 0,
+        scm_c_define_gsubr ("%type-info-is-pointer", 1, 0, 0,
                             gig_type_info_is_pointer);
-        scm_c_define_gsubr ("type-info-get-tag", 1, 0, 0,
+        scm_c_define_gsubr ("%type-info-get-tag", 1, 0, 0,
                             gig_type_info_get_tag);
-        scm_c_define_gsubr ("type-info-get-param-type", 1, 0, 0,
+        scm_c_define_gsubr ("%type-info-get-param-type", 2, 0, 0,
                             gig_type_info_get_param_type);
-        scm_c_define_gsubr ("type-info-get-interface", 1, 0, 0,
+        scm_c_define_gsubr ("%type-info-get-interface", 1, 0, 0,
                             gig_type_info_get_interface);
-        scm_c_define_gsubr ("type-info-get-array-length", 1, 0, 0,
+        scm_c_define_gsubr ("%type-info-get-array-length", 1, 0, 0,
                             gig_type_info_get_array_length);
-        scm_c_define_gsubr ("type-info-get-array-fixed-size", 1, 0, 0,
+        scm_c_define_gsubr ("%type-info-get-array-fixed-size", 1, 0, 0,
                             gig_type_info_get_array_fixed_size);
-        scm_c_define_gsubr ("type-info-is-zero-terminated?", 1, 0, 0,
+        scm_c_define_gsubr ("%type-info-is-zero-terminated", 1, 0, 0,
                             gig_type_info_is_zero_terminated);
-        scm_c_define_gsubr ("type-info-get-array-type", 1, 0, 0,
+        scm_c_define_gsubr ("%type-info-get-array-type", 1, 0, 0,
                             gig_type_info_get_array_type);
         first = 0;
     }
