@@ -158,21 +158,25 @@ zero_terminated_array_length(GigTypeMeta *meta, GIArgument *arg)
         {
             char *ptr = arg->v_pointer;
             bool non_null;
-            size_t length = -1;
-            do {
-                length++;
+            size_t length = 0;
+            while(1) {
                 non_null = false;
-                for (size_t i = 0; i <= item_size; i++)
-                    if (ptr + i != 0) {
+                for (size_t i = 0; i <= item_size; i++) {
+                    if (ptr[i] != 0) {
                         non_null = true;
-                        break;
                     }
-                ptr += item_size;
-            } while (non_null);
+		}
+		if (non_null) {
+		    length ++;
+		    ptr += item_size;
+		}
+		else
+		    break;
+	    };
 
             return length;
         }
-        }
+	}
     }
     gig_return_val_if_reached(GIG_ARRAY_SIZE_UNKNOWN);
 }

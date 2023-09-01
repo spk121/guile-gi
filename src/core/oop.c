@@ -174,7 +174,6 @@ scm_define_methods_from_procedure(const char *public_name, SCM proc, int opt, SC
     } while (opt-- > 0);
 
     scm_define(sym_public_name, generic);
-    char tmp[1000];
     return sym_public_name;
 }
 

@@ -102,36 +102,7 @@ gc_free_gibaseinfo (SCM x)
 
 #define MAX_STRING_LIST_LEN 1000
 
-static bool
-is_ascii_alnum_dash_dot(char *str)
-{
-    size_t len = strlen(str);
-    bool valid = true;
-    for (size_t i = 0; i < len; i ++) {
-        char c = str[i];
-        if (!((c >= u8'0' && c <= u8'9')
-              || (c >= u8'a' && c <= u8'z')
-              || (c >= u8'A' && c <= u8'Z')
-              || c == u8'-'
-              || c == u8'.')) {
-            valid = false;
-            break;
-        }
-    }
-    return valid;
-}
-
-static bool
-is_valid_namespace_char(char c)
-{
-    return ((c >= u8'0' && c <= u8'9')
-            || (c >= u8'a' && c <= u8'z')
-            || (c >= u8'A' && c <= u8'Z')
-            || c == u8'-'
-            || c == u8'.');
-}
-
-
+#if 0
 static size_t
 get_null_terminated_array_len(void **arr)
 {
@@ -143,6 +114,7 @@ get_null_terminated_array_len(void **arr)
     }
     return i;
 }
+#endif
 
 static size_t
 strvlen(char **arr)
@@ -156,6 +128,7 @@ strvlen(char **arr)
     return i;
 }
 
+#if 0
 static void
 free_arrayn(void **arr, size_t n)
 {
@@ -166,8 +139,10 @@ free_arrayn(void **arr, size_t n)
 
 #define freev(x) _Generic((x),                 \
                           char: char8freev)(x)
+#endif
+
 static void
-char8freev(char **arr)
+free_strv(char **arr)
 {
     size_t i = 0;
     if (arr == nullptr)
@@ -190,6 +165,7 @@ utf8_arrayn_to_scheme_list (char **c_strs, size_t n)
     for (size_t i = n; i > 0; i --) {
         ret = scm_cons(scm_from_utf8_string(c_strs[i - 1]),ret);
     }
+    return ret;
 }
 
 typedef void(*scm_unwind_handler_t)(void *);
@@ -210,7 +186,7 @@ gig_irepository_get_dependencies(SCM s_namespace)
     scm_dynwind_free(c_namespace);
 
     c_dependencies = g_irepository_get_dependencies(NULL, c_namespace);
-    scm_dynwind_unwind_handler((scm_unwind_handler_t) char8freev, c_dependencies, SCM_F_WIND_EXPLICITLY);
+    scm_dynwind_unwind_handler((scm_unwind_handler_t) free_strv, c_dependencies, SCM_F_WIND_EXPLICITLY);
     len = strvlen(c_dependencies);
     if (len > 0)
         ret = utf8_arrayn_to_scheme_list(c_dependencies, len);
@@ -231,7 +207,7 @@ gig_irepository_get_immediate_dependencies(SCM s_namespace)
     c_namespace = scm_to_utf8_string(s_namespace);
     scm_dynwind_free(c_namespace);
     c_dependencies = g_irepository_get_immediate_dependencies(NULL, c_namespace);
-    scm_dynwind_unwind_handler((scm_unwind_handler_t) char8freev,
+    scm_dynwind_unwind_handler((scm_unwind_handler_t) free_strv,
                                c_dependencies, SCM_F_WIND_EXPLICITLY);
     len = strvlen(c_dependencies);
     if (len > 0)
@@ -250,7 +226,7 @@ gig_irepository_get_loaded_namespaces()
 
     scm_dynwind_begin(0);
     c_namespaces = g_irepository_get_loaded_namespaces(nullptr);
-    scm_dynwind_unwind_handler((scm_unwind_handler_t) char8freev,
+    scm_dynwind_unwind_handler((scm_unwind_handler_t) free_strv,
                                c_namespaces, SCM_F_WIND_EXPLICITLY);
     if (c_namespaces == nullptr)
         return SCM_EOL;

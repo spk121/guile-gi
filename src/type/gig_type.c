@@ -87,7 +87,6 @@ static SCM make_type_with_gtype(GType gtype, SCM extra_supers);
 static SCM make_type_with_info(GIRegisteredTypeInfo *info, SCM slots);
 static char *g_registered_type_info_get_qualified_name(GIRegisteredTypeInfo *info);
 static SCM gig_type_associate(GType gtype, SCM stype);
-static SCM _gig_type_check_scheme_type(scm_t_bits _stype);
 
 ////////////////////////////////////////////////////////////////
 // Type definition
@@ -651,13 +650,6 @@ gig_type_free_types(void)
 {
     gig_debug("Freeing gtype hash table");
     _free_boxed_funcs();
-}
-
-static SCM
-_gig_type_check_scheme_type(scm_t_bits _stype)
-{
-    gig_return_val_if_fail(_stype != 0, scm_get_unknown_class());
-    return SCM_PACK(_stype);
 }
 
 GType
