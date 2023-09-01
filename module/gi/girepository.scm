@@ -806,7 +806,7 @@ type of this callable."
   (assert-gicallableinfo "callable-info-get-caller-owns" info)
   (let ((ret (%callable-info-get-caller-owns info)))
     (list-ref transfer-enum ret)))
-  
+
 (define (callable-info-get-instance-ownership-transfer info)
   "Given a callable <gibaseinfo>, this returns a symbol from the
 transfer-enum set that indicates the ownership transfer of the
@@ -955,7 +955,9 @@ with the signal <gibaseinfo>, e.g. if it is 'run-first, 'run-last, etc"
             (if (logtest flags %SIGNAL_NO_HOOKS) '(no-hooks) '())
             (if (logtest flags %SIGNAL_MUST_COLLECT) '(must-collect) '())
             (if (logtest flags %SIGNAL_DEPRECATED) '(deprecated) '())
-            (if (logtest flags %SIGNAL_ACCUMULATOR_FIRST_RUN) '(accumulator-first-run) '()))))
+            (if (and
+                 (defined? '%SIGNAL_ACCUMULATOR_FIRST_RUN)
+                 (logtest flags %SIGNAL_ACCUMULATOR_FIRST_RUN)) '(accumulator-first-run) '()))))
 
 (define (signal-info-get-class-closure info)
   "Obtain the class closure for this signal if one is set. The class
@@ -1346,7 +1348,10 @@ type which is not G_TYPE_OBJECT."
   "Returns #t if the given object <gibaseinfo> is a final
 type which cannot be derived."
   (assert-giobjectinfo "object-info-get-final?" info)
-  (%object-info-get-final info))
+  (if (defined? '%object-info-get-final)
+      (%object-info-get-final info)
+      ;; else
+      (error "this version of girepository does not support g_object_info_get_final")))
 
 (define (object-info-get-parent info)
   "Given an object <gibaseinfo>, returns the object <gibaseinfo>
@@ -1378,7 +1383,7 @@ of constants that this object type has."
 the n-th constant associated with this object."
   (assert-giobjectinfo "object-info-get-constant" info)
   (assert-index-integer "object-info-get-constant" n (object-info-get-n-constants info))
-  (%object-info-get-constant info n))  
+  (%object-info-get-constant info n))
 
 (define (object-info-get-n-fields info)
   "Given an object <gibaseinfo>, returns, as an integer, the number
@@ -1391,7 +1396,7 @@ of fields that this object type has."
 the n-th field associated with this object."
   (assert-giobjectinfo "object-info-get-field" info)
   (assert-index-integer "object-info-get-field" n (object-info-get-n-fields info))
-  (%object-info-get-field info n))  
+  (%object-info-get-field info n))
 
 (define (object-info-get-n-interfaces info)
   "Given an object <gibaseinfo>, returns, as an integer, the number
@@ -1404,7 +1409,7 @@ of interfaces that this object type has."
 the n-th interface associated with this object."
   (assert-giobjectinfo "object-info-get-interface" info)
   (assert-index-integer "object-info-get-interface" n (object-info-get-n-interfaces info))
-  (%object-info-get-interface info n))  
+  (%object-info-get-interface info n))
 
 (define (object-info-get-n-methods info)
   "Given an object <gibaseinfo>, returns, as an integer, the number
@@ -1417,7 +1422,7 @@ of methods that this object type has."
 the n-th method associated with this object."
   (assert-giobjectinfo "object-info-get-method" info)
   (assert-index-integer "object-info-get-method" n (object-info-get-n-methods info))
-  (%object-info-get-method info n))  
+  (%object-info-get-method info n))
 
 (define (object-info-find-method info name)
   "Given an object-info <gibaseinfo> and the string name of a method,
@@ -1452,7 +1457,7 @@ of properties that this object type has."
 the n-th property associated with this object."
   (assert-giobjectinfo "object-info-get-property" info)
   (assert-index-integer "object-info-get-property" n (object-info-get-n-properties info))
-  (%object-info-get-property info n))  
+  (%object-info-get-property info n))
 
 (define (object-info-get-n-signals info)
   "Given an object <gibaseinfo>, returns, as an integer, the number
@@ -1465,7 +1470,7 @@ of signals that this object type has."
 the n-th signal associated with this object."
   (assert-giobjectinfo "object-info-get-signal" info)
   (assert-index-integer "object-info-get-n-signals" n (object-info-get-n-signals info))
-  (%object-info-get-signal info n))  
+  (%object-info-get-signal info n))
 
 (define (object-info-find-signal info name)
   "Given an object-info <gibaseinfo> and the string name of a signal,
@@ -1486,7 +1491,7 @@ vfuncs that this object type has."
 the n-th vfunc associated with this object."
   (assert-giobjectinfo "object-info-get-vfunc" info)
   (assert-index-integer "object-info-get-vfunc" n (object-info-get-n-vfuncs info))
-  (%object-info-get-vfunc info n))  
+  (%object-info-get-vfunc info n))
 
 (define (object-info-find-vfunc info name)
   "Given an object-info <gibaseinfo> and the string name of a vfunc,
@@ -1570,7 +1575,7 @@ number of prerequisite interfaces that this interface has."
 the n-th prerequisite interface associated with this interface."
   (assert-giinterfaceinfo "interface-info-get-prerequisite" info)
   (assert-index-integer "interface-info-get-prerequisite" n (interface-info-get-n-prerequisites info))
-  (%interface-info-get-prerequisite info n))  
+  (%interface-info-get-prerequisite info n))
 
 (define (interface-info-get-n-properties info)
   "Given an interface-info <gibaseinfo>, returns, as an integer, the
@@ -1583,7 +1588,7 @@ number of properties that this interface has."
 the n-th property associated with this interface."
   (assert-giinterfaceinfo "interface-info-get-property" info)
   (assert-index-integer "interface-info-get-property" n (interface-info-get-n-properties info))
-  (%interface-info-get-property info n))  
+  (%interface-info-get-property info n))
 
 (define (interface-info-get-n-methods info)
   "Given an interface-info <gibaseinfo>, returns, as an integer, the
@@ -1596,7 +1601,7 @@ number of methods that this interface has."
 the n-th method associated with this interface."
   (assert-giinterfaceinfo "interface-info-get-method" info)
   (assert-index-integer "interface-info-get-method" n (interface-info-get-n-methods info))
-  (%interface-info-get-method info n))  
+  (%interface-info-get-method info n))
 
 (define (interface-info-find-method info name)
   "Given an interface-info <gibaseinfo> and the string name
@@ -1617,7 +1622,7 @@ number of signals that this interface has."
 the n-th signal associated with this interface."
   (assert-giinterfaceinfo "interface-info-get-signal" info)
   (assert-index-integer "interface-info-get-signal" n (interface-info-get-n-signals info))
-  (%interface-info-get-signal info n))  
+  (%interface-info-get-signal info n))
 
 (define (interface-info-find-signal info name)
   "Given an interface-info <gibaseinfo> and the string name
@@ -1638,7 +1643,7 @@ number of vfuncs that this interface has."
 the n-th vfunc associated with this interface."
   (assert-giinterfaceinfo "interface-info-get-vfunc" info)
   (assert-index-integer "interface-info-get-vfunc" n (interface-info-get-n-vfuncs info))
-  (%interface-info-get-vfunc info n))  
+  (%interface-info-get-vfunc info n))
 
 (define (interface-info-find-vfunc info name)
   "Given an interface-info <gibaseinfo> and the string name
@@ -1659,7 +1664,7 @@ number of constants that this interface has."
 the n-th constant associated with this interface."
   (assert-giinterfaceinfo "interface-info-get-constant" info)
   (assert-index-integer "interface-info-get-constant" n (interface-info-get-n-constants info))
-  (%interface-info-get-constant info n))  
+  (%interface-info-get-constant info n))
 
 (define (interface-info-get-iface-struct info)
   "Given an interface-info <gibaseinfo>, returns, as a struct <gibaseinfo>,
@@ -1755,7 +1760,9 @@ argument and the resources used to invoke that callback:
      ((eqv? dir %SCOPE_TYPE_CALL) 'call)
      ((eqv? dir %SCOPE_TYPE_ASYNC) 'async)
      ((eqv? dir %SCOPE_TYPE_NOTIFIED) 'notified)
-     ((eqv? dir %SCOPE_TYPE_FOREVER) 'forever)
+     ((and
+       (defined? '%SCOPE_TYPE_FOREVER)
+       (eqv? dir %SCOPE_TYPE_FOREVER) 'forever))
      (else
       (error "unknown scope")))))
 

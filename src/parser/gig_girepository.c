@@ -1449,12 +1449,14 @@ gig_object_info_get_fundamental(SCM s_info)
     return scm_from_bool(g_object_info_get_fundamental(c_info));
 }
 
+#if GI_CHECK_VERSION(1,70,0)
 SCM
 gig_object_info_get_final(SCM s_info)
 {
     GIBaseInfo *c_info = _scm_to_gibaseinfo(s_info);
     return scm_from_bool(g_object_info_get_final(c_info));
 }
+#endif
 
 SCM
 gig_object_info_get_parent(SCM s_info)
@@ -2496,7 +2498,9 @@ gig_init_girepository ()
         gig_SIGNAL_NO_HOOKS = flag("%SIGNAL_NO_HOOKS", G_SIGNAL_NO_HOOKS);
         gig_SIGNAL_MUST_COLLECT = flag("%SIGNAL_MUST_COLLECT", G_SIGNAL_MUST_COLLECT);
         gig_SIGNAL_DEPRECATED = flag("%SIGNAL_DEPRECATED", G_SIGNAL_DEPRECATED);
+#if GLIB_CHECK_VERSION(2,68,0)
         gig_SIGNAL_ACCUMULATOR_FIRST_RUN = flag("%SIGNAL_ACCUMULATOR_FIRST_RUN", G_SIGNAL_ACCUMULATOR_FIRST_RUN);
+#endif
 
         scm_c_define_gsubr ("%is-vfunc-info", 1, 0, 0,
                             gig_is_vfunc_info);
@@ -2599,8 +2603,10 @@ gig_init_girepository ()
                             gig_object_info_get_abstract);
         scm_c_define_gsubr ("%object-info-get-fundamental", 1, 0, 0,
                             gig_object_info_get_fundamental);
+#if GI_CHECK_VERSION(1,70,0)
         scm_c_define_gsubr ("%object-info-get-final", 1, 0, 0,
                             gig_object_info_get_final);
+#endif
         scm_c_define_gsubr ("%object-info-get-parent", 1, 0, 0,
                             gig_object_info_get_parent);
         scm_c_define_gsubr ("%object-info-get-type-name", 1, 0, 0,
@@ -2726,8 +2732,10 @@ gig_init_girepository ()
         gig_SCOPE_TYPE_ASYNC = flag("%SCOPE_TYPE_ASYNC", GI_SCOPE_TYPE_ASYNC);
         gig_SCOPE_TYPE_NOTIFIED = flag("%SCOPE_TYPE_NOTIFIED",
                                        GI_SCOPE_TYPE_NOTIFIED);
+#if GI_CHECK_VERSION(1,71,0)
         gig_SCOPE_TYPE_FOREVER = flag("%SCOPE_TYPE_FOREVER",
                                        GI_SCOPE_TYPE_FOREVER);
+#endif
 
         gig_TRANSFER_NOTHING = flag("%TRANSFER_NOTHING", GI_TRANSFER_NOTHING);
         gig_TRANSFER_CONTAINER = flag("%TRANSFER_CONTAINER",
