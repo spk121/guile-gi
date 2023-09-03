@@ -15,6 +15,7 @@
 
 ;; A thin wrapper around the C functions provided by libgirepository
 (define-module (gi girepository)
+  #:use-module (srfi srfi-1)
   #:export (<gibaseinfo>
             gibaseinfo?
             gibaseinfo=?
@@ -22,8 +23,7 @@
             get-dependencies
             get-immediate-dependencies
             get-loaded-namespaces
-            get-n-infos
-            get-info
+            get-infos
             enumerate-versions
             prepend-library-path
             prepend-search-path
@@ -54,6 +54,7 @@
 
             ;; GIBaseInfo
             is-base-info?
+            assert-gibaseinfo
             base-info-equal?
             base-info-get-type
             base-info-get-namespace
@@ -62,11 +63,12 @@
             base-info-get-container
             base-info-is-deprecated?
             info-type-to-string
+
             ;; GICallableInfo
             is-callable-info?
+            assert-gicallableinfo
             callable-info-can-throw-gerror?
-            callable-info-get-n-args
-            callable-info-get-arg
+            callable-info-get-args
             callable-info-get-caller-owns
             callable-info-get-instance-ownership-transfer
             callable-info-get-return-attribute
@@ -78,6 +80,7 @@
 
             ;; GIFunctionInfo
             is-function-info?
+            assert-gifunctioninfo
             function-info-get-flags
             function-info-get-property
             function-info-get-symbol
@@ -85,9 +88,11 @@
 
             ;; GICallbackInfo
             is-callback-info?
+            assert-gicallbackinfo
 
             ;; GISignalInfo
             is-signal-info?
+            assert-gisignalinfo
             signal-info-get-flags
             signal-info-get-class-closure
             signal-info-true-stops-emit?
@@ -99,43 +104,42 @@
             vfunc-info-get-invoker
 
             ;; GIRegisteredType
-            is-registered-type-info
+            is-registered-type-info?
+            assert-giregisteredtypeinfo
             registered-type-info-get-type-name
             registered-type-info-get-type-init
             registered-type-info-get-g-type
 
             ;; GIEnumInfo
             is-enum-info?
-            enum-info-get-n-values
-            enum-info-get-value
-            enum-info-get-n-methods
-            enum-info-get-method
+            assert-gienuminfo
+            enum-info-get-values
+            enum-info-get-methods
             enum-info-get-error-domain
             enum-info-get-storage-type
 
             ;; GIValueInfo
             is-value-info?
+            assert-givalueinfo
             value-info-get-value
 
             ;; GIStructInfo
             is-struct-info?
+            assert-gistructinfo
             struct-info-find-field
             struct-info-get-alignment
             struct-info-get-size
             struct-info-is-gtype-struct?
             struct-info-is-foreign?
-            struct-info-get-n-fields
-            struct-info-get-field
-            struct-info-get-n-methods
-            struct-info-get-method
+            struct-info-get-fields
+            struct-info-get-methods
             struct-info-find-method
 
             ;; GIUnionInfo
             is-union-info?
-            union-info-get-n-fields
-            union-info-get-field
-            union-info-get-n-methods
-            union-info-get-method
+            assert-giunioninfo
+            union-info-get-fields
+            union-info-get-methods
             union-info-is-discriminated?
             union-info-get-discriminator-offset
             union-info-get-discriminator-type
@@ -146,29 +150,23 @@
 
             ;; GIObjectInfo
             is-object-info?
+            assert-giobjectinfo
             object-info-get-abstract?
             object-info-get-fundamental?
             object-info-get-final?
             object-info-get-parent
             object-info-get-type-name
             object-info-get-type-init
-            object-info-get-n-constants
-            object-info-get-constant
-            object-info-get-n-fields
-            object-info-get-field
-            object-info-get-n-interfaces
-            object-info-get-interface
-            object-info-get-n-methods
-            object-info-get-method
+            object-info-get-constants
+            object-info-get-fields
+            object-info-get-interfaces
+            object-info-get-methods
             object-info-find-method
             object-info-find-method-using-interfaces
-            object-info-get-n-properties
-            object-info-get-property
-            object-info-get-n-signals
-            object-info-get-signal
+            object-info-get-properties
+            object-info-get-signals
             object-info-find-signal
-            object-info-get-n-vfuncs
-            object-info-get-vfunc
+            object-info-get-vfuncs
             object-info-find-vfunc
             object-info-find-vfunc-using-interfaces
             object-info-get-class-struct
@@ -179,25 +177,21 @@
 
             ;; GIInterfaceInfo
             is-interface-info?
-            interface-info-get-n-prerequisites
-            interface-info-get-prerequisite
-            interface-info-get-n-properties
-            interface-info-get-property
-            interface-info-get-n-methods
-            interface-info-get-method
+            assert-giinterfaceinfo
+            interface-info-get-prerequisites
+            interface-info-get-properties
+            interface-info-get-methods
             interface-info-find-method
-            interface-info-get-n-signals
-            interface-info-get-signal
+            interface-info-get-signals
             interface-info-find-signal
-            interface-info-get-n-vfuncs
-            interface-info-get-vfunc
+            interface-info-get-vfuncs
             interface-info-find-vfunc
-            interface-info-get-n-constants
-            interface-info-get-constant
+            interface-info-get-constants
             interface-info-get-iface-struct
 
             ;; GIArgInfo
             is-arg-info?
+            assert-giarginfo
             arg-info-get-closure
             arg-info-get-destroy
             arg-info-get-direction
@@ -212,11 +206,13 @@
 
             ;; GIConstantInfo
             is-constant-info?
+            assert-giconstantinfo
             constant-info-get-type
             constant-info-get-value
 
             ;; GIFieldInfo
             is-field-info?
+            assert-gifieldinfo
             field-info-get-flags
             field-info-get-offset
             field-info-get-size
@@ -224,6 +220,7 @@
 
             ;; GIPropertyInfo
             is-property-info?
+            assert-gipropertyinfo
             property-info-get-flags
             property-info-get-ownership-transfer
             property-info-get-type
@@ -232,6 +229,7 @@
 
             ;; GITypeInfo
             is-type-info?
+            assert-gitypeinfo
             type-info-is-pointer?
             type-info-get-tag
             type-info-get-param-type
@@ -466,6 +464,17 @@ total number of metadata entries."
   (assert-index-integer "get-info" index (get-n-infos namespace))
   (%irepository-get-info namespace index))
 
+(define (get-infos namespace)
+  "This procedure returns the list of metadata entries for a namespace.
+The namespace must already have been loaded."
+  (assert-namespace-string "get-infos" namespace)
+  (assert-loaded-namespace "get-infos" namespace)
+  (let ((n (get-n-infos namespace))
+        (infos '()))
+    (do ((i 0 (1+ i))) ((>= i n))
+      (set! infos (cons (get-info namespace i) infos)))
+    (reverse infos)))
+
 (define (enumerate-versions namespace)
   "Returns a list of versions (either currently loaded or available) for
 namespace."
@@ -650,7 +659,7 @@ or newer than the current version of GIRepository."
 ;; COMMON TYPES
 
 (define type-tag-enum
-  '(void int8 uint8 int16 uint16 int32 uint32 int64 uint64
+  '(void boolean int8 uint8 int16 uint16 int32 uint32 int64 uint64
          float double gtype utf8 filename array interface
          glist gslist ghash error unichar))
 
@@ -684,7 +693,7 @@ a numeric type."
                          (lambda (x) (eqv? x tag))
                          type-tag-enum)))
 
-(define (type-tag->string tag)
+(define (type-tag-to-string tag)
   "Given a symbol in the type-tag-enum set, it returns a string
 representation of the type tag."
   (unless (member tag type-tag-enum)
@@ -798,6 +807,16 @@ throw a GError"
   (assert-gicallableinfo "callable-info-get-arg" info)
   (assert-index-integer "callable-info-get-arg" n (callable-info-get-n-args info))
   (%callable-info-get-arg info n))
+
+(define (callable-info-get-args info)
+  "Given a callable <gibaseinfo>, returns a list of the arg <gibaseinfo>
+for its arguments."
+  (assert-gicallableinfo "callable-info-get-args" info)
+  (let ((n (callable-info-get-n-args info))
+        (infos '()))
+    (do ((i 0 (1+ i))) ((>= i n))
+      (set! infos (cons (callable-info-get-arg info i) infos)))
+    (reverse infos)))
 
 (define (callable-info-get-caller-owns info)
   "Given a callable <gibaseinfo>, this returns a symbol from the
@@ -1090,6 +1109,16 @@ the value <gibaseinfo> for the nth value of the enumeration."
   (assert-index-integer "enum-info-get-value" n (enum-info-get-n-values info))
   (%enum-info-get-value info n))
 
+(define (enum-info-get-values info)
+  "Given an enum <gibaseinfo>, this returns a list of the the value
+<gibaseinfo> of the enumeration."
+  (assert-gienuminfo "enum-info-get-values" info)
+  (let ((n (enum-info-get-n-values info))
+        (infos '()))
+    (do ((i 0 (1+ i))) ((>= i n))
+      (set! infos (cons (enum-info-get-value info i) infos)))
+    (reverse infos)))
+
 (define (enum-info-get-n-methods info)
   "Given an enum <gibaseinfo>, this returns an integer of the number of
 methods that this enumerated type has."
@@ -1098,10 +1127,20 @@ methods that this enumerated type has."
 
 (define (enum-info-get-method info n)
   "Given an enum <gibaseinfo> and an integer index, this returns
-the method <gibaseinfo> for the nth method of the enumeration."
+the function <gibaseinfo> for the nth method of the enumeration."
   (assert-gienuminfo "enum-info-get-method" info)
   (assert-index-integer "enum-info-get-method" n (enum-info-get-n-methods info))
   (%enum-info-get-method info n))
+
+(define (enum-info-get-methods info)
+  "Given an enum <gibaseinfo>, this returns a list of the the function
+<gibaseinfo>s which are the methods of this enumeration type."
+  (assert-gienuminfo "enum-info-get-methods" info)
+  (let ((n (enum-info-get-n-methods info))
+        (infos '()))
+    (do ((i 0 (1+ i))) ((>= i n))
+      (set! infos (cons (enum-info-get-method info i) infos)))
+    (reverse infos)))
 
 (define (enum-info-get-error-domain info)
   "Given an enum <gibaseinfo>, this returns
@@ -1197,6 +1236,16 @@ the field <gibaseinfo> for the nth field of the structure."
   (assert-index-integer "struct-info-get-field" n (struct-info-get-n-fields info))
   (%struct-info-get-field info n))
 
+(define (struct-info-get-fields info)
+  "Given a struct <gibaseinfo>, returns a list of the field <gibaseinfo>
+for the fields of this structure."
+  (assert-gistructinfo "struct-info-get-fields" info)
+  (let ((n (struct-info-get-n-fields info))
+        (infos '()))
+    (do ((i 0 (1+ i))) ((>= i n))
+      (set! infos (cons (struct-info-get-field info i) infos)))
+    (reverse infos)))
+
 (define (struct-info-get-n-methods info)
   "Given an struct <gibaseinfo>, this returns an integer of the number of
 methods that this structerated type has."
@@ -1205,10 +1254,20 @@ methods that this structerated type has."
 
 (define (struct-info-get-method info n)
   "Given an struct <gibaseinfo> and an integer index, this returns
-the method <gibaseinfo> for the nth method of the structure."
+the function <gibaseinfo> for the nth method of the structure."
   (assert-gistructinfo "struct-info-get-method" info)
   (assert-index-integer "struct-info-get-method" n (struct-info-get-n-methods info))
   (%struct-info-get-method info n))
+
+(define (struct-info-get-methods info)
+  "Given a struct <gibaseinfo>, returns a list of the function
+<gibaseinfo>s for the methods of this structure type."
+  (assert-gistructinfo "struct-info-get-methods" info)
+  (let ((n (struct-info-get-n-methods info))
+        (infos '()))
+    (do ((i 0 (1+ i))) ((>= i n))
+      (set! infos (cons (struct-info-get-method info i) infos)))
+    (reverse infos)))
 
 (define (struct-info-find-method info name)
   "Searches for a method with the specified name in a struct <gibaseinfo>.
@@ -1245,6 +1304,16 @@ the nth field in the union."
   (assert-index-integer "union-info-get-field" n (union-info-get-n-fields info))
   (%union-info-get-field info n))
 
+(define (union-info-get-fields info)
+  "Given a union <gibaseinfo>, returns a list of the field <gibaseinfo>
+for the fields of this union."
+  (assert-giunioninfo "union-info-get-fields" info)
+  (let ((n (union-info-get-n-fields info))
+        (infos '()))
+    (do ((i 0 (1+ i))) ((>= i n))
+      (set! infos (cons (union-info-get-field info i) infos)))
+    (reverse infos)))
+
 (define (union-info-get-n-methods info)
   "Given a union <gibaseinfo>, it returns the integer count of
 the number of methods assocaited with this union."
@@ -1252,11 +1321,21 @@ the number of methods assocaited with this union."
   (%union-info-get-n-methods info))
 
 (define (union-info-get-method info n)
-  "Given a union <gibaseinfo>, returns the method <gibaseinfo> of
+  "Given a union <gibaseinfo>, returns the function <gibaseinfo> of
 the nth method for this union."
   (assert-giunioninfo "union-info-get-method" info)
   (assert-index-integer "union-info-get-method" n (union-info-get-n-methods info))
   (%union-info-get-method info n))
+
+(define (union-info-get-methods info)
+  "Given a union <gibaseinfo>, returns a list of the function
+<gibaseinfo> for the methods of this union type."
+  (assert-giunioninfo "union-info-get-methods" info)
+  (let ((n (union-info-get-n-methods info))
+        (infos '()))
+    (do ((i 0 (1+ i))) ((>= i n))
+      (set! infos (cons (union-info-get-method info i) infos)))
+    (reverse infos)))
 
 (define (union-info-is-discriminated? info)
   "Given a union <gibaseinfo>, returns #t if this union contains a
@@ -1299,7 +1378,7 @@ discriminator contains the constant described by the returned
 
 (define (union-info-find-method info name)
   "Given a union <gibaseinfo> and the string name of a method,
-returns the method <gibaseinfo> if found.  Otherwise #f."
+returns the function <gibaseinfo> if found.  Otherwise #f."
   (assert-giunioninfo "union-info-find-method" info)
   (assert-name-string "union-info-find-method" name)
   (%union-info-find-method info name))
@@ -1385,6 +1464,16 @@ the n-th constant associated with this object."
   (assert-index-integer "object-info-get-constant" n (object-info-get-n-constants info))
   (%object-info-get-constant info n))
 
+(define (object-info-get-constants info)
+  "Given a object <gibaseinfo>, returns a list of the constant <gibaseinfo>
+for the constants of this object."
+  (assert-giobjectinfo "object-info-get-constants" info)
+  (let ((n (object-info-get-n-constants info))
+        (infos '()))
+    (do ((i 0 (1+ i))) ((>= i n))
+      (set! infos (cons (object-info-get-constant info i) infos)))
+    (reverse infos)))
+
 (define (object-info-get-n-fields info)
   "Given an object <gibaseinfo>, returns, as an integer, the number
 of fields that this object type has."
@@ -1397,6 +1486,16 @@ the n-th field associated with this object."
   (assert-giobjectinfo "object-info-get-field" info)
   (assert-index-integer "object-info-get-field" n (object-info-get-n-fields info))
   (%object-info-get-field info n))
+
+(define (object-info-get-fields info)
+  "Given a object <gibaseinfo>, returns a list of the field <gibaseinfo>
+for the fields of this object."
+  (assert-giobjectinfo "object-info-get-fields" info)
+  (let ((n (object-info-get-n-fields info))
+        (infos '()))
+    (do ((i 0 (1+ i))) ((>= i n))
+      (set! infos (cons (object-info-get-field info i) infos)))
+    (reverse infos)))
 
 (define (object-info-get-n-interfaces info)
   "Given an object <gibaseinfo>, returns, as an integer, the number
@@ -1411,6 +1510,16 @@ the n-th interface associated with this object."
   (assert-index-integer "object-info-get-interface" n (object-info-get-n-interfaces info))
   (%object-info-get-interface info n))
 
+(define (object-info-get-interfaces info)
+  "Given a object <gibaseinfo>, returns a list of the interface <gibaseinfo>
+for the interfaces of this object."
+  (assert-giobjectinfo "object-info-get-interfaces" info)
+  (let ((n (object-info-get-n-interfaces info))
+        (infos '()))
+    (do ((i 0 (1+ i))) ((>= i n))
+      (set! infos (cons (object-info-get-interface info i) infos)))
+    (reverse infos)))
+
 (define (object-info-get-n-methods info)
   "Given an object <gibaseinfo>, returns, as an integer, the number
 of methods that this object type has."
@@ -1423,6 +1532,16 @@ the n-th method associated with this object."
   (assert-giobjectinfo "object-info-get-method" info)
   (assert-index-integer "object-info-get-method" n (object-info-get-n-methods info))
   (%object-info-get-method info n))
+
+(define (object-info-get-methods info)
+  "Given a object <gibaseinfo>, returns a list of the function <gibaseinfo>
+for the methods of this object."
+  (assert-giobjectinfo "object-info-get-methods" info)
+  (let ((n (object-info-get-n-methods info))
+        (infos '()))
+    (do ((i 0 (1+ i))) ((>= i n))
+      (set! infos (cons (object-info-get-method info i) infos)))
+    (reverse infos)))
 
 (define (object-info-find-method info name)
   "Given an object-info <gibaseinfo> and the string name of a method,
@@ -1459,6 +1578,16 @@ the n-th property associated with this object."
   (assert-index-integer "object-info-get-property" n (object-info-get-n-properties info))
   (%object-info-get-property info n))
 
+(define (object-info-get-properties info)
+  "Given a object <gibaseinfo>, returns a list of the property
+<gibaseinfo> for the propertys of this object."
+  (assert-giobjectinfo "object-info-get-properties" info)
+  (let ((n (object-info-get-n-properties info))
+        (infos '()))
+    (do ((i 0 (1+ i))) ((>= i n))
+      (set! infos (cons (object-info-get-property info i) infos)))
+    (reverse infos)))
+
 (define (object-info-get-n-signals info)
   "Given an object <gibaseinfo>, returns, as an integer, the number
 of signals that this object type has."
@@ -1471,6 +1600,16 @@ the n-th signal associated with this object."
   (assert-giobjectinfo "object-info-get-signal" info)
   (assert-index-integer "object-info-get-n-signals" n (object-info-get-n-signals info))
   (%object-info-get-signal info n))
+
+(define (object-info-get-signals info)
+  "Given a object <gibaseinfo>, returns a list of the signal
+<gibaseinfo> for the signals of this object."
+  (assert-giobjectinfo "object-info-get-signals" info)
+  (let ((n (object-info-get-n-signals info))
+        (infos '()))
+    (do ((i 0 (1+ i))) ((>= i n))
+      (set! infos (cons (object-info-get-signal info i) infos)))
+    (reverse infos)))
 
 (define (object-info-find-signal info name)
   "Given an object-info <gibaseinfo> and the string name of a signal,
@@ -1492,6 +1631,16 @@ the n-th vfunc associated with this object."
   (assert-giobjectinfo "object-info-get-vfunc" info)
   (assert-index-integer "object-info-get-vfunc" n (object-info-get-n-vfuncs info))
   (%object-info-get-vfunc info n))
+
+(define (object-info-get-vfuncs info)
+  "Given a object <gibaseinfo>, returns a list of the vfunc <gibaseinfo>
+for the vfuncs of this object."
+  (assert-giobjectinfo "object-info-get-vfuncs" info)
+  (let ((n (object-info-get-n-vfuncs info))
+        (infos '()))
+    (do ((i 0 (1+ i))) ((>= i n))
+      (set! infos (cons (object-info-get-vfunc info i) infos)))
+    (reverse infos)))
 
 (define (object-info-find-vfunc info name)
   "Given an object-info <gibaseinfo> and the string name of a vfunc,
@@ -1577,6 +1726,17 @@ the n-th prerequisite interface associated with this interface."
   (assert-index-integer "interface-info-get-prerequisite" n (interface-info-get-n-prerequisites info))
   (%interface-info-get-prerequisite info n))
 
+(define (interface-info-get-prerequisites info)
+  "Given an interface <gibaseinfo>, this returns a list of the the
+interface <gibaseinfo>s which are the prerequisites of this
+interface."
+  (assert-giinterfaceinfo "interface-info-get-prerequisites" info)
+  (let ((n (interface-info-get-n-prerequisites info))
+        (infos '()))
+    (do ((i 0 (1+ i))) ((>= i n))
+      (set! infos (cons (interface-info-get-prerequisite info i) infos)))
+    (reverse infos)))
+
 (define (interface-info-get-n-properties info)
   "Given an interface-info <gibaseinfo>, returns, as an integer, the
 number of properties that this interface has."
@@ -1590,6 +1750,16 @@ the n-th property associated with this interface."
   (assert-index-integer "interface-info-get-property" n (interface-info-get-n-properties info))
   (%interface-info-get-property info n))
 
+(define (interface-info-get-properties info)
+  "Given an interface <gibaseinfo>, this returns a list of the the
+property <gibaseinfo>s which are the properties of this interface."
+  (assert-giinterfaceinfo "interface-info-get-properties" info)
+  (let ((n (interface-info-get-n-properties info))
+        (infos '()))
+    (do ((i 0 (1+ i))) ((>= i n))
+      (set! infos (cons (interface-info-get-prerequisite info i) infos)))
+    (reverse infos)))
+
 (define (interface-info-get-n-methods info)
   "Given an interface-info <gibaseinfo>, returns, as an integer, the
 number of methods that this interface has."
@@ -1597,15 +1767,25 @@ number of methods that this interface has."
   (%interface-info-get-n-methods info))
 
 (define (interface-info-get-method info n)
-  "Given an interface-info <gibaseinfo>, returns, as a method <gibaseinfo>,
+  "Given an interface-info <gibaseinfo>, returns, as a function <gibaseinfo>,
 the n-th method associated with this interface."
   (assert-giinterfaceinfo "interface-info-get-method" info)
   (assert-index-integer "interface-info-get-method" n (interface-info-get-n-methods info))
   (%interface-info-get-method info n))
 
+(define (interface-info-get-methods info)
+  "Given an interface <gibaseinfo>, this returns a list of the the
+function <gibaseinfo>s which are the methods of this interface."
+  (assert-giinterfaceinfo "interface-info-get-methods" info)
+  (let ((n (interface-info-get-n-methods info))
+        (infos '()))
+    (do ((i 0 (1+ i))) ((>= i n))
+      (set! infos (cons (interface-info-get-method info i) infos)))
+    (reverse infos)))
+
 (define (interface-info-find-method info name)
   "Given an interface-info <gibaseinfo> and the string name
-of a method, returns, as a method <gibaseinfo>,
+of a method, returns, as a function <gibaseinfo>,
 that method if found. Otherwise #f."
   (assert-giinterfaceinfo "interface-info-find-method" info)
   (assert-name-string "interface-info-find-method" name)
@@ -1623,6 +1803,16 @@ the n-th signal associated with this interface."
   (assert-giinterfaceinfo "interface-info-get-signal" info)
   (assert-index-integer "interface-info-get-signal" n (interface-info-get-n-signals info))
   (%interface-info-get-signal info n))
+
+(define (interface-info-get-signals info)
+  "Given an interface <gibaseinfo>, this returns a list of the the
+signal <gibaseinfo>s which are the signals of this interface."
+  (assert-giinterfaceinfo "interface-info-get-signals" info)
+  (let ((n (interface-info-get-n-signals info))
+        (infos '()))
+    (do ((i 0 (1+ i))) ((>= i n))
+      (set! infos (cons (interface-info-get-signal info i) infos)))
+    (reverse infos)))
 
 (define (interface-info-find-signal info name)
   "Given an interface-info <gibaseinfo> and the string name
@@ -1645,6 +1835,16 @@ the n-th vfunc associated with this interface."
   (assert-index-integer "interface-info-get-vfunc" n (interface-info-get-n-vfuncs info))
   (%interface-info-get-vfunc info n))
 
+(define (interface-info-get-vfuncs info)
+  "Given an interface <gibaseinfo>, this returns a list of the the vfunc
+<gibaseinfo>s which are the vfuncs of this interface."
+  (assert-giinterfaceinfo "interface-info-get-vfuncs" info)
+  (let ((n (interface-info-get-n-vfuncs info))
+        (infos '()))
+    (do ((i 0 (1+ i))) ((>= i n))
+      (set! infos (cons (interface-info-get-vfunc info i) infos)))
+    (reverse infos)))
+
 (define (interface-info-find-vfunc info name)
   "Given an interface-info <gibaseinfo> and the string name
 of a vfunc, returns, as a vfunc <gibaseinfo>,
@@ -1665,6 +1865,16 @@ the n-th constant associated with this interface."
   (assert-giinterfaceinfo "interface-info-get-constant" info)
   (assert-index-integer "interface-info-get-constant" n (interface-info-get-n-constants info))
   (%interface-info-get-constant info n))
+
+(define (interface-info-get-constants info)
+  "Given an interface <gibaseinfo>, this returns a list of the the
+constant <gibaseinfo>s which are the constants of this interface."
+  (assert-giinterfaceinfo "interface-info-get-constants" info)
+  (let ((n (interface-info-get-n-constants info))
+        (infos '()))
+    (do ((i 0 (1+ i))) ((>= i n))
+      (set! infos (cons (interface-info-get-constant info i) infos)))
+    (reverse infos)))
 
 (define (interface-info-get-iface-struct info)
   "Given an interface-info <gibaseinfo>, returns, as a struct <gibaseinfo>,
@@ -1970,9 +2180,7 @@ is passed by reference."
 type tag of the type, such as 'int32, 'double, or 'glist."
   (assert-gitypeinfo "type-info-get-tag" info)
   (let ((tag (%type-info-get-tag info)))
-    (list-index
-     (lambda (x) (eqv? x tag))
-     type-tag-enum)))
+    (list-ref type-tag-enum tag)))
 
 (define (type-info-get-param-type info n)
   "Given a type <gibaseinfo>, returns the type <gibaseinfo>
