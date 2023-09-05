@@ -76,6 +76,63 @@ foreign-library-function until top-level library is loaded (Gtk4,
 WebKit) since that one links to the version of GObject/GLib we
 need to handle.
 
+### Argument Conversions
+
+*Input Conversions*
+
+| GObject Type | Scheme Type                 | Notes |
+|---------------|-----------------------------|--------|
+| int8, uint8   | exact integer, Latin-1 char |         |
+| int16, uint16 | exact integer              |         |
+| int32, uint32 | exact integer              |         |
+| int64, uint64 | exact integer              |         |
+| float, double | real                       |         |
+| gboolean      | #t, #f                     |         |
+| gunichar      | exact integer, char        |         |
+| GArray        | GArray, lists, vectors     | Lists & vectors are converted to GArray. See Note 1 |
+| GByteArray    | GByteArray, bytevectors    | Bytevectors are converted into GByteArray, See Note 2 |
+| GPtrArray     | GPtrArray, vector of pointers | See Note 3 |
+| GList, GSList | GList, GSList, lists       | Note 4 |
+| GHash         | GHash, hashtable           | Note 5 |
+
+*Note 1*: Lists and vectors are by default converted to GArray by copying contents.
+Modifying the GArray won't modify the contents of the list or vector.
+To share contents, when possible, there will be a procedure like `(array->GArray/shared)` or such.
+Lists can not share contents.
+
+*Note 2*: Vectors and bytevectors are converted into GByteArray by copying contents.
+Modifying the GArray won't modify the contents of the list or vector.
+To share contents, when possible, there will be a procedure like `(bytevector->GByteArray/shared)` or something.
+
+*Note 4*: Lists are converted to GList or GSList by copying contents.
+Modifying the GList or GSList won't modify the contents of the list.
+
+*Note 5*: Hash tables are converted to GHash by copying contents.
+There is no practical way to share contents.
+
+*Output Conversions*
+
+| GObject Type | Scheme Type                 | Notes |
+|---------------|-----------------------------|--------|
+| int8, uint8   | exact integer              | See Note 1 |
+| int16, uint16 | exact integer              |         |
+| int32, uint32 | exact integer              |         |
+| int64, uint64 | exact integer              |         |
+| float, double | real                       |         |
+| gboolean      | #t, #f                     |         |
+| gunichar      | char                       |         |
+| GArray        | GArray                     | See Note 2 |
+| GByteArray    | GByteArray                 | See Note 2 |
+| GPtrArray     | GPtrArray                  | See Note 2 |
+| GList, GSList | GList, GSList              | See Note 2  |
+
+*Note 1*: For functions that return an 8-bit integer that is meant to represent
+an 8-bit character, it is going to return the integer form.
+
+*Note 2*: For sets of function that take a type of array or list and then
+return a type of array or list, the return is always a GObject/GLib type,
+even if the array or list that was passed in was a Scheme list or vector.
+
 ### Output Args
 
 In 0.3.0, guile-gi was clever enough to elide output arrguments
