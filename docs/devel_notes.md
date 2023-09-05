@@ -89,11 +89,14 @@ need to handle.
 | float, double | real                       |         |
 | gboolean      | #t, #f                     |         |
 | gunichar      | exact integer, char        |         |
+| utf8          | string                     | Note 6 |
+| filename      | string                     | Note 6  |
 | GArray        | GArray, lists, vectors     | Lists & vectors are converted to GArray. See Note 1 |
 | GByteArray    | GByteArray, bytevectors    | Bytevectors are converted into GByteArray, See Note 2 |
 | GPtrArray     | GPtrArray, vector of pointers | See Note 3 |
 | GList, GSList | GList, GSList, lists       | Note 4 |
 | GHash         | GHash, hashtable           | Note 5 |
+| C arrays of char |  | |
 
 *Note 1*: Lists and vectors are by default converted to GArray by copying contents.
 Modifying the GArray won't modify the contents of the list or vector.
@@ -110,28 +113,46 @@ Modifying the GList or GSList won't modify the contents of the list.
 *Note 5*: Hash tables are converted to GHash by copying contents.
 There is no practical way to share contents.
 
+*Note 6*: Guile strings and GLib strings do not share a common representation
+and the contents of Guile strings may be read-only anyway.
+The strings are converted by translating the contents from one representation
+to another, so it is not possible to share contents. GObject/GLib functions that
+modify string contents will be modifying their copy of C string.
+Some functions exist to modify the contents of C strings.  To keep these
+useful, 
+we allow the GString type to be used in any context where plain C strings
+are expected.
+
 *Output Conversions*
 
-| GObject Type | Scheme Type                 | Notes |
-|---------------|-----------------------------|--------|
-| int8, uint8   | exact integer              | See Note 1 |
-| int16, uint16 | exact integer              |         |
-| int32, uint32 | exact integer              |         |
-| int64, uint64 | exact integer              |         |
-| float, double | real                       |         |
-| gboolean      | #t, #f                     |         |
-| gunichar      | char                       |         |
-| GArray        | GArray                     | See Note 2 |
-| GByteArray    | GByteArray                 | See Note 2 |
-| GPtrArray     | GPtrArray                  | See Note 2 |
-| GList, GSList | GList, GSList              | See Note 2  |
+| GObject Type | Scheme Type                 | Notes      |
+|---------------|----------------------------|------------|
+| int8, uint8   | exact integer              | Note 1     |
+| int16, uint16 | exact integer              |            |
+| int32, uint32 | exact integer              |            |
+| int64, uint64 | exact integer              |            |
+| float, double | real                       |            |
+| gboolean      | #t, #f                     |            |
+| gunichar      | char                       |            |
+| utf8          | TBD                     | Note 3     |
+| filename      | TBD                    | Note 3     |
+| GArray        | GArray                     | Note 2     |
+| GByteArray    | GByteArray                 | Note 2     |
+| GPtrArray     | GPtrArray                  | Note 2     |
+| GList, GSList | GList, GSList              | Note 2     |
+| GHash         | GHash                      | Note 2     |
 
 *Note 1*: For functions that return an 8-bit integer that is meant to represent
 an 8-bit character, it is going to return the integer form.
 
-*Note 2*: For sets of function that take a type of array or list and then
-return a type of array or list, the return is always a GObject/GLib type,
+*Note 2*: For functions that returns an array, list, or hash
+the return is always a GObject/GLib type,
 even if the array or list that was passed in was a Scheme list or vector.
+The programmer will have to convert them back to a Scheme type, if desired.
+
+*Note 3*: Returned strings are C arrays in either UTF-8 or locale
+encoding.  They may be `const char *`, implying no ownership
+transfer, or may be `char *`
 
 ### Output Args
 
@@ -142,7 +163,7 @@ a worse Scheme binding so it looks more like GTK docs, we're going
 back to requiring output arguments when calling
 a function.
 
-In 0.0, for a moment, we used SRFI-111 boxes for this.
+In 0.0.x, for a moment, we used SRFI-111 boxes for this.
 
 For bound types, is probably better to
 have the caller pass in a `<GFundamental>`, and then have the
@@ -180,7 +201,7 @@ use a `<GFundamental>`, or a SRFI-111 box is good, too.
 In 0.3.0, guile-gi was clever enough to elide array length
 arguments, instead calculating them from the length of the
 array or bytevector used as input.  To go with the new plan
-of being worse scheme but matching GTK docs better, length
+of being worse scheme experience but matching GTK docs better, length
 arguments are again required. Passing in a non-number
 will compute the array size from the array.
 
