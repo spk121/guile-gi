@@ -66,9 +66,65 @@ Something like this
     #:throws #t))
 ```
 
-Note the types from other modules need to be handled.  Also this
+Note the types from other modules need to be handled are
+are imported with a dot notation, so the `#:use-module`
+will need a `#:prefix Gio.` etc.
+
+Also this
 probably all needs to be lazy evaluation since we can't call
 foreign-library-function until top-level library is loaded (Gtk4,
 WebKit) since that one links to the version of GObject/GLib we
 need to handle.
 
+### Output Args
+
+In 0.3.0, guile-gi was clever enough to elide output arrguments
+from a bound function's input args, and then add them as a multiple
+return values.  To go with new philosopy of making Guile-GI
+a worse Scheme binding so it looks more like GTK docs, we're going
+back to requiring output arguments when calling
+a function.
+
+In 0.0, for a moment, we used SRFI-111 boxes for this.
+
+For bound types, is probably better to
+have the caller pass in a `<GFundamental>`, and then have the
+function binding call `change-class` to upgrade the class instance
+to the new class.  This works fine, so long as `<GFundamental>`
+has `<redefinable-class>` as its metaclass.
+
+```Scheme
+(use-modules (oop goops) (oop goops describe) (system foreign))
+
+(define-class <GFundamental> ()
+  (value #:class <scm-slot>
+         #:init-keyword #:value
+         #:init-value %null-pointer)
+  #:metaclass <redefinable-class>)
+(define-class <GBravo> (<GFundamental>)
+  bravo)
+(define-method (set-bravo! (x <GFundamental>))
+  (change-class x <GBravo>)
+  (slot-set! x 'bravo 2))
+
+(define x (make <GFundamental> #:value 1))
+(describe x)
+(set-bravo! x)
+(describe x)
+```
+
+If output is a simple value, like an integer, you can still
+use a `<GFundamental>`, or a SRFI-111 box is good, too.
+
+(ugh)
+
+### Length Args
+
+In 0.3.0, guile-gi was clever enough to elide array length
+arguments, instead calculating them from the length of the
+array or bytevector used as input.  To go with the new plan
+of being worse scheme but matching GTK docs better, length
+arguments are again required. Passing in a non-number
+will compute the array size from the array.
+
+What non-number? Maybe `#t` or perhaps `_` or `:`.
