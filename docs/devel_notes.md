@@ -1,18 +1,7 @@
 # Guile Modules
 
 # Aliases
-These are typedefs, either to simple types, like guint8, or to _opaque_ types.
-When they are opaque, the type name is `none`.
-
-Since aliases don't have any typological meaning, let's just keep
-an alist of alises and use the more fundamental type whenever the alias
-appears, during parse time.
-
-What to do with opaque type aliases? They could be pointers, if they're
-used like pointers.
-
-When using GIRepository, can you even get alias data? Or is that
-just a GIR XML thing?
+Seems to be for GIR XML, not typelib.
 
 # Constants
 Define directly at parse time assuming they are simple types: `gint`
@@ -21,6 +10,31 @@ Define directly at parse time assuming they are simple types: `gint`
 (define BINARY_AGE 1301)
 ```
 # Structs/Unions and Fields
+```uml
+┌────────────────┐
+│ <GFundamental> │
+├────────────────┤
+│ +value         │
+└────────────────┘
+        △
+        │
+┌────────────────┐
+│ <GMaybeTyped>  │
+├────────────────┤
+│ +gtype-name    │
+└────────────────┘
+        △
+        │
+┌────────────────┐
+│ <GStruct>      │
+├────────────────┤
+│ -fieldinfo[]   │
+├────────────────┤
+│ +get-field     │
+│ +set-field!    │
+└────────────────┘
+```
+
 
 Subclasses of `<GStruct>` may have a list of fields for use with
 getters and setters.  When that it true,
