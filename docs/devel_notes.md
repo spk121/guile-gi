@@ -1,11 +1,65 @@
 # Guile Modules
 
-## Constants
-Define directly at parse time.
+# Aliases
+These are typedefs, either to simple types, like guint8, or to _opaque_ types.
+When they are opaque, the type name is `none`.
+
+Since aliases don't have any typological meaning, let's just keep
+an alist of alises and use the more fundamental type whenever the alias
+appears, during parse time.
+
+What to do with opaque type aliases? They could be pointers, if they're
+used like pointers.
+
+When using GIRepository, can you even get alias data? Or is that
+just a GIR XML thing?
+
+# Constants
+Define directly at parse time assuming they are simple types: `gint`
 
 ```Scheme
 (define BINARY_AGE 1301)
 ```
+# Structs/Unions and Fields
+
+Subclasses of `<GStruct>` may have a list of fields for use with
+getters and setters.  When that it true,
+a class derived from `<GStruct>` has a class slot containing
+information required to get/set fields.  A `<GStruct>` subclass needs to
+define its fieldinfo class slot at parse time, since it is not introspectable.
+That information is used by the `get-field` and `set-field!` methods.
+
+Remember not to add field info for private fields.
+
+In GLib, there are unions with fields that are anonymous
+structs.  Don't even try to support fields of anonymous structs
+
+```Scheme
+(describe-fields (instance <GStruct>))
+(get-field (instance <GStruct>) (field-name <symbol>))
+(set-field! (instance <GStruct>) (field-name <symbol>) value)
+```
+
+
+
+|               |                |            |
+|-----------|-----------|---------|----------|
+| utf8 | gchar* | writable |  | GArray.data | provides unsafe direct write access to pointed-to bytes |
+| guint | guint | writable | | GArray.len | can modify this int |
+
+# Arguments and Return Values
+
+| array name | array c:type | type name | type c:type |
+|--|--|--|--|
+| return | GLib.Array | GArray* | gpointer | gpointer |
+|return | gpointer | gpointer | | | pointer | 
+
+## Special Types
+
+`GArray`: all `GArray` methods are marked as non-introspectable.  The binding
+is suppose to provide native ways to handle `GArray`
+
+
 
 ## Enums and Bitfields
 
@@ -76,7 +130,23 @@ foreign-library-function until top-level library is loaded (Gtk4,
 WebKit) since that one links to the version of GObject/GLib we
 need to handle.
 
-### Argument Conversions
+## String Argument Conversions
+
+String argument conversions are always a source of friction.
+
+1. input, utf8 `gchar *` w/ length arg, transfer-ownership: none
+
+Example: `ascii_dtostr`
+
+Caller is providing a UTF-8 string buffer than can be modified by
+callee.
+
+2. output, utf8 `gchar *`, transfer-ownership: full
+
+C
+
+
+## Argument Conversion
 
 *Input Conversions*
 
