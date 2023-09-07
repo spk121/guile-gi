@@ -651,7 +651,9 @@ gig_type_tag_is_numeric(SCM s_tag)
 SCM
 gig_type_tag_to_string(SCM s_tag)
 {
-    return scm_from_utf8_string(g_type_tag_to_string(scm_to_int(s_tag)));
+    GITypeTag c_tag = scm_to_int(s_tag);
+    const gchar *c_str = g_type_tag_to_string(c_tag);
+    return scm_from_utf8_string(c_str);
 }
 
 SCM gig_TYPE_TAG_VOID;
@@ -716,8 +718,10 @@ SCM
 gig_base_info_get_name(SCM s_info)
 {
     GIBaseInfo *c_info = _scm_to_gibaseinfo(s_info);
-    const char *c_name = g_base_info_get_name(c_info);
-    return scm_from_utf8_string(c_name);
+    const gchar *c_name = g_base_info_get_name(c_info);
+    if (c_name)
+        return scm_from_utf8_string(c_name);
+    return SCM_BOOL_F;
 }
 
 SCM
@@ -820,16 +824,18 @@ gig_callable_info_can_throw_gerror(SCM s_info)
 SCM
 gig_callable_info_get_n_args(SCM s_info)
 {
-    GIBaseInfo *c_info = _scm_to_gibaseinfo(s_info);
-    return scm_from_int(g_callable_info_get_n_args(c_info));
+    GIArgInfo *c_info = _scm_to_gibaseinfo(s_info);
+    gint c_n = g_callable_info_get_n_args(c_info);
+    return scm_from_int(c_n);
 }
 
 SCM
 gig_callable_info_get_arg(SCM s_info, SCM s_n)
 {
-    GIBaseInfo *c_info = _scm_to_gibaseinfo(s_info);
-    int c_n = scm_to_int(s_n);
-    return _scm_from_gibaseinfo(g_callable_info_get_arg(c_info, c_n));
+    GICallableInfo *c_info = _scm_to_gibaseinfo(s_info);
+    gint c_n = scm_to_int(s_n);
+    GIArgInfo *arg = g_callable_info_get_arg(c_info, c_n);
+    return _scm_from_gibaseinfo(arg);
 }
 
 SCM
@@ -935,8 +941,9 @@ gig_is_function_info(SCM s_info)
 SCM
 gig_function_info_get_flags(SCM s_info)
 {
-    GIBaseInfo *c_info = _scm_to_gibaseinfo(s_info);
-    return scm_from_int(g_function_info_get_flags(c_info));
+    GIFunctionInfo *c_info = _scm_to_gibaseinfo(s_info);
+    GIFunctionInfoFlags flags = g_function_info_get_flags(c_info);
+    return scm_from_int(flags);
 }
 
 SCM
@@ -1463,6 +1470,8 @@ gig_object_info_get_parent(SCM s_info)
 {
     GIBaseInfo *c_info = _scm_to_gibaseinfo(s_info);
     GIBaseInfo *c_ret = g_object_info_get_parent(c_info);
+    if (c_ret == NULL)
+        return SCM_BOOL_F;
     return _scm_from_gibaseinfo(c_ret);
 }
 
@@ -1701,7 +1710,10 @@ SCM
 gig_object_info_get_ref_function(SCM s_info)
 {
     GIBaseInfo *c_info = _scm_to_gibaseinfo(s_info);
-    return scm_from_utf8_string(g_object_info_get_ref_function(c_info));
+    const char *c_sym = g_object_info_get_ref_function(c_info);
+    if (c_sym == nullptr)
+        return SCM_BOOL_F;
+    return scm_from_utf8_string(c_sym);
 }
 
 // g_object_info_get_ref_function_pointer is not useful
@@ -1709,8 +1721,11 @@ gig_object_info_get_ref_function(SCM s_info)
 SCM
 gig_object_info_get_unref_function(SCM s_info)
 {
-    GIBaseInfo *c_info = _scm_to_gibaseinfo(s_info);
-    return scm_from_utf8_string(g_object_info_get_unref_function(c_info));
+    GIObjectInfo *c_info = _scm_to_gibaseinfo(s_info);
+    const char *c_sym = g_object_info_get_unref_function(c_info);
+    if (c_sym == nullptr)
+        return SCM_BOOL_F;
+    return scm_from_utf8_string(c_sym);
 }
 
 // g_object_info_get_unref_function_pointer is not useful
@@ -1718,8 +1733,11 @@ gig_object_info_get_unref_function(SCM s_info)
 SCM
 gig_object_info_get_set_value_function(SCM s_info)
 {
-    GIBaseInfo *c_info = _scm_to_gibaseinfo(s_info);
-    return scm_from_utf8_string(g_object_info_get_set_value_function(c_info));
+    GIObjectInfo *c_info = _scm_to_gibaseinfo(s_info);
+    const char *c_sym = g_object_info_get_set_value_function(c_info);
+    if (c_sym == nullptr)
+        return SCM_BOOL_F;
+    return scm_from_utf8_string(c_sym);
 }
 
 // g_object_info_get_set_value_function_pointer is not useful
@@ -1948,8 +1966,9 @@ gig_arg_info_get_direction(SCM s_info)
 SCM
 gig_arg_info_get_ownership_transfer(SCM s_info)
 {
-    GIBaseInfo *c_info = _scm_to_gibaseinfo(s_info);
-    return scm_from_int(g_arg_info_get_ownership_transfer(c_info));
+    GIArgInfo *c_info = _scm_to_gibaseinfo(s_info);
+    GITransfer c_transfer = g_arg_info_get_ownership_transfer(c_info);
+    return scm_from_int(c_transfer);
 }
 
 SCM
@@ -1962,8 +1981,9 @@ gig_arg_info_get_scope(SCM s_info)
 SCM
 gig_arg_info_get_type(SCM s_info)
 {
-    GIBaseInfo *c_info = _scm_to_gibaseinfo(s_info);
-    return _scm_from_gibaseinfo(g_arg_info_get_type(c_info));
+    GIArgInfo *c_info = _scm_to_gibaseinfo(s_info);
+    GITypeInfo *c_type = g_arg_info_get_type(c_info);
+    return _scm_from_gibaseinfo(c_type);
 }
 
 // g_arg_info_load_type not useful
@@ -1971,8 +1991,9 @@ gig_arg_info_get_type(SCM s_info)
 SCM
 gig_arg_info_may_be_null(SCM s_info)
 {
-    GIBaseInfo *c_info = _scm_to_gibaseinfo(s_info);
-    return scm_from_bool(g_arg_info_may_be_null(c_info));
+    GIArgInfo *c_info = _scm_to_gibaseinfo(s_info);
+    gboolean c_ret = g_arg_info_may_be_null(c_info);
+    return scm_from_bool(c_ret);
 }
 
 SCM
@@ -2221,8 +2242,9 @@ gig_type_info_is_pointer(SCM s_info)
 SCM
 gig_type_info_get_tag(SCM s_info)
 {
-    GIBaseInfo *c_info = _scm_to_gibaseinfo(s_info);
-    return scm_from_int(g_type_info_get_tag(c_info));
+    GITypeInfo *c_info = _scm_to_gibaseinfo(s_info);
+    GITypeTag c_tag = g_type_info_get_tag(c_info);
+    return scm_from_int(c_tag);
 }
 
 SCM
@@ -2236,8 +2258,11 @@ gig_type_info_get_param_type(SCM s_info, SCM s_n)
 SCM
 gig_type_info_get_interface(SCM s_info)
 {
-    GIBaseInfo *c_info = _scm_to_gibaseinfo(s_info);
-    return _scm_from_gibaseinfo(g_type_info_get_interface(c_info));
+    GITypeInfo *c_info = _scm_to_gibaseinfo(s_info);
+    GIBaseInfo *c_iface = g_type_info_get_interface(c_info);
+    if (c_iface == nullptr)
+        return SCM_BOOL_F;
+    return _scm_from_gibaseinfo(c_iface);
 }
 
 SCM
@@ -2440,7 +2465,7 @@ gig_init_girepository ()
         scm_c_define_gsubr ("%callable-info-get-n-args", 1, 0, 0,
                             gig_callable_info_get_n_args);
         scm_c_define_gsubr ("%callable-info-get-arg", 2, 0, 0,
-                            gig_callable_info_get_n_args);
+                            gig_callable_info_get_arg);
         scm_c_define_gsubr ("%callable-info-get-caller-owns", 1, 0, 0,
                             gig_callable_info_get_caller_owns);
         scm_c_define_gsubr ("%callable-info-get-instance-ownership-transfer",

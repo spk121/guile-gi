@@ -109,6 +109,7 @@
             registered-type-info-get-type-name
             registered-type-info-get-type-init
             registered-type-info-get-g-type
+            registered-type-info-has-g-type?
 
             ;; GIEnumInfo
             is-enum-info?
@@ -1077,8 +1078,14 @@ the environment at parse type differs from the envirnoment at run time.
 The only useful thing to do with this function is to check if a type
 info *has* a gtype, or possibly to pass it to
 get-object-gtype-interfaces."
-  (assert-giregisteredtypeinfo "registered-type-info-get-g-type?" info)
+  (assert-giregisteredtypeinfo "registered-type-info-get-g-type" info)
   (%registered-type-info-get-g-type info))
+
+(define (registered-type-has--g-type? info)
+  "Given a registered type <gibaseinfo>, this returns #t if this
+type has a GType.  Not all enums and bitfields have GTypes, for example."
+  (assert-giregisteredtypeinfo "registered-type-info-has-g-type?" info)
+  (> (%registered-type-info-get-g-type info) 4))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; GIEnumInfo
@@ -2082,7 +2089,7 @@ the field from the beginning of the struct or union."
   "Given a field <gibaseinfo>, obtains the size in bits
 necessary to hold the field."
   (assert-gifieldinfo "field-info-get-size" info)
-  (%field-info-get-offset info))
+  (%field-info-get-size info))
 
 (define (field-info-get-type info)
   "Given a field <gibaseinfo>, this returns a type <gibaseinfo> that
