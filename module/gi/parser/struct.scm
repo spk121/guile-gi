@@ -16,66 +16,30 @@
 (define-module (gi parser struct)
   #:use-module (gi girepository)
   #:use-module (gi parser entry)
-  #:export (struct-info-parent
+  #:use-module (gi parser field)
+  #:export (struct-info-parents
             parse-struct-info
-            struct-info-childnre))
+            struct-info-children))
 
 ;; Structs have no prerequisites.  They may have a GType.
 ;; The field information needs to be gathered at parse time.
 ;; They may have methods.
 
-(define (pre-struct-info info)
+(define (struct-info-children info)
   '())
-
-(define (type-info-to-guile-type type-info)
-  (assert-gitypeinfo "type-info-to-guile-type" type-info)
-  (let* ((tag (type-info-get-tag type-info))
-         (pointer? (type-info-is-pointer? type-info)))
-    (cond
-     ((and (type-tag-is-basic? tag) (not pointer?))
-      tag)
-     ((and (type-tag-is-basic? tag) pointer?)
-      (cons tag 'pointer))
-     ((and (eq? tag 'interface) pointer?)
-      (let* ((base-info (type-info-get-interface type-info))
-             (base-type (base-info-get-type base-info)))
-        (cons
-         (if (member base-type '(struct boxed enum interface flags object union))
-             (or (and=> (registered-type-info-get-type-name base-info) string->symbol)
-                 (string->symbol (base-info-get-name base-info)))
-             base-type)
-         'pointer)))
-     ((and (eq? tag 'interface) (not pointer?))
-      (let* ((base-info (type-info-get-interface type-info))
-             (base-type (base-info-get-type base-info)))
-         (if (member base-type '(struct boxed enum interface flags object union))
-             (or (and=> (registered-type-info-get-type-name base-info) string->symbol)
-                 (string->symbol (base-info-get-name base-info)))
-             (if (eq? base-type 'callback)
-                 (let* ((base-info (type-info-get-interface type-info)))
-                   (cons 'kallback (base-info-get-name base-info)))
-                 
-                 base-type))))
-     (else
-      tag))))
 
 (define (extract-field-info struct-info)
   (assert-gistructinfo "extract-field-info" struct-info)
   (let ((field-infos (struct-info-get-fields struct-info)))
-    (map-in-order
-     (lambda (fi)
-       (list
-        (base-info-get-name fi)
-        (field-info-get-flags fi)
-        (field-info-get-offset fi)
-        (field-info-get-size fi)
-        (type-info-to-guile-type (field-info-get-type fi))))
-     field-infos)))
-  
+    (map-in-order field-info-il field-infos)))
+
 (define (parse-struct-info struct-info namespace)
   (assert-gistructinfo "parse-struct-info" struct-info)
   (let ((name-symbol (string->symbol (base-info-get-name struct-info)))
-        (fields (extract-field-info struct-info)))
+        (fields (extract-field-info struct-info))
+        (gtype-string (registered-type-info-get-type-name struct-info)))
+
+
 
     (list
      (make-entry
@@ -83,11 +47,24 @@
       (list name-symbol)
 
       ;; Definition
-      `(define-class ,name-symbol (<GStruct>)
-         (field-info #:allocation #:each-subclass
-                     #:init-value ,fields))
+      (cond
+       ((and (null? fields) (not gtype-string))
+        `(define-class ,name-symbol (<GUntypedOpaqueStruct>)))
+       ((and (null? fields) gtype-string)
+        `(define-class ,name-symbol (<GOpaqueStruct>)
+           (gtype-string #:allocation #:class #:init-value ,gtype-string)))
+       ((and (not (null? fields)) (not gtype-string))
+        `(define-class ,name-symbol (<GUntypedStruct>)
+           (field-info #:allocation #:each-subclass
+                       #:init-value ,fields)))
+       ((and (not (null? fields)) gtype-string)
+        `(define-class ,name-symbol (<GStruct>)
+           (gtype-string #:allocation #:class #:init-value ,gtype-string)
+           (field-info #:allocation #:each-subclass
+                       #:init-value ,fields))))
       ))))
 
 
-(define (post-constant-info info)
-  '())
+(define (struct-info-children struct-info)
+  (assert-gistructinfo "parse-struct-info" struct-info)
+  (struct-info-get-methods struct-info))

@@ -1081,7 +1081,7 @@ get-object-gtype-interfaces."
   (assert-giregisteredtypeinfo "registered-type-info-get-g-type" info)
   (%registered-type-info-get-g-type info))
 
-(define (registered-type-has--g-type? info)
+(define (registered-type-info-has-g-type? info)
   "Given a registered type <gibaseinfo>, this returns #t if this
 type has a GType.  Not all enums and bitfields have GTypes, for example."
   (assert-giregisteredtypeinfo "registered-type-info-has-g-type?" info)
