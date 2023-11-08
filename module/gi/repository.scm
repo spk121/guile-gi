@@ -35,6 +35,14 @@
 (eval-when (expand load eval)
   (load-extension "libguile-gi" "gig_init_repository"))
 
+(define %gig-duplicate-handlers
+  (append
+   (lookup-duplicates-handlers
+    '(merge-generics replace warn-override-core))
+   (list %gig-duplicate-warn)
+   (lookup-duplicates-handlers
+    '(last))))
+
 (define-method (load (info <GIBaseInfo>))
   (%load-info info LOAD_EVERYTHING))
 
@@ -46,10 +54,14 @@
 
 (define* (typelib->module module lib #:optional version)
   (require lib version)
-  (set! module (cond
-                ((module? module) module)
-                ((list? module) (resolve-module module))
-                (else (error "not a module: ~A" module))))
+  (set! module
+    (cond
+     ((module? module) module)
+     ((list? module)
+      (let ((m (resolve-module module)))
+        (set-module-duplicates-handlers! m %gig-duplicate-handlers)
+        m))
+     (else (error "not a module: ~A" module))))
 
   (unless (module-public-interface module)
     (let ((interface (make-module)))
@@ -57,6 +69,17 @@
       (set-module-version! interface (module-version module))
       (set-module-kind! interface 'interface)
       (set-module-public-interface! module interface)))
+
+  (for-each
+   (lambda (dep)
+     (module-use!
+      module
+      (let ((module (list 'gi (string->symbol dep)))
+           (lib+version (string-split dep #\-)))
+       (or (false-if-exception (resolve-interface module))
+           (module-public-interface
+            (apply typelib->module module lib+version))))))
+   (immediate-dependencies lib))
 
   (save-module-excursion
    (lambda ()
