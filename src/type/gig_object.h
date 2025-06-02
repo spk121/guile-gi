@@ -17,10 +17,13 @@
 #define GIG_OBJECT_H
 
 #include <libguile.h>
-#include <girepository.h>
 #include "../core.h"
 
-SCM gig_property_define(GType type, GIPropertyInfo *info, const char *namespace);
-GIG_API void gig_init_object(void);
+GIG_API extern SCM gig_il_property_func;
+
+SCM gig_il_property(SCM s_gtype_name, SCM s_long_name, SCM s_short_name, SCM s_symbol);
+
+void gig_init_object_stage1(void);
+void gig_init_object_stage2(void);
 
 #endif

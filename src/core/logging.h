@@ -13,28 +13,30 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef CORE_LOGGING_H
-#define CORE_LOGGING_H
+#ifndef _CORE_LOGGING_H
+#define _CORE_LOGGING_H
 
 #include <assert.h>
-#include <stdio.h>
 #include <stdbool.h>
-#include <unistd.h>
 
-typedef struct _LogField
+struct _LogField
 {
-    const char *key;
-    const void *value;
-    ssize_t length;
-} LogField;
+    const char* key;
+    const void* value;
+    int length;
+};
 
-typedef enum _LogWriterOutput
+typedef struct _LogField LogField;
+
+enum _LogWriterOutput
 {
     LOG_WRITER_HANDLED = 1,
     LOG_WRITER_UNHANDLED = 0
-} LogWriterOutput;
+};
 
-typedef enum _LogLeveFlags
+typedef enum _LogWriterOutput LogWriterOutput;
+
+enum _LogLevelFlags
 {
     /* log flags */
     LOG_FLAG_RECURSION = 1 << 0,
@@ -50,27 +52,36 @@ typedef enum _LogLeveFlags
 
     LOG_LEVEL_MASK = ~(LOG_FLAG_RECURSION | LOG_FLAG_FATAL),
     LOG_FATAL_MASK = LOG_FLAG_FATAL | LOG_LEVEL_ERROR
-} LogLevelFlags;
+};
 
-typedef LogWriterOutput(*LogWriterFunc) (LogLevelFlags log_level, const LogField *fields,
+typedef enum _LogLevelFlags LogLevelFlags;
+
+typedef enum _LogWriterOutput (*LogWriterFunc)(enum _LogLevelFlags log_level, const LogField *fields,
                                          size_t n_fields, void *user_data);
+
 typedef void (*DestroyNotify)(void *data);
 
 bool log_writer_supports_color(int fd);
 void log_set_writer_func(LogWriterFunc func, void *user_data, DestroyNotify user_data_free);
+
+#if 0
 LogWriterOutput log_writer_journald(LogLevelFlags log_level, const LogField *fields,
                                     size_t n_fields, void *user_data);
 LogWriterOutput log_writer_default(LogLevelFlags log_level, const LogField *fields,
                                    size_t n_fields, void *user_data);
-void log_structured(const char *log_domain, LogLevelFlags log_level, ...);
+#endif
+void log_structured(const char *log_domain, enum _LogLevelFlags log_level, ...);
 
 #define assert_not_reached() (assert(0))
+
+#define STRINGIFY(x) STRINGIFY_INNER(x)
+#define STRINGIFY_INNER(x) #x
 
 #define gig_debug_internal(level, domain, ...)                                                    \
     do                                                                                            \
     {                                                                                             \
         log_structured(G_LOG_DOMAIN, level, "CODE_FILE", __FILE__, "CODE_LINE",                   \
-                       G_STRINGIFY(__LINE__), "CODE_FUNC", __func__, "GIG_DOMAIN", domain,        \
+                       STRINGIFY(__LINE__), "CODE_FUNC", __func__, "GIG_DOMAIN", domain, \
                        "MESSAGE", __VA_ARGS__);                                                   \
     } while (false)
 #define gig_debug_transfer(...) gig_debug_internal(LOG_LEVEL_DEBUG, "transfers", __VA_ARGS__)

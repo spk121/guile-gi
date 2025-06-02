@@ -98,7 +98,7 @@ examples/resources/test.gresource: AM_GRESOURCE_FLAGS = --sourcedir=$(abs_buildd
 #  LTLIBRARIES  #
 #################
 
-guileextension_LTLIBRARIES = libguile-gi.la libguile-girepository.la
+guileextension_LTLIBRARIES = libguile-gi.la libguile-giparse.la libguile-girepository.la
 
 # CFLAG_VISIBILITY = -fvisibility=hidden
 
@@ -122,18 +122,20 @@ libguile_gi_la_c_sources = \
   src/type/gig_object.c \
   src/type/gig_value.c \
   src/type/gig_signal.c \
-  src/gig.c \
   src/func/gig_arg_map.c \
   src/func/gig_callback.c \
   src/func/gig_function.c \
   src/type/gig_constant.c \
   src/type/gig_flag.c \
-  src/gig_repository.c \
-  src/gig_document.c \
   src/type/gig_type.c \
   src/type/gig_boxed.c \
   src/func/gig_util.c \
-  src/gig_logging.c
+  src/gig_logging.c \
+  src/func/gig_lib.c \
+  src/func/gig_invoker.c \
+  src/gig_glib.c \
+  src/gig_runtime.c
+
 
 libguile_gi_la_internal_headers = \
   src/core.h \
@@ -167,13 +169,15 @@ libguile_gi_la_internal_headers = \
   src/type/gig_constant.h \
   src/type/gig_flag.h \
   src/type/gig_flag_priv.h \
-  src/gig_repository.h \
   src/type/gig_type.h \
   src/type/gig_type_priv.h \
   src/type/gig_boxed.h \
   src/func/gig_util.h \
   src/func/gig_util_priv.h \
-  src/gig_logging.h
+  src/gig_logging.h \
+  src/func/gig_lib.h \
+  src/func/gig_invoker.h \
+  src/gig_glib.h
 
 libguile_gi_la_SOURCES = \
   $(libguile_gi_la_internal_headers) \
@@ -194,27 +198,18 @@ if MTRACE
 libguile_gi_la_CPPFLAGS += -DMTRACE
 endif
 
-CFLAG_VISIBILITY = -fvisibility=hidden
-
 libguile_gi_la_CFLAGS = \
   -std=c11 \
   $(CFLAG_VISIBILITY) \
   $(GUILE_CFLAGS) \
   $(GLIB_CFLAGS) \
   $(GOBJECT_CFLAGS) \
-  $(GOBJECT_INTROSPECTION_CFLAGS) \
   $(FFI_CFLAGS)
 
 libguile_gi_la_LDFLAGS = \
  -no-undefined \
  -version-info $(LIBGUILE_GI_INTERFACE) \
  $(GUILE_LDFLAGS)
-
-# On Windows, make sure the DLL is installed into the
-# $guileextensiondir and not into $guileextensiondir/../bin
-if BUILDING_DLL
-libguile_gi_la_LDFLAGS += -bindir $(DESTDIR)$(guileextensiondir)
-endif
 
 if !DLL_VERSION_INFO
 libguile_gi_la_LDFLAGS += -avoid-version
@@ -224,11 +219,91 @@ if COVERAGE
 libguile_gi_la_LDFLAGS += --coverage -Wl,--dynamic-list-data
 endif
 
+# FIXME: remove GOBJECT_LIBS when dynamic loading is working
+
 libguile_gi_la_LIBADD = \
  $(GUILE_LIBS) \
+ $(FFI_LIBS)  \
+ $(GOBJECT_LIBS)
+
+######################
+#  libguile-giparse  #
+######################
+
+libguile_giparse_la_c_sources = \
+  src/core/keyval.c \
+  src/core/logging.c \
+  src/core/mem.c \
+  src/core/oop.c \
+  src/core/scm.c \
+  src/core/slist.c \
+  src/core/string.c \
+  src/core/strval.c \
+  src/func/gig_arg_map.c \
+  src/func/gig_data_type.c \
+  src/gig_parser.c \
+  src/gig_document.c
+
+libguile_giparse_la_internal_headers = \
+  src/core.h \
+  src/core/keyval.h \
+  src/core/logging.h \
+  src/core/mem.h \
+  src/core/oop.h \
+  src/core/scm.h \
+  src/core/slist.h \
+  src/core/string.h \
+  src/core/strval.h \
+  src/core/visibility.h \
+  src/core/func/gig_arg_map.h \
+  src/core/func/gig_data_type.h \
+  src/gig_parser.h
+
+libguile_giparse_la_SOURCES = \
+  $(libguile_giparse_la_internal_headers) \
+  $(libguile_giparse_la_c_sources)
+
+libguile_giparse_la_CPPFLAGS = \
+  -DG_LOG_DOMAIN=\"GuileGI\" \
+  -DG_LOG_USE_STRUCTURED \
+  -DBUILDING_GIG \
+  -DGIG_PARSER
+
+if BUILDING_DLL
+libguile_giparse_la_CPPFLAGS += -DGIR_DLL -DGIR_DLL_EXPORTS
+endif
+if COVERAGE
+libguile_giparse_la_CPPFLAGS += -DENABLE_GCOV --coverage
+endif
+if MTRACE
+libguile_giparse_la_CPPFLAGS += -DMTRACE
+endif
+
+libguile_giparse_la_CFLAGS = \
+  -std=c11 \
+  $(CFLAG_VISIBILITY) \
+  $(GUILE_CFLAGS) \
+  $(GLIB_CFLAGS) \
+  $(GOBJECT_CFLAGS) \
+  $(GOBJECT_INTROSPECTION_CFLAGS) \
+  $(FFI_CFLAGS)
+
+libguile_giparse_la_LDFLAGS = \
+ -no-undefined \
+ -version-info $(LIBGUILE_GIPARSE_INTERFACE) \
+ $(GUILE_LDFLAGS)
+
+if !DLL_VERSION_INFO
+libguile_giparse_la_LDFLAGS += -avoid-version
+endif
+
+if COVERAGE
+libguile_giparse_la_LDFLAGS += --coverage -Wl,--dynamic-list-data
+endif
+
+libguile_giparse_la_LIBADD = \
+ $(GUILE_LIBS) \
  $(GOBJECT_INTROSPECTION_LIBS) \
- $(GLIB_LIBS) \
- $(GOBJECT_LIBS) \
  $(FFI_LIBS)
 
 ######################
@@ -290,15 +365,15 @@ nodist_pkgguilesite_DATA = \
   module/gi/config.scm
 
 dist_pkgguilesite_DATA = \
-  module/gi/core-generics.scm \
   module/gi/compat.scm \
+  module/gi/core-generics.scm \
   module/gi/documentation.scm \
   module/gi/logging.scm \
-  module/gi/oop.scm \
+  module/gi/runtime.scm \
+  module/gi/parser.scm \
   module/gi/repository.scm \
   module/gi/types.scm \
-  module/gi/util.scm \
-  module/gi/girepository.scm
+  module/gi/util.scm
 
 dist_scriptguilesite_DATA = \
   module/scripts/gi-gtkdoc.scm
@@ -447,17 +522,20 @@ EVERYTHING_TESTS = \
 
 TESTS_LTDLOPEN = \
   -dlopen ${top_builddir}/libguile-gi.la \
+  -dlopen ${top_builddir}/libguile-giparse.la \
   -dlopen ${top_builddir}/test/libeverything-1.0.la \
   -dlopen ${top_builddir}/test/libmarshall-1.0.la \
   -dlopen ${top_builddir}/test/libextra-1.0.la
 else
 EVERYTHING_TESTS =
-TESTS_LTDLOPEN = -dlopen ${top_builddir}/libguile-gi.la
+TESTS_LTDLOPEN = -dlopen ${top_builddir}/libguile-gi.la \
+  -dlopen ${top_builddir}/libguile-giparse.la
 endif
 
 TESTS = \
   test/_setup.scm \
   test/typelib.scm \
+  test/il.scm \
   test/insanity.scm \
   test/constants.scm \
   test/mem.scm \

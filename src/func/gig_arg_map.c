@@ -44,9 +44,6 @@ const char presence_strings[GIG_ARG_PRESENCE_COUNT][9] = {
     [GIG_ARG_PRESENCE_IMPLICIT] = "implicit"
 };
 
-static GigArgMap *arg_map_allocate(size_t n);
-static void arg_map_apply_function_info(GigArgMap *amap, GIFunctionInfo *func_info);
-static void arg_map_determine_argument_presence(GigArgMap *amap, GIFunctionInfo *info);
 static void arg_map_compute_c_invoke_positions(GigArgMap *amap);
 static void arg_map_compute_s_call_positions(GigArgMap *amap);
 static void arg_map_entry_init(GigArgMapEntry *map);
@@ -58,31 +55,8 @@ arg_map_entry_init(GigArgMapEntry *entry)
     entry->name = xstrdup("(uninitialized)");
 }
 
-// Gather information on how to map Scheme arguments to C arguments.
 GigArgMap *
-gig_amap_new(const char *name, GICallableInfo *function_info)
-{
-    GigArgMap *amap;
-    size_t n;
-
-    n = g_callable_info_get_n_args(function_info);
-    amap = arg_map_allocate(n);
-    free(amap->name);
-    amap->name = xstrdup(g_base_info_get_name(function_info));
-    arg_map_apply_function_info(amap, function_info);
-    if (amap->is_invalid) {
-        gig_amap_free(amap);
-        return NULL;
-    }
-    arg_map_determine_argument_presence(amap, function_info);
-    arg_map_compute_c_invoke_positions(amap);
-    arg_map_compute_s_call_positions(amap);
-    gig_amap_dump(name, amap);
-    return amap;
-}
-
-static GigArgMap *
-arg_map_allocate(size_t n)
+gig_amap_allocate(size_t n)
 {
     GigArgMap *amap;
 
@@ -96,185 +70,6 @@ arg_map_allocate(size_t n)
     arg_map_entry_init(&amap->return_val);
 
     return amap;
-}
-
-static void
-arg_map_apply_function_info(GigArgMap *amap, GIFunctionInfo *func_info)
-{
-    int i, n;
-    GIArgInfo *arg_info;
-
-    n = amap->len;
-
-    for (i = 0; i < n; i++) {
-        arg_info = g_callable_info_get_arg(func_info, i);
-        gig_type_meta_init_from_arg_info(&amap->pdata[i].meta, arg_info);
-        free(amap->pdata[i].name);
-        amap->pdata[i].name = xstrdup(g_base_info_get_name(arg_info));
-        g_base_info_unref(arg_info);
-        amap->is_invalid |= amap->pdata[i].meta.is_invalid;
-    }
-
-    gig_type_meta_init_from_callable_info(&amap->return_val.meta, func_info);
-    free(amap->return_val.name);
-    amap->return_val.name = xstrdup("%return");
-    amap->is_invalid |= amap->return_val.meta.is_invalid;
-}
-
-static void
-arg_map_determine_array_length_index(GigArgMap *amap, GigArgMapEntry *entry, GITypeInfo *info)
-{
-    if (entry->meta.gtype == G_TYPE_PRIV_C_ARRAY && entry->meta.has_size) {
-        int idx = g_type_info_get_array_length(info);
-
-        assert(idx >= 0);
-
-        entry->tuple = GIG_ARG_TUPLE_ARRAY;
-        entry->child = amap->pdata + idx;
-        entry->child->tuple = GIG_ARG_TUPLE_ARRAY_SIZE;
-        entry->child->presence = GIG_ARG_PRESENCE_IMPLICIT;
-        entry->child->parent = entry;
-        entry->child->is_s_output = 0;
-    }
-}
-
-static void
-arg_map_determine_argument_presence(GigArgMap *amap, GIFunctionInfo *info)
-{
-    GigArgMapEntry *entry;
-    bool opt_flag = true;
-    int i, n;
-
-    n = amap->len;
-
-    // may-be-null parameters at the end of the C call can be made
-    // optional parameters in the gsubr call.
-    for (i = n - 1; i >= 0; i--) {
-        entry = &amap->pdata[i];
-        entry->tuple = GIG_ARG_TUPLE_SINGLETON;
-        if (entry->meta.is_in || (entry->meta.is_out && entry->meta.is_caller_allocates)) {
-            if (opt_flag && entry->meta.is_nullable)
-                entry->presence = GIG_ARG_PRESENCE_OPTIONAL;
-            else {
-                entry->presence = GIG_ARG_PRESENCE_REQUIRED;
-                opt_flag = false;
-            }
-        }
-        else {
-            entry->presence = GIG_ARG_PRESENCE_IMPLICIT;
-        }
-    }
-
-    // In C, if there is an array defined as a pointer and a
-    // length parameter, it becomes a single S parameter.
-    for (i = 0; i < n; i++) {
-        entry = amap->pdata + i;
-        GIArgInfo *a = g_callable_info_get_arg(info, i);
-        GITypeInfo *t = g_arg_info_get_type(a);
-        arg_map_determine_array_length_index(amap, entry, t);
-        g_base_info_unref(t);
-        g_base_info_unref(a);
-    }
-
-    amap->return_val.tuple = GIG_ARG_TUPLE_SINGLETON;
-    GITypeInfo *return_type = g_callable_info_get_return_type(info);
-    arg_map_determine_array_length_index(amap, &amap->return_val, return_type);
-    g_base_info_unref(return_type);
-}
-
-static void
-arg_map_compute_c_invoke_positions(GigArgMap *amap)
-{
-    int i, n;
-    GigArgMapEntry *entry;
-    n = amap->len;
-
-    int c_input_pos = 0;
-    int c_output_pos = 0;
-    for (i = 0; i < n; i++) {
-        entry = &amap->pdata[i];
-
-        // Here we find the positions of this argument in the
-        // g_function_info_invoke call.  Also, some output parameters
-        // require a SCM container to be passed in to the SCM GSubr
-        // call.
-        if (entry->meta.is_in && !entry->meta.is_out) {
-            entry->s_direction = GIG_ARG_DIRECTION_INPUT;
-            entry->is_c_input = 1;
-            entry->c_input_pos = c_input_pos++;
-        }
-        else if (entry->meta.is_in && entry->meta.is_out) {
-            entry->s_direction = GIG_ARG_DIRECTION_INOUT;
-            entry->is_c_input = 1;
-            entry->c_input_pos = c_input_pos++;
-            entry->is_c_output = 1;
-            entry->c_output_pos = c_output_pos++;
-        }
-        else if (entry->meta.is_out && entry->meta.is_caller_allocates) {
-            entry->s_direction = GIG_ARG_DIRECTION_PREALLOCATED_OUTPUT;
-            entry->is_c_output = 1;
-            entry->c_output_pos = c_output_pos++;
-        }
-        else {
-            entry->s_direction = GIG_ARG_DIRECTION_OUTPUT;
-            entry->is_c_output = 1;
-            entry->c_output_pos = c_output_pos++;
-        }
-    }
-
-    if (amap->return_val.meta.is_out)
-        amap->return_val.s_direction = GIG_ARG_DIRECTION_OUTPUT;
-    else
-        amap->return_val.s_direction = GIG_ARG_DIRECTION_VOID;
-
-    amap->c_input_len = c_input_pos;
-    amap->c_output_len = c_output_pos;
-}
-
-static void
-arg_map_compute_s_call_positions(GigArgMap *amap)
-{
-    int i, n;
-    GigArgMapEntry *entry;
-    n = amap->len;
-
-    int s_input_pos = 0;
-    int s_output_pos = 0;
-    // We now can decide where these arguments appear in the SCM GSubr
-    // call.
-    for (i = 0; i < n; i++) {
-        entry = &amap->pdata[i];
-
-        // TODO: Why check entry->tuple instead of entry->presence?
-        //       The latter appears to be buggy in some way.
-        if (entry->tuple == GIG_ARG_TUPLE_ARRAY_SIZE)
-            continue;
-
-        switch (entry->s_direction) {
-        case GIG_ARG_DIRECTION_INPUT:
-        case GIG_ARG_DIRECTION_INOUT:
-        case GIG_ARG_DIRECTION_PREALLOCATED_OUTPUT:
-            entry->is_s_input = 1;
-            entry->s_input_pos = s_input_pos++;
-            if (entry->presence == GIG_ARG_PRESENCE_REQUIRED)
-                amap->s_input_req++;
-            else if (entry->presence == GIG_ARG_PRESENCE_OPTIONAL)
-                amap->s_input_opt++;
-
-            if (entry->s_direction == GIG_ARG_DIRECTION_INPUT)
-                break;
-            /* fallthrough */
-        case GIG_ARG_DIRECTION_OUTPUT:
-            entry->is_s_output = 1;
-            entry->s_output_pos = s_output_pos++;
-            break;
-        default:
-            assert_not_reached();
-        }
-    }
-
-    amap->s_output_len = s_output_pos;
-    assert(amap->s_input_req + amap->s_input_opt == s_input_pos);
 }
 
 void
@@ -307,8 +102,12 @@ gig_amap_dump(const char *name, const GigArgMap *amap)
     gig_debug_amap(" C inputs: %d, outputs: %d", amap->c_input_len, amap->c_output_len);
     for (int i = 0; i < amap->len; i++) {
         const GigArgMapEntry *entry = &amap->pdata[i];
+#ifdef GIG_PARSER
+        len = snprintf(s, 100, " Arg %d: '%s'", i, entry->name);
+#else
         len = snprintf(s, 100, " Arg %d: '%s' %s",
                        i, entry->name, gig_type_meta_describe(&entry->meta));
+#endif
         len += snprintf(s + len, 100, ", %s, %s, %s",
                         dir_strings[entry->s_direction],
                         tuple_strings[entry->tuple], presence_strings[entry->presence]);
@@ -325,15 +124,23 @@ gig_amap_dump(const char *name, const GigArgMap *amap)
 
         if (amap->pdata[i].meta.n_params > 0) {
             GigTypeMeta *m2 = &amap->pdata[i].meta.params[0];
+#ifdef GIG_PARSER
+	    len = 0;
+#else
             len = snprintf(s, 100, "    Item Type: %s", gig_type_meta_describe(m2));
+#endif
             gig_debug_amap("%s", s);
             s[0] = '\0';
         }
     }
     if (amap->return_val.meta.gtype != G_TYPE_NONE) {
         const GigArgMapEntry *entry = &amap->return_val;
+#ifdef GIG_PARSER
+        len = snprintf(s, 100, " Return: '%s'", entry->name);
+#else
         len = snprintf(s, 100, " Return: '%s' %s",
                        entry->name, gig_type_meta_describe(&entry->meta));
+#endif
         len += snprintf(s + len, 100, ", %s, %s, %s",
                         dir_strings[entry->s_direction],
                         tuple_strings[entry->tuple], presence_strings[entry->presence]);
@@ -341,7 +148,11 @@ gig_amap_dump(const char *name, const GigArgMap *amap)
         s[0] = '\0';
         if (amap->return_val.meta.n_params > 0) {
             GigTypeMeta *m2 = &amap->return_val.meta.params[0];
+#ifdef GIG_PARSER
+	    len = 0;
+#else
             len = snprintf(s, 100, "    Item Type: %s", gig_type_meta_describe(m2));
+#endif
             gig_debug_amap("%s", s);
             s[0] = '\0';
         }
@@ -403,8 +214,9 @@ gig_amap_output_child_c(GigArgMap *amap, int c_output_pos, int *cinvoke_output_a
     int i = 0;
     while (i < amap->len) {
         if (amap->pdata[i].is_c_output && (amap->pdata[i].c_output_pos == c_output_pos)) {
-            if (amap->pdata[i].child) {
-                *cinvoke_output_array_size_index = amap->pdata[i].child->c_output_pos;
+            if (amap->pdata[i].meta.has_length_arg) {
+                size_t idx = amap->pdata[i].meta.length_arg;
+                *cinvoke_output_array_size_index = amap->pdata[idx].c_output_pos;
                 return true;
             }
         }
@@ -486,8 +298,9 @@ gig_amap_input_s_2_child_input_c(const GigArgMap *amap, int s_input_pos, int *c_
     int i = 0;
     while (i < amap->len) {
         if (amap->pdata[i].is_s_input && (amap->pdata[i].s_input_pos == s_input_pos)) {
-            GigArgMapEntry *child = amap->pdata[i].child;
-            if (child) {
+            if (amap->pdata[i].meta.has_length_arg) {
+                size_t i_child = amap->pdata[i].meta.length_arg;
+                GigArgMapEntry *child = &amap->pdata[i_child];
                 if (child->is_c_input) {
                     *c_input_pos = child->c_input_pos;
                     return true;
@@ -512,8 +325,9 @@ gig_amap_input_s_2_child_output_c(const GigArgMap *amap, int s_input_pos, int *c
     int i = 0;
     while (i < amap->len) {
         if (amap->pdata[i].is_s_input && (amap->pdata[i].s_input_pos == s_input_pos)) {
-            GigArgMapEntry *child = amap->pdata[i].child;
-            if (child) {
+            if (amap->pdata[i].meta.has_length_arg) {
+                size_t idx = amap->pdata[i].meta.length_arg;
+                GigArgMapEntry *child = &amap->pdata[idx];
                 if (child->is_c_output) {
                     *c_output_pos = child->c_output_pos;
                     return true;
@@ -733,36 +547,235 @@ gig_amap_output_s2c(const GigArgMap *am, int spos, int *cpos)
 bool
 gig_amap_child_i(const GigArgMap *am, int i, int *ichild)
 {
-    if (am->pdata[i].child == NULL)
+    if (am->pdata[i].meta.has_length_arg == false)
         return false;
-    *ichild = am->pdata[i].child->i;
+    *ichild = am->pdata[i].meta.length_arg;
     return true;
 }
 
 bool
 gig_amap_return_child_i(const GigArgMap *am, int *ichild)
 {
-    if (am->return_val.child == NULL)
+    if (am->return_val.meta.has_length_arg == false)
         return false;
-    *ichild = am->return_val.child->i;
+    *ichild = am->return_val.meta.length_arg;
     return true;
 }
 
 // Returns a list of all the GTypes in the arg map
-GType *
+size_t *
 gig_amap_get_gtype_list(GigArgMap *amap, size_t *len)
 {
     size_t n = 0;
     GType *types = xcalloc((1 + amap->len) * 3, sizeof(GType));
 
-    types[n++] = amap->return_val.meta.gtype;
+    if (amap->return_val.meta.gtype)
+        types[n++] = amap->return_val.meta.gtype;
     for (size_t i = 0; i < amap->return_val.meta.n_params; i++)
-        types[n++] = amap->return_val.meta.params[i].gtype;
+        if (amap->return_val.meta.params[i].gtype)
+            types[n++] = amap->return_val.meta.params[i].gtype;
     for (int j = 0; j < amap->len; j++) {
-        types[n++] = amap->pdata[j].meta.gtype;
+        if (amap->pdata[j].meta.gtype)
+            types[n++] = amap->pdata[j].meta.gtype;
         for (size_t i = 0; i < amap->pdata[j].meta.n_params; i++)
-            types[n++] = amap->pdata[j].meta.params[i].gtype;
+            if (amap->pdata[j].meta.params[i].gtype)
+                types[n++] = amap->pdata[j].meta.params[i].gtype;
     }
     *len = n;
     return types;
 }
+
+#ifndef GIG_PARSER
+static void
+gig_amap_entry_from_il(SCM il, GigArgMapEntry *entry)
+{
+    SCM val;
+    char *str;
+
+    val = scm_assq_ref(il, scm_from_utf8_symbol("name"));
+    entry->name = scm_to_utf8_string(val);
+
+    val = scm_assq_ref(il, scm_from_utf8_symbol("meta"));
+    gig_type_meta_from_il(val, &(entry->meta));
+
+    val = scm_assq_ref(il, scm_from_utf8_symbol("s-direction"));
+    str = scm_to_utf8_symbol(val);
+    for (int i = 0; i < GIG_ARG_DIRECTION_COUNT; i++) {
+        if (strcmp(str, dir_strings[i]) == 0) {
+            entry->s_direction = (GigArgDirection) i;
+            break;
+        }
+    }
+    free(str);
+
+    val = scm_assq_ref(il, scm_from_utf8_symbol("tuple"));
+    str = scm_to_utf8_symbol(val);
+    for (int i = 0; i < GIG_ARG_TUPLE_COUNT; i++) {
+        if (strcmp(str, tuple_strings[i]) == 0) {
+            entry->tuple = (GigArgTuple) i;
+            break;
+        }
+    }
+    free(str);
+
+    val = scm_assq_ref(il, scm_from_utf8_symbol("presence"));
+    str = scm_to_utf8_symbol(val);
+    for (int i = 0; i < GIG_ARG_PRESENCE_COUNT; i++) {
+        if (strcmp(str, presence_strings[i]) == 0) {
+            entry->presence = (GigArgPresence) i;
+            break;
+        }
+    }
+    free(str);
+
+    val = scm_assq_ref(il, scm_from_utf8_symbol("i"));
+    entry->i = scm_to_int(val);
+
+    val = scm_assq_ref(il, scm_from_utf8_symbol("c-input-pos"));
+    if (scm_is_true(val)) {
+        entry->is_c_input = TRUE;
+        entry->c_input_pos = scm_to_int(val);
+    }
+
+    val = scm_assq_ref(il, scm_from_utf8_symbol("c-output-pos"));
+    if (scm_is_true(val)) {
+        entry->is_c_output = TRUE;
+        entry->c_output_pos = scm_to_int(val);
+    }
+
+    val = scm_assq_ref(il, scm_from_utf8_symbol("s-input-pos"));
+    if (scm_is_true(val)) {
+        entry->is_s_input = TRUE;
+        entry->s_input_pos = scm_to_int(val);
+    }
+
+    val = scm_assq_ref(il, scm_from_utf8_symbol("s-output-pos"));
+    if (scm_is_true(val)) {
+        entry->is_s_output = TRUE;
+        entry->s_output_pos = scm_to_int(val);
+    }
+}
+
+GigArgMap *
+gig_amap_new_from_il(SCM il)
+{
+    SCM val;
+    GigArgMap *amap = xcalloc(1, sizeof(GigArgMap));
+
+    val = scm_assq_ref(il, scm_from_utf8_symbol("name"));
+    if (scm_is_true(val))
+        amap->name = scm_to_utf8_string(val);
+    else
+        amap->name = NULL;
+    val = scm_assq_ref(il, scm_from_utf8_symbol("is-method"));
+    if (scm_is_true(val))
+        amap->is_method = scm_to_bool(val);
+    val = scm_assq_ref(il, scm_from_utf8_symbol("can-throw-gerror"));
+    if (scm_is_true(val))
+        amap->can_throw_gerror = scm_to_bool(val);
+    val = scm_assq_ref(il, scm_from_utf8_symbol("s-input-req"));
+    if (scm_is_true(val))
+        amap->s_input_req = scm_to_int(val);
+    val = scm_assq_ref(il, scm_from_utf8_symbol("s-input-opt"));
+    if (scm_is_true(val))
+        amap->s_input_opt = scm_to_int(val);
+    val = scm_assq_ref(il, scm_from_utf8_symbol("s-output-len"));
+    if (scm_is_true(val))
+        amap->s_output_len = scm_to_int(val);
+    val = scm_assq_ref(il, scm_from_utf8_symbol("c-input-len"));
+    if (scm_is_true(val))
+        amap->c_input_len = scm_to_int(val);
+    val = scm_assq_ref(il, scm_from_utf8_symbol("c-output-len"));
+    if (scm_is_true(val))
+        amap->c_output_len = scm_to_int(val);
+    // val = scm_assq_ref(il, scm_from_utf8_symbol("is-invalid"));
+    // amap->is_invalid = scm_to_bool(val);
+
+    SCM pdata_il = scm_assq_ref(il, scm_from_utf8_symbol("pdata"));
+    if (scm_is_true(pdata_il)) {
+        int len = scm_c_length(pdata_il);
+        amap->pdata = xcalloc(len, sizeof(GigArgMapEntry));
+        for (int i = 0; i < len; i++) {
+            SCM entry_il = scm_c_list_ref(pdata_il, i);
+            gig_amap_entry_from_il(entry_il, &(amap->pdata[i]));
+        }
+        amap->len = len;
+    }
+    else {
+        amap->len = 0;
+        amap->pdata = NULL;
+    }
+
+    SCM return_il = scm_assq_ref(il, scm_from_utf8_symbol("return-val"));
+    gig_amap_entry_from_il(return_il, &(amap->return_val));
+
+    return amap;
+}
+#endif
+
+#ifdef GIG_PARSER
+
+#define D(k,v) \
+    il = scm_cons(scm_cons(scm_from_utf8_symbol(k),(v)),il)
+#define F(x) \
+    flags = scm_cons(scm_from_utf8_symbol(x), flags);
+
+static SCM
+amap_entry_to_il(GigArgMapEntry *entry)
+{
+    SCM il = SCM_EOL;
+    D("name", scm_from_utf8_string(entry->name));
+    D("meta", gig_type_meta_to_il(&(entry->meta)));
+    D("s-direction", scm_from_utf8_symbol(dir_strings[entry->s_direction]));
+    D("tuple", scm_from_utf8_symbol(tuple_strings[entry->tuple]));
+    D("presence", scm_from_utf8_symbol(presence_strings[entry->presence]));
+    D("i", scm_from_int(entry->i));
+    if (entry->is_c_input)
+        D("c-input-pos", scm_from_int(entry->c_input_pos));
+    if (entry->is_c_output)
+        D("c-output-pos", scm_from_int(entry->c_output_pos));
+    if (entry->is_s_input)
+        D("s-input-pos", scm_from_int(entry->s_input_pos));
+    if (entry->is_s_output)
+        D("s-output-pos", scm_from_int(entry->s_output_pos));
+    return scm_reverse(il);
+}
+
+SCM
+gig_amap_to_il(GigArgMap *amap)
+{
+    SCM il = SCM_EOL;
+    if (amap->name)
+        D("name", scm_from_utf8_string(amap->name));
+    else
+        D("name", SCM_BOOL_F);
+    if (amap->is_method)
+        D("is-method", scm_from_bool(amap->is_method));
+    if (amap->can_throw_gerror)
+        D("can-throw-gerror", scm_from_bool(amap->can_throw_gerror));
+    if (amap->s_input_req)
+        D("s-input-req", scm_from_int(amap->s_input_req));
+    if (amap->s_input_opt)
+        D("s-input-opt", scm_from_int(amap->s_input_opt));
+    if (amap->s_output_len)
+        D("s-output-len", scm_from_int(amap->s_output_len));
+    if (amap->c_input_len)
+        D("c-input-len", scm_from_int(amap->c_input_len));
+    if (amap->c_output_len)
+        D("c-output-len", scm_from_int(amap->c_output_len));
+    // D("is-invalid", scm_from_bool(amap->is_invalid));
+    if (amap->len > 0) {
+        SCM pdata_il = SCM_EOL;
+        for (int i = 0; i < amap->len; i++) {
+            pdata_il =
+                scm_append(scm_list_2(pdata_il, scm_list_1(amap_entry_to_il(&(amap->pdata[i])))));
+        }
+        D("pdata", pdata_il);
+    }
+    D("return-val", amap_entry_to_il(&(amap->return_val)));
+    return scm_reverse(il);
+}
+
+#undef D
+
+#endif

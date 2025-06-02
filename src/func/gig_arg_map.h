@@ -18,7 +18,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <girepository.h>
 #include "gig_data_type.h"
 
 // This module gathers information to help convert between 3 paradigms
@@ -89,15 +88,15 @@ struct _GigArgMapEntry
     int s_output_pos;
     // When non-NULL, this is the entry of the array length argument
     // for this array argument.
-
-    GigArgMapEntry *child;
-    GigArgMapEntry *parent;
 };
 
 typedef struct _GigArgMap GigArgMap;
 struct _GigArgMap
 {
     char *name;
+
+    bool is_method;
+    bool can_throw_gerror;
 
     // S arguments.
     int s_input_req;
@@ -120,11 +119,18 @@ struct _GigArgMap
     GigArgMapEntry return_val;
 };
 
-GigArgMap *gig_amap_new(const char *name, GICallableInfo *function_info);
-void gig_amap_free(GigArgMap *am);
+GigArgMap *gig_amap_allocate(size_t n);
+void gig_amap_dump(const char *name, const GigArgMap *am);
+GIG_API void gig_amap_free(GigArgMap *am);
 GigArgMapEntry *gig_amap_get_input_entry_by_s(GigArgMap *am, int spos);
 GigArgMapEntry *gig_amap_get_output_entry_by_c(GigArgMap *am, int cpos);
 void gig_amap_s_input_count(const GigArgMap *amap, int *required, int *optional);
 void gig_amap_c_count(const GigArgMap *am, int *c_input_pos, int *c_output_pos);
+bool gig_amap_return_child_i(const GigArgMap *amap, int *ichild);
+bool gig_amap_output_i2c(const GigArgMap *amap, int i, int *c);
+size_t *gig_amap_get_gtype_list(GigArgMap *am, size_t *len);
+GigArgMap *gig_amap_new_from_il(SCM il);
+SCM gig_amap_to_il(GigArgMap *amap);
+
 
 #endif

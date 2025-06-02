@@ -12,6 +12,7 @@
 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#include "../gig_glib.h"
 #include "gig_signal_priv.h"
 #include "gig_value.h"
 #include "gig_type_priv.h"
@@ -47,13 +48,15 @@ scm_signal_accu(GSignalInvocationHint * ihint,
         return true;
     case 1:
         if (!scm_is_eq(result, SCM_UNSPECIFIED))
-            g_return_val_if_fail(!gig_value_from_scm(seed, result), FALSE);
+            if (gig_value_from_scm(seed, result))
+                return FALSE;
         return true;
     case 2:
     {
         bool ret = scm_is_true(scm_c_value_ref(result, 0));
         SCM next_seed = scm_c_value_ref(result, 1);
-        g_return_val_if_fail(!gig_value_from_scm(seed, next_seed), false);
+        if (gig_value_from_scm(seed, next_seed))
+            return false;
         return ret;
     }
     default:
@@ -117,7 +120,7 @@ gig_signalspec_from_obj(SCM obj)
             scm_misc_error("%scm->signalspec",
                            "signal ~A must return a value to use the first-wins accumulator",
                            scm_list_1(scm_from_utf8_string(spec->signal_name)));
-        spec->accumulator = g_signal_accumulator_first_wins;
+        spec->accumulator = G.signal_accumulator_first_wins;
         spec->accu_data = NULL;
     }
     else if (scm_is_eq(saccu, signal_accu_true_handled)) {
@@ -125,7 +128,7 @@ gig_signalspec_from_obj(SCM obj)
             scm_misc_error("%scm->signalspec",
                            "signal ~A must have a boolean return type to use the true-handled accumulator",
                            scm_list_1(scm_from_utf8_string(spec->signal_name)));
-        spec->accumulator = g_signal_accumulator_true_handled;
+        spec->accumulator = G.signal_accumulator_true_handled;
         spec->accu_data = NULL;
     }
     else if (scm_is_procedure(saccu)) {
@@ -173,11 +176,8 @@ gig_make_signal(size_t n_slots, GigSignalSlot *slots, SCM *slot_values)
 }
 
 void
-gig_init_signal()
+gig_init_signal_stage1()
 {
-    gig_signal_type = scm_c_public_ref("gi oop", "<signal>");
-    make_signal_proc = scm_c_public_ref("gi oop", "make-signal");
-
     signal_slot_syms[GIG_SIGNAL_SLOT_NAME] = scm_from_utf8_symbol("name");
     signal_slot_syms[GIG_SIGNAL_SLOT_FLAGS] = scm_from_utf8_symbol("flags");
     signal_slot_syms[GIG_SIGNAL_SLOT_ACCUMULATOR] = scm_from_utf8_symbol("accumulator");
@@ -188,4 +188,11 @@ gig_init_signal()
     signal_accu_first_wins = scm_from_utf8_symbol("first-wins");
     signal_accu_true_handled = scm_from_utf8_symbol("true-handled");
 
+}
+
+void
+gig_init_signal_stage2()
+{
+    gig_signal_type = scm_c_public_ref("gi runtime", "<signal>");
+    make_signal_proc = scm_c_public_ref("gi runtime", "make-signal");
 }

@@ -21,7 +21,7 @@ dnl Process this file with autoconf to produce a configure script
 AC_INIT([Guile GI], [0.3.2], [spk121@yahoo.com], [guile_gi])
 
 AC_CONFIG_AUX_DIR([build-aux])
-AC_CONFIG_SRCDIR([src/gig.c])
+AC_CONFIG_SRCDIR([src/gig_runtime.c])
 AM_INIT_AUTOMAKE
 
 AC_PREREQ([2.63])
@@ -32,8 +32,10 @@ AC_CONFIG_MACRO_DIR([m4])
 ################
 # Libtool versioning
 
-LIBGUILE_GI_INTERFACE="6:1:0"
+LIBGUILE_GI_INTERFACE="7:0:0"
 AC_SUBST([LIBGUILE_GI_INTERFACE])
+LIBGUILE_GIPARSE_INTERFACE="0:0:0"
+AC_SUBST([LIBGUILE_GIPARSE_INTERFACE])
 
 ################
 # Check for programs
@@ -51,27 +53,6 @@ dnl AC_PROG_SED
 
 # from guile.m4
 GUILE_PKG([3.0 2.2])
-
-if test "$GUILE" = ""; then
-AC_MSG_CHECKING(for guile executable using pkg-config)
-GUILE=`$PKG_CONFIG --print-errors --variable=guile guile-$GUILE_EFFECTIVE_VERSION`
-AC_MSG_RESULT($GUILE)
-if test "$GUILE" = ""; then
-  AC_MSG_FAILURE(guile not found)
-fi
-fi
-AC_SUBST(GUILE)
-
-if test "$GUILD" = ""; then
-AC_MSG_CHECKING(for guild using pkg-config)
-GUILD=`$PKG_CONFIG --print-errors --variable=guild guile-$GUILE_EFFECTIVE_VERSION`
-AC_MSG_RESULT($GUILD)
-if test "$GUILD" = ""; then
-  AC_MSG_FAILURE(guild not found)
-fi
-fi
-AC_SUBST(GUILD)
-
 GUILE_PROGS
 GUILE_FLAGS
 GUILE_SITE_DIR

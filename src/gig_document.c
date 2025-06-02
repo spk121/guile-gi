@@ -17,7 +17,7 @@
 #include <girepository.h>
 #include "type.h"
 #include "func.h"
-#include "gig_repository.h"
+#include "gig_parser.h"
 
 static void do_document(GIBaseInfo *info, const char *parent);
 GIG_API void gig_init_document(void);
@@ -75,7 +75,7 @@ do_document(GIBaseInfo *info, const char *_namespace)
         else
             kind = "function";
 
-        arg_map = gig_amap_new(NULL, info);
+        arg_map = callable_info_make_amap(info, NULL);
         if (arg_map)
             scm_dynwind_unwind_handler((scm_t_pointer_finalizer) gig_amap_free,
                                        arg_map, SCM_F_WIND_EXPLICITLY);
@@ -84,7 +84,7 @@ do_document(GIBaseInfo *info, const char *_namespace)
 
 
         scm_printf(SCM_UNDEFINED, "<%s name=\"%s\">", kind, g_base_info_get_name(info));
-        scheme_name = scm_dynfree(gig_callable_info_make_name(info, NULL));
+        scheme_name = scm_dynfree(callable_info_make_name(info, NULL));
 
         if (g_callable_info_is_method(info))
             scm_printf(SCM_UNDEFINED, "<scheme><procedure name=\"%s\" long-name=\"%s:%s\">",
@@ -106,7 +106,7 @@ do_document(GIBaseInfo *info, const char *_namespace)
             GigArgMapEntry *entry = gig_amap_get_input_entry_by_s(arg_map, i);
             document_arg_entry("argument", entry);
         }
-        if (arg_map->return_val.meta.gtype != G_TYPE_NONE)
+        if (arg_map->return_val.meta.arg_type > GIG_ARG_TYPE_VOID)
             document_arg_entry("return", &arg_map->return_val);
 
         for (int i = 0; i < out; i++) {
@@ -122,18 +122,9 @@ do_document(GIBaseInfo *info, const char *_namespace)
 
         for (int i = 0; i < arg_map->len; i++) {
             GigArgMapEntry *entry = arg_map->pdata + i;
-            scm_printf(SCM_UNDEFINED, "<parameter name=\"%s\">", entry->name);
-            if (entry->parent) {
-                char *parent = make_scm_name(entry->parent->name);
-                scm_printf(SCM_UNDEFINED, "<inferred parent=\"%s\"/>", parent);
-                free(parent);
+            if (entry->presence != GIG_ARG_PRESENCE_IMPLICIT) {
+                scm_printf(SCM_UNDEFINED, "<parameter name=\"%s\"></parameter>", entry->name);
             }
-            else {
-                char *arg = make_scm_name(entry->name);
-                scm_printf(SCM_UNDEFINED, "<inferred argument=\"%s\"/>", arg);
-                free(arg);
-            }
-            scm_printf(SCM_UNDEFINED, "</parameter>");
         }
         scm_printf(SCM_UNDEFINED, "</parameters>");
         scm_printf(SCM_UNDEFINED, "</%s>", kind);
@@ -253,7 +244,7 @@ do_document(GIBaseInfo *info, const char *_namespace)
 static SCM
 _document(SCM info)
 {
-    GIBaseInfo *real_info = (GIBaseInfo *)gig_type_peek_object(info);
+    GIBaseInfo *real_info = (GIBaseInfo *)scm_foreign_object_ref(info, 0);
     do_document(real_info, NULL);
     return SCM_UNSPECIFIED;
 }

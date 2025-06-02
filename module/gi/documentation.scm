@@ -29,14 +29,14 @@
   #:use-module ((sxml xpath) #:prefix xpath:)
   #:use-module (gi config)
   #:use-module (gi types)
-  #:use-module ((gi repository) #:select (infos require))
+  #:use-module ((gi repository) #:select (<GIBaseInfo> infos require))
   #:export (parse
             typelib gir
             ->guile-procedures.txt
             ->docbook))
 
 (eval-when (expand load eval)
-  (load-extension "libguile-gi" "gig_init_document"))
+  (load-extension "libguile-giparse" "gig_init_document"))
 
 ;;; XML Parsing
 

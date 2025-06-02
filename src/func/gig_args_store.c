@@ -13,29 +13,32 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#include <string.h>
 #include "../core.h"
+#include "../type.h"
 #include "gig_arg_map_priv.h"
 #include "gig_args_store.h"
 #include "gig_argument.h"
 
 static void
 gig_callable_prepare_invoke(GigArgMap *amap, const char *name, GObject *self, SCM args,
-                            GIArgument *in_args, GIArgument *out_args, slist_t **free_list,
-                            GIArgument *out_boxes);
+                            GigArgument *in_args, GigArgument *out_args, slist_t **free_list,
+                            GigArgument *out_boxes);
 static void object_list_to_c_args(GigArgMap *amap, const char *subr, SCM s_args,
-                                  GIArgument *in_args, slist_t **free_list, GIArgument *out_args);
-static void object_to_c_arg(GigArgMap *amap, int s, const char *name, SCM obj, GIArgument *in_args,
-                            slist_t **free_list, GIArgument *out_args);
+                                  GigArgument *in_args, slist_t **free_list,
+                                  GigArgument *out_args);
+static void object_to_c_arg(GigArgMap *amap, int s, const char *name, SCM obj,
+                            GigArgument *in_args, slist_t **free_list, GigArgument *out_args);
 static void store_argument(int invoke_in, int invoke_out, bool inout, bool inout_free,
-                           GIArgument *arg, GIArgument *in_args, slist_t **free_list,
-                           GIArgument *out_args);
+                           GigArgument *arg, GigArgument *in_args, slist_t **free_list,
+                           GigArgument *out_args);
 static SCM gig_callable_return_value(GigArgMap *amap, const char *name, GObject *self, SCM args,
-                                     bool ok, GIArgument *return_arg, GIArgument *in_args,
-                                     GIArgument *out_args, slist_t **free_list,
-                                     GIArgument *out_boxes);
-static SCM convert_output_args(GigArgMap *amap, const char *func_name, GIArgument *in,
-                               GIArgument *out, SCM output);
-static GIArgument *find_output_arg(GigArgMapEntry *entry, GIArgument *in, GIArgument *out);
+                                     bool ok, GigArgument *return_arg, GigArgument *in_args,
+                                     GigArgument *out_args, slist_t **free_list,
+                                     GigArgument *out_boxes);
+static SCM convert_output_args(GigArgMap *amap, const char *func_name, GigArgument *in,
+                               GigArgument *out, SCM output);
+static GigArgument *find_output_arg(GigArgMapEntry *entry, GigArgument *in, GigArgument *out);
 
 
 GigArgsStore *
@@ -44,9 +47,9 @@ gig_args_store_new(size_t in_len, size_t out_len)
     GigArgsStore *store = xcalloc(1, sizeof(GigArgsStore));
     store->in_len = in_len;
     store->out_len = out_len;
-    store->in_args = xcalloc(in_len + 1, sizeof(GIArgument));
-    store->out_args = xcalloc(out_len, sizeof(GIArgument));
-    store->out_boxes = xcalloc(out_len, sizeof(GIArgument));
+    store->in_args = xcalloc(in_len + 1, sizeof(GigArgument));
+    store->out_args = xcalloc(out_len, sizeof(GigArgument));
+    store->out_boxes = xcalloc(out_len, sizeof(GigArgument));
     store->free_list = NULL;
     return store;
 }
@@ -72,8 +75,8 @@ gig_args_store_initialize(GigArgsStore *store, GigArgMap *amap, const char *name
 
 static void
 gig_callable_prepare_invoke(GigArgMap *amap, const char *name, GObject *self, SCM args,
-                            GIArgument *in_args, GIArgument *out_args, slist_t **free_list,
-                            GIArgument *out_boxes)
+                            GigArgument *in_args, GigArgument *out_args, slist_t **free_list,
+                            GigArgument *out_boxes)
 {
     // Convert the scheme arguments into C.
     // For methods calls, the object gets inserted as the 1st argument.
@@ -99,8 +102,8 @@ gig_callable_prepare_invoke(GigArgMap *amap, const char *name, GObject *self, SC
 }
 
 static void
-object_list_to_c_args(GigArgMap *amap, const char *subr, SCM s_args, GIArgument *in_args,
-                      slist_t **free_list, GIArgument *out_args)
+object_list_to_c_args(GigArgMap *amap, const char *subr, SCM s_args, GigArgument *in_args,
+                      slist_t **free_list, GigArgument *out_args)
 {
     int args_count, required, optional;
     if (SCM_UNBNDP(s_args))
@@ -120,11 +123,11 @@ object_list_to_c_args(GigArgMap *amap, const char *subr, SCM s_args, GIArgument 
 }
 
 static void
-object_to_c_arg(GigArgMap *amap, int s, const char *name, SCM obj, GIArgument *in_args,
-                slist_t **free_list, GIArgument *out_args)
+object_to_c_arg(GigArgMap *amap, int s, const char *name, SCM obj, GigArgument *in_args,
+                slist_t **free_list, GigArgument *out_args)
 {
     // Convert an input scheme argument to a C invoke argument
-    GIArgument arg;
+    GigArgument arg;
     GigArgMapEntry *entry;
     size_t size;
     int i;
@@ -148,7 +151,7 @@ object_to_c_arg(GigArgMap *amap, int s, const char *name, SCM obj, GIArgument *i
     inout = is_in && is_out;
     if (inout) {
         gig_amap_input_s2i(amap, s, &i);
-        inout_free = (amap->pdata[i].meta.transfer == GI_TRANSFER_NOTHING);
+        inout_free = (amap->pdata[i].meta.transfer == GIG_TRANSFER_NOTHING);
     }
     else
         inout_free = false;
@@ -158,10 +161,12 @@ object_to_c_arg(GigArgMap *amap, int s, const char *name, SCM obj, GIArgument *i
     // If this argument is an array with an associated size, store the
     // array size as well.
     if (gig_amap_input_s_2_child_input_c(amap, s, &c_child_invoke_in)) {
-        GigArgMapEntry *size_entry = entry->child;
-        GIArgument size_arg;
+        GigArgMapEntry *size_entry;
+        GigArgument size_arg;
         size_t dummy_size;
         int c_child_invoke_out, i_child;
+        gig_amap_input_c2i(amap, c_child_invoke_in, &i_child);
+        size_entry = &amap->pdata[i_child];
 
         gig_argument_scm_to_c(name, s, &size_entry->meta, scm_from_size_t(size),
                               free_list, &size_arg, &dummy_size);
@@ -174,7 +179,7 @@ object_to_c_arg(GigArgMap *amap, int s, const char *name, SCM obj, GIArgument *i
 
         inout = is_in && is_out;
         if (inout)
-            inout_free = (amap->pdata[i_child].meta.transfer == GI_TRANSFER_NOTHING);
+            inout_free = (amap->pdata[i_child].meta.transfer == GIG_TRANSFER_NOTHING);
         else
             inout_free = false;
         store_argument(c_child_invoke_in, c_child_invoke_out, inout, inout_free, &size_arg,
@@ -183,12 +188,12 @@ object_to_c_arg(GigArgMap *amap, int s, const char *name, SCM obj, GIArgument *i
 }
 
 static void
-store_argument(int invoke_in, int invoke_out, bool inout, bool inout_free, GIArgument *arg,
-               GIArgument *in_args, slist_t **free_list, GIArgument *out_args)
+store_argument(int invoke_in, int invoke_out, bool inout, bool inout_free, GigArgument *arg,
+               GigArgument *in_args, slist_t **free_list, GigArgument *out_args)
 {
     if (invoke_in >= 0) {
         if (inout) {
-            void **dup = xmemdup(arg, sizeof(GIArgument));
+            void **dup = xmemdup(arg, sizeof(GigArgument));
             in_args[invoke_in].v_pointer = dup;
 
             if (inout_free)
@@ -197,17 +202,17 @@ store_argument(int invoke_in, int invoke_out, bool inout, bool inout_free, GIArg
             out_args[invoke_out].v_pointer = NULL;
         }
         else {
-            memcpy(&in_args[invoke_in], arg, sizeof(GIArgument));
+            memcpy(&in_args[invoke_in], arg, sizeof(GigArgument));
         }
     }
     else if (invoke_out >= 0) {
-        memcpy(&out_args[invoke_out], arg, sizeof(GIArgument));
+        memcpy(&out_args[invoke_out], arg, sizeof(GigArgument));
     }
 }
 
 SCM
 gig_args_store_return_value(GigArgsStore *store, GigArgMap *amap, const char *name, GObject *self,
-                            SCM args, bool ok, GIArgument *return_arg)
+                            SCM args, bool ok, GigArgument *return_arg)
 {
     return
         gig_callable_return_value(amap, name, self, args, ok, return_arg,
@@ -217,8 +222,8 @@ gig_args_store_return_value(GigArgsStore *store, GigArgMap *amap, const char *na
 
 static SCM
 gig_callable_return_value(GigArgMap *amap, const char *name, GObject *self, SCM args, bool ok,
-                          GIArgument *return_arg, GIArgument *in_args, GIArgument *out_args,
-                          slist_t **free_list, GIArgument *out_boxes)
+                          GigArgument *return_arg, GigArgument *in_args, GigArgument *out_args,
+                          slist_t **free_list, GigArgument *out_boxes)
 {
     SCM output = SCM_EOL;
 
@@ -226,14 +231,15 @@ gig_callable_return_value(GigArgMap *amap, const char *name, GObject *self, SCM 
     // output argument space created above.
     for (unsigned i = 0; i < amap->c_output_len; i++)
         if (out_args[i].v_pointer == &out_boxes[i])
-            memcpy(&out_args[i], &out_boxes[i], sizeof(GIArgument));
+            memcpy(&out_args[i], &out_boxes[i], sizeof(GigArgument));
 
     if (ok) {
         SCM s_return;
         size_t sz = -1;
-        if (amap->return_val.meta.has_size) {
-            size_t idx = amap->return_val.child->c_output_pos;
-            sz = out_args[idx].v_size;
+        int i_child, c_child;
+        if (gig_amap_return_child_i(amap, &i_child)) {
+            gig_amap_output_i2c(amap, i_child, &c_child);
+            sz = out_args[c_child].v_int64;
         }
 
         gig_argument_c_to_scm(name, -1, &amap->return_val.meta, return_arg, &s_return, sz);
@@ -263,7 +269,7 @@ gig_callable_return_value(GigArgMap *amap, const char *name, GObject *self, SCM 
 }
 
 static SCM
-convert_output_args(GigArgMap *amap, const char *func_name, GIArgument *in, GIArgument *out,
+convert_output_args(GigArgMap *amap, const char *func_name, GigArgument *in, GigArgument *out,
                     SCM output)
 {
     gig_debug_transfer("%s - convert_output_args", func_name);
@@ -275,7 +281,7 @@ convert_output_args(GigArgMap *amap, const char *func_name, GIArgument *in, GIAr
 
         GigArgMapEntry *entry = gig_amap_get_output_entry_by_c(amap, c_output_pos);
 
-        GIArgument *arg;
+        GigArgument *arg;
         arg = find_output_arg(entry, in, out);
         if (arg == NULL)        // an INOUT argument has been eaten
         {
@@ -286,11 +292,12 @@ convert_output_args(GigArgMap *amap, const char *func_name, GIArgument *in, GIAr
         SCM obj;
         size_t size = GIG_ARRAY_SIZE_UNKNOWN;
 
-        if (entry->child) {
+        if (entry->meta.has_length_arg) {
+            size_t idx = entry->meta.length_arg;
             // We need to know the size argument before we can process
             // this array argument.
-            GigArgMapEntry *size_entry = entry->child;
-            GIArgument *size_arg = find_output_arg(size_entry, in, out);
+            GigArgMapEntry *size_entry = &amap->pdata[idx];
+            GigArgument *size_arg = find_output_arg(size_entry, in, out);
             gig_argument_c_to_scm(func_name, size_entry->i, &size_entry->meta, size_arg, &obj, -1);
             size = scm_is_integer(obj) ? scm_to_int(obj) : 0;
         }
@@ -301,8 +308,8 @@ convert_output_args(GigArgMap *amap, const char *func_name, GIArgument *in, GIAr
     return scm_reverse_x(output, SCM_EOL);
 }
 
-static GIArgument *
-find_output_arg(GigArgMapEntry *entry, GIArgument *in, GIArgument *out)
+static GigArgument *
+find_output_arg(GigArgMapEntry *entry, GigArgument *in, GigArgument *out)
 {
     switch (entry->s_direction) {
     case GIG_ARG_DIRECTION_INPUT:      // may happen with sizes of preallocated outputs

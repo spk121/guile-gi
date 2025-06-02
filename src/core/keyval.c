@@ -36,9 +36,9 @@ keyval_new()
 }
 
 void
-keyval_free(keyval_t *kv, void (*keyfree)(uint64_t key), void(*valfree)(uint64_t val))
+keyval_free(keyval_t *kv, void (*keyfree)(uint64_t key), void (*valfree)(uint64_t val))
 {
-    for(int i = 0; i < kv->len; i++) {
+    for (int i = 0; i < kv->len; i++) {
         if (keyfree)
             keyfree(kv->entries[i].key);
         if (valfree)
@@ -59,9 +59,7 @@ compare(const void *pA, const void *pB)
 void
 keyval_add_entry(keyval_t *kv, uint64_t key, uint64_t val)
 {
-    keyval_item_t A;
-    A.key = key;
-    A.val = val;
+    keyval_item_t A = { key, val };
 
     void *pB;
     pB = bsearch(&A, kv->entries, kv->len, sizeof(keyval_item_t), compare);
@@ -89,9 +87,7 @@ uint64_t
 keyval_find_entry(keyval_t *kv, uint64_t key)
 {
     void *pB;
-    keyval_item_t A;
-    A.key = key;
-    A.val = 0;
+    keyval_item_t A = { key, 0 };
 
     pB = bsearch(&A, kv->entries, kv->len, sizeof(keyval_item_t), compare);
     if (pB == NULL)

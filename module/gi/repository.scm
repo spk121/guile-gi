@@ -18,31 +18,51 @@
   #:use-module (oop goops)
   #:use-module (srfi srfi-1)
   #:use-module (system foreign)
-
-  #:use-module (gi types)
   #:use-module (gi core-generics)
-  #:re-export (load)
+  #:use-module (gi parser)
+  #:use-module (gi runtime)
+  #:re-export (<GIBaseInfo>
+               LOAD_METHODS LOAD_PROPERTIES LOAD_SIGNALS
+               LOAD_EVERYTHING LOAD_INFO_ONLY
+               )
   #:export (require
             infos info
             load-by-name typelib->module
+            reset-repository
 
             get-search-path prepend-search-path!
             get-dependencies
+            ))
 
-            LOAD_METHODS LOAD_PROPERTIES LOAD_SIGNALS
-            LOAD_EVERYTHING LOAD_INFO_ONLY))
+(define *parser* (new-parser))
 
-(eval-when (expand load eval)
-  (load-extension "libguile-gi" "gig_init_repository"))
+(define (reset-repository)
+  (set! *parser* (new-parser)))
 
 (define-method (load (info <GIBaseInfo>))
-  (%load-info info LOAD_EVERYTHING))
+  (parser-add-info! *parser* info LOAD_EVERYTHING)
+  (for-each runtime-eval (parser-take-output! *parser*)))
 
 (define-method (load (info <GIBaseInfo>) flags)
-  (%load-info info flags))
+  (parser-add-info! *parser* info flags)
+  (for-each runtime-eval (parser-take-output! *parser*)))
 
 (define* (load-by-name lib name #:optional (flags LOAD_EVERYTHING))
-  (load (info lib name) flags))
+  (parser-add-info! *parser*
+                    (namespace-info-by-name lib name))
+  (for-each runtime-eval (parser-take-output! *parser*)))
+
+(define* (require namespace #:optional (version ""))
+  (parser-add-namespace! *parser* namespace version))
+
+(define (infos lib)
+  (namespace-infos lib))
+
+(define get-search-path irepository-search-path)
+
+(define prepend-search-path! irepository-prepend-search-path)
+
+(define get-dependencies namespace-dependencies)
 
 (define* (typelib->module module lib #:optional version)
   (require lib version)
@@ -61,6 +81,17 @@
   (save-module-excursion
    (lambda ()
      (set-current-module module)
-     (module-export! module (append-map! load (infos lib)))))
-
+     (for-each (lambda (i)
+                 (parser-add-info! *parser* i LOAD_EVERYTHING))
+               (namespace-infos lib))
+     (let ((cmds (parser-take-output! *parser*)))
+       (when #t
+         (for-each (lambda (entry)
+                     (unless (list? entry)
+                       (error "non-list export symbol entry '~A'" entry)))
+                   cmds))
+       
+       (let ((syms (append-map runtime-eval cmds)))
+         (module-export! module syms)))))
+       
   module)

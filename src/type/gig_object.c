@@ -20,6 +20,9 @@
 #include "gig_signal_priv.h"
 #include "gig_closure.h"
 #include "gig_value.h"
+#include "../gig_glib.h"
+
+SCM gig_il_property_func = SCM_UNDEFINED;
 
 GQuark gig_user_object_properties;
 
@@ -35,14 +38,14 @@ typedef struct _GigUserObjectInitInfo
 static SCM
 gig_object_take(GObject *object)
 {
-    return gig_type_transfer_object(G_OBJECT_TYPE(object), object, GI_TRANSFER_EVERYTHING);
+    return gig_type_transfer_object(G_OBJECT_TYPE(object), object, GIG_TRANSFER_EVERYTHING);
 }
 
 
 static SCM
 gig_object_ref(GObject *object)
 {
-    return gig_type_transfer_object(G_OBJECT_TYPE(object), object, GI_TRANSFER_NOTHING);
+    return gig_type_transfer_object(G_OBJECT_TYPE(object), object, GIG_TRANSFER_NOTHING);
 }
 
 static GObject *
@@ -60,6 +63,7 @@ gig_paramspec_peek(SCM object)
 static SCM
 gig_i_scm_make_gobject(SCM s_gtype, SCM s_prop_keylist)
 {
+    GIG_INIT_CHECK();
 #define FUNC "%make-gobject"
     GType type;
     GObject *obj;
@@ -70,7 +74,7 @@ gig_i_scm_make_gobject(SCM s_gtype, SCM s_prop_keylist)
 
     type = scm_to_gtype(s_gtype);
 
-    SCM_ASSERT_TYPE(G_TYPE_IS_CLASSED(type), s_gtype, SCM_ARG1, FUNC,
+    SCM_ASSERT_TYPE(G.type_test_flags(type, G_TYPE_FLAG_CLASSED), s_gtype, SCM_ARG1, FUNC,
                     "typeid derived from G_TYPE_OBJECT or scheme type derived from <GObject>");
 
     if (scm_is_unknown_class(gig_type_get_scheme_type(type)))
@@ -79,8 +83,8 @@ gig_i_scm_make_gobject(SCM s_gtype, SCM s_prop_keylist)
     scm_dynwind_begin(0);
 
     if (scm_is_list(s_prop_keylist) && (scm_c_length(s_prop_keylist) != 0)) {
-        _class = g_type_class_ref(type);
-        scm_dynwind_unwind_handler(g_type_class_unref, _class, SCM_F_WIND_EXPLICITLY);
+        _class = G.type_class_ref(type);
+        scm_dynwind_unwind_handler(G.type_class_unref, _class, SCM_F_WIND_EXPLICITLY);
 
         n_prop = scm_c_length(s_prop_keylist) / 2;
         keys = scm_dynfree(calloc(n_prop, sizeof(char *)));
@@ -96,13 +100,13 @@ gig_i_scm_make_gobject(SCM s_gtype, SCM s_prop_keylist)
             key = scm_keyword_to_string(key);
 
             keys[i] = scm_dynfree(scm_to_utf8_string(key));
-            GParamSpec *pspec = g_object_class_find_property(_class, keys[i]);
+            GParamSpec *pspec = G.object_class_find_property(_class, keys[i]);
             if (!pspec) {
                 scm_misc_error(FUNC, "unknown object parameter ~S", scm_list_1(key));
             }
             else {
                 GValue *value = &values[i];
-                g_value_init(value, G_PARAM_SPEC_VALUE_TYPE(pspec));
+                G.value_init(value, pspec->value_type);
                 if (gig_value_from_scm(value, s_value))
                     scm_misc_error(FUNC, "unable to convert parameter ~S", scm_list_1(s_value));
             }
@@ -114,7 +118,7 @@ gig_i_scm_make_gobject(SCM s_gtype, SCM s_prop_keylist)
         values = NULL;
     }
 
-    obj = g_object_new_with_properties(type, n_prop, keys, values);
+    obj = G.object_new_with_properties(type, n_prop, keys, values);
     scm_dynwind_end();
 
     assert(obj);
@@ -127,12 +131,13 @@ static GParamSpec *
 get_paramspec(const GObject *self, const char *prop)
 {
     GObjectClass *oclass = G_OBJECT_GET_CLASS(self);
-    return g_object_class_find_property(oclass, prop);
+    return G.object_class_find_property(oclass, prop);
 }
 
 static SCM
 gig_i_scm_get_pspec(SCM self, SCM prop)
 {
+    GIG_INIT_CHECK();
     GObject *obj;
     char *name;
     GParamSpec *pspec;
@@ -150,12 +155,13 @@ gig_i_scm_get_pspec(SCM self, SCM prop)
     }
     scm_dynwind_end();
 
-    return gig_type_transfer_object(G_PARAM_SPEC_TYPE(pspec), pspec, GI_TRANSFER_NOTHING);
+    return gig_type_transfer_object(G_PARAM_SPEC_TYPE(pspec), pspec, GIG_TRANSFER_NOTHING);
 }
 
 static SCM
 gig_i_scm_get_property(SCM self, SCM property)
 {
+    GIG_INIT_CHECK();
     SCM ret;
 
     GParamSpec *pspec;
@@ -176,17 +182,57 @@ gig_i_scm_get_property(SCM self, SCM property)
         scm_misc_error("%get-property", "property ~A is not readable", scm_list_1(property));
     }
 
-    g_value_init(&value, G_PARAM_SPEC_VALUE_TYPE(pspec));
-    g_object_get_property(obj, pspec->name, &value);
+    G.value_init(&value, pspec->value_type);
+    G.object_get_property(obj, pspec->name, &value);
     ret = gig_value_param_as_scm(&value, TRUE, pspec);
-    g_value_unset(&value);
+    G.value_unset(&value);
 
     return ret;
 }
 
+#if 0
+static SCM
+gig_i_scm_object_properties(SCM self)
+{
+    GIG_INIT_CHECK();
+#define FUNC_NAME "object-properties"
+    SCM_ASSERT(SCM_IS_A_P(self, gig_object_type()), self, SCM_ARG1, FUNC_NAME);
+
+    GObject *obj;
+    obj = gig_object_peek(self);
+    GObjectClass *oclass = G_OBJECT_GET_CLASS(obj);
+    GParamSpec **properties;
+    unsigned n_properties;
+    GValue *values;
+    SCM lst = SCM_EOL;
+    properties = G.object_class_list_properties(oclass, &n_properties);
+    if (n_properties == 0)
+        return SCM_EOL;
+    values = xcalloc(n_properties, sizeof(GValue));
+    for (unsigned i = 0; i < n_properties; i ++) {
+        GValue value = { 0, };
+        SCM key, val;
+        key = scm_from_utf8_symbol(properties[i]->name);
+        if(properties[i]->flags & G_PARAM_READABLE) {
+            G.value_init(&value, properties[i]->value_type);
+            G.object_get_property(obj, properties[i]->name, &value);
+            val = gig_value_param_as_scm(&value, TRUE, properties[i]);
+            G.value_unset(&value);
+        }
+        else
+            val = scm_from_utf8_symbol("unreadable");
+        lst = scm_cons(scm_cons(key, val), lst);
+    }
+    free(properties);
+    return lst;
+#undef FUNC_NAME
+}
+#endif
+
 static SCM
 gig_i_scm_set_property_x(SCM self, SCM property, SCM svalue)
 {
+    GIG_INIT_CHECK();
     GParamSpec *pspec;
     GObject *obj;
 
@@ -206,9 +252,9 @@ gig_i_scm_set_property_x(SCM self, SCM property, SCM svalue)
         scm_misc_error("%set-property!", "property ~A is not writable", scm_list_1(property));
     }
 
-    g_value_init(&value, G_PARAM_SPEC_VALUE_TYPE(pspec));
+    G.value_init(&value, pspec->value_type);
     gig_value_from_scm_with_error(&value, svalue, "%set-property!", SCM_ARG3);
-    g_object_set_property(obj, pspec->name, &value);
+    G.object_set_property(obj, pspec->name, &value);
 
     return SCM_UNSPECIFIED;
 }
@@ -217,7 +263,7 @@ static void
 make_new_signal(GigSignalSpec *signal_spec, void *user_data)
 {
     GType instance_type = GPOINTER_TO_SIZE(user_data);
-    g_signal_newv(signal_spec->signal_name, instance_type, signal_spec->signal_flags, NULL,     /* closure */
+    G.signal_newv(signal_spec->signal_name, instance_type, signal_spec->signal_flags, NULL,     /* closure */
                   signal_spec->accumulator,
                   signal_spec->accu_data,
                   NULL, signal_spec->return_type, signal_spec->n_params, signal_spec->param_types);
@@ -227,18 +273,18 @@ static void
 gig_user_object_get_property(GObject *object, unsigned property_id, GValue *value,
                              GParamSpec *pspec)
 {
-    GValue *properties = g_object_get_qdata(object, gig_user_object_properties);
+    GValue *properties = G.object_get_qdata(object, gig_user_object_properties);
     GValue *property = properties + property_id - 1;
-    g_value_copy(property, value);
+    G.value_copy(property, value);
 }
 
 static void
 gig_user_object_set_property(GObject *object, unsigned property_id,
                              const GValue *value, GParamSpec *pspec)
 {
-    GValue *properties = g_object_get_qdata(object, gig_user_object_properties);
+    GValue *properties = G.object_get_qdata(object, gig_user_object_properties);
     GValue *property = properties + property_id - 1;
-    g_param_value_convert(pspec, value, property, FALSE);
+    G.param_value_convert(pspec, value, property, FALSE);
 }
 
 static void
@@ -249,19 +295,19 @@ gig_user_object_dispose(GObject *object)
     GObjectClass *parent_class;
 
     type = G_OBJECT_TYPE(object);
-    parent_type = g_type_parent(type);
+    parent_type = G.type_parent(type);
 
-    assert(G_TYPE_IS_CLASSED(type));
-    assert(G_TYPE_IS_CLASSED(parent_type));
+    assert(G.type_test_flags(type, G_TYPE_FLAG_CLASSED));
+    assert(G.type_test_flags(parent_type, G_TYPE_FLAG_CLASSED));
 
     gig_debug("dispose is currently just calling the parent's dispose");
     gig_debug("disposing parent type");
-    _parent_class = g_type_class_ref(parent_type);
-    parent_class = G_OBJECT_CLASS(_parent_class);
+    _parent_class = G.type_class_ref(parent_type);
+    parent_class = G.type_check_class_cast(_parent_class, G_TYPE_OBJECT);
 
     parent_class->dispose(object);
 
-    g_type_class_unref(_parent_class);
+    G.type_class_unref(_parent_class);
 }
 
 static void
@@ -287,29 +333,29 @@ gig_user_class_init(GObjectClass *_class, void *class_info)
         make_new_signal(init_info->signals[i], GSIZE_TO_POINTER(type));
 
     for (size_t i = 0; i < init_info->n_properties; i++)
-        g_object_class_install_property(_class, i + 1, init_info->properties[i]);
+        G.object_class_install_property(_class, i + 1, init_info->properties[i]);
 }
 
 static void
 gig_user_object_init(GTypeInstance *instance, void *class_ptr)
 {
     GType type = G_TYPE_FROM_CLASS(class_ptr);
-    GType parent_type = g_type_parent(type);
+    GType parent_type = G.type_parent(type);
     unsigned n_properties;
     GParamSpec **properties;
     GTypeQuery query;
 
-    g_type_query(parent_type, &query);
-    properties = g_object_class_list_properties(class_ptr, &n_properties);
+    G.type_query(parent_type, &query);
+    properties = G.object_class_list_properties(class_ptr, &n_properties);
 
     GValue *instance_properties = xcalloc(n_properties, sizeof(GValue));
-    g_object_set_qdata(G_OBJECT(instance), gig_user_object_properties, instance_properties);
+    G.object_set_qdata((GObject *)instance, gig_user_object_properties, instance_properties);
 
     for (unsigned i = 0; i < n_properties; i++) {
         const GValue *_default;
-        _default = g_param_spec_get_default_value(properties[i]);
-        g_value_init(instance_properties + i, properties[i]->value_type);
-        g_value_copy(_default, instance_properties + i);
+        _default = G.param_spec_get_default_value(properties[i]);
+        G.value_init(instance_properties + i, properties[i]->value_type);
+        G.value_copy(_default, instance_properties + i);
     }
 }
 
@@ -335,12 +381,12 @@ gig_user_object_define(const char *type_name,
     type_info.class_data = class_init_info;
 
     /* Register it. */
-    g_type_query(parent_type, &query);
+    G.type_query(parent_type, &query);
     type_info.class_size = query.class_size;
     type_info.instance_size = query.instance_size;
     type_info.class_init = (GClassInitFunc) gig_user_class_init;
     type_info.instance_init = gig_user_object_init;
-    new_type = g_type_register_static(parent_type, type_name, &type_info, 0);
+    new_type = G.type_register_static(parent_type, type_name, &type_info, 0);
     class_init_info->type = new_type;
 
     return new_type;
@@ -349,6 +395,7 @@ gig_user_object_define(const char *type_name,
 static SCM
 gig_i_scm_define_type(SCM s_type_name, SCM s_parent_type, SCM s_properties, SCM s_signals)
 {
+    GIG_INIT_CHECK();
     char *type_name;
     GType parent_type;
     GType new_type;
@@ -418,19 +465,19 @@ signal_lookup(const char *proc, GObject *self,
     SCM s_name = gig_signal_ref(signal, GIG_SIGNAL_SLOT_NAME);
     char *name = scm_to_utf8_string(s_name);
 
-    *c_signal = g_signal_lookup(name, G_OBJECT_TYPE(self));
+    *c_signal = G.signal_lookup(name, G_OBJECT_TYPE(self));
     free(name);
 
     if (c_signal == 0)
         scm_misc_error(proc, "~A: unknown signal name ~A",
                        scm_list_2(gig_object_ref(self), s_name));
 
-    g_signal_query(*c_signal, query_info);
+    G.signal_query(*c_signal, query_info);
 
     if ((query_info->signal_flags & G_SIGNAL_DETAILED) && scm_is_symbol(detail)) {
         SCM detail_str = scm_symbol_to_string(detail);
         char *_detail = scm_to_utf8_string(detail_str);
-        *c_detail = g_quark_from_string(_detail);
+        *c_detail = G.quark_from_string(_detail);
         free(_detail);
     }
     else
@@ -440,6 +487,7 @@ signal_lookup(const char *proc, GObject *self,
 static SCM
 gig_i_scm_connect(SCM self, SCM signal, SCM sdetail, SCM callback, SCM s_after, SCM reserved)
 {
+    GIG_INIT_CHECK();
     GObject *obj;
     bool after;
     GClosure *closure;
@@ -458,7 +506,7 @@ gig_i_scm_connect(SCM self, SCM signal, SCM sdetail, SCM callback, SCM s_after, 
     after = !SCM_UNBNDP(s_after) && scm_to_bool(s_after);
     closure = gig_closure_new(callback, gig_signal_ref(signal, GIG_SIGNAL_SLOT_OUTPUT_MASK));
 
-    handlerid = g_signal_connect_closure_by_id(obj, sigid, detail, closure, after);
+    handlerid = G.signal_connect_closure_by_id(obj, sigid, detail, closure, after);
 
     return scm_from_ulong(handlerid);
 }
@@ -466,6 +514,7 @@ gig_i_scm_connect(SCM self, SCM signal, SCM sdetail, SCM callback, SCM s_after, 
 static SCM
 gig_i_scm_emit(SCM self, SCM signal, SCM s_detail, SCM args)
 {
+    GIG_INIT_CHECK();
     GObject *obj;
     GValue *values, retval = G_VALUE_INIT;
     GSignalQuery query_info;
@@ -491,18 +540,18 @@ gig_i_scm_emit(SCM self, SCM signal, SCM s_detail, SCM args)
                                   scm_length(args)));
 
     values = xcalloc(query_info.n_params + 1, sizeof(GValue));
-    g_value_init(values, G_OBJECT_TYPE(obj));
+    G.value_init(values, G_OBJECT_TYPE(obj));
     gig_value_from_scm_with_error(values, self, "%emit", SCM_ARG1);
     SCM iter = args;
     for (unsigned i = 0; i < query_info.n_params; i++, iter = scm_cdr(iter)) {
-        g_value_init(values + i + 1, query_info.param_types[i]);
+        G.value_init(values + i + 1, query_info.param_types[i]);
         gig_value_from_scm_with_error(values + i + 1, scm_car(iter), "%emit", SCM_ARGn);
     }
 
     if (query_info.return_type != G_TYPE_NONE)
-        g_value_init(&retval, query_info.return_type);
-    gig_debug("%s - emitting signal", g_signal_name(sigid));
-    g_signal_emitv(values, sigid, detail, &retval);
+        G.value_init(&retval, query_info.return_type);
+    gig_debug("%s - emitting signal", G.signal_name(sigid));
+    G.signal_emitv(values, sigid, detail, &retval);
 
     if (query_info.return_type != G_TYPE_NONE)
         ret = scm_cons(gig_value_as_scm(&retval, FALSE), ret);
@@ -531,7 +580,7 @@ gig_i_scm_emit(SCM self, SCM signal, SCM s_detail, SCM args)
         ret = scm_reverse_x(ret, SCM_EOL);
     }
     for (size_t narg = 0; narg < query_info.n_params + 1; narg++)
-        g_value_unset(values + narg);
+        G.value_unset(values + narg);
     free(values);
     if (scm_is_null(ret))
         return SCM_UNSPECIFIED;
@@ -544,55 +593,67 @@ static SCM sym_value;
 static SCM do_define_property(const char *, SCM, SCM, SCM);
 
 SCM
-gig_property_define(GType type, GIPropertyInfo *info, const char *_namespace)
+gig_il_property(SCM s_gtype_name, SCM s_long_name, SCM s_short_name, SCM s_symbol)
 {
-    GParamSpec *prop = NULL;
-    SCM s_prop, def;
+#define FUNC_NAME "^property"
+    char *gtype_name;
+    size_t type;
+    char *long_name;
+    char *short_name;
+    char *symbol;
+    SCM self_type;
     SCM defs = SCM_EOL;
 
-    const char *name = g_base_info_get_name(info);
-    char *long_name;
-
-    SCM self_type = gig_type_get_scheme_type(type);
+    SCM_ASSERT_TYPE(scm_is_symbol(s_gtype_name), s_gtype_name, SCM_ARG1, FUNC_NAME, "symbol");
+    SCM_ASSERT_TYPE(scm_is_symbol(s_long_name), s_long_name, SCM_ARG2, FUNC_NAME, "symbol");
+    SCM_ASSERT_TYPE(scm_is_symbol(s_short_name), s_short_name, SCM_ARG3, FUNC_NAME, "symbol");
+    SCM_ASSERT_TYPE(scm_is_symbol(s_symbol), s_symbol, SCM_ARG4, FUNC_NAME, "symbol");
 
     scm_dynwind_begin(0);
-    long_name = scm_dynfree(concatenate3(_namespace, ":", name));
-    long_name = scm_dynfree(make_scm_name(long_name));
 
-    if (G_TYPE_IS_CLASSED(type)) {
-        GObjectClass *_class = g_type_class_ref(type);
-        scm_dynwind_unwind_handler(g_type_class_unref, _class, SCM_F_WIND_EXPLICITLY);
-        prop = g_object_class_find_property(_class, name);
+    gtype_name = scm_dynfree(scm_to_utf8_symbol(s_gtype_name));
+    type = G.type_from_name(gtype_name);
+    if (type == 0)
+        scm_misc_error(FUNC_NAME, "cannot find GType for '~A'", scm_list_1(s_gtype_name));
+
+    self_type = gig_type_get_scheme_type(type);
+
+    GParamSpec *prop = NULL;
+    SCM s_prop;
+    symbol = scm_dynfree(scm_to_utf8_symbol(s_symbol));
+
+    if (G.type_test_flags(type, G_TYPE_FLAG_CLASSED)) {
+        GObjectClass *_class = G.type_class_ref(type);
+        scm_dynwind_unwind_handler(G.type_class_unref, _class, SCM_F_WIND_EXPLICITLY);
+        prop = G.object_class_find_property(_class, symbol);
     }
-    else if (G_TYPE_IS_INTERFACE(type)) {
-        GTypeInterface *iface = g_type_default_interface_ref(type);
-        scm_dynwind_unwind_handler(g_type_default_interface_unref, iface, SCM_F_WIND_EXPLICITLY);
-        prop = g_object_interface_find_property(iface, name);
+    else if (G.type_fundamental(type) == G_TYPE_INTERFACE) {
+        GTypeInterface *iface = G.type_default_interface_ref(type);
+        scm_dynwind_unwind_handler(G.type_default_interface_unref, iface, SCM_F_WIND_EXPLICITLY);
+        prop = G.object_interface_find_property(iface, symbol);
     }
     else
         gig_critical_load("%s is neither class nor interface, but we define properties, wtf?",
-                          g_type_name(type));
+                          gtype_name);
+    long_name = scm_dynfree(scm_to_utf8_symbol(s_long_name));
     if (prop != NULL) {
         GType prop_type = G_PARAM_SPEC_TYPE(prop);
         if (!gig_type_is_registered(prop_type))
-            defs = scm_append2(defs, gig_type_define(prop_type));
-        s_prop = gig_type_transfer_object(prop_type, prop, GI_TRANSFER_NOTHING);
+            gig_type_define(prop_type);
+        s_prop = gig_type_transfer_object(prop_type, prop, GIG_TRANSFER_NOTHING);
 
         SCM top_type = scm_get_top_class();
-        def = do_define_property(long_name, s_prop, self_type, top_type);
-        if (!SCM_UNBNDP(def))
-            defs = scm_cons(def, defs);
-        gig_debug_load("%s - bound to property %s.%s", long_name, g_type_name(type), name);
-        def = do_define_property(name, s_prop, self_type, top_type);
-        if (!SCM_UNBNDP(def))
-            defs = scm_cons(def, defs);
-        gig_debug_load("%s - shorthand for %s", name, long_name);
+        defs = scm_cons(do_define_property(long_name, s_prop, self_type, top_type), defs);
+        gig_debug_load("%s - bound to property %s.%s", long_name, gtype_name, symbol);
+        short_name = scm_dynfree(scm_to_utf8_symbol(s_short_name));
+        defs = scm_cons(do_define_property(short_name, s_prop, self_type, top_type), defs);
+        gig_debug_load("%s - shorthand for %s", short_name, long_name);
     }
     else
         gig_warning_load("Missing property %s", long_name);
 
     scm_dynwind_end();
-    return defs;
+    return scm_reverse(defs);
 }
 
 static SCM
@@ -602,7 +663,8 @@ do_define_property(const char *public_name, SCM prop, SCM self_type, SCM value_t
     if (!scm_is_true(sym_self))
         sym_self = scm_from_utf8_symbol("self");
 
-    g_return_val_if_fail(public_name != NULL, SCM_UNDEFINED);
+    if (public_name == NULL)
+        return SCM_UNDEFINED;
 
     SCM sym_public_name, formals, specializers, generic, proc, setter;
 
@@ -629,10 +691,8 @@ do_define_property(const char *public_name, SCM prop, SCM self_type, SCM value_t
 }
 
 void
-gig_init_object()
+gig_init_object_stage1()
 {
-    gig_user_object_properties = g_quark_from_static_string("GigObject::properties");
-
     sym_value = scm_from_utf8_symbol("value");
 
     scm_c_define_gsubr("%make-gobject", 1, 1, 0, gig_i_scm_make_gobject);
@@ -642,4 +702,12 @@ gig_init_object()
     scm_c_define_gsubr("%connect", 4, 2, 0, gig_i_scm_connect);
     scm_c_define_gsubr("%emit", 2, 1, 1, gig_i_scm_emit);
     scm_c_define_gsubr("%define-object-type", 2, 2, 0, gig_i_scm_define_type);
+    // scm_c_define_gsubr("gobject-properties", 1, 0, 0, gig_i_scm_object_properties);
+    gig_il_property_func = scm_c_define_gsubr("^property", 4, 0, 0, gig_il_property);
+}
+
+void
+gig_init_object_stage2()
+{
+    gig_user_object_properties = G.quark_from_static_string("GigObject::properties");
 }

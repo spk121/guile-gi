@@ -17,30 +17,42 @@
 #define GIG_TYPE_H
 
 #include <stdbool.h>
-#include <girepository.h>
 #include "../core.h"
+#include <glib.h>
+#include <glib-object.h>
+#include <libguile.h>
 
-GType gig_type_get_c_array_type(void);
-
-#define G_TYPE_PRIV_C_ARRAY (gig_type_get_c_array_type())
+typedef enum GigTransfer_
+{
+    GIG_TRANSFER_NOTHING,
+    GIG_TRANSFER_CONTAINER,
+    GIG_TRANSFER_EVERYTHING
+} GigTransfer;
 
 typedef void *(*GigTypeRefFunction)(void *);
 typedef void (*GigTypeUnrefFunction)(void *);
 
+GIG_API extern SCM gig_il_type_func;
+GIG_API extern SCM gig_il_untyped_flags_func;
+GIG_API extern SCM gig_il_untyped_enum_func;
+
 bool gig_type_is_registered(GType gtype);
 
 SCM gig_type_define(GType gtype);
-void gig_type_define_fundamental(GType type, SCM extra_supers,
-                                 GigTypeRefFunction ref, GigTypeUnrefFunction unref);
-SCM gig_type_define_with_info(GIRegisteredTypeInfo *info, SCM slots);
+SCM gig_il_type(SCM s_name, SCM s_gtype_name, SCM boxed_size, SCM s_initializer);
+SCM gig_il_untyped_flags(SCM s_name, SCM s_qname, SCM alist);
+SCM gig_il_untyped_enum(SCM s_name, SCM s_qname, SCM alist);
+
 SCM gig_type_get_scheme_type(GType gtype);
 void *gig_type_peek_object(SCM obj);
 bool gig_type_check_typed_object(SCM obj, SCM expected_type);
-SCM gig_type_transfer_object(GType gtype, void *obj, GITransfer transfer);
+SCM gig_type_transfer_object(GType gtype, void *obj, GigTransfer transfer);
 SCM scm_from_gtype(GType x);
 GType scm_to_gtype(SCM x);
 GType scm_to_gtype_full(SCM x, const char *subr, int argpos);
+char *gig_type_class_name_from_gtype(GType gtype);
 
-GIG_API void gig_init_types(void);
+void gig_init_type_stage1(void);
+void gig_init_type_stage2(void);
 
 #endif

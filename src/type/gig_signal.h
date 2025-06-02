@@ -29,6 +29,7 @@ typedef enum
 } GigSignalSlot;
 
 SCM gig_make_signal(size_t n_slots, GigSignalSlot *slots, SCM *slot_values);
-void gig_init_signal(void);
+void gig_init_signal_stage1(void);
+void gig_init_signal_stage2(void);
 
 #endif

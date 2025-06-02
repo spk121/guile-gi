@@ -17,10 +17,11 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <girepository.h>
 #include <libguile.h>
+#include <glib.h>
 #include "../core.h"
 #include "../type.h"
+#include "../gig_glib.h"
 #include "gig_argument.h"
 #include "gig_callback_priv.h"
 
@@ -51,6 +52,7 @@ static void scm_to_c_pointer(S2C_ARG_DECL);
 static void scm_to_c_boxed(S2C_ARG_DECL);
 // static void scm_to_c_param(S2C_ARG_DECL);
 static void scm_to_c_object(S2C_ARG_DECL);
+static void scm_to_c_unichar(S2C_ARG_DECL);
 static void scm_to_c_variant(S2C_ARG_DECL);
 
 // Derived types
@@ -71,6 +73,7 @@ static void c_interface_to_scm(C2S_ARG_DECL);
 static void c_char_to_scm(C2S_ARG_DECL);
 static void c_boolean_to_scm(C2S_ARG_DECL);
 static void c_integer_to_scm(C2S_ARG_DECL);
+static void c_unichar_to_scm(C2S_ARG_DECL);
 static void c_enum_to_scm(C2S_ARG_DECL);
 static void c_real_to_scm(C2S_ARG_DECL);
 static void c_string_to_scm(C2S_ARG_DECL);
@@ -92,7 +95,7 @@ static void c_list_to_scm(C2S_ARG_DECL);
 static void *
 later_free(slist_t **must_free, GigTypeMeta *meta, void *ptr)
 {
-    if ((must_free != NULL) && meta->transfer != GI_TRANSFER_EVERYTHING)
+    if ((must_free != NULL) && meta->transfer != GIG_TRANSFER_EVERYTHING)
         slist_prepend(must_free, ptr);
     return ptr;
 }
@@ -100,10 +103,11 @@ later_free(slist_t **must_free, GigTypeMeta *meta, void *ptr)
 #define LATER_FREE(_ptr) later_free(must_free, meta, _ptr)
 
 static GType
-child_type(GigTypeMeta *meta, GIArgument *arg)
+child_type(GigTypeMeta *meta, GigArgument *arg)
 {
-    if ((arg != NULL) && (arg->v_pointer != NULL) && G_IS_OBJECT(arg->v_pointer)
-        && g_type_is_a(G_OBJECT_TYPE(arg->v_pointer), meta->gtype)) {
+    if ((arg != NULL) && (arg->v_pointer != NULL)
+        && G.type_check_instance_is_fundamentally_a(arg->v_pointer, G_TYPE_OBJECT)
+        && G.type_is_a(G_OBJECT_TYPE(arg->v_pointer), meta->gtype)) {
         return G_OBJECT_TYPE(arg->v_pointer);
     }
     return meta->gtype;
@@ -111,14 +115,15 @@ child_type(GigTypeMeta *meta, GIArgument *arg)
 
 // This returns the number of elements (not necessarily bytes) in ARG.
 static size_t
-zero_terminated_array_length(GigTypeMeta *meta, GIArgument *arg)
+zero_terminated_array_length(GigTypeMeta *meta, GigArgument *arg)
 {
     assert(meta != NULL);
     assert(arg != NULL);
 
     if (arg->v_pointer == NULL)
         return 0;
-    else if (G_TYPE_FUNDAMENTAL(meta->params[0].gtype) == G_TYPE_STRING)
+    else if (meta->params[0].arg_type == GIG_ARG_TYPE_UTF8_STRING
+             || meta->params[0].arg_type == GIG_ARG_TYPE_LOCALE_STRING)
         return strvlen((const char **)arg->v_pointer);
     else {
         size_t item_size = gig_meta_real_item_size(&meta->params[0]);
@@ -158,35 +163,31 @@ zero_terminated_array_length(GigTypeMeta *meta, GIArgument *arg)
         {
             char *ptr = arg->v_pointer;
             bool non_null;
-            size_t length = 0;
-            while(1) {
+            size_t length = -1;
+            do {
+                length++;
                 non_null = false;
-                for (size_t i = 0; i <= item_size; i++) {
-                    if (ptr[i] != 0) {
+                for (size_t i = 0; i <= item_size; i++)
+                    if (ptr + i != 0) {
                         non_null = true;
+                        break;
                     }
-		}
-		if (non_null) {
-		    length ++;
-		    ptr += item_size;
-		}
-		else
-		    break;
-	    };
+                ptr += item_size;
+            } while (non_null);
 
             return length;
         }
-	}
+        }
     }
     gig_return_val_if_reached(GIG_ARRAY_SIZE_UNKNOWN);
 }
 
 //////////////////////////////////////////////////////////
-// CONVERTING SCM OBJECTS TO GIARGUMENTS
+// CONVERTING SCM OBJECTS TO GIGARGUMENTS
 //////////////////////////////////////////////////////////
 
 // This is the main entry point of the conversion of SCM objects to
-// GIArguments.
+// GigArguments.
 void
 gig_argument_scm_to_c(S2C_ARG_DECL)
 {
@@ -195,58 +196,69 @@ gig_argument_scm_to_c(S2C_ARG_DECL)
     if (size)
         *size = 0;
 
-    GType fundamental_type = G_TYPE_FUNDAMENTAL(meta->gtype);
-    switch (fundamental_type) {
-    case G_TYPE_INVALID:
+    switch (meta->arg_type) {
+    case GIG_ARG_TYPE_UNKNOWN:
         UNHANDLED;
         break;
-    case G_TYPE_NONE:
+    case GIG_ARG_TYPE_VOID:
         SURPRISING;
         arg->v_pointer = NULL;
         break;
-    case G_TYPE_INTERFACE:
+    case GIG_ARG_TYPE_INTERFACE:
+    case GIG_ARG_TYPE_OTHER:
+    case GIG_ARG_TYPE_PARAM:
         scm_to_c_interface(S2C_ARGS);
         break;
-    case G_TYPE_CHAR:
-    case G_TYPE_UCHAR:
+    case GIG_ARG_TYPE_INT8:
+    case GIG_ARG_TYPE_UINT8:
         scm_to_c_char(S2C_ARGS);
         break;
-    case G_TYPE_BOOLEAN:
+    case GIG_ARG_TYPE_GBOOLEAN:
         scm_to_c_boolean(S2C_ARGS);
         break;
-    case G_TYPE_INT:
-    case G_TYPE_UINT:
-    case G_TYPE_LONG:
-    case G_TYPE_ULONG:
-    case G_TYPE_INT64:
-    case G_TYPE_UINT64:
+    case GIG_ARG_TYPE_INT16:
+    case GIG_ARG_TYPE_UINT16:
+    case GIG_ARG_TYPE_INT32:
+    case GIG_ARG_TYPE_UINT32:
+    case GIG_ARG_TYPE_INT64:
+    case GIG_ARG_TYPE_UINT64:
         scm_to_c_integer(S2C_ARGS);
         break;
-    case G_TYPE_ENUM:
-    case G_TYPE_FLAGS:
+    case GIG_ARG_TYPE_UNICHAR:
+        scm_to_c_unichar(S2C_ARGS);
+        break;
+    case GIG_ARG_TYPE_ENUM:
+    case GIG_ARG_TYPE_FLAGS:
         scm_to_c_enum(S2C_ARGS);
         break;
-    case G_TYPE_FLOAT:
-    case G_TYPE_DOUBLE:
+    case GIG_ARG_TYPE_FLOAT:
+    case GIG_ARG_TYPE_DOUBLE:
         scm_to_c_real(S2C_ARGS);
         break;
-    case G_TYPE_STRING:
+    case GIG_ARG_TYPE_UTF8_STRING:
+    case GIG_ARG_TYPE_LOCALE_STRING:
         scm_to_c_string(S2C_ARGS);
         break;
-    case G_TYPE_POINTER:
+    case GIG_ARG_TYPE_ARRAY:
+    case GIG_ARG_TYPE_CALLBACK:
+    case GIG_ARG_TYPE_GLIST:
+    case GIG_ARG_TYPE_GSLIST:
+    case GIG_ARG_TYPE_GTYPE:
+    case GIG_ARG_TYPE_POINTER:
         scm_to_c_pointer(S2C_ARGS);
         break;
-    case G_TYPE_BOXED:
+    case GIG_ARG_TYPE_BOXED:
+    case GIG_ARG_TYPE_GARRAY:
+    case GIG_ARG_TYPE_GBYTEARRAY:
+    case GIG_ARG_TYPE_GHASH:
+    case GIG_ARG_TYPE_GPTRARRAY:
+    case GIG_ARG_TYPE_VALUE:
         scm_to_c_boxed(S2C_ARGS);
         break;
-    case G_TYPE_PARAM:
-        //scm_to_c_param(S2C_ARGS);
-        UNHANDLED;
-        break;
-    case G_TYPE_OBJECT:
+    case GIG_ARG_TYPE_OBJECT:
         scm_to_c_object(S2C_ARGS);
         break;
-    case G_TYPE_VARIANT:
+    case GIG_ARG_TYPE_VARIANT:
         scm_to_c_variant(S2C_ARGS);
         break;
     default:
@@ -262,20 +274,19 @@ scm_to_c_interface(S2C_ARG_DECL)
     if (meta->is_nullable && scm_is_false(object))
         arg->v_pointer = NULL;
     else
-        arg->v_pointer = G_TYPE_CHECK_INSTANCE_CAST(gig_type_peek_object(object),
-                                                    meta->gtype, void);
+        arg->v_pointer = G.type_check_instance_cast(gig_type_peek_object(object), meta->gtype);
 }
 
 static void
 scm_to_c_char(S2C_ARG_DECL)
 {
     TRACE_S2C();
-    GType t = meta->gtype;
+    GigArgType t = meta->arg_type;
 
     if (!scm_is_integer(object) && !scm_is_char(object))
         scm_wrong_type_arg_msg(subr, argpos, object, "int8");
 
-    if (t == G_TYPE_CHAR) {
+    if (t == GIG_ARG_TYPE_INT8) {
         if (scm_is_char(object)) {
             if (SCM_CHAR(object) > 255)
                 scm_out_of_range(subr, object);
@@ -287,7 +298,7 @@ scm_to_c_char(S2C_ARG_DECL)
         else
             arg->v_int8 = scm_to_int8(object);
     }
-    else if (t == G_TYPE_UCHAR) {
+    else if (t == GIG_ARG_TYPE_UINT8) {
         if (scm_is_char(object)) {
             if (SCM_CHAR(object) > 255)
                 scm_out_of_range(subr, object);
@@ -315,116 +326,81 @@ static void
 scm_to_c_integer(S2C_ARG_DECL)
 {
     TRACE_S2C();
-    GType t = meta->gtype;
-    if (t == G_TYPE_INT) {
+    GigArgType t = meta->arg_type;
+    if (!scm_is_integer(object))
+        scm_wrong_type_arg_msg(subr, argpos, object, "integer");
+
 #define T(t,min,max)                                                    \
-        do {                                                            \
-            if (!scm_is_signed_integer(object, min, max))               \
-                scm_wrong_type_arg_msg(subr, argpos, object, #t);       \
-            arg->v_ ## t = scm_to_ ## t(object);                        \
-        } while (0)                                                     \
+    do {                                                                \
+        if (!scm_is_signed_integer(object, min, max))                   \
+            scm_out_of_range(subr, object);                             \
+        arg->v_ ## t = scm_to_ ## t(object);                            \
+    } while (0)
 
-        switch (meta->item_size) {
-        case 1:
-            T(int8, INT8_MIN, INT8_MAX);
-            break;
-        case 2:
-            T(int16, INT16_MIN, INT16_MAX);
-            break;
-        case 4:
-            T(int32, INT32_MIN, INT32_MAX);
-            break;
-        case 8:
-            // future-proofing for int == int64
-            T(int64, INT64_MIN, INT64_MAX);
-            break;
-        }
+    if (t == GIG_ARG_TYPE_INT16)
+        T(int16, INT16_MIN, INT16_MAX);
+    else if (t == GIG_ARG_TYPE_INT32)
+        T(int32, INT32_MIN, INT32_MAX);
+    else if (t == GIG_ARG_TYPE_INT64)
+        T(int64, INT64_MIN, INT64_MAX);
+
 #undef T
-    }
-
-    else if (t == G_TYPE_UINT) {
 #define T(t,min,max)                                                    \
-        do {                                                            \
-            if (!scm_is_unsigned_integer(object, min, max))             \
-                scm_wrong_type_arg_msg(subr, argpos, object, #t);       \
-            arg->v_ ## t = scm_to_ ## t(object);                        \
-        } while (0)                                                     \
+    do {                                                                \
+        if (!scm_is_unsigned_integer(object, min, max))                 \
+            scm_out_of_range(subr, object);                             \
+        arg->v_ ## t = scm_to_ ## t(object);                            \
+    } while (0)
 
-        if (meta->is_unichar) {
-            if (scm_is_char(object))
-                arg->v_uint32 = SCM_CHAR(object);
-            else if (scm_is_unsigned_integer(object, 0, SCM_CODEPOINT_MAX))
-                arg->v_uint32 = scm_to_uint32(object);
-            else
-                scm_wrong_type_arg_msg(subr, argpos, object, "char");
-        }
-        else
-            switch (meta->item_size) {
-            case 1:
-                T(uint8, 0, UINT8_MAX);
-                break;
-            case 2:
-                T(uint16, 0, UINT16_MAX);
-                break;
-            case 4:
-                T(uint32, 0, UINT32_MAX);
-                break;
-            case 8:
-                // future-proofing for uint == uint64
-                T(uint64, 0, UINT64_MAX);
-                break;
-            }
+    if (t == GIG_ARG_TYPE_UINT16)
+        T(uint16, 0, UINT16_MAX);
+    else if (t == GIG_ARG_TYPE_UINT32)
+        T(uint32, 0, UINT32_MAX);
+    else if (t == GIG_ARG_TYPE_UINT64)
+        T(uint64, 0, UINT64_MAX);
 #undef T
-    }
+}
 
-    else if (t == G_TYPE_INT64) {
-        if (!scm_is_signed_integer(object, INT64_MIN, INT64_MAX))
-            scm_wrong_type_arg_msg(subr, argpos, object, "int64");
-        arg->v_int64 = scm_to_int64(object);
-    }
-    else if (t == G_TYPE_UINT64) {
-        if (!scm_is_unsigned_integer(object, 0, UINT64_MAX))
-            scm_wrong_type_arg_msg(subr, argpos, object, "uint64");
-        arg->v_uint64 = scm_to_uint64(object);
-    }
+static void
+scm_to_c_unichar(S2C_ARG_DECL)
+{
+    if (!scm_is_char(object) && !scm_is_integer(object))
+        scm_wrong_type_arg(subr, argpos, object);
+    if (scm_is_char(object))
+        arg->v_uint32 = SCM_CHAR(object);
+    else if (scm_is_unsigned_integer(object, 0, SCM_CODEPOINT_MAX))
+        arg->v_uint32 = scm_to_uint32(object);
     else
-        UNHANDLED;
+        scm_out_of_range(subr, object);
 }
 
 static void
 scm_to_c_enum(S2C_ARG_DECL)
 {
     TRACE_S2C();
-    GType fundamental_type = G_TYPE_FUNDAMENTAL(meta->gtype);
-    if (fundamental_type == G_TYPE_ENUM)
-        arg->v_int = gig_enum_to_int(object);
-    else if (fundamental_type == G_TYPE_FLAGS)
-        arg->v_uint = gig_flags_to_uint(object);
+    if (meta->arg_type == GIG_ARG_TYPE_ENUM)
+        arg->v_int32 = gig_enum_to_int(object);
     else
-        UNHANDLED;
+        arg->v_uint32 = gig_flags_to_uint(object);
 }
 
 static void
 scm_to_c_real(S2C_ARG_DECL)
 {
     TRACE_S2C();
-    GType t = meta->gtype;
+    GigArgType t = meta->arg_type;
 
-    if (t == G_TYPE_FLOAT) {
-        if (!scm_is_real(object))
-            scm_wrong_type_arg_msg(subr, argpos, object, "float32");
-        gdouble dtmp = scm_to_double(object);
+    if (!scm_is_real(object))
+        scm_wrong_type_arg_msg(subr, argpos, object, "real");
+
+    if (t == GIG_ARG_TYPE_FLOAT) {
+        double dtmp = scm_to_double(object);
         if (dtmp > FLT_MAX || dtmp < -FLT_MAX)
             scm_out_of_range(subr, object);
         arg->v_float = (float)dtmp;
     }
-    else if (t == G_TYPE_DOUBLE) {
-        if (!scm_is_real(object))
-            scm_wrong_type_arg_msg(subr, argpos, object, "float64");
-        arg->v_double = scm_to_double(object);
-    }
     else
-        UNHANDLED;
+        arg->v_double = scm_to_double(object);
 }
 
 static void
@@ -435,6 +411,9 @@ scm_to_c_string(S2C_ARG_DECL)
         arg->v_pointer = NULL;
         return;
     }
+
+    if (!scm_is_string(object) && !scm_is_bytevector(object))
+        scm_wrong_type_arg(subr, argpos, object);
 
     // Here we convert an input string into an argument.  The input
     // string is either UTF8 or locale encoded.
@@ -447,7 +426,7 @@ scm_to_c_string(S2C_ARG_DECL)
 
         // FIXME: is there any guarantee, that the bytevector
         // has the correct locale? This seems like a very ugly hack.
-        if (meta->transfer != GI_TRANSFER_EVERYTHING) {
+        if (meta->transfer != GIG_TRANSFER_EVERYTHING) {
             // But when we're using bytevectors as a possibly writable
             // location, they do need to be null terminated.
             bool terminated = false;
@@ -455,7 +434,7 @@ scm_to_c_string(S2C_ARG_DECL)
                 if (SCM_BYTEVECTOR_CONTENTS(object)[i] == 0)
                     terminated = true;
             if (!terminated)
-                scm_wrong_type_arg_msg(subr, argpos, object, "null-terminated bytevector");
+                scm_misc_error(subr, "input bytevector is not null-terminated", SCM_EOL);
             arg->v_string = (char *)SCM_BYTEVECTOR_CONTENTS(object);
         }
         else
@@ -464,15 +443,13 @@ scm_to_c_string(S2C_ARG_DECL)
             arg->v_string = xstrndup((const char *)SCM_BYTEVECTOR_CONTENTS(object),
                                      SCM_BYTEVECTOR_LENGTH(object));
     }
-    else if (scm_is_string(object)) {
-        if (meta->pointer_type == GIG_DATA_LOCALE_STRING)
+    else {
+        if (meta->arg_type == GIG_ARG_TYPE_LOCALE_STRING)
             arg->v_string = scm_to_locale_string(object);
         else
             arg->v_string = scm_to_utf8_string(object);
         LATER_FREE(arg->v_string);
     }
-    else
-        scm_wrong_type_arg_msg(subr, argpos, object, "string or bytevector");
 }
 
 static void
@@ -481,15 +458,15 @@ scm_to_c_pointer(S2C_ARG_DECL)
     TRACE_S2C();
     if (scm_is_false(object) && meta->is_nullable)
         arg->v_pointer = NULL;
-    else if (meta->gtype == G_TYPE_PRIV_C_ARRAY)
+    else if (meta->arg_type == GIG_ARG_TYPE_ARRAY)
         scm_to_c_native_array(S2C_ARGS);
-    else if (meta->pointer_type == GIG_DATA_CALLBACK) {
+    else if (meta->arg_type == GIG_ARG_TYPE_CALLBACK) {
         if (scm_is_procedure(object))
-            arg->v_pointer = gig_callback_to_c(subr, meta->callable_info, object);
+            arg->v_pointer = gig_callback_to_c(subr, meta->callable_arg_map, object);
         else
             scm_wrong_type_arg_msg(subr, argpos, object, "a procedure");
     }
-    else if (meta->gtype == G_TYPE_GTYPE)
+    else if (meta->arg_type == GIG_ARG_TYPE_GTYPE)
         arg->v_size = scm_to_gtype_full(object, subr, argpos);
     else if (scm_is_pointer(object))
         arg->v_pointer = scm_to_pointer(object);
@@ -503,22 +480,22 @@ static void
 scm_to_c_boxed(S2C_ARG_DECL)
 {
     TRACE_S2C();
-    GType t = meta->gtype;
+    GigArgType t = meta->arg_type;
     if (meta->is_nullable && scm_is_false(object)) {
         arg->v_pointer = NULL;
     }
-    else if (t == G_TYPE_ARRAY)
+    else if (t == GIG_ARG_TYPE_GARRAY)
         scm_to_c_garray(S2C_ARGS);
-    else if (t == G_TYPE_BYTE_ARRAY)
+    else if (t == GIG_ARG_TYPE_GBYTEARRAY)
         scm_to_c_byte_array(S2C_ARGS);
-    else if (t == G_TYPE_PTR_ARRAY)
+    else if (t == GIG_ARG_TYPE_GPTRARRAY)
         scm_to_c_ptr_array(S2C_ARGS);
-    else if (t == G_TYPE_HASH_TABLE)
+    else if (t == GIG_ARG_TYPE_GHASH)
         scm_to_c_ghashtable(S2C_ARGS);
     else if (!meta->is_ptr && !meta->is_caller_allocates)
         scm_misc_error("object->boxed",
                        "passing object ~S by value to a c function is not supported",
-                       scm_list_1(scm_from_utf8_string(g_type_name(meta->gtype))));
+                       scm_list_1(scm_from_utf8_string(G.type_name(meta->gtype))));
 
     else
         arg->v_pointer = gig_type_peek_object(object);
@@ -533,7 +510,7 @@ scm_to_c_object(S2C_ARG_DECL)
     }
     else {
         if (!gig_type_check_typed_object(object, scm_from_gtype(meta->gtype)))
-            scm_wrong_type_arg_msg(subr, argpos, object, g_type_name(meta->gtype));
+            scm_wrong_type_arg_msg(subr, argpos, object, G.type_name(meta->gtype));
 
         arg->v_pointer = gig_type_peek_object(object);
     }
@@ -550,27 +527,30 @@ static void
 scm_to_c_native_array(S2C_ARG_DECL)
 {
     TRACE_S2C();
-    GType item_type = meta->params[0].gtype;
-    GType fundamental_item_type = G_TYPE_FUNDAMENTAL(item_type);
+    GigArgType item_type = meta->params[0].arg_type;
 
-    if (item_type == G_TYPE_BOOLEAN)
+    if (item_type == GIG_ARG_TYPE_GBOOLEAN)
         scm_to_c_native_boolean_array(S2C_ARGS);
-    else if (meta->params[0].is_unichar)
+    else if (item_type == GIG_ARG_TYPE_UNICHAR)
         scm_to_c_native_unichar_array(S2C_ARGS);
-    else if (item_type == G_TYPE_CHAR
-             || item_type == G_TYPE_UCHAR
-             || item_type == G_TYPE_INT
-             || item_type == G_TYPE_UINT
-             || item_type == G_TYPE_INT64
-             || item_type == G_TYPE_UINT64
-             || item_type == G_TYPE_FLOAT || item_type == G_TYPE_DOUBLE)
+    else if (item_type == GIG_ARG_TYPE_INT8
+             || item_type == GIG_ARG_TYPE_UINT8
+             || item_type == GIG_ARG_TYPE_INT16
+             || item_type == GIG_ARG_TYPE_UINT16
+             || item_type == GIG_ARG_TYPE_INT32
+             || item_type == GIG_ARG_TYPE_UINT32
+             || item_type == GIG_ARG_TYPE_INT64
+             || item_type == GIG_ARG_TYPE_UINT64
+             || item_type == GIG_ARG_TYPE_FLOAT
+             || item_type == GIG_ARG_TYPE_DOUBLE || item_type == GIG_ARG_TYPE_POINTER)
         scm_to_c_native_immediate_array(S2C_ARGS);
-    else if (item_type == G_TYPE_GTYPE)
+    else if (item_type == GIG_ARG_TYPE_GTYPE)
         scm_to_c_native_gtype_array(S2C_ARGS);
-    else if (item_type == G_TYPE_STRING)
+    else if (item_type == GIG_ARG_TYPE_UTF8_STRING || item_type == GIG_ARG_TYPE_LOCALE_STRING)
         scm_to_c_native_string_array(S2C_ARGS);
-    else if (fundamental_item_type == G_TYPE_BOXED || item_type == G_TYPE_VARIANT
-             || fundamental_item_type == G_TYPE_ENUM || fundamental_item_type == G_TYPE_FLAGS)
+    else if (item_type == GIG_ARG_TYPE_BOXED
+             || item_type == GIG_ARG_TYPE_VARIANT
+             || item_type == GIG_ARG_TYPE_ENUM || item_type == GIG_ARG_TYPE_FLAGS)
         scm_to_c_native_interface_array(S2C_ARGS);
     else
         UNHANDLED;
@@ -625,42 +605,54 @@ scm_to_c_native_immediate_array(S2C_ARG_DECL)
     TRACE_S2C();
 #define FUNC_NAME "%object->c-native-immediate-array-arg"
     // IMMEDIATE TYPES.  It seems only double, and 8 and 32-bit
-    // integer arrays are ever used. Sometimes deep copy.  Sometimes
-    // zero terminated.
+    // integer arrays are commonly used. Sometimes deep copy.
+    // Sometimes zero terminated.
 
-    size_t item_size = gig_meta_real_item_size(&meta->params[0]);
-    assert(item_size != 0);
+    if (!scm_is_bytevector(object))
+        scm_wrong_type_arg_msg(subr, argpos, object, "bytevector");
 
-    if (scm_is_bytevector(object)) {
-        *size = SCM_BYTEVECTOR_LENGTH(object) / item_size;
-        if (meta->transfer == GI_TRANSFER_EVERYTHING) {
-            if (meta->is_zero_terminated) {
-                size_t len = SCM_BYTEVECTOR_LENGTH(object);
-                // Note, null terminated here.
-                arg->v_pointer = xcalloc(*size + 1, item_size);
-                memcpy(arg->v_pointer, SCM_BYTEVECTOR_CONTENTS(object), len);
-            }
-            else {
-                arg->v_pointer = xmemdup(SCM_BYTEVECTOR_CONTENTS(object),
-                                         SCM_BYTEVECTOR_LENGTH(object));
-            }
+    GigArgType t = meta->params[0].arg_type;
+    size_t item_size;
+    if (t == GIG_ARG_TYPE_INT8 || t == GIG_ARG_TYPE_UINT8)
+        item_size = 1;
+    else if (t == GIG_ARG_TYPE_INT16 || t == GIG_ARG_TYPE_UINT16)
+        item_size = 2;
+    else if (t == GIG_ARG_TYPE_INT32 || t == GIG_ARG_TYPE_UINT32)
+        item_size = 4;
+    else if (t == GIG_ARG_TYPE_INT64 || t == GIG_ARG_TYPE_UINT64)
+        item_size = 8;
+    else if (t == GIG_ARG_TYPE_FLOAT)
+        item_size = 4;
+    else if (t == GIG_ARG_TYPE_DOUBLE)
+        item_size = 8;
+    else
+        item_size = sizeof(void *);
+
+    *size = SCM_BYTEVECTOR_LENGTH(object) / item_size;
+    if (meta->transfer == GIG_TRANSFER_EVERYTHING) {
+        if (meta->is_zero_terminated) {
+            size_t len = SCM_BYTEVECTOR_LENGTH(object);
+            // Note, null terminated here.
+            arg->v_pointer = xcalloc(*size + 1, item_size);
+            memcpy(arg->v_pointer, SCM_BYTEVECTOR_CONTENTS(object), len);
         }
         else {
-            if (meta->is_zero_terminated) {
-                size_t len = SCM_BYTEVECTOR_LENGTH(object);
-                // Adding null terminator element.
-                arg->v_pointer = xcalloc(*size + 1, item_size);
-                LATER_FREE(arg->v_pointer);
-                memcpy(arg->v_pointer, SCM_BYTEVECTOR_CONTENTS(object), len);
-            }
-            else
-                // The fast path
-                arg->v_pointer = SCM_BYTEVECTOR_CONTENTS(object);
-
+            arg->v_pointer = xmemdup(SCM_BYTEVECTOR_CONTENTS(object),
+                                     SCM_BYTEVECTOR_LENGTH(object));
         }
     }
-    else
-        scm_wrong_type_arg_msg(subr, argpos, object, "bytevector");
+    else {
+        if (meta->is_zero_terminated) {
+            size_t len = SCM_BYTEVECTOR_LENGTH(object);
+            // Adding null terminator element.
+            arg->v_pointer = xcalloc(*size + 1, item_size);
+            LATER_FREE(arg->v_pointer);
+            memcpy(arg->v_pointer, SCM_BYTEVECTOR_CONTENTS(object), len);
+        }
+        else
+            // The fast path
+            arg->v_pointer = SCM_BYTEVECTOR_CONTENTS(object);
+    }
 #undef FUNC_NAME
 }
 
@@ -668,35 +660,35 @@ static void
 scm_to_c_byte_array(S2C_ARG_DECL)
 {
     TRACE_S2C();
-    if (scm_is_bytevector(object)) {
-        void *contents = SCM_BYTEVECTOR_CONTENTS(object);
-        size_t len = SCM_BYTEVECTOR_LENGTH(object);
-        *size = len;
-        if (meta->transfer == GI_TRANSFER_EVERYTHING)
-            arg->v_pointer = g_byte_array_new_take(contents, len);
-        else
-            arg->v_pointer = g_byte_array_new_take(xmemdup(contents, len), len);
-    }
-    else
+
+    if (!scm_is_bytevector(object))
         scm_wrong_type_arg_msg(subr, argpos, object, "bytevector");
+
+    void *contents = SCM_BYTEVECTOR_CONTENTS(object);
+    size_t len = SCM_BYTEVECTOR_LENGTH(object);
+    *size = len;
+    if (meta->transfer == GIG_TRANSFER_EVERYTHING)
+        arg->v_pointer = G.byte_array_new_take(contents, len);
+    else
+        arg->v_pointer = G.byte_array_new_take(xmemdup(contents, len), len);
 }
 
 static void
 scm_to_c_ptr_array(S2C_ARG_DECL)
 {
     TRACE_S2C();
-    GIArgument _arg;
+    GigArgument _arg;
     GigTypeMeta _meta = *meta;
 
-    _meta.gtype = G_TYPE_PRIV_C_ARRAY;
+    _meta.arg_type = GIG_ARG_TYPE_ARRAY;
 
     // Make a C array from this SCM.
     gig_argument_scm_to_c(subr, argpos, &_meta, object, NULL, &_arg, size);
 
     // Move the pointers inside of the C array into a GPtrArray.
-    GPtrArray *ptrarray = g_ptr_array_new();
+    GPtrArray *ptrarray = G.ptr_array_new();
     for (size_t i = 0; i < *size; i++)
-        g_ptr_array_add(ptrarray, ((void **)(_arg.v_pointer))[i]);
+        G.ptr_array_add(ptrarray, ((void **)(_arg.v_pointer))[i]);
     arg->v_pointer = ptrarray;
     assert(arg->v_pointer != NULL);
 
@@ -716,89 +708,83 @@ typedef enum _gig_hash_key_type
 } GigHashKeyType;
 
 // This procedure converts a GHashTable's key or value to a
-// GIArgument.
+// GigArgument.
 static void
-c_hash_pointer_to_arg(GigTypeMeta *meta, void **p, GIArgument *arg)
+c_hash_pointer_to_arg(GigTypeMeta *meta, void **p, GigArgument *arg)
 {
+    GigArgType t = meta->arg_type;
+
     if (!meta->is_ptr) {
-        if (meta->gtype == G_TYPE_INT && meta->item_size <= 4) {
-            // 4-byte INT types are packed into the pointer storage,
-            // but with intptr_t sign extension.
-            int x = GPOINTER_TO_INT(p);
-            if (meta->item_size == 1)
-                arg->v_int8 = x;
-            else if (meta->item_size == 2)
-                arg->v_int16 = x;
-            else if (meta->item_size == 4)
-                arg->v_int32 = x;
-            else
-                assert_not_reached();
-        }
+        // 4-byte INT types are packed into the pointer storage,
+        // but with intptr_t sign extension.
+        if (t == GIG_ARG_TYPE_INT8)
+            arg->v_int8 = GPOINTER_TO_INT(p);
+        else if (t == GIG_ARG_TYPE_UINT8)
+            arg->v_uint8 = GPOINTER_TO_INT(p);
+        else if (t == GIG_ARG_TYPE_INT16)
+            arg->v_int16 = GPOINTER_TO_INT(p);
+        else if (t == GIG_ARG_TYPE_UINT16)
+            arg->v_uint16 = GPOINTER_TO_INT(p);
+        else if (t == GIG_ARG_TYPE_INT32)
+            arg->v_int32 = GPOINTER_TO_INT(p);
+        else if (t == GIG_ARG_TYPE_UINT32)
+            arg->v_uint32 = GPOINTER_TO_INT(p);
         // 8-byte INT, INT64, DOUBLE and FLOAT are stored by
         // reference, even if they would fit in a pointer.
-        else if (meta->gtype == G_TYPE_INT || meta->gtype == G_TYPE_INT64)
+        else if (t == GIG_ARG_TYPE_INT64)
             arg->v_int64 = *(int64_t *)p;
-        else if (meta->gtype == G_TYPE_UINT || meta->gtype == G_TYPE_UINT64)
+        else if (t == GIG_ARG_TYPE_UINT64)
             arg->v_uint64 = *(uint64_t *)p;
-        else if (meta->gtype == G_TYPE_FLOAT)
+        else if (t == GIG_ARG_TYPE_FLOAT)
             arg->v_float = *(float *)p;
-        else if (meta->gtype == G_TYPE_DOUBLE)
+        else if (t == GIG_ARG_TYPE_DOUBLE)
             arg->v_double = *(double *)p;
     }
     else {
-        if (meta->gtype == G_TYPE_STRING)
+        if (t == GIG_ARG_TYPE_UTF8_STRING || t == GIG_ARG_TYPE_LOCALE_STRING)
             arg->v_string = (char *)p;
         else
             arg->v_pointer = p;
     }
 }
 
-// This procedure converts a GIArgument to a gpointer to be used as a
+// This procedure converts a GigArgument to a gpointer to be used as a
 // GHashTable's key or value.
 static void *
-arg_to_c_hash_pointer(GigTypeMeta *meta, GigHashKeyType key_type, GIArgument *arg)
+arg_to_c_hash_pointer(GigTypeMeta *meta, GigHashKeyType key_type, GigArgument *arg)
 {
+    GigArgType t = meta->arg_type;
+
     if (key_type == GIG_HASH_INT) {
         // GHashTables apparently expect that negative integers have
         // intptr_t sign extension.
-        if (meta->item_size == 1)
+        if (t == GIG_ARG_TYPE_INT8)
             return GINT_TO_POINTER(arg->v_int8);
-        else if (meta->item_size == 2)
+        else if (t == GIG_ARG_TYPE_INT16)
             return GINT_TO_POINTER(arg->v_int16);
-        else if (meta->item_size == 4)
+        else if (t == GIG_ARG_TYPE_INT32)
             return GINT_TO_POINTER(arg->v_int32);
-        else
-            assert_not_reached();
+
+        return arg->v_pointer;
     }
     else if (key_type == GIG_HASH_INT64) {
         // GHashTables expect int64_t to be passed by reference, even
         // if they fit in a pointer.
-        if (meta->gtype == G_TYPE_INT || meta->gtype == G_TYPE_INT64) {
-            int64_t *p = xmalloc(sizeof(int64_t));
-            *p = arg->v_int64;
-            return p;
-        }
-        else if (meta->gtype == G_TYPE_UINT || meta->gtype == G_TYPE_UINT64) {
-            uint64_t *p = xmalloc(sizeof(uint64_t));
-            *p = arg->v_uint64;
-            return p;
-        }
+        int64_t *p = xmalloc(sizeof(int64_t));
+        *p = arg->v_int64;
+        return p;
     }
     else if (key_type == GIG_HASH_REAL) {
         // GHashTables expect double and float to be passed by
         // reference, even if they fit in a pointer.
-        if (meta->gtype == G_TYPE_DOUBLE) {
-            double *p = xmalloc(sizeof(double));
-            *p = arg->v_double;
-            return p;
-        }
-        else if (meta->gtype == G_TYPE_FLOAT) {
-            float *p = xmalloc(sizeof(double));
+        if (t == GIG_ARG_TYPE_FLOAT) {
+            float *p = xmalloc(sizeof(float));
             *p = arg->v_float;
             return p;
         }
-        else
-            assert_not_reached();
+        double *p = xmalloc(sizeof(double));
+        *p = arg->v_double;
+        return p;
     }
     // else is GIG_HASH_STRING or GIG_HASH_POINTER which don't require
     // special handling.
@@ -810,37 +796,35 @@ scm_to_c_ghashtable(S2C_ARG_DECL)
 {
     TRACE_S2C();
     bool is_ptr;
-    GType type;
-    size_t siz;
     GHashFunc hash_func;
     GEqualFunc equal_func;
     GigHashKeyType key_type = GIG_HASH_INVALID;
     GigHashKeyType val_type = GIG_HASH_INVALID;
     GDestroyNotify key_destroy_func = NULL;
     GDestroyNotify val_destroy_func = NULL;
+    GigArgType t;
 
     is_ptr = meta->params[0].is_ptr;
-    type = meta->params[0].gtype;
-    siz = meta->params[0].item_size;
+    t = meta->params[0].arg_type;
     if (!is_ptr) {
-        if (type == G_TYPE_INT && siz <= 4) {
+        if (t == GIG_ARG_TYPE_INT8 || t == GIG_ARG_TYPE_INT16 || t == GIG_ARG_TYPE_INT32) {
             // INT types are packed into the pointer storage
             key_type = GIG_HASH_INT;
-            hash_func = g_direct_hash;
-            equal_func = g_direct_equal;
+            hash_func = G.direct_hash;
+            equal_func = G.direct_equal;
         }
         // INT64, DOUBLE are stored by reference, even if they would
         // fit in a pointer.
-        else if (type == G_TYPE_INT || type == G_TYPE_INT64) {
+        else if (t == GIG_ARG_TYPE_INT64) {
             key_type = GIG_HASH_INT64;
-            hash_func = g_int64_hash;
-            equal_func = g_int64_equal;
+            hash_func = G.int64_hash;
+            equal_func = G.int64_equal;
             key_destroy_func = free;
         }
-        else if (type == G_TYPE_DOUBLE || type == G_TYPE_FLOAT) {
+        else if (t == GIG_ARG_TYPE_DOUBLE || t == GIG_ARG_TYPE_FLOAT) {
             key_type = GIG_HASH_REAL;
-            hash_func = g_double_hash;
-            equal_func = g_double_equal;
+            hash_func = G.double_hash;
+            equal_func = G.double_equal;
             key_destroy_func = free;
         }
         else {
@@ -855,10 +839,10 @@ scm_to_c_ghashtable(S2C_ARG_DECL)
         // POINTER TYPES
         // For pointer types, strings are special because they have their own
         // comparison function
-        if (meta->params[0].gtype == G_TYPE_STRING) {
+        if (t == GIG_ARG_TYPE_UTF8_STRING || t == GIG_ARG_TYPE_LOCALE_STRING) {
             key_type = GIG_HASH_STRING;
-            hash_func = g_str_hash;
-            equal_func = g_str_equal;
+            hash_func = G.str_hash;
+            equal_func = G.str_equal;
             key_destroy_func = free;
         }
         else {
@@ -870,26 +854,26 @@ scm_to_c_ghashtable(S2C_ARG_DECL)
     }
     if (key_type == GIG_HASH_INVALID)
         scm_misc_error("object->hashtable", "unsupported key type ~S",
-                       scm_list_1(scm_from_utf8_string(g_type_name(type))));
+                       scm_list_1(scm_from_int(meta->params[0].arg_type)));
 
     is_ptr = meta->params[1].is_ptr;
-    type = meta->params[1].gtype;
-    siz = meta->params[1].item_size;
+    t = meta->params[1].arg_type;
     if (!is_ptr) {
-        if ((type == G_TYPE_INT || type == G_TYPE_UINT) && siz <= 4)
+        if (t == GIG_ARG_TYPE_INT8 || t == GIG_ARG_TYPE_UINT8
+            || t == GIG_ARG_TYPE_INT16 || t == GIG_ARG_TYPE_UINT16
+            || t == GIG_ARG_TYPE_INT32 || t == GIG_ARG_TYPE_UINT32)
             val_type = GIG_HASH_INT;
-        else if (type == G_TYPE_INT || type == G_TYPE_UINT || type == G_TYPE_INT64 ||
-                 type == G_TYPE_UINT64) {
+        else if (t == GIG_ARG_TYPE_INT64 || t == GIG_ARG_TYPE_UINT64) {
             val_type = GIG_HASH_INT64;
             val_destroy_func = free;
         }
-        else if (type == G_TYPE_DOUBLE || type == G_TYPE_FLOAT) {
+        else if (t == GIG_ARG_TYPE_DOUBLE || t == GIG_ARG_TYPE_FLOAT) {
             val_type = GIG_HASH_REAL;
             val_destroy_func = free;
         }
     }
     else {
-        if (type == G_TYPE_STRING) {
+        if (t == GIG_ARG_TYPE_LOCALE_STRING || t == GIG_ARG_TYPE_UTF8_STRING) {
             val_type = GIG_HASH_STRING;
             val_destroy_func = free;
         }
@@ -898,10 +882,10 @@ scm_to_c_ghashtable(S2C_ARG_DECL)
     }
     if (val_type == GIG_HASH_INVALID)
         scm_misc_error("object->hashtable", "unsupported value type ~S",
-                       scm_list_1(scm_from_utf8_string(g_type_name(type))));
+                       scm_list_1(scm_from_utf8_string(G.type_name(meta->gtype))));
 
     GHashTable *hash =
-        g_hash_table_new_full(hash_func, equal_func, key_destroy_func, val_destroy_func);
+        G.hash_table_new_full(hash_func, equal_func, key_destroy_func, val_destroy_func);
 
     SCM buckets = SCM_HASHTABLE_VECTOR(object);
     long n = SCM_SIMPLE_VECTOR_LENGTH(buckets);
@@ -910,7 +894,7 @@ scm_to_c_ghashtable(S2C_ARG_DECL)
 
         for (ls = SCM_SIMPLE_VECTOR_REF(buckets, i); !scm_is_null(ls); ls = SCM_CDR(ls)) {
             handle = scm_car(ls);
-            GIArgument _keyval[2];
+            GigArgument _keyval[2];
             SCM keyval[2];
             keyval[0] = scm_car(handle);
             keyval[1] = scm_cdr(handle);
@@ -918,17 +902,17 @@ scm_to_c_ghashtable(S2C_ARG_DECL)
             for (int j = 0; j < 2; j++) {
                 size_t _size = GIG_ARRAY_SIZE_UNKNOWN;
                 GigTypeMeta _meta = meta->params[j];
-                _meta.transfer = GI_TRANSFER_EVERYTHING;
+                _meta.transfer = GIG_TRANSFER_EVERYTHING;
 
                 gig_argument_scm_to_c(subr, argpos, &_meta, keyval[j], must_free, &_keyval[j],
                                       &_size);
                 _keyval[j].v_pointer =
                     arg_to_c_hash_pointer(&_meta, ((j == 0) ? key_type : val_type), &_keyval[j]);
             }
-            g_hash_table_insert(hash, _keyval[0].v_pointer, _keyval[1].v_pointer);
+            G.hash_table_insert(hash, _keyval[0].v_pointer, _keyval[1].v_pointer);
         }
     }
-    if (meta->transfer == GI_TRANSFER_NOTHING) {
+    if (meta->transfer == GIG_TRANSFER_NOTHING) {
         // Later free the hash table
         ;
     }
@@ -959,15 +943,15 @@ static void
 scm_to_c_garray(S2C_ARG_DECL)
 {
     TRACE_S2C();
-    GIArgument _arg;
+    GigArgument _arg;
     GigTypeMeta _meta = *meta;
 
-    _meta.gtype = G_TYPE_PRIV_C_ARRAY;
+    _meta.arg_type = GIG_ARG_TYPE_ARRAY;
     // The GArray is going to take ownership of the array contents
-    _meta.transfer = GI_TRANSFER_EVERYTHING;
+    _meta.transfer = GIG_TRANSFER_EVERYTHING;
 
     gig_argument_scm_to_c(subr, argpos, &_meta, object, NULL, &_arg, size);
-    arg->v_pointer = g_array_new(_meta.is_zero_terminated, FALSE, _meta.params[0].item_size);
+    arg->v_pointer = G.array_new(_meta.is_zero_terminated, FALSE, _meta.params[0].item_size);
     assert(arg->v_pointer != NULL);
     ((GArray *)(arg->v_pointer))->len = *size;
     ((GArray *)(arg->v_pointer))->data = _arg.v_pointer;
@@ -979,7 +963,7 @@ scm_to_c_native_interface_array(S2C_ARG_DECL)
     TRACE_S2C();
 #define FUNC_NAME "%object->c-native-interface-array-arg"
     GType item_type = meta->params[0].gtype;
-    GType fundamental_item_type = G_TYPE_FUNDAMENTAL(item_type);
+    GType fundamental_item_type = G.type_fundamental(item_type);
     if (fundamental_item_type == G_TYPE_OBJECT || fundamental_item_type == G_TYPE_BOXED
         || fundamental_item_type == G_TYPE_INTERFACE || fundamental_item_type == G_TYPE_VARIANT) {
         // If we are a Struct or Object, we need to look up
@@ -997,18 +981,18 @@ scm_to_c_native_interface_array(S2C_ARG_DECL)
             }
             for (size_t i = 0; i < *size; i++) {
                 void *p = gig_type_peek_object(scm_c_vector_ref(object, i));
-                if (meta->transfer == GI_TRANSFER_EVERYTHING) {
+                if (meta->transfer == GIG_TRANSFER_EVERYTHING) {
                     if (fundamental_item_type == G_TYPE_BOXED) {
                         ((void **)(arg->v_pointer))[i] =
                             xmemdup(p, gig_meta_real_item_size(&meta->params[0]));
                     }
                     else if (fundamental_item_type == G_TYPE_VARIANT) {
                         ((void **)(arg->v_pointer))[i] = p;
-                        g_variant_ref(p);
+                        G.variant_ref(p);
                     }
                     else {
                         ((void **)(arg->v_pointer))[i] = p;
-                        g_object_ref(p);
+                        G.object_ref(p);
                     }
                 }
                 else
@@ -1024,7 +1008,7 @@ scm_to_c_native_interface_array(S2C_ARG_DECL)
                 arg->v_pointer = xcalloc(*size, real_item_size);
             for (size_t i = 0; i < *size; i++) {
                 void *p = gig_type_peek_object(scm_c_vector_ref(object, i));
-                if (meta->transfer == GI_TRANSFER_EVERYTHING)
+                if (meta->transfer == GIG_TRANSFER_EVERYTHING)
                     memcpy((char *)(arg->v_pointer) + i * real_item_size,
                            xmemdup(p, real_item_size), real_item_size);
                 else
@@ -1032,7 +1016,8 @@ scm_to_c_native_interface_array(S2C_ARG_DECL)
             }
         }
     }
-    else if (fundamental_item_type == G_TYPE_ENUM || fundamental_item_type == G_TYPE_FLAGS) {
+    else if (meta->params[0].arg_type == GIG_ARG_TYPE_ENUM
+             || meta->params[0].arg_type == GIG_ARG_TYPE_FLAGS) {
         // TODO: coerce to vector as above?
         if (scm_is_list(object)) {
             size_t length = scm_c_length(object);
@@ -1047,12 +1032,15 @@ scm_to_c_native_interface_array(S2C_ARG_DECL)
             SCM iter = object;
 
             for (size_t i = 0; i < length; i++, iter = scm_cdr(iter))
-                switch (fundamental_item_type) {
-                case G_TYPE_ENUM:
+                switch (meta->params[0].arg_type) {
+                case GIG_ARG_TYPE_ENUM:
                     ptr[i] = gig_enum_to_int(scm_car(iter));
                     break;
-                case G_TYPE_FLAGS:
+                case GIG_ARG_TYPE_FLAGS:
                     ptr[i] = (int)gig_flags_to_uint(scm_car(iter));
+                    break;
+                default:
+                    assert_not_reached();
                     break;
                 }
         }
@@ -1062,6 +1050,7 @@ scm_to_c_native_interface_array(S2C_ARG_DECL)
     else {
         // Everything else is unhandled.
         UNHANDLED;
+        assert_not_reached();
     }
 #undef FUNC_NAME
 }
@@ -1087,7 +1076,7 @@ scm_to_c_native_string_array(S2C_ARG_DECL)
         LATER_FREE(strv);
 
         for (size_t i = 0; i < len; i++, elt += inc) {
-            if (meta->params[0].pointer_type == GIG_DATA_LOCALE_STRING)
+            if (meta->params[0].arg_type == GIG_ARG_TYPE_LOCALE_STRING)
                 strv[i] = scm_to_locale_string(*elt);
             else
                 strv[i] = scm_to_utf8_string(*elt);
@@ -1106,7 +1095,7 @@ scm_to_c_native_string_array(S2C_ARG_DECL)
         SCM iter = object;
         for (size_t i = 0; i < len; i++) {
             SCM elt = scm_car(iter);
-            if (meta->params[0].pointer_type == GIG_DATA_LOCALE_STRING)
+            if (meta->params[0].arg_type == GIG_ARG_TYPE_LOCALE_STRING)
                 strv[i] = scm_to_locale_string(elt);
             else
                 strv[i] = scm_to_utf8_string(elt);
@@ -1121,7 +1110,7 @@ scm_to_c_native_string_array(S2C_ARG_DECL)
 }
 
 //////////////////////////////////////////////////////////
-// CONVERTING GIARGUMENTS TO SCM OBJECTS
+// CONVERTING GIGARGUMENTS TO SCM OBJECTS
 //////////////////////////////////////////////////////////
 
 
@@ -1129,11 +1118,9 @@ void
 gig_argument_c_to_scm(C2S_ARG_DECL)
 {
     TRACE_C2S();
-    GType fundamental_type = G_TYPE_FUNDAMENTAL(meta->gtype);
+    GigArgType t = meta->arg_type;
 
-    // Check this up front because arg may be unitialized when
-    // returning void.
-    if (fundamental_type == G_TYPE_NONE) {
+    if (meta->arg_type == GIG_ARG_TYPE_VOID) {
         *object = SCM_UNSPECIFIED;
         return;
     }
@@ -1143,52 +1130,64 @@ gig_argument_c_to_scm(C2S_ARG_DECL)
         return;
     }
 
-    switch (fundamental_type) {
-    case G_TYPE_NONE:
-        *object = SCM_UNSPECIFIED;
-        break;
-    case G_TYPE_INTERFACE:
+    switch (t) {
+    case GIG_ARG_TYPE_INTERFACE:
+    case GIG_ARG_TYPE_OTHER:
         c_interface_to_scm(C2S_ARGS);
         break;
-    case G_TYPE_CHAR:
-    case G_TYPE_UCHAR:
+    case GIG_ARG_TYPE_INT8:
+    case GIG_ARG_TYPE_UINT8:
         c_char_to_scm(C2S_ARGS);
         break;
-    case G_TYPE_BOOLEAN:
+    case GIG_ARG_TYPE_GBOOLEAN:
         c_boolean_to_scm(C2S_ARGS);
         break;
-    case G_TYPE_INT:
-    case G_TYPE_UINT:
-    case G_TYPE_LONG:
-    case G_TYPE_ULONG:
-    case G_TYPE_INT64:
-    case G_TYPE_UINT64:
+    case GIG_ARG_TYPE_INT16:
+    case GIG_ARG_TYPE_UINT16:
+    case GIG_ARG_TYPE_INT32:
+    case GIG_ARG_TYPE_UINT32:
+    case GIG_ARG_TYPE_INT64:
+    case GIG_ARG_TYPE_UINT64:
         c_integer_to_scm(C2S_ARGS);
         break;
-    case G_TYPE_ENUM:
-    case G_TYPE_FLAGS:
+    case GIG_ARG_TYPE_UNICHAR:
+        c_unichar_to_scm(C2S_ARGS);
+        break;
+    case GIG_ARG_TYPE_ENUM:
+    case GIG_ARG_TYPE_FLAGS:
         c_enum_to_scm(C2S_ARGS);
         break;
-    case G_TYPE_FLOAT:
-    case G_TYPE_DOUBLE:
+    case GIG_ARG_TYPE_FLOAT:
+    case GIG_ARG_TYPE_DOUBLE:
         c_real_to_scm(C2S_ARGS);
         break;
-    case G_TYPE_STRING:
+    case GIG_ARG_TYPE_LOCALE_STRING:
+    case GIG_ARG_TYPE_UTF8_STRING:
         c_string_to_scm(C2S_ARGS);
         break;
-    case G_TYPE_POINTER:
+    case GIG_ARG_TYPE_POINTER:
+    case GIG_ARG_TYPE_ARRAY:
+    case GIG_ARG_TYPE_GTYPE:
+    case GIG_ARG_TYPE_GLIST:
+    case GIG_ARG_TYPE_GSLIST:
+    case GIG_ARG_TYPE_CALLBACK:
         c_pointer_to_scm(C2S_ARGS);
         break;
-    case G_TYPE_BOXED:
+    case GIG_ARG_TYPE_GARRAY:
+    case GIG_ARG_TYPE_GPTRARRAY:
+    case GIG_ARG_TYPE_GBYTEARRAY:
+    case GIG_ARG_TYPE_GHASH:
+    case GIG_ARG_TYPE_BOXED:
+    case GIG_ARG_TYPE_VALUE:
         c_boxed_to_scm(C2S_ARGS);
         break;
-    case G_TYPE_PARAM:
+    case GIG_ARG_TYPE_PARAM:
         c_param_to_scm(C2S_ARGS);
         break;
-    case G_TYPE_OBJECT:
+    case GIG_ARG_TYPE_OBJECT:
         c_object_to_scm(C2S_ARGS);
         break;
-    case G_TYPE_VARIANT:
+    case GIG_ARG_TYPE_VARIANT:
         c_variant_to_scm(C2S_ARGS);
         break;
     default:
@@ -1201,9 +1200,9 @@ static void
 c_char_to_scm(C2S_ARG_DECL)
 {
     TRACE_C2S();
-    if (meta->gtype == G_TYPE_CHAR)
+    if (meta->arg_type == GIG_ARG_TYPE_INT8)
         *object = scm_from_int8(arg->v_int8);
-    else if (meta->gtype == G_TYPE_UCHAR)
+    else
         *object = scm_from_uint8(arg->v_uint8);
 }
 
@@ -1218,56 +1217,35 @@ static void
 c_integer_to_scm(C2S_ARG_DECL)
 {
     TRACE_C2S();
-    if (meta->gtype == G_TYPE_INT) {
-        switch (meta->item_size) {
-        case 1:
-            *object = scm_from_int8(arg->v_int8);
-            break;
-        case 2:
-            *object = scm_from_int16(arg->v_int16);
-            break;
-        case 4:
-            *object = scm_from_int32(arg->v_int32);
-            break;
-        case 8:
-            *object = scm_from_int64(arg->v_int64);
-            break;
-        }
-    }
-    else if (meta->gtype == G_TYPE_UINT) {
-        if (meta->is_unichar)
-            *object = SCM_MAKE_CHAR(arg->v_uint32);
-        else
-            switch (meta->item_size) {
-            case 1:
-                *object = scm_from_uint8(arg->v_uint8);
-                break;
-            case 2:
-                *object = scm_from_uint16(arg->v_uint16);
-                break;
-            case 4:
-                *object = scm_from_uint32(arg->v_uint32);
-                break;
-            case 8:
-                *object = scm_from_uint64(arg->v_uint64);
-                break;
-            }
-    }
-    else if (meta->gtype == G_TYPE_INT64)
+    GigArgType t = meta->arg_type;
+    if (t == GIG_ARG_TYPE_INT16)
+        *object = scm_from_int16(arg->v_int16);
+    else if (t == GIG_ARG_TYPE_UINT16)
+        *object = scm_from_uint16(arg->v_int16);
+    else if (t == GIG_ARG_TYPE_INT32)
+        *object = scm_from_int32(arg->v_int32);
+    else if (t == GIG_ARG_TYPE_UINT32)
+        *object = scm_from_uint32(arg->v_int32);
+    else if (t == GIG_ARG_TYPE_INT64)
         *object = scm_from_int64(arg->v_int64);
-    else if (meta->gtype == G_TYPE_UINT64)
-        *object = scm_from_uint64(arg->v_uint64);
-    else
-        UNHANDLED;
+    else if (t == GIG_ARG_TYPE_UINT64)
+        *object = scm_from_uint64(arg->v_int64);
+}
+
+static void
+c_unichar_to_scm(C2S_ARG_DECL)
+{
+    TRACE_C2S();
+    *object = SCM_MAKE_CHAR(arg->v_int32);
 }
 
 static void
 c_real_to_scm(C2S_ARG_DECL)
 {
     TRACE_C2S();
-    if (meta->gtype == G_TYPE_FLOAT)
+    if (meta->arg_type == GIG_ARG_TYPE_FLOAT)
         *object = scm_from_double((double)arg->v_float);
-    else if (meta->gtype == G_TYPE_DOUBLE)
+    else if (meta->arg_type == GIG_ARG_TYPE_DOUBLE)
         *object = scm_from_double(arg->v_double);
     else
         UNHANDLED;
@@ -1277,13 +1255,13 @@ static void
 c_boxed_to_scm(C2S_ARG_DECL)
 {
     TRACE_C2S();
-    if (meta->gtype == G_TYPE_BYTE_ARRAY)
+    if (meta->arg_type == GIG_ARG_TYPE_GBYTEARRAY)
         c_byte_array_to_scm(C2S_ARGS);
-    else if (meta->gtype == G_TYPE_ARRAY)
+    else if (meta->arg_type == GIG_ARG_TYPE_GARRAY)
         c_garray_to_scm(C2S_ARGS);
-    else if (meta->gtype == G_TYPE_PTR_ARRAY)
+    else if (meta->arg_type == GIG_ARG_TYPE_GPTRARRAY)
         c_gptrarray_to_scm(C2S_ARGS);
-    else if (meta->gtype == G_TYPE_HASH_TABLE)
+    else if (meta->arg_type == GIG_ARG_TYPE_GHASH)
         c_ghashtable_to_scm(C2S_ARGS);
     else
         *object = gig_type_transfer_object(meta->gtype, arg->v_pointer, meta->transfer);
@@ -1311,7 +1289,7 @@ c_object_to_scm(C2S_ARG_DECL)
         // The valid is_nullable NULL pointers should already have been handled.
         // Any NULLs here must be an error.
         scm_misc_error("%object-arg->scm", "cannot convert a NULL pointer to an object of type ~S",
-                       scm_list_1(scm_from_utf8_string(g_type_name(meta->gtype))));
+                       scm_list_1(scm_from_utf8_string(G.type_name(meta->gtype))));
 
     *object = gig_type_transfer_object(child_type(meta, arg), arg->v_pointer, meta->transfer);
 }
@@ -1334,21 +1312,18 @@ static void
 c_enum_to_scm(C2S_ARG_DECL)
 {
     TRACE_C2S();
-    switch (G_TYPE_FUNDAMENTAL(meta->gtype)) {
-    case G_TYPE_ENUM:
-        if (meta->gtype == G_TYPE_ENUM)
-            *object = gig_int_to_enum_with_info(arg->v_int32, meta->enum_info);
+    GigArgType t = meta->arg_type;
+    if (t == GIG_ARG_TYPE_ENUM) {
+        if (meta->gtype == 0)
+            *object = gig_int_to_enum_with_qname(arg->v_int32, meta->qname);
         else
             *object = gig_int_to_enum(arg->v_int32, meta->gtype);
-        break;
-    case G_TYPE_FLAGS:
-        if (meta->gtype == G_TYPE_FLAGS)
-            *object = gig_uint_to_flags_with_info(arg->v_uint32, meta->enum_info);
+    }
+    else {
+        if (meta->gtype == 0)
+            *object = gig_uint_to_flags_with_qname(arg->v_uint32, meta->qname);
         else
             *object = gig_uint_to_flags(arg->v_uint32, meta->gtype);
-        break;
-    default:
-        UNHANDLED;
     }
 }
 
@@ -1356,33 +1331,31 @@ static void
 c_string_to_scm(C2S_ARG_DECL)
 {
     TRACE_C2S();
+    GigArgType t = meta->arg_type;
     // We can't transfer strings directly, since GObject and Guile use
-    // different internal encodings.  So for GI_TRANSFER_EVERYTHGING,
+    // different internal encodings.  So for GIG_TRANSFER_EVERYTHGING,
     // we just free.
-    if (meta->gtype == G_TYPE_STRING) {
-        if (!arg->v_string)
-            *object = scm_c_make_string(0, SCM_MAKE_CHAR(0));
+
+    if (!arg->v_string)
+        *object = scm_c_make_string(0, SCM_MAKE_CHAR(0));
+    else {
+        if (t == GIG_ARG_TYPE_UTF8_STRING) {
+            if (size != GIG_ARRAY_SIZE_UNKNOWN)
+                *object = scm_from_utf8_stringn(arg->v_string, size);
+            else
+                *object = scm_from_utf8_string(arg->v_string);
+        }
         else {
-            if (meta->pointer_type == GIG_DATA_UTF8_STRING) {
-                if (size != GIG_ARRAY_SIZE_UNKNOWN)
-                    *object = scm_from_utf8_stringn(arg->v_string, size);
-                else
-                    *object = scm_from_utf8_string(arg->v_string);
-            }
-            else {
-                if (size != GIG_ARRAY_SIZE_UNKNOWN)
-                    *object = scm_from_locale_stringn(arg->v_string, size);
-                else
-                    *object = scm_from_locale_string(arg->v_string);
-            }
-            if (meta->transfer == GI_TRANSFER_EVERYTHING) {
-                free(arg->v_string);
-                arg->v_string = NULL;
-            }
+            if (size != GIG_ARRAY_SIZE_UNKNOWN)
+                *object = scm_from_locale_stringn(arg->v_string, size);
+            else
+                *object = scm_from_locale_string(arg->v_string);
+        }
+        if (meta->transfer == GIG_TRANSFER_EVERYTHING) {
+            free(arg->v_string);
+            arg->v_string = NULL;
         }
     }
-    else
-        UNHANDLED;
 }
 
 #if 0
@@ -1406,13 +1379,13 @@ static void
 c_native_array_to_scm(C2S_ARG_DECL)
 {
     TRACE_C2S();
-    size_t length;
+    size_t length = 0;
 
-    if (meta->length != GIG_ARRAY_SIZE_UNKNOWN)
-        length = meta->length;
+    if (meta->has_fixed_size)
+        length = meta->fixed_size;
     else if (meta->is_zero_terminated)
         length = zero_terminated_array_length(meta, arg);
-    else
+    else if (meta->has_length_arg)
         length = size;
     if (length == 0 && meta->is_nullable) {
         *object = SCM_BOOL_F;
@@ -1426,75 +1399,54 @@ c_native_array_to_scm(C2S_ARG_DECL)
             scm_misc_error(subr, "array size overflow", SCM_EOL);       \
         if (sz == 0)                                                    \
             *object = scm_make_ ## _short_type ## vector (scm_from_int(0), scm_from_int(0)); \
-        else if (meta->transfer == GI_TRANSFER_EVERYTHING)              \
+        else if (meta->transfer == GIG_TRANSFER_EVERYTHING)              \
             *object = scm_take_ ## _short_type ## vector((_type *)(arg->v_pointer), length); \
         else                                                            \
             *object = scm_take_ ## _short_type ## vector((_type *)xmemdup(arg->v_pointer, sz), length); \
     } while(0)
 
-    GType item_type = meta->params[0].gtype;
-    switch (G_TYPE_FUNDAMENTAL(item_type)) {
-    case G_TYPE_CHAR:
+    GigArgType t = meta->params[0].arg_type;
+    switch (t) {
+    case GIG_ARG_TYPE_INT8:
         TRANSFER(gint8, s8);
         break;
-    case G_TYPE_UCHAR:
+    case GIG_ARG_TYPE_UINT8:
         TRANSFER(guint8, u8);
         break;
-    case G_TYPE_INT:
-#define DO_TRANSFER(n, m)                       \
-        case n:                                 \
-            TRANSFER(gint ## m, s ## m);        \
-            break;
-
-        switch (meta->params[0].item_size) {
-            DO_TRANSFER(1, 8);
-            DO_TRANSFER(2, 16);
-            DO_TRANSFER(4, 32);
-            DO_TRANSFER(8, 64);
-        default:
-            UNHANDLED;
-        }
-#undef DO_TRANSFER
+    case GIG_ARG_TYPE_INT16:
+        TRANSFER(gint16, s16);
         break;
-    case G_TYPE_UINT:
-#define DO_TRANSFER(n, m)                       \
-        case n:                                 \
-            TRANSFER(guint ## m, u ## m);       \
-            break;
-
-        if (meta->params[0].is_unichar) {
-            *object = scm_c_make_string(length, SCM_MAKE_CHAR(0));
-            for (size_t k = 0; k < length; k++)
-                scm_c_string_set_x(*object, k, SCM_MAKE_CHAR(((gunichar *)(arg->v_pointer))[k]));
-            if (meta->transfer == GI_TRANSFER_EVERYTHING) {
-                free(arg->v_pointer);
-                arg->v_pointer = 0;
-            }
-        }
-        else
-            switch (meta->params[0].item_size) {
-                DO_TRANSFER(1, 8);
-                DO_TRANSFER(2, 16);
-                DO_TRANSFER(4, 32);
-                DO_TRANSFER(8, 64);
-            default:
-                UNHANDLED;
-            }
+    case GIG_ARG_TYPE_UINT16:
+        TRANSFER(guint16, u16);
         break;
-#undef DO_TRANSFER
-    case G_TYPE_INT64:
+    case GIG_ARG_TYPE_INT32:
+        TRANSFER(gint32, s32);
+        break;
+    case GIG_ARG_TYPE_UINT32:
+        TRANSFER(guint32, u32);
+        break;
+    case GIG_ARG_TYPE_INT64:
         TRANSFER(gint64, s64);
         break;
-    case G_TYPE_UINT64:
+    case GIG_ARG_TYPE_UINT64:
         TRANSFER(guint64, u64);
         break;
-    case G_TYPE_FLOAT:
+    case GIG_ARG_TYPE_FLOAT:
         TRANSFER(gfloat, f32);
         break;
-    case G_TYPE_DOUBLE:
+    case GIG_ARG_TYPE_DOUBLE:
         TRANSFER(gdouble, f64);
         break;
-    case G_TYPE_BOOLEAN:
+    case GIG_ARG_TYPE_UNICHAR:
+        *object = scm_c_make_string(length, SCM_MAKE_CHAR(0));
+        for (size_t k = 0; k < length; k++)
+            scm_c_string_set_x(*object, k, SCM_MAKE_CHAR(((uint32_t *)(arg->v_pointer))[k]));
+        if (meta->transfer == GIG_TRANSFER_EVERYTHING) {
+            free(arg->v_pointer);
+            arg->v_pointer = 0;
+        }
+        break;
+    case GIG_ARG_TYPE_GBOOLEAN:
     {
         *object = scm_c_make_vector(length, SCM_BOOL_F);
         scm_t_array_handle handle;
@@ -1505,14 +1457,15 @@ c_native_array_to_scm(C2S_ARG_DECL)
         for (size_t k = 0; k < len; k++, elt += inc)
             *elt = ((gboolean *)(arg->v_pointer))[k] ? SCM_BOOL_T : SCM_BOOL_F;
         scm_array_handle_release(&handle);
-        if (meta->transfer == GI_TRANSFER_EVERYTHING) {
+        if (meta->transfer == GIG_TRANSFER_EVERYTHING) {
             free(arg->v_pointer);
             arg->v_pointer = 0;
         }
         break;
     }
-    case G_TYPE_BOXED:
-    case G_TYPE_VARIANT:
+    case GIG_ARG_TYPE_BOXED:
+    case GIG_ARG_TYPE_VARIANT:
+    case GIG_ARG_TYPE_VALUE:
     {
         *object = scm_c_make_vector(length, SCM_BOOL_F);
         scm_t_array_handle handle;
@@ -1523,10 +1476,10 @@ c_native_array_to_scm(C2S_ARG_DECL)
 
         assert(arg->v_pointer != NULL);
 
-        GIArgument _arg = *arg;
+        GigArgument _arg = *arg;
         GigTypeMeta _meta = meta->params[0];
 
-        if (item_type == G_TYPE_VALUE) {
+        if (t == GIG_ARG_TYPE_VALUE) {
             // value arrays are weird, man
 
             assert(meta->is_ptr);
@@ -1551,13 +1504,14 @@ c_native_array_to_scm(C2S_ARG_DECL)
 
         scm_array_handle_release(&handle);
 
-        if (meta->transfer == GI_TRANSFER_EVERYTHING) {
+        if (meta->transfer == GIG_TRANSFER_EVERYTHING) {
             free(arg->v_pointer);
             arg->v_pointer = 0;
         }
         break;
     }
-    case G_TYPE_STRING:
+    case GIG_ARG_TYPE_UTF8_STRING:
+    case GIG_ARG_TYPE_LOCALE_STRING:
     {
         *object = scm_c_make_vector(length, SCM_BOOL_F);
         scm_t_array_handle handle;
@@ -1571,17 +1525,17 @@ c_native_array_to_scm(C2S_ARG_DECL)
         for (size_t i = 0; i < length; i++, elt += inc) {
             char *str = ((char **)(arg->v_pointer))[i];
             if (str) {
-                if (meta->params[0].pointer_type == GIG_DATA_UTF8_STRING)
+                if (meta->params[0].arg_type == GIG_ARG_TYPE_UTF8_STRING)
                     *elt = scm_from_utf8_string(str);
                 else
                     *elt = scm_from_locale_string(str);
             }
-            if (meta->transfer == GI_TRANSFER_EVERYTHING) {
+            if (meta->transfer == GIG_TRANSFER_EVERYTHING) {
                 free(((char **)(arg->v_pointer))[i]);
                 ((char **)(arg->v_pointer))[i] = NULL;
             }
         }
-        if (meta->transfer != GI_TRANSFER_NOTHING) {
+        if (meta->transfer != GIG_TRANSFER_NOTHING) {
             free(arg->v_pointer);
             arg->v_pointer = NULL;
         }
@@ -1602,10 +1556,10 @@ c_byte_array_to_scm(C2S_ARG_DECL)
     GByteArray *byte_array = arg->v_pointer;
     *object = scm_c_make_bytevector(byte_array->len);
     memcpy(SCM_BYTEVECTOR_CONTENTS(*object), byte_array->data, byte_array->len);
-    if (meta->transfer == GI_TRANSFER_EVERYTHING)
-        g_byte_array_free(byte_array, TRUE);
+    if (meta->transfer == GIG_TRANSFER_EVERYTHING)
+        G.byte_array_free(byte_array, TRUE);
     else
-        g_byte_array_free(byte_array, FALSE);
+        G.byte_array_free(byte_array, FALSE);
 }
 
 static void
@@ -1620,27 +1574,29 @@ c_garray_to_scm(C2S_ARG_DECL)
 {
     TRACE_C2S();
     GigTypeMeta _meta = *meta;
-    GIArgument _arg;
+    GigArgument _arg;
     GArray *array = arg->v_pointer;
     _arg.v_pointer = array->data;
-    _meta.gtype = G_TYPE_PRIV_C_ARRAY;
-    _meta.length = array->len;
+    _meta.arg_type = GIG_ARG_TYPE_ARRAY;
+    _meta.has_fixed_size = true;
+    _meta.fixed_size = array->len;
     // The GArray retains ownership of the conents.
-    _meta.transfer = GI_TRANSFER_NOTHING;
+    _meta.transfer = GIG_TRANSFER_NOTHING;
 
-    size = array->len;
+    size = 0;
 
     c_native_array_to_scm(subr, argpos, &_meta, &_arg, object, size);
 
     // Since the GArray retained ownership of the contents, we free as
     // necessary here.
-    if (meta->transfer == GI_TRANSFER_EVERYTHING) {
-        if (meta->params[0].gtype == G_TYPE_STRING)
-            g_array_set_clear_func(array, deep_free);
-        g_array_free(array, TRUE);
+    if (meta->transfer == GIG_TRANSFER_EVERYTHING) {
+        if (meta->params[0].arg_type == GIG_ARG_TYPE_LOCALE_STRING
+            || meta->params[0].arg_type == GIG_ARG_TYPE_UTF8_STRING)
+            G.array_set_clear_func(array, deep_free);
+        G.array_free(array, TRUE);
     }
-    else if (meta->transfer == GI_TRANSFER_CONTAINER)
-        g_array_free(array, FALSE);
+    else if (meta->transfer == GIG_TRANSFER_CONTAINER)
+        G.array_free(array, FALSE);
 }
 
 static void
@@ -1648,19 +1604,20 @@ c_gptrarray_to_scm(C2S_ARG_DECL)
 {
     TRACE_C2S();
     GigTypeMeta _meta = *meta;
-    GIArgument _arg;
+    GigArgument _arg;
     GPtrArray *array = arg->v_pointer;
-    _meta.gtype = G_TYPE_PRIV_C_ARRAY;
-    _meta.length = array->len;
+    _meta.arg_type = GIG_ARG_TYPE_ARRAY;
+    _meta.has_fixed_size = true;
+    _meta.fixed_size = array->len;
 
     // Transfer the contents out of the GPtrArray into a
     // native C array, and then on to an SCM
-    size = array->len;
+    size = 0;
     _arg.v_pointer = xmemdup(array->pdata, array->len * sizeof(void *));
     c_native_array_to_scm(subr, argpos, &_meta, &_arg, object, size);
 
     // Free the GPtrArray without deleting the contents
-    g_ptr_array_free(array, FALSE);
+    G.ptr_array_free(array, FALSE);
 }
 
 static void
@@ -1671,14 +1628,14 @@ c_ghashtable_to_scm(C2S_ARG_DECL)
     GHashTableIter iter;
     void *key, *value;
 
-    *object = scm_c_make_hash_table(g_hash_table_size(hash));
+    *object = scm_c_make_hash_table(G.hash_table_size(hash));
 
-    g_hash_table_iter_init(&iter, hash);
-    while (g_hash_table_iter_next(&iter, &key, &value)) {
+    G.hash_table_iter_init(&iter, hash);
+    while (G.hash_table_iter_next(&iter, &key, &value)) {
         SCM keyval[2];
         for (int i = 0; i < 2; i++) {
             GigTypeMeta _meta = meta->params[i];
-            GIArgument _arg;
+            GigArgument _arg;
             void *p = ((i == 0) ? key : value);
 
             c_hash_pointer_to_arg(&_meta, p, &_arg);
@@ -1688,8 +1645,8 @@ c_ghashtable_to_scm(C2S_ARG_DECL)
         }
         scm_hash_set_x(*object, keyval[0], keyval[1]);
     }
-    if (meta->transfer != GI_TRANSFER_NOTHING)
-        g_hash_table_unref(hash);
+    if (meta->transfer != GIG_TRANSFER_NOTHING)
+        G.hash_table_unref(hash);
 }
 
 static void
@@ -1698,23 +1655,23 @@ c_list_to_scm(C2S_ARG_DECL)
     TRACE_C2S();
     // Actual conversion
     GSList *slist = arg->v_pointer;
-    size_t length = g_slist_length(slist);
+    size_t length = G.slist_length(slist);
     *object = scm_make_list(scm_from_size_t(length), SCM_UNDEFINED);
 
     for (SCM out_iter = *object; slist != NULL;
          slist = g_slist_next(slist), out_iter = scm_cdr(out_iter)) {
-        GIArgument _arg;
+        GigArgument _arg;
         SCM _obj;
         _arg.v_pointer = slist->data;
         gig_argument_c_to_scm(subr, argpos, &meta->params[0], &_arg, &_obj,
                               GIG_ARRAY_SIZE_UNKNOWN);
         scm_set_car_x(out_iter, _obj);
     }
-    if (meta->transfer != GI_TRANSFER_NOTHING) {
-        if (meta->pointer_type == GIG_DATA_LIST)
-            g_list_free(arg->v_pointer);
+    if (meta->transfer != GIG_TRANSFER_NOTHING) {
+        if (meta->arg_type == GIG_ARG_TYPE_GLIST)
+            G.list_free(arg->v_pointer);
         else
-            g_slist_free(arg->v_pointer);
+            G.slist_free(arg->v_pointer);
         arg->v_pointer = NULL;
     }
 }
@@ -1723,18 +1680,18 @@ static void
 c_pointer_to_scm(C2S_ARG_DECL)
 {
     TRACE_C2S();
-    if (meta->gtype == G_TYPE_PRIV_C_ARRAY) {
-        if (meta->has_size)
-            meta->length = size;
-        c_native_array_to_scm(C2S_ARGS);
+    GigArgType t = meta->arg_type;
+    if (t == GIG_ARG_TYPE_ARRAY) {
+        if (meta->has_length_arg || meta->has_fixed_size || meta->is_zero_terminated)
+            c_native_array_to_scm(C2S_ARGS);
     }
-    else if (meta->gtype == G_TYPE_GTYPE)
+    else if (t == GIG_ARG_TYPE_GTYPE)
         *object = scm_from_gtype(arg->v_size);
-    else if (meta->pointer_type == GIG_DATA_CALLBACK) {
+    else if (t == GIG_ARG_TYPE_CALLBACK) {
         void *cb = meta->is_ptr ? *(void **)arg->v_pointer : arg->v_pointer;
-        *object = gig_callback_to_scm(subr, meta->callable_info, cb);
+        *object = gig_callback_to_scm(subr, meta->callable_arg_map, cb);
     }
-    else if (meta->pointer_type == GIG_DATA_LIST || meta->pointer_type == GIG_DATA_SLIST)
+    else if (t == GIG_ARG_TYPE_GLIST || t == GIG_ARG_TYPE_GSLIST)
         c_list_to_scm(C2S_ARGS);
     else if (size != GIG_ARRAY_SIZE_UNKNOWN) {
         SCM bv = scm_c_make_bytevector(size);

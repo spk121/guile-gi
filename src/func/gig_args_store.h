@@ -7,10 +7,10 @@
 
 typedef struct GigArgsStore_
 {
-    GIArgument *in_args;
+    GigArgument *in_args;
     size_t in_len;
-    GIArgument *out_args;
-    GIArgument *out_boxes;
+    GigArgument *out_args;
+    GigArgument *out_boxes;
     size_t out_len;
     slist_t *free_list;
 } GigArgsStore;
@@ -20,6 +20,6 @@ void gig_args_store_free(GigArgsStore *store);
 void gig_args_store_initialize(GigArgsStore *store, GigArgMap *amap, const char *name,
                                GObject *self, SCM args);
 SCM gig_args_store_return_value(GigArgsStore *store, GigArgMap *amap, const char *name,
-                                GObject *self, SCM args, bool ok, GIArgument *return_arg);
+                                GObject *self, SCM args, bool ok, GigArgument *return_arg);
 
 #endif

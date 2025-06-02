@@ -16,8 +16,14 @@
 #include <inttypes.h>
 #include <libguile.h>
 #include "../core.h"
+#include "../gig_glib.h"
 #include "gig_flag_priv.h"
 #include "gig_type_priv.h"
+
+SCM gig_il_untyped_enum_conversions_func = SCM_UNDEFINED;
+SCM gig_il_untyped_flag_conversions_func = SCM_UNDEFINED;
+SCM gig_il_enum_conversions_func = SCM_UNDEFINED;
+SCM gig_il_flag_conversions_func = SCM_UNDEFINED;
 
 static SCM enum_to_number;
 static SCM flags_to_number;
@@ -27,6 +33,9 @@ static SCM enum_to_symbol;
 static SCM symbol_to_enum;
 static SCM flags_to_list;
 static SCM list_to_flags;
+
+static SCM gig_define_enum_conversions(const char *cls, const char *qname, GType type,
+                                       bool is_flag);
 
 int
 gig_enum_to_int(SCM val)
@@ -57,17 +66,17 @@ gig_uint_to_flags(unsigned v, GType gtype)
 }
 
 SCM
-gig_int_to_enum_with_info(int v, GIEnumInfo *info)
+gig_int_to_enum_with_qname(int v, const char *qname)
 {
-    SCM type = gig_type_get_scheme_type_with_info(info);
+    SCM type = gig_type_get_scheme_type_with_qname(qname);
     SCM val = scm_from_int(v);
     return scm_call_2(number_to_enum, type, val);
 }
 
 SCM
-gig_uint_to_flags_with_info(unsigned v, GIEnumInfo *info)
+gig_uint_to_flags_with_qname(unsigned v, const char *qname)
 {
-    SCM type = gig_type_get_scheme_type_with_info(info);
+    SCM type = gig_type_get_scheme_type_with_qname(qname);
     SCM val = scm_from_uint(v);
     return scm_call_2(number_to_flags, type, val);
 }
@@ -84,67 +93,132 @@ gig_list_to_flags(SCM type, SCM list)
     return scm_call_2(list_to_flags, type, list);
 }
 
-void
-gig_init_flag(void)
-{
-    enum_to_number = scm_c_public_ref("gi types", "enum->number");
-    flags_to_number = scm_c_public_ref("gi types", "flags->number");
-    number_to_enum = scm_c_public_ref("gi types", "number->enum");
-    enum_to_symbol = scm_c_public_ref("gi types", "enum->symbol");
-    symbol_to_enum = scm_c_public_ref("gi types", "symbol->enum");
-    number_to_flags = scm_c_public_ref("gi types", "number->flags");
-    list_to_flags = scm_c_public_ref("gi types", "list->flags");
-    flags_to_list = scm_c_public_ref("gi types", "flags->list");
-}
-
 static SCM
 define_conversion(const char *fmt, const char *name, SCM proc)
 {
+    SCM sym;
     char *_sym = decorate_string(fmt, name);
-    SCM sym = scm_from_utf8_symbol(_sym);
+    scm_c_define(_sym, proc);
+    sym = scm_from_utf8_symbol(_sym);
     free(_sym);
-    scm_define(sym, proc);
     return sym;
 }
 
-SCM
-gig_define_enum_conversions(GIEnumInfo *info, GType type)
+static SCM
+gig_il_untyped_enum_conversions(SCM s_conversion_name, SCM s_qname)
 {
-    SCM defs = SCM_EOL;
+    GIG_INIT_CHECK();
+    SCM defs;
+    char *cls = scm_to_utf8_symbol(s_conversion_name);
+    char *qname = scm_to_utf8_symbol(s_qname);
+    defs = gig_define_enum_conversions(cls, qname, G_TYPE_NONE, false);
+    free(cls);
+    free(qname);
+    return defs;
+}
+
+static SCM
+gig_il_untyped_flag_conversions(SCM s_conversion_name, SCM s_qname)
+{
+    GIG_INIT_CHECK();
+    SCM def;
+    char *cls = scm_to_utf8_symbol(s_conversion_name);
+    char *qname = scm_to_utf8_symbol(s_qname);
+    def = gig_define_enum_conversions(cls, qname, G_TYPE_NONE, true);
+    free(cls);
+    free(qname);
+    return def;
+}
+
+static SCM
+gig_il_flag_conversions(SCM s_conversion_name, SCM s_gtype_name)
+{
+    GIG_INIT_CHECK();
+    SCM def;
+    char *cls = scm_to_utf8_symbol(s_conversion_name);
+    char *gtype_name = scm_to_utf8_symbol(s_gtype_name);
+    size_t type = G.type_from_name(gtype_name);
+    free(gtype_name);
+    def = gig_define_enum_conversions(cls, NULL, type, true);
+    free(cls);
+    return def;
+}
+
+static SCM
+gig_il_enum_conversions(SCM s_conversion_name, SCM s_gtype_name)
+{
+    GIG_INIT_CHECK();
+    SCM def;
+    char *cls = scm_to_utf8_symbol(s_conversion_name);
+    char *gtype_name = scm_to_utf8_symbol(s_gtype_name);
+    size_t type = G.type_from_name(gtype_name);
+    free(gtype_name);
+    def = gig_define_enum_conversions(cls, NULL, type, false);
+    free(cls);
+    return def;
+}
+
+static SCM
+gig_define_enum_conversions(const char *cls, const char *qname, GType type, bool is_flag)
+{
     SCM _class;
+    SCM def = SCM_EOL;
     scm_dynwind_begin(0);
-    char *cls = make_scm_name(g_base_info_get_name(info));
-    scm_dynfree(cls);
 
     if (type != G_TYPE_NONE)
         _class = gig_type_get_scheme_type(type);
     else
-        _class = gig_type_get_scheme_type_with_info(info);
+        _class = gig_type_get_scheme_type_with_qname(qname);
+
+    if (scm_is_unknown_class(_class))
+        scm_misc_error("%define-enum-conversion",
+                       "trying to define enum/flag conversions for <unknown> class ~A",
+                       scm_list_1(scm_from_utf8_string(cls)));
 
 #define C(fmt, proc)                                                    \
     do {                                                                \
-        defs = scm_cons(define_conversion(fmt, cls,                     \
-                                          scm_call_1(proc, _class)),    \
-                        defs);                                          \
+        def = scm_cons(define_conversion(fmt, cls,                      \
+                                         scm_call_1(proc, _class)),def); \
     } while (0)
 
-    switch (g_base_info_get_type(info)) {
-    case GI_INFO_TYPE_ENUM:
+    if (!is_flag) {
         C("%s->number", enum_to_number);
         C("%s->symbol", enum_to_symbol);
         C("number->%s", number_to_enum);
         C("symbol->%s", symbol_to_enum);
-        break;
-    case GI_INFO_TYPE_FLAGS:
+    }
+    else {
         C("%s->number", flags_to_number);
         C("%s->list", flags_to_list);
         C("number->%s", number_to_flags);
         C("list->%s", list_to_flags);
-        break;
-    default:
-        assert_not_reached();
     }
     scm_dynwind_end();
+    return def;
+}
 
-    return defs;
+void
+gig_init_flag_stage1(void)
+{
+    gig_il_untyped_enum_conversions_func
+        = scm_c_define_gsubr("^untyped-enum-conv", 2, 0, 0, gig_il_untyped_enum_conversions);
+    gig_il_untyped_flag_conversions_func
+        = scm_c_define_gsubr("^untyped-flags-conv", 2, 0, 0, gig_il_untyped_flag_conversions);
+    gig_il_enum_conversions_func
+        = scm_c_define_gsubr("^enum-conv", 2, 0, 0, gig_il_enum_conversions);
+    gig_il_flag_conversions_func
+        = scm_c_define_gsubr("^flags-conv", 2, 0, 0, gig_il_flag_conversions);
+}
+
+void
+gig_init_flag_stage2(void)
+{
+    enum_to_number = scm_c_public_ref("gi runtime", "enum->number");
+    flags_to_number = scm_c_public_ref("gi runtime", "flags->number");
+    number_to_enum = scm_c_public_ref("gi runtime", "number->enum");
+    enum_to_symbol = scm_c_public_ref("gi runtime", "enum->symbol");
+    symbol_to_enum = scm_c_public_ref("gi runtime", "symbol->enum");
+    number_to_flags = scm_c_public_ref("gi runtime", "number->flags");
+    list_to_flags = scm_c_public_ref("gi runtime", "list->flags");
+    flags_to_list = scm_c_public_ref("gi runtime", "flags->list");
 }

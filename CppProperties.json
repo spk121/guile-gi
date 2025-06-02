@@ -1,0 +1,31 @@
+{
+  "configurations": [
+    {
+      "inheritEnvironments": [
+        "mingw_64"
+      ],
+      "name": "Mingw64",
+      "includePath": [
+        "${env.INCLUDE}",
+        "${env.MINGW64_ROOT}\\include\\guile\\3.0",
+        "${workspaceRoot}\\src",
+        "${workspaceRoot}\\src\\core",
+        "${workspaceRoot}\\src\\func",
+        "${workspaceRoot}\\src\\type"
+      ],
+      "intelliSenseMode": "linux-gcc-x64",
+      "compilerSwitches": "-std=c2x -X c",
+      "environments": [
+        {
+          "BIN_ROOT": "${env.MINGW64_ROOT}\\bin",
+          "environment": "mingw_64",
+          "FLAVOR": "x86_64-w64-mingw32",
+          "INCLUDE": "${env.MINGW64_ROOT}\\include;${env.MINGW64_ROOT}\\lib\\gcc\\x86_64-w64-mingw32\\${env.TOOLSET_VERSION}\\include;${env.MINGW64_ROOT}\\include\\guile\\3.0;${env.MINGW64_ROOT}\\include\\gtk-4.0;${env.MINGW64_ROOT}\\include\\pango-1.0;${env.MINGW64_ROOT}\\include\\glib-2.0;${env.MINGW64_ROOT}\\lib\\glib-2.0\\include;${env.MINGW64_ROOT}\\include\\harfbuzz;${env.MINGW64_ROOT}\\include\\freetype2;${env.MINGW64_ROOT}\\include\\libpng16;${env.MINGW64_ROOT}\\include\\fribidi;${env.MINGW64_ROOT}\\include\\cairo;${env.MINGW64_ROOT}\\include\\pixman-1;${env.MINGW64_ROOT}\\include\\gdk-pixbuf-2.0;${env.MINGW64_ROOT}\\include\\webp;${env.MINGW64_ROOT}\\include\\graphene-1.0;${env.MINGW64_ROOT}\\lib\\graphene-1.0\\include;${env.MINGW64_ROOT}\\include\\gobject-introspection-1.0",
+          "MINGW64_ROOT": "C:\\msys64\\ucrt64",
+          "PATH": "${env.BIN_ROOT};${env.MINGW64_ROOT}\\..\\usr\\local\\bin;${env.MINGW64_ROOT}\\..\\usr\\bin;${env.MINGW64_ROOT}\\..\\bin;${env.PATH}",
+          "TOOLSET_VERSION": "13.1.0"
+        }
+      ]
+    }
+  ]
+}

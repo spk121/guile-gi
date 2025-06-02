@@ -17,7 +17,6 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-#include <girepository.h>
 #include <glib.h>
 #include <libguile.h>
 #include "core.h"

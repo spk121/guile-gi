@@ -16,7 +16,7 @@
 #ifndef GIG_FUNCTION_H
 #define GIG_FUNCTION_H
 
-#include <girepository.h>
+#include <glib-object.h>
 #include <libguile.h>
 #include "gig_arg_map.h"
 #include "gig_function.h"
@@ -27,7 +27,7 @@ extern SCM ensure_generic_proc;
 extern SCM top_type;
 extern SCM sym_self;
 
-SCM gig_callable_invoke(GICallableInfo *callable_info, void *callable, GigArgMap *amap,
+SCM gig_callable_invoke(void *callable, GigArgMap *amap,
                         const char *name, GObject *self, SCM args, GError **error);
 
 #endif

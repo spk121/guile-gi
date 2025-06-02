@@ -16,9 +16,6 @@
 #ifndef GIG_UTIL_H
 #define GIG_UTIL_H
 
-#include <girepository.h>
 #include "gig_util.h"
-
-const char *g_base_info_get_name_safe(GIBaseInfo *info);
 
 #endif

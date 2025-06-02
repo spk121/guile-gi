@@ -73,14 +73,17 @@
 -T gint32
 -T gint64
 -T gint8
+-T glong
 -T gpointer
 -T gsize
--T guint
 -T gssize
+-T guchar
+-T guint
 -T guint16
 -T guint32
 -T guint64
 -T guint8
+-T gulong
 -T gunichar
 -T GArray
 -T GClosure
@@ -128,3 +131,4 @@
 -T GigTypeMeta
 -T GigTypeRefFunction
 -T GigTypeUnrefFunction
+-T GigArgument
