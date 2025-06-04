@@ -1,0 +1,415 @@
+#!/usr/bin/env guile
+!#
+;; -*- scheme -*-
+;; Complete workflow test for GI code generation
+
+(use-modules (gi repository)
+             (gi codegen)
+             (ice-9 format)
+             (ice-9 pretty-print)
+             (srfi srfi-1))
+
+;; ============================================================================
+;; Test Configuration
+;; ============================================================================
+
+(define test-namespaces '("GLib" "GObject"))
+(define output-directory "./generated-modules")
+
+;; ============================================================================
+;; Test Functions
+;; ============================================================================
+
+(define (test-repository-setup)
+  "Test basic repository setup and functionality"
+  (format #t "=== Testing Repository Setup ===~%")
+  
+  ;; Test repository initialization
+  (format #t "Repository stats: ~a~%" (repository-stats))
+  
+  ;; Test namespace loading
+  (for-each (lambda (ns)
+              (format #t "Loading namespace: ~a~%" ns)
+              (require-namespace ns "2.0")
+              (format #t "  Success: ~a infos loaded~%" 
+                      (length (get-all-infos ns))))
+            test-namespaces)
+  
+  ;; Test caching performance
+  (format #t "~%Testing cache performance...~%")
+  (let ((start-time (current-time)))
+    (for-each (lambda (ns)
+                (preload-namespace ns))
+              test-namespaces)
+    (let ((end-time (current-time)))
+      (format #t "Preload time: ~a seconds~%" (- end-time start-time))))
+  
+  ;; Show final stats
+  (format #t "Final repository stats: ~a~%" (repository-stats))
+  (newline))
+
+(define (test-info-extraction)
+  "Test extraction of various info types"
+  (format #t "=== Testing Info Extraction ===~%")
+  
+  ;; Test function extraction
+  (let ((main-loop-new (find-by-name "GLib" "MainLoop")))
+    (when main-loop-new
+      (format #t "Found MainLoop info:~%")
+      (display-info main-loop-new)
+      (newline)))
+  
+  ;; Test enum extraction  
+  (let ((variant-error (find-by-name "GLib" "VariantParseError")))
+    (when variant-error
+      (format #t "Found VariantParseError enum:~%")
+      (display-info variant-error)
+      (newline)))
+  
+  ;; Test constant extraction
+  (let ((g-pi (find-by-name "GLib" "PI")))
+    (when g-pi
+      (format #t "Found G_PI constant:~%")
+      (display-info g-pi)
+      (newline)))
+  
+  (newline))
+
+(define (test-code-generation)
+  "Test code generation for sample items"
+  (format #t "=== Testing Code Generation ===~%")
+  
+  ;; Test function generation
+  (let ((main-loop-new (find-by-name "GLib" "MainLoop")))
+    (when main-loop-new
+      (format #t "Generated function definition:~%")
+      (let ((extracted (extract-function-info main-loop-new)))
+        (pretty-print extracted))
+      (newline)))
+  
+  ;; Test enum generation
+  (let ((parse-error (find-by-name "GLib" "VariantParseError")))
+    (when parse-error
+      (format #t "Generated enum definition:~%")
+      (let ((extracted (extract-enum-info parse-error)))
+        (pretty-print extracted))
+      (newline)))
+  
+  (newline))
+
+(define (test-module-generation)
+  "Test complete module generation"
+  (format #t "=== Testing Module Generation ===~%")
+  
+  ;; Create output directory
+  (unless (file-exists? output-directory)
+    (mkdir output-directory))
+  
+  ;; Generate modules for test namespaces
+  (for-each (lambda (ns)
+              (format #t "Generating module for ~a...~%" ns)
+              (let ((filename (generate-gi-module-file 
+                               ns "2.0" 
+                               #:directory output-directory)))
+                (format #t "  Generated: ~a~%" filename)
+                
+                ;; Verify file was created and has content
+                (when (file-exists? filename)
+                  (let ((size (stat:size (stat filename))))
+                    (format #t "  File size: ~a bytes~%" size)
+                    (when (> size 1000)
+                      (format #t "  ✓ Module generation successful~%"))))))
+            test-namespaces)
+  
+  (newline))
+
+(define (test-sample-definitions)
+  "Test extraction of specific definition types"
+  (format #t "=== Testing Sample Definitions ===~%")
+  
+  ;; Find and extract various types of definitions
+  (let ((samples '(("GLib" "MainLoop" "constructor function")
+                   ("GLib" "VariantParseError" "enum")
+                   ("GLib" "PI" "constant")
+                   ("GObject" "Object" "object class")
+                   ("GObject" "ParamSpec" "struct"))))
+    
+    (for-each (lambda (sample)
+                (match sample
+                  ((namespace name description)
+                   (format #t "Testing ~a (~a):~%" name description)
+                   (let ((info (find-by-name namespace name)))
+                     (if info
+                         (let ((extracted (extract-info-data info)))
+                           (if extracted
+                               (begin
+                                 (format #t "  ✓ Successfully extracted~%")
+                                 (format #t "  Type: ~a~%" (car extracted))
+                                 (when (> (length extracted) 2)
+                                   (format #t "  Data keys: ~a~%" 
+                                           (map car (filter pair? (cddr extracted))))))
+                               (format #t "  ✗ Failed to extract data~%")))
+                         (format #t "  ✗ Info not found~%")))
+                  (_ #f)))
+              samples))
+  
+  (newline))
+
+(define (test-performance)
+  "Test performance characteristics"
+  (format #t "=== Testing Performance ===~%")
+  
+  ;; Test lookup performance
+  (format #t "Testing lookup performance...~%")
+  (let ((start-time (current-time)))
+    (do ((i 0 (+ i 1)))
+        ((= i 100))
+      (find-by-name "GLib" "MainLoop")
+      (find-by-name "GObject" "Object"))
+    (let ((end-time (current-time)))
+      (format #t "100 lookups took: ~a seconds~%" (- end-time start-time))))
+  
+  ;; Test generation performance
+  (format #t "Testing generation performance...~%")
+  (let ((start-time (current-time)))
+    (with-output-to-string
+      (lambda ()
+        (generate-gi-module "GLib" "2.0")))
+    (let ((end-time (current-time)))
+      (format #t "Full module generation took: ~a seconds~%" (- end-time start-time))))
+  
+  (newline))
+
+(define (verify-generated-modules)
+  "Verify the generated modules are valid Scheme"
+  (format #t "=== Verifying Generated Modules ===~%")
+  
+  ;; Check each generated file
+  (for-each (lambda (ns)
+              (let ((filename (format #f "~a/~a-2-0.scm" 
+                                     output-directory 
+                                     (string-downcase ns))))
+                (format #t "Verifying ~a...~%" filename)
+                (if (file-exists? filename)
+                    (catch #t
+                      (lambda ()
+                        ;; Try to read the file as Scheme code
+                        (call-with-input-file filename
+                          (lambda (port)
+                            (let loop ((forms 0))
+                              (let ((form (read port)))
+                                (if (eof-object? form)
+                                    (begin
+                                      (format #t "  ✓ Valid Scheme (~a forms)~%" forms)
+                                      #t)
+                                    (loop (+ forms 1)))))))
+                      (lambda (key . args)
+                        (format #t "  ✗ Invalid Scheme: ~a~%" args)
+                        #f))
+                    (format #t "  ✗ File not found~%"))))
+            test-namespaces)
+  
+  (newline))
+
+(define (show-sample-output)
+  "Show sample of generated output"
+  (format #t "=== Sample Generated Output ===~%")
+  
+  ;; Show a few sample definitions
+  (let ((glib-file (format #f "~a/glib-2-0.scm" output-directory)))
+    (when (file-exists? glib-file)
+      (format #t "Sample from GLib module:~%")
+      (call-with-input-file glib-file
+        (lambda (port)
+          ;; Skip module header
+          (read port) ; module definition
+          (read port) ; comment
+          (read port) ; comment
+          
+          ;; Show first few definitions
+          (do ((i 0 (+ i 1))
+               (form (read port) (read port)))
+              ((or (= i 5) (eof-object? form)))
+            (format #t "~%Definition ~a:~%" (+ i 1))
+            (pretty-print form))))))
+  
+  (newline))
+
+(define (cleanup-test-files)
+  "Clean up test files"
+  (format #t "=== Cleaning Up ===~%")
+  
+  (when (file-exists? output-directory)
+    (let ((files (scandir output-directory 
+                          (lambda (name) 
+                            (string-suffix? ".scm" name)))))
+      (when files
+        (for-each (lambda (file)
+                    (let ((full-path (format #f "~a/~a" output-directory file)))
+                      (format #t "Removing ~a~%" full-path)
+                      (delete-file full-path)))
+                  files))
+      
+      ;; Remove directory if empty
+      (catch #t
+        (lambda () (rmdir output-directory))
+        (lambda (key . args) 
+          (format #t "Directory not empty or removal failed~%")))))
+  
+  (format #t "Cleanup completed~%~%"))
+
+;; ============================================================================
+;; Test Suite Runner
+;; ============================================================================
+
+(define (run-test-suite)
+  "Run the complete test suite"
+  (format #t "Starting GI Code Generation Test Suite~%")
+  (format #t "====================================~%~%")
+  
+  (catch #t
+    (lambda ()
+      ;; Run all tests
+      (test-repository-setup)
+      (test-info-extraction)
+      (test-code-generation)
+      (test-sample-definitions)
+      (test-module-generation)
+      (verify-generated-modules)
+      (test-performance)
+      (show-sample-output)
+      
+      (format #t "=== Test Suite Completed Successfully ===~%")
+      #t)
+    
+    (lambda (key . args)
+      (format #t "=== Test Suite Failed ===~%")
+      (format #t "Error: ~a ~a~%" key args)
+      #f))
+  
+  ;; Always try to clean up
+  (cleanup-test-files))
+
+(define (run-interactive-demo)
+  "Run an interactive demonstration"
+  (format #t "=== Interactive GI Code Generation Demo ===~%~%")
+  
+  ;; Load basic namespaces
+  (format #t "Loading GLib and GObject...~%")
+  (require-namespace "GLib" "2.0")
+  (require-namespace "GObject" "2.0")
+  
+  ;; Show what's available
+  (format #t "~%Available namespaces: ~a~%" (get-loaded-namespaces))
+  (format #t "GLib has ~a infos~%" (length (get-all-infos "GLib")))
+  (format #t "GObject has ~a infos~%" (length (get-all-infos "GObject")))
+  
+  ;; Interactive exploration
+  (format #t "~%Let's explore some interesting items...~%~%")
+  
+  ;; Find and show MainLoop
+  (let ((main-loop (find-by-name "GLib" "MainLoop")))
+    (when main-loop
+      (format #t "MainLoop constructor:~%")
+      (let ((extracted (extract-function-info main-loop)))
+        (pretty-print extracted))
+      (newline)))
+  
+  ;; Find and show an enum
+  (let ((file-test (find-by-name "GLib" "FileTest")))
+    (when file-test
+      (format #t "FileTest enum:~%")
+      (let ((extracted (extract-enum-info file-test)))
+        (pretty-print extracted))
+      (newline)))
+  
+  ;; Show a sample module generation
+  (format #t "Generating sample GLib module (truncated):~%")
+  (let ((output (with-output-to-string
+                  (lambda ()
+                    (let ((infos (take (get-all-infos "GLib") 10)))
+                      (format #t "(define-module (gi glib-2-0)~%")
+                      (format #t "  #:use-module (gi runtime)~%")
+                      (format #t "  #:export (...))~%~%")
+                      (format #t ";; Sample definitions (first 10 of ~a):~%~%" 
+                              (length (get-all-infos "GLib")))
+                      (for-each (lambda (info)
+                                  (let ((extracted (extract-info-data info)))
+                                    (when extracted
+                                      (pretty-print extracted)
+                                      (newline))))
+                                infos))))))
+    (display output))
+  
+  (format #t "~%Demo completed! This shows how the full generator works.~%"))
+
+;; ============================================================================
+;; Main Entry Point
+;; ============================================================================
+
+(define (main args)
+  "Main entry point"
+  (cond
+    ((and (pair? args) (string=? (car args) "--interactive"))
+     (run-interactive-demo))
+    ((and (pair? args) (string=? (car args) "--test"))
+     (run-test-suite))
+    (else
+     (format #t "GI Code Generation Workflow Test~%")
+     (format #t "Usage: ~a [--test|--interactive]~%~%" (car args))
+     (format #t "  --test        Run complete test suite~%")
+     (format #t "  --interactive Run interactive demo~%")
+     (format #t "  (no args)     Show this help~%~%")
+     
+     ;; Run a quick demo by default
+     (format #t "Running quick demo...~%~%")
+     (run-interactive-demo))))
+
+;; ============================================================================
+;; Additional Utility Functions
+;; ============================================================================
+
+(define (benchmark-generation namespace)
+  "Benchmark module generation for a specific namespace"
+  (format #t "Benchmarking generation for ~a...~%" namespace)
+  
+  (require-namespace namespace)
+  (let ((info-count (length (get-all-infos namespace))))
+    (format #t "Processing ~a infos...~%" info-count)
+    
+    (let ((start-time (get-internal-real-time)))
+      (let ((output (with-output-to-string
+                      (lambda ()
+                        (generate-gi-module namespace)))))
+        (let* ((end-time (get-internal-real-time))
+               (elapsed (/ (- end-time start-time) internal-time-units-per-second))
+               (output-size (string-length output)))
+          
+          (format #t "Results:~%")
+          (format #t "  Time: ~a seconds~%" elapsed)
+          (format #t "  Output size: ~a characters~%" output-size)
+          (format #t "  Rate: ~a infos/second~%" (/ info-count elapsed))
+          (format #t "  Rate: ~a chars/second~%" (/ output-size elapsed))
+          
+          elapsed)))))
+
+(define (compare-namespaces namespaces)
+  "Compare characteristics of different namespaces"
+  (format #t "Comparing namespaces:~%")
+  
+  (for-each (lambda (ns)
+              (require-namespace ns)
+              (let ((infos (get-all-infos ns))
+                    (summary (namespace-summary ns)))
+                (format #t "~%~a:~%" ns)
+                (format #t "  Total infos: ~a~%" (length infos))
+                (for-each (lambda (entry)
+                            (format #t "  ~a: ~a~%" (car entry) (cdr entry)))
+                          summary)))
+            namespaces))
+
+;; Run main function when executed as script
+(when (defined? 'command-line)
+  (main (command-line)))
+
+  

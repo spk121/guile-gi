@@ -37,15 +37,72 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <errno.h>
-#include <sys/types.h>
 #include <time.h>
+
+// Platform-specific includes
+#if defined(__unix__) || defined(__unix) || (defined(__APPLE__) && defined(__MACH__))
+#include <unistd.h>
+#include <sys/types.h>
+#define HAVE_UNISTD_H 1
+#elif defined(_WIN32) || defined(__MINGW32__) || defined(__MINGW64__)
+#include <windows.h>
+#include <io.h>
+#include <process.h>
+#define HAVE_WINDOWS_H 1
+#else
+// Other platforms - assume POSIX compliance
+#include <unistd.h>
+#include <sys/types.h>
+#define HAVE_UNISTD_H 1
+#endif
+
 #include "logging.h"
 
 // Forward declarations
 static LogWriterOutput log_writer_fallback(LogLevelFlags flags, const LogField *fields, 
                                           size_t n_fields, void *user_data);
+
+// Cross-platform function implementations
+#if defined(_WIN32) || defined(__MINGW32__) || defined(__MINGW64__)
+
+// Windows implementation of isatty-like functionality
+static int is_console(int fd) {
+    HANDLE handle;
+    DWORD mode;
+    
+    if (fd == 0) {
+        handle = GetStdHandle(STD_INPUT_HANDLE);
+    } else if (fd == 1) {
+        handle = GetStdHandle(STD_OUTPUT_HANDLE);
+    } else if (fd == 2) {
+        handle = GetStdHandle(STD_ERROR_HANDLE);
+    } else {
+        return 0;
+    }
+    
+    return GetConsoleMode(handle, &mode) != 0;
+}
+
+#define isatty(fd) is_console(fd)
+
+// Define standard file descriptor constants for Windows
+#ifndef STDIN_FILENO
+#define STDIN_FILENO 0
+#endif
+#ifndef STDOUT_FILENO
+#define STDOUT_FILENO 1
+#endif
+#ifndef STDERR_FILENO
+#define STDERR_FILENO 2
+#endif
+
+// Windows implementation of getpid
+#ifndef HAVE_GETPID
+#define getpid() _getpid()
+#endif
+
+#endif // Windows platform
 
 // Global state with better encapsulation
 static struct {
@@ -59,6 +116,33 @@ static struct {
     .writer_user_data_free = NULL,
     .initialized = false
 };
+
+// Cross-platform threading support
+#if defined(HAVE_UNISTD_H) && GIG_LOG_USE_LOCKS
+#include <pthread.h>
+static pthread_mutex_t g_log_mutex = PTHREAD_MUTEX_INITIALIZER;
+#define GIG_LOG_LOCK() pthread_mutex_lock(&g_log_mutex)
+#define GIG_LOG_UNLOCK() pthread_mutex_unlock(&g_log_mutex)
+#elif defined(HAVE_WINDOWS_H) && GIG_LOG_USE_LOCKS
+static CRITICAL_SECTION g_log_mutex;
+static LONG g_log_mutex_init = 0;
+
+static void log_init_mutex(void) {
+    if (InterlockedCompareExchange(&g_log_mutex_init, 1, 0) == 0) {
+        InitializeCriticalSection(&g_log_mutex);
+    }
+}
+
+#define GIG_LOG_LOCK() do { \
+    log_init_mutex(); \
+    EnterCriticalSection(&g_log_mutex); \
+} while(0)
+
+#define GIG_LOG_UNLOCK() LeaveCriticalSection(&g_log_mutex)
+#else
+#define GIG_LOG_LOCK()
+#define GIG_LOG_UNLOCK()
+#endif
 
 // Terminal color support detection - more efficient approach
 static const char * const COLOR_TERMINALS[] = {
@@ -173,6 +257,18 @@ log_writer_supports_color(int fd)
             color_support = is_color_terminal(term);
         }
         
+        // Windows-specific: Check for Windows Terminal or ConEmu
+#if defined(HAVE_WINDOWS_H)
+        if (!color_support) {
+            const char *wt_session = getenv("WT_SESSION");
+            const char *conemu = getenv("ConEmuANSI");
+            if ((wt_session && strlen(wt_session) > 0) || 
+                (conemu && strcmp(conemu, "ON") == 0)) {
+                color_support = true;
+            }
+        }
+#endif
+        
         color_support_cached = true;
     }
     
@@ -260,9 +356,31 @@ log_writer_fallback(LogLevelFlags flags, const LogField *fields, size_t n_fields
     
     // Add timestamp for better debugging
     time_t now = time(NULL);
-    struct tm *tm_info = localtime(&now);
+    struct tm *tm_info;
     char timestamp[64];
-    strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", tm_info);
+    
+#if defined(HAVE_WINDOWS_H)
+    // Windows: use localtime_s if available, otherwise localtime
+    struct tm tm_storage;
+    if (localtime_s(&tm_storage, &now) == 0) {
+        tm_info = &tm_storage;
+    } else {
+        tm_info = localtime(&now);
+    }
+#elif defined(HAVE_LOCALTIME_R)
+    // POSIX: use thread-safe localtime_r if available
+    struct tm tm_storage;
+    tm_info = localtime_r(&now, &tm_storage);
+#else
+    // Fallback: use regular localtime (not thread-safe)
+    tm_info = localtime(&now);
+#endif
+    
+    if (tm_info) {
+        strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", tm_info);
+    } else {
+        snprintf(timestamp, sizeof(timestamp), "%lld", (long long)now);
+    }
     
     // Format: [TIMESTAMP] LEVEL: MESSAGE
     fprintf(stream, "[%s] %s: %s\n", timestamp, level_str, message);

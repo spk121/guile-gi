@@ -65,6 +65,7 @@ enum log_level_flags {
     LOG_FATAL_MASK = LOG_FLAG_FATAL | LOG_LEVEL_ERROR
 };
 
+#define GIG_LOG_DOMAIN "guile-gi"    
 // Core logging functions
 bool log_writer_supports_color(int fd);
 void log_set_writer_func(LogWriterFunc func, void *user_data, DestroyNotify user_data_free);
@@ -82,17 +83,32 @@ void log_structured(const char *log_domain, LogLevelFlags log_level, ...);
 #define STRINGIFY(x) STRINGIFY_INNER(x)
 #define STRINGIFY_INNER(x) #x
 
+    
 // Enhanced logging macros with better parameter validation
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+// C11 and later: use _Static_assert
 #define GIG_LOG_INTERNAL(level, domain, format, ...) \
     do { \
-        static_assert(level > 0, "Invalid log level"); \
-        log_structured(G_LOG_DOMAIN, (level), \
+        _Static_assert((level) > 0, "Invalid log level"); \
+        log_structured(GIG_LOG_DOMAIN, (level), \
                       "CODE_FILE", __FILE__, \
                       "CODE_LINE", STRINGIFY(__LINE__), \
                       "CODE_FUNC", __func__, \
                       "GIG_DOMAIN", (domain), \
                       "MESSAGE", (format), ##__VA_ARGS__); \
     } while (0)
+#else
+// Pre-C11: skip static assertion
+#define GIG_LOG_INTERNAL(level, domain, format, ...) \
+    do { \
+        log_structured(GIG_LOG_DOMAIN, (level), \
+                      "CODE_FILE", __FILE__, \
+                      "CODE_LINE", STRINGIFY(__LINE__), \
+                      "CODE_FUNC", __func__, \
+                      "GIG_DOMAIN", (domain), \
+                      "MESSAGE", (format), ##__VA_ARGS__); \
+    } while (0)
+#endif
 
 // Domain-specific logging macros
 #define gig_debug_transfer(format, ...) \
@@ -163,6 +179,15 @@ void log_structured(const char *log_domain, LogLevelFlags log_level, ...);
 // Thread safety macros (can be customized based on threading library)
 #ifndef GIG_LOG_USE_LOCKS
 #define GIG_LOG_USE_LOCKS 0
+#endif
+
+// Platform detection for conditional compilation
+#if defined(_WIN32) || defined(__MINGW32__) || defined(__MINGW64__)
+#define GIG_PLATFORM_WINDOWS 1
+#elif defined(__unix__) || defined(__unix) || (defined(__APPLE__) && defined(__MACH__))
+#define GIG_PLATFORM_POSIX 1
+#else
+#define GIG_PLATFORM_UNKNOWN 1
 #endif
 
 #if GIG_LOG_USE_LOCKS
