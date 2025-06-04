@@ -1,0 +1,551 @@
+#!/usr/bin/env guile
+!#
+;; -*- scheme -*-
+;; GI Module Generator - Command line tool for generating Scheme bindings
+
+(use-modules (gi repository)
+             (gi codegen)
+             (srfi srfi-37)  ; args-fold
+             (ice-9 format)
+             (ice-9 ftw)
+             (ice-9 match))
+
+;; ============================================================================
+;; Command Line Options
+;; ============================================================================
+
+(define (show-help)
+  (display "GI Module Generator - Generate Scheme bindings from GObject Introspection
+
+Usage: gi-generator [OPTIONS] NAMESPACE [VERSION]
+
+Options:
+  -h, --help           Show this help message
+  -v, --version        Show version information
+  -o, --output DIR     Output directory (default: current directory)
+  -f, --force          Overwrite existing files
+  -q, --quiet          Quiet output
+  -V, --verbose        Verbose output
+  -l, --list          List available namespaces
+  -a, --all           Generate modules for all loaded namespaces
+  -p, --preload       Preload namespace for better performance
+  -s, --stats         Show repository statistics
+  --lazy              Use lazy loading
+  --no-deps           Don't auto-load dependencies
+
+Examples:
+  gi-generator GLib 2.0                    # Generate GLib 2.0 module
+  gi-generator --output /tmp Gtk 4.0       # Generate to /tmp directory
+  gi-generator --all --output ./modules    # Generate all loaded modules
+  gi-generator --list                      # List available namespaces
+
+"))
+
+(define (show-version)
+  (display "GI Module Generator 1.0.0
+Part of the modernized GIRepository binding for GNU Guile
+"))
+
+;; ============================================================================
+;; Configuration
+;; ============================================================================
+
+(define-record-type <config>
+  (make-config namespace version output-dir force? quiet? verbose? 
+               list? all? preload? show-stats? lazy? no-deps?)
+  config?
+  (namespace config-namespace set-config-namespace!)
+  (version config-version set-config-version!)
+  (output-dir config-output-dir set-config-output-dir!)
+  (force? config-force? set-config-force!)
+  (quiet? config-quiet? set-config-quiet!)
+  (verbose? config-verbose? set-config-verbose!)
+  (list? config-list? set-config-list!)
+  (all? config-all? set-config-all!)
+  (preload? config-preload? set-config-preload!)
+  (show-stats? config-show-stats? set-config-show-stats!)
+  (lazy? config-lazy? set-config-lazy!)
+  (no-deps? config-no-deps? set-config-no-deps!))
+
+(define default-config
+  (make-config #f #f "." #f #f #f #f #f #f #f #f #f))
+
+;; ============================================================================
+;; Option Processing
+;; ============================================================================
+
+(define option-spec
+  (list
+    (option '(#\h "help") #f #f
+      (lambda (opt name arg config)
+        (show-help)
+        (exit 0)))
+    
+    (option '(#\v "version") #f #f
+      (lambda (opt name arg config)
+        (show-version)
+        (exit 0)))
+    
+    (option '(#\o "output") #t #f
+      (lambda (opt name arg config)
+        (set-config-output-dir! config arg)
+        config))
+    
+    (option '(#\f "force") #f #f
+      (lambda (opt name arg config)
+        (set-config-force! config #t)
+        config))
+    
+    (option '(#\q "quiet") #f #f
+      (lambda (opt name arg config)
+        (set-config-quiet! config #t)
+        config))
+    
+    (option '(#\V "verbose") #f #f
+      (lambda (opt name arg config)
+        (set-config-verbose! config #t)
+        config))
+    
+    (option '(#\l "list") #f #f
+      (lambda (opt name arg config)
+        (set-config-list! config #t)
+        config))
+    
+    (option '(#\a "all") #f #f
+      (lambda (opt name arg config)
+        (set-config-all! config #t)
+        config))
+    
+    (option '(#\p "preload") #f #f
+      (lambda (opt name arg config)
+        (set-config-preload! config #t)
+        config))
+    
+    (option '(#\s "stats") #f #f
+      (lambda (opt name arg config)
+        (set-config-show-stats! config #t)
+        config))
+    
+    (option '("lazy") #f #f
+      (lambda (opt name arg config)
+        (set-config-lazy! config #t)
+        config))
+    
+    (option '("no-deps") #f #f
+      (lambda (opt name arg config)
+        (set-config-no-deps! config #t)
+        config))))
+
+(define (unrecognized-option-proc opt name arg config)
+  (format (current-error-port) "Unrecognized option: ~a~%" name)
+  (exit 1))
+
+(define (operand-proc operand config)
+  (cond
+    ((not (config-namespace config))
+     (set-config-namespace! config operand)
+     config)
+    ((not (config-version config))
+     (set-config-version! config operand)
+     config)
+    (else
+     (format (current-error-port) "Too many arguments: ~a~%" operand)
+     (exit 1))))
+
+;; ============================================================================
+;; Logging and Output
+;; ============================================================================
+
+(define (log-info config fmt . args)
+  (unless (config-quiet? config)
+    (apply format (current-error-port) fmt args)))
+
+(define (log-verbose config fmt . args)
+  (when (config-verbose? config)
+    (apply format (current-error-port) fmt args)))
+
+(define (log-error fmt . args)
+  (apply format (current-error-port) fmt args))
+
+;; ============================================================================
+;; Utility Functions
+;; ============================================================================
+
+(define (ensure-directory path)
+  "Ensure directory exists, creating it if necessary"
+  (unless (file-exists? path)
+    (mkdir path)))
+
+(define (file-exists-and-newer? file)
+  "Check if file exists and is relatively new"
+  (and (file-exists? file)
+       (> (stat:mtime (stat file))
+          (- (current-time) 3600)))) ; 1 hour
+
+(define (safe-require-namespace namespace version lazy?)
+  "Safely require a namespace with error handling"
+  (catch #t
+    (lambda ()
+      (require-namespace namespace version #:lazy? lazy?)
+      #t)
+    (lambda (key . args)
+      (log-error "Failed to load namespace ~a ~a: ~a~%" 
+                 namespace (or version "") args)
+      #f)))
+
+;; ============================================================================
+;; Core Functions
+;; ============================================================================
+
+(define (list-namespaces config)
+  "List available namespaces"
+  (log-info config "Available namespaces:~%")
+  
+  ;; Show loaded namespaces
+  (let ((loaded (get-loaded-namespaces)))
+    (log-info config "~%Loaded namespaces (~a):~%" (length loaded))
+    (for-each (lambda (ns)
+                (format #t "  ~a~%" ns))
+              (sort loaded string<?)))
+  
+  ;; Try to find more namespaces by searching common locations
+  (log-info config "~%Attempting to discover additional namespaces...~%")
+  (let ((discovered '()))
+    (for-each 
+      (lambda (ns)
+        (when (safe-require-namespace ns #f (config-lazy? config))
+          (set! discovered (cons ns discovered))
+          (log-verbose config "  Discovered: ~a~%" ns)))
+      '("GLib" "GObject" "Gio" "Gtk" "Gdk" "GdkPixbuf"
+        "Pango" "PangoCairo" "cairo" "Atk" "WebKit2" "Soup"
+        "GStreamer" "Gst" "GstAudio" "GstVideo" "Secret"
+        "Notify" "AppStream" "PackageKitGlib" "Flatpak"))
+    
+    (when (not (null? discovered))
+      (log-info config "~%Newly discovered namespaces (~a):~%" (length discovered))
+      (for-each (lambda (ns)
+                  (format #t "  ~a~%" ns))
+                (sort discovered string<?)))))
+
+(define (show-stats config)
+  "Show repository statistics"
+  (log-info config "Repository Statistics:~%")
+  (let ((stats (repository-stats)))
+    (format #t "  Cached types: ~a~%" (assq-ref stats 'cached-types))
+    (format #t "  Memory used: ~a bytes~%" (assq-ref stats 'memory-used)))
+  
+  (let ((namespaces (get-loaded-namespaces)))
+    (format #t "  Loaded namespaces: ~a~%" (length namespaces))
+    (for-each (lambda (ns)
+                (format #t "    ~a: ~a infos~%" 
+                        ns (length (get-all-infos ns))))
+              namespaces)))
+
+(define (generate-single-module config)
+  "Generate a single module"
+  (let ((namespace (config-namespace config))
+        (version (config-version config))
+        (output-dir (config-output-dir config)))
+    
+    (ensure-directory output-dir)
+    
+    ;; Configure repository
+    (unless (config-no-deps? config)
+      (auto-load-dependencies! #t))
+    
+    (log-verbose config "Loading namespace ~a ~a...~%" 
+                 namespace (or version ""))
+    
+    ;; Load namespace
+    (unless (safe-require-namespace namespace version (config-lazy? config))
+      (exit 1))
+    
+    ;; Preload if requested
+    (when (config-preload? config)
+      (log-verbose config "Preloading namespace for better performance...~%")
+      (preload-namespace namespace))
+    
+    ;; Generate module
+    (log-info config "Generating module for ~a ~a...~%" 
+              namespace (or version ""))
+    
+    (catch #t
+      (lambda ()
+        (let ((filename (generate-gi-module-file 
+                         namespace version 
+                         #:directory output-dir)))
+          (log-info config "Generated: ~a~%" filename)
+          filename))
+      (lambda (key . args)
+        (log-error "Error generating module: ~a~%" args)
+        (exit 1)))))
+
+(define (generate-all-modules config)
+  "Generate modules for all loaded namespaces"
+  (let ((output-dir (config-output-dir config)))
+    (ensure-directory output-dir)
+    
+    ;; Load common namespaces first
+    (log-info config "Loading common namespaces...~%")
+    (for-each (lambda (ns)
+                (safe-require-namespace ns #f (config-lazy? config)))
+              '("GLib" "GObject" "Gio"))
+    
+    (let ((namespaces (get-loaded-namespaces)))
+      (log-info config "Generating modules for ~a namespaces...~%" 
+                (length namespaces))
+      
+      (let ((results '()))
+        (for-each 
+          (lambda (ns)
+            (log-verbose config "Processing namespace: ~a~%" ns)
+            (catch #t
+              (lambda ()
+                (when (config-preload? config)
+                  (preload-namespace ns))
+                (let ((filename (generate-gi-module-file 
+                                 ns #f #:directory output-dir)))
+                  (set! results (cons filename results))
+                  (log-info config "  Generated: ~a~%" filename)))
+              (lambda (key . args)
+                (log-error "  Error with ~a: ~a~%" ns args))))
+          namespaces)
+        
+        (log-info config "~%Generated ~a modules successfully.~%" 
+                  (length results))
+        results))))
+
+(define (check-output-file config filename)
+  "Check if output file should be written"
+  (cond
+    ((not (file-exists? filename)) #t)
+    ((config-force? config) #t)
+    (else
+     (log-error "File exists: ~a (use --force to overwrite)~%" filename)
+     #f)))
+
+;; ============================================================================
+;; Main Program
+;; ============================================================================
+
+(define (validate-config config)
+  "Validate configuration and check for conflicts"
+  (cond
+    ;; List mode - no other args needed
+    ((config-list? config) #t)
+    
+    ;; Stats mode - no other args needed  
+    ((config-show-stats? config) #t)
+    
+    ;; All mode - no namespace needed
+    ((config-all? config) #t)
+    
+    ;; Single module mode - need namespace
+    ((config-namespace config) #t)
+    
+    (else
+     (log-error "Error: No namespace specified. Use --help for usage.~%")
+     #f)))
+
+(define (run-program config)
+  "Main program logic"
+  (unless (validate-config config)
+    (exit 1))
+  
+  ;; Handle different modes
+  (cond
+    ((config-list? config)
+     (list-namespaces config))
+    
+    ((config-show-stats? config)
+     (show-stats config))
+    
+    ((config-all? config)
+     (generate-all-modules config))
+    
+    ((config-namespace config)
+     (generate-single-module config))
+    
+    (else
+     (log-error "Internal error: Invalid configuration state~%")
+     (exit 1))))
+
+(define (main args)
+  "Main entry point"
+  ;; Initialize GI system
+  (catch #t
+    (lambda ()
+      ;; Parse command line
+      (let ((config (args-fold args 
+                               option-spec
+                               unrecognized-option-proc
+                               operand-proc
+                               default-config)))
+        
+        ;; Set up logging level
+        (when (config-verbose? config)
+          (auto-load-dependencies! (not (config-no-deps? config))))
+        
+        ;; Run the program
+        (run-program config)))
+    
+    (lambda (key . args)
+      (log-error "Fatal error: ~a~%" args)
+      (exit 1))))
+
+;; ============================================================================
+;; Script Entry Point
+;; ============================================================================
+
+;; Only run main if this file is executed as a script
+(when (and (defined? 'command-line) 
+           (not (null? (command-line))))
+  (main (cdr (command-line))))
+
+;; ============================================================================
+;; Module Interface (for use as library)
+;; ============================================================================
+
+;; If loaded as a module, export useful functions
+(define-module (gi generator)
+  #:use-module (gi repository)
+  #:use-module (gi codegen)
+  #:export (generate-namespace
+            generate-all-namespaces
+            list-available-namespaces
+            repository-info))
+
+(define* (generate-namespace namespace #:optional version 
+                            #:key (output-dir ".") (force? #f) (preload? #t))
+  "High-level interface for generating a single namespace module"
+  (let ((config (make-config namespace version output-dir force? #f #f #f #f preload? #f #f #f)))
+    (if (config-namespace config)
+        (generate-single-module config)
+        #f)))
+
+(define* (generate-all-namespaces #:key (output-dir ".") (force? #f) (preload? #t))
+  "High-level interface for generating all loaded namespace modules"
+  (let ((config (make-config #f #f output-dir force? #f #f #f #t preload? #f #f #f)))
+    (generate-all-modules config)))
+
+(define (list-available-namespaces)
+  "Return list of available namespaces"
+  (get-loaded-namespaces))
+
+(define (repository-info)
+  "Return repository information"
+  (repository-stats))
+
+;; ============================================================================
+;; Additional Utilities
+;; ============================================================================
+
+(define (generate-makefile output-dir generated-files)
+  "Generate a Makefile for the generated modules"
+  (let ((makefile-path (string-append output-dir "/Makefile")))
+    (with-output-to-file makefile-path
+      (lambda ()
+        (display "# Generated Makefile for GI modules
+# Install these modules to make them available to Guile
+
+GUILE_SITEDIR = $(shell pkg-config --variable=sitedir guile-3.0)
+INSTALL_DIR = $(DESTDIR)$(GUILE_SITEDIR)/gi
+
+MODULES = ")
+        (for-each (lambda (file)
+                    (format #t "~a " (basename file)))
+                  generated-files)
+        (display "
+
+all:
+	@echo \"Modules ready for installation\"
+
+install:
+	install -d $(INSTALL_DIR)
+	install -m 644 $(MODULES) $(INSTALL_DIR)/
+
+uninstall:
+	cd $(INSTALL_DIR) && rm -f $(MODULES)
+
+clean:
+	rm -f *.scm~
+
+.PHONY: all install uninstall clean
+")))
+    (format #t "Generated Makefile: ~a~%" makefile-path)))
+
+(define (generate-readme output-dir namespaces)
+  "Generate a README file for the generated modules"
+  (let ((readme-path (string-append output-dir "/README.md")))
+    (with-output-to-file readme-path
+      (lambda ()
+        (display "# Generated GObject Introspection Modules
+
+This directory contains automatically generated Scheme modules for GObject
+Introspection libraries.
+
+## Generated Modules
+
+")
+        (for-each (lambda (ns)
+                    (format #t "- `(gi ~a)` - ~a library bindings~%"
+                            (kebab-case ns) ns))
+                  namespaces)
+        (display "
+## Usage
+
+These modules provide Scheme-friendly definitions that can be used by a
+runtime binding system. To use them:
+
+```scheme
+(use-modules (gi runtime)
+             (gi glib-2-0))  ; Example module
+
+;; The runtime system can now use the definitions
+;; to provide actual bindings via dlopen/dlsym
+```
+
+## Installation
+
+Use the provided Makefile to install these modules:
+
+```bash
+make install
+```
+
+Or install manually to your Guile site directory.
+
+## Generated Format
+
+Each module contains definitions in the following format:
+
+- `^function` - Function definitions with full signature information
+- `^untyped-enum` - Enumeration definitions  
+- `^constant` - Constant definitions
+- `^struct` - Structure definitions
+- `^object` - GObject class definitions
+- `^interface` - Interface definitions
+
+This format is designed to be consumed by a runtime binding generator
+that can create actual Scheme bindings using libffi and dlopen.
+")))
+    (format #t "Generated README: ~a~%" readme-path)))
+
+;; Enhanced main with additional file generation
+(define (main-enhanced args)
+  "Enhanced main that generates additional files"
+  (let ((result (main args)))
+    (when (and result (list? result) (not (null? result)))
+      ;; Generate additional files if we generated modules
+      (let ((output-dir (dirname (car result)))
+            (namespaces (map (lambda (f) 
+                               (string-take (basename f) 
+                                          (- (string-length (basename f)) 4)))
+                             result)))
+        (generate-makefile output-dir result)
+        (generate-readme output-dir namespaces)))))
+
+;; Alternative entry point with enhanced features
+(define (main-with-extras args)
+  (main-enhanced args))
+
