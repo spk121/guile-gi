@@ -1,1 +1,169 @@
-This directory contains helper functions that depend solely on C and libguile.
+Core Library - Modernized C Infrastructure
+==========================================
+
+This is a comprehensive, modernized C library providing essential infrastructure
+components for system programming, GNU Guile integration, and cross-platform
+development. All modules have been enhanced with safety, performance, and rich
+APIs while maintaining full backward compatibility.
+
+Files Overview
+==============
+
+Core Infrastructure
+-------------------
+
+logging.h / logging.c
+  Structured logging system with configurable outputs, filtering, and
+  cross-platform terminal color detection. Supports multiple log levels,
+  timestamps, and thread-safe operation. Enhanced from simple stderr output
+  to production-ready logging with caching and performance optimizations.
+
+mem.h / mem.c  
+  Advanced memory management with tracking, custom allocators, and safety
+  features. Provides overflow-safe allocation, memory pools, aligned memory,
+  and comprehensive debugging. Includes both fail-fast allocators (x*) and
+  safe variants that return NULL on failure. Enhanced with statistics,
+  leak detection, and cross-platform secure memory operations.
+
+string.h / string.c
+  Rich string manipulation library with modern safety and convenience features.
+  Includes trimming, case conversion, searching, splitting/joining, validation,
+  and a StringBuilder for efficient concatenation. Enhanced with UTF-8 support,
+  escape/unescape functions, and comprehensive string operations rivaling
+  modern languages.
+
+visibility.h
+  Cross-platform symbol visibility macros for building shared libraries.
+  Handles Windows DLL import/export, Unix visibility attributes, and compiler-
+  specific optimizations. Includes function attributes, alignment macros,
+  thread-local storage, and performance hints for modern C development.
+
+Data Structures
+---------------
+
+keyval.h / keyval.c
+  High-performance hash table implementation with generic type support.
+  Replaces O(log n) sorted arrays with O(1) hash tables using separate
+  chaining. Includes specialized maps (string→string, int→pointer), custom
+  allocators, and comprehensive statistics. Maintains backward compatibility
+  with original KeyVal/StrVal APIs.
+
+slist.h / slist.c
+  Enhanced singly-linked list with rich API and performance optimizations.
+  Features O(1) append via tail pointer, functional programming operations
+  (map, filter, reduce), safe iteration, and specialized lists for common
+  types. Includes memory management, validation, and debugging support.
+
+GNU Guile Integration
+--------------------
+
+scm.h / scm.c
+  Comprehensive GNU Guile/Scheme integration layer with enhanced safety and
+  convenience functions. Provides safe type conversion, error handling,
+  module management, and cross-platform compatibility. Enhanced with
+  performance monitoring, debugging tools, and modern exception handling
+  for embedding Scheme in C applications.
+
+oop.h / oop.c
+  Complete GOOPS (Guile Object-Oriented Programming System) interface
+  providing access to Scheme's sophisticated object system from C. Supports
+  multiple inheritance, generic functions, method dispatch, metaclasses,
+  and dynamic class modification. Includes C type registration, debugging
+  tools, and performance optimization for enterprise-grade OOP in C.
+
+Key Features
+============
+
+Safety & Reliability
+- Comprehensive error handling with detailed error codes
+- Memory safety with bounds checking and leak detection  
+- Cross-platform compatibility (Windows, Linux, macOS, Unix)
+- Thread safety preparation with configurable locking
+- Extensive validation and debugging tools
+
+Performance
+- O(1) hash tables replacing O(log n) sorted arrays
+- Memory pools for efficient bulk allocation
+- Caching systems for frequently accessed objects
+- Performance monitoring and optimization hints
+- Cache-friendly data structure layouts
+
+Modern C Standards
+- C11/C17 compliance with fallbacks for older compilers
+- Compiler attributes for optimization (GCC, Clang, MSVC)
+- Platform detection and feature availability macros
+- Standard library integration and portable APIs
+
+Rich APIs
+- Functional programming support (map, filter, reduce)
+- Builder patterns for complex object construction
+- Fluent interfaces and method chaining where appropriate
+- Comprehensive utility functions and convenience macros
+
+Cross-Platform Support
+======================
+
+The library works across:
+- Windows (MSVC, MinGW-w64, UCRT)
+- Linux (glibc, musl, other libc implementations)  
+- macOS and other BSD variants
+- Solaris and other Unix systems
+- Embedded systems with limited libc
+
+Platform-specific optimizations include:
+- Windows console detection and DLL handling
+- Unix visibility attributes and POSIX features
+- Compiler-specific optimizations and intrinsics
+- Automatic feature detection and graceful fallbacks
+
+Building
+========
+
+The library is designed as a collection of self-contained modules that can
+be used independently or together. Each module has minimal dependencies:
+
+- logging: Requires only standard C library
+- mem: Depends on logging for error reporting
+- string: Depends on mem for allocation
+- keyval: Depends on mem and logging
+- slist: Depends on mem and logging  
+- scm: Requires GNU Guile development libraries
+- oop: Requires scm and GNU Guile with GOOPS
+
+Recommended compiler flags:
+  -std=c11 -Wall -Wextra -O2 -DNDEBUG
+
+For debug builds:
+  -std=c11 -Wall -Wextra -Og -g -DDEBUG
+
+Usage Examples
+==============
+
+Logging:
+  gig_debug("Processing %d items", count);
+  gig_error("Failed to open file: %s", filename);
+
+Memory Management:
+  void *ptr = xmalloc(size);  // Aborts on failure
+  void *safe_ptr = safe_malloc(size);  // Returns NULL on failure
+  StringList *list = string_list_create();
+
+Hash Tables:
+  HashMap *map = hashmap_create_string_keys(sizeof(int), NULL);
+  int value = 42;
+  hashmap_insert_string(map, "answer", &value);
+
+GNU Guile Integration:
+  init_core_oop();  // Initialize GOOPS
+  SCM my_class = scm_make_class_simple(scm_get_object_class(), "MyClass");
+  SCM instance = scm_make_instance(my_class, SCM_UNDEFINED);
+
+License
+=======
+
+This library maintains the original GPL licensing of the base components.
+Individual files contain their specific license headers. The modernization
+enhancements are provided under the same terms as the original code.
+
+The library includes code derived from GNU Guile and follows their licensing
+requirements for integration components.
