@@ -29,8 +29,8 @@ ID
 TAGS
 
 # Autotools
-Makefile
-Makefile.in
+#Makefile
+#Makefile.in
 
 ChangeLog
 README
