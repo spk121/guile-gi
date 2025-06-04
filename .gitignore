@@ -132,3 +132,6 @@ doc/stamp-vti
 doc/version.texi
 tmp
 tmp.*
+
+# VSCode
+.vscode
