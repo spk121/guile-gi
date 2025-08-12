@@ -23,7 +23,7 @@
               (("Marshall" "1.0")
                #:renamer (protect* '(sizeof short int long size_t)))
               (("GLib" "2.0")
-               #:renamer (protect* '(test-equal test-assert test-skip))))
+               #:renamer (protect* '(test-equal test-assert test-skip int))))
 
 (define-syntax-rule (boolarray-input f)
   (test-assert (symbol->string (quote f))
