@@ -7,6 +7,7 @@
   (string-contains %host-type "-mingw32"))
 
 (require "GLib" "2.0")
+(require "GLibUnix" "2.0")
 (load-by-name "GLib" "IOCondition")
 (load-by-name "GLib" "MainLoop")
 (load-by-name "GLib" "MainContext")
@@ -14,7 +15,7 @@
 (load-by-name "GLib" "idle_add")
 (load-by-name "GLib" "timeout_add")
 (unless mingw?
-  (load-by-name "GLib" "unix_fd_add_full"))
+  (load-by-name "GLibUnix" "fd_add_full"))
 
 (define loop #f)
 
@@ -83,22 +84,22 @@
        (display unix-fd-sample-text out-port)
        (newline out-port)
        (close out-port)
-       (unix-fd-add-full PRIORITY_DEFAULT
-                         (port->fdes in-port)
-                         (list->iocondition '(hup in))
-                         (lambda (fd condition dummy)
-                           (cond
-                            ((flags-set? condition 'in)
-                             (let* ((port (dup->inport fd))
-                                    (line (get-line port)))
-                               (set! unix-fd-result line)
-                               #t))
-                            ((flags-set? condition 'hup)
-                             ;; close in-port on SIGHUP
-                             (close in-port)
-                             #f)))
-                         #f
-                         (const #f)))))
+       (fd-add-full PRIORITY_DEFAULT
+                    (port->fdes in-port)
+                    (list->iocondition '(hup in))
+                    (lambda (fd condition dummy)
+                      (cond
+                       ((flags-set? condition 'in)
+                        (let* ((port (dup->inport fd))
+                               (line (get-line port)))
+                          (set! unix-fd-result line)
+                          #t))
+                       ((flags-set? condition 'hup)
+                        ;; close in-port on SIGHUP
+                        (close in-port)
+                        #f)))
+                    #f
+                    (const #f)))))
 
 (test-assert "run mainloop"
   (begin
