@@ -104,7 +104,11 @@ gig_function_define(GType type, GICallableInfo *info, const char *_namespace)
 
     if (is_method) {
         self_type = gig_type_get_scheme_type(type);
-        g_return_val_if_fail(!scm_is_unknown_class(self_type), SCM_EOL);
+        // Leave through 'end' so that the dynwind context is closed.
+        if (scm_is_unknown_class(self_type)) {
+            g_critical("%s: no class for %s", function_name, g_type_name(type));
+            goto end;
+        }
         method_name = scm_dynfree(gig_callable_info_make_name(info, NULL));
         gig_debug_load("%s - shorthand for %s", method_name, function_name);
     }
@@ -412,7 +416,12 @@ function_invoke(GIFunctionInfo *func_info, GigArgMap *amap, const char *name, GO
     GigArgsStore *store;
     gboolean ok;
 
+    // Converting the arguments or the results can raise a Scheme
+    // error; free the store (and the temporaries it holds) either way.
+    scm_dynwind_begin(0);
     store = gig_args_store_new(amap->c_input_len, amap->c_output_len);
+    scm_dynwind_unwind_handler((void (*)(void *))gig_args_store_free, store,
+                               SCM_F_WIND_EXPLICITLY);
     gig_args_store_initialize(store, amap, name, self, args);
 
     // Make the actual call.
@@ -432,7 +441,7 @@ function_invoke(GIFunctionInfo *func_info, GigArgMap *amap, const char *name, GO
                                 store->out_args, amap->c_output_len, &return_arg, error);
     SCM ret = gig_args_store_return_value(store, amap, name, self, args, ok, &return_arg);
 
-    gig_args_store_free(store);
+    scm_dynwind_end();
 
     return ret;
 }
@@ -445,7 +454,11 @@ gig_callable_invoke(GICallableInfo *callable_info, void *callable, GigArgMap *am
     gboolean ok;
     GIArgument return_arg;
 
+    // Free the store even if a conversion raises a Scheme error.
+    scm_dynwind_begin(0);
     store = gig_args_store_new(amap->c_input_len, amap->c_output_len);
+    scm_dynwind_unwind_handler((void (*)(void *))gig_args_store_free, store,
+                               SCM_F_WIND_EXPLICITLY);
     gig_args_store_initialize(store, amap, name, self, args);
 
     // Make the actual call.
@@ -468,7 +481,7 @@ gig_callable_invoke(GICallableInfo *callable_info, void *callable, GigArgMap *am
 
     SCM ret = gig_args_store_return_value(store, amap, name, self, args, ok, &return_arg);
 
-    gig_args_store_free(store);
+    scm_dynwind_end();
 
     return ret;
 }
@@ -522,12 +535,11 @@ function_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
 
     // If there is a GError, write an error and exit.
     if (err) {
-        char str[256];
-        memset(str, 0, 256);
-        strncpy(str, err->message, 255);
+        // The message is data, not a format string: it may contain '~'.
+        SCM message = scm_from_utf8_string(err->message);
         g_error_free(err);
 
-        scm_misc_error(gfn->name, str, SCM_EOL);
+        scm_misc_error(gfn->name, "~A", scm_list_1(message));
         g_return_if_reached();
     }
 

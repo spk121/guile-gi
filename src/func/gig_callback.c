@@ -214,6 +214,10 @@ callback_binding_inner(struct callback_binding_args *args)
     else
         callback_name = xstrdup("callback");
 
+    // Conversions and the callback itself can raise a Scheme error.
+    scm_dynwind_begin(0);
+    scm_dynwind_free(callback_name);
+
     // Do the two-step conversion from libffi arguments to GIArgument
     // to SCM arguments.
     for (unsigned i = 0; i < n_args; i++) {
@@ -269,11 +273,12 @@ callback_binding_inner(struct callback_binding_args *args)
                                   &size);
             store_output(&(amap->return_val), (void ***)&ret, &giarg);
 
-            if (amap->return_val.meta.has_size) {
-                size_t c_output_pos = amap->return_val.child->c_output_pos;
+            if (amap->return_val.meta.has_size && amap->return_val.child) {
+                // ffi_args is indexed by position in the callback's
+                // signature, not by output position.
                 GIArgument tmp;
                 tmp.v_int64 = size;
-                store_output(amap->return_val.child, ffi_args[c_output_pos], &tmp);
+                store_output(amap->return_val.child, ffi_args[amap->return_val.child->i], &tmp);
             }
         }
 
@@ -287,17 +292,18 @@ callback_binding_inner(struct callback_binding_args *args)
             SCM real_value = scm_c_value_ref(s_ret, entry->s_output_pos + start);
             gig_argument_scm_to_c(callback_name, real_cpos, &entry->meta, real_value, NULL, &giarg,
                                   &size);
-            store_output(entry, ffi_args[c_output_pos], &giarg);
+            // ffi_args is indexed by position in the callback's
+            // signature (real_cpos), not by output position.
+            store_output(entry, ffi_args[real_cpos], &giarg);
 
-            if (amap->return_val.meta.has_size) {
-                size_t size_pos = entry->child->c_output_pos;
+            if (entry->meta.has_size && entry->child) {
                 GIArgument tmp;
                 tmp.v_int64 = size;
-                store_output(entry->child, ffi_args[size_pos], &tmp);
+                store_output(entry->child, ffi_args[entry->child->i], &tmp);
             }
         }
     }
-    free(callback_name);
+    scm_dynwind_end();
     return (void *)1;
 }
 
@@ -432,6 +438,9 @@ gig_callback_new(const char *name, GICallbackInfo *callback_info, SCM s_func)
     gcb->s_func = s_func;
     gcb->callback_info = g_base_info_ref(callback_info);
     gcb->amap = gig_amap_new(gcb->name, gcb->callback_info);
+    if (gcb->amap == NULL)
+        gig_error("%s: callback type %s cannot be represented", name,
+                  g_base_info_get_name(callback_info));
 
     // STEP 1
     // Allocate the block of memory that FFI uses to hold a closure object,
@@ -495,6 +504,11 @@ gig_callback_new_for_callback(GICallbackInfo *info, void *c_func)
     gcb->c_func = c_func;
     gcb->callback_info = g_base_info_ref(info);
     gcb->amap = gig_amap_new(gcb->name, gcb->callback_info);
+    if (gcb->amap == NULL) {
+        g_base_info_unref(gcb->callback_info);
+        free(gcb);
+        return NULL;
+    }
 
     if (n_args > 0) {
         gcb->atypes = xcalloc(1, sizeof(ffi_type *));
@@ -527,7 +541,7 @@ gig_callback_to_c(const char *name, GICallbackInfo *cb_info, SCM s_func)
     // as well as the same GObject C Callback type.
     while (x != NULL) {
         gcb = x->data;
-        if (scm_is_eq(gcb->s_func, s_func))
+        if (scm_is_eq(gcb->s_func, s_func) && g_base_info_equal(gcb->callback_info, cb_info))
             return gcb->callback_ptr;
         x = x->next;
     }

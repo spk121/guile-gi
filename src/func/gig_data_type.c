@@ -33,6 +33,9 @@ gig_type_meta_init_from_arg_info(GigTypeMeta *meta, GIArgInfo *ai)
     GIDirection dir = g_arg_info_get_direction(ai);
     GITransfer transfer = g_arg_info_get_ownership_transfer(ai);
 
+    // Set before the type info is read: add_child_params derives the
+    // element transfer from it.
+    meta->transfer = transfer;
     gig_type_meta_init_from_type_info(meta, type_info);
 
     meta->is_in = (dir == GI_DIRECTION_IN || dir == GI_DIRECTION_INOUT);
@@ -53,6 +56,9 @@ gig_type_meta_init_from_callable_info(GigTypeMeta *meta, GICallableInfo *ci)
     GITypeInfo *type_info = g_callable_info_get_return_type(ci);
     GITransfer transfer = g_callable_info_get_caller_owns(ci);
 
+    // Set before the type info is read: add_child_params derives the
+    // element transfer from it.
+    meta->transfer = transfer;
     gig_type_meta_init_from_type_info(meta, type_info);
 
     meta->is_in = false;
@@ -84,14 +90,17 @@ add_child_params(GigTypeMeta *meta, GITypeInfo *type_info, int n)
     add_params(meta, n);
 
     for (int i = 0; i < n; i++) {
-        param_type = g_type_info_get_param_type((GITypeInfo *)type_info, i);
-        gig_type_meta_init_from_type_info(&meta->params[i], param_type);
-        g_base_info_unref(param_type);
-
+        // Elements are owned by the caller only when the whole
+        // container is.  Set this before reading the element's type,
+        // so that nested containers inherit it too.
         if (meta->transfer == GI_TRANSFER_EVERYTHING)
             meta->params[i].transfer = GI_TRANSFER_EVERYTHING;
         else
             meta->params[i].transfer = GI_TRANSFER_NOTHING;
+
+        param_type = g_type_info_get_param_type((GITypeInfo *)type_info, i);
+        gig_type_meta_init_from_type_info(&meta->params[i], param_type);
+        g_base_info_unref(param_type);
 
         meta->is_invalid |= meta->params[i].is_invalid;
     }

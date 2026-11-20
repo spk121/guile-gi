@@ -65,6 +65,11 @@
     (list= eqv? '(-1 0 1 2) (c (f)))))
 
 (ints-input array-fixed-int-in list->int-vector)
+
+(test-error "array-fixed-int-in with too few elements"
+  ;; The C function reads four ints whatever it is given.
+  #t
+  (array-fixed-int-in (list->int-vector '(1 2))))
 (ints-input array-fixed-short-in list->short-vector)
 (ints-input array-int64-in list->s64vector)
 (ints-input array-in-guint8-len list->int-vector)
@@ -282,6 +287,11 @@
 (stringarray-output garray-utf8-full-return)
 
 (stringarray-output gptrarray-utf8-none-return)
+
+(test-equal "gptrarray-utf8-none-return twice"
+  ;; The callee's (static) array used to be freed after the first call.
+  '(#("0" "1" "2") #("0" "1" "2"))
+  (list (gptrarray-utf8-none-return) (gptrarray-utf8-none-return)))
 (stringarray-output gptrarray-utf8-container-return)
 (stringarray-output gptrarray-utf8-full-return)
 (stringarray-output gptrarray-utf8-none-out)
@@ -858,5 +868,14 @@
   (begin
     (gclosure-in (gclosure-return))
     #t))
+
+(test-equal "garray-boxed-struct-full-return"
+  ;; Structs stored by value were read at pointer-sized strides.
+  '(42 43 44)
+  (map (lambda (s)
+         (case (sizeof long)
+           ((4) (bytevector-s32-native-ref (pointer->bytevector (slot-ref s 'value) 4) 0))
+           ((8) (bytevector-s64-native-ref (pointer->bytevector (slot-ref s 'value) 8) 0))))
+       (vector->list (garray-boxed-struct-full-return))))
 
 (test-end "marshall.scm")

@@ -292,7 +292,7 @@ convert_output_args(GigArgMap *amap, const char *func_name, GIArgument *in, GIAr
             GigArgMapEntry *size_entry = entry->child;
             GIArgument *size_arg = find_output_arg(size_entry, in, out);
             gig_argument_c_to_scm(func_name, size_entry->i, &size_entry->meta, size_arg, &obj, -1);
-            size = scm_is_integer(obj) ? scm_to_int(obj) : 0;
+            size = scm_is_unsigned_integer(obj, 0, SIZE_MAX) ? scm_to_size_t(obj) : 0;
         }
 
         gig_argument_c_to_scm(func_name, c_output_pos, &entry->meta, arg, &obj, size);

@@ -14,6 +14,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <assert.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 #include "../core.h"
@@ -127,7 +128,12 @@ arg_map_determine_array_length_index(GigArgMap *amap, GigArgMapEntry *entry, GIT
     if (entry->meta.gtype == G_TYPE_PRIV_C_ARRAY && entry->meta.has_size) {
         int idx = g_type_info_get_array_length(info);
 
-        assert(idx >= 0);
+        // The index comes from the typelib; don't trust it blindly.
+        if (idx < 0 || idx >= amap->len) {
+            gig_critical("%s: array length argument %d is out of range", amap->name, idx);
+            entry->meta.has_size = false;
+            return;
+        }
 
         entry->tuple = GIG_ARG_TUPLE_ARRAY;
         entry->child = amap->pdata + idx;
@@ -295,6 +301,23 @@ gig_amap_free(GigArgMap *amap)
     free(amap);
 }
 
+// snprintf returns the length it would have written, so adding that
+// to an offset can run past the buffer.  This appends, truncating.
+static size_t
+dump_append(char *buf, size_t bufsize, size_t len, const char *fmt, ...)
+{
+    if (len >= bufsize - 1)
+        return len;
+    va_list args;
+    va_start(args, fmt);
+    int n = vsnprintf(buf + len, bufsize - len, fmt, args);
+    va_end(args);
+    if (n < 0)
+        return len;
+    len += (size_t)n;
+    return len < bufsize ? len : bufsize - 1;
+}
+
 void
 gig_amap_dump(const char *name, const GigArgMap *amap)
 {
@@ -307,41 +330,41 @@ gig_amap_dump(const char *name, const GigArgMap *amap)
     gig_debug_amap(" C inputs: %d, outputs: %d", amap->c_input_len, amap->c_output_len);
     for (int i = 0; i < amap->len; i++) {
         const GigArgMapEntry *entry = &amap->pdata[i];
-        len = snprintf(s, 100, " Arg %d: '%s' %s",
-                       i, entry->name, gig_type_meta_describe(&entry->meta));
-        len += snprintf(s + len, 100, ", %s, %s, %s",
-                        dir_strings[entry->s_direction],
-                        tuple_strings[entry->tuple], presence_strings[entry->presence]);
+        len = dump_append(s, sizeof(s), 0, " Arg %d: '%s' %s",
+                          i, entry->name, gig_type_meta_describe(&entry->meta));
+        len = dump_append(s, sizeof(s), len, ", %s, %s, %s",
+                          dir_strings[entry->s_direction],
+                          tuple_strings[entry->tuple], presence_strings[entry->presence]);
         if (entry->is_c_input)
-            len += snprintf(s + len, 20, ", C input %d", entry->c_input_pos);
+            len = dump_append(s, sizeof(s), len, ", C input %d", entry->c_input_pos);
         if (entry->is_c_output)
-            len += snprintf(s + len, 20, ", C output %d", entry->c_output_pos);
+            len = dump_append(s, sizeof(s), len, ", C output %d", entry->c_output_pos);
         if (entry->is_s_input)
-            len += snprintf(s + len, 20, ", SCM input %d", entry->s_input_pos);
+            len = dump_append(s, sizeof(s), len, ", SCM input %d", entry->s_input_pos);
         if (entry->is_s_output)
-            len += snprintf(s + len, 20, ", SCM output %d", entry->s_output_pos);
+            len = dump_append(s, sizeof(s), len, ", SCM output %d", entry->s_output_pos);
         gig_debug_amap("%s", s);
         s[0] = '\0';
 
         if (amap->pdata[i].meta.n_params > 0) {
             GigTypeMeta *m2 = &amap->pdata[i].meta.params[0];
-            len = snprintf(s, 100, "    Item Type: %s", gig_type_meta_describe(m2));
+            len = dump_append(s, sizeof(s), 0, "    Item Type: %s", gig_type_meta_describe(m2));
             gig_debug_amap("%s", s);
             s[0] = '\0';
         }
     }
     if (amap->return_val.meta.gtype != G_TYPE_NONE) {
         const GigArgMapEntry *entry = &amap->return_val;
-        len = snprintf(s, 100, " Return: '%s' %s",
-                       entry->name, gig_type_meta_describe(&entry->meta));
-        len += snprintf(s + len, 100, ", %s, %s, %s",
-                        dir_strings[entry->s_direction],
-                        tuple_strings[entry->tuple], presence_strings[entry->presence]);
+        len = dump_append(s, sizeof(s), 0, " Return: '%s' %s",
+                          entry->name, gig_type_meta_describe(&entry->meta));
+        len = dump_append(s, sizeof(s), len, ", %s, %s, %s",
+                          dir_strings[entry->s_direction],
+                          tuple_strings[entry->tuple], presence_strings[entry->presence]);
         gig_debug_amap("%s", s);
         s[0] = '\0';
         if (amap->return_val.meta.n_params > 0) {
             GigTypeMeta *m2 = &amap->return_val.meta.params[0];
-            len = snprintf(s, 100, "    Item Type: %s", gig_type_meta_describe(m2));
+            len = dump_append(s, sizeof(s), 0, "    Item Type: %s", gig_type_meta_describe(m2));
             gig_debug_amap("%s", s);
             s[0] = '\0';
         }
@@ -374,6 +397,7 @@ gig_amap_get_input_entry_by_s(GigArgMap *amap, int spos)
         i++;
     }
     assert_not_reached();
+    return NULL;
 }
 
 GigArgMapEntry *
