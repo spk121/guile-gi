@@ -35,8 +35,13 @@ On Debian-based systems, this translates to
 It is also possible to build Guile-GI for Guile 2.2, in which
 `guile-3.0-dev` is to be replaced by `guile-2.2-dev`.
 
-When building from a git clone rather than a release tarball, Texinfo
-is required as well in order to build documentation.
+When building from a git clone rather than a release tarball, the
+GNU autotools and Texinfo are required as well, in order to run
+`./bootstrap` and to build documentation.  Guile's `guile.m4` also
+needs `lib-link.m4`, which is provided by gettext.  On Debian-based
+systems, this translates to
+
+    autoconf automake libtool gettext texinfo
 
 Users of GNU Guix can set up development environments through the provided `guix.scm`.
 
