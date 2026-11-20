@@ -2316,6 +2316,8 @@ gig_init_girepository ()
         gibaseinfo_fo_type = makeFO (u8sym ("<gibaseinfo>"),
                                      scm_list_1 (u8sym ("ptr")),
                                      gc_free_gibaseinfo);
+        // (gi girepository) exports this name.
+        scm_c_define ("<gibaseinfo>", gibaseinfo_fo_type);
         scm_c_define_gsubr ("gibaseinfo?", 1, 0, 0, gig_is_gibaseinfo_p);
         scm_c_define_gsubr ("gibaseinfo=?", 2, 0, 0, gig_gibaseinfo_equalp);
 

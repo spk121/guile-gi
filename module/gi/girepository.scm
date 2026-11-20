@@ -50,7 +50,7 @@
             type-tag-is-basic?
             type-tag-is-numeric?
             type-tag-is-container?
-            type-tag-to-string
+            type-tag->string
 
             ;; GIBaseInfo
             is-base-info?
@@ -61,7 +61,7 @@
             base-info-get-attribute
             base-info-get-container
             base-info-is-deprecated?
-            info-type-to-string
+            info-type->string
             ;; GICallableInfo
             is-callable-info?
             callable-info-can-throw-gerror?
@@ -99,7 +99,7 @@
             vfunc-info-get-invoker
 
             ;; GIRegisteredType
-            is-registered-type-info
+            is-registered-type-info?
             registered-type-info-get-type-name
             registered-type-info-get-type-init
             registered-type-info-get-g-type
@@ -262,20 +262,18 @@
                                         ; sized, so 32-bit
                                         ; on 32-bit
                                         ; systems
-(define *min-tag-integer* 0)
-(define *max-tag-integer* 31)           ; As of 1.71.1, the actual max is 21 for UNICHAR
 (define *min-version-integer* 0)
 (define *max-version-integer* 1000)     ; Really probably about 100
 (define char-set:alnum-dash-dot
   (string->char-set (string-append "abcdefghijklmnopqrstuvwxyz"
-                                   "ABCDEFGHIJKLMNOPQRSTUVWZYZ"
+                                   "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                                    "0123456789"
                                    "-.")))
 (define char-set:num-dot
   (string->char-set (string-append "0123456789.")))
 (define char-set:alnum-dash-underscore
   (string->char-set (string-append "abcdefghijklmnopqrstuvwxyz"
-                                   "ABCDEFGHIJKLMNOPQRSTUVWZYZ"
+                                   "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                                    "0123456789"
                                    "-_")))
 
@@ -327,7 +325,7 @@
      (begin
        (unless (string? directory)
          (scm-error 'wrong-type-arg funcname "Not a string: ~S"
-                    (list funcname) (list funcname)))
+                    (list directory) (list directory)))
        (when (string-null? directory)
          (scm-error 'out-of-range funcname "String too short: ~S"
                     (list directory) (list directory)))
@@ -391,20 +389,6 @@
        (when (>= version *max-version-integer*)
          (scm-error 'out-of-range funcname "Out of range: ~S"
                     (list version) (list version)))))))
-
-(define-syntax assert-tag-integer
-  (syntax-rules ()
-    ((assert-tag-integer funcname name)
-     (begin
-       (unless (and (exact? tag) (integer? tag))
-         (scm-error 'wrong-type-arg funcname "Not an exact integer: ~S"
-                    (list tag) (list tag)))
-       (when (< tag *min-tag-integer*)
-         (scm-error 'out-of-range funcname "Out of range: ~S"
-                    (list tag) (list tag)))
-       (when (>= index *max-tag-integer*)
-         (scm-error 'out-of-range funcname "Out of range: ~S"
-                    (list tag) (list tag)))))))
 
 (define-syntax assert-index-integer
   (syntax-rules ()
@@ -600,7 +584,7 @@ Returns a #<gibaseinfo> on success, or #f otherwise."
   (when (< quark 0)
     (scm-error 'out-of-range "find-by-error-domain" "Out of range: ~S"
                (list quark) (list quark)))
-  (when (>= quark #xFFFFFFFFFFFFFFFF)
+  (when (> quark #xFFFFFFFF)
     (scm-error 'out-of-range "find-by-error-domain" "Out of range: ~S"
                (list quark) (list quark)))
   (%irepository-find-by-error-domain quark))
@@ -632,11 +616,11 @@ be loaded."
 
 (define (get-minor-version)
   "Returns the integer value of the minor version of GIRepository."
-  (%get-major-version))
+  (%get-minor-version))
 
 (define (get-micro-version)
   "Returns the integer value of the micro version of GIRepository."
-  (%get-major-version))
+  (%get-micro-version))
 
 (define (check-version major minor micro)
   "Returns #t if the major / minor / micro triplet is the same
@@ -649,8 +633,18 @@ or newer than the current version of GIRepository."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; COMMON TYPES
 
+;; These lists are in the order of the C enums, so a symbol's position
+;; is its C value.
+(define (enum-symbol->integer enum sym)
+  (let ((tail (memq sym enum)))
+    (and tail (- (length enum) (length tail)))))
+
+(define (integer->enum-symbol enum n)
+  (and (exact-integer? n) (< -1 n (length enum))
+       (list-ref enum n)))
+
 (define type-tag-enum
-  '(void int8 uint8 int16 uint16 int32 uint32 int64 uint64
+  '(void boolean int8 uint8 int16 uint16 int32 uint32 int64 uint64
          float double gtype utf8 filename array interface
          glist gslist ghash error unichar))
 
@@ -660,9 +654,7 @@ a basic tag: if it is not a container."
   (unless (member tag type-tag-enum)
     (scm-error 'wrong-type-arg "type-tag-is-basic?" "Not a type-tag-enum symbol: ~S"
                (list tag) (list tag)))
-  (%type-tag-is-basic (list-index
-                       (lambda (x) (eqv? x tag))
-                       type-tag-enum)))
+  (%type-tag-is-basic (enum-symbol->integer type-tag-enum tag)))
 
 (define (type-tag-is-container? tag)
   "Given a symbol in the type-tag-enum set, it returns #t if the tag is
@@ -670,9 +662,7 @@ a container."
   (unless (member tag type-tag-enum)
     (scm-error 'wrong-type-arg "type-tag-is-container?" "Not a type-tag-enum symbol: ~S"
                (list tag) (list tag)))
-  (%type-tag-is-container (list-index
-                           (lambda (x) (eqv? x tag))
-                           type-tag-enum)))
+  (%type-tag-is-container (enum-symbol->integer type-tag-enum tag)))
 
 (define (type-tag-is-numeric? tag)
   "Given a symbol in the type-tag-enum set, it returns #t if the tag is
@@ -680,9 +670,7 @@ a numeric type."
   (unless (member tag type-tag-enum)
     (scm-error 'wrong-type-arg "type-tag-is-numeric?" "Not a type-tag-enum symbol: ~S"
                (list tag) (list tag)))
-  (%type-tag-is-numeric (list-index
-                         (lambda (x) (eqv? x tag))
-                         type-tag-enum)))
+  (%type-tag-is-numeric (enum-symbol->integer type-tag-enum tag)))
 
 (define (type-tag->string tag)
   "Given a symbol in the type-tag-enum set, it returns a string
@@ -690,9 +678,7 @@ representation of the type tag."
   (unless (member tag type-tag-enum)
     (scm-error 'wrong-type-arg "type-tag->string" "Not a type-tag-enum symbol: ~S"
                (list tag) (list tag)))
-  (%type-tag-to-string (list-index
-                        (lambda (x) (eqv? x tag))
-                        type-tag-enum)))
+  (%type-tag-to-string (enum-symbol->integer type-tag-enum tag)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; GIBaseInfo
@@ -708,12 +694,18 @@ representation of the type tag."
 (define (is-base-info? info)
   (gibaseinfo? info))
 
+(define (base-info-equal? info1 info2)
+  "Returns #t if the two <gibaseinfo> describe the same entity."
+  (assert-gibaseinfo "base-info-equal?" info1)
+  (assert-gibaseinfo "base-info-equal?" info2)
+  (base-info-equal info1 info2))
+
 (define (base-info-get-type info)
   "Returns a symbol from the info-type-enum set that indicates
 the type of the given <gibaseinfo>."
   (assert-gibaseinfo "base-info-get-type" info)
   (let ((typ (%base-info-get-type info)))
-    (list-ref info-type-enum typ)))
+    (integer->enum-symbol info-type-enum typ)))
 
 (define (base-info-get-namespace info)
   "Returns the string representation of the namespace associated with
@@ -757,9 +749,7 @@ the string representation of that info type."
   (unless (member tag info-type-enum)
     (scm-error 'wrong-type-arg "info-tag->string" "Not an info-tag-enum symbol: ~S"
                (list tag) (list tag)))
-  (%info-type-to-string (list-index
-                         (lambda (x) (eqv? x tag))
-                         info-type-enum)))
+  (%info-type-to-string (enum-symbol->integer info-type-enum tag)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; GICallableInfo
@@ -861,7 +851,7 @@ of the callable is probably of no interest to a language binding."
 (define (is-function-info? info)
   "Returns #t if the given <gibaseinfo> is a function, method,
 or constructor."
-  (assert-gibaseinfo "is-callable-info?" info)
+  (assert-gibaseinfo "is-function-info?" info)
   (%is-function-info info))
 
 (define-syntax assert-gifunctioninfo
@@ -888,7 +878,8 @@ with the function <gibaseinfo>, e.g. if it is a method, a getter, etc"
 this returns the property <gibaseinfo> that this function is
 a getter or setter of."
   (assert-gifunctioninfo "function-info-get-property" info)
-  (unless (member (function-info-get-flags info) '(getter setter))
+  (unless (or (memq 'getter (function-info-get-flags info))
+              (memq 'setter (function-info-get-flags info)))
     (scm-error 'wrong-type-arg "function-info-get-property" "Not a getter or setter function <gibaseinfo>: ~S"
                (list info) (list info)))
   (%function-info-get-property info))
@@ -905,7 +896,7 @@ parlance.  This is not to be confused with a Scheme symbol."
 function, this returns the <gibaseinfo> of the virtual function that
 this function overrides."
   (assert-gifunctioninfo "function-info-get-vfunc" info)
-  (unless (member (function-info-get-flags info) '(wraps-vfunc))
+  (unless (memq 'wraps-vfunc (function-info-get-flags info))
     (scm-error 'wrong-type-arg "function-info-get-vfunc" "Not a function <gibaseinfo> that wraps virtual function: ~S"
                (list info) (list info)))
   (%function-info-get-vfunc info))
@@ -931,7 +922,7 @@ this function overrides."
 (define (is-signal-info? info)
   "Returns #t if the given <gibaseinfo> is a function, method,
 or constructor."
-  (assert-gibaseinfo "is-callable-info?" info)
+  (assert-gibaseinfo "is-signal-info?" info)
   (%is-signal-info info))
 
 (define-syntax assert-gisignalinfo
@@ -1039,7 +1030,7 @@ struct with a GType."
 (define (registered-type-info-get-type-name info)
   "Given a registered type <gibaseinfo>, this returns the
 string name of that type."
-  (assert-giregisteredtypeinfo "registered-type-info-get-name" info)
+  (assert-giregisteredtypeinfo "registered-type-info-get-type-name" info)
   (%registered-type-info-get-type-name info))
 
 (define (registered-type-info-get-type-init info)
@@ -1058,7 +1049,7 @@ the environment at parse type differs from the envirnoment at run time.
 The only useful thing to do with this function is to check if a type
 info *has* a gtype, or possibly to pass it to
 get-object-gtype-interfaces."
-  (assert-giregisteredtypeinfo "registered-type-info-get-g-type?" info)
+  (assert-giregisteredtypeinfo "registered-type-info-get-g-type" info)
   (%registered-type-info-get-g-type info))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1113,10 +1104,7 @@ the string representation of the error domain for this enumeration."
   "Given an enum <gibaseinfo>, this returns a type-tag symbol
 of the type used for the enum by the C ABI."
   (assert-gienuminfo "enum-info-get-storage-type" info)
-  (let ((tag (%enum-info-get-storage-type info)))
-    (%type-tag-is-basic (list-index
-                         (lambda (x) (eqv? x tag))
-                         type-tag-enum))))
+  (integer->enum-symbol type-tag-enum (%enum-info-get-storage-type info)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; GIValueInfo
@@ -1280,7 +1268,7 @@ returns a type-info <gibaseinfo> that gives type information
 about the discriminator field."
   (assert-giunioninfo "union-info-get-discriminator-type" info)
   (unless (union-info-is-discriminated? info)
-    (scm-error 'wrong-type-arg "union-info-discriminator-type" "Not a discriminated union <gibaseinfo>: ~S"
+    (scm-error 'wrong-type-arg "union-info-get-discriminator-type" "Not a discriminated union <gibaseinfo>: ~S"
                (list info) (list info)))
   (%union-info-get-discriminator-type info))
 
@@ -1469,7 +1457,7 @@ of signals that this object type has."
   "Given an object <gibaseinfo>, returns, as a signal-info <gibaseinfo>,
 the n-th signal associated with this object."
   (assert-giobjectinfo "object-info-get-signal" info)
-  (assert-index-integer "object-info-get-n-signals" n (object-info-get-n-signals info))
+  (assert-index-integer "object-info-get-signal" n (object-info-get-n-signals info))
   (%object-info-get-signal info n))
 
 (define (object-info-find-signal info name)
@@ -1547,7 +1535,7 @@ object instance pointer of this object type.  Otherwise #f."
 function that should be called to convert an object instance pointer
 of this object type to a GValue.  Otherwise #f."
   (assert-giobjectinfo "object-info-get-get-value-function" info)
-  (%object-info-get-set-value-function info))
+  (%object-info-get-get-value-function info))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; GIInterfaceInfo
@@ -1872,7 +1860,7 @@ the field from the beginning of the struct or union."
   "Given a field <gibaseinfo>, obtains the size in bits
 necessary to hold the field."
   (assert-gifieldinfo "field-info-get-size" info)
-  (%field-info-get-offset info))
+  (%field-info-get-size info))
 
 (define (field-info-get-type info)
   "Given a field <gibaseinfo>, this returns a type <gibaseinfo> that
@@ -1940,7 +1928,7 @@ that describes the getter for this property."
   "Given a property <gibaseinfo>, obtains the function <gibaseinfo>
 that describes the setter for this property."
   (assert-gipropertyinfo "property-info-get-setter" info)
-  (%property-info-get-getter info))
+  (%property-info-get-setter info))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; GITypeInfo
@@ -1969,10 +1957,7 @@ is passed by reference."
   "Given a type <gibaseinfo>, returns a symbol that is the
 type tag of the type, such as 'int32, 'double, or 'glist."
   (assert-gitypeinfo "type-info-get-tag" info)
-  (let ((tag (%type-info-get-tag info)))
-    (list-index
-     (lambda (x) (eqv? x tag))
-     type-tag-enum)))
+  (integer->enum-symbol type-tag-enum (%type-info-get-tag info)))
 
 (define (type-info-get-param-type info n)
   "Given a type <gibaseinfo>, returns the type <gibaseinfo>
