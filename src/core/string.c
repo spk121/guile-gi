@@ -75,7 +75,12 @@ concatenate4(const char *str1, const char *str2, const char *str3, const char *s
 char *
 decorate_string(const char *fmt, const char *str)
 {
-    int len = snprintf(NULL, 0, fmt, str) + 1;
+    int n = snprintf(NULL, 0, fmt, str);
+    if (n < 0) {
+        fprintf(stderr, "Bad format string\n");
+        exit(1);
+    }
+    size_t len = (size_t)n + 1;
     char *out = malloc(len);
     if (out == NULL) {
         fprintf(stderr, "Out of memory\n");
@@ -101,7 +106,7 @@ make_scm_name(const char *gname)
 
     size_t j = 0;
     for (size_t i = 0; i < len; i++) {
-        if (islower(gname[i])) {
+        if (islower((unsigned char)gname[i])) {
             str[j++] = gname[i];
             was_lower = 1;
         }
@@ -113,14 +118,14 @@ make_scm_name(const char *gname)
             str[j++] = gname[i];
             was_lower = 0;
         }
-        else if (isdigit(gname[i])) {
+        else if (isdigit((unsigned char)gname[i])) {
             str[j++] = gname[i];
             was_lower = 0;
         }
-        else if (isupper(gname[i])) {
+        else if (isupper((unsigned char)gname[i])) {
             if (was_lower)
                 str[j++] = '-';
-            str[j++] = tolower(gname[i]);
+            str[j++] = tolower((unsigned char)gname[i]);
             was_lower = 0;
         }
     }
@@ -147,7 +152,7 @@ skip_prefix(const char *name, const char *prefix)
     /* strip off prefix from value name, while keeping it a valid
      * identifier */
     for (i = prefix_len + 1; i > 0; i--) {
-        if (isalpha(name[i - 1]) || name[i - 1] == '_') {
+        if (isalpha((unsigned char)name[i - 1]) || name[i - 1] == '_') {
             return &name[i - 1];
         }
     }

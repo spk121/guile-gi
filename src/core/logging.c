@@ -114,7 +114,7 @@ bool
 log_writer_supports_color(int fd)
 {
     static int first = 1;
-    bool color = false;
+    static bool color = false;
     if (first) {
         first = 0;
         color = is_color_term(getenv("TERM"));
@@ -143,7 +143,7 @@ log_writer_fallback(LogLevelFlags flags, const LogField *fields, size_t n_fields
     const LogField *message;
 
     FILE *outfp = log_level_to_file(flags);
-    const char *prefix = NULL;
+    const char *prefix = "LOG";
     switch (flags & LOG_LEVEL_MASK) {
     case LOG_LEVEL_ERROR:
         prefix = "ERROR";
@@ -186,6 +186,8 @@ log_writer_fallback(LogLevelFlags flags, const LogField *fields, size_t n_fields
 void
 log_set_writer_func(LogWriterFunc func, void *_user_data, DestroyNotify _user_data_free)
 {
+    if (log_writer_user_data_free && log_writer_user_data)
+        log_writer_user_data_free(log_writer_user_data);
     log_writer_func = func;
     log_writer_user_data = _user_data;
     log_writer_user_data_free = _user_data_free;
@@ -298,7 +300,8 @@ log_structured(const char *log_domain, LogLevelFlags log_level, ...)
             stack_fields[i] = field;
     }
 
-    n_fields = i;
+    /* Fields beyond the 16 that fit in stack_fields were dropped above. */
+    n_fields = (i < 16) ? i : 16;
 
     format = va_arg(args, char *);
 
