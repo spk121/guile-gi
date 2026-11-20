@@ -127,7 +127,7 @@ vgcore*
 *~
 \#*\#
 coverage
-doc/stamp-vti
-doc/version.texi
+docs/stamp-vti
+docs/version.texi
 tmp
 tmp.*
