@@ -46,9 +46,14 @@ static void gc_free_gibaseinfo (SCM x);
 
 SCM gibaseinfo_fo_type = SCM_BOOL_F;
 
+// Takes ownership of one reference to C_INFO.  Many libgirepository
+// getters return NULL for "none", which becomes #f rather than a
+// <gibaseinfo> holding NULL.
 SCM
 _scm_from_gibaseinfo (GIBaseInfo *c_info)
 {
+    if (c_info == nullptr)
+        return SCM_BOOL_F;
     return scm_make_foreign_object_1 (gibaseinfo_fo_type, c_info);
 }
 
@@ -70,6 +75,10 @@ _scm_is_gibaseinfo (SCM x)
 GIBaseInfo *
 _scm_to_gibaseinfo (SCM x)
 {
+    // scm_foreign_object_ref doesn't check its argument, so anything
+    // but a live <gibaseinfo> would be dereferenced as one.
+    if (!_scm_is_gibaseinfo (x))
+        scm_wrong_type_arg_msg (NULL, 0, x, "<gibaseinfo>");
     return scm_foreign_object_ref (x, 0);
 }
 
@@ -79,7 +88,7 @@ gig_is_gibaseinfo_p (SCM x)
     return scm_from_bool (_scm_is_gibaseinfo (x));
 }
 
-SCM
+static SCM
 gig_gibaseinfo_equalp (SCM x, SCM y)
 {
     return scm_from_bool (_scm_to_gibaseinfo (x) == _scm_to_gibaseinfo (y));
@@ -120,6 +129,8 @@ static size_t
 strvlen(char **arr)
 {
     size_t i = 0;
+    if (arr == nullptr)
+        return 0;
     while(arr[i] != nullptr) {
         i++;
         if (i == SIZE_MAX - 1)
@@ -144,16 +155,14 @@ free_arrayn(void **arr, size_t n)
 static void
 free_strv(char **arr)
 {
-    size_t i = 0;
-    if (arr == nullptr)
-        return;
-    while(arr[i] != nullptr) {
-        free(arr[i]);
-        arr[i] = nullptr;
-        i++;
-    }
-    free(arr);
-    arr = nullptr;
+    // String vectors from libgirepository are GLib-allocated.
+    g_strfreev(arr);
+}
+
+static void
+free_string_list(void *lst)
+{
+    g_list_free_full(lst, g_free);
 }
 
 
@@ -228,13 +237,9 @@ gig_irepository_get_loaded_namespaces()
     c_namespaces = g_irepository_get_loaded_namespaces(nullptr);
     scm_dynwind_unwind_handler((scm_unwind_handler_t) free_strv,
                                c_namespaces, SCM_F_WIND_EXPLICITLY);
-    if (c_namespaces == nullptr)
-        return SCM_EOL;
     len = strvlen(c_namespaces);
-    if (len == 0) {
-        return SCM_EOL;
-    }
-    ret = utf8_arrayn_to_scheme_list(c_namespaces, len);
+    if (len > 0)
+        ret = utf8_arrayn_to_scheme_list(c_namespaces, len);
     scm_dynwind_end();
 
     return ret;
@@ -285,8 +290,7 @@ gig_irepository_enumerate_versions(SCM s_namespace)
     c_namespace = scm_to_utf8_string(s_namespace);
     scm_dynwind_free(c_namespace);
     c_lst = g_irepository_enumerate_versions(nullptr, c_namespace);
-    scm_dynwind_unwind_handler((scm_unwind_handler_t) g_list_free_full,
-                               c_lst, SCM_F_WIND_EXPLICITLY);
+    scm_dynwind_unwind_handler(free_string_list, c_lst, SCM_F_WIND_EXPLICITLY);
     c_lst_cur = c_lst;
     while (c_lst_cur != nullptr) {
         ret = scm_cons(scm_from_utf8_string(c_lst_cur->data), ret);
@@ -354,14 +358,14 @@ gig_irepository_get_typelib_path(SCM s_namespace)
     const char *c_path;
 
     scm_dynwind_begin(0);
-    // A locale string since it is a filename
-    c_namespace = scm_to_locale_string(s_namespace);
+    c_namespace = scm_to_utf8_string(s_namespace);
     scm_dynwind_free(c_namespace);
     c_path = g_irepository_get_typelib_path(nullptr, c_namespace);
     scm_dynwind_end();
 
     if (c_path == nullptr)
         return SCM_BOOL_F;
+    // A locale string since it is a filename
     return scm_from_locale_string(c_path);
 }
 
@@ -429,17 +433,20 @@ SCM
 gig_irepository_require_private(SCM s_typelib_dir,
                                 SCM s_namespace, SCM s_version, SCM s_flags)
 {
-    char *c_typelib_dir, *c_namespace, *c_version;
+    char *c_typelib_dir, *c_namespace, *c_version = nullptr;
     int c_flags;
     GError *error = nullptr;
 
     scm_dynwind_begin(0);
-    c_typelib_dir = scm_to_utf8_string(s_typelib_dir);
+    // A locale string since it is a filename
+    c_typelib_dir = scm_to_locale_string(s_typelib_dir);
     scm_dynwind_free(c_typelib_dir);
     c_namespace = scm_to_utf8_string(s_namespace);
     scm_dynwind_free(c_namespace);
-    c_version = scm_to_utf8_string(s_namespace);
-    scm_dynwind_free(c_version);
+    if (scm_is_true(s_version)) {
+        c_version = scm_to_utf8_string(s_version);
+        scm_dynwind_free(c_version);
+    }
     c_flags = scm_to_int(s_flags);
 
     g_irepository_require_private(nullptr,
@@ -522,7 +529,7 @@ gig_irepository_find_by_gtype (SCM s_gtype)
 SCM
 gig_irepository_find_by_error_domain (SCM s_quark)
 {
-    GQuark c_quark = scm_to_size_t(s_quark);
+    GQuark c_quark = scm_to_uint32(s_quark);
     GIEnumInfo *c_info;
     c_info = g_irepository_find_by_error_domain(nullptr, c_quark);
     if (c_info != nullptr)
@@ -560,10 +567,10 @@ gig_irepository_get_object_gtype_interfaces(SCM s_gtype)
     g_irepository_get_object_gtype_interfaces (nullptr, c_gtype, &n, &infos);
     SCM ret = SCM_EOL;
 
-    for (unsigned i = 0; i < n; i ++) {
-        ret = scm_cons (_scm_from_gibaseinfo(infos[i]), ret);
-        i++;
-    }
+    // The infos are owned by the repository (transfer none), so take
+    // a reference for each <gibaseinfo>, which unrefs it when collected.
+    for (unsigned i = 0; i < n; i ++)
+        ret = scm_cons (_scm_from_gibaseinfo(g_base_info_ref(infos[i])), ret);
     return scm_reverse(ret);
 }
 
@@ -761,6 +768,8 @@ gig_base_info_get_container(SCM s_info)
 {
     GIBaseInfo *c_info = _scm_to_gibaseinfo(s_info);
     GIBaseInfo *c_info2 = g_base_info_get_container(c_info);
+    if (c_info2 == nullptr)
+        return SCM_BOOL_F;
     return _scm_from_gibaseinfo(g_base_info_ref(c_info2));
 }
 
@@ -946,7 +955,7 @@ gig_function_info_get_property(SCM s_info)
     GIBaseInfo *c_ret = g_function_info_get_property(c_info);
     if (c_ret == nullptr)
         return SCM_BOOL_F;
-    return _scm_from_gibaseinfo(c_info);
+    return _scm_from_gibaseinfo(c_ret);
 }
 
 SCM
@@ -966,7 +975,7 @@ gig_function_info_get_vfunc(SCM s_info)
     GIBaseInfo *c_ret = g_function_info_get_vfunc(c_info);
     if (c_ret == nullptr)
         return SCM_BOOL_F;
-    return _scm_from_gibaseinfo(c_info);
+    return _scm_from_gibaseinfo(c_ret);
 }
 
 // g_function_info_invoke is not necessary
@@ -1004,7 +1013,7 @@ gig_signal_info_get_class_closure(SCM s_info)
     GIBaseInfo *c_ret = g_signal_info_get_class_closure(c_info);
     if (c_ret == nullptr)
         return SCM_BOOL_F;
-    return _scm_from_gibaseinfo(c_info);
+    return _scm_from_gibaseinfo(c_ret);
 }
 
 SCM
@@ -1049,7 +1058,7 @@ SCM
 gig_vfunc_info_get_offset(SCM s_info)
 {
     GIBaseInfo *c_info = _scm_to_gibaseinfo(s_info);
-    return scm_from_int(g_vfunc_info_get_flags(c_info));
+    return scm_from_int(g_vfunc_info_get_offset(c_info));
 }
 
 SCM
@@ -1168,14 +1177,14 @@ gig_enum_info_get_method(SCM s_info, SCM s_n)
     c_ret = g_enum_info_get_method(c_info, c_n);
     if (c_ret == nullptr)
         return SCM_BOOL_F;
-    return _scm_from_gibaseinfo(c_info);
+    return _scm_from_gibaseinfo(c_ret);
 }
 
 SCM
 gig_enum_info_get_storage_type(SCM s_info)
 {
     GIBaseInfo *c_info = _scm_to_gibaseinfo(s_info);
-    return _scm_from_gibaseinfo(c_info);
+    return scm_from_int(g_enum_info_get_storage_type(c_info));
 }
 
 SCM
@@ -1470,14 +1479,20 @@ SCM
 gig_object_info_get_type_name(SCM s_info)
 {
     GIBaseInfo *c_info = _scm_to_gibaseinfo(s_info);
-    return scm_from_utf8_string(g_object_info_get_type_name(c_info));
+    const char *c_ret = g_object_info_get_type_name(c_info);
+    if (c_ret == nullptr)
+        return SCM_BOOL_F;
+    return scm_from_utf8_string(c_ret);
 }
 
 SCM
 gig_object_info_get_type_init(SCM s_info)
 {
     GIBaseInfo *c_info = _scm_to_gibaseinfo(s_info);
-    return scm_from_utf8_string(g_object_info_get_type_init(c_info));
+    const char *c_ret = g_object_info_get_type_init(c_info);
+    if (c_ret == nullptr)
+        return SCM_BOOL_F;
+    return scm_from_utf8_string(c_ret);
 }
 
 SCM
@@ -1701,7 +1716,10 @@ SCM
 gig_object_info_get_ref_function(SCM s_info)
 {
     GIBaseInfo *c_info = _scm_to_gibaseinfo(s_info);
-    return scm_from_utf8_string(g_object_info_get_ref_function(c_info));
+    const char *c_ret = g_object_info_get_ref_function(c_info);
+    if (c_ret == nullptr)
+        return SCM_BOOL_F;
+    return scm_from_utf8_string(c_ret);
 }
 
 // g_object_info_get_ref_function_pointer is not useful
@@ -1710,7 +1728,10 @@ SCM
 gig_object_info_get_unref_function(SCM s_info)
 {
     GIBaseInfo *c_info = _scm_to_gibaseinfo(s_info);
-    return scm_from_utf8_string(g_object_info_get_unref_function(c_info));
+    const char *c_ret = g_object_info_get_unref_function(c_info);
+    if (c_ret == nullptr)
+        return SCM_BOOL_F;
+    return scm_from_utf8_string(c_ret);
 }
 
 // g_object_info_get_unref_function_pointer is not useful
@@ -1719,7 +1740,10 @@ SCM
 gig_object_info_get_set_value_function(SCM s_info)
 {
     GIBaseInfo *c_info = _scm_to_gibaseinfo(s_info);
-    return scm_from_utf8_string(g_object_info_get_set_value_function(c_info));
+    const char *c_ret = g_object_info_get_set_value_function(c_info);
+    if (c_ret == nullptr)
+        return SCM_BOOL_F;
+    return scm_from_utf8_string(c_ret);
 }
 
 // g_object_info_get_set_value_function_pointer is not useful
@@ -1728,7 +1752,10 @@ SCM
 gig_object_info_get_get_value_function(SCM s_info)
 {
     GIBaseInfo *c_info = _scm_to_gibaseinfo(s_info);
-    return scm_from_utf8_string(g_object_info_get_get_value_function(c_info));
+    const char *c_ret = g_object_info_get_get_value_function(c_info);
+    if (c_ret == nullptr)
+        return SCM_BOOL_F;
+    return scm_from_utf8_string(c_ret);
 }
 
 // g_object_info_get_get_value_function_pointer is not useful
@@ -1798,7 +1825,7 @@ gig_interface_info_get_method(SCM s_info, SCM s_n)
     int c_n = scm_to_int(s_n);
     GIBaseInfo *c_ret;
     c_ret = g_interface_info_get_method(c_info, c_n);
-    if (c_info == nullptr)
+    if (c_ret == nullptr)
         return SCM_BOOL_F;
     return _scm_from_gibaseinfo(c_ret);
 }
@@ -1844,7 +1871,7 @@ gig_interface_info_find_signal(SCM s_info, SCM s_name)
     GIBaseInfo *c_ret;
     c_ret = g_interface_info_find_signal(c_info, c_name);
     free(c_name);
-    if (c_info == nullptr)
+    if (c_ret == nullptr)
         return SCM_BOOL_F;
     return _scm_from_gibaseinfo(c_ret);
 }
@@ -2078,11 +2105,13 @@ gig_constant_info_get_value(SCM s_info)
         s_value = scm_from_uint64(value.v_uint64);
         break;
     case GI_TYPE_TAG_UTF8:
-        s_value = scm_from_utf8_string(value.v_string);
+        s_value = value.v_string ? scm_from_utf8_string(value.v_string) : SCM_BOOL_F;
         break;
     default:
     {
         SCM tagname = scm_from_utf8_string(g_type_tag_to_string(typetag));
+        g_constant_info_free_value(c_info, &value);
+        g_base_info_unref(typeinfo);
         scm_misc_error("constant-info-get-value",
                        "unsupported constant type '~a'",
                        scm_list_1(tagname));
@@ -2090,6 +2119,7 @@ gig_constant_info_get_value(SCM s_info)
     }
     }
     g_constant_info_free_value(c_info, &value);
+    g_base_info_unref(typeinfo);
     return s_value;
 }
 
@@ -2440,7 +2470,7 @@ gig_init_girepository ()
         scm_c_define_gsubr ("%callable-info-get-n-args", 1, 0, 0,
                             gig_callable_info_get_n_args);
         scm_c_define_gsubr ("%callable-info-get-arg", 2, 0, 0,
-                            gig_callable_info_get_n_args);
+                            gig_callable_info_get_arg);
         scm_c_define_gsubr ("%callable-info-get-caller-owns", 1, 0, 0,
                             gig_callable_info_get_caller_owns);
         scm_c_define_gsubr ("%callable-info-get-instance-ownership-transfer",
