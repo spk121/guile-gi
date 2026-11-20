@@ -206,6 +206,16 @@
          (obj2 (value-passthrough G_TYPE_OBJECT obj)))
     (eqv? obj obj2)))
 
+(test-assert "get GLib object repeatedly, then collect"
+  ;; Each read used to wrap the GValue's own reference, so collecting
+  ;; the extra wrappers released the object more than once.
+  (let ((obj (make <GObject>))
+        (value (make <GValue>)))
+    (set! (value G_TYPE_OBJECT) obj)
+    (do ((i 0 (1+ i))) ((= i 5)) (value))
+    (do ((i 0 (1+ i))) ((= i 5)) (gc))
+    (is-a? (value) <GObject>)))
+
 (test-equal "transform"
   "42"
   (let ((value (make <GValue>)))
@@ -236,5 +246,23 @@
                     (cons G_TYPE_INT #*11)
                     (map int->value '(21 2))))
          list)))
+
+(test-assert "inout-closure outputs can be collected"
+  ;; The output GValues used to share a single allocation that was
+  ;; freed once per output.
+  (begin
+    (do ((n 0 (1+ n))) ((= n 50))
+      (call-with-values
+          (lambda ()
+            (apply (procedure->closure
+                    (lambda (a b)
+                      (let ((c (* a b)))
+                        (values c c c)))
+                    #*11)
+                   (cons G_TYPE_INT #*11)
+                   (map int->value '(21 2))))
+        list))
+    (do ((i 0 (1+ i))) ((= i 5)) (gc))
+    #t))
 
 (test-end "value")

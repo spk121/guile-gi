@@ -16,6 +16,7 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <stdio.h>
+#include <inttypes.h>
 #include <libguile.h>
 #include <girepository.h>
 #include <ffi.h>
@@ -122,7 +123,11 @@ gig_type_define_full(GType gtype, SCM extra_supers)
 
         SCM new_type = make_type_with_gtype(gtype, extra_supers);
 
-        g_return_val_if_fail(!scm_is_unknown_class(new_type), defs);
+        if (scm_is_unknown_class(new_type)) {
+            g_critical("%s: could not make a class for %s", G_STRFUNC, g_type_name(gtype));
+            free(_type_class_name);
+            return defs;
+        }
 
         SCM key = gig_type_associate(gtype, new_type);
         scm_define(key, new_type);
@@ -189,6 +194,8 @@ make_type_with_gtype(GType gtype, SCM extra_supers)
 {
     char *_type_class_name = gig_type_class_name_from_gtype(gtype);
     SCM type_class_name = scm_from_utf8_symbol(_type_class_name);
+    free(_type_class_name);
+    _type_class_name = NULL;
 
     GType parent = g_type_parent(gtype);
     GType fundamental = g_type_fundamental(gtype);
@@ -207,8 +214,8 @@ make_type_with_gtype(GType gtype, SCM extra_supers)
         for (unsigned i = 0; i < _class->n_values; i++) {
             SCM key = scm_from_utf8_symbol(_class->values[i].value_nick);
             SCM value = scm_from_int(_class->values[i].value);
-            gig_debug_load("%s - add enum %s %d",
-                           _type_class_name, _class->values[i].value_nick,
+            gig_debug_load("<%s> - add enum %s %d",
+                           g_type_name(gtype), _class->values[i].value_nick,
                            _class->values[i].value);
             scm_hashq_set_x(obarray, key, value);
         }
@@ -229,9 +236,9 @@ make_type_with_gtype(GType gtype, SCM extra_supers)
 
         for (unsigned i = 0; i < _class->n_values; i++) {
             SCM key = scm_from_utf8_symbol(_class->values[i].value_nick);
-            SCM value = scm_from_int(_class->values[i].value);
-            gig_debug_load("%s - add flag %s %u",
-                           _type_class_name, _class->values[i].value_nick,
+            SCM value = scm_from_uint(_class->values[i].value);
+            gig_debug_load("<%s> - add flag %s %u",
+                           g_type_name(gtype), _class->values[i].value_nick,
                            _class->values[i].value);
             scm_hashq_set_x(obarray, key, value);
         }
@@ -261,7 +268,7 @@ make_type_with_gtype(GType gtype, SCM extra_supers)
             if (GI_IS_STRUCT_INFO(info))
                 size = g_struct_info_get_size((GIStructInfo *) info);
             if (GI_IS_UNION_INFO(info))
-                size = g_union_info_get_size((GIStructInfo *) info);
+                size = g_union_info_get_size((GIUnionInfo *) info);
             g_base_info_unref(info);
         }
 
@@ -289,7 +296,7 @@ make_type_with_gtype(GType gtype, SCM extra_supers)
 
         for (unsigned n = 0; n < n_interfaces; n++)
             dsupers = scm_cons(gig_type_get_scheme_type(interfaces[n]), dsupers);
-        free(interfaces);
+        g_free(interfaces);
 
         // dsupers need to be sorted, or else Guile will barf
         dsupers = scm_sort_x(dsupers, type_less_p_proc);
@@ -310,7 +317,7 @@ make_type_with_gtype(GType gtype, SCM extra_supers)
 
         for (unsigned n = 0; n < n_interfaces; n++)
             dsupers = scm_cons(gig_type_get_scheme_type(interfaces[n]), dsupers);
-        free(interfaces);
+        g_free(interfaces);
 
         dsupers = scm_sort_x(dsupers, type_less_p_proc);
         new_type = scm_make_class_with_name(dsupers, slots, type_class_name);
@@ -360,11 +367,11 @@ make_type_with_info(GIRegisteredTypeInfo *info, SCM slots)
 
             switch (t) {
             case GI_INFO_TYPE_ENUM:
-                gig_debug_load("%s - add enum %s %d", name, _key, _val);
+                gig_debug_load("%s - add enum %s %" PRId64, name, _key, _val);
                 val = scm_from_int(_val);
                 break;
             case GI_INFO_TYPE_FLAGS:
-                gig_debug_load("%s - add flag %s %u", name, _key, _val);
+                gig_debug_load("%s - add flag %s %" PRId64, name, _key, _val);
                 val = scm_from_uint(_val);
                 break;
             default:
@@ -551,8 +558,8 @@ gig_type_get_scheme_type_with_info(GIRegisteredTypeInfo *info)
 SCM
 gig_type_transfer_object(GType type, void *ptr, GITransfer transfer)
 {
-    if (G_TYPE_IS_CLASSED(type))
-        type = G_OBJECT_TYPE(ptr);
+    if (ptr != NULL && G_TYPE_IS_CLASSED(type))
+        type = G_TYPE_FROM_INSTANCE(ptr);
 
     gig_debug_transfer("gig_type_transfer_object(%s, %p, %d)", g_type_name(type), ptr, transfer);
 
@@ -570,8 +577,10 @@ gig_type_transfer_object(GType type, void *ptr, GITransfer transfer)
         if (ref)
             pointer = scm_from_pointer(ref(ptr), unref);
         else {
+            // We don't own PTR and can't take a reference, so we
+            // mustn't release it either.
             gig_debug_transfer("%s has no ref function", g_type_name(type));
-            pointer = scm_from_pointer(ptr, unref);
+            pointer = scm_from_pointer(ptr, NULL);
         }
         break;
 
@@ -799,7 +808,7 @@ scm_type_gtype_get_children(SCM s_gtype)
             entry = scm_from_uintptr_t(children[i]);
             ret = scm_append(scm_list_2(ret, scm_list_1(entry)));
         }
-        free(children);
+        g_free(children);
     }
 
     return ret;
@@ -825,7 +834,7 @@ scm_type_gtype_get_interfaces(SCM s_gtype)
             entry = scm_from_uintptr_t(interfaces[i]);
             ret = scm_append(scm_list_2(ret, scm_list_1(entry)));
         }
-        free(interfaces);
+        g_free(interfaces);
     }
 
     return ret;
@@ -926,7 +935,7 @@ scm_allocate_boxed(SCM type)
     if (size == 0)
         scm_out_of_range("%allocate-boxed", s_size);
 
-    void *boxed = xcalloc(1, size);
+    void *boxed = g_malloc0(size);
     GigTypeUnrefFunction unref;
     unref = (GigTypeUnrefFunction)scm_to_pointer(scm_get_class_unref_slot(type));
     SCM pointer = scm_from_pointer(boxed, unref);

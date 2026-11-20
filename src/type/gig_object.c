@@ -57,6 +57,21 @@ gig_paramspec_peek(SCM object)
     return gig_type_peek_typed_object(object, gig_paramspec_type());
 }
 
+typedef struct
+{
+    size_t n;
+    GValue *values;
+} GigValueArray;
+
+static void
+unset_value_array(void *data)
+{
+    GigValueArray *arr = data;
+    for (size_t i = 0; i < arr->n; i++)
+        if (G_IS_VALUE(&arr->values[i]))
+            g_value_unset(&arr->values[i]);
+}
+
 static SCM
 gig_i_scm_make_gobject(SCM s_gtype, SCM s_prop_keylist)
 {
@@ -67,6 +82,7 @@ gig_i_scm_make_gobject(SCM s_gtype, SCM s_prop_keylist)
     size_t n_prop;
     const char **keys;
     GValue *values;
+    GigValueArray value_array = { 0, NULL };
 
     type = scm_to_gtype(s_gtype);
 
@@ -85,6 +101,10 @@ gig_i_scm_make_gobject(SCM s_gtype, SCM s_prop_keylist)
         n_prop = scm_c_length(s_prop_keylist) / 2;
         keys = scm_dynfree(calloc(n_prop, sizeof(char *)));
         values = scm_dynfree(calloc(n_prop, sizeof(GValue)));
+        value_array.n = n_prop;
+        value_array.values = values;
+        // Registered after scm_dynfree, so it runs before VALUES is freed.
+        scm_dynwind_unwind_handler(unset_value_array, &value_array, SCM_F_WIND_EXPLICITLY);
 
         SCM iter = s_prop_keylist;
         for (size_t i = 0; i < n_prop; i++, iter = scm_cddr(iter)) {
@@ -209,6 +229,7 @@ gig_i_scm_set_property_x(SCM self, SCM property, SCM svalue)
     g_value_init(&value, G_PARAM_SPEC_VALUE_TYPE(pspec));
     gig_value_from_scm_with_error(&value, svalue, "%set-property!", SCM_ARG3);
     g_object_set_property(obj, pspec->name, &value);
+    g_value_unset(&value);
 
     return SCM_UNSPECIFIED;
 }
@@ -223,12 +244,52 @@ make_new_signal(GigSignalSpec *signal_spec, void *user_data)
                   NULL, signal_spec->return_type, signal_spec->n_params, signal_spec->param_types);
 }
 
+// Each instance of a user-defined type stores the values of all of
+// its class's properties, along with the GParamSpec each value
+// belongs to.  Values are found by GParamSpec, not property id:
+// property ids are only unique within the class that installed
+// them, and g_object_class_list_properties lists inherited
+// properties first, so an id is not an index into this array.
+typedef struct
+{
+    unsigned n;
+    GParamSpec **pspecs;
+    GValue *values;
+} GigUserObjectProperties;
+
+static void
+gig_user_object_properties_free(void *data)
+{
+    GigUserObjectProperties *props = data;
+    for (unsigned i = 0; i < props->n; i++)
+        if (G_IS_VALUE(&props->values[i]))
+            g_value_unset(&props->values[i]);
+    g_free(props->values);
+    g_free(props->pspecs);
+    g_free(props);
+}
+
+static GValue *
+gig_user_object_find_property(GObject *object, GParamSpec *pspec)
+{
+    GigUserObjectProperties *props = g_object_get_qdata(object, gig_user_object_properties);
+    if (props == NULL)
+        return NULL;
+    for (unsigned i = 0; i < props->n; i++)
+        if (props->pspecs[i] == pspec)
+            return &props->values[i];
+    return NULL;
+}
+
 static void
 gig_user_object_get_property(GObject *object, unsigned property_id, GValue *value,
                              GParamSpec *pspec)
 {
-    GValue *properties = g_object_get_qdata(object, gig_user_object_properties);
-    GValue *property = properties + property_id - 1;
+    GValue *property = gig_user_object_find_property(object, pspec);
+    if (property == NULL) {
+        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
+        return;
+    }
     g_value_copy(property, value);
 }
 
@@ -236,37 +297,51 @@ static void
 gig_user_object_set_property(GObject *object, unsigned property_id,
                              const GValue *value, GParamSpec *pspec)
 {
-    GValue *properties = g_object_get_qdata(object, gig_user_object_properties);
-    GValue *property = properties + property_id - 1;
+    GValue *property = gig_user_object_find_property(object, pspec);
+    if (property == NULL) {
+        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
+        return;
+    }
     g_param_value_convert(pspec, value, property, FALSE);
+}
+
+static void gig_user_object_dispose(GObject *object);
+static void gig_user_object_finalize(GObject *object);
+
+// A user-defined type may derive from another user-defined type, and
+// G_OBJECT_TYPE(object) is the most-derived type, not the one whose
+// handler is running.  Since every user-defined level shares these
+// handlers and adds nothing of its own, chain up to the nearest
+// ancestor that is not a user-defined type.
+static GObjectClass *
+gig_user_object_native_parent_class(GObject *object)
+{
+    GType type = g_type_parent(G_OBJECT_TYPE(object));
+    GObjectClass *klass = g_type_class_peek(type);
+    while (klass->dispose == gig_user_object_dispose
+           && klass->finalize == gig_user_object_finalize) {
+        type = g_type_parent(type);
+        klass = g_type_class_peek(type);
+    }
+    return klass;
 }
 
 static void
 gig_user_object_dispose(GObject *object)
 {
-    GType type, parent_type;
-    void *_parent_class;
-    GObjectClass *parent_class;
-
-    type = G_OBJECT_TYPE(object);
-    parent_type = g_type_parent(type);
-
-    assert(G_TYPE_IS_CLASSED(type));
-    assert(G_TYPE_IS_CLASSED(parent_type));
-
-    gig_debug("dispose is currently just calling the parent's dispose");
-    gig_debug("disposing parent type");
-    _parent_class = g_type_class_ref(parent_type);
-    parent_class = G_OBJECT_CLASS(_parent_class);
-
-    parent_class->dispose(object);
-
-    g_type_class_unref(_parent_class);
+    GObjectClass *parent_class = gig_user_object_native_parent_class(object);
+    if (parent_class->dispose)
+        parent_class->dispose(object);
 }
 
 static void
 gig_user_object_finalize(GObject *object)
 {
+    // The property values are freed with the object's qdata, which
+    // GObject's own finalize clears, so chaining up is all we need.
+    GObjectClass *parent_class = gig_user_object_native_parent_class(object);
+    if (parent_class->finalize)
+        parent_class->finalize(object);
 }
 
 static void
@@ -293,24 +368,24 @@ gig_user_class_init(GObjectClass *_class, void *class_info)
 static void
 gig_user_object_init(GTypeInstance *instance, void *class_ptr)
 {
-    GType type = G_TYPE_FROM_CLASS(class_ptr);
-    GType parent_type = g_type_parent(type);
-    unsigned n_properties;
-    GParamSpec **properties;
-    GTypeQuery query;
+    // instance_init runs once for each user-defined level of the
+    // type hierarchy, but CLASS_PTR is always the most-derived class,
+    // which already lists every property.  Only set up storage once.
+    if (g_object_get_qdata(G_OBJECT(instance), gig_user_object_properties) != NULL)
+        return;
 
-    g_type_query(parent_type, &query);
-    properties = g_object_class_list_properties(class_ptr, &n_properties);
+    GigUserObjectProperties *props = g_new0(GigUserObjectProperties, 1);
+    props->pspecs = g_object_class_list_properties(class_ptr, &props->n);
+    props->values = g_new0(GValue, props->n);
 
-    GValue *instance_properties = xcalloc(n_properties, sizeof(GValue));
-    g_object_set_qdata(G_OBJECT(instance), gig_user_object_properties, instance_properties);
-
-    for (unsigned i = 0; i < n_properties; i++) {
-        const GValue *_default;
-        _default = g_param_spec_get_default_value(properties[i]);
-        g_value_init(instance_properties + i, properties[i]->value_type);
-        g_value_copy(_default, instance_properties + i);
+    for (unsigned i = 0; i < props->n; i++) {
+        const GValue *_default = g_param_spec_get_default_value(props->pspecs[i]);
+        g_value_init(props->values + i, props->pspecs[i]->value_type);
+        g_value_copy(_default, props->values + i);
     }
+
+    g_object_set_qdata_full(G_OBJECT(instance), gig_user_object_properties, props,
+                            gig_user_object_properties_free);
 }
 
 static GType
@@ -421,7 +496,7 @@ signal_lookup(const char *proc, GObject *self,
     *c_signal = g_signal_lookup(name, G_OBJECT_TYPE(self));
     free(name);
 
-    if (c_signal == 0)
+    if (*c_signal == 0)
         scm_misc_error(proc, "~A: unknown signal name ~A",
                        scm_list_2(gig_object_ref(self), s_name));
 
@@ -486,7 +561,7 @@ gig_i_scm_emit(SCM self, SCM signal, SCM s_detail, SCM args)
         args = scm_cons(s_detail, args);
 
     if (scm_c_length(args) != query_info.n_params)
-        scm_misc_error("%emit", "~A: signal ~A has ~d params, but ~d were supplied",
+        scm_misc_error("%emit", "~A: signal ~A has ~A params, but ~A were supplied",
                        scm_list_4(self, signal, scm_from_uint32(query_info.n_params),
                                   scm_length(args)));
 
@@ -504,8 +579,10 @@ gig_i_scm_emit(SCM self, SCM signal, SCM s_detail, SCM args)
     gig_debug("%s - emitting signal", g_signal_name(sigid));
     g_signal_emitv(values, sigid, detail, &retval);
 
-    if (query_info.return_type != G_TYPE_NONE)
-        ret = scm_cons(gig_value_as_scm(&retval, FALSE), ret);
+    if (query_info.return_type != G_TYPE_NONE) {
+        ret = scm_cons(gig_value_as_scm(&retval, TRUE), ret);
+        g_value_unset(&retval);
+    }
 
     SCM output_mask = gig_signal_ref(signal, GIG_SIGNAL_SLOT_OUTPUT_MASK);
     if (scm_is_bitvector(output_mask)) {
@@ -525,7 +602,7 @@ gig_i_scm_emit(SCM self, SCM signal, SCM s_detail, SCM args)
             size_t mask = 1L << (pos % 32);
 
             if (bits[word_pos] & mask)
-                ret = scm_cons(gig_value_as_scm(values + i, FALSE), ret);
+                ret = scm_cons(gig_value_as_scm(values + i, TRUE), ret);
         }
         scm_array_handle_release(&handle);
         ret = scm_reverse_x(ret, SCM_EOL);

@@ -39,6 +39,10 @@ gig_constant_define(GIConstantInfo *info)
         gig_debug_load("%s - boolean constant %d", public_name, value.v_boolean);
         ret = scm_from_bool(value.v_boolean);
         break;
+    case GI_TYPE_TAG_FLOAT:
+        gig_debug_load("%s - float constant %f", public_name, (double)value.v_float);
+        ret = scm_from_double(value.v_float);
+        break;
     case GI_TYPE_TAG_DOUBLE:
         gig_debug_load("%s - double constant %lf", public_name, value.v_double);
         ret = scm_from_double(value.v_double);
@@ -68,7 +72,7 @@ gig_constant_define(GIConstantInfo *info)
         ret = scm_from_uint16(value.v_uint16);
         break;
     case GI_TYPE_TAG_UINT32:
-        gig_debug_load("%s - uint32 constant %d", public_name, (int)value.v_uint32);
+        gig_debug_load("%s - uint32 constant %" PRIu32, public_name, value.v_uint32);
         ret = scm_from_uint32(value.v_uint32);
         break;
     case GI_TYPE_TAG_UINT64:

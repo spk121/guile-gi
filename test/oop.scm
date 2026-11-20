@@ -112,6 +112,39 @@
     (test-signal object)
     blocked))
 
+(test-error "connect unknown signal"
+  #t
+  (connect object
+           (make-signal #:name "no-such-signal" #:return-type G_TYPE_NONE)
+           (lambda _ #t)))
+
+;; A user-defined type derived from another user-defined type, each
+;; with a property of its own.
+(define sub-param
+  (param-spec-string "sub-param" "sub-param" "A string parameter" "default"
+                     (list->param-flags '(readwrite))))
+
+(define <TestSubClass>
+  (register-type "TestSubClass" <TestClass> (list sub-param) '()))
+
+(test-equal "subclass property defaults"
+  '(0 "default")
+  (let ((sub (make <TestSubClass>)))
+    (list (test-param sub) (sub-param sub))))
+
+(test-equal "subclass properties are independent"
+  '(150 "changed")
+  (let ((sub (make <TestSubClass>)))
+    (set! (sub-param sub) "changed")
+    (set! (test-param sub) 150)
+    (list (test-param sub) (sub-param sub))))
+
+(test-assert "subclass instances can be collected"
+  (begin
+    (do ((i 0 (1+ i))) ((= i 20)) (make <TestSubClass>))
+    (do ((i 0 (1+ i))) ((= i 5)) (gc))
+    #t))
+
 (if (false-if-exception (require "Gio" "2.0"))
     (begin
       (test-assert "interface"
