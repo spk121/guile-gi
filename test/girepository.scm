@@ -77,6 +77,19 @@
   #f
   (gir:is-registered? "GdkX11" "3.0"))
 
+(let ((array-type
+       (gir:arg-info-get-type
+        (gir:callable-info-get-arg
+         (gir:struct-info-find-method (gir:find-by-name "GLib" "ByteArray") "append")
+         0))))
+  (test-assert "type-info-get-param-type"
+    (gir:type-info-get-param-type array-type 0))
+  (test-error "type-info-get-param-type past the last parameter"
+    ;; libgirepository doesn't check; this used to return garbage that
+    ;; crashed when used.
+    'out-of-range
+    (gir:type-info-get-param-type array-type 1)))
+
 (if (false-if-exception (gir:require "Gio" #:version "2.0"))
     (begin
       (test-equal "get-object-gtype-interfaces"

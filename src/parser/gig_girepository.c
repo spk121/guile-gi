@@ -2260,6 +2260,24 @@ gig_type_info_get_param_type(SCM s_info, SCM s_n)
 {
     GIBaseInfo *c_info = _scm_to_gibaseinfo(s_info);
     int c_n = scm_to_int(s_n);
+    // g_type_info_get_param_type doesn't check N; past the last
+    // parameter it returns an info for whatever follows in the typelib.
+    // Only these tags have parameters.
+    int n_params;
+    switch (g_type_info_get_tag(c_info)) {
+    case GI_TYPE_TAG_ARRAY:
+    case GI_TYPE_TAG_GLIST:
+    case GI_TYPE_TAG_GSLIST:
+        n_params = 1;
+        break;
+    case GI_TYPE_TAG_GHASH:
+        n_params = 2;
+        break;
+    default:
+        n_params = 0;
+    }
+    if (c_n < 0 || c_n >= n_params)
+        scm_out_of_range("%type-info-get-param-type", s_n);
     return _scm_from_gibaseinfo(g_type_info_get_param_type(c_info, c_n));
 }
 
