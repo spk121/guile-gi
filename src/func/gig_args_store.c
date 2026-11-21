@@ -236,8 +236,10 @@ gig_callable_return_value(GigArgMap *amap, const char *name, GObject *self, SCM 
             sz = out_args[idx].v_size;
         }
 
+        // Convert even a skipped return value: that releases it if we
+        // own it.
         gig_argument_c_to_scm(name, -1, &amap->return_val.meta, return_arg, &s_return, sz);
-        if (scm_is_eq(s_return, SCM_UNSPECIFIED))
+        if (scm_is_eq(s_return, SCM_UNSPECIFIED) || !gig_amap_return_is_returned(amap))
             output = SCM_EOL;
         else
             output = scm_list_1(s_return);
@@ -274,12 +276,16 @@ convert_output_args(GigArgMap *amap, const char *func_name, GIArgument *in, GIAr
             continue;
 
         GigArgMapEntry *entry = gig_amap_get_output_entry_by_c(amap, c_output_pos);
+        // A skipped output is still converted, which releases it if we
+        // own it, but it isn't returned.
+        bool returned = gig_amap_output_is_returned(amap, c_output_pos);
 
         GIArgument *arg;
         arg = find_output_arg(entry, in, out);
         if (arg == NULL)        // an INOUT argument has been eaten
         {
-            output = scm_cons(SCM_UNSPECIFIED, output);
+            if (returned)
+                output = scm_cons(SCM_UNSPECIFIED, output);
             continue;
         }
 
@@ -296,7 +302,8 @@ convert_output_args(GigArgMap *amap, const char *func_name, GIArgument *in, GIAr
         }
 
         gig_argument_c_to_scm(func_name, c_output_pos, &entry->meta, arg, &obj, size);
-        output = scm_cons(obj, output);
+        if (returned)
+            output = scm_cons(obj, output);
     }
     return scm_reverse_x(output, SCM_EOL);
 }

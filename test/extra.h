@@ -182,4 +182,16 @@ _GI_TEST_EXTERN
 void
 extra_return_callback(ExtraIntCallbackInt *func);
 
+_GI_TEST_EXTERN
+gboolean
+extra_skip_out(gint in, gint *skipped, gint *kept);
+
+_GI_TEST_EXTERN
+gchar *
+extra_skip_owned(gchar **str);
+
+_GI_TEST_EXTERN
+gboolean
+extra_skip_bool(void);
+
 #endif /* _EXTRA_H_ */

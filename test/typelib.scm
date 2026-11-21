@@ -3,7 +3,7 @@
              (gi repository)
              (srfi srfi-64))
 
-(use-modules (ice-9 peg))
+(use-modules (ice-9 peg) (sxml simple) (sxml xpath) (srfi srfi-1))
 
 (define %markdown-sample
   "Some text.\n\n# A heading\n\nMore text.\n\n```txt\n# a comment\n[group]\n```\n\nThe end.\n")
@@ -53,6 +53,56 @@
   ;; parse, silently dropping the rest of the docstring.
   (string-length %markdown-sample)
   (peg:end (match-pattern (@@ (gi documentation) doc-string) %markdown-sample)))
+
+(test-assert "documentation headings nest validly in DocBook"
+  ;; Every Markdown heading used to become a refsect2, which DocBook
+  ;; doesn't allow inside a method's refsect2 or inside a table cell.
+  (let* ((gir "<repository xmlns=\"http://www.gtk.org/introspection/core/1.0\">
+<namespace name=\"GObject\"><class name=\"Object\">
+<doc>The base object.\n\n# Overview heading\n\nOverview text.</doc>
+<method name=\"notify\"><doc>Emits notify.\n\n## Details heading\n\nDetail text.</doc>
+<parameters><parameter name=\"property_name\"><doc>The name.\n\n## Note heading\n\nNote text.</doc>
+</parameter></parameters></method></class></namespace></repository>")
+         (%typelib (typelib "GObject" "2.0"))
+         (%doc (parse gir (parse %typelib '())))
+         (tree (xml->sxml (with-output-to-string (lambda () (->docbook %doc)))))
+         (titles (lambda (path) ((sxpath path) tree))))
+    (close %typelib)
+    (and (member "Overview heading" (titles '(// refsect1 refsect2 title *text*)))
+         (member "Details heading" (titles '(// refsect2 refsect3 title *text*)))
+         (member "Note heading" (titles '(// td para emphasis *text*)))
+         (null? ((sxpath '(// td // refsect2)) tree))
+         (null? ((sxpath '(// refsect2 refsect2)) tree)))))
+
+(define (documented-procedure lib type long-name)
+  ;; The <procedure> element %document emits for LONG-NAME.
+  (let* ((xml (with-output-to-string
+                (lambda () ((@@ (gi documentation) %document) (info lib type)))))
+         (tree (xml->sxml (string-append "<r xmlns:c=\"urn:c\">" xml "</r>")
+                          #:namespaces '((c . "urn:c")))))
+    (or (find (lambda (proc)
+                (equal? ((sxpath '(@ long-name *text*)) proc) (list long-name)))
+              ((sxpath '(// procedure)) tree))
+        (error "procedure is not documented" long-name))))
+
+(test-equal "documented returns omit array-length outputs"
+  ;; g_bytes_get_data's size output only sizes the returned array; the
+  ;; procedure returns just the data, so the documentation must too.
+  '("%return")
+  ((sxpath '(return @ name *text*))
+   (documented-procedure "GLib" "Bytes" "bytes:get-data")))
+
+(test-equal "documented optional arguments"
+  ;; The trailing nullable argument may be omitted.  (This needs a type
+  ;; with a GType in every supported GLib: e.g. GBookmarkFile only has
+  ;; one since GLib 2.76, and without one its methods are neither bound
+  ;; nor documented.)
+  '(("self" ()) ("key" ()) ("data" ("1")))
+  (map (lambda (arg)
+         (list (car ((sxpath '(@ name *text*)) arg))
+               ((sxpath '(@ optional *text*)) arg)))
+       ((sxpath '(argument))
+        (documented-procedure "GObject" "Object" "object:set-data"))))
 
 (test-assert "typelib->module without a version"
   ;; The version defaulted to #f, which require rejects.
