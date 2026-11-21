@@ -80,9 +80,10 @@
                 (lambda () ((@@ (gi documentation) %document) (info lib type)))))
          (tree (xml->sxml (string-append "<r xmlns:c=\"urn:c\">" xml "</r>")
                           #:namespaces '((c . "urn:c")))))
-    (find (lambda (proc)
-            (equal? ((sxpath '(@ long-name *text*)) proc) (list long-name)))
-          ((sxpath '(// procedure)) tree))))
+    (or (find (lambda (proc)
+                (equal? ((sxpath '(@ long-name *text*)) proc) (list long-name)))
+              ((sxpath '(// procedure)) tree))
+        (error "procedure is not documented" long-name))))
 
 (test-equal "documented returns omit array-length outputs"
   ;; g_bytes_get_data's size output only sizes the returned array; the
@@ -92,13 +93,16 @@
    (documented-procedure "GLib" "Bytes" "bytes:get-data")))
 
 (test-equal "documented optional arguments"
-  ;; The trailing nullable arguments may be omitted.
-  '(("self" ()) ("uri" ()) ("name" ("1")) ("exec" ("1")))
+  ;; The trailing nullable argument may be omitted.  (This needs a type
+  ;; with a GType in every supported GLib: e.g. GBookmarkFile only has
+  ;; one since GLib 2.76, and without one its methods are neither bound
+  ;; nor documented.)
+  '(("self" ()) ("key" ()) ("data" ("1")))
   (map (lambda (arg)
          (list (car ((sxpath '(@ name *text*)) arg))
                ((sxpath '(@ optional *text*)) arg)))
        ((sxpath '(argument))
-        (documented-procedure "GLib" "BookmarkFile" "bookmark-file:add-application"))))
+        (documented-procedure "GObject" "Object" "object:set-data"))))
 
 (test-assert "typelib->module without a version"
   ;; The version defaulted to #f, which require rejects.
