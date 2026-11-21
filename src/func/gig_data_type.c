@@ -76,6 +76,20 @@ gig_type_meta_init_from_callable_info(GigTypeMeta *meta, GICallableInfo *ci)
     g_base_info_unref(type_info);
 }
 
+// A struct, union or object field, read and written with transfer
+// none.  A NULL pointer field is #f.
+void
+gig_type_meta_init_from_field_info(GigTypeMeta *meta, GIFieldInfo *fi)
+{
+    GITypeInfo *type_info = g_field_info_get_type(fi);
+    meta->transfer = GI_TRANSFER_NOTHING;
+    gig_type_meta_init_from_type_info(meta, type_info);
+    meta->is_in = false;
+    meta->is_out = false;
+    meta->is_nullable = meta->is_ptr;
+    g_base_info_unref(type_info);
+}
+
 static void
 add_params(GigTypeMeta *meta, int n)
 {
@@ -247,8 +261,16 @@ gig_type_meta_init_from_type_info(GigTypeMeta *meta, GITypeInfo *type_info)
             else if (itype == GI_INFO_TYPE_UNION)
                 meta->item_size = g_union_info_get_size(referenced_base_info);
 
-            if (meta->gtype == G_TYPE_NONE)
-                meta->is_invalid = true;
+            if (meta->gtype == G_TYPE_NONE) {
+                // A few plain structs without a GType are foreign objects.
+                const GigForeignStruct *fs = gig_foreign_struct_find(referenced_base_info);
+                if (fs != NULL) {
+                    meta->gtype = G_TYPE_PRIV_FOREIGN_STRUCT;
+                    meta->foreign_struct = fs;
+                }
+                else
+                    meta->is_invalid = true;
+            }
             break;
         case GI_INFO_TYPE_CALLBACK:
         {
@@ -326,7 +348,10 @@ gig_type_meta_describe(const GigTypeMeta *meta)
                    (meta->is_ptr ? "pointer to " : ""),
                    (meta->is_caller_allocates ? "caller allocated " : ""),
                    g_type_name(meta->gtype));
-    if (!G_TYPE_IS_FUNDAMENTAL(meta->gtype) && len < STRLEN)
+    if (meta->gtype == G_TYPE_PRIV_FOREIGN_STRUCT && len < STRLEN)
+        len += snprintf(gig_data_type_describe_buf + len, STRLEN - len,
+                        " %s", gig_foreign_struct_c_name(meta->foreign_struct));
+    else if (!G_TYPE_IS_FUNDAMENTAL(meta->gtype) && len < STRLEN)
         len += snprintf(gig_data_type_describe_buf + len, STRLEN - len,
                         " of type %s", g_type_name(G_TYPE_FUNDAMENTAL(meta->gtype)));
     if (meta->is_nullable && len < STRLEN)

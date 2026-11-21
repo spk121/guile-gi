@@ -309,9 +309,16 @@ make_type_with_gtype(GType gtype, SCM extra_supers)
     {
         GType *interfaces = NULL;
         unsigned n_interfaces = 0;
+        // A fundamental instance type introduced by a library, such as
+        // GtkExpression or GskRenderNode: a GTypeInstance with its own
+        // reference counting, which the typelib names.
+        bool new_fundamental = !scm_is_true(sparent) && G_TYPE_IS_INSTANTIATABLE(gtype);
+
         interfaces = g_type_interfaces(gtype, &n_interfaces);
         if (scm_is_true(sparent))
             dsupers = scm_cons(sparent, extra_supers);
+        else if (new_fundamental)
+            dsupers = extra_supers;     // %make-fundamental-class adds <GFundamental>
         else
             dsupers = scm_cons(fundamental_type, extra_supers);
 
@@ -320,7 +327,27 @@ make_type_with_gtype(GType gtype, SCM extra_supers)
         g_free(interfaces);
 
         dsupers = scm_sort_x(dsupers, type_less_p_proc);
-        new_type = scm_make_class_with_name(dsupers, slots, type_class_name);
+        if (new_fundamental) {
+            // Its subclasses inherit these class-allocated ref and unref
+            // slots, which gig_type_transfer_object uses.
+            GigTypeRefFunction ref = NULL;
+            GigTypeUnrefFunction unref = NULL;
+            GIBaseInfo *info = g_irepository_find_by_gtype(NULL, gtype);
+            if (info != NULL) {
+                if (GI_IS_OBJECT_INFO(info)) {
+                    ref = g_object_info_get_ref_function_pointer(info);
+                    unref = g_object_info_get_unref_function_pointer(info);
+                }
+                g_base_info_unref(info);
+            }
+            if (ref == NULL || unref == NULL)
+                gig_warning_load("%s - fundamental type without ref and unref functions",
+                                 g_type_name(gtype));
+            new_type = scm_call_4(make_fundamental_proc, type_class_name, dsupers,
+                                  scm_from_pointer(ref, NULL), scm_from_pointer(unref, NULL));
+        }
+        else
+            new_type = scm_make_class_with_name(dsupers, slots, type_class_name);
         break;
     }
     }
@@ -427,6 +454,19 @@ void *
 gig_type_peek_object(SCM obj)
 {
     return gig_type_peek_typed_object(obj, fundamental_type);
+}
+
+// Returns OBJ's instance with a new reference, taken with its class's
+// ref function, for C code that takes ownership of it.
+void *
+gig_type_ref_object(SCM obj)
+{
+    void *ptr = gig_type_peek_object(obj);
+    if (ptr == NULL)
+        return NULL;
+    GigTypeRefFunction ref;
+    ref = (GigTypeRefFunction)scm_to_pointer(scm_get_class_ref_slot(SCM_CLASS_OF(obj)));
+    return ref ? ref(ptr) : ptr;
 }
 
 char *

@@ -72,7 +72,8 @@ dist_example_DATA = \
   examples/browser.scm \
   examples/builder-manual.scm \
   examples/cairo.scm \
-  examples/editor.scm
+  examples/editor.scm \
+  examples/gtk4-robustness.scm
 
 dist_emptywindow_DATA = \
   examples/empty-window/main.scm \
@@ -121,6 +122,7 @@ libguile_gi_la_c_sources = \
   src/func/gig_argument.c \
   src/type/gig_closure.c \
   src/func/gig_data_type.c \
+  src/func/gig_field.c \
   src/type/gig_object.c \
   src/type/gig_value.c \
   src/type/gig_signal.c \
@@ -130,11 +132,13 @@ libguile_gi_la_c_sources = \
   src/func/gig_function.c \
   src/type/gig_constant.c \
   src/type/gig_flag.c \
+  src/type/gig_foreign_struct.c \
   src/gig_repository.c \
   src/gig_document.c \
   src/type/gig_type.c \
   src/type/gig_boxed.c \
   src/func/gig_util.c \
+  src/func/gig_vfunc.c \
   src/gig_logging.c
 
 libguile_gi_la_internal_headers = \
@@ -154,6 +158,7 @@ libguile_gi_la_internal_headers = \
   src/func/gig_argument.h \
   src/type/gig_closure.h \
   src/func/gig_data_type.h \
+  src/func/gig_field.h \
   src/type/gig_object.h \
   src/type/gig_object_priv.h \
   src/type/gig_value.h \
@@ -168,12 +173,14 @@ libguile_gi_la_internal_headers = \
   src/type/gig_constant_priv.h \
   src/type/gig_constant.h \
   src/type/gig_flag.h \
+  src/type/gig_foreign_struct.h \
   src/type/gig_flag_priv.h \
   src/gig_repository.h \
   src/type/gig_type.h \
   src/type/gig_type_priv.h \
   src/type/gig_boxed.h \
   src/func/gig_util.h \
+  src/func/gig_vfunc.h \
   src/func/gig_util_priv.h \
   src/gig_logging.h
 
@@ -445,6 +452,8 @@ test/Extra-1.0.gir: test/libextra-1.0.la $(test_libextra_1_0_la_SOURCES)
 EVERYTHING_TESTS = \
   test/everything.scm \
   test/marshall.scm \
+  test/vfunc-marshall.scm \
+  test/field-marshall.scm \
   test/extra.scm
 
 TESTS_LTDLOPEN = \
@@ -475,6 +484,7 @@ TESTS = \
   test/application.scm \
   test/gtk.scm \
   test/gtk4-cclosure.scm \
+  test/gtk4-structs.scm \
   test/grilo.scm \
   test/oop.scm \
   test/value.scm \
@@ -482,6 +492,8 @@ TESTS = \
   test/task.scm \
   test/type.scm \
   test/signals.scm \
+  test/vfunc.scm \
+  test/field.scm \
   test/logging.scm \
   $(EVERYTHING_TESTS)
 

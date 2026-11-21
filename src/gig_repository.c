@@ -216,8 +216,13 @@ load_info(GIBaseInfo *info, LoadFlags flags)
     {
         GType gtype = g_registered_type_info_get_g_type(info);
         if (gtype == G_TYPE_NONE) {
-            gig_debug_load("%s - not loading struct type because is has no GType",
-                           g_base_info_get_name(info));
+            // A few plain structs that GTK, GSK and GDK need are
+            // wrapped as foreign objects instead.
+            const GigForeignStruct *fs = gig_foreign_struct_find(info);
+            if (fs != NULL) {
+                defs = scm_append2(defs, gig_foreign_struct_define(fs));
+                goto recursion;
+            }
             gig_debug_load("%s - not loading %s type because is has no GType",
                            g_base_info_get_name(info), g_info_type_to_string(t));
             break;
@@ -344,6 +349,29 @@ load_info(GIBaseInfo *info, LoadFlags flags)
         LOAD_NESTED(LOAD_PROPERTIES, n_properties, property);
         LOAD_NESTED(LOAD_SIGNALS, n_signals, nested_signal);
 #undef LOAD_NESTED
+
+        // Accessors for the fields of structs, unions and objects.
+        if ((flags & LOAD_METHODS)
+            && (t == GI_INFO_TYPE_STRUCT || t == GI_INFO_TYPE_UNION || t == GI_INFO_TYPE_OBJECT
+                || t == GI_INFO_TYPE_BOXED))
+            defs = scm_append2(defs, gig_fields_define(info));
+
+        // A procedure that calls each virtual function, given the
+        // class whose implementation to use.
+        if (flags & LOAD_METHODS) {
+            int n_vfuncs = 0;
+            if (t == GI_INFO_TYPE_OBJECT)
+                n_vfuncs = g_object_info_get_n_vfuncs(info);
+            else if (t == GI_INFO_TYPE_INTERFACE)
+                n_vfuncs = g_interface_info_get_n_vfuncs(info);
+            for (int i = 0; i < n_vfuncs; i++) {
+                GIVFuncInfo *vfunc = (t == GI_INFO_TYPE_OBJECT
+                                      ? g_object_info_get_vfunc(info, i)
+                                      : g_interface_info_get_vfunc(info, i));
+                defs = scm_append2(defs, gig_vfunc_define(vfunc, g_base_info_get_name(info)));
+                g_base_info_unref(vfunc);
+            }
+        }
         goto end;
     }
 }

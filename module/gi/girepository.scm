@@ -1966,11 +1966,15 @@ of the n-th parameter."
   (unless (and (exact? n) (integer? n))
     (scm-error 'wrong-type-arg "type-info-get-param-type" "Not an exact integer: ~S"
                (list n) (list n)))
-  (when (< n 0)
-    (scm-error 'out-of-range "type-info-get-param-type" "Out of range: ~S"
-               (list n) (list n)))
-  ;; FIXME: range check 'n'
-
+  ;; Arrays and lists have one type parameter, hash tables two, other
+  ;; types none; libgirepository doesn't check.
+  (let ((n-params (case (type-info-get-tag info)
+                    ((array glist gslist) 1)
+                    ((ghash) 2)
+                    (else 0))))
+    (unless (< -1 n n-params)
+      (scm-error 'out-of-range "type-info-get-param-type" "Out of range: ~S"
+                 (list n) (list n))))
   (%type-info-get-param-type info n))
 
 (define (type-info-get-interface info)

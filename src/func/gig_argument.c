@@ -52,6 +52,9 @@ static void scm_to_c_boxed(S2C_ARG_DECL);
 // static void scm_to_c_param(S2C_ARG_DECL);
 static void scm_to_c_object(S2C_ARG_DECL);
 static void scm_to_c_variant(S2C_ARG_DECL);
+static void scm_to_c_fundamental_instance(S2C_ARG_DECL);
+static void scm_to_c_foreign_struct(S2C_ARG_DECL);
+static void scm_to_c_native_foreign_struct_array(S2C_ARG_DECL);
 
 // Derived types
 static void scm_to_c_native_array(S2C_ARG_DECL);
@@ -79,6 +82,9 @@ static void c_boxed_to_scm(C2S_ARG_DECL);
 static void c_param_to_scm(C2S_ARG_DECL);
 static void c_object_to_scm(C2S_ARG_DECL);
 static void c_variant_to_scm(C2S_ARG_DECL);
+static void c_fundamental_instance_to_scm(C2S_ARG_DECL);
+static void c_foreign_struct_to_scm(C2S_ARG_DECL);
+static void c_native_foreign_struct_array_to_scm(C2S_ARG_DECL, size_t length);
 
 // Derived types
 static void c_byte_array_to_scm(C2S_ARG_DECL);
@@ -208,6 +214,13 @@ gig_argument_scm_to_c(S2C_ARG_DECL)
     if (size)
         *size = 0;
 
+    // Plain structs without a GType, such as GskRoundedRect.  Their
+    // pseudo-GType is a pointer type, so check before the switch.
+    if (meta->gtype == G_TYPE_PRIV_FOREIGN_STRUCT) {
+        scm_to_c_foreign_struct(S2C_ARGS);
+        return;
+    }
+
     GType fundamental_type = G_TYPE_FUNDAMENTAL(meta->gtype);
     switch (fundamental_type) {
     case G_TYPE_INVALID:
@@ -263,7 +276,11 @@ gig_argument_scm_to_c(S2C_ARG_DECL)
         scm_to_c_variant(S2C_ARGS);
         break;
     default:
-        UNHANDLED;
+        // Fundamental instance types from libraries, e.g. GtkExpression.
+        if (G_TYPE_IS_INSTANTIATABLE(fundamental_type))
+            scm_to_c_fundamental_instance(S2C_ARGS);
+        else
+            UNHANDLED;
         break;
     }
 }
@@ -274,9 +291,13 @@ scm_to_c_interface(S2C_ARG_DECL)
     TRACE_S2C();
     if (meta->is_nullable && scm_is_false(object))
         arg->v_pointer = NULL;
-    else
+    else {
         arg->v_pointer = G_TYPE_CHECK_INSTANCE_CAST(gig_type_peek_object(object),
                                                     meta->gtype, void);
+        // The receiver takes a reference; the Scheme object keeps its own.
+        if (meta->transfer == GI_TRANSFER_EVERYTHING && G_IS_OBJECT(arg->v_pointer))
+            g_object_ref(arg->v_pointer);
+    }
 }
 
 static void
@@ -549,7 +570,98 @@ scm_to_c_object(S2C_ARG_DECL)
             scm_wrong_type_arg_msg(subr, argpos, object, g_type_name(meta->gtype));
 
         arg->v_pointer = gig_type_peek_object(object);
+        // The receiver, e.g. the caller of a callback that returns a
+        // new reference, takes a reference; the Scheme object keeps its
+        // own.
+        if (meta->transfer == GI_TRANSFER_EVERYTHING)
+            g_object_ref(arg->v_pointer);
     }
+}
+
+// Instances of a fundamental type that a library introduces, such as
+// GtkExpression, are reference counted with functions the typelib
+// names; their Scheme classes keep those as their ref and unref slots.
+static void
+scm_to_c_fundamental_instance(S2C_ARG_DECL)
+{
+    TRACE_S2C();
+    if (meta->is_nullable && scm_is_false(object)) {
+        arg->v_pointer = NULL;
+        return;
+    }
+    if (!gig_type_check_typed_object(object, gig_type_get_scheme_type(meta->gtype)))
+        scm_wrong_type_arg_msg(subr, argpos, object, g_type_name(meta->gtype));
+    // With transfer everything the callee takes a reference, and the
+    // Scheme object keeps its own.
+    if (meta->transfer == GI_TRANSFER_EVERYTHING)
+        arg->v_pointer = gig_type_ref_object(object);
+    else
+        arg->v_pointer = gig_type_peek_object(object);
+}
+
+// Plain structs without a GType are passed by pointer; the Scheme
+// object owns the struct, so the callee may change it but not keep
+// it.  An opaque struct may also be given as the raw pointer that a
+// signal handler receives.
+static void
+scm_to_c_foreign_struct(S2C_ARG_DECL)
+{
+    TRACE_S2C();
+    const GigForeignStruct *fs = meta->foreign_struct;
+    if (meta->is_nullable && scm_is_false(object)) {
+        arg->v_pointer = NULL;
+        return;
+    }
+    if (!meta->is_ptr && !meta->is_caller_allocates)
+        scm_misc_error(subr, "passing struct ~A by value to a C function is not supported",
+                       scm_list_1(scm_from_utf8_string(gig_foreign_struct_c_name(fs))));
+    if (meta->transfer == GI_TRANSFER_EVERYTHING && !gig_foreign_struct_is_opaque(fs)) {
+        // The callee frees what it is given, so give it a copy.
+        arg->v_pointer = xmemdup(gig_foreign_struct_peek(fs, object, subr, argpos),
+                                 gig_foreign_struct_size(fs));
+    }
+    else
+        arg->v_pointer = gig_foreign_struct_peek(fs, object, subr, argpos);
+}
+
+// A list or vector of plain structs, for a C array of the structs
+// themselves (or of pointers to them).
+static void
+scm_to_c_native_foreign_struct_array(S2C_ARG_DECL)
+{
+    TRACE_S2C();
+    GigTypeMeta *item_meta = &meta->params[0];
+    const GigForeignStruct *fs = item_meta->foreign_struct;
+    SCM vec = object;
+    if (scm_is_true(scm_list_p(object)))
+        vec = scm_vector(object);
+    if (!scm_is_vector(vec))
+        scm_wrong_type_arg_msg(subr, argpos, object, "list or vector of structs");
+    *size = scm_c_vector_length(vec);
+
+    // Check every element first, so that nothing leaks on an error.
+    for (size_t i = 0; i < *size; i++)
+        gig_foreign_struct_peek(fs, scm_c_vector_ref(vec, i), subr, argpos);
+
+    size_t n = *size + (meta->is_zero_terminated ? 1 : 0);
+    if (item_meta->is_ptr) {
+        void **ptrs = xcalloc(n, sizeof(void *));
+        for (size_t i = 0; i < *size; i++)
+            ptrs[i] = gig_foreign_struct_peek(fs, scm_c_vector_ref(vec, i), subr, argpos);
+        arg->v_pointer = ptrs;
+    }
+    else {
+        size_t item_size = gig_foreign_struct_size(fs);
+        char *data = xcalloc(n, item_size);
+        // Shallow copies: the strings in them stay owned by the
+        // Scheme objects, which OBJECT keeps alive during the call.
+        for (size_t i = 0; i < *size; i++)
+            memcpy(data + i * item_size,
+                   gig_foreign_struct_peek(fs, scm_c_vector_ref(vec, i), subr, argpos),
+                   item_size);
+        arg->v_pointer = data;
+    }
+    LATER_FREE_CONTAINER(arg->v_pointer);
 }
 
 static void
@@ -582,6 +694,8 @@ scm_to_c_native_array(S2C_ARG_DECL)
         scm_to_c_native_gtype_array(S2C_ARGS);
     else if (item_type == G_TYPE_STRING)
         scm_to_c_native_string_array(S2C_ARGS);
+    else if (item_type == G_TYPE_PRIV_FOREIGN_STRUCT)
+        scm_to_c_native_foreign_struct_array(S2C_ARGS);
     else if (fundamental_item_type == G_TYPE_BOXED || item_type == G_TYPE_VARIANT
              || fundamental_item_type == G_TYPE_ENUM || fundamental_item_type == G_TYPE_FLAGS)
         scm_to_c_native_interface_array(S2C_ARGS);
@@ -1176,6 +1290,11 @@ gig_argument_c_to_scm(C2S_ARG_DECL)
         return;
     }
 
+    if (meta->gtype == G_TYPE_PRIV_FOREIGN_STRUCT) {
+        c_foreign_struct_to_scm(C2S_ARGS);
+        return;
+    }
+
     switch (fundamental_type) {
     case G_TYPE_NONE:
         *object = SCM_UNSPECIFIED;
@@ -1225,7 +1344,11 @@ gig_argument_c_to_scm(C2S_ARG_DECL)
         c_variant_to_scm(C2S_ARGS);
         break;
     default:
-        UNHANDLED;
+        // Fundamental instance types from libraries, e.g. GtkExpression.
+        if (G_TYPE_IS_INSTANTIATABLE(fundamental_type))
+            c_fundamental_instance_to_scm(C2S_ARGS);
+        else
+            UNHANDLED;
         break;
     }
 }
@@ -1350,6 +1473,67 @@ c_object_to_scm(C2S_ARG_DECL)
 }
 
 static void
+c_fundamental_instance_to_scm(C2S_ARG_DECL)
+{
+    TRACE_C2S();
+    if (arg->v_pointer == NULL)
+        // Valid nullable NULLs were handled already.
+        scm_misc_error("%fundamental-arg->scm",
+                       "cannot convert a NULL pointer to an object of type ~S",
+                       scm_list_1(scm_from_utf8_string(g_type_name(meta->gtype))));
+    // gig_type_transfer_object takes the instance's own (most derived)
+    // type and its class's ref and unref functions.
+    *object = gig_type_transfer_object(meta->gtype, arg->v_pointer, meta->transfer);
+}
+
+// Plain structs are copied into a new Scheme object; opaque structs
+// are wrapped, and valid only while C lends them.
+static void
+c_foreign_struct_to_scm(C2S_ARG_DECL)
+{
+    TRACE_C2S();
+    const GigForeignStruct *fs = meta->foreign_struct;
+    if (arg->v_pointer == NULL) {
+        *object = SCM_BOOL_F;
+        return;
+    }
+    *object = gig_foreign_struct_to_scm(fs, arg->v_pointer);
+    if (meta->transfer == GI_TRANSFER_EVERYTHING && !gig_foreign_struct_is_opaque(fs)
+        && !meta->is_caller_allocates) {
+        g_free(arg->v_pointer);
+        arg->v_pointer = NULL;
+    }
+}
+
+static void
+c_native_foreign_struct_array_to_scm(C2S_ARG_DECL, size_t length)
+{
+    TRACE_C2S();
+    GigTypeMeta *item_meta = &meta->params[0];
+    const GigForeignStruct *fs = item_meta->foreign_struct;
+    size_t item_size = gig_foreign_struct_size(fs);
+
+    if (arg->v_pointer == NULL)
+        length = 0;
+    *object = scm_c_make_vector(length, SCM_BOOL_F);
+    for (size_t i = 0; i < length; i++) {
+        void *item;
+        if (item_meta->is_ptr)
+            item = ((void **)arg->v_pointer)[i];
+        else
+            item = (char *)arg->v_pointer + i * item_size;
+        scm_c_vector_set_x(*object, i, gig_foreign_struct_to_scm(fs, item));
+        if (item_meta->is_ptr && meta->transfer == GI_TRANSFER_EVERYTHING
+            && !gig_foreign_struct_is_opaque(fs))
+            g_free(item);
+    }
+    if (meta->transfer != GI_TRANSFER_NOTHING) {
+        g_free(arg->v_pointer);
+        arg->v_pointer = NULL;
+    }
+}
+
+static void
 c_variant_to_scm(C2S_ARG_DECL)
 {
     TRACE_C2S();
@@ -1466,6 +1650,10 @@ c_native_array_to_scm(C2S_ARG_DECL)
     } while(0)
 
     GType item_type = meta->params[0].gtype;
+    if (item_type == G_TYPE_PRIV_FOREIGN_STRUCT) {
+        c_native_foreign_struct_array_to_scm(C2S_ARGS, length);
+        return;
+    }
     switch (G_TYPE_FUNDAMENTAL(item_type)) {
     case G_TYPE_CHAR:
         TRANSFER(gint8, s8);

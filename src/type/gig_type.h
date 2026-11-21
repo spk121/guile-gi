@@ -35,6 +35,7 @@ void gig_type_define_fundamental(GType type, SCM extra_supers,
 SCM gig_type_define_with_info(GIRegisteredTypeInfo *info, SCM slots);
 SCM gig_type_get_scheme_type(GType gtype);
 void *gig_type_peek_object(SCM obj);
+void *gig_type_ref_object(SCM obj);
 bool gig_type_check_typed_object(SCM obj, SCM expected_type);
 SCM gig_type_transfer_object(GType gtype, void *obj, GITransfer transfer);
 SCM scm_from_gtype(GType x);

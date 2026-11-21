@@ -24,6 +24,47 @@ static void do_document(GIBaseInfo *info, const char *parent);
 GIG_API void gig_init_document(void);
 
 
+// The field accessors that src/func/gig_field.c defines.
+static void
+document_fields(GIBaseInfo *container, const char *prefix)
+{
+    GIInfoType type = g_base_info_get_type(container);
+    int n;
+    GIFieldInfo *(*get)(GIBaseInfo *, int);
+    switch (type) {
+    case GI_INFO_TYPE_STRUCT:
+    case GI_INFO_TYPE_BOXED:
+        n = g_struct_info_get_n_fields(container);
+        get = (GIFieldInfo *(*)(GIBaseInfo *, int))g_struct_info_get_field;
+        break;
+    case GI_INFO_TYPE_UNION:
+        n = g_union_info_get_n_fields(container);
+        get = (GIFieldInfo *(*)(GIBaseInfo *, int))g_union_info_get_field;
+        break;
+    case GI_INFO_TYPE_OBJECT:
+        n = g_object_info_get_n_fields(container);
+        get = (GIFieldInfo *(*)(GIBaseInfo *, int))g_object_info_get_field;
+        break;
+    default:
+        return;
+    }
+    GType gtype = g_registered_type_info_get_g_type(container);
+    if (gtype == G_TYPE_NONE || gtype == G_TYPE_INVALID || !gig_fields_are_reliable(container))
+        return;
+    for (int i = 0; i < n; i++) {
+        GIFieldInfo *fi = get(container, i);
+        if (gig_field_is_readable(fi) && !gig_field_is_shadowed(container, fi)) {
+            char *name = gig_field_make_name(fi);
+            scm_printf(SCM_UNDEFINED, "<field name=\"%s\"><scheme>"
+                       "<accessor name=\"%s\" long-name=\"%s:%s\" readable=\"1\" writable=\"%d\"/>"
+                       "</scheme></field>", g_base_info_get_name(fi), name, prefix, name,
+                       gig_field_is_writable(fi));
+            free(name);
+        }
+        g_base_info_unref(fi);
+    }
+}
+
 static void
 document_nested(GIBaseInfo *parent)
 {
@@ -49,6 +90,13 @@ document_nested(GIBaseInfo *parent)
     DOCUMENT_NESTED(n_properties, property);
     DOCUMENT_NESTED(n_signals, nested_signal);
 
+    GIInfoType type = g_base_info_get_type(parent);
+    document_fields(parent, _namespace);
+    if (type == GI_INFO_TYPE_OBJECT)
+        DOCUMENT_NESTED(g_object_info_get_n_vfuncs(parent), g_object_info_get_vfunc);
+    else if (type == GI_INFO_TYPE_INTERFACE)
+        DOCUMENT_NESTED(g_interface_info_get_n_vfuncs(parent), g_interface_info_get_vfunc);
+
 #undef DOCUMENT_NESTED
 }
 
@@ -60,6 +108,75 @@ document_arg_entry(const char *kind, GigArgMapEntry *entry, bool optional)
     scm_printf(SCM_UNDEFINED, "<%s name=\"%s\" c:name=\"%s\"%s>", kind, name, entry->name,
                optional ? " optional=\"1\"" : "");
     scm_printf(SCM_UNDEFINED, "</%s>", kind);
+}
+
+// One procedure that src/type/gig_foreign_struct.c defines: its
+// arguments, and its return value if RET is not NULL.
+static void
+document_foreign_procedure(const char *name, const char **args, size_t n_args,
+                           size_t n_required, const char *ret)
+{
+    scm_printf(SCM_UNDEFINED, "<function name=\"%s\"><scheme><procedure name=\"%s\">",
+               name, name);
+    for (size_t i = 0; i < n_args; i++) {
+        char *arg = make_scm_name(args[i]);
+        scm_printf(SCM_UNDEFINED, "<argument name=\"%s\" c:name=\"%s\"%s></argument>", arg,
+                   args[i], i >= n_required ? " optional=\"1\"" : "");
+        free(arg);
+    }
+    if (ret != NULL) {
+        char *r = make_scm_name(ret);
+        scm_printf(SCM_UNDEFINED, "<return name=\"%s\" c:name=\"%s\"></return>", r, ret);
+        free(r);
+    }
+    scm_printf(SCM_UNDEFINED, "</procedure></scheme></function>");
+}
+
+// A plain struct without a GType that guile-gi wraps as a foreign
+// object: its class, constructor, field accessors and methods.
+static void
+document_foreign_struct(GIBaseInfo *info, const GigForeignStruct *fs)
+{
+    char *prefix = make_scm_name(gig_foreign_struct_name(fs));
+    char *name;
+    size_t n = gig_foreign_struct_n_fields(fs);
+    const char *self = "self";
+
+    scm_printf(SCM_UNDEFINED, "<record name=\"%s\">", g_base_info_get_name(info));
+    scm_printf(SCM_UNDEFINED, "<scheme><type name=\"&lt;%s&gt;\" /></scheme>",
+               gig_foreign_struct_c_name(fs));
+
+    if (gig_foreign_struct_is_opaque(fs)) {
+        const char *ptr = "pointer";
+        name = concatenate("pointer->", prefix);
+        document_foreign_procedure(name, &ptr, 1, 1, "struct");
+        free(name);
+    }
+    else {
+        const char **fields = xcalloc(n, sizeof(char *));
+        for (size_t i = 0; i < n; i++)
+            fields[i] = gig_foreign_struct_field_name(fs, i);
+        name = concatenate("make-", prefix);
+        document_foreign_procedure(name, fields, n, 0, "struct");
+        free(name);
+
+        for (size_t i = 0; i < n; i++) {
+            char *field = make_scm_name(fields[i]);
+            const char *setter_args[2] = { self, fields[i] };
+            name = concatenate3(prefix, ":", field);
+            document_foreign_procedure(name, &self, 1, 1, fields[i]);
+            free(name);
+            name = concatenate4(prefix, ":set-", field, "!");
+            document_foreign_procedure(name, setter_args, 2, 2, NULL);
+            free(name);
+            free(field);
+        }
+        free(fields);
+    }
+    free(prefix);
+
+    document_nested(info);
+    scm_printf(SCM_UNDEFINED, "</record>");
 }
 
 static void
@@ -75,7 +192,14 @@ do_document(GIBaseInfo *info, const char *_namespace)
     scm_dynwind_begin(0);
     switch (type) {
     case GI_INFO_TYPE_FUNCTION:
-        if (g_callable_info_is_method(info))
+    case GI_INFO_TYPE_VFUNC:
+    {
+        // A virtual function's procedure takes the class whose
+        // implementation to call, then the instance.
+        bool is_vfunc = (type == GI_INFO_TYPE_VFUNC);
+        if (is_vfunc)
+            kind = "virtual-method";
+        else if (g_callable_info_is_method(info))
             kind = "method";
         else
             kind = "function";
@@ -91,7 +215,10 @@ do_document(GIBaseInfo *info, const char *_namespace)
         scm_printf(SCM_UNDEFINED, "<%s name=\"%s\">", kind, g_base_info_get_name(info));
         scheme_name = scm_dynfree(gig_callable_info_make_name(info, NULL));
 
-        if (g_callable_info_is_method(info))
+        if (is_vfunc)
+            scm_printf(SCM_UNDEFINED, "<scheme><procedure name=\"%s:do-%s\">",
+                       _namespace, scm_dynfree(make_scm_name(g_base_info_get_name(info))));
+        else if (g_callable_info_is_method(info))
             scm_printf(SCM_UNDEFINED, "<scheme><procedure name=\"%s\" long-name=\"%s:%s\">",
                        scheme_name, _namespace, scheme_name);
         else if (_namespace != NULL)
@@ -103,6 +230,8 @@ do_document(GIBaseInfo *info, const char *_namespace)
         gig_amap_c_count(arg_map, &in, &out);
         gig_amap_s_input_count(arg_map, &req, &opt);
 
+        if (is_vfunc)
+            scm_printf(SCM_UNDEFINED, "<argument name=\"implementor\"></argument>");
         if (g_callable_info_is_method(info)) {
             scm_printf(SCM_UNDEFINED, "<argument name=\"self\">");
             scm_printf(SCM_UNDEFINED, "</argument>");
@@ -153,6 +282,7 @@ do_document(GIBaseInfo *info, const char *_namespace)
         scm_printf(SCM_UNDEFINED, "</%s>", kind);
 
         break;
+    }
 
     case GI_INFO_TYPE_STRUCT:
     case GI_INFO_TYPE_BOXED:
@@ -161,8 +291,12 @@ do_document(GIBaseInfo *info, const char *_namespace)
     case GI_INFO_TYPE_UNION:
     {
         GType gtype = g_registered_type_info_get_g_type(info);
-        if (gtype == G_TYPE_NONE)
+        if (gtype == G_TYPE_NONE) {
+            const GigForeignStruct *fs = gig_foreign_struct_find(info);
+            if (fs != NULL)
+                document_foreign_struct(info, fs);
             break;
+        }
 
         switch (type) {
         case GI_INFO_TYPE_STRUCT:
@@ -258,7 +392,6 @@ do_document(GIBaseInfo *info, const char *_namespace)
         scm_printf(SCM_UNDEFINED, "/></scheme></member>");
     }
         break;
-    case GI_INFO_TYPE_VFUNC:
     case GI_INFO_TYPE_FIELD:
     case GI_INFO_TYPE_CONSTANT:
     case GI_INFO_TYPE_CALLBACK:

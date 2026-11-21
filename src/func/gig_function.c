@@ -103,7 +103,16 @@ gig_function_define(GType type, GICallableInfo *info, const char *_namespace)
                    g_base_info_get_name(info));
 
     if (is_method) {
-        self_type = gig_type_get_scheme_type(type);
+        // Methods of the plain structs that are foreign objects.
+        const GigForeignStruct *fs = NULL;
+        if (type == G_TYPE_NONE) {
+            GIBaseInfo *container = g_base_info_get_container(info);
+            fs = gig_foreign_struct_find(container);
+        }
+        if (fs != NULL)
+            self_type = gig_foreign_struct_scheme_type(fs);
+        else
+            self_type = gig_type_get_scheme_type(type);
         // Leave through 'end' so that the dynwind context is closed.
         if (scm_is_unknown_class(self_type)) {
             g_critical("%s: no class for %s", function_name, g_type_name(type));
@@ -525,7 +534,10 @@ function_binding(ffi_cif *cif, void *ret, void **ffi_args, void *user_data)
 #endif
 
     if (g_callable_info_is_method(gfn->function_info)) {
-        self = gig_type_peek_object(scm_car(s_args));
+        // The method's specializer has checked its type.
+        self = gig_foreign_struct_peek_any(scm_car(s_args));
+        if (self == NULL)
+            self = gig_type_peek_object(scm_car(s_args));
         s_args = scm_cdr(s_args);
     }
 

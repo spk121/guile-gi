@@ -26,8 +26,10 @@
     (append
      (append-map (cut entry #f <>) ((sxpath '(r function)) tree))
      (append-map (lambda (c)
+                   ;; Constructors and static functions are <function>s.
                    (append-map (cut entry (attr c 'name) <>)
-                               ((sxpath '(method)) c)))
+                               (append ((sxpath '(method)) c)
+                                       ((sxpath '(function)) c))))
                  ((sxpath '(r *)) tree)))))
 
 ;; Real arities: methods whose gsubr carries the procedure's name.

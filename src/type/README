@@ -5,4 +5,8 @@ types.
 
 It also provides code to define new GObject classes in scheme.
 
+gig_foreign_struct.c wraps a few plain structs without a GType that
+GTK, GSK and GDK need, such as GskRoundedRect, as foreign objects.
+Their layouts are mirrored in C and checked against the typelib.
+
 src/type should depend only on src/core

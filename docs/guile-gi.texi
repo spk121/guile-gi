@@ -472,6 +472,51 @@ using @code{make}.
 @include ex-date.scm
 @end example
 
+@cindex fields
+The public fields of structs, unions and objects have getters named
+after the type and the field, such as @code{rgba:red} for the
+@code{red} field of a @code{GdkRGBA}.  Getters return copies of strings,
+structs and arrays.  Fields of plain data -- numbers, booleans, enums,
+flags, and structs made only of those -- can also be set when the
+typelib allows it, either with @code{set!} on the getter or with a
+setter such as @code{rgba:set-red!}.  Fields that hold other pointers,
+such as strings, are read-only, because the typelib does not say who
+would own a new value.  A field gets no getter if a method of its type
+already has that name, and structs with bitfields, which typelibs
+describe incorrectly, get no field accessors at all.
+
+@example
+(rgba:red color)              @result{} 1.0
+(set! (rgba:alpha color) 0.5)
+(point:x (rect:origin rect))  ; rect:origin returns a copy
+@end example
+
+Structs that have no GType usually can't be bound, because Guile-GI
+can't know how to copy or free them.  A few that GTK, GSK and GDK
+need are wrapped specially: @code{GskRoundedRect},
+@code{GskColorStop}, @code{GskShadow}, @code{GskParseLocation},
+@code{GtkCssLocation}, @code{GdkKeymapKey}, @code{GdkTimeCoord},
+@code{GtkPageRange}, @code{GtkRequestedSize}, @code{GtkRecentData}
+and @code{GtkPadActionEntry}.  For each, loading its typelib entry
+defines its class, a constructor that takes the values of its fields
+in order, all optional, and a getter and a setter for each field.  The
+library's functions that take or return these structs work too, as do
+arrays of them, given as lists or vectors and returned as vectors.
+These structs are copied when they come from C, so changing one in
+Scheme does not change the library's copy.
+
+@example
+(make-color-stop 0.5 red)      ; a <GskColorStop>
+(color-stop:offset stop)       @result{} 0.5
+(color-stop:set-offset! stop 0.25)
+@end example
+
+@code{GdkToplevelSize}, @code{GdkDragSurfaceSize} and
+@code{GtkBuildableParseContext} are opaque and only valid while the
+library lends them, for example during a signal.  Signal handlers
+receive them as pointers; @code{pointer->toplevel-size} and the like
+wrap a pointer for the struct's methods.
+
 @node GObjects
 @subsection GObjects
 
@@ -1020,7 +1065,8 @@ of the GObject infrastructure, such as signals.
 
 Defining a new GObject class is rather complicated.
 
-@deffn Procedure register-type type-name parent-type [list-of-properties] [list-of-signals]
+@deffn Procedure register-type type-name parent-type [list-of-properties] [list-of-signals] @
+         [#:vfuncs overrides] [#:interfaces interfaces]
 This procedure creates and returns a new @code{<GType>} of a GObject
 object.
 
@@ -1037,9 +1083,55 @@ methods found in the @code{GObject} typelib.
 
 @var{list-of-signals} is a list of signal specifications. @xref{GObject
 Signals}.
+
+@var{overrides} is a list of pairs @code{(@var{name} . @var{procedure})}
+that override virtual functions.  @var{name} is a symbol or string,
+such as @code{snapshot} or @code{size-allocate}, naming a virtual
+function of @var{parent-type}, one of its ancestors, or one of
+@var{interfaces}.  @var{procedure} takes the instance and then the
+virtual function's arguments, and returns its return value and output
+arguments, as multiple values if there are several.  If the virtual
+function can fail with a @code{GError}, a Scheme error raised by
+@var{procedure} becomes that error.  GObject's @code{finalize},
+@code{constructor}, @code{set_property} and @code{get_property} can't be
+overridden.
+
+@var{interfaces} is a list of interface classes, such as
+@code{<GListModel>}, for the new type to implement.  The parent type
+must not already implement them.
 @end deffn
 
 To then make instances of your custom GObject type, use @code{make}.
+
+@cindex virtual functions
+Each virtual function of a class or interface also has a procedure to
+call it, named after the class and the virtual function, such as
+@code{widget:do-snapshot}.  Its first argument is the class whose
+implementation to use, then the instance and the virtual function's
+arguments.  Passing the parent class from inside an override chains up
+to the parent's implementation.
+
+@example
+(define <Swatch>
+  (register-type "Swatch" <GtkWidget>
+    #:vfuncs
+    `((snapshot . ,(lambda (self snapshot)
+                     (snapshot:append-color snapshot color bounds)))
+      (measure . ,(lambda (self orientation for-size)
+                    ;; minimum, natural, and their baselines
+                    (values 100 200 -1 -1)))
+      (unrealize . ,(lambda (self)
+                      ;; chain up
+                      (widget:do-unrealize <GtkWidget> self))))))
+
+(define <NumberList>
+  (register-type "NumberList" <GObject>
+    #:interfaces (list <GListModel>)
+    #:vfuncs
+    `((get-item-type . ,(lambda (self) (get-gtype <GObject>)))
+      (get-n-items . ,(lambda (self) (length items)))
+      (get-item . ,(lambda (self i) (list-ref items i))))))
+@end example
 
 @node Sample Applications
 @section Sample Applications

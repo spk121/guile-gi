@@ -75,11 +75,14 @@ struct GigTypeMeta_
         struct GigTypeMeta_ *params;
         GICallableInfo *callable_info;
         GIEnumInfo *enum_info;
+        // For G_TYPE_PRIV_FOREIGN_STRUCT
+        const struct _GigForeignStruct *foreign_struct;
     };
 };
 
 void gig_type_meta_init_from_arg_info(GigTypeMeta *type, GIArgInfo *ai);
 void gig_type_meta_init_from_callable_info(GigTypeMeta *type, GICallableInfo *ci);
+void gig_type_meta_init_from_field_info(GigTypeMeta *type, GIFieldInfo *fi);
 size_t gig_meta_real_item_size(const GigTypeMeta *meta);
 const char *gig_type_meta_describe(const GigTypeMeta *meta);
 void gig_data_type_free(GigTypeMeta *meta);

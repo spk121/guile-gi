@@ -56,9 +56,12 @@ gig_init(void)
 #endif
     gig_debug("Begin libguile-gir initialization");
     gig_init_flag();
+    gig_init_foreign_struct();
     gig_init_signal();
     gig_init_callback();
     gig_init_function();
+    gig_init_vfunc();
+    gig_init_field();
 #ifdef ENABLE_GCOV
     scm_c_define_gsubr("gcov-reset", 0, 0, 0, scm_gcov_reset);
     scm_c_define_gsubr("gcov-dump", 0, 0, 0, scm_gcov_dump);
