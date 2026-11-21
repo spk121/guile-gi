@@ -131,3 +131,4 @@ docs/stamp-vti
 docs/version.texi
 tmp
 tmp.*
+/cache/
