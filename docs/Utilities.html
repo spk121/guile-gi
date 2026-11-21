@@ -1,9 +1,9 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE html>
 <html>
-<!-- Created by GNU Texinfo 6.8, https://www.gnu.org/software/texinfo/ -->
+<!-- Created by GNU Texinfo 7.1, https://www.gnu.org/software/texinfo/ -->
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<!-- Copyright (C) 2018, 2019, 2020 Michael L. Gran
+<!-- Copyright © 2018, 2019, 2020 Michael L. Gran
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3
@@ -28,21 +28,10 @@ Free Documentation License". -->
 <link href="Enums-and-Flags.html" rel="prev" title="Enums and Flags">
 <style type="text/css">
 <!--
-a.copiable-anchor {visibility: hidden; text-decoration: none; line-height: 0em}
-a.summary-letter {text-decoration: none}
-blockquote.indentedblock {margin-right: 0em}
-div.display {margin-left: 3.2em}
+a.copiable-link {visibility: hidden; text-decoration: none; line-height: 0em}
 div.example {margin-left: 3.2em}
-kbd {font-style: oblique}
-pre.display {font-family: inherit}
-pre.format {font-family: inherit}
-pre.menu-comment {font-family: serif}
-pre.menu-preformatted {font-family: serif}
-span.nolinebreak {white-space: nowrap}
-span.roman {font-family: initial; font-weight: normal}
-span.sansserif {font-family: sans-serif; font-weight: normal}
-span:hover a.copiable-anchor {visibility: visible}
-ul.no-bullet {list-style: none}
+span:hover a.copiable-link {visibility: visible}
+strong.def-name {font-family: monospace; font-weight: bold; font-size: larger}
 -->
 </style>
 <link rel="stylesheet" type="text/css" href="document-1.0.1.css">
@@ -51,92 +40,92 @@ ul.no-bullet {list-style: none}
 </head>
 
 <body lang="en">
-<div class="section" id="Utilities">
-<div class="header">
+<div class="section-level-extent" id="Utilities">
+<div class="nav-panel">
 <p>
 Next: <a href="Compatibility.html" accesskey="n" rel="next">Compatibility</a>, Previous: <a href="Enums-and-Flags.html" accesskey="p" rel="prev">Enums and Flags</a>, Up: <a href="Reference-Guide.html" accesskey="u" rel="up">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>
 <hr>
-<span id="Utilities-1"></span><h3 class="section">3.5 Utilities</h3>
-<span id="index-Utilities"></span>
+<h3 class="section" id="Utilities-1"><span>3.5 Utilities<a class="copiable-link" href="#Utilities-1"> &para;</a></span></h3>
+<a class="index-entry-id" id="index-Utilities"></a>
 
-<p>The following procedures are in the <code>(gi util)</code> library.
+<p>The following procedures are in the <code class="code">(gi util)</code> library.
 </p>
-<ul class="section-toc">
+<ul class="mini-toc">
 <li><a href="#Utilities-for-Guile-Modules" accesskey="1">Utilities for Guile Modules</a></li>
 <li><a href="#Utilities-for-Vectors" accesskey="2">Utilities for Vectors</a></li>
 </ul>
-<div class="subsection" id="Utilities-for-Guile-Modules">
-<h4 class="subsection">3.5.1 Utilities for Guile Modules</h4>
+<div class="subsection-level-extent" id="Utilities-for-Guile-Modules">
+<h4 class="subsection"><span>3.5.1 Utilities for Guile Modules<a class="copiable-link" href="#Utilities-for-Guile-Modules"> &para;</a></span></h4>
 
-<span id="index-default_002dduplicate_002dbinding_002dhandler"></span>
-<span id="index-Guile-modules_002c-defining"></span>
+<a class="index-entry-id" id="index-default_002dduplicate_002dbinding_002dhandler"></a>
+<a class="index-entry-id" id="index-Guile-modules_002c-defining"></a>
 
 <p>In core Guile, there are options to tailor handling of
 same-named procedures imported into the same module
-(see <a data-manual="guile" href="https://www.gnu.org/software/guile/manual/html_node/Creating-Guile-Modules.html#Creating-Guile-Modules">Creating Guile Modules</a> in <cite>Guile Reference Manual</cite>).
-The <code>default-duplicate-binding-handler</code> procedure and the
-<code>#:duplicates</code> option to <code>define-module</code> can be used to tailor
+(see <a data-manual="guile" href="https://www.gnu.org/software/guile/manual/html_node/Creating-Guile-Modules.html#Creating-Guile-Modules">Creating Guile Modules</a> in <cite class="cite">Guile Reference Manual</cite>).
+The <code class="code">default-duplicate-binding-handler</code> procedure and the
+<code class="code">#:duplicates</code> option to <code class="code">define-module</code> can be used to tailor
 the strategy.  Choosing a correct behaviour may become important
 important when using GObject introspection when many methods,
 procedures, and signals may have the same name.
 </p>
-<p>In the <code>(gi util)</code> library, the following additional helper
+<p>In the <code class="code">(gi util)</code> library, the following additional helper
 procedures are provided.
 </p>
-<dl class="def">
-<dt id="index-push_002dduplicate_002dhandler_0021"><span class="category">Procedure: </span><span><strong>push-duplicate-handler!</strong> <em>handler</em><a href='#index-push_002dduplicate_002dhandler_0021' class='copiable-anchor'> &para;</a></span></dt>
-<dd><p>This utility procedure adds the symbol <var>handler</var> to the list of
-default duplicate handlers. <var>handler</var> will be placed at the start of
+<dl class="first-deffn">
+<dt class="deffn" id="index-push_002dduplicate_002dhandler_0021"><span class="category-def">Procedure: </span><span><strong class="def-name">push-duplicate-handler!</strong> <var class="def-var-arguments">handler</var><a class="copiable-link" href="#index-push_002dduplicate_002dhandler_0021"> &para;</a></span></dt>
+<dd><p>This utility procedure adds the symbol <var class="var">handler</var> to the list of
+default duplicate handlers. <var class="var">handler</var> will be placed at the start of
 the list, giving it highest priority.
 </p></dd></dl>
 
-<span id="index-shrug_002dequals"></span>
-<dl class="def">
-<dt id="index-shrug_002dequals-2"><span class="category">Duplicate handler: </span><span><strong>shrug-equals</strong><a href='#index-shrug_002dequals-2' class='copiable-anchor'> &para;</a></span></dt>
-<dd><p>In the case of duplicate bindings whose values are equal (as in <code>eq?</code>), they are accepted without raising a warning.
+<a class="index-entry-id" id="index-shrug_002dequals"></a>
+<dl class="first-defvr">
+<dt class="defvr" id="index-shrug_002dequals-2"><span class="category-def">Duplicate handler: </span><span><strong class="def-name">shrug-equals</strong><a class="copiable-link" href="#index-shrug_002dequals-2"> &para;</a></span></dt>
+<dd><p>In the case of duplicate bindings whose values are equal (as in <code class="code">eq?</code>), they are accepted without raising a warning.
 </p></dd></dl>
 
-<span id="index-use_002dmodules"></span>
-<span id="index-use_002dtypelibs"></span>
-<span id="index-symbol_002dprefix_002dproc"></span>
+<a class="index-entry-id" id="index-use_002dmodules"></a>
+<a class="index-entry-id" id="index-use_002dtypelibs"></a>
+<a class="index-entry-id" id="index-symbol_002dprefix_002dproc"></a>
 
 <p>Another strategy to mitigate the problems posed by same-named
-methods, procedures, and variables is to use the <code>#:renamer</code> option
-of <code>use-modules</code> or <code>use-typelibs</code>.  Core Guile provides the
-<code>symbol-prefix-proc</code> renamer procedure, which can be used to apply
+methods, procedures, and variables is to use the <code class="code">#:renamer</code> option
+of <code class="code">use-modules</code> or <code class="code">use-typelibs</code>.  Core Guile provides the
+<code class="code">symbol-prefix-proc</code> renamer procedure, which can be used to apply
 a prefix to the name of all imported procedures and variables.
 </p>
-<p>This module provides the <code>protect*</code> renamer.  It is more targeted
-than <code>symbol-prefix-proc</code>; it applies a prefix and/or suffix to
+<p>This module provides the <code class="code">protect*</code> renamer.  It is more targeted
+than <code class="code">symbol-prefix-proc</code>; it applies a prefix and/or suffix to
 those imports whose names are in a list of provided symbols.
 </p>
-<dl class="def">
-<dt id="index-protect"><span class="category">Procedure: </span><span><strong>protect</strong> <em>symbol [prefix] [suffix]</em><a href='#index-protect' class='copiable-anchor'> &para;</a></span></dt>
-<dt id="index-protect_002a"><span class="category">Procedure: </span><span><strong>protect*</strong> <em>symbols [prefix] [suffix]</em><a href='#index-protect_002a' class='copiable-anchor'> &para;</a></span></dt>
-<dd><p>Returns a renamer, which &ldquo;protects&rdquo; <var>symbol</var>, a symbol or
-<var>symbols</var>, a list of symbols from being overridden, by prepending
+<dl class="first-deffn">
+<dt class="deffn" id="index-protect"><span class="category-def">Procedure: </span><span><strong class="def-name">protect</strong> <var class="def-var-arguments">symbol [prefix] [suffix]</var><a class="copiable-link" href="#index-protect"> &para;</a></span></dt>
+<dt class="deffnx def-cmd-deffn" id="index-protect_002a"><span class="category-def">Procedure: </span><span><strong class="def-name">protect*</strong> <var class="def-var-arguments">symbols [prefix] [suffix]</var><a class="copiable-link" href="#index-protect_002a"> &para;</a></span></dt>
+<dd><p>Returns a renamer, which &ldquo;protects&rdquo; <var class="var">symbol</var>, a symbol or
+<var class="var">symbols</var>, a list of symbols from being overridden, by prepending
 prefix and appending suffix, both symbols.  If neither prefix nor suffix
-are given, <code>'%</code> is used as prefix.
+are given, <code class="code">'%</code> is used as prefix.
 </p></dd></dl>
 
-<dl class="def">
-<dt id="index-_0025rnrs_002dsyntax"><span class="category">Variable: </span><span><strong>%rnrs-syntax</strong><a href='#index-_0025rnrs_002dsyntax' class='copiable-anchor'> &para;</a></span></dt>
-<dt id="index-_0025r5rs_002dprocedures"><span class="category">Variable: </span><span><strong>%r5rs-procedures</strong><a href='#index-_0025r5rs_002dprocedures' class='copiable-anchor'> &para;</a></span></dt>
-<dd><p>Constants, which can be applied to <code>protect*</code>.
+<dl class="first-defvr">
+<dt class="defvr" id="index-_0025rnrs_002dsyntax"><span class="category-def">Variable: </span><span><strong class="def-name">%rnrs-syntax</strong><a class="copiable-link" href="#index-_0025rnrs_002dsyntax"> &para;</a></span></dt>
+<dt class="defvrx def-cmd-defvr" id="index-_0025r5rs_002dprocedures"><span class="category-def">Variable: </span><span><strong class="def-name">%r5rs-procedures</strong><a class="copiable-link" href="#index-_0025r5rs_002dprocedures"> &para;</a></span></dt>
+<dd><p>Constants, which can be applied to <code class="code">protect*</code>.
 </p>
-<p><code>%rnrs-syntax</code> contains R6RS syntax keywords from the
-<code>(rnrs syntax)</code> module. Most of these are also very important to R5RS.
+<p><code class="code">%rnrs-syntax</code> contains R6RS syntax keywords from the
+<code class="code">(rnrs syntax)</code> module. Most of these are also very important to R5RS.
 </p>
-<p><code>%r5rs-procedures</code> contains the names of common R5RS procedures that
+<p><code class="code">%r5rs-procedures</code> contains the names of common R5RS procedures that
 Guile always provides.
 </p></dd></dl>
 
 <p>These can be used alone or together to protect important names in Scheme
-code.  The following example, for instance, prepends <code>gtk::</code> to imported
+code.  The following example, for instance, prepends <code class="code">gtk::</code> to imported
 GObject procedures which match R6RS syntax or R5RS procedures.
 </p><div class="example lisp">
-<pre class="lisp">(use-modules (gi)
+<pre class="lisp-preformatted">(use-modules (gi)
              (gi util))
 (use-typelibs ((&quot;Gtk&quot; &quot;3.0&quot;)
                #:renamer (protect*
@@ -144,33 +133,33 @@ GObject procedures which match R6RS syntax or R5RS procedures.
                            'gtk::)))
 </pre></div>
 <p>While importing procedures or methods with the same names a Scheme
-<em>syntax</em> may cause confusion, importing procedures or methods with
-the same name as Guile <em>procedures</em> is usually not a problem due to
+<em class="emph">syntax</em> may cause confusion, importing procedures or methods with
+the same name as Guile <em class="emph">procedures</em> is usually not a problem due to
 method overloading via GOOPS.
 </p>
-<blockquote>
-<p><b>Note:</b> While this can prevent you from accidentally messing up important procedures, it is usually a better strategy to only include what you need.
+<blockquote class="quotation">
+<p><b class="b">Note:</b> While this can prevent you from accidentally messing up important procedures, it is usually a better strategy to only include what you need.
 </p></blockquote>
 
 </div>
-<div class="subsection" id="Utilities-for-Vectors">
-<h4 class="subsection">3.5.2 Utilities for Vectors</h4>
+<div class="subsection-level-extent" id="Utilities-for-Vectors">
+<h4 class="subsection"><span>3.5.2 Utilities for Vectors<a class="copiable-link" href="#Utilities-for-Vectors"> &para;</a></span></h4>
 
-<p>In the <code>(gi util)</code> library, the following helper procedures are provided
+<p>In the <code class="code">(gi util)</code> library, the following helper procedures are provided
 for use with SRFI-4-type uniform numeric vectors.
 </p>
-<dl class="def">
-<dt id="index-short_002dvector_002d_003elist"><span class="category">Procedure: </span><span><strong>short-vector-&gt;list</strong> <em>vec</em><a href='#index-short_002dvector_002d_003elist' class='copiable-anchor'> &para;</a></span></dt>
-<dt id="index-int_002dvector_002d_003elist"><span class="category">Procedure: </span><span><strong>int-vector-&gt;list</strong> <em>vec</em><a href='#index-int_002dvector_002d_003elist' class='copiable-anchor'> &para;</a></span></dt>
-<dt id="index-long_002dvector_002d_003elist"><span class="category">Procedure: </span><span><strong>long-vector-&gt;list</strong> <em>vec</em><a href='#index-long_002dvector_002d_003elist' class='copiable-anchor'> &para;</a></span></dt>
+<dl class="first-deffn">
+<dt class="deffn" id="index-short_002dvector_002d_003elist"><span class="category-def">Procedure: </span><span><strong class="def-name">short-vector-&gt;list</strong> <var class="def-var-arguments">vec</var><a class="copiable-link" href="#index-short_002dvector_002d_003elist"> &para;</a></span></dt>
+<dt class="deffnx def-cmd-deffn" id="index-int_002dvector_002d_003elist"><span class="category-def">Procedure: </span><span><strong class="def-name">int-vector-&gt;list</strong> <var class="def-var-arguments">vec</var><a class="copiable-link" href="#index-int_002dvector_002d_003elist"> &para;</a></span></dt>
+<dt class="deffnx def-cmd-deffn" id="index-long_002dvector_002d_003elist"><span class="category-def">Procedure: </span><span><strong class="def-name">long-vector-&gt;list</strong> <var class="def-var-arguments">vec</var><a class="copiable-link" href="#index-long_002dvector_002d_003elist"> &para;</a></span></dt>
 <dd><p>Converts a SRFI-4 uniform numeric vector of signed integers into an
 integer list.
 </p></dd></dl>
 
-<dl class="def">
-<dt id="index-list_002d_003eshort_002dvector"><span class="category">Procedure: </span><span><strong>list-&gt;short-vector</strong> <em>lst</em><a href='#index-list_002d_003eshort_002dvector' class='copiable-anchor'> &para;</a></span></dt>
-<dt id="index-list_002d_003eint_002dvector"><span class="category">Procedure: </span><span><strong>list-&gt;int-vector</strong> <em>lst</em><a href='#index-list_002d_003eint_002dvector' class='copiable-anchor'> &para;</a></span></dt>
-<dt id="index-list_002d_003elong_002dvector"><span class="category">Procedure: </span><span><strong>list-&gt;long-vector</strong> <em>lst</em><a href='#index-list_002d_003elong_002dvector' class='copiable-anchor'> &para;</a></span></dt>
+<dl class="first-deffn">
+<dt class="deffn" id="index-list_002d_003eshort_002dvector"><span class="category-def">Procedure: </span><span><strong class="def-name">list-&gt;short-vector</strong> <var class="def-var-arguments">lst</var><a class="copiable-link" href="#index-list_002d_003eshort_002dvector"> &para;</a></span></dt>
+<dt class="deffnx def-cmd-deffn" id="index-list_002d_003eint_002dvector"><span class="category-def">Procedure: </span><span><strong class="def-name">list-&gt;int-vector</strong> <var class="def-var-arguments">lst</var><a class="copiable-link" href="#index-list_002d_003eint_002dvector"> &para;</a></span></dt>
+<dt class="deffnx def-cmd-deffn" id="index-list_002d_003elong_002dvector"><span class="category-def">Procedure: </span><span><strong class="def-name">list-&gt;long-vector</strong> <var class="def-var-arguments">lst</var><a class="copiable-link" href="#index-list_002d_003elong_002dvector"> &para;</a></span></dt>
 <dd><p>Converts a list of integers into an SRFI-4 uniform numeric vector of
 signed integers.
 </p></dd></dl>
@@ -178,7 +167,7 @@ signed integers.
 </div>
 </div>
 <hr>
-<div class="header">
+<div class="nav-panel">
 <p>
 Next: <a href="Compatibility.html">Compatibility</a>, Previous: <a href="Enums-and-Flags.html">Enums and Flags</a>, Up: <a href="Reference-Guide.html">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>

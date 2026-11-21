@@ -58,7 +58,21 @@ info_TEXINFOS = docs/guile-gi.texi
 
 dvi: # Don't build dvi
 
-$(srcdir)/docs/index.html: $(srcdir)/docs/guile-gi.texi
+# The HTML manual, which is committed and served as the project's web
+# pages.  It depends on everything the manual includes: in particular
+# docs/version.texi, which has the version number, so that it is rebuilt
+# when the version changes.
+html_manual_includes = \
+  $(srcdir)/docs/version.texi \
+  $(srcdir)/docs/fdl-1.3.texi \
+  $(srcdir)/docs/ex-button.scm \
+  $(srcdir)/docs/ex-date.scm \
+  $(srcdir)/docs/ex-gapplication.scm \
+  $(srcdir)/docs/ex-load-by-name.scm \
+  $(srcdir)/docs/example-1.scm \
+  $(srcdir)/docs/gtk-3.scm
+
+$(srcdir)/docs/index.html: $(srcdir)/docs/guile-gi.texi $(html_manual_includes)
 	makeinfo $(srcdir)/docs/guile-gi.texi --css-ref=document-1.0.1.css --html --output=$(srcdir)/docs
 
 -distclean-docs:

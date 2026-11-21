@@ -1,9 +1,9 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE html>
 <html>
-<!-- Created by GNU Texinfo 6.8, https://www.gnu.org/software/texinfo/ -->
+<!-- Created by GNU Texinfo 7.1, https://www.gnu.org/software/texinfo/ -->
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<!-- Copyright (C) 2018, 2019, 2020 Michael L. Gran
+<!-- Copyright © 2018, 2019, 2020 Michael L. Gran
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3
@@ -28,21 +28,9 @@ Free Documentation License". -->
 <link href="Typelib-Introspection.html" rel="prev" title="Typelib Introspection">
 <style type="text/css">
 <!--
-a.copiable-anchor {visibility: hidden; text-decoration: none; line-height: 0em}
-a.summary-letter {text-decoration: none}
-blockquote.indentedblock {margin-right: 0em}
-div.display {margin-left: 3.2em}
-div.example {margin-left: 3.2em}
-kbd {font-style: oblique}
-pre.display {font-family: inherit}
-pre.format {font-family: inherit}
-pre.menu-comment {font-family: serif}
-pre.menu-preformatted {font-family: serif}
-span.nolinebreak {white-space: nowrap}
-span.roman {font-family: initial; font-weight: normal}
-span.sansserif {font-family: sans-serif; font-weight: normal}
-span:hover a.copiable-anchor {visibility: visible}
-ul.no-bullet {list-style: none}
+a.copiable-link {visibility: hidden; text-decoration: none; line-height: 0em}
+span:hover a.copiable-link {visibility: visible}
+strong.def-name {font-family: monospace; font-weight: bold; font-size: larger}
 -->
 </style>
 <link rel="stylesheet" type="text/css" href="document-1.0.1.css">
@@ -51,45 +39,45 @@ ul.no-bullet {list-style: none}
 </head>
 
 <body lang="en">
-<div class="section" id="Typelib-Documentation">
-<div class="header">
+<div class="section-level-extent" id="Typelib-Documentation">
+<div class="nav-panel">
 <p>
 Next: <a href="GType-Constants-and-Operations.html" accesskey="n" rel="next">GType Constants and Operations</a>, Previous: <a href="Typelib-Introspection.html" accesskey="p" rel="prev">Typelib Introspection</a>, Up: <a href="Reference-Guide.html" accesskey="u" rel="up">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>
 <hr>
-<span id="Typelib-Documentation-1"></span><h3 class="section">3.2 Typelib Documentation</h3>
+<h3 class="section" id="Typelib-Documentation-1"><span>3.2 Typelib Documentation<a class="copiable-link" href="#Typelib-Documentation-1"> &para;</a></span></h3>
 
-<dl class="def">
-<dt id="index-typelib"><span class="category">Procedure: </span><span><strong>typelib</strong> <em>lib [version] [#:require?=#t]</em><a href='#index-typelib' class='copiable-anchor'> &para;</a></span></dt>
+<dl class="first-deffn">
+<dt class="deffn" id="index-typelib"><span class="category-def">Procedure: </span><span><strong class="def-name">typelib</strong> <var class="def-var-arguments">lib [version] [#:require?=#t]</var><a class="copiable-link" href="#index-typelib"> &para;</a></span></dt>
 <dd><p>Open a new input port, whose contents describe the runtime bindings created
-for <var>lib</var>. If <var>version</var> is given, use that version of the typelib,
-otherwise the latest. If <var>require?</var> is true (the default), require
+for <var class="var">lib</var>. If <var class="var">version</var> is given, use that version of the typelib,
+otherwise the latest. If <var class="var">require?</var> is true (the default), require
 it first.
 </p></dd></dl>
 
-<dl class="def">
-<dt id="index-gir"><span class="category">Procedure: </span><span><strong>gir</strong> <em>lib version</em><a href='#index-gir' class='copiable-anchor'> &para;</a></span></dt>
+<dl class="first-deffn">
+<dt class="deffn" id="index-gir"><span class="category-def">Procedure: </span><span><strong class="def-name">gir</strong> <var class="def-var-arguments">lib version</var><a class="copiable-link" href="#index-gir"> &para;</a></span></dt>
 <dd><p>Open a new file input port for the GIR metadata of LIB. VERSION applies just
-as with <code>typelib</code>, but is required.
+as with <code class="code">typelib</code>, but is required.
 </p></dd></dl>
 
-<dl class="def">
-<dt id="index-gir_002dsearch_002dpath"><span class="category">Parameter: </span><span><strong>gir-search-path</strong><a href='#index-gir_002dsearch_002dpath' class='copiable-anchor'> &para;</a></span></dt>
-<dd><p>Search path, that <code>gir</code> searches GIR metadata in.
-This parameter is actually defined in <code>(gi config)</code>.
+<dl class="first-deffn">
+<dt class="deffn" id="index-gir_002dsearch_002dpath"><span class="category-def">Parameter: </span><span><strong class="def-name">gir-search-path</strong><a class="copiable-link" href="#index-gir_002dsearch_002dpath"> &para;</a></span></dt>
+<dd><p>Search path, that <code class="code">gir</code> searches GIR metadata in.
+This parameter is actually defined in <code class="code">(gi config)</code>.
 </p></dd></dl>
 
-<dl class="def">
-<dt id="index-parse"><span class="category">Procedure: </span><span><strong>parse</strong> <em>xml [documentation]</em><a href='#index-parse' class='copiable-anchor'> &para;</a></span></dt>
-<dd><p>Parse <var>xml</var> into a structure suitable for post-processing.
-If <var>documentation</var> is given, use it as a base, merging the two.
+<dl class="first-deffn">
+<dt class="deffn" id="index-parse"><span class="category-def">Procedure: </span><span><strong class="def-name">parse</strong> <var class="def-var-arguments">xml [documentation]</var><a class="copiable-link" href="#index-parse"> &para;</a></span></dt>
+<dd><p>Parse <var class="var">xml</var> into a structure suitable for post-processing.
+If <var class="var">documentation</var> is given, use it as a base, merging the two.
 </p>
-<p><var>xml</var> is expected to be a string or port containing documentation in
-an XML format. <var>documentation</var> should either be the empty list (the
-default) or the result of a previous <code>parse</code> operation.
+<p><var class="var">xml</var> is expected to be a string or port containing documentation in
+an XML format. <var class="var">documentation</var> should either be the empty list (the
+default) or the result of a previous <code class="code">parse</code> operation.
 </p>
 <p>It should be noted, that the order in which documentations are threaded
-through <code>parse</code> matters. The last <code>xml</code> &ldquo;wins&rdquo; in cases
+through <code class="code">parse</code> matters. The last <code class="code">xml</code> &ldquo;wins&rdquo; in cases
 where multiple ones fill in the same value (e.g. attributes).  Since
 GIRs has more information than typelibs, you should therefore handle
 typelibs first in most cases.
@@ -97,30 +85,30 @@ typelibs first in most cases.
 <p>The result is a nodeset corresponding to the (merged) XML.  However, it
 is stripped down to only contain nodes relevant for documentation (the
 exact subset may be subject to change) and also contains the
-non-standard <code>scheme</code> node for bindings created by Guile-GI.
+non-standard <code class="code">scheme</code> node for bindings created by Guile-GI.
 </p></dd></dl>
 
-<dl class="def">
-<dt id="index-_002d_003eguile_002dprocedures_002etxt"><span class="category">Procedure: </span><span><strong>-&gt;guile-procedures.txt</strong> <em>documentation</em><a href='#index-_002d_003eguile_002dprocedures_002etxt' class='copiable-anchor'> &para;</a></span></dt>
-<dd><p>Display <var>documentation</var> in an <samp>guile-procedures.txt</samp>-esque style.
+<dl class="first-deffn">
+<dt class="deffn" id="index-_002d_003eguile_002dprocedures_002etxt"><span class="category-def">Procedure: </span><span><strong class="def-name">-&gt;guile-procedures.txt</strong> <var class="def-var-arguments">documentation</var><a class="copiable-link" href="#index-_002d_003eguile_002dprocedures_002etxt"> &para;</a></span></dt>
+<dd><p>Display <var class="var">documentation</var> in an <samp class="file">guile-procedures.txt</samp>-esque style.
 </p></dd></dl>
 
-<dl class="def">
-<dt id="index-_002d_003edocbook"><span class="category">Procedure: </span><span><strong>-&gt;docbook</strong> <em>documentation</em><a href='#index-_002d_003edocbook' class='copiable-anchor'> &para;</a></span></dt>
-<dd><p>Display <var>documentation</var> as DocBook XML.
-</p><blockquote>
-<p><b>Warning:</b> The standard DocBook tools installable through most distributions do
+<dl class="first-deffn">
+<dt class="deffn" id="index-_002d_003edocbook"><span class="category-def">Procedure: </span><span><strong class="def-name">-&gt;docbook</strong> <var class="def-var-arguments">documentation</var><a class="copiable-link" href="#index-_002d_003edocbook"> &para;</a></span></dt>
+<dd><p>Display <var class="var">documentation</var> as DocBook XML.
+</p><blockquote class="quotation">
+<p><b class="b">Warning:</b> The standard DocBook tools installable through most distributions do
 not handle XML, but rather SGML.
 Trying to post-process the results of this function with them will
 only end up in weird results, (potentially lots of) errors and user frustration.
-Use GTK-Doc instead, either directly or through <code>xsltproc</code>,
+Use GTK-Doc instead, either directly or through <code class="code">xsltproc</code>,
 or use your own XSLT stylesheets.
 </p></blockquote>
 </dd></dl>
 
 </div>
 <hr>
-<div class="header">
+<div class="nav-panel">
 <p>
 Next: <a href="GType-Constants-and-Operations.html">GType Constants and Operations</a>, Previous: <a href="Typelib-Introspection.html">Typelib Introspection</a>, Up: <a href="Reference-Guide.html">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>

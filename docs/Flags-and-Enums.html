@@ -1,9 +1,9 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE html>
 <html>
-<!-- Created by GNU Texinfo 6.8, https://www.gnu.org/software/texinfo/ -->
+<!-- Created by GNU Texinfo 7.1, https://www.gnu.org/software/texinfo/ -->
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<!-- Copyright (C) 2018, 2019, 2020 Michael L. Gran
+<!-- Copyright © 2018, 2019, 2020 Michael L. Gran
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3
@@ -28,21 +28,9 @@ Free Documentation License". -->
 <link href="Constants.html" rel="prev" title="Constants">
 <style type="text/css">
 <!--
-a.copiable-anchor {visibility: hidden; text-decoration: none; line-height: 0em}
-a.summary-letter {text-decoration: none}
-blockquote.indentedblock {margin-right: 0em}
-div.display {margin-left: 3.2em}
+a.copiable-link {visibility: hidden; text-decoration: none; line-height: 0em}
 div.example {margin-left: 3.2em}
-kbd {font-style: oblique}
-pre.display {font-family: inherit}
-pre.format {font-family: inherit}
-pre.menu-comment {font-family: serif}
-pre.menu-preformatted {font-family: serif}
-span.nolinebreak {white-space: nowrap}
-span.roman {font-family: initial; font-weight: normal}
-span.sansserif {font-family: sans-serif; font-weight: normal}
-span:hover a.copiable-anchor {visibility: visible}
-ul.no-bullet {list-style: none}
+span:hover a.copiable-link {visibility: visible}
 -->
 </style>
 <link rel="stylesheet" type="text/css" href="document-1.0.1.css">
@@ -51,30 +39,30 @@ ul.no-bullet {list-style: none}
 </head>
 
 <body lang="en">
-<div class="subsection" id="Flags-and-Enums">
-<div class="header">
+<div class="subsection-level-extent" id="Flags-and-Enums">
+<div class="nav-panel">
 <p>
 Next: <a href="Structs-and-Unions.html" accesskey="n" rel="next">Structs and Unions</a>, Previous: <a href="Constants.html" accesskey="p" rel="prev">Constants</a>, Up: <a href="Categories-of-Typelib-Bindings.html" accesskey="u" rel="up">Categories of Typelib Bindings</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>
 <hr>
-<span id="Flags-and-Enums-1"></span><h4 class="subsection">2.3.2 Flags and Enums</h4>
+<h4 class="subsection" id="Flags-and-Enums-1"><span>2.3.2 Flags and Enums<a class="copiable-link" href="#Flags-and-Enums-1"> &para;</a></span></h4>
 
 <p>When a typelib file contains a set of flags or enums, Guile-GI creates a
 class for that set.  That class contains an association map between
 symbols and values.
 </p>
-<p>For example, when Guile-GI encounters the  <code>G_APPLICATION_FLAGS</code>
-flags collection, it creates a GOOPS type <code>&lt;GApplicationFlags&gt;</code>.
+<p>For example, when Guile-GI encounters the  <code class="code">G_APPLICATION_FLAGS</code>
+flags collection, it creates a GOOPS type <code class="code">&lt;GApplicationFlags&gt;</code>.
 Its association map can be queried two ways.
 </p><div class="example">
-<pre class="example">;; In C, (G_APPLICATION_HANDLES_OPEN | G_APPLICATION_NON_UNIQUE)
+<pre class="example-preformatted">;; In C, (G_APPLICATION_HANDLES_OPEN | G_APPLICATION_NON_UNIQUE)
 (list-&gt;flags &lt;GApplicationFlags&gt; '(handles-open non-unique))
 (list-&gt;application-flags '(handles-open non-unique))
 </pre></div>
 
 <p>Enums are similar, except not accessed as lists.
 </p><div class="example">
-<pre class="example">;; In C, the enum G_BUS_TYPE_SYSTEM
+<pre class="example-preformatted">;; In C, the enum G_BUS_TYPE_SYSTEM
 (symbol-&gt;enum &lt;GBusType&gt; 'system)
 (symbol-&gt;bus-type 'system)
 </pre></div>

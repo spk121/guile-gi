@@ -1,9 +1,9 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE html>
 <html>
-<!-- Created by GNU Texinfo 6.8, https://www.gnu.org/software/texinfo/ -->
+<!-- Created by GNU Texinfo 7.1, https://www.gnu.org/software/texinfo/ -->
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<!-- Copyright (C) 2018, 2019, 2020 Michael L. Gran
+<!-- Copyright © 2018, 2019, 2020 Michael L. Gran
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3
@@ -28,21 +28,9 @@ Free Documentation License". -->
 <link href="Typelib-Documentation.html" rel="prev" title="Typelib Documentation">
 <style type="text/css">
 <!--
-a.copiable-anchor {visibility: hidden; text-decoration: none; line-height: 0em}
-a.summary-letter {text-decoration: none}
-blockquote.indentedblock {margin-right: 0em}
-div.display {margin-left: 3.2em}
-div.example {margin-left: 3.2em}
-kbd {font-style: oblique}
-pre.display {font-family: inherit}
-pre.format {font-family: inherit}
-pre.menu-comment {font-family: serif}
-pre.menu-preformatted {font-family: serif}
-span.nolinebreak {white-space: nowrap}
-span.roman {font-family: initial; font-weight: normal}
-span.sansserif {font-family: sans-serif; font-weight: normal}
-span:hover a.copiable-anchor {visibility: visible}
-ul.no-bullet {list-style: none}
+a.copiable-link {visibility: hidden; text-decoration: none; line-height: 0em}
+span:hover a.copiable-link {visibility: visible}
+strong.def-name {font-family: monospace; font-weight: bold; font-size: larger}
 -->
 </style>
 <link rel="stylesheet" type="text/css" href="document-1.0.1.css">
@@ -51,74 +39,74 @@ ul.no-bullet {list-style: none}
 </head>
 
 <body lang="en">
-<div class="section" id="GType-Constants-and-Operations">
-<div class="header">
+<div class="section-level-extent" id="GType-Constants-and-Operations">
+<div class="nav-panel">
 <p>
 Next: <a href="Enums-and-Flags.html" accesskey="n" rel="next">Enums and Flags</a>, Previous: <a href="Typelib-Documentation.html" accesskey="p" rel="prev">Typelib Documentation</a>, Up: <a href="Reference-Guide.html" accesskey="u" rel="up">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>
 <hr>
-<span id="GType-Constants-and-Operations-1"></span><h3 class="section">3.3 GType Constants and Operations</h3>
-<p>The <code>(gi types)</code> module provides these variables and procedures.
+<h3 class="section" id="GType-Constants-and-Operations-1"><span>3.3 GType Constants and Operations<a class="copiable-link" href="#GType-Constants-and-Operations-1"> &para;</a></span></h3>
+<p>The <code class="code">(gi types)</code> module provides these variables and procedures.
 </p>
-<dl class="def">
-<dt id="index-G_005fTYPE_005fNONE"><span class="category">Variable: </span><span><strong>G_TYPE_NONE</strong><a href='#index-G_005fTYPE_005fNONE' class='copiable-anchor'> &para;</a></span></dt>
-<dt id="index-G_005fTYPE_005fCHAR"><span class="category">Variable: </span><span><strong>G_TYPE_CHAR</strong><a href='#index-G_005fTYPE_005fCHAR' class='copiable-anchor'> &para;</a></span></dt>
-<dt id="index-G_005fTYPE_005fUCHAR"><span class="category">Variable: </span><span><strong>G_TYPE_UCHAR</strong><a href='#index-G_005fTYPE_005fUCHAR' class='copiable-anchor'> &para;</a></span></dt>
-<dt id="index-G_005fTYPE_005fBOOLEAN"><span class="category">Variable: </span><span><strong>G_TYPE_BOOLEAN</strong><a href='#index-G_005fTYPE_005fBOOLEAN' class='copiable-anchor'> &para;</a></span></dt>
-<dt id="index-G_005fTYPE_005fINT"><span class="category">Variable: </span><span><strong>G_TYPE_INT</strong><a href='#index-G_005fTYPE_005fINT' class='copiable-anchor'> &para;</a></span></dt>
-<dt id="index-G_005fTYPE_005fUINT"><span class="category">Variable: </span><span><strong>G_TYPE_UINT</strong><a href='#index-G_005fTYPE_005fUINT' class='copiable-anchor'> &para;</a></span></dt>
-<dt id="index-G_005fTYPE_005fINT64"><span class="category">Variable: </span><span><strong>G_TYPE_INT64</strong><a href='#index-G_005fTYPE_005fINT64' class='copiable-anchor'> &para;</a></span></dt>
-<dt id="index-G_005fTYPE_005fUINT64"><span class="category">Variable: </span><span><strong>G_TYPE_UINT64</strong><a href='#index-G_005fTYPE_005fUINT64' class='copiable-anchor'> &para;</a></span></dt>
-<dt id="index-G_005fTYPE_005fFLOAT"><span class="category">Variable: </span><span><strong>G_TYPE_FLOAT</strong><a href='#index-G_005fTYPE_005fFLOAT' class='copiable-anchor'> &para;</a></span></dt>
-<dt id="index-G_005fTYPE_005fDOUBLE"><span class="category">Variable: </span><span><strong>G_TYPE_DOUBLE</strong><a href='#index-G_005fTYPE_005fDOUBLE' class='copiable-anchor'> &para;</a></span></dt>
+<dl class="first-defvr first-defvar-alias-first-defvr">
+<dt class="defvr defvar-alias-defvr" id="index-G_005fTYPE_005fNONE"><span class="category-def">Variable: </span><span><strong class="def-name">G_TYPE_NONE</strong><a class="copiable-link" href="#index-G_005fTYPE_005fNONE"> &para;</a></span></dt>
+<dt class="defvrx defvarx-alias-defvrx def-cmd-defvr" id="index-G_005fTYPE_005fCHAR"><span class="category-def">Variable: </span><span><strong class="def-name">G_TYPE_CHAR</strong><a class="copiable-link" href="#index-G_005fTYPE_005fCHAR"> &para;</a></span></dt>
+<dt class="defvrx defvarx-alias-defvrx def-cmd-defvr" id="index-G_005fTYPE_005fUCHAR"><span class="category-def">Variable: </span><span><strong class="def-name">G_TYPE_UCHAR</strong><a class="copiable-link" href="#index-G_005fTYPE_005fUCHAR"> &para;</a></span></dt>
+<dt class="defvrx defvarx-alias-defvrx def-cmd-defvr" id="index-G_005fTYPE_005fBOOLEAN"><span class="category-def">Variable: </span><span><strong class="def-name">G_TYPE_BOOLEAN</strong><a class="copiable-link" href="#index-G_005fTYPE_005fBOOLEAN"> &para;</a></span></dt>
+<dt class="defvrx defvarx-alias-defvrx def-cmd-defvr" id="index-G_005fTYPE_005fINT"><span class="category-def">Variable: </span><span><strong class="def-name">G_TYPE_INT</strong><a class="copiable-link" href="#index-G_005fTYPE_005fINT"> &para;</a></span></dt>
+<dt class="defvrx defvarx-alias-defvrx def-cmd-defvr" id="index-G_005fTYPE_005fUINT"><span class="category-def">Variable: </span><span><strong class="def-name">G_TYPE_UINT</strong><a class="copiable-link" href="#index-G_005fTYPE_005fUINT"> &para;</a></span></dt>
+<dt class="defvrx defvarx-alias-defvrx def-cmd-defvr" id="index-G_005fTYPE_005fINT64"><span class="category-def">Variable: </span><span><strong class="def-name">G_TYPE_INT64</strong><a class="copiable-link" href="#index-G_005fTYPE_005fINT64"> &para;</a></span></dt>
+<dt class="defvrx defvarx-alias-defvrx def-cmd-defvr" id="index-G_005fTYPE_005fUINT64"><span class="category-def">Variable: </span><span><strong class="def-name">G_TYPE_UINT64</strong><a class="copiable-link" href="#index-G_005fTYPE_005fUINT64"> &para;</a></span></dt>
+<dt class="defvrx defvarx-alias-defvrx def-cmd-defvr" id="index-G_005fTYPE_005fFLOAT"><span class="category-def">Variable: </span><span><strong class="def-name">G_TYPE_FLOAT</strong><a class="copiable-link" href="#index-G_005fTYPE_005fFLOAT"> &para;</a></span></dt>
+<dt class="defvrx defvarx-alias-defvrx def-cmd-defvr" id="index-G_005fTYPE_005fDOUBLE"><span class="category-def">Variable: </span><span><strong class="def-name">G_TYPE_DOUBLE</strong><a class="copiable-link" href="#index-G_005fTYPE_005fDOUBLE"> &para;</a></span></dt>
 <dd><p>These variables hold the GType integer values for the fundamental types.
 </p></dd></dl>
 
-<dl class="def">
-<dt id="index-G_005fTYPE_005fENUM"><span class="category">Variable: </span><span><strong>G_TYPE_ENUM</strong><a href='#index-G_005fTYPE_005fENUM' class='copiable-anchor'> &para;</a></span></dt>
-<dt id="index-G_005fTYPE_005fFLAGS"><span class="category">Variable: </span><span><strong>G_TYPE_FLAGS</strong><a href='#index-G_005fTYPE_005fFLAGS' class='copiable-anchor'> &para;</a></span></dt>
-<dt id="index-G_005fTYPE_005fSTRUCT"><span class="category">Variable: </span><span><strong>G_TYPE_STRUCT</strong><a href='#index-G_005fTYPE_005fSTRUCT' class='copiable-anchor'> &para;</a></span></dt>
-<dt id="index-G_005fTYPE_005fOBJECT"><span class="category">Variable: </span><span><strong>G_TYPE_OBJECT</strong><a href='#index-G_005fTYPE_005fOBJECT' class='copiable-anchor'> &para;</a></span></dt>
+<dl class="first-defvr first-defvar-alias-first-defvr">
+<dt class="defvr defvar-alias-defvr" id="index-G_005fTYPE_005fENUM"><span class="category-def">Variable: </span><span><strong class="def-name">G_TYPE_ENUM</strong><a class="copiable-link" href="#index-G_005fTYPE_005fENUM"> &para;</a></span></dt>
+<dt class="defvrx defvarx-alias-defvrx def-cmd-defvr" id="index-G_005fTYPE_005fFLAGS"><span class="category-def">Variable: </span><span><strong class="def-name">G_TYPE_FLAGS</strong><a class="copiable-link" href="#index-G_005fTYPE_005fFLAGS"> &para;</a></span></dt>
+<dt class="defvrx defvarx-alias-defvrx def-cmd-defvr" id="index-G_005fTYPE_005fSTRUCT"><span class="category-def">Variable: </span><span><strong class="def-name">G_TYPE_STRUCT</strong><a class="copiable-link" href="#index-G_005fTYPE_005fSTRUCT"> &para;</a></span></dt>
+<dt class="defvrx defvarx-alias-defvrx def-cmd-defvr" id="index-G_005fTYPE_005fOBJECT"><span class="category-def">Variable: </span><span><strong class="def-name">G_TYPE_OBJECT</strong><a class="copiable-link" href="#index-G_005fTYPE_005fOBJECT"> &para;</a></span></dt>
 <dd><p>These variables hold the GType integer values of the enum, flags,
 struct, and object base classes respectively.
 </p></dd></dl>
 
-<dl class="def">
-<dt id="index-get_002dgtype"><span class="category">Procedure: </span><span><strong>get-gtype</strong> <em>object</em><a href='#index-get_002dgtype' class='copiable-anchor'> &para;</a></span></dt>
-<dd><p>Given <var>object</var>, this procedure returns its GType as an integer. It
-returns <code>#f</code> if the object does not have a type registered in The
+<dl class="first-deffn">
+<dt class="deffn" id="index-get_002dgtype"><span class="category-def">Procedure: </span><span><strong class="def-name">get-gtype</strong> <var class="def-var-arguments">object</var><a class="copiable-link" href="#index-get_002dgtype"> &para;</a></span></dt>
+<dd><p>Given <var class="var">object</var>, this procedure returns its GType as an integer. It
+returns <code class="code">#f</code> if the object does not have a type registered in The
 GLib Dynamic Type System.
 </p></dd></dl>
 
-<dl class="def">
-<dt id="index-gtype_002dget_002dscheme_002dtype"><span class="category">Procedure: </span><span><strong>gtype-get-scheme-type</strong> <em>gtype</em><a href='#index-gtype_002dget_002dscheme_002dtype' class='copiable-anchor'> &para;</a></span></dt>
-<dd><p>Given <var>gtype</var>, a GType integer ID, this procedure will return the
-associated GOOPS class that holds instances of that type, of <code>#f</code>
-if there is no GOOPS class for that <var>gtype</var>.
+<dl class="first-deffn">
+<dt class="deffn" id="index-gtype_002dget_002dscheme_002dtype"><span class="category-def">Procedure: </span><span><strong class="def-name">gtype-get-scheme-type</strong> <var class="def-var-arguments">gtype</var><a class="copiable-link" href="#index-gtype_002dget_002dscheme_002dtype"> &para;</a></span></dt>
+<dd><p>Given <var class="var">gtype</var>, a GType integer ID, this procedure will return the
+associated GOOPS class that holds instances of that type, of <code class="code">#f</code>
+if there is no GOOPS class for that <var class="var">gtype</var>.
 </p></dd></dl>
 
-<dl class="def">
-<dt id="index-gtype_002dget_002dname"><span class="category">Procedure: </span><span><strong>gtype-get-name</strong> <em>gtype</em><a href='#index-gtype_002dget_002dname' class='copiable-anchor'> &para;</a></span></dt>
-<dd><p>Given <var>gtype</var> of type <code>&lt;integer&gt;</code>, this procedure returns
+<dl class="first-deffn">
+<dt class="deffn" id="index-gtype_002dget_002dname"><span class="category-def">Procedure: </span><span><strong class="def-name">gtype-get-name</strong> <var class="def-var-arguments">gtype</var><a class="copiable-link" href="#index-gtype_002dget_002dname"> &para;</a></span></dt>
+<dd><p>Given <var class="var">gtype</var> of type <code class="code">&lt;integer&gt;</code>, this procedure returns
 a string with GObject&rsquo;s internal name for this type.  This may differ
 slightly from the name that Guile-GI gives to the type.
 </p></dd></dl>
 
-<dl class="def">
-<dt id="index-gtype_002dget_002dparent"><span class="category">Procedure: </span><span><strong>gtype-get-parent</strong> <em>gtype</em><a href='#index-gtype_002dget_002dparent' class='copiable-anchor'> &para;</a></span></dt>
-<dt id="index-gtype_002dget_002dchildren"><span class="category">Procedure: </span><span><strong>gtype-get-children</strong> <em>gtype</em><a href='#index-gtype_002dget_002dchildren' class='copiable-anchor'> &para;</a></span></dt>
+<dl class="first-deffn">
+<dt class="deffn" id="index-gtype_002dget_002dparent"><span class="category-def">Procedure: </span><span><strong class="def-name">gtype-get-parent</strong> <var class="def-var-arguments">gtype</var><a class="copiable-link" href="#index-gtype_002dget_002dparent"> &para;</a></span></dt>
+<dt class="deffnx def-cmd-deffn" id="index-gtype_002dget_002dchildren"><span class="category-def">Procedure: </span><span><strong class="def-name">gtype-get-children</strong> <var class="def-var-arguments">gtype</var><a class="copiable-link" href="#index-gtype_002dget_002dchildren"> &para;</a></span></dt>
 <dd><p>These procedures return the parent type and the child types of a
-specified <var>gtype</var> as GType integers.
+specified <var class="var">gtype</var> as GType integers.
 </p></dd></dl>
 
-<dl class="def">
-<dt id="index-gtype_002dis_002da_003f"><span class="category">Procedure: </span><span><strong>gtype-is-a?</strong> <em>object type</em><a href='#index-gtype_002dis_002da_003f' class='copiable-anchor'> &para;</a></span></dt>
-<dd><p>Returns <code>#t</code> of <var>object</var> is an instance of a <var>type</var>.
+<dl class="first-deffn">
+<dt class="deffn" id="index-gtype_002dis_002da_003f"><span class="category-def">Procedure: </span><span><strong class="def-name">gtype-is-a?</strong> <var class="def-var-arguments">object type</var><a class="copiable-link" href="#index-gtype_002dis_002da_003f"> &para;</a></span></dt>
+<dd><p>Returns <code class="code">#t</code> of <var class="var">object</var> is an instance of a <var class="var">type</var>.
 </p></dd></dl>
 
 </div>
 <hr>
-<div class="header">
+<div class="nav-panel">
 <p>
 Next: <a href="Enums-and-Flags.html">Enums and Flags</a>, Previous: <a href="Typelib-Documentation.html">Typelib Documentation</a>, Up: <a href="Reference-Guide.html">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>

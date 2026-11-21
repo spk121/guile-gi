@@ -1,9 +1,9 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE html>
 <html>
-<!-- Created by GNU Texinfo 6.8, https://www.gnu.org/software/texinfo/ -->
+<!-- Created by GNU Texinfo 7.1, https://www.gnu.org/software/texinfo/ -->
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<!-- Copyright (C) 2018, 2019, 2020 Michael L. Gran
+<!-- Copyright © 2018, 2019, 2020 Michael L. Gran
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3
@@ -28,21 +28,8 @@ Free Documentation License". -->
 <link href="Native-Pointers.html" rel="prev" title="Native Pointers">
 <style type="text/css">
 <!--
-a.copiable-anchor {visibility: hidden; text-decoration: none; line-height: 0em}
-a.summary-letter {text-decoration: none}
-blockquote.indentedblock {margin-right: 0em}
-div.display {margin-left: 3.2em}
-div.example {margin-left: 3.2em}
-kbd {font-style: oblique}
-pre.display {font-family: inherit}
-pre.format {font-family: inherit}
-pre.menu-comment {font-family: serif}
-pre.menu-preformatted {font-family: serif}
-span.nolinebreak {white-space: nowrap}
-span.roman {font-family: initial; font-weight: normal}
-span.sansserif {font-family: sans-serif; font-weight: normal}
-span:hover a.copiable-anchor {visibility: visible}
-ul.no-bullet {list-style: none}
+a.copiable-link {visibility: hidden; text-decoration: none; line-height: 0em}
+span:hover a.copiable-link {visibility: visible}
 -->
 </style>
 <link rel="stylesheet" type="text/css" href="document-1.0.1.css">
@@ -51,13 +38,13 @@ ul.no-bullet {list-style: none}
 </head>
 
 <body lang="en">
-<div class="subsection" id="Arrays">
-<div class="header">
+<div class="subsection-level-extent" id="Arrays">
+<div class="nav-panel">
 <p>
 Next: <a href="Null-Pointers-and-Optional-Arguments.html" accesskey="n" rel="next">Null Pointers and Optional Arguments</a>, Previous: <a href="Native-Pointers.html" accesskey="p" rel="prev">Native Pointers</a>, Up: <a href="Argument-Conversion.html" accesskey="u" rel="up">Argument Conversion</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>
 <hr>
-<span id="Arrays-1"></span><h4 class="subsection">2.4.8 Arrays</h4>
+<h4 class="subsection" id="Arrays-1"><span>2.4.8 Arrays<a class="copiable-link" href="#Arrays-1"> &para;</a></span></h4>
 
 <p>There are many different types of native arrays, and the Guile types
 expected for GObject procedures that native arrays varies depending on
@@ -67,14 +54,14 @@ the type required.
 floating points, etc &ndash; a Guile bytevector needs to be used.  For these
 bytevectors, always use native-endianness.
 </p>
-<p>When a native array of <code>gunichar</code> values is expected, a Guile
+<p>When a native array of <code class="code">gunichar</code> values is expected, a Guile
 string can be used.
 </p>
 <p>When a native array of strings is expected, a Guile list or vector of
 strings can be used.
 </p>
 <p>For native arrays of GObject objects, structs, unions, flags, enums, and
-GTypes, a <em>list</em> is used instead of a bytevector.
+GTypes, a <em class="emph">list</em> is used instead of a bytevector.
 </p>
 <p>If the native procedure expects a zero-terminated array, Guile-GI will
 provide that automatically.  There is no need to add you own zero.
@@ -83,8 +70,8 @@ provide that automatically.  There is no need to add you own zero.
 arrays.  For those procedures, the Guile caller will need to create
 and pass in a bytevector of the appropriate size.
 </p>
-<blockquote>
-<p><b>Warning:</b> It is best not to use any of GLib&rsquo;s <code>Array</code> and <code>ByteArray</code>
+<blockquote class="quotation">
+<p><b class="b">Warning:</b> It is best not to use any of GLib&rsquo;s <code class="code">Array</code> and <code class="code">ByteArray</code>
 procedures directly.  Since arrays get converted to bytevectors, these
 procedures will likely fail to do anything sensible.
 </p></blockquote>

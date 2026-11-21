@@ -1,9 +1,9 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE html>
 <html>
-<!-- Created by GNU Texinfo 6.8, https://www.gnu.org/software/texinfo/ -->
+<!-- Created by GNU Texinfo 7.1, https://www.gnu.org/software/texinfo/ -->
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<!-- Copyright (C) 2018, 2019, 2020 Michael L. Gran
+<!-- Copyright © 2018, 2019, 2020 Michael L. Gran
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3
@@ -28,21 +28,9 @@ Free Documentation License". -->
 <link href="Utilities.html" rel="prev" title="Utilities">
 <style type="text/css">
 <!--
-a.copiable-anchor {visibility: hidden; text-decoration: none; line-height: 0em}
-a.summary-letter {text-decoration: none}
-blockquote.indentedblock {margin-right: 0em}
-div.display {margin-left: 3.2em}
-div.example {margin-left: 3.2em}
-kbd {font-style: oblique}
-pre.display {font-family: inherit}
-pre.format {font-family: inherit}
-pre.menu-comment {font-family: serif}
-pre.menu-preformatted {font-family: serif}
-span.nolinebreak {white-space: nowrap}
-span.roman {font-family: initial; font-weight: normal}
-span.sansserif {font-family: sans-serif; font-weight: normal}
-span:hover a.copiable-anchor {visibility: visible}
-ul.no-bullet {list-style: none}
+a.copiable-link {visibility: hidden; text-decoration: none; line-height: 0em}
+span:hover a.copiable-link {visibility: visible}
+strong.def-name {font-family: monospace; font-weight: bold; font-size: larger}
 -->
 </style>
 <link rel="stylesheet" type="text/css" href="document-1.0.1.css">
@@ -51,58 +39,58 @@ ul.no-bullet {list-style: none}
 </head>
 
 <body lang="en">
-<div class="section" id="Compatibility">
-<div class="header">
+<div class="section-level-extent" id="Compatibility">
+<div class="nav-panel">
 <p>
 Next: <a href="More-Stuff.html" accesskey="n" rel="next">More Stuff</a>, Previous: <a href="Utilities.html" accesskey="p" rel="prev">Utilities</a>, Up: <a href="Reference-Guide.html" accesskey="u" rel="up">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>
 <hr>
-<span id="Compatibility-1"></span><h3 class="section">3.6 Compatibility</h3>
-<span id="index-fiddle"></span>
+<h3 class="section" id="Compatibility-1"><span>3.6 Compatibility<a class="copiable-link" href="#Compatibility-1"> &para;</a></span></h3>
+<a class="index-entry-id" id="index-fiddle"></a>
 
 <p>Guile-GI normally keeps pointers to the actual objects hidden (for valid
 concerns about reference handling), but in some instances it might be
 necessary to fiddle with them.  A procedure to do exactly that is
-defined in <code>(gi compat)</code>.
-</p><dl class="def">
-<dt id="index-fiddle-1"><span class="category">Procedure: </span><span><strong>fiddle</strong> <em>(proc &lt;procedure&gt;) (object &lt;GObject&gt;)</em><a href='#index-fiddle-1' class='copiable-anchor'> &para;</a></span></dt>
-<dt id="index-fiddle-2"><span class="category">Procedure: </span><span><strong>fiddle</strong> <em>(proc &lt;procedure&gt;) (boxed &lt;GBoxed&gt;)</em><a href='#index-fiddle-2' class='copiable-anchor'> &para;</a></span></dt>
-<dd><p>Apply <var>proc</var> on the internal pointer of <var>object</var> or
-<var>boxed</var>.
+defined in <code class="code">(gi compat)</code>.
+</p><dl class="first-deffn">
+<dt class="deffn" id="index-fiddle-1"><span class="category-def">Procedure: </span><span><strong class="def-name">fiddle</strong> <var class="def-var-arguments">(proc &lt;procedure&gt;) (object &lt;GObject&gt;)</var><a class="copiable-link" href="#index-fiddle-1"> &para;</a></span></dt>
+<dt class="deffnx def-cmd-deffn" id="index-fiddle-2"><span class="category-def">Procedure: </span><span><strong class="def-name">fiddle</strong> <var class="def-var-arguments">(proc &lt;procedure&gt;) (boxed &lt;GBoxed&gt;)</var><a class="copiable-link" href="#index-fiddle-2"> &para;</a></span></dt>
+<dd><p>Apply <var class="var">proc</var> on the internal pointer of <var class="var">object</var> or
+<var class="var">boxed</var>.
 </p></dd></dl>
 
-<p>Oftentimes, <var>proc</var> is a procedure from a dynamic library, which takes
+<p>Oftentimes, <var class="var">proc</var> is a procedure from a dynamic library, which takes
 exactly one argument (the pointer) and returns exactly one output (the
 Scheme object).  Defining many such conversions can be a bit verbose,
 so we defined a helper for that.
-</p><dl class="def">
-<dt id="index-dynamic_002dfiddler"><span class="category">Procedure: </span><span><strong>dynamic-fiddler</strong> <em>name library</em><a href='#index-dynamic_002dfiddler' class='copiable-anchor'> &para;</a></span></dt>
-<dd><p>Load <var>name</var> from <var>library</var> and convert it to a function, that
+</p><dl class="first-deffn">
+<dt class="deffn" id="index-dynamic_002dfiddler"><span class="category-def">Procedure: </span><span><strong class="def-name">dynamic-fiddler</strong> <var class="def-var-arguments">name library</var><a class="copiable-link" href="#index-dynamic_002dfiddler"> &para;</a></span></dt>
+<dd><p>Load <var class="var">name</var> from <var class="var">library</var> and convert it to a function, that
 takes exactly one pointer and returns a Scheme object.
 </p></dd></dl>
 
-<span id="index-Guile_002dCairo"></span>
+<a class="index-entry-id" id="index-Guile_002dCairo"></a>
 <p>One instance, where the above are necessary, is the cairo library,
 whose lack of introspection has caused many language bindings to be written
 without it.
-When loading <code>(gi compat)</code> in an environment, where
-<code>(cairo)</code> is available, it will automatically create conversion
+When loading <code class="code">(gi compat)</code> in an environment, where
+<code class="code">(cairo)</code> is available, it will automatically create conversion
 functions for it.
 </p>
-<dl class="def">
-<dt id="index-context_002d_003ecairo"><span class="category">Procedure: </span><span><strong>context-&gt;cairo</strong> <em>context</em><a href='#index-context_002d_003ecairo' class='copiable-anchor'> &para;</a></span></dt>
-<dt id="index-surface_002d_003ecairo"><span class="category">Procedure: </span><span><strong>surface-&gt;cairo</strong> <em>surface</em><a href='#index-surface_002d_003ecairo' class='copiable-anchor'> &para;</a></span></dt>
-<dt id="index-font_002dface_002d_003ecairo"><span class="category">Procedure: </span><span><strong>font-face-&gt;cairo</strong> <em>font-face</em><a href='#index-font_002dface_002d_003ecairo' class='copiable-anchor'> &para;</a></span></dt>
-<dt id="index-scaled_002dfont_002d_003ecairo"><span class="category">Procedure: </span><span><strong>scaled-font-&gt;cairo</strong> <em>scaled-font</em><a href='#index-scaled_002dfont_002d_003ecairo' class='copiable-anchor'> &para;</a></span></dt>
-<dd><p>Convert <var>context</var>, <var>surface</var>, <var>font-face</var> or <var>scaled-font</var>
-to the respective <code>(cairo)</code> smob type.
+<dl class="first-deffn">
+<dt class="deffn" id="index-context_002d_003ecairo"><span class="category-def">Procedure: </span><span><strong class="def-name">context-&gt;cairo</strong> <var class="def-var-arguments">context</var><a class="copiable-link" href="#index-context_002d_003ecairo"> &para;</a></span></dt>
+<dt class="deffnx def-cmd-deffn" id="index-surface_002d_003ecairo"><span class="category-def">Procedure: </span><span><strong class="def-name">surface-&gt;cairo</strong> <var class="def-var-arguments">surface</var><a class="copiable-link" href="#index-surface_002d_003ecairo"> &para;</a></span></dt>
+<dt class="deffnx def-cmd-deffn" id="index-font_002dface_002d_003ecairo"><span class="category-def">Procedure: </span><span><strong class="def-name">font-face-&gt;cairo</strong> <var class="def-var-arguments">font-face</var><a class="copiable-link" href="#index-font_002dface_002d_003ecairo"> &para;</a></span></dt>
+<dt class="deffnx def-cmd-deffn" id="index-scaled_002dfont_002d_003ecairo"><span class="category-def">Procedure: </span><span><strong class="def-name">scaled-font-&gt;cairo</strong> <var class="def-var-arguments">scaled-font</var><a class="copiable-link" href="#index-scaled_002dfont_002d_003ecairo"> &para;</a></span></dt>
+<dd><p>Convert <var class="var">context</var>, <var class="var">surface</var>, <var class="var">font-face</var> or <var class="var">scaled-font</var>
+to the respective <code class="code">(cairo)</code> smob type.
 The conversion adds a reference count to the object, so it should
-be freed manually using the correct <code>-destroy</code> function.
+be freed manually using the correct <code class="code">-destroy</code> function.
 </p></dd></dl>
 
 </div>
 <hr>
-<div class="header">
+<div class="nav-panel">
 <p>
 Next: <a href="More-Stuff.html">More Stuff</a>, Previous: <a href="Utilities.html">Utilities</a>, Up: <a href="Reference-Guide.html">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>

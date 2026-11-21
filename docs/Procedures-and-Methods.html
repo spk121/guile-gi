@@ -1,9 +1,9 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE html>
 <html>
-<!-- Created by GNU Texinfo 6.8, https://www.gnu.org/software/texinfo/ -->
+<!-- Created by GNU Texinfo 7.1, https://www.gnu.org/software/texinfo/ -->
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<!-- Copyright (C) 2018, 2019, 2020 Michael L. Gran
+<!-- Copyright © 2018, 2019, 2020 Michael L. Gran
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3
@@ -27,21 +27,9 @@ Free Documentation License". -->
 <link href="GObjects.html" rel="prev" title="GObjects">
 <style type="text/css">
 <!--
-a.copiable-anchor {visibility: hidden; text-decoration: none; line-height: 0em}
-a.summary-letter {text-decoration: none}
-blockquote.indentedblock {margin-right: 0em}
-div.display {margin-left: 3.2em}
+a.copiable-link {visibility: hidden; text-decoration: none; line-height: 0em}
 div.example {margin-left: 3.2em}
-kbd {font-style: oblique}
-pre.display {font-family: inherit}
-pre.format {font-family: inherit}
-pre.menu-comment {font-family: serif}
-pre.menu-preformatted {font-family: serif}
-span.nolinebreak {white-space: nowrap}
-span.roman {font-family: initial; font-weight: normal}
-span.sansserif {font-family: sans-serif; font-weight: normal}
-span:hover a.copiable-anchor {visibility: visible}
-ul.no-bullet {list-style: none}
+span:hover a.copiable-link {visibility: visible}
 -->
 </style>
 <link rel="stylesheet" type="text/css" href="document-1.0.1.css">
@@ -50,13 +38,13 @@ ul.no-bullet {list-style: none}
 </head>
 
 <body lang="en">
-<div class="subsection" id="Procedures-and-Methods">
-<div class="header">
+<div class="subsection-level-extent" id="Procedures-and-Methods">
+<div class="nav-panel">
 <p>
 Previous: <a href="GObjects.html" accesskey="p" rel="prev">GObjects</a>, Up: <a href="Categories-of-Typelib-Bindings.html" accesskey="u" rel="up">Categories of Typelib Bindings</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>
 <hr>
-<span id="Procedures-and-Methods-1"></span><h4 class="subsection">2.3.5 Procedures and Methods</h4>
+<h4 class="subsection" id="Procedures-and-Methods-1"><span>2.3.5 Procedures and Methods<a class="copiable-link" href="#Procedures-and-Methods-1"> &para;</a></span></h4>
 
 <p>When a library provides functions, they can either be standalone
 functions or methods.  Methods are functions closely associated with a
@@ -66,27 +54,27 @@ type.
 function name is the kebab-case version of the native function name,
 with the namespace removed.
 </p><div class="example">
-<pre class="example">;; In C, the function g_unix_mount_at(mount_path, time_read)
+<pre class="example-preformatted">;; In C, the function g_unix_mount_at(mount_path, time_read)
 (unix-mount-at mount-path)
 </pre></div>
 
 <p>When Guile-GI provides a binding for a method, it creates a GOOPS
 generic function.  The function name is of the form
-<code>type:method-name</code>.  It also provides an alias of the form
-<code>method-name</code>.  Often, the generic functions using the shorter
+<code class="code">type:method-name</code>.  It also provides an alias of the form
+<code class="code">method-name</code>.  Often, the generic functions using the shorter
 method names end up overloaded; however, as they are bound to classes
 they can usually be disambiguated based on their first arguments,
 which are the object instances.
 </p><div class="example">
-<pre class="example">;; In C, the GDate* method g_date_add_days
+<pre class="example-preformatted">;; In C, the GDate* method g_date_add_days
 ;; The type:method form
 (date:add-days date 1)
 ;; The method-only form
 (add-days date 1)
 </pre></div>
 
-<blockquote>
-<p><b>Caveat:</b> When loading multiple typelibs, it may happen, that the two define
+<blockquote class="quotation">
+<p><b class="b">Caveat:</b> When loading multiple typelibs, it may happen, that the two define
 classes with an identical name modulo namespace and a similar API.
 We have already seen such an example with Gio and Gtk, both of which
 have an application class.  Usually, though not always, one inherits from

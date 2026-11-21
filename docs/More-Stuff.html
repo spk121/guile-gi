@@ -1,9 +1,9 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE html>
 <html>
-<!-- Created by GNU Texinfo 6.8, https://www.gnu.org/software/texinfo/ -->
+<!-- Created by GNU Texinfo 7.1, https://www.gnu.org/software/texinfo/ -->
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<!-- Copyright (C) 2018, 2019, 2020 Michael L. Gran
+<!-- Copyright © 2018, 2019, 2020 Michael L. Gran
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3
@@ -27,21 +27,8 @@ Free Documentation License". -->
 <link href="Compatibility.html" rel="prev" title="Compatibility">
 <style type="text/css">
 <!--
-a.copiable-anchor {visibility: hidden; text-decoration: none; line-height: 0em}
-a.summary-letter {text-decoration: none}
-blockquote.indentedblock {margin-right: 0em}
-div.display {margin-left: 3.2em}
-div.example {margin-left: 3.2em}
-kbd {font-style: oblique}
-pre.display {font-family: inherit}
-pre.format {font-family: inherit}
-pre.menu-comment {font-family: serif}
-pre.menu-preformatted {font-family: serif}
-span.nolinebreak {white-space: nowrap}
-span.roman {font-family: initial; font-weight: normal}
-span.sansserif {font-family: sans-serif; font-weight: normal}
-span:hover a.copiable-anchor {visibility: visible}
-ul.no-bullet {list-style: none}
+a.copiable-link {visibility: hidden; text-decoration: none; line-height: 0em}
+span:hover a.copiable-link {visibility: visible}
 -->
 </style>
 <link rel="stylesheet" type="text/css" href="document-1.0.1.css">
@@ -50,43 +37,43 @@ ul.no-bullet {list-style: none}
 </head>
 
 <body lang="en">
-<div class="section" id="More-Stuff">
-<div class="header">
+<div class="section-level-extent" id="More-Stuff">
+<div class="nav-panel">
 <p>
 Previous: <a href="Compatibility.html" accesskey="p" rel="prev">Compatibility</a>, Up: <a href="Reference-Guide.html" accesskey="u" rel="up">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>
 <hr>
-<span id="More-Stuff-1"></span><h3 class="section">3.7 More Stuff</h3>
+<h3 class="section" id="More-Stuff-1"><span>3.7 More Stuff<a class="copiable-link" href="#More-Stuff-1"> &para;</a></span></h3>
 
-<ul class="section-toc">
+<ul class="mini-toc">
 <li><a href="#Help_0021-Guile_002dGI-overrides-core-binding-X" accesskey="1">Help! Guile-GI overrides core binding X</a></li>
 <li><a href="#Help_0021-Guile_002dGI-bindings-conflict-with-each-other" accesskey="2">Help! Guile-GI bindings conflict with each other</a></li>
 </ul>
-<div class="subsection" id="Help_0021-Guile_002dGI-overrides-core-binding-X">
-<h4 class="subsection">3.7.1 Help! Guile-GI overrides core binding X</h4>
-<span id="index-protect_002a-1"></span>
-<span id="index-Overrides"></span>
+<div class="subsection-level-extent" id="Help_0021-Guile_002dGI-overrides-core-binding-X">
+<h4 class="subsection"><span>3.7.1 Help! Guile-GI overrides core binding X<a class="copiable-link" href="#Help_0021-Guile_002dGI-overrides-core-binding-X"> &para;</a></span></h4>
+<a class="index-entry-id" id="index-protect_002a-1"></a>
+<a class="index-entry-id" id="index-Overrides"></a>
 
 <p>In most cases this is nothing to worry about. Guile-GI ensures, that
 the core binding is used as the default behaviour when the signature
 does not accidentally match that of a function in some typelib.
 However, this can still cause issues when Guile-GI overrides syntax.
 To protect your syntax (or other variables you deeply care about), use
-the <code>protect</code> or <code>protect*</code> renamer from <code>(gi util)</code>.
+the <code class="code">protect</code> or <code class="code">protect*</code> renamer from <code class="code">(gi util)</code>.
 </p>
 </div>
-<div class="subsection" id="Help_0021-Guile_002dGI-bindings-conflict-with-each-other">
-<h4 class="subsection">3.7.2 Help! Guile-GI bindings conflict with each other</h4>
-<span id="index-merge_002dgenerics"></span>
-<span id="index-shrug_002dequals-1"></span>
+<div class="subsection-level-extent" id="Help_0021-Guile_002dGI-bindings-conflict-with-each-other">
+<h4 class="subsection"><span>3.7.2 Help! Guile-GI bindings conflict with each other<a class="copiable-link" href="#Help_0021-Guile_002dGI-bindings-conflict-with-each-other"> &para;</a></span></h4>
+<a class="index-entry-id" id="index-merge_002dgenerics"></a>
+<a class="index-entry-id" id="index-shrug_002dequals-1"></a>
 
-<p>Most conflicts should be resolved using the <code>merge-generics</code>
+<p>Most conflicts should be resolved using the <code class="code">merge-generics</code>
 duplicate handler.  However, this handler is not enabled by default, so
 you may want to push it to the default duplicate handlers. If this is
 still not working, you may somehow have ended up with &ldquo;equal&rdquo;
 duplicates, i.e. duplicates, whose bindings resolve to the same value.
-To silence warnings about them, use the <code>shrug-equals</code> duplicate
-handler defined in <code>(gi util)</code>.  If the conflict is still not
+To silence warnings about them, use the <code class="code">shrug-equals</code> duplicate
+handler defined in <code class="code">(gi util)</code>.  If the conflict is still not
 resolved, file a bug detailing it.  As a workaround, you may also rename
 either binding, which is probably the best way to resolve a duplicate.
 </p>
