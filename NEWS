@@ -1,3 +1,52 @@
+2026-11-21: version 0.4.0
+
+Incompatible changes
+ - Return values and out parameters annotated (skip) are no longer
+   returned.  This changes the results of every such function; in
+   GLib, for example, uri:split no longer returns a leading #t.  A
+   function whose only result is a skipped boolean is no longer named
+   as a predicate (no "?").
+ - flags-difference is now set difference; it used to return the
+   symmetric difference.
+ - flags->list no longer lists zero-valued flags, such as 'none,
+   unless no flag is set.
+ - libguile-gi now exports only its module initialization functions
+   (libtool interface 7:0:0).
+
+New features
+ - New (gi girepository) module: a binding of libgirepository for
+   inspecting typelibs.
+ - Builds with Guile 3.0 and current GLib and GObject Introspection
+   releases (tested with GLib 2.72 and 2.80), and on MinGW/UCRT.
+ - Generated documentation shows optional arguments after #:optional,
+   lists only the values a procedure actually returns, documents boxed
+   types, and parses gi-docgen Markdown (headings of any level, fenced
+   code).  A new test checks that documented signatures match the
+   generated procedures.
+
+Bug fixes
+ - Fix many crashes, double frees and leaks in argument marshalling:
+   reading objects back out of <GValue>s, in/out GClosure values,
+   transfer-none GPtrArray results, arrays of structs stored by value,
+   transfer-container arrays, and elements of transfer-full lists and
+   arrays.
+ - User-defined GObject types now chain up dispose and finalize, and
+   subclasses of user-defined types store their properties correctly.
+ - Scheme callbacks now write output arguments to the right place, and
+   one procedure can serve as two callback types.
+ - Fix crashes and wrong results throughout (gi girepository).
+ - Errors raised by a custom logger no longer escape into the code
+   being logged.
+ - typelib->module and typelib work without a version.
+ - The main-loop test works with GLib 2.88, which moved
+   unix_fd_add_full to GLibUnix (#144).
+ - surface->cairo is now exported by (gi compat).
+ - Builds with -DNDEBUG no longer break boxed types.
+
+Thanks to
+ - Maxim Cournoyer <apteryks>
+ - Bqleine
+
 2021-12-29: version 0.3.2
  - SCM GObject arguments should better preserve their type when
    passing through function calls, and not downgrade to the argument's
