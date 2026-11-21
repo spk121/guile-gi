@@ -522,16 +522,48 @@
                     (list converted)
                     converted))))
 
+           ;; The parser turns every Markdown heading into a refsect2,
+           ;; but DocBook's reference sections nest strictly
+           ;; (refsect1 > refsect2 > refsect3), so the right element
+           ;; depends on where the docstring ends up.  LEVEL is the
+           ;; section element for headings at that place, or #f where
+           ;; no section is allowed (e.g. a table cell), in which case
+           ;; a heading becomes a paragraph with a strong title.
+           (place-headings
+            (lambda (items level)
+              (append-map
+               (lambda (item)
+                 (if (and (pair? item) (eq? (car item) 'refsect2))
+                     (let* ((kids (cdr item))
+                            (title (find (lambda (kid)
+                                           (and (pair? kid) (eq? (car kid) 'title)))
+                                         kids))
+                            (body (delq title kids)))
+                       (if level
+                           `((,level ,@kids))
+                           (let ((anchors (filter (lambda (kid)
+                                                    (and (pair? kid) (eq? (car kid) 'anchor)))
+                                                  (if title (cdr title) '())))
+                                 (text (remove (lambda (kid)
+                                                 (and (pair? kid) (eq? (car kid) 'anchor)))
+                                               (if title (cdr title) '()))))
+                             (cons `(para ,@anchors (emphasis (@ (role "strong")) ,@text))
+                                   body))))
+                     (list item)))
+               items)))
+
            (markdown
-            (lambda (str)
+            (lambda (str level)
               (let ((md (markdown-1 str)))
-                (cond
-                 ((null? md) md)
-                 ((string? (car md))
-                  `((para ,@md)))
-                 ((symbol? (car md))
-                  (list md))
-                 (else md)))))
+                (place-headings
+                 (cond
+                  ((null? md) md)
+                  ((string? (car md))
+                   `((para ,@md)))
+                  ((symbol? (car md))
+                   (list md))
+                  (else md))
+                 level))))
 
            (refname
             (lambda (tag . kids)
@@ -551,7 +583,7 @@
                   (td (@ (class "parameter_name"))
                       (para ,@name))
                   (td (@ (class "parameter_description"))
-                      ,@(markdown (string-join doc " "))
+                      ,@(markdown (string-join doc " ") #f)
                       ,@(map (lambda (p)
                                `(para "Inferred from " (code ,p)))
                              parent)
@@ -594,10 +626,15 @@
                     `((refnamediv ,@(cdar scheme))
                       ,(and (not (null? doc))
                             `(refsect1 (title "Description")
-                                       ,@(markdown (string-join doc ""))))
+                                       ,@(markdown (string-join doc "") 'refsect2)))
                       ,(section "Members" members)
                       ,(section "Properties" properties)
-                      ,(section "Functions" functions)))))))))
+                      ,(section "Functions" functions)
+                      ;; A refentry needs at least one refsect1.
+                      ,(and (null? doc) (null? members)
+                            (null? properties) (null? functions)
+                            `(refsect1 (title "Description")
+                                       (para "Undocumented")))))))))))
 
            (refsect2
             (lambda (tag . kids)
@@ -614,7 +651,7 @@
                               (para "Undocumented")
                               ,@params))
                   (else `(refsect2 ,@(cadar scheme)
-                                   ,@(markdown (string-join doc ""))
+                                   ,@(markdown (string-join doc "") 'refsect3)
                                    ,@params))))))))
 
     (compose
