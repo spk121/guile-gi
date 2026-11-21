@@ -37,10 +37,10 @@
   (let ((builder (make-builder)))
     ;; need to keep a global reference or else GC hates us
     (set! %builder builder)
-    (let ((window (get-object builder (peek "window")))
-          (button1 (get-object builder (peek "button1")))
-          (button2 (get-object builder (peek "button2")))
-          (button3 (get-object builder (peek "quit"))))
+    (let ((window (get-object builder "window"))
+          (button1 (get-object builder "button1"))
+          (button2 (get-object builder "button2"))
+          (button3 (get-object builder "quit")))
       (connect window destroy
                (lambda (object)
                  (main-quit)))

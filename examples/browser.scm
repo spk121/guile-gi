@@ -20,9 +20,12 @@
              (oop goops))
 
 (eval-when (compile load eval)
-  (for-each require
-            '("Gio" "Gtk" "WebKit2")
-            '("2.0" "3.0" "4.0"))
+  (require "Gio" "2.0")
+  (require "Gtk" "3.0")
+  ;; WebKit2 4.1 (built on libsoup 3) replaced 4.0 (libsoup 2); both
+  ;; are for GTK 3.  Use 4.0 only where 4.1 isn't available.
+  (unless (false-if-exception (begin (require "WebKit2" "4.1") #t))
+    (require "WebKit2" "4.0"))
 
   (load-by-name "Gio" "Application")
   (load-by-name "Gio" "ApplicationFlags")
