@@ -13,8 +13,19 @@
 (load-by-name "GLib" "PRIORITY_DEFAULT")
 (load-by-name "GLib" "idle_add")
 (load-by-name "GLib" "timeout_add")
-(unless mingw?
-  (load-by-name "GLib" "unix_fd_add_full"))
+
+;; g_unix_fd_add_full is GLibUnix.fd_add_full since GLib 2.80, and
+;; GLib 2.88 dropped the old GLib.unix_fd_add_full name.  GLibUnix
+;; doesn't exist before 2.80, so fall back to the old name there.
+(define unix-fd-add-full
+  (cond
+   (mingw? #f)
+   ((false-if-exception (begin (require "GLibUnix" "2.0") #t))
+    (load-by-name "GLibUnix" "fd_add_full")
+    (module-ref (current-module) 'fd-add-full))
+   (else
+    (load-by-name "GLib" "unix_fd_add_full")
+    (module-ref (current-module) 'unix-fd-add-full))))
 
 (define loop #f)
 
