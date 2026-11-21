@@ -349,6 +349,23 @@ load_info(GIBaseInfo *info, LoadFlags flags)
         LOAD_NESTED(LOAD_PROPERTIES, n_properties, property);
         LOAD_NESTED(LOAD_SIGNALS, n_signals, nested_signal);
 #undef LOAD_NESTED
+
+        // A procedure that calls each virtual function, given the
+        // class whose implementation to use.
+        if (flags & LOAD_METHODS) {
+            int n_vfuncs = 0;
+            if (t == GI_INFO_TYPE_OBJECT)
+                n_vfuncs = g_object_info_get_n_vfuncs(info);
+            else if (t == GI_INFO_TYPE_INTERFACE)
+                n_vfuncs = g_interface_info_get_n_vfuncs(info);
+            for (int i = 0; i < n_vfuncs; i++) {
+                GIVFuncInfo *vfunc = (t == GI_INFO_TYPE_OBJECT
+                                      ? g_object_info_get_vfunc(info, i)
+                                      : g_interface_info_get_vfunc(info, i));
+                defs = scm_append2(defs, gig_vfunc_define(vfunc, g_base_info_get_name(info)));
+                g_base_info_unref(vfunc);
+            }
+        }
         goto end;
     }
 }

@@ -14,10 +14,12 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <assert.h>
+#include <string.h>
 #include <libguile.h>
 #include <libguile/hooks.h>
 #include <ffi.h>
 #include "../core.h"
+#include "../type.h"
 #include "gig_argument.h"
 #include "gig_callback_priv.h"
 #include "gig_function_priv.h"
@@ -37,6 +39,12 @@ struct _GigCallback
     char *name;
     void *callback_ptr;
     ffi_type **atypes;
+    // For a virtual function: its first C argument is the instance,
+    // which is not in the argument map.
+    bool is_method;
+    // Its last C argument is a GError ** that the argument map
+    // doesn't describe either.
+    bool throws;
 };
 
 static slist_t *callback_list = NULL;
@@ -48,6 +56,7 @@ SCM gig_before_callback_hook;
 SCM gig_callback_thread_fluid;
 
 static ffi_type *amap_entry_to_ffi_type(GigArgMapEntry *entry);
+static ffi_type *meta_to_ffi_type(GigTypeMeta *meta);
 static void callback_free(GigCallback *gcb);
 static void gig_fini_callback(void);
 
@@ -57,8 +66,9 @@ convert_ffi_arg_to_giargument(void *_ffi_arg, ffi_type *arg_type, bool unpack, G
     if (unpack)
         _ffi_arg = ((void **)_ffi_arg)[0];
 
+    // _FFI_ARG points to the argument (or, unpacked, is the pointer).
     if (arg_type == &ffi_type_pointer)
-        giarg->v_pointer = _ffi_arg;
+        giarg->v_pointer = unpack ? _ffi_arg : *(void **)_ffi_arg;
     else if (arg_type == &ffi_type_void)
         giarg->v_pointer = _ffi_arg;
     else if (arg_type == &ffi_type_sint)
@@ -96,6 +106,9 @@ store_output(GigArgMapEntry *entry, void ***arg, GIArgument *value)
 {
     GType gtype = G_TYPE_FUNDAMENTAL(entry->meta.gtype);
     size_t item_size = entry->meta.item_size;
+    // The caller may pass NULL for an optional output.
+    if (*arg == NULL)
+        return;
     switch (gtype) {
     case G_TYPE_BOOLEAN:
         **(int **)arg = value->v_int;
@@ -158,6 +171,12 @@ store_output(GigArgMapEntry *entry, void ***arg, GIArgument *value)
     case G_TYPE_DOUBLE:
         **(double **)arg = value->v_double;
         break;
+    case G_TYPE_ENUM:
+        **(int **)arg = value->v_int;
+        break;
+    case G_TYPE_FLAGS:
+        **(unsigned **)arg = value->v_uint;
+        break;
     case G_TYPE_STRING:
         **(char ***)arg = value->v_string;
         break;
@@ -181,6 +200,32 @@ struct callback_binding_args
     GigCallback *gcb;
 };
 
+static SCM
+apply_body(void *data)
+{
+    SCM *proc_and_args = data;
+    return scm_apply_0(proc_and_args[0], proc_and_args[1]);
+}
+
+static SCM
+catch_handler(void *data, SCM key, SCM args)
+{
+    *(SCM *)data = scm_cons(key, args);
+    return SCM_UNSPECIFIED;
+}
+
+// A readable message for the exception (KEY . ARGS), which usually
+// are (SUBR MESSAGE FORMAT-ARGS DATA).
+static SCM
+exception_message(SCM exception)
+{
+    SCM key = scm_car(exception), args = scm_cdr(exception);
+    if (scm_ilength(args) >= 3 && scm_is_string(scm_cadr(args))
+        && scm_is_true(scm_list_p(scm_caddr(args))))
+        return scm_simple_format(SCM_BOOL_F, scm_cadr(args), scm_caddr(args));
+    return scm_simple_format(SCM_BOOL_F, scm_from_utf8_string("~A: ~S"), scm_list_2(key, args));
+}
+
 // This is the core of a dynamically generated callback funcion.
 // It converts FFI arguments to SCM arguments, calls a SCM function
 // and then returns the result.
@@ -200,8 +245,32 @@ callback_binding_inner(struct callback_binding_args *args)
     assert(gcb != NULL);
 
     unsigned n_args = cif->nargs;
+    ffi_type **arg_types = cif->arg_types;
+    SCM s_self = SCM_UNDEFINED;
 
     scm_load_goops();
+
+    // A virtual function's instance comes first; the argument map
+    // describes the rest.  Pass the instance as the first Scheme
+    // argument, and index the other arguments from after it.
+    if (gcb->is_method) {
+        void *self = *(void **)ffi_args[0];
+        if (self == NULL)
+            s_self = SCM_BOOL_F;
+        else
+            s_self = gig_type_transfer_object(G_TYPE_FROM_INSTANCE(self), self,
+                                              GI_TRANSFER_NOTHING);
+        ffi_args++;
+        arg_types++;
+        n_args--;
+    }
+    // A function that can fail reports Scheme errors through its
+    // GError ** argument, which comes last.
+    GError **error = NULL;
+    if (gcb->throws) {
+        error = *(GError ***)ffi_args[n_args - 1];
+        n_args--;
+    }
 
     assert(scm_is_procedure(gcb->s_func));
     assert(n_args == g_callable_info_get_n_args(gcb->callback_info));
@@ -227,13 +296,21 @@ callback_binding_inner(struct callback_binding_args *args)
         if (!amap->pdata[i].is_s_input)
             continue;
 
-        convert_ffi_arg_to_giargument(ffi_args[i], cif->arg_types[i], amap->pdata[i].meta.is_ptr,
-                                      &giarg);
+        if (amap->pdata[i].s_direction == GIG_ARG_DIRECTION_INOUT)
+            // The argument points to the value.
+            convert_ffi_arg_to_giargument(*(void **)ffi_args[i],
+                                          meta_to_ffi_type(&amap->pdata[i].meta),
+                                          amap->pdata[i].meta.is_ptr, &giarg);
+        else
+            convert_ffi_arg_to_giargument(ffi_args[i], arg_types[i], amap->pdata[i].meta.is_ptr,
+                                          &giarg);
         gig_argument_c_to_scm(callback_name, i, &amap->pdata[i].meta, &giarg, &s_entry, -1);
         s_args = scm_cons(s_entry, s_args);
     }
     s_args = scm_reverse_x(s_args, SCM_EOL);
     size_t length = scm_c_length(s_args);
+    if (gcb->is_method)
+        s_args = scm_cons(s_self, s_args);
 
 #if HAVE_SCM_HOOKS
     if (!scm_is_empty_hook(gig_before_callback_hook))
@@ -250,6 +327,22 @@ callback_binding_inner(struct callback_binding_args *args)
                   scm_list_4(gcb->s_func, scm_from_int(length),
                              scm_from_int(amap->s_input_req),
                              scm_from_int(amap->s_input_req + amap->s_input_opt)), SCM_BOOL_F);
+    else if (gcb->throws) {
+        SCM caught = SCM_BOOL_F;
+        s_ret = scm_internal_catch(SCM_BOOL_T, apply_body, &(SCM[2]) { gcb->s_func, s_args },
+                                   catch_handler, &caught);
+        if (scm_is_true(caught)) {
+            // Return zeros (FALSE or NULL) with the error set.
+            char *message = scm_to_utf8_string(exception_message(caught));
+            g_set_error_literal(error, g_quark_from_static_string("guile-gi-scheme-error"), 0,
+                                message);
+            free(message);
+            memset(ret, 0, cif->rtype->size > sizeof(ffi_arg) ? cif->rtype->size
+                   : sizeof(ffi_arg));
+            scm_dynwind_end();
+            return (void *)1;
+        }
+    }
     else
         s_ret = scm_apply_0(gcb->s_func, s_args);
 
@@ -424,6 +517,11 @@ gig_callback_new(const char *name, GICallbackInfo *callback_info, SCM s_func)
     ffi_type **ffi_args = NULL;
     ffi_type *ffi_ret_type;
     int n_args = g_callable_info_get_n_args(callback_info);
+    // Virtual functions take their instance first.
+    int offset = g_callable_info_is_method(callback_info) ? 1 : 0;
+    gcb->is_method = offset;
+    gcb->throws = g_callable_info_can_throw_gerror(callback_info);
+    int n_c_args = offset + n_args + (gcb->throws ? 1 : 0);
 
     SCM s_name = scm_procedure_name(s_func);
     if (scm_is_symbol(s_name)) {
@@ -454,12 +552,16 @@ gig_callback_new(const char *name, GICallbackInfo *callback_info, SCM s_func)
     // Next, we begin to construct an FFI_CIF to describe the function call.
 
     // Initialize the argument info vectors.
-    if (n_args > 0) {
-        ffi_args = xcalloc(n_args, sizeof(ffi_type *));
+    if (n_c_args > 0) {
+        ffi_args = xcalloc(n_c_args, sizeof(ffi_type *));
         gcb->atypes = ffi_args;
 
+        if (offset)
+            ffi_args[0] = &ffi_type_pointer;
         for (int i = 0; i < n_args; i++)
-            ffi_args[i] = amap_entry_to_ffi_type(&gcb->amap->pdata[i]);
+            ffi_args[i + offset] = amap_entry_to_ffi_type(&gcb->amap->pdata[i]);
+        if (gcb->throws)
+            ffi_args[n_c_args - 1] = &ffi_type_pointer;    // GError **
     }
 
     GITypeInfo *ret_type_info = g_callable_info_get_return_type(callback_info);
@@ -468,7 +570,7 @@ gig_callback_new(const char *name, GICallbackInfo *callback_info, SCM s_func)
 
     // Initialize the CIF Call Interface Struct.
     ffi_status prep_ok;
-    prep_ok = ffi_prep_cif(&(gcb->cif), FFI_DEFAULT_ABI, n_args, ffi_ret_type, ffi_args);
+    prep_ok = ffi_prep_cif(&(gcb->cif), FFI_DEFAULT_ABI, n_c_args, ffi_ret_type, ffi_args);
 
     if (prep_ok != FFI_OK)
         scm_misc_error("gig-callback-new",
@@ -578,11 +680,17 @@ amap_entry_to_ffi_type(GigArgMapEntry *entry)
     default:
         break;
     }
+    return meta_to_ffi_type(&entry->meta);
+}
 
-    if (entry->meta.is_ptr)
+// The FFI type of a value of type META.
+static ffi_type *
+meta_to_ffi_type(GigTypeMeta *meta)
+{
+    if (meta->is_ptr)
         return &ffi_type_pointer;
     else {
-        GType fundamental_type = G_TYPE_FUNDAMENTAL(entry->meta.gtype);
+        GType fundamental_type = G_TYPE_FUNDAMENTAL(meta->gtype);
         if (fundamental_type == G_TYPE_NONE)
             return &ffi_type_void;
         else if (fundamental_type == G_TYPE_BOOLEAN)
@@ -592,7 +700,7 @@ amap_entry_to_ffi_type(GigArgMapEntry *entry)
         else if (fundamental_type == G_TYPE_UCHAR)
             return &ffi_type_uint8;
         else if (fundamental_type == G_TYPE_INT)
-            switch (entry->meta.item_size) {
+            switch (meta->item_size) {
             case 1:
                 return &ffi_type_sint8;
             case 2:
@@ -605,7 +713,7 @@ amap_entry_to_ffi_type(GigArgMapEntry *entry)
                 assert_not_reached();
             }
         else if (fundamental_type == G_TYPE_UINT)
-            switch (entry->meta.item_size) {
+            switch (meta->item_size) {
             case 1:
                 return &ffi_type_uint8;
             case 2:
@@ -626,7 +734,7 @@ amap_entry_to_ffi_type(GigArgMapEntry *entry)
         else if (fundamental_type == G_TYPE_DOUBLE)
             return &ffi_type_double;
         else if (fundamental_type == G_TYPE_GTYPE)
-            switch (entry->meta.item_size) {
+            switch (meta->item_size) {
             case 4:
                 return &ffi_type_sint32;
             case 8:
@@ -638,9 +746,16 @@ amap_entry_to_ffi_type(GigArgMapEntry *entry)
             return &ffi_type_uint32;
         else if (fundamental_type == G_TYPE_ENUM)
             return &ffi_type_sint32;
+        else if (fundamental_type == G_TYPE_POINTER || fundamental_type == G_TYPE_STRING
+                 || fundamental_type == G_TYPE_BOXED || fundamental_type == G_TYPE_OBJECT
+                 || fundamental_type == G_TYPE_INTERFACE || fundamental_type == G_TYPE_VARIANT
+                 || fundamental_type == G_TYPE_PARAM)
+            // e.g. a callback argument, whose type info isn't a pointer
+            return &ffi_type_pointer;
         else
             assert_not_reached();
     }
+    return &ffi_type_pointer;
 }
 
 static SCM

@@ -26,7 +26,7 @@
 ;;     with the procedures guile-gi actually created, and explains why
 ;;     each missing one was not bound;
 ;;  3. counts introspected features guile-gi does not handle at all
-;;     (struct fields, virtual functions, deprecated infos, types
+;;     (struct fields, virtual functions it cannot represent, deprecated infos, types
 ;;     without a GType);
 ;;  4. if a display is available, instantiates every concrete GObject
 ;;     class and reads every readable property through guile-gi's
@@ -185,6 +185,23 @@
                                (append ((sxpath '(method)) c) ((sxpath '(function)) c))))
                  ((sxpath '(r *)) tree)))))
 
+(define (documented-vfuncs info)
+  ;; (((container . vfunc) . procedure-name) ...) for the virtual
+  ;; functions %document describes for INFO, an info from (gi
+  ;; repository): those guile-gi can represent.
+  (let* ((xml (with-output-to-string
+                (lambda () ((@@ (gi documentation) %document) info))))
+         (tree (xml->sxml (string-append "<r xmlns:c=\"urn:c\">" xml "</r>")
+                          #:namespaces '((c . "urn:c")))))
+    (append-map
+     (lambda (c)
+       (map (lambda (vm)
+              (cons (cons (car ((sxpath '(@ name *text*)) c))
+                          (car ((sxpath '(@ name *text*)) vm)))
+                    (car ((sxpath '(scheme procedure @ name *text*)) vm))))
+            ((sxpath '(virtual-method)) c)))
+     ((sxpath '(r *)) tree))))
+
 (define (bound? module name)
   (let ((g (module-ref module (string->symbol name) #f)))
     (and (is-a? g <generic>)
@@ -294,9 +311,12 @@
      (iota (gir:get-n-infos ns)))
     (emit 'coverage ns bound total)))
 
-(define (unsupported-features ns)
+(define (unsupported-features ns module)
   ;; Introspected features guile-gi has no support for at all.
-  (let ((fields '()) (vfuncs '()) (deprecated '()) (no-gtype '()))
+  (let ((fields '()) (vfuncs '()) (deprecated '()) (no-gtype '())
+        (documented (append-map (lambda (info)
+                                  (or (false-if-exception (documented-vfuncs info)) '()))
+                                (infos ns))))
     (for-each
      (lambda (i)
        (let* ((info (gir:get-info ns i))
@@ -312,16 +332,31 @@
                            ((union) (gir:union-info-get-n-fields info))
                            ((object) (gir:object-info-get-n-fields info))
                            (else 0)))
-               (n-vfuncs (case kind
-                           ((object) (gir:object-info-get-n-vfuncs info))
-                           ((interface) (gir:interface-info-get-n-vfuncs info))
-                           (else 0))))
+               ;; Virtual functions without a procedure to call them,
+               ;; which also can't be overridden.
+               (n-vfuncs
+                (let ((names (case (and (not (gir:base-info-is-deprecated? info)) kind)
+                               ((object)
+                                (map (lambda (j)
+                                       (gir:base-info-get-name (gir:object-info-get-vfunc info j)))
+                                     (iota (gir:object-info-get-n-vfuncs info))))
+                               ((interface)
+                                (map (lambda (j)
+                                       (gir:base-info-get-name (gir:interface-info-get-vfunc info j)))
+                                     (iota (gir:interface-info-get-n-vfuncs info))))
+                               (else '()))))
+                  (count (lambda (vf)
+                           (let ((proc (assoc-ref documented
+                                                  (cons (gir:base-info-get-name info) vf))))
+                             (not (and proc
+                                       (procedure? (module-ref module (string->symbol proc) #f))))))
+                         names))))
            (when (> n-fields 0) (set! fields (cons (cons name n-fields) fields)))
            (when (> n-vfuncs 0) (set! vfuncs (cons (cons name n-vfuncs) vfuncs))))))
      (iota (gir:get-n-infos ns)))
     (emit 'unsupported ns "struct, union and class fields (no accessors)"
           (apply + (map cdr fields)) (map car fields))
-    (emit 'unsupported ns "virtual functions (cannot be overridden or called)"
+    (emit 'unsupported ns "virtual functions guile-gi can't represent (no do- procedure, can't be overridden)"
           (apply + (map cdr vfuncs)) (map car vfuncs))
     (emit 'unsupported ns "deprecated top-level infos (skipped when loading)"
           (length deprecated) deprecated)
@@ -423,7 +458,7 @@
                 (hash-set! skipped-reasons (match:substring m 1) (match:substring m 2))))))))
        (let ((module (load-namespace ns ver skip #t)))
          (coverage ns module skipped-reasons skip)
-         (unsupported-features ns))))
+         (unsupported-features ns module))))
     ((instantiate)
      (if (display-available?)
          (let ((module (begin

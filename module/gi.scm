@@ -125,10 +125,16 @@
    (else
     (apply make type rest))))
 
-(define (register-type name parent . rest)
+(define* (register-type name parent #:optional properties signals
+                        #:key (vfuncs '()) (interfaces '()))
+  ;; VFUNCS is a list of (NAME . PROCEDURE) overriding the virtual
+  ;; functions of PARENT, its ancestors, or INTERFACES, a list of
+  ;; interface classes for the new type to implement.
   (cond
    ((subclass? parent <GObject>)
-    (apply (@@ (gi oop) %define-object-type) name parent rest))
+    ((@@ (gi oop) %define-object-type) name parent properties signals interfaces
+     ;; Defined by the extension when it is loaded.
+     ((module-ref (resolve-module '(gi)) '%vfunc-overrides) parent interfaces vfuncs)))
    (else
     (scm-error 'wrong-type-arg "register-type"
                "cannot define a class with parent ~S" (list parent) (list parent)))))

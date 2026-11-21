@@ -1046,7 +1046,8 @@ of the GObject infrastructure, such as signals.
 
 Defining a new GObject class is rather complicated.
 
-@deffn Procedure register-type type-name parent-type [list-of-properties] [list-of-signals]
+@deffn Procedure register-type type-name parent-type [list-of-properties] [list-of-signals] @
+         [#:vfuncs overrides] [#:interfaces interfaces]
 This procedure creates and returns a new @code{<GType>} of a GObject
 object.
 
@@ -1063,9 +1064,55 @@ methods found in the @code{GObject} typelib.
 
 @var{list-of-signals} is a list of signal specifications. @xref{GObject
 Signals}.
+
+@var{overrides} is a list of pairs @code{(@var{name} . @var{procedure})}
+that override virtual functions.  @var{name} is a symbol or string,
+such as @code{snapshot} or @code{size-allocate}, naming a virtual
+function of @var{parent-type}, one of its ancestors, or one of
+@var{interfaces}.  @var{procedure} takes the instance and then the
+virtual function's arguments, and returns its return value and output
+arguments, as multiple values if there are several.  If the virtual
+function can fail with a @code{GError}, a Scheme error raised by
+@var{procedure} becomes that error.  GObject's @code{finalize},
+@code{constructor}, @code{set_property} and @code{get_property} can't be
+overridden.
+
+@var{interfaces} is a list of interface classes, such as
+@code{<GListModel>}, for the new type to implement.  The parent type
+must not already implement them.
 @end deffn
 
 To then make instances of your custom GObject type, use @code{make}.
+
+@cindex virtual functions
+Each virtual function of a class or interface also has a procedure to
+call it, named after the class and the virtual function, such as
+@code{widget:do-snapshot}.  Its first argument is the class whose
+implementation to use, then the instance and the virtual function's
+arguments.  Passing the parent class from inside an override chains up
+to the parent's implementation.
+
+@example
+(define <Swatch>
+  (register-type "Swatch" <GtkWidget>
+    #:vfuncs
+    `((snapshot . ,(lambda (self snapshot)
+                     (snapshot:append-color snapshot color bounds)))
+      (measure . ,(lambda (self orientation for-size)
+                    ;; minimum, natural, and their baselines
+                    (values 100 200 -1 -1)))
+      (unrealize . ,(lambda (self)
+                      ;; chain up
+                      (widget:do-unrealize <GtkWidget> self))))))
+
+(define <NumberList>
+  (register-type "NumberList" <GObject>
+    #:interfaces (list <GListModel>)
+    #:vfuncs
+    `((get-item-type . ,(lambda (self) (get-gtype <GObject>)))
+      (get-n-items . ,(lambda (self) (length items)))
+      (get-item . ,(lambda (self i) (list-ref items i))))))
+@end example
 
 @node Sample Applications
 @section Sample Applications

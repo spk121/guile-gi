@@ -30,6 +30,15 @@ typedef struct _GigUserObjectInitInfo
     GParamSpec **properties;
     size_t n_signals;
     GigSignalSpec **signals;
+    // Virtual function overrides: closures to store at OFFSET in the
+    // class or interface struct of STRUCT_TYPE.
+    size_t n_overrides;
+    struct
+    {
+        GType struct_type;
+        size_t offset;
+        void *func;
+    } *overrides;
 } GigUserObjectInitInfo;
 
 static SCM
@@ -305,55 +314,15 @@ gig_user_object_set_property(GObject *object, unsigned property_id,
     g_param_value_convert(pspec, value, property, FALSE);
 }
 
-static void gig_user_object_dispose(GObject *object);
-static void gig_user_object_finalize(GObject *object);
-
-// A user-defined type may derive from another user-defined type, and
-// G_OBJECT_TYPE(object) is the most-derived type, not the one whose
-// handler is running.  Since every user-defined level shares these
-// handlers and adds nothing of its own, chain up to the nearest
-// ancestor that is not a user-defined type.
-static GObjectClass *
-gig_user_object_native_parent_class(GObject *object)
-{
-    GType type = g_type_parent(G_OBJECT_TYPE(object));
-    GObjectClass *klass = g_type_class_peek(type);
-    while (klass->dispose == gig_user_object_dispose
-           && klass->finalize == gig_user_object_finalize) {
-        type = g_type_parent(type);
-        klass = g_type_class_peek(type);
-    }
-    return klass;
-}
-
-static void
-gig_user_object_dispose(GObject *object)
-{
-    GObjectClass *parent_class = gig_user_object_native_parent_class(object);
-    if (parent_class->dispose)
-        parent_class->dispose(object);
-}
-
-static void
-gig_user_object_finalize(GObject *object)
-{
-    // The property values are freed with the object's qdata, which
-    // GObject's own finalize clears, so chaining up is all we need.
-    GObjectClass *parent_class = gig_user_object_native_parent_class(object);
-    if (parent_class->finalize)
-        parent_class->finalize(object);
-}
-
 static void
 gig_user_class_init(GObjectClass *_class, void *class_info)
 {
     GType type = G_TYPE_FROM_CLASS(_class);
     GigUserObjectInitInfo *init_info = class_info;
 
+    // dispose and finalize are inherited from the parent class.
     _class->set_property = gig_user_object_set_property;
     _class->get_property = gig_user_object_get_property;
-    _class->dispose = gig_user_object_dispose;
-    _class->finalize = gig_user_object_finalize;
 
     /* Since the parent type could be anything, some pointer math is
      * required to figure out where our part of the object class is
@@ -363,6 +332,24 @@ gig_user_class_init(GObjectClass *_class, void *class_info)
 
     for (size_t i = 0; i < init_info->n_properties; i++)
         g_object_class_install_property(_class, i + 1, init_info->properties[i]);
+
+    // Overrides of the virtual functions of the class and its
+    // ancestors.  Subclasses inherit them with the rest of the class.
+    for (size_t i = 0; i < init_info->n_overrides; i++)
+        if (!G_TYPE_IS_INTERFACE(init_info->overrides[i].struct_type))
+            *(void **)((char *)_class + init_info->overrides[i].offset) =
+                init_info->overrides[i].func;
+}
+
+static void
+gig_user_interface_init(void *g_iface, void *data)
+{
+    GigUserObjectInitInfo *init_info = data;
+    GType iface_type = G_TYPE_FROM_INTERFACE(g_iface);
+    for (size_t i = 0; i < init_info->n_overrides; i++)
+        if (init_info->overrides[i].struct_type == iface_type)
+            *(void **)((char *)g_iface + init_info->overrides[i].offset) =
+                init_info->overrides[i].func;
 }
 
 static void
@@ -391,7 +378,8 @@ gig_user_object_init(GTypeInstance *instance, void *class_ptr)
 static GType
 gig_user_object_define(const char *type_name,
                        GType parent_type, size_t n_properties, GParamSpec **properties,
-                       size_t n_signals, GigSignalSpec **signals)
+                       size_t n_signals, GigSignalSpec **signals,
+                       size_t n_interfaces, GType *interfaces, SCM overrides)
 {
     GTypeInfo type_info;
     GigUserObjectInitInfo *class_init_info;
@@ -406,6 +394,15 @@ gig_user_object_define(const char *type_name,
     class_init_info->properties = properties;
     class_init_info->n_signals = n_signals;
     class_init_info->signals = signals;
+    class_init_info->n_overrides = scm_c_length(overrides);
+    class_init_info->overrides = xcalloc(class_init_info->n_overrides + 1,
+                                         sizeof(*class_init_info->overrides));
+    for (size_t i = 0; i < class_init_info->n_overrides; i++, overrides = scm_cdr(overrides)) {
+        SCM o = scm_car(overrides);
+        class_init_info->overrides[i].struct_type = scm_to_gtype(scm_car(o));
+        class_init_info->overrides[i].offset = scm_to_size_t(scm_cadr(o));
+        class_init_info->overrides[i].func = scm_to_pointer(scm_cddr(o));
+    }
 
     type_info.class_data = class_init_info;
 
@@ -418,11 +415,16 @@ gig_user_object_define(const char *type_name,
     new_type = g_type_register_static(parent_type, type_name, &type_info, 0);
     class_init_info->type = new_type;
 
+    GInterfaceInfo iface_info = { gig_user_interface_init, NULL, class_init_info };
+    for (size_t i = 0; i < n_interfaces; i++)
+        g_type_add_interface_static(new_type, interfaces[i], &iface_info);
+
     return new_type;
 }
 
 static SCM
-gig_i_scm_define_type(SCM s_type_name, SCM s_parent_type, SCM s_properties, SCM s_signals)
+gig_i_scm_define_type(SCM s_type_name, SCM s_parent_type, SCM s_properties, SCM s_signals,
+                      SCM s_interfaces, SCM s_overrides)
 {
     char *type_name;
     GType parent_type;
@@ -444,6 +446,52 @@ gig_i_scm_define_type(SCM s_type_name, SCM s_parent_type, SCM s_properties, SCM 
 
     SCM_UNBND_TO_BOOL_F(s_properties);
     SCM_UNBND_TO_BOOL_F(s_signals);
+    if (SCM_UNBNDP(s_interfaces) || scm_is_false(s_interfaces))
+        s_interfaces = SCM_EOL;
+    if (SCM_UNBNDP(s_overrides) || scm_is_false(s_overrides))
+        s_overrides = SCM_EOL;
+    SCM_ASSERT_TYPE(scm_is_list(s_interfaces), s_interfaces, SCM_ARG5, "%define-type",
+                    "list of interface types");
+    SCM_ASSERT_TYPE(scm_is_list(s_overrides), s_overrides, SCM_ARG6, "%define-type",
+                    "list of virtual function overrides");
+
+    // Check the interfaces before registering anything: GLib only
+    // warns about these.
+    size_t n_interfaces = scm_c_length(s_interfaces);
+    GType *interfaces = xcalloc(n_interfaces + 1, sizeof(GType));
+    scm_dynwind_begin(0);
+    // Freed here only if a check fails.
+    scm_dynwind_unwind_handler(free, interfaces, 0);
+    {
+        SCM iter = s_interfaces;
+        for (size_t i = 0; i < n_interfaces; i++, iter = scm_cdr(iter)) {
+            GType iface = scm_to_gtype_full(scm_car(iter), "%define-type", SCM_ARG5);
+            if (!G_TYPE_IS_INTERFACE(iface))
+                scm_misc_error("%define-type", "~S is not an interface", scm_list_1(scm_car(iter)));
+            if (g_type_is_a(parent_type, iface))
+                scm_misc_error("%define-type", "the parent type already implements ~S",
+                               scm_list_1(scm_car(iter)));
+            interfaces[i] = iface;
+        }
+        for (size_t i = 0; i < n_interfaces; i++) {
+            unsigned n_prereqs;
+            GType *prereqs = g_type_interface_prerequisites(interfaces[i], &n_prereqs);
+            for (unsigned k = 0; k < n_prereqs; k++) {
+                bool ok = g_type_is_a(parent_type, prereqs[k]);
+                for (size_t j = 0; !ok && j < n_interfaces; j++)
+                    ok = g_type_is_a(interfaces[j], prereqs[k]);
+                if (!ok) {
+                    SCM prereq = scm_from_utf8_string(g_type_name(prereqs[k]));
+                    g_free(prereqs);
+                    scm_misc_error("%define-type", "~A requires ~A",
+                                   scm_list_2(scm_from_utf8_string(g_type_name(interfaces[i])),
+                                              prereq));
+                }
+            }
+            g_free(prereqs);
+        }
+    }
+    scm_dynwind_end();
 
     SCM_ASSERT_TYPE(scm_is_false(s_properties) ||
                     scm_is_list(s_properties),
@@ -479,7 +527,8 @@ gig_i_scm_define_type(SCM s_type_name, SCM s_parent_type, SCM s_properties, SCM 
 
     new_type =
         gig_user_object_define(type_name, parent_type, n_properties, properties, n_signals,
-                               signals);
+                               signals, n_interfaces, interfaces, s_overrides);
+    free(interfaces);
     free(type_name);
     gig_type_define(new_type);
     return gig_type_get_scheme_type(new_type);
@@ -718,5 +767,5 @@ gig_init_object()
     scm_c_define_gsubr("%set-property!", 3, 0, 0, gig_i_scm_set_property_x);
     scm_c_define_gsubr("%connect", 4, 2, 0, gig_i_scm_connect);
     scm_c_define_gsubr("%emit", 2, 1, 1, gig_i_scm_emit);
-    scm_c_define_gsubr("%define-object-type", 2, 2, 0, gig_i_scm_define_type);
+    scm_c_define_gsubr("%define-object-type", 2, 4, 0, gig_i_scm_define_type);
 }

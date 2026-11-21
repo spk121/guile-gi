@@ -26,6 +26,14 @@ New features
  - Fundamental instance types that libraries introduce, such as Gtk4's
    GtkExpression, can be passed to and returned from functions and
    stored in properties and <GValue>s.
+ - Virtual functions.  register-type takes #:vfuncs, a list of
+   (NAME . PROCEDURE) overriding virtual functions of the parent type,
+   its ancestors or its interfaces, and #:interfaces, a list of
+   interfaces for the new type to implement, so that Scheme can define
+   GTK widgets that draw and size themselves, or implement GListModel.
+   Each virtual function also has a procedure that calls a given
+   class's implementation, such as widget:do-snapshot, for chaining up.
+   The generated documentation lists them.
  - The plain structs without a GType that GTK, GSK and GDK need are
    bound as foreign objects, with constructors and field accessors:
    GskRoundedRect, GskColorStop, GskShadow, GskParseLocation,
@@ -53,6 +61,15 @@ Bug fixes
    unix_fd_add_full to GLibUnix (#144).
  - surface->cairo is now exported by (gi compat).
  - Builds with -DNDEBUG no longer break boxed types.
+ - GObjects passed to C with transfer full, including those that
+   Scheme callbacks return, get a reference of their own; C used to
+   release the Scheme object's reference.
+ - Scheme callbacks receive inout arguments' values instead of their
+   addresses, can have arguments that are callbacks and enum or flags
+   outputs, and report Scheme errors as GErrors when the callback can
+   throw one.
+ - Generated documentation no longer nests paragraphs for docstrings
+   that start with whitespace.
  - Reading a property or <GValue> that holds a NULL or empty GValue,
    such as GtkDropTarget:value, or a NULL GString, returns #f instead
    of crashing.  A <GValue> holding a GValue can be set to #f or to

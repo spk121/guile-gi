@@ -48,7 +48,7 @@
          namespace
          ;; introspected types
          class record union interface enumeration bitfield
-         function method member property)))
+         function method virtual-method member property)))
 
 (define (documentation-special? sym)
   (or (member sym documentation-special-nodes)
@@ -439,6 +439,7 @@
        (union . ,container)
 
        (method . ,procedure)
+       (virtual-method . ,procedure)
        (function . ,procedure)
 
        (*text* . ,(lambda (tag txt) txt))
@@ -466,6 +467,11 @@
                (xpath:node-typeof? 'method))
               (xpath:node-self
                (xpath:node-typeof? 'function)))))
+           (%virtual-methods
+            (compose
+             (xpath:select-kids identity)
+             (xpath:node-self
+              (xpath:node-typeof? 'virtual-method))))
            (%c-id (xpath:sxpath `(@ c:identifier *text*)))
 
            (fancy-quote
@@ -573,17 +579,34 @@
                      (list item)))
                items)))
 
+           ;; Wrap each run of inline content (text, code, ...) in a
+           ;; paragraph, leaving block elements as they are.  A docstring
+           ;; that starts with whitespace gives text before a paragraph,
+           ;; which used to be wrapped together into nested paragraphs.
+           (wrap-inline
+            (lambda (items)
+              (let loop ((items items) (run '()) (out '()))
+                (define (flush)
+                  (if (every (lambda (x) (and (string? x) (string-null? (string-trim-both x))))
+                             run)
+                      out
+                      (cons `(para ,@(reverse run)) out)))
+                (cond
+                 ((null? items) (reverse (flush)))
+                 ((and (pair? (car items))
+                       (memq (caar items) '(para informalexample refsect2 anchor)))
+                  (loop (cdr items) '() (cons (car items) (flush))))
+                 (else (loop (cdr items) (cons (car items) run) out))))))
+
            (markdown
             (lambda (str level)
               (let ((md (markdown-1 str)))
                 (place-headings
                  (cond
                   ((null? md) md)
-                  ((string? (car md))
-                   `((para ,@md)))
                   ((symbol? (car md))
-                   (list md))
-                  (else md))
+                   (wrap-inline (list md)))
+                  (else (wrap-inline md)))
                  level))))
 
            (refname
@@ -631,6 +654,7 @@
                     (members (%members kids))
                     (properties (%properties kids))
                     (functions (%functions kids))
+                    (virtual-methods (%virtual-methods kids))
                     (section (lambda (title content)
                                (and (not (null? content))
                                     `(refsect1 (title ,title)
@@ -651,9 +675,11 @@
                       ,(section "Members" members)
                       ,(section "Properties" properties)
                       ,(section "Functions" functions)
+                      ,(section "Virtual Functions" virtual-methods)
                       ;; A refentry needs at least one refsect1.
                       ,(and (null? doc) (null? members)
                             (null? properties) (null? functions)
+                            (null? virtual-methods)
                             `(refsect1 (title "Description")
                                        (para "Undocumented")))))))))))
 
@@ -691,6 +717,7 @@
         (bitfield . ,entry)
 
         (method . ,refsect2)
+        (virtual-method . ,refsect2)
         (function . ,refsect2)
         (member . ,refsect2)
         (property . ,refsect2)

@@ -49,6 +49,12 @@ document_nested(GIBaseInfo *parent)
     DOCUMENT_NESTED(n_properties, property);
     DOCUMENT_NESTED(n_signals, nested_signal);
 
+    GIInfoType type = g_base_info_get_type(parent);
+    if (type == GI_INFO_TYPE_OBJECT)
+        DOCUMENT_NESTED(g_object_info_get_n_vfuncs(parent), g_object_info_get_vfunc);
+    else if (type == GI_INFO_TYPE_INTERFACE)
+        DOCUMENT_NESTED(g_interface_info_get_n_vfuncs(parent), g_interface_info_get_vfunc);
+
 #undef DOCUMENT_NESTED
 }
 
@@ -144,7 +150,14 @@ do_document(GIBaseInfo *info, const char *_namespace)
     scm_dynwind_begin(0);
     switch (type) {
     case GI_INFO_TYPE_FUNCTION:
-        if (g_callable_info_is_method(info))
+    case GI_INFO_TYPE_VFUNC:
+    {
+        // A virtual function's procedure takes the class whose
+        // implementation to call, then the instance.
+        bool is_vfunc = (type == GI_INFO_TYPE_VFUNC);
+        if (is_vfunc)
+            kind = "virtual-method";
+        else if (g_callable_info_is_method(info))
             kind = "method";
         else
             kind = "function";
@@ -160,7 +173,10 @@ do_document(GIBaseInfo *info, const char *_namespace)
         scm_printf(SCM_UNDEFINED, "<%s name=\"%s\">", kind, g_base_info_get_name(info));
         scheme_name = scm_dynfree(gig_callable_info_make_name(info, NULL));
 
-        if (g_callable_info_is_method(info))
+        if (is_vfunc)
+            scm_printf(SCM_UNDEFINED, "<scheme><procedure name=\"%s:do-%s\">",
+                       _namespace, scm_dynfree(make_scm_name(g_base_info_get_name(info))));
+        else if (g_callable_info_is_method(info))
             scm_printf(SCM_UNDEFINED, "<scheme><procedure name=\"%s\" long-name=\"%s:%s\">",
                        scheme_name, _namespace, scheme_name);
         else if (_namespace != NULL)
@@ -172,6 +188,8 @@ do_document(GIBaseInfo *info, const char *_namespace)
         gig_amap_c_count(arg_map, &in, &out);
         gig_amap_s_input_count(arg_map, &req, &opt);
 
+        if (is_vfunc)
+            scm_printf(SCM_UNDEFINED, "<argument name=\"implementor\"></argument>");
         if (g_callable_info_is_method(info)) {
             scm_printf(SCM_UNDEFINED, "<argument name=\"self\">");
             scm_printf(SCM_UNDEFINED, "</argument>");
@@ -222,6 +240,7 @@ do_document(GIBaseInfo *info, const char *_namespace)
         scm_printf(SCM_UNDEFINED, "</%s>", kind);
 
         break;
+    }
 
     case GI_INFO_TYPE_STRUCT:
     case GI_INFO_TYPE_BOXED:
@@ -331,7 +350,6 @@ do_document(GIBaseInfo *info, const char *_namespace)
         scm_printf(SCM_UNDEFINED, "/></scheme></member>");
     }
         break;
-    case GI_INFO_TYPE_VFUNC:
     case GI_INFO_TYPE_FIELD:
     case GI_INFO_TYPE_CONSTANT:
     case GI_INFO_TYPE_CALLBACK:

@@ -291,9 +291,13 @@ scm_to_c_interface(S2C_ARG_DECL)
     TRACE_S2C();
     if (meta->is_nullable && scm_is_false(object))
         arg->v_pointer = NULL;
-    else
+    else {
         arg->v_pointer = G_TYPE_CHECK_INSTANCE_CAST(gig_type_peek_object(object),
                                                     meta->gtype, void);
+        // The receiver takes a reference; the Scheme object keeps its own.
+        if (meta->transfer == GI_TRANSFER_EVERYTHING && G_IS_OBJECT(arg->v_pointer))
+            g_object_ref(arg->v_pointer);
+    }
 }
 
 static void
@@ -566,6 +570,11 @@ scm_to_c_object(S2C_ARG_DECL)
             scm_wrong_type_arg_msg(subr, argpos, object, g_type_name(meta->gtype));
 
         arg->v_pointer = gig_type_peek_object(object);
+        // The receiver, e.g. the caller of a callback that returns a
+        // new reference, takes a reference; the Scheme object keeps its
+        // own.
+        if (meta->transfer == GI_TRANSFER_EVERYTHING)
+            g_object_ref(arg->v_pointer);
     }
 }
 

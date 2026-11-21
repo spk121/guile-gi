@@ -137,6 +137,7 @@ libguile_gi_la_c_sources = \
   src/type/gig_type.c \
   src/type/gig_boxed.c \
   src/func/gig_util.c \
+  src/func/gig_vfunc.c \
   src/gig_logging.c
 
 libguile_gi_la_internal_headers = \
@@ -177,6 +178,7 @@ libguile_gi_la_internal_headers = \
   src/type/gig_type_priv.h \
   src/type/gig_boxed.h \
   src/func/gig_util.h \
+  src/func/gig_vfunc.h \
   src/func/gig_util_priv.h \
   src/gig_logging.h
 
@@ -448,6 +450,7 @@ test/Extra-1.0.gir: test/libextra-1.0.la $(test_libextra_1_0_la_SOURCES)
 EVERYTHING_TESTS = \
   test/everything.scm \
   test/marshall.scm \
+  test/vfunc-marshall.scm \
   test/extra.scm
 
 TESTS_LTDLOPEN = \
@@ -486,6 +489,7 @@ TESTS = \
   test/task.scm \
   test/type.scm \
   test/signals.scm \
+  test/vfunc.scm \
   test/logging.scm \
   $(EVERYTHING_TESTS)
 
