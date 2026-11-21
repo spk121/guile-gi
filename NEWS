@@ -45,6 +45,10 @@ Bug fixes
    unix_fd_add_full to GLibUnix (#144).
  - surface->cairo is now exported by (gi compat).
  - Builds with -DNDEBUG no longer break boxed types.
+ - Reading a property or <GValue> that holds a NULL or empty GValue,
+   such as GtkDropTarget:value, or a NULL GString, returns #f instead
+   of crashing.  A <GValue> holding a GValue can be set to #f or to
+   another <GValue>.
 
 Thanks to
  - Maxim Cournoyer <apteryks>

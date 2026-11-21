@@ -265,4 +265,30 @@
     (do ((i 0 (1+ i))) ((= i 5)) (gc))
     #t))
 
+;;; GValues holding GValues, as in GtkDropTarget:value
+
+(test-equal "getset nested GValue"
+  42
+  (let ((inner (make <GValue>)))
+    (set! (inner G_TYPE_INT) 42)
+    (value-passthrough (get-gtype <GValue>) inner)))
+
+(test-equal "getset NULL nested GValue"
+  ;; Used to dereference NULL.
+  #f
+  (value-passthrough (get-gtype <GValue>) #f))
+
+(test-equal "get uninitialized nested GValue"
+  #f
+  (value-passthrough (get-gtype <GValue>) (make <GValue>)))
+
+(test-equal "set into a nested GValue copies it"
+  '(7 1)
+  (let ((outer (make <GValue>))
+        (inner (make <GValue>)))
+    (set! (inner G_TYPE_INT) 1)
+    (set! (outer (get-gtype <GValue>)) inner)
+    (set! (outer) 7)
+    (list (outer) (inner))))
+
 (test-end "value")

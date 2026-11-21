@@ -243,8 +243,18 @@ gig_value_from_scm(GValue *value, SCM obj)
     case G_TYPE_BOXED:
     {
         if (G_VALUE_HOLDS(value, G_TYPE_VALUE)) {
+            // #f and <GValue>s replace the nested GValue; other values
+            // are stored in it.
+            if (scm_is_false(obj)) {
+                g_value_set_boxed(value, NULL);
+                return 0;
+            }
+            if (gig_type_get_gtype_from_obj(obj) == G_TYPE_VALUE) {
+                g_value_set_boxed(value, gig_type_peek_object(obj));
+                return 0;
+            }
             GValue *n_value = g_value_get_boxed(value);
-            if (n_value == NULL)
+            if (n_value == NULL || !G_IS_VALUE(n_value))
                 return GIG_VALUE_WRONG_TYPE;
             return gig_value_from_scm(n_value, obj);
         }
@@ -428,11 +438,17 @@ gig_value_to_scm_structured_type(const GValue *value, GType fundamental, bool co
     case G_TYPE_BOXED:
     {
         if (G_VALUE_HOLDS(value, G_TYPE_VALUE)) {
+            // A GValue property, such as GtkDropTarget:value, is NULL
+            // or uninitialized when it holds nothing.
             GValue *n_value = g_value_get_boxed(value);
+            if (n_value == NULL || !G_IS_VALUE(n_value))
+                return SCM_BOOL_F;
             return gig_value_as_scm(n_value, copy_boxed);
         }
         else if (G_VALUE_HOLDS(value, G_TYPE_GSTRING)) {
             GString *string = (GString *)g_value_get_boxed(value);
+            if (string == NULL)
+                return SCM_BOOL_F;
             return scm_from_utf8_stringn(string->str, string->len);
         }
         else {

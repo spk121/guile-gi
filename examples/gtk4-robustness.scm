@@ -30,7 +30,8 @@
 ;;     without a GType);
 ;;  4. if a display is available, instantiates every concrete GObject
 ;;     class and reads every readable property through guile-gi's
-;;     GValue marshalling.
+;;     GValue marshalling, except for a few reads that are known to
+;;     crash inside the library itself (see %library-crashes).
 ;;
 ;; Each namespace and phase runs in a child process, so that a crash in
 ;; C is reported (with the item that caused it) instead of ending the
@@ -339,6 +340,18 @@
        (not (gir:object-info-get-fundamental? info))
        (not (no-gtype? info))))
 
+(define %library-crashes
+  ;; Property reads that crash inside the library's own get_property on
+  ;; an object made without construct properties, as the survey makes
+  ;; them; the same reads crash from C, so they say nothing about
+  ;; guile-gi.  They are listed in the report instead of read.
+  '(("Gio.PropertyAction:parameter-type"
+     . "GIO reads the unset action's NULL property spec")
+    ("Gio.PropertyAction:state"
+     . "GIO reads the unset action's NULL property spec")
+    ("Gio.UnixSocketAddress:path-as-array"
+     . "GIO copies a path whose length is unset (-1)")))
+
 (define %keep-alive
   ;; Objects created by instantiate-all are kept until the child exits:
   ;; otherwise the GC may finalize one during a later item, and a crash
@@ -365,7 +378,11 @@
                              (pname (gir:base-info-get-name prop))
                              (item (string-append name ":" pname)))
                         (when (and (memq 'readable (gir:property-info-get-flags prop))
-                                   (not (member item skip)))
+                                   (assoc item %library-crashes))
+                          (emit 'library-crash item (assoc-ref %library-crashes item)))
+                        (when (and (memq 'readable (gir:property-info-get-flags prop))
+                                   (not (member item skip))
+                                   (not (assoc item %library-crashes)))
                           (emit 'progress item)
                           (when (guarded (string-append item " ("
                                                         (type-description
@@ -541,6 +558,12 @@
                           crashes)
                 (length crashes)
                 (match-lambda ((phase ns item status) item)))
+
+  (print-groups "Known crashes in the libraries themselves (not attempted)"
+                (group-by (match-lambda ((_ item reason) reason))
+                          (records-of 'library-crash))
+                n-examples
+                (match-lambda ((_ item reason) item)))
 
   (print-groups "Scheme errors"
                 (group-by (match-lambda ((_ item key message)
