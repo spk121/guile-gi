@@ -1,4 +1,5 @@
 (use-modules ((gi girepository) #:prefix gir:)
+             (srfi srfi-1)
              (srfi srfi-64))
 
 (test-begin "girepository")
@@ -78,9 +79,17 @@
   (gir:is-registered? "GdkX11" "3.0"))
 
 (let ((array-type
-       ;; strfreev's argument is an array of strings in every GLib.
-       (gir:arg-info-get-type
-        (gir:callable-info-get-arg (gir:find-by-name "GLib" "strfreev") 0))))
+       ;; The first array argument of a GLib function; which functions
+       ;; have one depends on the GLib version.
+       (let loop ((i 0))
+         (let ((info (gir:get-info "GLib" i)))
+           (or (and (eq? (gir:base-info-get-type info) 'function)
+                    (let ((n (gir:callable-info-get-n-args info)))
+                      (any (lambda (j)
+                             (let ((ti (gir:arg-info-get-type (gir:callable-info-get-arg info j))))
+                               (and (eq? (gir:type-info-get-tag ti) 'array) ti)))
+                           (iota n))))
+               (loop (1+ i)))))))
   (test-assert "type-info-get-param-type"
     (gir:type-info-get-param-type array-type 0))
   (test-equal "type-info-get-param-type past the last parameter"
