@@ -53,7 +53,7 @@
 ;;; Code:
 
 (use-modules ((gi) #:select ((make . gi:make)))
-             ((gi repository) #:select (require infos load load-by-name))
+             ((gi repository) #:select (require infos load load-by-name LOAD_INFO_ONLY))
              (gi types)
              (gi logging)
              ((gi girepository) #:prefix gir:)
@@ -195,6 +195,13 @@
 (define (no-gtype? info)
   (memv (gir:registered-type-info-get-g-type info) '(0 4))) ; INVALID, NONE
 
+(define (wrapped-struct? ns info)
+  ;; A struct without a GType that guile-gi wraps as a foreign object,
+  ;; with a constructor and field accessors.
+  (and (eq? (gir:base-info-get-type info) 'struct)
+       (no-gtype? info)
+       (pair? (load-by-name ns (gir:base-info-get-name info) LOAD_INFO_ONLY))))
+
 (define (type-problem ti depth)
   ;; Why guile-gi can't represent this type, or #f.
   (let ((tag (gir:type-info-get-tag ti)))
@@ -297,10 +304,11 @@
               (kind (gir:base-info-get-type info)))
          (when (gir:base-info-is-deprecated? info)
            (set! deprecated (cons name deprecated)))
-         (when (and (memq kind '(struct union)) (no-gtype? info))
+         (define wrapped? (wrapped-struct? ns info))
+         (when (and (memq kind '(struct union)) (no-gtype? info) (not wrapped?))
            (set! no-gtype (cons name no-gtype)))
          (let ((n-fields (case kind
-                           ((struct) (gir:struct-info-get-n-fields info))
+                           ((struct) (if wrapped? 0 (gir:struct-info-get-n-fields info)))
                            ((union) (gir:union-info-get-n-fields info))
                            ((object) (gir:object-info-get-n-fields info))
                            (else 0)))

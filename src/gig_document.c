@@ -62,6 +62,75 @@ document_arg_entry(const char *kind, GigArgMapEntry *entry, bool optional)
     scm_printf(SCM_UNDEFINED, "</%s>", kind);
 }
 
+// One procedure that src/type/gig_foreign_struct.c defines: its
+// arguments, and its return value if RET is not NULL.
+static void
+document_foreign_procedure(const char *name, const char **args, size_t n_args,
+                           size_t n_required, const char *ret)
+{
+    scm_printf(SCM_UNDEFINED, "<function name=\"%s\"><scheme><procedure name=\"%s\">",
+               name, name);
+    for (size_t i = 0; i < n_args; i++) {
+        char *arg = make_scm_name(args[i]);
+        scm_printf(SCM_UNDEFINED, "<argument name=\"%s\" c:name=\"%s\"%s></argument>", arg,
+                   args[i], i >= n_required ? " optional=\"1\"" : "");
+        free(arg);
+    }
+    if (ret != NULL) {
+        char *r = make_scm_name(ret);
+        scm_printf(SCM_UNDEFINED, "<return name=\"%s\" c:name=\"%s\"></return>", r, ret);
+        free(r);
+    }
+    scm_printf(SCM_UNDEFINED, "</procedure></scheme></function>");
+}
+
+// A plain struct without a GType that guile-gi wraps as a foreign
+// object: its class, constructor, field accessors and methods.
+static void
+document_foreign_struct(GIBaseInfo *info, const GigForeignStruct *fs)
+{
+    char *prefix = make_scm_name(gig_foreign_struct_name(fs));
+    char *name;
+    size_t n = gig_foreign_struct_n_fields(fs);
+    const char *self = "self";
+
+    scm_printf(SCM_UNDEFINED, "<record name=\"%s\">", g_base_info_get_name(info));
+    scm_printf(SCM_UNDEFINED, "<scheme><type name=\"&lt;%s&gt;\" /></scheme>",
+               gig_foreign_struct_c_name(fs));
+
+    if (gig_foreign_struct_is_opaque(fs)) {
+        const char *ptr = "pointer";
+        name = concatenate("pointer->", prefix);
+        document_foreign_procedure(name, &ptr, 1, 1, "struct");
+        free(name);
+    }
+    else {
+        const char **fields = xcalloc(n, sizeof(char *));
+        for (size_t i = 0; i < n; i++)
+            fields[i] = gig_foreign_struct_field_name(fs, i);
+        name = concatenate("make-", prefix);
+        document_foreign_procedure(name, fields, n, 0, "struct");
+        free(name);
+
+        for (size_t i = 0; i < n; i++) {
+            char *field = make_scm_name(fields[i]);
+            const char *setter_args[2] = { self, fields[i] };
+            name = concatenate3(prefix, ":", field);
+            document_foreign_procedure(name, &self, 1, 1, fields[i]);
+            free(name);
+            name = concatenate4(prefix, ":set-", field, "!");
+            document_foreign_procedure(name, setter_args, 2, 2, NULL);
+            free(name);
+            free(field);
+        }
+        free(fields);
+    }
+    free(prefix);
+
+    document_nested(info);
+    scm_printf(SCM_UNDEFINED, "</record>");
+}
+
 static void
 do_document(GIBaseInfo *info, const char *_namespace)
 {
@@ -161,8 +230,12 @@ do_document(GIBaseInfo *info, const char *_namespace)
     case GI_INFO_TYPE_UNION:
     {
         GType gtype = g_registered_type_info_get_g_type(info);
-        if (gtype == G_TYPE_NONE)
+        if (gtype == G_TYPE_NONE) {
+            const GigForeignStruct *fs = gig_foreign_struct_find(info);
+            if (fs != NULL)
+                document_foreign_struct(info, fs);
             break;
+        }
 
         switch (type) {
         case GI_INFO_TYPE_STRUCT:

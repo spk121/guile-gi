@@ -56,6 +56,7 @@ gig_init(void)
 #endif
     gig_debug("Begin libguile-gir initialization");
     gig_init_flag();
+    gig_init_foreign_struct();
     gig_init_signal();
     gig_init_callback();
     gig_init_function();

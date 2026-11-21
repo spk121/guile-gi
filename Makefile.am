@@ -131,6 +131,7 @@ libguile_gi_la_c_sources = \
   src/func/gig_function.c \
   src/type/gig_constant.c \
   src/type/gig_flag.c \
+  src/type/gig_foreign_struct.c \
   src/gig_repository.c \
   src/gig_document.c \
   src/type/gig_type.c \
@@ -169,6 +170,7 @@ libguile_gi_la_internal_headers = \
   src/type/gig_constant_priv.h \
   src/type/gig_constant.h \
   src/type/gig_flag.h \
+  src/type/gig_foreign_struct.h \
   src/type/gig_flag_priv.h \
   src/gig_repository.h \
   src/type/gig_type.h \
@@ -476,6 +478,7 @@ TESTS = \
   test/application.scm \
   test/gtk.scm \
   test/gtk4-cclosure.scm \
+  test/gtk4-structs.scm \
   test/grilo.scm \
   test/oop.scm \
   test/value.scm \

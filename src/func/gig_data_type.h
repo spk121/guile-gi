@@ -75,6 +75,8 @@ struct GigTypeMeta_
         struct GigTypeMeta_ *params;
         GICallableInfo *callable_info;
         GIEnumInfo *enum_info;
+        // For G_TYPE_PRIV_FOREIGN_STRUCT
+        const struct _GigForeignStruct *foreign_struct;
     };
 };
 

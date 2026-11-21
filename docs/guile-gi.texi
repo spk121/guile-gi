@@ -472,6 +472,32 @@ using @code{make}.
 @include ex-date.scm
 @end example
 
+Structs that have no GType usually can't be bound, because Guile-GI
+can't know how to copy or free them.  A few that GTK, GSK and GDK
+need are wrapped specially: @code{GskRoundedRect},
+@code{GskColorStop}, @code{GskShadow}, @code{GskParseLocation},
+@code{GtkCssLocation}, @code{GdkKeymapKey}, @code{GdkTimeCoord},
+@code{GtkPageRange}, @code{GtkRequestedSize}, @code{GtkRecentData}
+and @code{GtkPadActionEntry}.  For each, loading its typelib entry
+defines its class, a constructor that takes the values of its fields
+in order, all optional, and a getter and a setter for each field.  The
+library's functions that take or return these structs work too, as do
+arrays of them, given as lists or vectors and returned as vectors.
+These structs are copied when they come from C, so changing one in
+Scheme does not change the library's copy.
+
+@example
+(make-color-stop 0.5 red)      ; a <GskColorStop>
+(color-stop:offset stop)       @result{} 0.5
+(color-stop:set-offset! stop 0.25)
+@end example
+
+@code{GdkToplevelSize}, @code{GdkDragSurfaceSize} and
+@code{GtkBuildableParseContext} are opaque and only valid while the
+library lends them, for example during a signal.  Signal handlers
+receive them as pointers; @code{pointer->toplevel-size} and the like
+wrap a pointer for the struct's methods.
+
 @node GObjects
 @subsection GObjects
 

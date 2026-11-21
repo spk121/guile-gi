@@ -216,8 +216,13 @@ load_info(GIBaseInfo *info, LoadFlags flags)
     {
         GType gtype = g_registered_type_info_get_g_type(info);
         if (gtype == G_TYPE_NONE) {
-            gig_debug_load("%s - not loading struct type because is has no GType",
-                           g_base_info_get_name(info));
+            // A few plain structs that GTK, GSK and GDK need are
+            // wrapped as foreign objects instead.
+            const GigForeignStruct *fs = gig_foreign_struct_find(info);
+            if (fs != NULL) {
+                defs = scm_append2(defs, gig_foreign_struct_define(fs));
+                goto recursion;
+            }
             gig_debug_load("%s - not loading %s type because is has no GType",
                            g_base_info_get_name(info), g_info_type_to_string(t));
             break;
