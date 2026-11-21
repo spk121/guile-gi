@@ -34,4 +34,14 @@
     (or (string=? "/tmp" child-path)
 	(string=? "\\tmp" child-path))))
 
+(test-assert "GError messages are not format strings"
+  ;; The message used to be passed as the format string, so a '~d' in
+  ;; it broke formatting the error.
+  (catch 'misc-error
+    (lambda ()
+      (file:load-contents (file:new-for-path "/nonexistent/~dir/x") #f)
+      #f)
+    (lambda (key subr message args rest)
+      (string-contains (apply simple-format #f message args) "/nonexistent/~dir/x"))))
+
 (test-end "file")

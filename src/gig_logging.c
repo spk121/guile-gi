@@ -15,6 +15,7 @@
 
 #include <assert.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <girepository.h>
@@ -48,6 +49,55 @@ is_enabled(const LogField *domain, const char *domains, bool allow_empty)
     return false;
 }
 
+// Logging is called from all over the C code, including callbacks and
+// atexit handlers, so a Scheme error raised while writing a message
+// (a closed port, or a custom logger that throws) must not escape.
+static SCM
+log_error_handler(void *data, SCM key, SCM args)
+{
+    // Say so once, rather than once per message.
+    static int reported = 0;
+    if (!reported) {
+        reported = 1;
+        fprintf(stderr, "guile-gi: error while writing a log message; "
+                "further logging errors are ignored\n");
+    }
+    return SCM_BOOL_F;
+}
+
+struct port_message
+{
+    SCM port;
+    const char *prefix;
+    const char *color;
+    const char *message;
+};
+
+static SCM
+write_to_port(void *data)
+{
+    struct port_message *m = data;
+    SCM port = m->port;
+
+    if (scm_is_true(scm_output_port_p(port)) && SCM_OPOUTPORTP(port)) {
+        if (scm_is_true(scm_file_port_p(port))) {
+            int fd = scm_to_int(scm_fileno(port));
+            char *colored_prefix =
+                decorate_string(log_writer_supports_color(fd) ? m->color : "%s", m->prefix);
+            scm_c_write(port, colored_prefix, strlen(colored_prefix));
+            scm_c_write(port, ": ", 2);
+            scm_c_write(port, m->message, strlen(m->message));
+            scm_newline(port);
+            free(colored_prefix);
+        }
+        else
+            scm_printf(port, "%s: %s\n", m->prefix, m->message);
+    }
+    else
+        scm_printf(scm_current_error_port(), "%s: %s\n", m->prefix, m->message);
+    return SCM_UNSPECIFIED;
+}
+
 static LogWriterOutput
 gig_log_writer(LogLevelFlags flags, const LogField *fields, size_t n_fields, void *user_data)
 {
@@ -56,7 +106,8 @@ gig_log_writer(LogLevelFlags flags, const LogField *fields, size_t n_fields, voi
 #define ENV_GIG_DEBUG (getenv("GIG_DEBUG"))
     const LogField *message;
 
-    const char *prefix = NULL, *color = NULL;
+    // Defaults for a level outside the switch below.
+    const char *prefix = "LOG", *color = "%s";
     if (!logger_initialized) {
         scm_init_guile();
         logger_initialized = 1;
@@ -97,24 +148,13 @@ gig_log_writer(LogLevelFlags flags, const LogField *fields, size_t n_fields, voi
     message = field_ref("MESSAGE", fields, n_fields);
     assert(message != NULL);
 
-    SCM port = SCM_PACK_POINTER(user_data);
-
-    if (scm_is_true(scm_output_port_p(port))) {
-        if (scm_is_true(scm_file_port_p(port))) {
-            int fd = scm_to_int(scm_fileno(port));
-            char *colored_prefix =
-                decorate_string(log_writer_supports_color(fd) ? color : "%s", prefix);
-            scm_c_write(port, colored_prefix, strlen(colored_prefix));
-            scm_c_write(port, ": ", 2);
-            scm_c_write(port, message->value, strlen(message->value));
-            scm_newline(port);
-            free(colored_prefix);
-        }
-        else
-            scm_printf(port, "%s: %s\n", prefix, (const char *)message->value);
-    }
-    else
-        scm_printf(scm_current_error_port(), "%s: %s\n", prefix, (const char *)message->value);
+    struct port_message m = {
+        .port = SCM_PACK_POINTER(user_data),
+        .prefix = prefix,
+        .color = color,
+        .message = message->value,
+    };
+    scm_internal_catch(SCM_BOOL_T, write_to_port, &m, log_error_handler, NULL);
 
     return LOG_WRITER_HANDLED;
 #undef LOG_FIELD
@@ -122,12 +162,16 @@ gig_log_writer(LogLevelFlags flags, const LogField *fields, size_t n_fields, voi
 #undef ENV_GIG_DEBUG
 }
 
+static void gig_unprotect_func(void *func);
+
 static SCM
 gig_log_to_port(SCM port)
 {
     SCM_ASSERT_TYPE(SCM_OPOUTPORTP(port), port, SCM_ARG1, "install-port-logger!",
                     "open output port");
-    log_set_writer_func(gig_log_writer, SCM_UNPACK_POINTER(port), NULL);
+    // Keep the port alive for as long as it is the logger.
+    port = scm_gc_protect_object(port);
+    log_set_writer_func(gig_log_writer, SCM_UNPACK_POINTER(port), gig_unprotect_func);
     return SCM_UNSPECIFIED;
 }
 
@@ -145,6 +189,19 @@ gig_unprotect_func(void *func)
 }
 
 SCM kwd_log_level;
+
+struct custom_call
+{
+    SCM func;
+    SCM args;
+};
+
+static SCM
+call_custom_logger(void *data)
+{
+    struct custom_call *call = data;
+    return scm_apply_0(call->func, call->args);
+}
 
 static LogWriterOutput
 gig_log_custom_helper(LogLevelFlags log_level, const LogField *fields, size_t n_fields,
@@ -193,7 +250,8 @@ gig_log_custom_helper(LogLevelFlags log_level, const LogField *fields, size_t n_
         free(key);
     }
     scm_set_cdr_x(scm_cdr(it), SCM_EOL);
-    scm_apply_0(SCM_PACK_POINTER(user_data), args);
+    struct custom_call call = { SCM_PACK_POINTER(user_data), args };
+    scm_internal_catch(SCM_BOOL_T, call_custom_logger, &call, log_error_handler, NULL);
 
     return LOG_WRITER_HANDLED;
 }

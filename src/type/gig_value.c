@@ -208,7 +208,7 @@ gig_value_from_scm(GValue *value, SCM obj)
             return 0;
         }
         else if (gig_type_get_gtype_from_obj(obj) > G_TYPE_INVALID) {
-            g_value_set_object(value, gig_type_peek_object(obj));
+            g_value_set_pointer(value, gig_type_peek_object(obj));
             return 0;
         }
         return GIG_VALUE_WRONG_TYPE;
@@ -218,14 +218,24 @@ gig_value_from_scm(GValue *value, SCM obj)
     {
         if (G_VALUE_HOLDS(value, G_TYPE_VALUE)) {
             GValue *n_value = g_value_get_boxed(value);
+            if (n_value == NULL)
+                return GIG_VALUE_WRONG_TYPE;
             return gig_value_from_scm(n_value, obj);
         }
         else if (G_VALUE_HOLDS(value, G_TYPE_GSTRING)) {
             gig_critical("unhandled value type");
             return GIG_VALUE_WRONG_TYPE;
         }
-        else
+        else if (scm_is_false(obj))
+            g_value_set_boxed(value, NULL);
+        else {
+            // g_value_set_boxed copies OBJ with VALUE's copy function,
+            // so OBJ must really be of that boxed type.
+            GType obj_type = gig_type_get_gtype_from_obj(obj);
+            if (obj_type == G_TYPE_INVALID || !g_type_is_a(obj_type, value_type))
+                return GIG_VALUE_WRONG_TYPE;
             g_value_set_boxed(value, gig_type_peek_object(obj));
+        }
         break;
     }
 
@@ -353,13 +363,12 @@ gig_value_to_scm_structured_type(const GValue *value, GType fundamental, bool co
     switch (fundamental) {
     case G_TYPE_INTERFACE:
     {
+        if (!g_type_is_a(G_VALUE_TYPE(value), G_TYPE_OBJECT))
+            break;
         void *obj = g_value_get_object(value);
         if (!obj)
             return SCM_BOOL_F;
-        else if (g_type_is_a(G_VALUE_TYPE(value), G_TYPE_OBJECT))
-            return gig_type_transfer_object(G_OBJECT_TYPE(obj), obj, transfer);
-        else
-            break;
+        return gig_type_transfer_object(G_OBJECT_TYPE(obj), obj, transfer);
     }
     case G_TYPE_POINTER:
         // If we get a simple pointer with no context information,
@@ -406,7 +415,8 @@ gig_value_to_scm_structured_type(const GValue *value, GType fundamental, bool co
     {
         GVariant *v = g_value_get_variant(value);
         if (v)
-            return gig_type_transfer_object(G_TYPE_VARIANT, g_variant_ref(v), transfer);
+            return gig_type_transfer_object(G_TYPE_VARIANT, transfer == GI_TRANSFER_NOTHING
+                                            ? v : g_variant_ref(v), transfer);
         else
             return SCM_BOOL_F;
     }
@@ -455,7 +465,9 @@ SCM
 gig_value_get(SCM value)
 {
     GValue *gvalue = gig_type_peek_typed_object(value, gig_value_type());
-    return gig_value_as_scm(gvalue, FALSE);
+    // The <GValue> keeps ownership of its contents, so take our own
+    // reference or copy.
+    return gig_value_as_scm(gvalue, TRUE);
 }
 
 SCM
@@ -488,12 +500,13 @@ SCM
 gig_value_transform(SCM val, SCM type)
 {
     GValue *old_val = gig_type_peek_typed_object(val, gig_value_type());
-    GValue *new_val = xcalloc(1, sizeof(GValue));
+    GValue *new_val = g_new0(GValue, 1);
     g_value_init(new_val, scm_to_gtype(type));
     if (g_value_transform(old_val, new_val))
         return gig_type_transfer_object(G_TYPE_VALUE, new_val, GI_TRANSFER_EVERYTHING);
     else {
-        free(new_val);
+        g_value_unset(new_val);
+        g_free(new_val);
         scm_misc_error("%transform", "failed to transform ~A into ~A", scm_list_2(val, type));
     }
 }

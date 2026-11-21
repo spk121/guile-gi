@@ -76,6 +76,10 @@ strval_add_entry(strval_t *sv, const char *key, uint64_t val)
             }
         }
         sv->entries[sv->len].key = strdup(key);
+        if (sv->entries[sv->len].key == NULL) {
+            fprintf(stderr, "Out of memory\n");
+            exit(1);
+        }
         sv->entries[sv->len].val = val;
         sv->len++;
         qsort(sv->entries, sv->len, sizeof(strval_item_t), compare);

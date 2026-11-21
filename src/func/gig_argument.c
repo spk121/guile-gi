@@ -99,6 +99,19 @@ later_free(slist_t **must_free, GigTypeMeta *meta, void *ptr)
 
 #define LATER_FREE(_ptr) later_free(must_free, meta, _ptr)
 
+// For an array we allocated to pass to C.  With transfer container
+// the callee takes the array (but not its elements), so it is ours to
+// free only with transfer none.
+static void *
+later_free_container(slist_t **must_free, GigTypeMeta *meta, void *ptr)
+{
+    if ((must_free != NULL) && meta->transfer == GI_TRANSFER_NOTHING)
+        slist_prepend(must_free, ptr);
+    return ptr;
+}
+
+#define LATER_FREE_CONTAINER(_ptr) later_free_container(must_free, meta, _ptr)
+
 static GType
 child_type(GigTypeMeta *meta, GIArgument *arg)
 {
@@ -161,7 +174,7 @@ zero_terminated_array_length(GigTypeMeta *meta, GIArgument *arg)
             size_t length = 0;
             while(1) {
                 non_null = false;
-                for (size_t i = 0; i <= item_size; i++) {
+                for (size_t i = 0; i < item_size; i++) {
                     if (ptr[i] != 0) {
                         non_null = true;
                     }
@@ -574,6 +587,12 @@ scm_to_c_native_array(S2C_ARG_DECL)
         scm_to_c_native_interface_array(S2C_ARGS);
     else
         UNHANDLED;
+
+    // The C function will read the whole fixed-size array.
+    if (meta->length != GIG_ARRAY_SIZE_UNKNOWN && *size < meta->length)
+        scm_misc_error(subr, "array argument ~S has ~A elements, but ~A are required",
+                       scm_list_3(object, scm_from_size_t(*size),
+                                  scm_from_size_t(meta->length)));
 }
 
 static void
@@ -585,13 +604,13 @@ scm_to_c_native_boolean_array(S2C_ARG_DECL)
         scm_wrong_type_arg_msg(subr, argpos, object, "vector of booleans");
     *size = scm_c_vector_length(object);
     if (meta->is_zero_terminated) {
-        arg->v_pointer = malloc(sizeof(gboolean) * (*size + 1));
+        arg->v_pointer = xmalloc(sizeof(gboolean) * (*size + 1));
         ((gboolean *)arg->v_pointer)[*size] = 0;
-        LATER_FREE(arg->v_pointer);
+        LATER_FREE_CONTAINER(arg->v_pointer);
     }
     else {
-        arg->v_pointer = malloc(sizeof(gboolean) * *size);
-        LATER_FREE(arg->v_pointer);
+        arg->v_pointer = xmalloc(sizeof(gboolean) * *size);
+        LATER_FREE_CONTAINER(arg->v_pointer);
     }
     for (size_t i = 0; i < *size; i++)
         ((gboolean *)(arg->v_pointer))[i] = (gboolean)scm_is_true(scm_c_vector_ref(object, i));
@@ -607,13 +626,13 @@ scm_to_c_native_unichar_array(S2C_ARG_DECL)
         scm_wrong_type_arg_msg(subr, argpos, object, "string");
     *size = scm_c_string_length(object);
     if (meta->is_zero_terminated) {
-        arg->v_pointer = malloc(sizeof(gunichar) * (*size + 1));
+        arg->v_pointer = xmalloc(sizeof(gunichar) * (*size + 1));
         ((gunichar *)arg->v_pointer)[*size] = 0;
-        LATER_FREE(arg->v_pointer);
+        LATER_FREE_CONTAINER(arg->v_pointer);
     }
     else {
-        arg->v_pointer = malloc(sizeof(gunichar) * *size);
-        LATER_FREE(arg->v_pointer);
+        arg->v_pointer = xmalloc(sizeof(gunichar) * *size);
+        LATER_FREE_CONTAINER(arg->v_pointer);
     }
     for (size_t i = 0; i < *size; i++)
         ((gunichar *)(arg->v_pointer))[i] = (gunichar)SCM_CHAR(scm_c_string_ref(object, i));
@@ -650,7 +669,7 @@ scm_to_c_native_immediate_array(S2C_ARG_DECL)
                 size_t len = SCM_BYTEVECTOR_LENGTH(object);
                 // Adding null terminator element.
                 arg->v_pointer = xcalloc(*size + 1, item_size);
-                LATER_FREE(arg->v_pointer);
+                LATER_FREE_CONTAINER(arg->v_pointer);
                 memcpy(arg->v_pointer, SCM_BYTEVECTOR_CONTENTS(object), len);
             }
             else
@@ -672,10 +691,9 @@ scm_to_c_byte_array(S2C_ARG_DECL)
         void *contents = SCM_BYTEVECTOR_CONTENTS(object);
         size_t len = SCM_BYTEVECTOR_LENGTH(object);
         *size = len;
-        if (meta->transfer == GI_TRANSFER_EVERYTHING)
-            arg->v_pointer = g_byte_array_new_take(contents, len);
-        else
-            arg->v_pointer = g_byte_array_new_take(xmemdup(contents, len), len);
+        // The bytevector's storage belongs to Guile, so GLib always
+        // gets its own copy.
+        arg->v_pointer = g_byte_array_new_take(xmemdup(contents, len), len);
     }
     else
         scm_wrong_type_arg_msg(subr, argpos, object, "bytevector");
@@ -813,6 +831,11 @@ scm_to_c_ghashtable(S2C_ARG_DECL)
     GType type;
     size_t siz;
     GHashFunc hash_func;
+
+    // SCM_HASHTABLE_VECTOR below doesn't check its argument.
+    if (!scm_is_true(scm_hash_table_p(object)))
+        scm_wrong_type_arg_msg(subr, argpos, object, "hash table");
+
     GEqualFunc equal_func;
     GigHashKeyType key_type = GIG_HASH_INVALID;
     GigHashKeyType val_type = GIG_HASH_INVALID;
@@ -943,13 +966,13 @@ scm_to_c_native_gtype_array(S2C_ARG_DECL)
         scm_wrong_type_arg_msg(subr, argpos, object, "vector of gtype-ables");
     *size = scm_c_vector_length(object);
     if (meta->is_zero_terminated) {
-        arg->v_pointer = malloc(sizeof(GType) * (*size + 1));
+        arg->v_pointer = xmalloc(sizeof(GType) * (*size + 1));
         ((GType *)arg->v_pointer)[*size] = 0;
-        LATER_FREE(arg->v_pointer);
+        LATER_FREE_CONTAINER(arg->v_pointer);
     }
     else {
-        arg->v_pointer = malloc(sizeof(GType) * *size);
-        LATER_FREE(arg->v_pointer);
+        arg->v_pointer = xmalloc(sizeof(GType) * *size);
+        LATER_FREE_CONTAINER(arg->v_pointer);
     }
     for (size_t i = 0; i < *size; i++)
         ((GType *)(arg->v_pointer))[i] = scm_to_gtype(scm_c_vector_ref(object, i));
@@ -967,10 +990,15 @@ scm_to_c_garray(S2C_ARG_DECL)
     _meta.transfer = GI_TRANSFER_EVERYTHING;
 
     gig_argument_scm_to_c(subr, argpos, &_meta, object, NULL, &_arg, size);
-    arg->v_pointer = g_array_new(_meta.is_zero_terminated, FALSE, _meta.params[0].item_size);
-    assert(arg->v_pointer != NULL);
-    ((GArray *)(arg->v_pointer))->len = *size;
-    ((GArray *)(arg->v_pointer))->data = _arg.v_pointer;
+
+    // item_size shares storage with pointer_type, so it isn't the
+    // element size for strings and pointers.  And GArray tracks its own
+    // allocation, so copy the elements in rather than replacing its data.
+    GArray *array = g_array_sized_new(_meta.is_zero_terminated, FALSE,
+                                      gig_meta_real_item_size(&_meta.params[0]), *size);
+    g_array_append_vals(array, _arg.v_pointer, *size);
+    free(_arg.v_pointer);
+    arg->v_pointer = array;
 }
 
 static void
@@ -989,18 +1017,21 @@ scm_to_c_native_interface_array(S2C_ARG_DECL)
         *size = scm_c_vector_length(object);
         if (meta->params[0].is_ptr) {
             if (meta->is_zero_terminated) {
-                arg->v_pointer = malloc(sizeof(void *) * (*size + 1));
+                arg->v_pointer = xmalloc(sizeof(void *) * (*size + 1));
                 ((void **)arg->v_pointer)[*size] = 0;
             }
             else {
-                arg->v_pointer = malloc(sizeof(void *) * *size);
+                arg->v_pointer = xmalloc(sizeof(void *) * *size);
             }
+            LATER_FREE_CONTAINER(arg->v_pointer);
             for (size_t i = 0; i < *size; i++) {
                 void *p = gig_type_peek_object(scm_c_vector_ref(object, i));
                 if (meta->transfer == GI_TRANSFER_EVERYTHING) {
                     if (fundamental_item_type == G_TYPE_BOXED) {
-                        ((void **)(arg->v_pointer))[i] =
-                            xmemdup(p, gig_meta_real_item_size(&meta->params[0]));
+                        // The callee will release it with the type's
+                        // free function, so copy it with the type's
+                        // copy function.
+                        ((void **)(arg->v_pointer))[i] = p ? g_boxed_copy(item_type, p) : NULL;
                     }
                     else if (fundamental_item_type == G_TYPE_VARIANT) {
                         ((void **)(arg->v_pointer))[i] = p;
@@ -1022,18 +1053,20 @@ scm_to_c_native_interface_array(S2C_ARG_DECL)
                 arg->v_pointer = xcalloc(*size + 1, real_item_size);
             else
                 arg->v_pointer = xcalloc(*size, real_item_size);
+            LATER_FREE_CONTAINER(arg->v_pointer);
+            // The structs are stored by value, so copying them into
+            // the array is all that's needed.
             for (size_t i = 0; i < *size; i++) {
                 void *p = gig_type_peek_object(scm_c_vector_ref(object, i));
-                if (meta->transfer == GI_TRANSFER_EVERYTHING)
-                    memcpy((char *)(arg->v_pointer) + i * real_item_size,
-                           xmemdup(p, real_item_size), real_item_size);
-                else
-                    memcpy((char *)(arg->v_pointer) + i * real_item_size, p, real_item_size);
+                if (p == NULL)
+                    scm_wrong_type_arg_msg(subr, argpos, object, "vector of structs");
+                memcpy((char *)(arg->v_pointer) + i * real_item_size, p, real_item_size);
             }
         }
     }
     else if (fundamental_item_type == G_TYPE_ENUM || fundamental_item_type == G_TYPE_FLAGS) {
-        // TODO: coerce to vector as above?
+        if (scm_is_vector(object))
+            object = scm_vector_to_list(object);
         if (scm_is_list(object)) {
             size_t length = scm_c_length(object);
             *size = length;
@@ -1043,7 +1076,7 @@ scm_to_c_native_interface_array(S2C_ARG_DECL)
             else
                 ptr = xcalloc(length, sizeof(int));
             arg->v_pointer = ptr;
-            LATER_FREE(ptr);
+            LATER_FREE_CONTAINER(ptr);
             SCM iter = object;
 
             for (size_t i = 0; i < length; i++, iter = scm_cdr(iter))
@@ -1057,7 +1090,7 @@ scm_to_c_native_interface_array(S2C_ARG_DECL)
                 }
         }
         else
-            assert_not_reached();
+            scm_wrong_type_arg_msg(subr, argpos, object, "list or vector of enums");
     }
     else {
         // Everything else is unhandled.
@@ -1084,7 +1117,7 @@ scm_to_c_native_string_array(S2C_ARG_DECL)
         elt = scm_vector_elements(object, &handle, &len, &inc);
         *size = len;
         char **strv = xcalloc(len + 1, sizeof(char *));
-        LATER_FREE(strv);
+        LATER_FREE_CONTAINER(strv);
 
         for (size_t i = 0; i < len; i++, elt += inc) {
             if (meta->params[0].pointer_type == GIG_DATA_LOCALE_STRING)
@@ -1102,7 +1135,7 @@ scm_to_c_native_string_array(S2C_ARG_DECL)
         size_t len = scm_c_length(object);
         *size = len;
         char **strv = xcalloc(len + 1, sizeof(char *));
-        LATER_FREE(strv);
+        LATER_FREE_CONTAINER(strv);
         SCM iter = object;
         for (size_t i = 0; i < len; i++) {
             SCM elt = scm_car(iter);
@@ -1521,7 +1554,8 @@ c_native_array_to_scm(C2S_ARG_DECL)
         SCM *elt;
         elt = scm_vector_writable_elements(*object, &handle, &len, &inc);
 
-        assert(arg->v_pointer != NULL);
+        if (arg->v_pointer == NULL)
+            len = 0;
 
         GIArgument _arg = *arg;
         GigTypeMeta _meta = meta->params[0];
@@ -1530,6 +1564,9 @@ c_native_array_to_scm(C2S_ARG_DECL)
             // value arrays are weird, man
 
             assert(meta->is_ptr);
+            // The GValues live inside the array, so they must be
+            // copied, never taken.
+            _meta.transfer = GI_TRANSFER_NOTHING;
             for (size_t k = 0; k < len; k++, _arg.v_pointer += sizeof(GValue), elt += inc)
                 gig_argument_c_to_scm(subr, argpos, &_meta, &_arg, elt, -1);
         }
@@ -1537,10 +1574,15 @@ c_native_array_to_scm(C2S_ARG_DECL)
             // this used to be the VARIANT conversion, but it turns out, that other boxed
             // types are packed just like this
             bool is_pointer = _meta.is_ptr;
+            size_t stride = is_pointer ? sizeof(void *) : _meta.item_size;
             _meta.is_ptr = true;
+            // Structs stored by value live inside the array, so they
+            // must be copied, never taken.
+            if (!is_pointer)
+                _meta.transfer = GI_TRANSFER_NOTHING;
             uint8_t *iter = arg->v_pointer;
 
-            for (size_t k = 0; k < len; k++, elt += inc, iter += gig_meta_real_item_size(meta)) {
+            for (size_t k = 0; k < len; k++, elt += inc, iter += stride) {
                 if (is_pointer)
                     _arg.v_pointer = *(void **)iter;
                 else
@@ -1602,10 +1644,9 @@ c_byte_array_to_scm(C2S_ARG_DECL)
     GByteArray *byte_array = arg->v_pointer;
     *object = scm_c_make_bytevector(byte_array->len);
     memcpy(SCM_BYTEVECTOR_CONTENTS(*object), byte_array->data, byte_array->len);
-    if (meta->transfer == GI_TRANSFER_EVERYTHING)
-        g_byte_array_free(byte_array, TRUE);
-    else
-        g_byte_array_free(byte_array, FALSE);
+    // With transfer none the array still belongs to the callee.
+    if (meta->transfer != GI_TRANSFER_NOTHING)
+        g_byte_array_unref(byte_array);
 }
 
 static void
@@ -1653,14 +1694,24 @@ c_gptrarray_to_scm(C2S_ARG_DECL)
     _meta.gtype = G_TYPE_PRIV_C_ARRAY;
     _meta.length = array->len;
 
-    // Transfer the contents out of the GPtrArray into a
-    // native C array, and then on to an SCM
-    size = array->len;
-    _arg.v_pointer = xmemdup(array->pdata, array->len * sizeof(void *));
-    c_native_array_to_scm(subr, argpos, &_meta, &_arg, object, size);
+    // Elements are ours only with transfer everything.
+    _meta.transfer = (meta->transfer == GI_TRANSFER_EVERYTHING
+                      ? GI_TRANSFER_EVERYTHING : GI_TRANSFER_NOTHING);
 
-    // Free the GPtrArray without deleting the contents
-    g_ptr_array_free(array, FALSE);
+    // Convert a copy of the pointer array.  With transfer everything
+    // the conversion consumes the copy; otherwise free it here.
+    size = array->len;
+    void *copy = xmemdup(array->pdata, array->len * sizeof(void *));
+    _arg.v_pointer = copy;
+    c_native_array_to_scm(subr, argpos, &_meta, &_arg, object, size);
+    if (_meta.transfer == GI_TRANSFER_NOTHING)
+        free(copy);
+
+    // With transfer none the GPtrArray still belongs to the callee.
+    // Otherwise release it, but not its elements: they were either
+    // taken above or still belong to the callee.
+    if (meta->transfer != GI_TRANSFER_NOTHING)
+        g_free(g_ptr_array_free(array, FALSE));
 }
 
 static void
@@ -1680,6 +1731,11 @@ c_ghashtable_to_scm(C2S_ARG_DECL)
             GigTypeMeta _meta = meta->params[i];
             GIArgument _arg;
             void *p = ((i == 0) ? key : value);
+
+            // The table's own destroy functions, if any, release its
+            // keys and values when it is unreffed below, so convert
+            // copies.
+            _meta.transfer = GI_TRANSFER_NOTHING;
 
             c_hash_pointer_to_arg(&_meta, p, &_arg);
 

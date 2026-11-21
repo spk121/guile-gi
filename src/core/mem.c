@@ -77,9 +77,12 @@ xstrndup(const char *S, size_t siz)
 {
     char *x;
     size_t len;
-    len = strlen (S);
-    if (len < siz)
-	len = siz;
+    const char *end;
+
+    /* Like strnlen, which MinGW/UCRT may lack: never read past S[siz-1],
+     * since S need not be NUL-terminated (e.g. bytevector contents). */
+    end = memchr(S, '\0', siz);
+    len = end ? (size_t)(end - S) : siz;
     x = malloc (len + 1);
     if (x == NULL) {
         fprintf(stderr, "Out of memory\n");

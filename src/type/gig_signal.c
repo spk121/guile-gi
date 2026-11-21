@@ -38,8 +38,9 @@ scm_signal_accu(GSignalInvocationHint * ihint,
                 GValue *seed, const GValue *element, void *procedure)
 {
     SCM _seed, _element, result;
-    _seed = gig_value_as_scm(seed, FALSE);
-    _element = gig_value_as_scm(element, FALSE);
+    // GLib keeps ownership of both values; take our own references.
+    _seed = gig_value_as_scm(seed, TRUE);
+    _element = gig_value_as_scm(element, TRUE);
 
     result = scm_call_2(SCM_PACK_POINTER(procedure), _seed, _element);
     switch (scm_c_nvalues(result)) {
@@ -96,6 +97,7 @@ gig_signalspec_from_obj(SCM obj)
     saccu = gig_signal_ref(obj, GIG_SIGNAL_SLOT_ACCUMULATOR);
     n_params = scm_c_length(sparams);
     params = xcalloc(n_params, sizeof(GType));
+    spec->param_types = params;   // freed by the unwind handler on error
 
     for (unsigned i = 0; i < n_params; i++, sparams = scm_cdr(sparams))
         params[i] = scm_to_gtype(scm_car(sparams));
@@ -134,7 +136,9 @@ gig_signalspec_from_obj(SCM obj)
                            "signal ~A must return a value to use an accumulator",
                            scm_list_1(scm_from_utf8_string(spec->signal_name)));
         spec->accumulator = scm_signal_accu;
-        spec->accu_data = SCM_UNPACK_POINTER(saccu);
+        // A registered signal is never freed, so neither is its
+        // accumulator.
+        spec->accu_data = SCM_UNPACK_POINTER(scm_permanent_object(saccu));
     }
     spec->n_params = n_params;
     spec->param_types = params;

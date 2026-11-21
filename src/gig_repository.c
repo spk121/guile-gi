@@ -276,7 +276,7 @@ load_info(GIBaseInfo *info, LoadFlags flags)
                     }
                 }
             }
-            free(interfaces);
+            g_free(interfaces);
             if (interface_ok)
                 defs = scm_append2(defs, gig_type_define(gtype));
         }
@@ -362,6 +362,8 @@ load(SCM info, SCM flags)
         load_flags = scm_to_uint(flags);
 
     GIBaseInfo *base_info = (GIBaseInfo *)gig_type_peek_object(info);
+    if (base_info == NULL)
+        scm_wrong_type_arg_msg("load", SCM_ARG1, info, "GIBaseInfo");
 
     return load_info(base_info, load_flags);
 }
@@ -398,7 +400,8 @@ get_search_path(void)
     if (slist == NULL)
         return SCM_EOL;
     do {
-        entry = scm_from_utf8_string(slist->data);
+        // Search paths are filenames, in the locale's encoding.
+        entry = scm_from_locale_string(slist->data);
         output = scm_cons(entry, output);
     } while ((slist = g_slist_next(slist)));
     return scm_reverse_x(output, SCM_EOL);
@@ -411,7 +414,7 @@ prepend_search_path(SCM s_dir)
 
     SCM_ASSERT_TYPE(scm_is_string(s_dir), s_dir, SCM_ARG1, "prepend-search-path!", "string");
 
-    dir = scm_to_utf8_string(s_dir);
+    dir = scm_to_locale_string(s_dir);
     g_irepository_prepend_search_path(dir);
     free(dir);
 
@@ -436,10 +439,9 @@ get_dependencies(SCM namespace)
     while (_dependencies[i] != NULL) {
         SCM entry = scm_from_utf8_string(_dependencies[i]);
         dependencies = scm_cons(entry, dependencies);
-        free(_dependencies[i]);
         i++;
     }
-    free(_dependencies);
+    g_strfreev(_dependencies);
     return scm_reverse_x(dependencies, SCM_EOL);
 }
 

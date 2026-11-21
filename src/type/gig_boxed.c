@@ -45,18 +45,21 @@ _boxed_funcs_for_type(GType type)
     funcs->copy_closure = ffi_closure_alloc(sizeof(ffi_closure), &(funcs->copy));
     funcs->free_closure = ffi_closure_alloc(sizeof(ffi_closure), &(funcs->free));
 
-    assert(funcs->copy_closure != NULL && funcs->copy != NULL);
-    assert(funcs->free_closure != NULL && funcs->free != NULL);
+    if (funcs->copy_closure == NULL || funcs->copy == NULL
+        || funcs->free_closure == NULL || funcs->free == NULL)
+        gig_error("%s: failed to allocate boxed closures for %s", G_STRFUNC, g_type_name(type));
 
-    assert(ffi_prep_cif(&(funcs->copy_cif), FFI_DEFAULT_ABI, 1, &ffi_type_pointer,
-                        funcs->atypes) == FFI_OK);
-    assert(ffi_prep_cif(&(funcs->free_cif), FFI_DEFAULT_ABI, 1, &ffi_type_void,
-                        funcs->atypes) == FFI_OK);
-
-    assert(ffi_prep_closure_loc(funcs->copy_closure, &(funcs->copy_cif), _boxed_copy,
-                                GSIZE_TO_POINTER(type), funcs->copy) == FFI_OK);
-    assert(ffi_prep_closure_loc(funcs->free_closure, &(funcs->free_cif), _boxed_free,
-                                GSIZE_TO_POINTER(type), funcs->free) == FFI_OK);
+    // These calls have side effects, so they must not be placed
+    // inside assert(), which compiles to nothing under NDEBUG.
+    if (ffi_prep_cif(&(funcs->copy_cif), FFI_DEFAULT_ABI, 1, &ffi_type_pointer,
+                     funcs->atypes) != FFI_OK
+        || ffi_prep_cif(&(funcs->free_cif), FFI_DEFAULT_ABI, 1, &ffi_type_void,
+                        funcs->atypes) != FFI_OK
+        || ffi_prep_closure_loc(funcs->copy_closure, &(funcs->copy_cif), _boxed_copy,
+                                GSIZE_TO_POINTER(type), funcs->copy) != FFI_OK
+        || ffi_prep_closure_loc(funcs->free_closure, &(funcs->free_cif), _boxed_free,
+                                GSIZE_TO_POINTER(type), funcs->free) != FFI_OK)
+        gig_error("%s: failed to prepare boxed closures for %s", G_STRFUNC, g_type_name(type));
 
     slist_prepend(&_boxed_funcs, funcs);
 

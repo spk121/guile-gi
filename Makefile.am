@@ -458,6 +458,7 @@ endif
 TESTS = \
   test/_setup.scm \
   test/typelib.scm \
+  test/girepository.scm \
   test/insanity.scm \
   test/constants.scm \
   test/mem.scm \

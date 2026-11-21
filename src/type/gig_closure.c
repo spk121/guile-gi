@@ -95,7 +95,7 @@ _gig_closure_marshal(GClosure *closure, GValue *ret, unsigned n_params, const GV
         bits = scm_bitvector_elements(pc->inout_mask, &handle, &offset, &length, &inc);
         pos = offset;
 
-        for (unsigned i = 0; i <= n_params; i++, pos += inc) {
+        for (unsigned i = 0; i < n_params && i < length; i++, pos += inc) {
             size_t word_pos = pos / 32;
             size_t mask = 1L << (pos % 32);
 
@@ -130,24 +130,27 @@ invoke_closure(SCM closure, SCM return_type, SCM inout_mask, SCM args)
     GClosure *real_closure = gig_type_peek_typed_object(closure, gig_closure_type());
     SCM_ASSERT_TYPE(scm_is_list(args), args, SCM_ARG2, "%invoke-closure", "list");
 
+    GType ret_type = scm_to_gtype(return_type);
+    if (!G_TYPE_IS_VALUE(ret_type))
+        scm_wrong_type_arg_msg("%invoke-closure", SCM_ARG2, return_type, "value GType");
+
     size_t nargs = scm_c_length(args);
-    GValue *params = xcalloc(nargs, sizeof(GValue));
-    GValue *retval = xcalloc(1, sizeof(GValue));
-    SCM ret = SCM_UNDEFINED;
     SCM iter = args;
+    for (size_t narg = 0; narg < nargs; narg++, iter = scm_cdr(iter))
+        if (!SCM_IS_A_P(scm_car(iter), gig_value_type()))
+            scm_wrong_type_arg_msg("%invoke-closure", SCM_ARGn, scm_car(iter), "GValue");
 
-    g_value_init(retval, scm_to_gtype(return_type));
-    if (G_VALUE_TYPE(retval) == G_TYPE_INVALID) {
-        free(retval);
-        goto out;
-    }
+    // Each GValue handed to Scheme below is released on its own with
+    // g_boxed_free, so each needs its own allocation.
+    GValue *params = g_new0(GValue, nargs);
+    GValue *retval = g_new0(GValue, 1);
+    SCM ret;
 
+    g_value_init(retval, ret_type);
+
+    iter = args;
     for (size_t narg = 0; narg < nargs; narg++, iter = scm_cdr(iter)) {
         const GValue *arg = gig_type_peek_typed_object(scm_car(iter), gig_value_type());
-        if (arg == NULL) {
-            free(retval);
-            goto out;
-        }
         g_value_init(params + narg, G_VALUE_TYPE(arg));
         g_value_copy(arg, params + narg);
     }
@@ -158,41 +161,42 @@ invoke_closure(SCM closure, SCM return_type, SCM inout_mask, SCM args)
     if (scm_is_bitvector(inout_mask)) {
         ret = scm_cons(ret, SCM_EOL);
 
-        size_t idx = 0, offset, length;
+        size_t offset, length;
         ssize_t pos = 0, inc;
         scm_t_array_handle handle;
         const uint32_t *bits;
 
         size_t bit_count = scm_c_bitvector_count(inout_mask);
-        if (bit_count > nargs)
+        if (bit_count > nargs) {
+            for (size_t narg = 0; narg < nargs; narg++)
+                g_value_unset(params + narg);
+            g_free(params);
             scm_misc_error(NULL, "~S returned fewer values than we should unpack",
                            scm_list_1(closure));
-        GValue *out = xcalloc(bit_count, sizeof(GValue));
+        }
 
         bits = scm_bitvector_elements(inout_mask, &handle, &offset, &length, &inc);
         pos = offset;
 
-        for (unsigned i = 0; i < nargs; i++, pos += inc) {
+        for (size_t i = 0; i < nargs && i < length; i++, pos += inc) {
             size_t word_pos = pos / 32;
             size_t mask = 1L << (pos % 32);
 
             if (bits[word_pos] & mask) {
-                g_value_init(out + idx, G_VALUE_TYPE(params + i));
-                g_value_copy(params + i, out + idx);
-                ret =
-                    scm_cons(gig_type_transfer_object
-                             (G_TYPE_VALUE, out + idx, GI_TRANSFER_EVERYTHING), ret);
-                idx++;
+                GValue *out = g_new0(GValue, 1);
+                g_value_init(out, G_VALUE_TYPE(params + i));
+                g_value_copy(params + i, out);
+                ret = scm_cons(gig_type_transfer_object(G_TYPE_VALUE, out,
+                                                        GI_TRANSFER_EVERYTHING), ret);
             }
         }
         scm_array_handle_release(&handle);
         ret = scm_values(scm_reverse_x(ret, SCM_EOL));
     }
 
-  out:
     for (size_t narg = 0; narg < nargs; narg++)
         g_value_unset(params + narg);
-    free(params);
+    g_free(params);
     return ret;
 }
 
