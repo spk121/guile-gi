@@ -89,9 +89,9 @@
   #t
   (make-page-range 1 2 3))
 
-(test-error "wrong type"
+(test-equal "wrong type"
   'wrong-type-arg
-  (page-range:start (make-css-location)))
+  (catch #t (lambda () (page-range:start (make-css-location)) 'no-error) (lambda (key . args) key)))
 
 (test-error "uninitialized"
   #t

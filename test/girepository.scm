@@ -78,17 +78,16 @@
   (gir:is-registered? "GdkX11" "3.0"))
 
 (let ((array-type
+       ;; strfreev's argument is an array of strings in every GLib.
        (gir:arg-info-get-type
-        (gir:callable-info-get-arg
-         (gir:struct-info-find-method (gir:find-by-name "GLib" "ByteArray") "append")
-         0))))
+        (gir:callable-info-get-arg (gir:find-by-name "GLib" "strfreev") 0))))
   (test-assert "type-info-get-param-type"
     (gir:type-info-get-param-type array-type 0))
-  (test-error "type-info-get-param-type past the last parameter"
+  (test-equal "type-info-get-param-type past the last parameter"
     ;; libgirepository doesn't check; this used to return garbage that
     ;; crashed when used.
     'out-of-range
-    (gir:type-info-get-param-type array-type 1)))
+    (catch #t (lambda () (gir:type-info-get-param-type array-type 1) 'no-error) (lambda (key . args) key))))
 
 (if (false-if-exception (gir:require "Gio" #:version "2.0"))
     (begin

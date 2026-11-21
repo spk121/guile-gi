@@ -41,9 +41,9 @@
   ;; end of the struct.
   (not (defined? 'date:julian-days)))
 
-(test-error "wrong type"
+(test-equal "wrong type"
   'wrong-type-arg
-  (poll-fd:fd (make <GValue>)))
+  (catch #t (lambda () (poll-fd:fd (make <GValue>)) 'no-error) (lambda (key . args) key)))
 
 (test-error "wrong value type"
   #t
@@ -76,9 +76,10 @@
     (set! (rect:origin r) p)
     (list (rect:get-x r) (rect:get-y r))))
 
-(test-error "embedded struct setter type check"
+(test-equal "embedded struct setter type check"
   'wrong-type-arg
-  (let ((r (rect:alloc)))
-    (set! (rect:origin r) r)))
+  (catch #t
+    (lambda () (set! (rect:origin (rect:alloc)) (rect:alloc)) 'no-error)
+    (lambda (key . args) key)))
 
 (test-end "field")

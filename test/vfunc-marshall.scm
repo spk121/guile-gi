@@ -75,9 +75,9 @@
   41
   (begin (object:call-vfunc-with-callback o) received))
 
-(test-error "Scheme errors become GErrors"
+(test-equal "Scheme errors become GErrors"
   'misc-error
-  (object:vfunc-meth-with-error? o 1))
+  (catch #t (lambda () (object:vfunc-meth-with-error? o 1) 'no-error) (lambda (key . args) key)))
 
 (test-equal "invoker of the parent's implementation"
   5

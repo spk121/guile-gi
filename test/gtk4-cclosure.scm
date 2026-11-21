@@ -10,7 +10,9 @@
    (negate null?)
    load-by-name))
 
-(unless (false-if-exception (require "Gtk" "4.0"))
+(define have-gtk4? (false-if-exception (require "Gtk" "4.0")))
+
+(unless have-gtk4?
   (test-skip most-positive-fixnum))
 
 (test-assert "<GtkExpression> exists"
@@ -23,9 +25,10 @@
 ;;; with its own ref, unref and GValue functions.  Values of it used to
 ;;; abort with "unhandled argument type" or raise "unknown type".
 
-(for-each (lambda (name) (load-by-name "Gtk" name))
-          '("Expression" "ConstantExpression" "PropertyExpression"
-            "StringFilter" "StringObject"))
+(when have-gtk4?
+  (for-each (lambda (name) (load-by-name "Gtk" name))
+            '("Expression" "ConstantExpression" "PropertyExpression"
+              "StringFilter" "StringObject")))
 
 (define (string-value str)
   (let ((v (make <GValue>)))
@@ -52,9 +55,9 @@
                  (property-expression:new (get-gtype <GtkStringObject>) #f "string"))))
     (is-a? (string-filter:get-expression filter) <GtkPropertyExpression>)))
 
-(test-error "fundamental instance argument type check"
+(test-equal "fundamental instance argument type check"
   'wrong-type-arg
-  (string-filter:set-expression (string-filter:new #f) 42))
+  (catch #t (lambda () (string-filter:set-expression (string-filter:new #f) 42) 'no-error) (lambda (key . args) key)))
 
 (test-equal "fundamental instance properties"
   '(#f "abc")
