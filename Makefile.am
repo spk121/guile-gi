@@ -72,7 +72,8 @@ dist_example_DATA = \
   examples/browser.scm \
   examples/builder-manual.scm \
   examples/cairo.scm \
-  examples/editor.scm
+  examples/editor.scm \
+  examples/gtk4-robustness.scm
 
 dist_emptywindow_DATA = \
   examples/empty-window/main.scm \
