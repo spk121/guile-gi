@@ -22,7 +22,7 @@
                     pathname
                     #t)))))
     (unless (string? location)
-      (error "Can't find file ~S" filename))
+      (error "Can't find file:" filename))
     location))
 
 (define (go)

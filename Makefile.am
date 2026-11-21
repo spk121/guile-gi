@@ -70,6 +70,8 @@ $(srcdir)/docs/index.html: $(srcdir)/docs/guile-gi.texi
 
 dist_example_DATA = \
   examples/browser.scm \
+  examples/builder-manual.scm \
+  examples/cairo.scm \
   examples/editor.scm
 
 dist_emptywindow_DATA = \
