@@ -45,11 +45,16 @@
   (load (info lib name) flags))
 
 (define* (typelib->module module lib #:optional version)
-  (require lib version)
+  ;; require takes a version string or nothing; it doesn't accept #f.
+  (if version
+      (require lib version)
+      (require lib))
   (set! module (cond
                 ((module? module) module)
                 ((list? module) (resolve-module module))
-                (else (error "not a module: ~A" module))))
+                (else (scm-error 'wrong-type-arg "typelib->module"
+                                 "not a module or module name: ~S"
+                                 (list module) (list module)))))
 
   (unless (module-public-interface module)
     (let ((interface (make-module)))

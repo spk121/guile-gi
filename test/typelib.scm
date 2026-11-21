@@ -42,4 +42,8 @@
     (->guile-procedures.txt %doc)
     #t))
 
+(test-assert "typelib->module without a version"
+  ;; The version defaulted to #f, which require rejects.
+  (module? (typelib->module '(test typelib->module no-version) "GLib")))
+
 (test-end "typelib")

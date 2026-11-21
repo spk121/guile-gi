@@ -110,7 +110,8 @@
                          (%find-signal signal (class-of obj)))))
     (if real-signal
         (%connect obj real-signal detail handler after?)
-        (error "~S has no signal in ~S" obj signal))))
+        (scm-error 'misc-error "connect" "~S has no signal ~S"
+                   (list obj signal) #f))))
 
 (define-method (connect obj (signal <generic>) (handler <procedure>) . rest)
   (apply connect-1 obj signal handler rest))

@@ -130,7 +130,8 @@
    ((subclass? parent <GObject>)
     (apply (@@ (gi oop) %define-object-type) name parent rest))
    (else
-    (error "cannot define class with parent ~A" parent))))
+    (scm-error 'wrong-type-arg "register-type"
+               "cannot define a class with parent ~S" (list parent) (list parent)))))
 
 (when (defined? 'gcov-reset)
   (export gcov-reset))
