@@ -24,6 +24,47 @@ static void do_document(GIBaseInfo *info, const char *parent);
 GIG_API void gig_init_document(void);
 
 
+// The field accessors that src/func/gig_field.c defines.
+static void
+document_fields(GIBaseInfo *container, const char *prefix)
+{
+    GIInfoType type = g_base_info_get_type(container);
+    int n;
+    GIFieldInfo *(*get)(GIBaseInfo *, int);
+    switch (type) {
+    case GI_INFO_TYPE_STRUCT:
+    case GI_INFO_TYPE_BOXED:
+        n = g_struct_info_get_n_fields(container);
+        get = (GIFieldInfo *(*)(GIBaseInfo *, int))g_struct_info_get_field;
+        break;
+    case GI_INFO_TYPE_UNION:
+        n = g_union_info_get_n_fields(container);
+        get = (GIFieldInfo *(*)(GIBaseInfo *, int))g_union_info_get_field;
+        break;
+    case GI_INFO_TYPE_OBJECT:
+        n = g_object_info_get_n_fields(container);
+        get = (GIFieldInfo *(*)(GIBaseInfo *, int))g_object_info_get_field;
+        break;
+    default:
+        return;
+    }
+    GType gtype = g_registered_type_info_get_g_type(container);
+    if (gtype == G_TYPE_NONE || gtype == G_TYPE_INVALID || !gig_fields_are_reliable(container))
+        return;
+    for (int i = 0; i < n; i++) {
+        GIFieldInfo *fi = get(container, i);
+        if (gig_field_is_readable(fi) && !gig_field_is_shadowed(container, fi)) {
+            char *name = gig_field_make_name(fi);
+            scm_printf(SCM_UNDEFINED, "<field name=\"%s\"><scheme>"
+                       "<accessor name=\"%s\" long-name=\"%s:%s\" readable=\"1\" writable=\"%d\"/>"
+                       "</scheme></field>", g_base_info_get_name(fi), name, prefix, name,
+                       gig_field_is_writable(fi));
+            free(name);
+        }
+        g_base_info_unref(fi);
+    }
+}
+
 static void
 document_nested(GIBaseInfo *parent)
 {
@@ -50,6 +91,7 @@ document_nested(GIBaseInfo *parent)
     DOCUMENT_NESTED(n_signals, nested_signal);
 
     GIInfoType type = g_base_info_get_type(parent);
+    document_fields(parent, _namespace);
     if (type == GI_INFO_TYPE_OBJECT)
         DOCUMENT_NESTED(g_object_info_get_n_vfuncs(parent), g_object_info_get_vfunc);
     else if (type == GI_INFO_TYPE_INTERFACE)

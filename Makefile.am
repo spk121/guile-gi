@@ -122,6 +122,7 @@ libguile_gi_la_c_sources = \
   src/func/gig_argument.c \
   src/type/gig_closure.c \
   src/func/gig_data_type.c \
+  src/func/gig_field.c \
   src/type/gig_object.c \
   src/type/gig_value.c \
   src/type/gig_signal.c \
@@ -157,6 +158,7 @@ libguile_gi_la_internal_headers = \
   src/func/gig_argument.h \
   src/type/gig_closure.h \
   src/func/gig_data_type.h \
+  src/func/gig_field.h \
   src/type/gig_object.h \
   src/type/gig_object_priv.h \
   src/type/gig_value.h \
@@ -451,6 +453,7 @@ EVERYTHING_TESTS = \
   test/everything.scm \
   test/marshall.scm \
   test/vfunc-marshall.scm \
+  test/field-marshall.scm \
   test/extra.scm
 
 TESTS_LTDLOPEN = \
@@ -490,6 +493,7 @@ TESTS = \
   test/type.scm \
   test/signals.scm \
   test/vfunc.scm \
+  test/field.scm \
   test/logging.scm \
   $(EVERYTHING_TESTS)
 

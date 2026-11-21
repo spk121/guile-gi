@@ -76,6 +76,20 @@ gig_type_meta_init_from_callable_info(GigTypeMeta *meta, GICallableInfo *ci)
     g_base_info_unref(type_info);
 }
 
+// A struct, union or object field, read and written with transfer
+// none.  A NULL pointer field is #f.
+void
+gig_type_meta_init_from_field_info(GigTypeMeta *meta, GIFieldInfo *fi)
+{
+    GITypeInfo *type_info = g_field_info_get_type(fi);
+    meta->transfer = GI_TRANSFER_NOTHING;
+    gig_type_meta_init_from_type_info(meta, type_info);
+    meta->is_in = false;
+    meta->is_out = false;
+    meta->is_nullable = meta->is_ptr;
+    g_base_info_unref(type_info);
+}
+
 static void
 add_params(GigTypeMeta *meta, int n)
 {

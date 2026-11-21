@@ -350,6 +350,12 @@ load_info(GIBaseInfo *info, LoadFlags flags)
         LOAD_NESTED(LOAD_SIGNALS, n_signals, nested_signal);
 #undef LOAD_NESTED
 
+        // Accessors for the fields of structs, unions and objects.
+        if ((flags & LOAD_METHODS)
+            && (t == GI_INFO_TYPE_STRUCT || t == GI_INFO_TYPE_UNION || t == GI_INFO_TYPE_OBJECT
+                || t == GI_INFO_TYPE_BOXED))
+            defs = scm_append2(defs, gig_fields_define(info));
+
         // A procedure that calls each virtual function, given the
         // class whose implementation to use.
         if (flags & LOAD_METHODS) {

@@ -48,7 +48,7 @@
          namespace
          ;; introspected types
          class record union interface enumeration bitfield
-         function method virtual-method member property)))
+         function method virtual-method member property field)))
 
 (define (documentation-special? sym)
   (or (member sym documentation-special-nodes)
@@ -467,6 +467,11 @@
                (xpath:node-typeof? 'method))
               (xpath:node-self
                (xpath:node-typeof? 'function)))))
+           (%fields
+            (compose
+             (xpath:select-kids identity)
+             (xpath:node-self
+              (xpath:node-typeof? 'field))))
            (%virtual-methods
             (compose
              (xpath:select-kids identity)
@@ -655,6 +660,7 @@
                     (properties (%properties kids))
                     (functions (%functions kids))
                     (virtual-methods (%virtual-methods kids))
+                    (fields (%fields kids))
                     (section (lambda (title content)
                                (and (not (null? content))
                                     `(refsect1 (title ,title)
@@ -673,13 +679,14 @@
                             `(refsect1 (title "Description")
                                        ,@(markdown (string-join doc "") 'refsect2)))
                       ,(section "Members" members)
+                      ,(section "Fields" fields)
                       ,(section "Properties" properties)
                       ,(section "Functions" functions)
                       ,(section "Virtual Functions" virtual-methods)
                       ;; A refentry needs at least one refsect1.
                       ,(and (null? doc) (null? members)
                             (null? properties) (null? functions)
-                            (null? virtual-methods)
+                            (null? virtual-methods) (null? fields)
                             `(refsect1 (title "Description")
                                        (para "Undocumented")))))))))))
 
@@ -721,6 +728,7 @@
         (function . ,refsect2)
         (member . ,refsect2)
         (property . ,refsect2)
+        (field . ,refsect2)
 
         (parameter . ,parameter)
         (instance-parameter . ,parameter)

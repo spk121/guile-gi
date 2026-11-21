@@ -202,6 +202,23 @@
             ((sxpath '(virtual-method)) c)))
      ((sxpath '(r *)) tree))))
 
+(define (documented-fields info)
+  ;; (((container . field) . getter-name) ...) for the fields %document
+  ;; describes for INFO, an info from (gi repository): those guile-gi
+  ;; defines accessors for.
+  (let* ((xml (with-output-to-string
+                (lambda () ((@@ (gi documentation) %document) info))))
+         (tree (xml->sxml (string-append "<r xmlns:c=\"urn:c\">" xml "</r>")
+                          #:namespaces '((c . "urn:c")))))
+    (append-map
+     (lambda (c)
+       (map (lambda (fl)
+              (cons (cons (car ((sxpath '(@ name *text*)) c))
+                          (car ((sxpath '(@ name *text*)) fl)))
+                    (car ((sxpath '(scheme accessor @ long-name *text*)) fl))))
+            ((sxpath '(field)) c)))
+     ((sxpath '(r *)) tree))))
+
 (define (bound? module name)
   (let ((g (module-ref module (string->symbol name) #f)))
     (and (is-a? g <generic>)
@@ -316,7 +333,10 @@
   (let ((fields '()) (vfuncs '()) (deprecated '()) (no-gtype '())
         (documented (append-map (lambda (info)
                                   (or (false-if-exception (documented-vfuncs info)) '()))
-                                (infos ns))))
+                                (infos ns)))
+        (documented-fields (append-map (lambda (info)
+                                         (or (false-if-exception (documented-fields info)) '()))
+                                       (infos ns))))
     (for-each
      (lambda (i)
        (let* ((info (gir:get-info ns i))
@@ -327,11 +347,32 @@
          (define wrapped? (wrapped-struct? ns info))
          (when (and (memq kind '(struct union)) (no-gtype? info) (not wrapped?))
            (set! no-gtype (cons name no-gtype)))
-         (let ((n-fields (case kind
-                           ((struct) (if wrapped? 0 (gir:struct-info-get-n-fields info)))
-                           ((union) (gir:union-info-get-n-fields info))
-                           ((object) (gir:object-info-get-n-fields info))
-                           (else 0)))
+         ;; Fields without an accessor.
+         (let ((n-fields
+                (let ((field-names
+                       (lambda (n get)
+                         (map (lambda (j) (gir:base-info-get-name (get info j))) (iota n)))))
+                  (count (lambda (f)
+                           (let ((getter (assoc-ref documented-fields
+                                                    (cons (gir:base-info-get-name info) f))))
+                             (not (and getter
+                                       (procedure? (module-ref module (string->symbol getter) #f))))))
+                         ;; Only for types guile-gi loads: class structs
+                         ;; are virtual function tables, and types without
+                         ;; a GType are counted as not loaded.
+                         (case (and (memq kind '(struct union object))
+                                    (not (no-gtype? info))
+                                    (not (gir:base-info-is-deprecated? info))
+                                    (not (and (eq? kind 'struct)
+                                              (gir:struct-info-is-gtype-struct? info)))
+                                    kind)
+                           ((struct) (field-names (gir:struct-info-get-n-fields info)
+                                                  gir:struct-info-get-field))
+                           ((union) (field-names (gir:union-info-get-n-fields info)
+                                                 gir:union-info-get-field))
+                           ((object) (field-names (gir:object-info-get-n-fields info)
+                                                  gir:object-info-get-field))
+                           (else '())))))
                ;; Virtual functions without a procedure to call them,
                ;; which also can't be overridden.
                (n-vfuncs
@@ -354,7 +395,7 @@
            (when (> n-fields 0) (set! fields (cons (cons name n-fields) fields)))
            (when (> n-vfuncs 0) (set! vfuncs (cons (cons name n-vfuncs) vfuncs))))))
      (iota (gir:get-n-infos ns)))
-    (emit 'unsupported ns "struct, union and class fields (no accessors)"
+    (emit 'unsupported ns "fields of loaded types without accessors (e.g. parent_instance)"
           (apply + (map cdr fields)) (map car fields))
     (emit 'unsupported ns "virtual functions guile-gi can't represent (no do- procedure, can't be overridden)"
           (apply + (map cdr vfuncs)) (map car vfuncs))

@@ -472,6 +472,25 @@ using @code{make}.
 @include ex-date.scm
 @end example
 
+@cindex fields
+The public fields of structs, unions and objects have getters named
+after the type and the field, such as @code{rgba:red} for the
+@code{red} field of a @code{GdkRGBA}.  Getters return copies of strings,
+structs and arrays.  Fields of plain data -- numbers, booleans, enums,
+flags, and structs made only of those -- can also be set when the
+typelib allows it, either with @code{set!} on the getter or with a
+setter such as @code{rgba:set-red!}.  Fields that hold other pointers,
+such as strings, are read-only, because the typelib does not say who
+would own a new value.  A field gets no getter if a method of its type
+already has that name, and structs with bitfields, which typelibs
+describe incorrectly, get no field accessors at all.
+
+@example
+(rgba:red color)              @result{} 1.0
+(set! (rgba:alpha color) 0.5)
+(point:x (rect:origin rect))  ; rect:origin returns a copy
+@end example
+
 Structs that have no GType usually can't be bound, because Guile-GI
 can't know how to copy or free them.  A few that GTK, GSK and GDK
 need are wrapped specially: @code{GskRoundedRect},
