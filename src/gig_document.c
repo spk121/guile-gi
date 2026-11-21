@@ -114,15 +114,15 @@ do_document(GIBaseInfo *info, const char *_namespace)
             GigArgMapEntry *entry = gig_amap_get_input_entry_by_s(arg_map, i);
             document_arg_entry("argument", entry, i >= req);
         }
-        // ...and its values: the return value, unless void, then each C
-        // output that is also a Scheme output, as convert_output_args
-        // does.  Outputs that only give an array's length are not.
-        if (arg_map->return_val.meta.gtype != G_TYPE_NONE)
+        // ...and its values: the return value, unless void or skipped,
+        // then each C output that is returned to Scheme, as
+        // convert_output_args decides.  Outputs that only give an array's
+        // length, and skipped outputs, are not.
+        if (gig_amap_return_is_returned(arg_map))
             document_arg_entry("return", &arg_map->return_val, false);
 
         for (int i = 0; i < out; i++) {
-            int s_output_pos;
-            if (!gig_amap_output_c2s(arg_map, i, &s_output_pos))
+            if (!gig_amap_output_is_returned(arg_map, i))
                 continue;
             GigArgMapEntry *entry = gig_amap_get_output_entry_by_c(arg_map, i);
             document_arg_entry("return", entry, false);

@@ -327,4 +327,20 @@
         n-callbacks
         n-c-callbacks))
 
+(test-equal "skipped return value and out parameter are not returned"
+  ;; extra_skip_out returns a (skip) boolean and has a (skip) out
+  ;; parameter; only @kept is returned.
+  '(42)
+  (call-with-values (lambda () (skip-out 41)) list))
+
+(test-assert "skipped owned values are still released"
+  ;; Both are (transfer full) and (skip): converted, freed, not returned.
+  (begin
+    (do ((i 0 (1+ i))) ((= i 100)) (skip-owned))
+    #t))
+
+(test-assert "a function returning only a skipped boolean is not a predicate"
+  (and (defined? 'skip-bool)
+       (not (defined? 'skip-bool?))))
+
 (test-end "extra")

@@ -259,3 +259,45 @@ extra_return_callback(ExtraIntCallbackInt *func)
 {
     *func = integer_passthrough;
 }
+
+/**
+ * extra_skip_out:
+ * @in: a number
+ * @skipped: (out) (skip): hidden from bindings
+ * @kept: (out): @in plus one
+ *
+ * Returns: (skip): always %TRUE
+ */
+gboolean
+extra_skip_out(gint in, gint *skipped, gint *kept)
+{
+    *skipped = -1;
+    *kept = in + 1;
+    return TRUE;
+}
+
+/**
+ * extra_skip_owned:
+ * @str: (out) (skip) (transfer full): hidden from bindings, but owned
+ *   by the caller
+ *
+ * Returns: (skip) (transfer full): hidden from bindings, but owned by
+ *   the caller
+ */
+gchar *
+extra_skip_owned(gchar **str)
+{
+    *str = g_strdup("out");
+    return g_strdup("return");
+}
+
+/**
+ * extra_skip_bool:
+ *
+ * Returns: (skip): always %TRUE
+ */
+gboolean
+extra_skip_bool(void)
+{
+    return TRUE;
+}

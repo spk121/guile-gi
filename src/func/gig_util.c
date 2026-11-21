@@ -38,6 +38,10 @@ is_predicate(GICallableInfo *info)
     if (GI_IS_SIGNAL_INFO(info))
         return false;
 
+    // A skipped return value isn't returned at all.
+    if (g_callable_info_skip_return(info))
+        return false;
+
     return_type = g_callable_info_get_return_type(info);
 
     if (g_type_info_get_tag(return_type) == GI_TYPE_TAG_BOOLEAN

@@ -44,6 +44,10 @@ bool gig_amap_output_i2s(const GigArgMap *amap, int i, int *s);
 bool gig_amap_output_c2i(const GigArgMap *amap, int c, int *i);
 bool gig_amap_output_s2i(const GigArgMap *amap, int s, int *i);
 bool gig_amap_output_c2s(const GigArgMap *amap, int c, int *s);
+// Whether a call into C returns these to Scheme.  A (skip) annotation
+// hides a return value or an output parameter from the binding.
+bool gig_amap_return_is_returned(const GigArgMap *amap);
+bool gig_amap_output_is_returned(const GigArgMap *amap, int c);
 bool gig_amap_output_s2c(const GigArgMap *amap, int s, int *c);
 
 bool gig_amap_child_i(const GigArgMap *amap, int i, int *ichild);

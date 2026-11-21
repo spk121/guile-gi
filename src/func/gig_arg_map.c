@@ -752,6 +752,30 @@ gig_amap_output_s2c(const GigArgMap *am, int spos, int *cpos)
     return false;
 }
 
+// These decide what a call into C returns to Scheme; both the call
+// itself (gig_args_store.c) and the documentation (gig_document.c) use
+// them, so that the two agree.  They don't apply to Scheme callbacks
+// called from C, whose outputs C expects to be filled in.
+bool
+gig_amap_return_is_returned(const GigArgMap *amap)
+{
+    return (amap->return_val.meta.gtype != G_TYPE_NONE && !amap->return_val.meta.is_skip);
+}
+
+bool
+gig_amap_output_is_returned(const GigArgMap *amap, int cpos)
+{
+    int spos;
+    if (!gig_amap_output_c2s(amap, cpos, &spos))
+        return false;
+    GigArgMapEntry *entry = gig_amap_get_output_entry_by_c((GigArgMap *)amap, cpos);
+    // (skip) on an out or caller-allocated out parameter hides it; an
+    // inout parameter's input is still needed, so it is kept.
+    if (entry->meta.is_skip && entry->s_direction != GIG_ARG_DIRECTION_INOUT)
+        return false;
+    return true;
+}
+
 ////////////////////////////////////////////////////////////////
 
 bool

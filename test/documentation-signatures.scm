@@ -43,8 +43,9 @@
         '())))
 
 ;; Expected Scheme return values, rebuilt from the introspection data the way
-;; the argument map does: the return value unless void, then each out/inout
-;; argument that is not the length of a C array.
+;; the argument map does: the return value unless void or (skip), then each
+;; out/inout argument that is not the length of a C array, leaving out
+;; (skip) out arguments.
 (define (expected-returns fn)
   (let* ((n (gir:callable-info-get-n-args fn))
          (args (map (cut gir:callable-info-get-arg fn <>) (iota n)))
@@ -55,10 +56,15 @@
                            (let ((i (gir:type-info-get-array-length ti))) (and (>= i 0) i)))))
          (children (filter-map len-index (cons ret (map gir:arg-info-get-type args)))))
     (append
-     (if (and (eq? (gir:type-info-get-tag ret) 'void) (not (gir:type-info-is-pointer? ret))) '() '("%return"))
+     (if (or (and (eq? (gir:type-info-get-tag ret) 'void) (not (gir:type-info-is-pointer? ret)))
+             (gir:callable-info-skip-return? fn))
+         '()
+         '("%return"))
      (filter-map (lambda (a i)
                    (and (memq (gir:arg-info-get-direction a) '(out inout))
                         (not (memv i children))
+                        (not (and (eq? (gir:arg-info-get-direction a) 'out)
+                                  (gir:arg-info-is-skip? a)))
                         (gir:base-info-get-name a)))
                  args (iota n)))))
 
