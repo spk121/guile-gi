@@ -28,8 +28,11 @@ document_nested(GIBaseInfo *parent)
 {
 #define DOCUMENT_NESTED(N, I)                           \
     do {                                                \
-        for (int i = 0; i < N; i++)                    \
-            do_document(I(parent, i), _namespace);      \
+        for (int i = 0; i < N; i++) {                   \
+            GIBaseInfo *nested = I(parent, i);          \
+            do_document(nested, _namespace);            \
+            g_base_info_unref(nested);                  \
+        }                                               \
     } while (0)
 
     char *_namespace = make_scm_name(g_base_info_get_name(parent));
@@ -201,8 +204,11 @@ do_document(GIBaseInfo *info, const char *_namespace)
         document_nested(info);
 
         int n_values = g_enum_info_get_n_values(info);
-        for (int i = 0; i < n_values; i++)
-            do_document(g_enum_info_get_value(info, i), g_base_info_get_name(info));
+        for (int i = 0; i < n_values; i++) {
+            GIValueInfo *value = g_enum_info_get_value(info, i);
+            do_document(value, g_base_info_get_name(info));
+            g_base_info_unref(value);
+        }
 
         scm_printf(SCM_UNDEFINED, "</%s>", kind);
     }
@@ -211,7 +217,6 @@ do_document(GIBaseInfo *info, const char *_namespace)
     case GI_INFO_TYPE_SIGNAL:
         scm_printf(SCM_UNDEFINED, "<signal name=\"%s\" />", g_base_info_get_name(info));
         break;
-    case GI_INFO_TYPE_VFUNC:
     case GI_INFO_TYPE_PROPERTY:
     {
         const char *name = g_base_info_get_name(info);
@@ -229,11 +234,18 @@ do_document(GIBaseInfo *info, const char *_namespace)
         scm_printf(SCM_UNDEFINED, "<scheme><symbol name=\"%s\"", scheme_name);
         GIAttributeIter iter = { 0, };
         char *name, *value;
-        while (g_base_info_iterate_attributes(info, &iter, &name, &value))
-            scm_printf(SCM_UNDEFINED, "%s=\"%s\"", name, value);
+        while (g_base_info_iterate_attributes(info, &iter, &name, &value)) {
+            // Attribute values are arbitrary text from the typelib.
+            char *_name = g_markup_escape_text(name, -1);
+            char *_value = g_markup_escape_text(value, -1);
+            scm_printf(SCM_UNDEFINED, " %s=\"%s\"", _name, _value);
+            g_free(_name);
+            g_free(_value);
+        }
         scm_printf(SCM_UNDEFINED, "/></scheme></member>");
     }
         break;
+    case GI_INFO_TYPE_VFUNC:
     case GI_INFO_TYPE_FIELD:
     case GI_INFO_TYPE_CONSTANT:
     case GI_INFO_TYPE_CALLBACK:
@@ -254,6 +266,8 @@ static SCM
 _document(SCM info)
 {
     GIBaseInfo *real_info = (GIBaseInfo *)gig_type_peek_object(info);
+    if (real_info == NULL)
+        scm_wrong_type_arg_msg("%document", SCM_ARG1, info, "GIBaseInfo");
     do_document(real_info, NULL);
     return SCM_UNSPECIFIED;
 }
