@@ -23,6 +23,9 @@ New features
    types, and parses gi-docgen Markdown (headings of any level, fenced
    code).  A new test checks that documented signatures match the
    generated procedures.
+ - Fundamental instance types that libraries introduce, such as Gtk4's
+   GtkExpression, can be passed to and returned from functions and
+   stored in properties and <GValue>s.
 
 Bug fixes
  - Fix many crashes, double frees and leaks in argument marshalling:

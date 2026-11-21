@@ -28,6 +28,32 @@
 #define GIG_VALUE_WRONG_TYPE -1
 #define GIG_VALUE_OUT_OF_RANGE -2
 
+// Fundamental instance types that libraries introduce, such as
+// GtkExpression, are stored in a GValue with functions the typelib
+// names.
+typedef void *(*GigValueGetFunction)(const GValue *value);
+typedef void (*GigValueSetFunction)(GValue *value, void *instance);
+
+static bool
+fundamental_value_functions(GType value_type, GigValueGetFunction *get,
+                            GigValueSetFunction *set)
+{
+    GType fundamental = G_TYPE_FUNDAMENTAL(value_type);
+    *get = NULL;
+    *set = NULL;
+    if (!G_TYPE_IS_INSTANTIATABLE(fundamental))
+        return false;
+    GIBaseInfo *info = g_irepository_find_by_gtype(NULL, fundamental);
+    if (info == NULL)
+        return false;
+    if (GI_IS_OBJECT_INFO(info)) {
+        *get = (GigValueGetFunction)g_object_info_get_get_value_function_pointer(info);
+        *set = (GigValueSetFunction)g_object_info_get_set_value_function_pointer(info);
+    }
+    g_base_info_unref(info);
+    return *get != NULL && *set != NULL;
+}
+
 /**
  * gig_value_from_scm:
  * @value: the GValue object to store the converted value in.
@@ -256,8 +282,24 @@ gig_value_from_scm(GValue *value, SCM obj)
         }
         return GIG_VALUE_WRONG_TYPE;
     default:
+    {
+        GigValueGetFunction get;
+        GigValueSetFunction set;
+        if (fundamental_value_functions(value_type, &get, &set)) {
+            if (scm_is_false(obj)) {
+                set(value, NULL);
+                return 0;
+            }
+            void *instance = gig_type_peek_object(obj);
+            if (instance == NULL || !G_TYPE_CHECK_INSTANCE_TYPE(instance, value_type))
+                return GIG_VALUE_WRONG_TYPE;
+            // The set function takes its own reference.
+            set(value, instance);
+            return 0;
+        }
         gig_critical("unhandled value type");
         return GIG_VALUE_WRONG_TYPE;
+    }
     }
 
     return 0;
@@ -422,10 +464,17 @@ gig_value_to_scm_structured_type(const GValue *value, GType fundamental, bool co
     }
     default:
     {
-        // assert_not_reached ();
-        /* PyGTypeMarshal *bm; */
-        /* if ((bm = pyg_type_lookup(G_VALUE_TYPE(value)))) */
-        /*  return bm->fromvalue(value); */
+        GigValueGetFunction get;
+        GigValueSetFunction set;
+        if (fundamental_value_functions(G_VALUE_TYPE(value), &get, &set)) {
+            // The get function returns a borrowed pointer, so the
+            // Scheme object takes a new reference.
+            void *instance = get(value);
+            if (instance == NULL)
+                return SCM_BOOL_F;
+            return gig_type_transfer_object(G_TYPE_FROM_INSTANCE(instance), instance,
+                                            GI_TRANSFER_NOTHING);
+        }
         break;
     }
     }

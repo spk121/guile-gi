@@ -52,6 +52,7 @@ static void scm_to_c_boxed(S2C_ARG_DECL);
 // static void scm_to_c_param(S2C_ARG_DECL);
 static void scm_to_c_object(S2C_ARG_DECL);
 static void scm_to_c_variant(S2C_ARG_DECL);
+static void scm_to_c_fundamental_instance(S2C_ARG_DECL);
 
 // Derived types
 static void scm_to_c_native_array(S2C_ARG_DECL);
@@ -79,6 +80,7 @@ static void c_boxed_to_scm(C2S_ARG_DECL);
 static void c_param_to_scm(C2S_ARG_DECL);
 static void c_object_to_scm(C2S_ARG_DECL);
 static void c_variant_to_scm(C2S_ARG_DECL);
+static void c_fundamental_instance_to_scm(C2S_ARG_DECL);
 
 // Derived types
 static void c_byte_array_to_scm(C2S_ARG_DECL);
@@ -263,7 +265,11 @@ gig_argument_scm_to_c(S2C_ARG_DECL)
         scm_to_c_variant(S2C_ARGS);
         break;
     default:
-        UNHANDLED;
+        // Fundamental instance types from libraries, e.g. GtkExpression.
+        if (G_TYPE_IS_INSTANTIATABLE(fundamental_type))
+            scm_to_c_fundamental_instance(S2C_ARGS);
+        else
+            UNHANDLED;
         break;
     }
 }
@@ -550,6 +556,27 @@ scm_to_c_object(S2C_ARG_DECL)
 
         arg->v_pointer = gig_type_peek_object(object);
     }
+}
+
+// Instances of a fundamental type that a library introduces, such as
+// GtkExpression, are reference counted with functions the typelib
+// names; their Scheme classes keep those as their ref and unref slots.
+static void
+scm_to_c_fundamental_instance(S2C_ARG_DECL)
+{
+    TRACE_S2C();
+    if (meta->is_nullable && scm_is_false(object)) {
+        arg->v_pointer = NULL;
+        return;
+    }
+    if (!gig_type_check_typed_object(object, gig_type_get_scheme_type(meta->gtype)))
+        scm_wrong_type_arg_msg(subr, argpos, object, g_type_name(meta->gtype));
+    // With transfer everything the callee takes a reference, and the
+    // Scheme object keeps its own.
+    if (meta->transfer == GI_TRANSFER_EVERYTHING)
+        arg->v_pointer = gig_type_ref_object(object);
+    else
+        arg->v_pointer = gig_type_peek_object(object);
 }
 
 static void
@@ -1225,7 +1252,11 @@ gig_argument_c_to_scm(C2S_ARG_DECL)
         c_variant_to_scm(C2S_ARGS);
         break;
     default:
-        UNHANDLED;
+        // Fundamental instance types from libraries, e.g. GtkExpression.
+        if (G_TYPE_IS_INSTANTIATABLE(fundamental_type))
+            c_fundamental_instance_to_scm(C2S_ARGS);
+        else
+            UNHANDLED;
         break;
     }
 }
@@ -1347,6 +1378,20 @@ c_object_to_scm(C2S_ARG_DECL)
                        scm_list_1(scm_from_utf8_string(g_type_name(meta->gtype))));
 
     *object = gig_type_transfer_object(child_type(meta, arg), arg->v_pointer, meta->transfer);
+}
+
+static void
+c_fundamental_instance_to_scm(C2S_ARG_DECL)
+{
+    TRACE_C2S();
+    if (arg->v_pointer == NULL)
+        // Valid nullable NULLs were handled already.
+        scm_misc_error("%fundamental-arg->scm",
+                       "cannot convert a NULL pointer to an object of type ~S",
+                       scm_list_1(scm_from_utf8_string(g_type_name(meta->gtype))));
+    // gig_type_transfer_object takes the instance's own (most derived)
+    // type and its class's ref and unref functions.
+    *object = gig_type_transfer_object(meta->gtype, arg->v_pointer, meta->transfer);
 }
 
 static void
