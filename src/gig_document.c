@@ -144,6 +144,7 @@ do_document(GIBaseInfo *info, const char *_namespace)
         break;
 
     case GI_INFO_TYPE_STRUCT:
+    case GI_INFO_TYPE_BOXED:
     case GI_INFO_TYPE_OBJECT:
     case GI_INFO_TYPE_INTERFACE:
     case GI_INFO_TYPE_UNION:
@@ -154,6 +155,7 @@ do_document(GIBaseInfo *info, const char *_namespace)
 
         switch (type) {
         case GI_INFO_TYPE_STRUCT:
+        case GI_INFO_TYPE_BOXED:
             kind = "record";
             break;
         case GI_INFO_TYPE_UNION:

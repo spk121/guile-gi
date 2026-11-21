@@ -340,7 +340,7 @@ class."
       (if (= value number) (make class #:value value) seed))
     #f (class-slot-ref class 'obarray))
    (scm-error 'out-of-range "number->enum"
-              "not bound in ~A" (list class) (list symbol))))
+              "not bound in ~A" (list class) (list number))))
 
 (define-method (number->enum (class <class>))
   (lambda (number) (number->enum class number)))
@@ -377,16 +377,26 @@ class."
   (= (logand (slot-ref flags 'value) number) number))
 
 (define-method (flags-set? (flags <GFlags>) (symbol <symbol>))
-  (flags-set? flags (hashq-ref (slot-ref flags 'obarray) symbol)))
+  (flags-set? flags
+              (or (hashq-ref (slot-ref flags 'obarray) symbol)
+                  (scm-error 'out-of-range "flags-set?" "not defined in ~A"
+                             (list (class-of flags)) (list symbol)))))
 
 (define-method (flags-set? (flags <GFlags>) (list <list>))
   (every (lambda (f) (flags-set? flags f)) list))
 
 (define-method (flags->list (flags <GFlags>))
-  (hash-fold
-   (lambda (key value seed)
-     (if (flags-set? flags value) (cons key seed) seed))
-   '() (slot-ref flags 'obarray)))
+  ;; A flag whose value is 0 (e.g. 'none) is contained in every value,
+  ;; so list it only when no flag is set.
+  (let ((number (slot-ref flags 'value)))
+    (hash-fold
+     (lambda (key value seed)
+       (if (if (zero? value)
+               (zero? number)
+               (flags-set? flags value))
+           (cons key seed)
+           seed))
+     '() (slot-ref flags 'obarray))))
 
 (define-method (flags->list (class <class>) (flags <GFlags>))
   (if (is-a? flags class)
@@ -445,7 +455,8 @@ class."
       (make (class-of flags1) #:value
             (logior (slot-ref flags1 'value)
                     (slot-ref flags2 'value)))
-      (error "cannot unite flags of differing type")))
+      (scm-error 'wrong-type-arg "flags-union" "flags of differing types: ~S and ~S"
+                 (list flags1 flags2) #f)))
 
 (define-method (flags-union (car <GFlags>) . rest)
   (fold flags-union car rest))
@@ -455,20 +466,23 @@ class."
       (make (class-of flags1) #:value
             (logand (slot-ref flags1 'value)
                     (slot-ref flags2 'value)))
-      (error "cannot unite flags of differing type")))
+      (scm-error 'wrong-type-arg "flags-intersection" "flags of differing types: ~S and ~S"
+                 (list flags1 flags2) #f)))
 
 (define-method (flags-intersection (car <GFlags>) . rest)
   (fold flags-intersection car rest))
 
 (define-method (flags-difference (flags1 <GFlags>) (flags2 <GFlags>))
+  "Returns the flags set in FLAGS1 but not in FLAGS2."
   (if (equal? (class-of flags1) (class-of flags2))
       (make (class-of flags1) #:value
-            (logxor (slot-ref flags1 'value)
-                    (slot-ref flags2 'value)))
-      (error "cannot unite flags of differing type")))
+            (logand (slot-ref flags1 'value)
+                    (lognot (slot-ref flags2 'value))))
+      (scm-error 'wrong-type-arg "flags-difference" "flags of differing types: ~S and ~S"
+                 (list flags1 flags2) #f)))
 
 (define-method (flags-complement (flags <GFlags>))
-  (flags-difference flags (flags-mask flags)))
+  (flags-difference (flags-mask flags) flags))
 
 (define-method (flags-projection/list (flags <GFlags>) (class <class>))
   (let ((v (flags->list flags))
@@ -505,7 +519,7 @@ class."
 ;;; Enum equality
 
 (define-method (= (enum1 <GEnum>) (enum2 <GEnum>))
-  (eq? (slot-ref enum1 'value) (slot-ref enum2 'value)))
+  (= (slot-ref enum1 'value) (slot-ref enum2 'value)))
 
 (define-method (= (enum <GEnum>) (number <number>))
   (= (enum->number enum) number))
@@ -515,7 +529,7 @@ class."
 
 (define-method (equal? (enum1 <GEnum>) (enum2 <GEnum>))
   (and (equal? (class-of enum1) (class-of enum2))
-       (eq? (slot-ref enum1 'value) (slot-ref enum2 'value))))
+       (= (slot-ref enum1 'value) (slot-ref enum2 'value))))
 
 ;;; Flag equality
 

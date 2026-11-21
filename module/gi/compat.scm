@@ -57,4 +57,4 @@ and returns a generic Scheme object."
   (cute fiddle (dynamic-fiddler "scm_from_cairo_scaled_font" %libcairo) <>))
 
 (when %libcairo
-  (export context->cairo surace->cairo font-face->cairo scaled-font->cairo))
+  (export context->cairo surface->cairo font-face->cairo scaled-font->cairo))

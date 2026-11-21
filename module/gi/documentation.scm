@@ -199,7 +199,11 @@
     doc))
 
 (define* (typelib lib #:optional version #:key (require? #t))
-  (when require? (require lib version))
+  ;; require takes a version string or nothing; it doesn't accept #f.
+  (when require?
+    (if version
+        (require lib version)
+        (require lib)))
   (open-input-string
    (format #f "<repository><namespace name=~s>~a</namespace></repository>" lib
            (string-join (map %info (infos lib)) ""))))
@@ -210,7 +214,8 @@
                          (let ((file (format #f "~a/~a-~a.gir" path lib version)))
                            (and (file-exists? file) file)))
                        (gir-search-path)))
-   (error "unable to find gir for ~a-~a" (list lib version))))
+   (scm-error 'misc-error "gir" "unable to find ~a-~a.gir in ~s"
+              (list lib version (gir-search-path)) #f)))
 
 (define (gir lib version)
   (open-input-file (find-gir lib version)))
@@ -246,6 +251,21 @@
        (ignore (* inline-ws))
        (ignore "]|")))
 
+;; gi-docgen style fenced code: ```lang ... ```
+(define-peg-pattern fenced-body body
+  (*
+   (and
+    (not-followed-by (and (* inline-ws) "```"))
+    (* (and (not-followed-by "\n") peg-any))
+    "\n")))
+(define-peg-pattern fenced-listing all
+  (and (ignore "```")
+       (ignore (* (and (not-followed-by "\n") peg-any)))
+       (ignore "\n")
+       fenced-body
+       (ignore (* inline-ws))
+       (ignore "```")))
+
 (define-peg-pattern word body
   (+ (and (not-followed-by wordsep) peg-any)))
 
@@ -275,6 +295,7 @@
     (* inline-ws)
     (or
      listing
+     fenced-listing
      (and
       (*
        (and
@@ -298,7 +319,7 @@
        (? anchor)))
 
 (define-peg-pattern refsect2 all
-  (and (ignore "##") title (ignore "\n")
+  (and (ignore (+ "#")) title (ignore "\n")
        (* (or (ignore any-ws) paragraph))))
 
 (define-peg-pattern doc-string body
@@ -454,30 +475,58 @@
            (markdown-1
             (lambda (str)
               (let ((match (match-pattern doc-string str)))
-                (if match
-                    (pre-post-order
-                     (peg:tree match)
-                     `((paragraph . ,(lambda (tag . kids) `(para ,@kids)))
-                       (listing . ,(lambda (tag . kids)
-                                     `(informalexample (programlisting ,@kids))))
+                (cond
+                 ((string-null? (string-trim-both str))
+                  ;; nothing to document, e.g. an undocumented parameter
+                  '())
+                 (match
+                  (append
+                   (convert-markdown (peg:tree match))
+                   ;; match-pattern only needs to match a prefix; keep
+                   ;; whatever it couldn't parse rather than drop it.
+                   (let ((rest (substring str (peg:end match))))
+                     (if (string-null? (string-trim-both rest))
+                         '()
+                         (begin
+                           (display "WARNING: part of a docstring is unparseable and will be included literally"
+                                    (current-error-port))
+                           (newline (current-error-port))
+                           `((para ,rest)))))))
+                 (else
+                  (display "WARNING: unparseable docstring will be included literally"
+                           (current-error-port))
+                  (newline (current-error-port))
+                  (list str))))))
+
+           (convert-markdown
+            (lambda (tree)
+              (let ((converted
+                     (pre-post-order
+                      tree
+                      `((paragraph . ,(lambda (tag . kids) `(para ,@kids)))
+                        (listing . ,(lambda (tag . kids)
+                                      `(informalexample (programlisting ,@kids))))
+                        (fenced-listing . ,(lambda (tag . kids)
+                                             `(informalexample (programlisting ,@kids))))
                        (property . ,(lambda (tag property . ignore)
                                       `(type ,(fancy-quote property))))
                        (signal . ,(lambda (tag signal . ignore)
                                     `(type ,(fancy-quote signal))))
                        (symbol . ,(lambda (tag . kids) `(type ,@kids)))
-                       (anchor . ,(lambda (tag id . ignore) `(,tag (@ (id ,id)))))
-                       (*text* . ,(lambda (tag txt) txt))
-                       (*default* . ,(lambda (tag . kids) (cons tag kids)))))
-                    (begin
-                      (display "WARNING: unparseable docstring will be included literally"
-                               (current-error-port))
-                      (newline (current-error-port))
-                      (list str))))))
+                        (anchor . ,(lambda (tag id . ignore) `(,tag (@ (id ,id)))))
+                        (*text* . ,(lambda (tag txt) txt))
+                        (*default* . ,(lambda (tag . kids) (cons tag kids)))))))
+                ;; A lone node or string is one item; otherwise a list of them.
+                (if (or (string? converted)
+                        (and (pair? converted) (symbol? (car converted))))
+                    (list converted)
+                    converted))))
 
            (markdown
             (lambda (str)
               (let ((md (markdown-1 str)))
                 (cond
+                 ((null? md) md)
                  ((string? (car md))
                   `((para ,@md)))
                  ((symbol? (car md))

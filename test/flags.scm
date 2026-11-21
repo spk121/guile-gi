@@ -23,7 +23,40 @@
                     (d . 1)
                     (cd . 3))))
 
+(define-class <ZeroFlags> (<GFlags>))
+(class-slot-set! <ZeroFlags> 'obarray
+                 (alist->hashq-table
+                  '((none . 0)
+                    (a . 1)
+                    (b . 2))))
+
+(define-class <Enum> (<GEnum>))
+(class-slot-set! <Enum> 'obarray
+                 (alist->hashq-table
+                  '((x . 0)
+                    (y . 1))))
+
 (test-begin "flags.scm")
+
+(test-equal "difference of overlapping sets"
+  ;; Used to be the symmetric difference, (a b).
+  (list->flags <Flags> '(a))
+  (flags-difference (list->flags <Flags> '(a c))
+                    (list->flags <Flags> '(b c))))
+
+(test-equal "flags->list omits zero-valued flags when something is set"
+  '(a)
+  (flags->list (list->flags <ZeroFlags> '(a))))
+
+(test-equal "flags->list of no flags lists zero-valued flags"
+  '(none)
+  (flags->list (number->flags <ZeroFlags> 0)))
+
+(test-equal "number->enum reports the number"
+  '(99)
+  (catch 'out-of-range
+    (lambda () (number->enum <Enum> 99))
+    (lambda (key subr message args data) data)))
 
 (test-equal "complement"
   (list->flags <Flags> '(c d))
