@@ -3,6 +3,11 @@
              (gi repository)
              (srfi srfi-64))
 
+(use-modules (ice-9 peg))
+
+(define %markdown-sample
+  "Some text.\n\n# A heading\n\nMore text.\n\n```txt\n# a comment\n[group]\n```\n\nThe end.\n")
+
 (test-begin "typelib")
 
 (define %test-symbol '<GMainLoop>)
@@ -40,7 +45,14 @@
       (set! %doc (parse %gir %doc))
       (close %gir))
     (->guile-procedures.txt %doc)
-    #t))
+    ;; ->docbook was not exercised at all before.
+    (string-prefix? "<?xml" (with-output-to-string (lambda () (->docbook %doc))))))
+
+(test-equal "documentation markdown parses headings and fenced code"
+  ;; A level-1 heading or a fenced block with '#' lines used to end the
+  ;; parse, silently dropping the rest of the docstring.
+  (string-length %markdown-sample)
+  (peg:end (match-pattern (@@ (gi documentation) doc-string) %markdown-sample)))
 
 (test-assert "typelib->module without a version"
   ;; The version defaulted to #f, which require rejects.
