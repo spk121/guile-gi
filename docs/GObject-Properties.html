@@ -1,9 +1,9 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE html>
 <html>
-<!-- Created by GNU Texinfo 6.8, https://www.gnu.org/software/texinfo/ -->
+<!-- Created by GNU Texinfo 7.1, https://www.gnu.org/software/texinfo/ -->
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<!-- Copyright (C) 2018, 2019, 2020 Michael L. Gran
+<!-- Copyright © 2018, 2019, 2020 Michael L. Gran
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3
@@ -28,21 +28,8 @@ Free Documentation License". -->
 <link href="GObject-Signals.html" rel="prev" title="GObject Signals">
 <style type="text/css">
 <!--
-a.copiable-anchor {visibility: hidden; text-decoration: none; line-height: 0em}
-a.summary-letter {text-decoration: none}
-blockquote.indentedblock {margin-right: 0em}
-div.display {margin-left: 3.2em}
-div.example {margin-left: 3.2em}
-kbd {font-style: oblique}
-pre.display {font-family: inherit}
-pre.format {font-family: inherit}
-pre.menu-comment {font-family: serif}
-pre.menu-preformatted {font-family: serif}
-span.nolinebreak {white-space: nowrap}
-span.roman {font-family: initial; font-weight: normal}
-span.sansserif {font-family: sans-serif; font-weight: normal}
-span:hover a.copiable-anchor {visibility: visible}
-ul.no-bullet {list-style: none}
+a.copiable-link {visibility: hidden; text-decoration: none; line-height: 0em}
+span:hover a.copiable-link {visibility: visible}
 -->
 </style>
 <link rel="stylesheet" type="text/css" href="document-1.0.1.css">
@@ -51,13 +38,13 @@ ul.no-bullet {list-style: none}
 </head>
 
 <body lang="en">
-<div class="subsection" id="GObject-Properties">
-<div class="header">
+<div class="subsection-level-extent" id="GObject-Properties">
+<div class="nav-panel">
 <p>
 Next: <a href="Custom-GObjects.html" accesskey="n" rel="next">Defining new GObject classes</a>, Previous: <a href="GObject-Signals.html" accesskey="p" rel="prev">GObject Signals</a>, Up: <a href="Working-with-GObjects.html" accesskey="u" rel="up">Working with GObjects</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>
 <hr>
-<span id="GObject-Properties-1"></span><h4 class="subsection">2.5.4 GObject Properties</h4>
+<h4 class="subsection" id="GObject-Properties-1"><span>2.5.4 GObject Properties<a class="copiable-link" href="#GObject-Properties-1"> &para;</a></span></h4>
 
 <p>GObject objects may have one or more properties, which are variables
 attached to the object that may be gotten or set.  GObject properties
@@ -67,20 +54,20 @@ or more properties. So, for example, if the object is a radio button,
 you may get or set properties that apply specifically to radio buttons,
 or generic buttons, or generic widgets.
 </p>
-<span id="index-_003cGParam_003e"></span>
+<a class="index-entry-id" id="index-_003cGParam_003e"></a>
 
 <p>In Guile-GI, properties come in two flavours.  The basic building block
-are objects derived from <code>G_TYPE_PARAM</code> alias <code>&lt;GParam&gt;</code>.
+are objects derived from <code class="code">G_TYPE_PARAM</code> alias <code class="code">&lt;GParam&gt;</code>.
 These can be created via introspected methods found in the
-<code>GObject</code> library.  They are enhanced so that they can work as
-procedures with setter.  Given an arbitrary property <code>prop</code>,
-<code>(prop obj)</code> will fetch the corresponding property, whereas
-<code>(set! (prop obj) val)</code> will set it.
+<code class="code">GObject</code> library.  They are enhanced so that they can work as
+procedures with setter.  Given an arbitrary property <code class="code">prop</code>,
+<code class="code">(prop obj)</code> will fetch the corresponding property, whereas
+<code class="code">(set! (prop obj) val)</code> will set it.
 </p>
 <p>The other flavour are GOOPS accessors.  These are used for introspected
 properties, so that the name may also overlap with a method or a signal
 of a different type. Other than that, they behave no different from
-<code>&lt;GParam&gt;</code>s &ndash; in fact, they work by constructing a <code>&lt;GParam&gt;</code>
+<code class="code">&lt;GParam&gt;</code>s &ndash; in fact, they work by constructing a <code class="code">&lt;GParam&gt;</code>
 and using their getters and setters.
 </p>
 </div>

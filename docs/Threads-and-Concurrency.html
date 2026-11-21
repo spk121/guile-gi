@@ -1,9 +1,9 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE html>
 <html>
-<!-- Created by GNU Texinfo 6.8, https://www.gnu.org/software/texinfo/ -->
+<!-- Created by GNU Texinfo 7.1, https://www.gnu.org/software/texinfo/ -->
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<!-- Copyright (C) 2018, 2019, 2020 Michael L. Gran
+<!-- Copyright © 2018, 2019, 2020 Michael L. Gran
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3
@@ -28,21 +28,8 @@ Free Documentation License". -->
 <link href="Sample-Applications.html" rel="prev" title="Sample Applications">
 <style type="text/css">
 <!--
-a.copiable-anchor {visibility: hidden; text-decoration: none; line-height: 0em}
-a.summary-letter {text-decoration: none}
-blockquote.indentedblock {margin-right: 0em}
-div.display {margin-left: 3.2em}
-div.example {margin-left: 3.2em}
-kbd {font-style: oblique}
-pre.display {font-family: inherit}
-pre.format {font-family: inherit}
-pre.menu-comment {font-family: serif}
-pre.menu-preformatted {font-family: serif}
-span.nolinebreak {white-space: nowrap}
-span.roman {font-family: initial; font-weight: normal}
-span.sansserif {font-family: sans-serif; font-weight: normal}
-span:hover a.copiable-anchor {visibility: visible}
-ul.no-bullet {list-style: none}
+a.copiable-link {visibility: hidden; text-decoration: none; line-height: 0em}
+span:hover a.copiable-link {visibility: visible}
 -->
 </style>
 <link rel="stylesheet" type="text/css" href="document-1.0.1.css">
@@ -51,20 +38,20 @@ ul.no-bullet {list-style: none}
 </head>
 
 <body lang="en">
-<div class="section" id="Threads-and-Concurrency">
-<div class="header">
+<div class="section-level-extent" id="Threads-and-Concurrency">
+<div class="nav-panel">
 <p>
 Next: <a href="Debugging-and-Profiling.html" accesskey="n" rel="next">Debugging and Profiling</a>, Previous: <a href="Sample-Applications.html" accesskey="p" rel="prev">Sample Applications</a>, Up: <a href="Tutorial.html" accesskey="u" rel="up">Tutorial</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>
 <hr>
-<span id="Threads-and-Concurrency-1"></span><h3 class="section">2.7 Threads and Concurrency</h3>
-<span id="index-threads"></span>
-<span id="index-concurrency"></span>
+<h3 class="section" id="Threads-and-Concurrency-1"><span>2.7 Threads and Concurrency<a class="copiable-link" href="#Threads-and-Concurrency-1"> &para;</a></span></h3>
+<a class="index-entry-id" id="index-threads"></a>
+<a class="index-entry-id" id="index-concurrency"></a>
 
 <p>While Guile is multi-threaded, applications using Guile-GI are not fully
 thread-safe.  Notably, applications using GTK or GLib&rsquo;s main loop need
 all rendering and main loop activities to occur in one thread.  Also, all
-calls to <code>typelib-load</code> need to be made from the same thread.
+calls to <code class="code">typelib-load</code> need to be made from the same thread.
 </p>
 </div>
 

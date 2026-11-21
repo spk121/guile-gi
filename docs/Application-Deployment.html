@@ -1,9 +1,9 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE html>
 <html>
-<!-- Created by GNU Texinfo 6.8, https://www.gnu.org/software/texinfo/ -->
+<!-- Created by GNU Texinfo 7.1, https://www.gnu.org/software/texinfo/ -->
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<!-- Copyright (C) 2018, 2019, 2020 Michael L. Gran
+<!-- Copyright © 2018, 2019, 2020 Michael L. Gran
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3
@@ -28,21 +28,10 @@ Free Documentation License". -->
 <link href="Debugging-and-Profiling.html" rel="prev" title="Debugging and Profiling">
 <style type="text/css">
 <!--
-a.copiable-anchor {visibility: hidden; text-decoration: none; line-height: 0em}
-a.summary-letter {text-decoration: none}
-blockquote.indentedblock {margin-right: 0em}
-div.display {margin-left: 3.2em}
+a.copiable-link {visibility: hidden; text-decoration: none; line-height: 0em}
 div.example {margin-left: 3.2em}
-kbd {font-style: oblique}
-pre.display {font-family: inherit}
-pre.format {font-family: inherit}
-pre.menu-comment {font-family: serif}
-pre.menu-preformatted {font-family: serif}
-span.nolinebreak {white-space: nowrap}
-span.roman {font-family: initial; font-weight: normal}
-span.sansserif {font-family: sans-serif; font-weight: normal}
-span:hover a.copiable-anchor {visibility: visible}
-ul.no-bullet {list-style: none}
+span:hover a.copiable-link {visibility: visible}
+ul.mark-bullet {list-style-type: disc}
 -->
 </style>
 <link rel="stylesheet" type="text/css" href="document-1.0.1.css">
@@ -51,40 +40,40 @@ ul.no-bullet {list-style: none}
 </head>
 
 <body lang="en">
-<div class="section" id="Application-Deployment">
-<div class="header">
+<div class="section-level-extent" id="Application-Deployment">
+<div class="nav-panel">
 <p>
 Next: <a href="Testing-and-Continuous-Integration.html" accesskey="n" rel="next">Testing and Continuous Integration</a>, Previous: <a href="Debugging-and-Profiling.html" accesskey="p" rel="prev">Debugging and Profiling</a>, Up: <a href="Tutorial.html" accesskey="u" rel="up">Tutorial</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>
 <hr>
-<span id="Application-Deployment-1"></span><h3 class="section">2.9 Application Deployment</h3>
-<span id="index-deployment"></span>
+<h3 class="section" id="Application-Deployment-1"><span>2.9 Application Deployment<a class="copiable-link" href="#Application-Deployment-1"> &para;</a></span></h3>
+<a class="index-entry-id" id="index-deployment"></a>
 
 <p>If you write a program in Guile-GI and wish to share it with the world,
 you will need to ensure your users have all the prerequisites.
 </p>
-<span id="index-prerequisites"></span>
+<a class="index-entry-id" id="index-prerequisites"></a>
 
 <p>At a minimum, Guile-GI scripts will require that users have the
 following packages.
-</p><ul>
-<li> Guile
-</li><li> Guile-GI
-</li><li> libffi
-</li><li> GLib
-</li><li> GObject-Introspection aka GIRepository
+</p><ul class="itemize mark-bullet">
+<li>Guile
+</li><li>Guile-GI
+</li><li>libffi
+</li><li>GLib
+</li><li>GObject-Introspection aka GIRepository
 </li></ul>
 
 <p>And then, of course, a Guile-GI program will additionally require
 whatever libraries its uses (GTK, WebKit2) as well as their associated
 typelib files.
 </p>
-<span id="index-directory-structure"></span>
+<a class="index-entry-id" id="index-directory-structure"></a>
 
 <p>A good layout for an application might be the following, though we can&rsquo;t
 discourage you from using any other.
 </p><div class="example">
-<pre class="example">/path/to/project
+<pre class="example-preformatted">/path/to/project
 |-- doc
 |-- data
 |   |-- icons

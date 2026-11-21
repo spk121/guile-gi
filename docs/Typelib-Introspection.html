@@ -1,9 +1,9 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE html>
 <html>
-<!-- Created by GNU Texinfo 6.8, https://www.gnu.org/software/texinfo/ -->
+<!-- Created by GNU Texinfo 7.1, https://www.gnu.org/software/texinfo/ -->
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<!-- Copyright (C) 2018, 2019, 2020 Michael L. Gran
+<!-- Copyright © 2018, 2019, 2020 Michael L. Gran
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3
@@ -27,21 +27,9 @@ Free Documentation License". -->
 <link href="Typelib-Documentation.html" rel="next" title="Typelib Documentation">
 <style type="text/css">
 <!--
-a.copiable-anchor {visibility: hidden; text-decoration: none; line-height: 0em}
-a.summary-letter {text-decoration: none}
-blockquote.indentedblock {margin-right: 0em}
-div.display {margin-left: 3.2em}
-div.example {margin-left: 3.2em}
-kbd {font-style: oblique}
-pre.display {font-family: inherit}
-pre.format {font-family: inherit}
-pre.menu-comment {font-family: serif}
-pre.menu-preformatted {font-family: serif}
-span.nolinebreak {white-space: nowrap}
-span.roman {font-family: initial; font-weight: normal}
-span.sansserif {font-family: sans-serif; font-weight: normal}
-span:hover a.copiable-anchor {visibility: visible}
-ul.no-bullet {list-style: none}
+a.copiable-link {visibility: hidden; text-decoration: none; line-height: 0em}
+span:hover a.copiable-link {visibility: visible}
+strong.def-name {font-family: monospace; font-weight: bold; font-size: larger}
 -->
 </style>
 <link rel="stylesheet" type="text/css" href="document-1.0.1.css">
@@ -50,40 +38,40 @@ ul.no-bullet {list-style: none}
 </head>
 
 <body lang="en">
-<div class="section" id="Typelib-Introspection">
-<div class="header">
+<div class="section-level-extent" id="Typelib-Introspection">
+<div class="nav-panel">
 <p>
 Next: <a href="Typelib-Documentation.html" accesskey="n" rel="next">Typelib Documentation</a>, Up: <a href="Reference-Guide.html" accesskey="u" rel="up">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>
 <hr>
-<span id="Typelib-Introspection-1"></span><h3 class="section">3.1 Typelib Introspection</h3>
-<span id="index-typelibs"></span>
-<span id="index-introspection"></span>
+<h3 class="section" id="Typelib-Introspection-1"><span>3.1 Typelib Introspection<a class="copiable-link" href="#Typelib-Introspection-1"> &para;</a></span></h3>
+<a class="index-entry-id" id="index-typelibs"></a>
+<a class="index-entry-id" id="index-introspection"></a>
 
 <p>A GObject typelib file contains information on the public classes,
 functions, and variables in a GObject-based library, and most
 GObject-compliant libraries, such as GLib and GTK, provide one.  Usually
 these files are on the file system in a single directory location.  On
 Fedora, for example, these files may be stored in
-<samp>/var/lib64/girepository-1.0</samp>.
+<samp class="file">/var/lib64/girepository-1.0</samp>.
 </p>
-<p>All functions outlined in this section are part of <code>(gi
-repository)</code> and are not re-exported by <code>(gi)</code>.
+<p>All functions outlined in this section are part of <code class="code">(gi
+repository)</code> and are not re-exported by <code class="code">(gi)</code>.
 </p>
-<dl class="def">
-<dt id="index-require"><span class="category">Procedure: </span><span><strong>require</strong> <em>lib [version]</em><a href='#index-require' class='copiable-anchor'> &para;</a></span></dt>
-<dd><p>Forces the namespace <var>lib</var> to be loaded if it isn&rsquo;t already.
-This step is required once per <var>lib</var> before any other functionality
+<dl class="first-deffn">
+<dt class="deffn" id="index-require"><span class="category-def">Procedure: </span><span><strong class="def-name">require</strong> <var class="def-var-arguments">lib [version]</var><a class="copiable-link" href="#index-require"> &para;</a></span></dt>
+<dd><p>Forces the namespace <var class="var">lib</var> to be loaded if it isn&rsquo;t already.
+This step is required once per <var class="var">lib</var> before any other functionality
 of this module is used.
 </p>
-<p>If <var>version</var> is given, loads that version, otherwise loads the
+<p>If <var class="var">version</var> is given, loads that version, otherwise loads the
 latest available.
 </p>
 <p>Throws an error, if the library could not be found or loaded.
 </p></dd></dl>
 
-<dl class="def">
-<dt id="index-get_002dsearch_002dpath"><span class="category">Procedure: </span><span><strong>get-search-path</strong><a href='#index-get_002dsearch_002dpath' class='copiable-anchor'> &para;</a></span></dt>
+<dl class="first-deffn">
+<dt class="deffn" id="index-get_002dsearch_002dpath"><span class="category-def">Procedure: </span><span><strong class="def-name">get-search-path</strong><a class="copiable-link" href="#index-get_002dsearch_002dpath"> &para;</a></span></dt>
 <dd><p>This returns the current search path used to find typelib files as a
 list of strings.
 </p>
@@ -91,59 +79,59 @@ list of strings.
 the default typelib directory.
 </p></dd></dl>
 
-<dl class="def">
-<dt id="index-prepend_002dsearch_002dpath_0021"><span class="category">Procedure: </span><span><strong>prepend-search-path!</strong> <em>directory</em><a href='#index-prepend_002dsearch_002dpath_0021' class='copiable-anchor'> &para;</a></span></dt>
-<dd><p>Given <var>directory</var>, a string representation of a file system
+<dl class="first-deffn">
+<dt class="deffn" id="index-prepend_002dsearch_002dpath_0021"><span class="category-def">Procedure: </span><span><strong class="def-name">prepend-search-path!</strong> <var class="def-var-arguments">directory</var><a class="copiable-link" href="#index-prepend_002dsearch_002dpath_0021"> &para;</a></span></dt>
+<dd><p>Given <var class="var">directory</var>, a string representation of a file system
 directory, this prepends that directory to the typelib search path.
 </p>
 <p>This change doesn&rsquo;t affect libraries loaded before it. It therefore is
 advisable to put such directives at the start of a script.
 </p></dd></dl>
 
-<dl class="def">
-<dt id="index-infos"><span class="category">Procedure: </span><span><strong>infos</strong> <em>lib</em><a href='#index-infos' class='copiable-anchor'> &para;</a></span></dt>
-<dd><p>Fetches all top-level metadata entries of <var>lib</var>.
+<dl class="first-deffn">
+<dt class="deffn" id="index-infos"><span class="category-def">Procedure: </span><span><strong class="def-name">infos</strong> <var class="def-var-arguments">lib</var><a class="copiable-link" href="#index-infos"> &para;</a></span></dt>
+<dd><p>Fetches all top-level metadata entries of <var class="var">lib</var>.
 </p></dd></dl>
 
-<dl class="def">
-<dt id="index-info"><span class="category">Procedure: </span><span><strong>info</strong> <em>lib name</em><a href='#index-info' class='copiable-anchor'> &para;</a></span></dt>
-<dd><p>Searches <var>lib</var> for an entry with name <var>name</var> and returns it.
-Throws an error, if <var>name</var> could not be found.
+<dl class="first-deffn">
+<dt class="deffn" id="index-info"><span class="category-def">Procedure: </span><span><strong class="def-name">info</strong> <var class="def-var-arguments">lib name</var><a class="copiable-link" href="#index-info"> &para;</a></span></dt>
+<dd><p>Searches <var class="var">lib</var> for an entry with name <var class="var">name</var> and returns it.
+Throws an error, if <var class="var">name</var> could not be found.
 </p></dd></dl>
 
-<dl class="def">
-<dt id="index-load"><span class="category">Procedure: </span><span><strong>load</strong> <em>(info &lt;GBaseInfo&gt;)</em><a href='#index-load' class='copiable-anchor'> &para;</a></span></dt>
-<dt id="index-load-1"><span class="category">Procedure: </span><span><strong>load</strong> <em>(info &lt;GBaseInfo&gt;) flags</em><a href='#index-load-1' class='copiable-anchor'> &para;</a></span></dt>
-<dd><p>Generates bindings for <var>info</var>.
+<dl class="first-deffn">
+<dt class="deffn" id="index-load"><span class="category-def">Procedure: </span><span><strong class="def-name">load</strong> <var class="def-var-arguments">(info &lt;GBaseInfo&gt;)</var><a class="copiable-link" href="#index-load"> &para;</a></span></dt>
+<dt class="deffnx def-cmd-deffn" id="index-load-1"><span class="category-def">Procedure: </span><span><strong class="def-name">load</strong> <var class="def-var-arguments">(info &lt;GBaseInfo&gt;) flags</var><a class="copiable-link" href="#index-load-1"> &para;</a></span></dt>
+<dd><p>Generates bindings for <var class="var">info</var>.
 </p>
-<p><var>flags</var> is a logical or of <code>LOAD_METHODS</code>, <code>LOAD_SIGNALS</code> and
-<code>LOAD_PROPERTIES</code>, and may be 0 or <code>LOAD_INFO_ONLY</code> tells <code>load</code>,
+<p><var class="var">flags</var> is a logical or of <code class="code">LOAD_METHODS</code>, <code class="code">LOAD_SIGNALS</code> and
+<code class="code">LOAD_PROPERTIES</code>, and may be 0 or <code class="code">LOAD_INFO_ONLY</code> tells <code class="code">load</code>,
 how to handle infos with nested information, such as structs and objects.
 They enable loading of methods, signals, properties and fields respectively.
 By default, all of them are loaded.
 </p></dd></dl>
 
-<dl class="def">
-<dt id="index-load_002dby_002dname"><span class="category">Procedure: </span><span><strong>load-by-name</strong> <em>lib name [flags]</em><a href='#index-load_002dby_002dname' class='copiable-anchor'> &para;</a></span></dt>
-<dd><p>A convenience function composing <code>info</code> and <code>load</code>.
+<dl class="first-deffn">
+<dt class="deffn" id="index-load_002dby_002dname"><span class="category-def">Procedure: </span><span><strong class="def-name">load-by-name</strong> <var class="def-var-arguments">lib name [flags]</var><a class="copiable-link" href="#index-load_002dby_002dname"> &para;</a></span></dt>
+<dd><p>A convenience function composing <code class="code">info</code> and <code class="code">load</code>.
 </p></dd></dl>
 
-<dl class="def">
-<dt id="index-typelib_002d_003emodule"><span class="category">Procedure: </span><span><strong>typelib-&gt;module</strong> <em>module lib [version]</em><a href='#index-typelib_002d_003emodule' class='copiable-anchor'> &para;</a></span></dt>
-<dd><p>Loads all infos of <var>lib</var> into <var>module</var> and adds them to its public
+<dl class="first-deffn">
+<dt class="deffn" id="index-typelib_002d_003emodule"><span class="category-def">Procedure: </span><span><strong class="def-name">typelib-&gt;module</strong> <var class="def-var-arguments">module lib [version]</var><a class="copiable-link" href="#index-typelib_002d_003emodule"> &para;</a></span></dt>
+<dd><p>Loads all infos of <var class="var">lib</var> into <var class="var">module</var> and adds them to its public
 interface.
 </p>
-<p><var>module</var> may be a module or a list of symbols. If the latter is given,
+<p><var class="var">module</var> may be a module or a list of symbols. If the latter is given,
 it is resolved to a (potentially new) module. In either case, the resulting
 module is returned.
 </p>
-<p>If <var>version</var> is given, loads that version, otherwise loads the latest.
+<p>If <var class="var">version</var> is given, loads that version, otherwise loads the latest.
 Throws an error, if the library could not be found or loaded.
 </p></dd></dl>
 
 </div>
 <hr>
-<div class="header">
+<div class="nav-panel">
 <p>
 Next: <a href="Typelib-Documentation.html">Typelib Documentation</a>, Up: <a href="Reference-Guide.html">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>

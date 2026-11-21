@@ -1,9 +1,9 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE html>
 <html>
-<!-- Created by GNU Texinfo 6.8, https://www.gnu.org/software/texinfo/ -->
+<!-- Created by GNU Texinfo 7.1, https://www.gnu.org/software/texinfo/ -->
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<!-- Copyright (C) 2018, 2019, 2020 Michael L. Gran
+<!-- Copyright © 2018, 2019, 2020 Michael L. Gran
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3
@@ -27,21 +27,10 @@ Free Documentation License". -->
 <link href="Debugging-Hooks.html" rel="prev" title="Debugging Hooks">
 <style type="text/css">
 <!--
-a.copiable-anchor {visibility: hidden; text-decoration: none; line-height: 0em}
-a.summary-letter {text-decoration: none}
-blockquote.indentedblock {margin-right: 0em}
-div.display {margin-left: 3.2em}
-div.example {margin-left: 3.2em}
-kbd {font-style: oblique}
-pre.display {font-family: inherit}
-pre.format {font-family: inherit}
-pre.menu-comment {font-family: serif}
-pre.menu-preformatted {font-family: serif}
-span.nolinebreak {white-space: nowrap}
-span.roman {font-family: initial; font-weight: normal}
-span.sansserif {font-family: sans-serif; font-weight: normal}
-span:hover a.copiable-anchor {visibility: visible}
-ul.no-bullet {list-style: none}
+a.copiable-link {visibility: hidden; text-decoration: none; line-height: 0em}
+span:hover a.copiable-link {visibility: visible}
+strong.def-name {font-family: monospace; font-weight: bold; font-size: larger}
+ul.mark-bullet {list-style-type: disc}
 -->
 </style>
 <link rel="stylesheet" type="text/css" href="document-1.0.1.css">
@@ -50,128 +39,128 @@ ul.no-bullet {list-style: none}
 </head>
 
 <body lang="en">
-<div class="subsection" id="GLib-Logging">
-<div class="header">
+<div class="subsection-level-extent" id="GLib-Logging">
+<div class="nav-panel">
 <p>
 Previous: <a href="Debugging-Hooks.html" accesskey="p" rel="prev">Debugging Hooks</a>, Up: <a href="Debugging-and-Profiling.html" accesskey="u" rel="up">Debugging and Profiling</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>
 <hr>
-<span id="GLib-Logging-1"></span><h4 class="subsection">2.8.2 GLib Logging</h4>
+<h4 class="subsection" id="GLib-Logging-1"><span>2.8.2 GLib Logging<a class="copiable-link" href="#GLib-Logging-1"> &para;</a></span></h4>
 
 <p>GLib provides a logging library whose behavior can be tailored using
 environment variables.  GLib&rsquo;s logging library has a concept of
-<em>log levels</em>: critical, error, warning, message, info, and debug.
+<em class="emph">log levels</em>: critical, error, warning, message, info, and debug.
 </p>
-<p>The <code>G_MESSAGES_DEBUG</code> environment variable may be set to a
-space-separated list of <em>log domains</em> for which debug messages
-should be printed. Some useful log domains are <code>GuileGI</code> for
-Guile-GI messages, <code>dconf</code>, <code>GLib</code>, <code>GLib-GIO</code>, <code>Gdk</code>,
-and <code>Gtk</code>.  Also, the special log domain <code>all</code> will print
+<p>The <code class="env">G_MESSAGES_DEBUG</code> environment variable may be set to a
+space-separated list of <em class="emph">log domains</em> for which debug messages
+should be printed. Some useful log domains are <code class="env">GuileGI</code> for
+Guile-GI messages, <code class="env">dconf</code>, <code class="env">GLib</code>, <code class="env">GLib-GIO</code>, <code class="env">Gdk</code>,
+and <code class="env">Gtk</code>.  Also, the special log domain <code class="env">all</code> will print
 debug messages from all domains. For more information on how to take
 advantage of this logging, see
-<a href="https://developer.gnome.org/glib/stable/glib-running.html">https://developer.gnome.org/glib/stable/glib-running.html</a>.
+<a class="uref" href="https://developer.gnome.org/glib/stable/glib-running.html">https://developer.gnome.org/glib/stable/glib-running.html</a>.
 </p>
-<p>When <code>G_MESSAGES_DEBUG</code> is set to <code>GuileGI</code> or <code>all</code>, you
-will receive <em>a lot</em> of debugging information from any Guile-GI
+<p>When <code class="env">G_MESSAGES_DEBUG</code> is set to <code class="env">GuileGI</code> or <code class="env">all</code>, you
+will receive <em class="emph">a lot</em> of debugging information from any Guile-GI
 libraries being used.  To help better filter through all this, a
-<code>(gi logging)</code> library provides a pair of alternative loggers.
+<code class="code">(gi logging)</code> library provides a pair of alternative loggers.
 </p>
-<ul class="section-toc">
+<ul class="mini-toc">
 <li><a href="#Using-the-Port-Logger" accesskey="1">Using the Port Logger</a></li>
 <li><a href="#Using-the-systemd-journal-Logger" accesskey="2">Using the systemd journal Logger</a></li>
 <li><a href="#Using-a-custom-logger" accesskey="3">Using a custom logger</a></li>
 </ul>
-<div class="subsubsection" id="Using-the-Port-Logger">
-<h4 class="subsubsection">2.8.2.1 Using the Port Logger</h4>
+<div class="subsubsection-level-extent" id="Using-the-Port-Logger">
+<h4 class="subsubsection"><span>2.8.2.1 Using the Port Logger<a class="copiable-link" href="#Using-the-Port-Logger"> &para;</a></span></h4>
 
-<p>The <code>(gi logging)</code> library provides the <code>install-port-logger!</code>
+<p>The <code class="code">(gi logging)</code> library provides the <code class="code">install-port-logger!</code>
 procedure that sends logging output to a Scheme port and provides
 functionality to target specific categories of debug information
 </p>
-<dl class="def">
-<dt id="index-install_002dport_002dlogger_0021"><span class="category">Procedure: </span><span><strong>install-port-logger!</strong> <em>port</em><a href='#index-install_002dport_002dlogger_0021' class='copiable-anchor'> &para;</a></span></dt>
-<dd><p>Given <var>port</var>, an output port, this procedure installs a GLib
-log writer function that outputs to <var>port</var>.
+<dl class="first-deffn">
+<dt class="deffn" id="index-install_002dport_002dlogger_0021"><span class="category-def">Procedure: </span><span><strong class="def-name">install-port-logger!</strong> <var class="def-var-arguments">port</var><a class="copiable-link" href="#index-install_002dport_002dlogger_0021"> &para;</a></span></dt>
+<dd><p>Given <var class="var">port</var>, an output port, this procedure installs a GLib
+log writer function that outputs to <var class="var">port</var>.
 </p>
 <p>The default behavior of this GLib log writer is to print critical,
 error, and warning messages to the port.
 This logger behaves like the default GLib logger &ndash; i.e. it respects
-<code>G_MESSAGES_DEBUG</code> &ndash; but in addition to that also reads
-<code>GIG_DEBUG</code> for more fine-grained control over the messages
+<code class="env">G_MESSAGES_DEBUG</code> &ndash; but in addition to that also reads
+<code class="env">GIG_DEBUG</code> for more fine-grained control over the messages
 Guile-GI prints to the port.
 </p>
-<p>Set the <code>GIG_DEBUG</code> environment variable to a list of topics separated
-by any delimiter or the specific value <code>all</code>.
-</p><ul>
-<li> <code>amap</code> prints information about the mapping of function arguments.
-</li><li> <code>load</code> prints information &ndash; when libraries are loaded &ndash; on how C
+<p>Set the <code class="env">GIG_DEBUG</code> environment variable to a list of topics separated
+by any delimiter or the specific value <code class="code">all</code>.
+</p><ul class="itemize mark-bullet">
+<li><code class="code">amap</code> prints information about the mapping of function arguments.
+</li><li><code class="code">load</code> prints information &ndash; when libraries are loaded &ndash; on how C
 procedures, structs, unions, and objects are bound to Guile.
-</li><li> <code>transfers</code> prints information on how C arguments are converted to
+</li><li><code class="code">transfers</code> prints information on how C arguments are converted to
 Guile objects and vice versa.
-</li><li> <code>all</code> prints all the debug information.
+</li><li><code class="code">all</code> prints all the debug information.
 </li></ul>
 
-<p>If <code>GIG_DEBUG</code> is not set, only information about function calls
+<p>If <code class="env">GIG_DEBUG</code> is not set, only information about function calls
 will be output.
 </p></dd></dl>
 
 </div>
-<div class="subsubsection" id="Using-the-systemd-journal-Logger">
-<h4 class="subsubsection">2.8.2.2 Using the systemd journal Logger</h4>
+<div class="subsubsection-level-extent" id="Using-the-systemd-journal-Logger">
+<h4 class="subsubsection"><span>2.8.2.2 Using the systemd journal Logger<a class="copiable-link" href="#Using-the-systemd-journal-Logger"> &para;</a></span></h4>
 
-<p>The <code>(gi logging)</code> library provides the <code>install-journal-logger!</code>
+<p>The <code class="code">(gi logging)</code> library provides the <code class="code">install-journal-logger!</code>
 procedure.
 </p>
-<dl class="def">
-<dt id="index-install_002djournal_002dlogger_0021"><span class="category">Procedure: </span><span><strong>install-journal-logger!</strong><a href='#index-install_002djournal_002dlogger_0021' class='copiable-anchor'> &para;</a></span></dt>
-<dd><p>This procedure sets GLib&rsquo;s <code>g_log_writer_journald</code> function
+<dl class="first-deffn">
+<dt class="deffn" id="index-install_002djournal_002dlogger_0021"><span class="category-def">Procedure: </span><span><strong class="def-name">install-journal-logger!</strong><a class="copiable-link" href="#index-install_002djournal_002dlogger_0021"> &para;</a></span></dt>
+<dd><p>This procedure sets GLib&rsquo;s <code class="code">g_log_writer_journald</code> function
 as the current GLib log writer function.
 </p></dd></dl>
 
-<p>For distributions that use systemd&rsquo;s journal, the <code>journalctl</code>
+<p>For distributions that use systemd&rsquo;s journal, the <code class="command">journalctl</code>
 command can help filter debug output.  Guile-GI&rsquo;s debug messages
-have the message key <code>GIG_DOMAIN</code> which can be used to filter
+have the message key <code class="env">GIG_DOMAIN</code> which can be used to filter
 debug info into general categories.
 </p>
 </div>
-<div class="subsubsection" id="Using-a-custom-logger">
-<h4 class="subsubsection">2.8.2.3 Using a custom logger</h4>
+<div class="subsubsection-level-extent" id="Using-a-custom-logger">
+<h4 class="subsubsection"><span>2.8.2.3 Using a custom logger<a class="copiable-link" href="#Using-a-custom-logger"> &para;</a></span></h4>
 
-<p>The <code>(gi logging)</code> library provides the <code>install-custom-logger!</code>
+<p>The <code class="code">(gi logging)</code> library provides the <code class="code">install-custom-logger!</code>
 procedure.
 </p>
-<dl class="def">
-<dt id="index-install_002dcustom_002dlogger_0021"><span class="category">Procedure: </span><span><strong>install-custom-logger!</strong> <em>logger</em><a href='#index-install_002dcustom_002dlogger_0021' class='copiable-anchor'> &para;</a></span></dt>
-<dd><p>This procedure installs a helper, which will call <var>logger</var>
+<dl class="first-deffn">
+<dt class="deffn" id="index-install_002dcustom_002dlogger_0021"><span class="category-def">Procedure: </span><span><strong class="def-name">install-custom-logger!</strong> <var class="def-var-arguments">logger</var><a class="copiable-link" href="#index-install_002dcustom_002dlogger_0021"> &para;</a></span></dt>
+<dd><p>This procedure installs a helper, which will call <var class="var">logger</var>
 to do the actual logging, as the GLib log writer function.
 </p>
-<p>For the call to <var>logger</var>, the <code>GLogField</code> structures used
+<p>For the call to <var class="var">logger</var>, the <code class="code">GLogField</code> structures used
 by GLib internally are translated to keyword arguments.  For that,
-the keys are <code>kebab-cased</code> and the values either transformed
+the keys are <code class="code">kebab-cased</code> and the values either transformed
 into suitable scheme datatypes or left as-is and passed by pointer.
 In the latter case, another argument is added for the length of the field,
-which takes the same keyword as the first one, but with the suffix <code>-length</code>.
+which takes the same keyword as the first one, but with the suffix <code class="code">-length</code>.
 </p>
 <p>The currently supported conversions are:
-</p><ul>
-<li> <code>#:message</code>, the current message as a string,
-</li><li> <code>#:priority</code>, a string representation of the log level,
-</li><li> <code>#:glib-domain</code>, the log domain as a string,
-</li><li> <code>#:gig-domain</code>, the Guile-GI log domain as a string, and
-</li><li> <code>#:code-file</code>, <code>#:code-func</code> and <code>#:code-line</code>,
+</p><ul class="itemize mark-bullet">
+<li><code class="code">#:message</code>, the current message as a string,
+</li><li><code class="code">#:priority</code>, a string representation of the log level,
+</li><li><code class="code">#:glib-domain</code>, the log domain as a string,
+</li><li><code class="code">#:gig-domain</code>, the Guile-GI log domain as a string, and
+</li><li><code class="code">#:code-file</code>, <code class="code">#:code-func</code> and <code class="code">#:code-line</code>,
 the location from which the log call was made, each as strings.
 </li></ul>
 
-<p>The log level is passed as an integer under the keyword <code>#:log-level</code>.
+<p>The log level is passed as an integer under the keyword <code class="code">#:log-level</code>.
 If you&rsquo;ve loaded the GLib typelib before installing the logger, you can transform
-that into log level flags by using <code>number-&gt;log-level</code>.
+that into log level flags by using <code class="code">number-&gt;log-level</code>.
 </p>
 </dd></dl>
 
 </div>
 </div>
 <hr>
-<div class="header">
+<div class="nav-panel">
 <p>
 Previous: <a href="Debugging-Hooks.html">Debugging Hooks</a>, Up: <a href="Debugging-and-Profiling.html">Debugging and Profiling</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>

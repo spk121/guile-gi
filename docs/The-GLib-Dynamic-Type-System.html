@@ -1,9 +1,9 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE html>
 <html>
-<!-- Created by GNU Texinfo 6.8, https://www.gnu.org/software/texinfo/ -->
+<!-- Created by GNU Texinfo 7.1, https://www.gnu.org/software/texinfo/ -->
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<!-- Copyright (C) 2018, 2019, 2020 Michael L. Gran
+<!-- Copyright © 2018, 2019, 2020 Michael L. Gran
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3
@@ -27,21 +27,9 @@ Free Documentation License". -->
 <link href="The-GObject-Class.html" rel="next" title="The GObject Class">
 <style type="text/css">
 <!--
-a.copiable-anchor {visibility: hidden; text-decoration: none; line-height: 0em}
-a.summary-letter {text-decoration: none}
-blockquote.indentedblock {margin-right: 0em}
-div.display {margin-left: 3.2em}
-div.example {margin-left: 3.2em}
-kbd {font-style: oblique}
-pre.display {font-family: inherit}
-pre.format {font-family: inherit}
-pre.menu-comment {font-family: serif}
-pre.menu-preformatted {font-family: serif}
-span.nolinebreak {white-space: nowrap}
-span.roman {font-family: initial; font-weight: normal}
-span.sansserif {font-family: sans-serif; font-weight: normal}
-span:hover a.copiable-anchor {visibility: visible}
-ul.no-bullet {list-style: none}
+a.copiable-link {visibility: hidden; text-decoration: none; line-height: 0em}
+span:hover a.copiable-link {visibility: visible}
+ul.mark-bullet {list-style-type: disc}
 -->
 </style>
 <link rel="stylesheet" type="text/css" href="document-1.0.1.css">
@@ -50,26 +38,26 @@ ul.no-bullet {list-style: none}
 </head>
 
 <body lang="en">
-<div class="subsection" id="The-GLib-Dynamic-Type-System">
-<div class="header">
+<div class="subsection-level-extent" id="The-GLib-Dynamic-Type-System">
+<div class="nav-panel">
 <p>
 Next: <a href="The-GObject-Class.html" accesskey="n" rel="next">The GObject Class</a>, Up: <a href="The-Concept-of-Operations.html" accesskey="u" rel="up">The Concept of Operations</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>
 <hr>
-<span id="The-GLib-Dynamic-Type-System-1"></span><h4 class="subsection">1.1.1 The GLib Dynamic Type System</h4>
+<h4 class="subsection" id="The-GLib-Dynamic-Type-System-1"><span>1.1.1 The GLib Dynamic Type System<a class="copiable-link" href="#The-GLib-Dynamic-Type-System-1"> &para;</a></span></h4>
 
 <p>Information on the project&rsquo;s data types are stored in The GLib Dynamic
-Type System<a id="DOCF1" href="#FOOT1"><sup>1</sup></a>.  The GLib Dynamic
+Type System<a class="footnote" id="DOCF1" href="#FOOT1"><sup>1</sup></a>.  The GLib Dynamic
 Type System&rsquo;s model for a data type is that you create a class and then
 make instances of that class.  For it, each type can be described with
 the following information
-</p><ul>
-<li> a GType - a unique integer ID for the type
-</li><li> a type name
-</li><li> a class data structure
-</li><li> class initialization and destruction functions
-</li><li> an instance data structure
-</li><li> instance initialization and copy functions
+</p><ul class="itemize mark-bullet">
+<li>a GType - a unique integer ID for the type
+</li><li>a type name
+</li><li>a class data structure
+</li><li>class initialization and destruction functions
+</li><li>an instance data structure
+</li><li>instance initialization and copy functions
 </li></ul>
 <p>This type system has inheritance: each type may be a specialization of a
 parent type.  Note that the class-and-instance capability of The GLib
@@ -77,37 +65,37 @@ Dynamic Type System is its own unique beast: not identical to C++
 classes or to GOOPS.
 </p>
 <p>When the introspection layer describes constants, variables, and
-function arguments, each of these <em>must</em> have a type that is
+function arguments, each of these <em class="emph">must</em> have a type that is
 registered by The GLib Dynamic Type System.  There are a set of
-fundamental GType IDs, denoted with the form <code>G_TYPE_XXX</code>, and the
+fundamental GType IDs, denoted with the form <code class="code">G_TYPE_XXX</code>, and the
 type of each variable or argument traces to a fundamental GType ID or
 one that is subclassed from a fundamental type.
 </p>
 <p>To allow introspection, there are GType IDs for all the standard native
-types: <code>char</code> has <code>G_TYPE_CHAR</code>, <code>int</code> has
-<code>G_TYPE_INT</code>, etc.  Each enumerated type or collection of flags has
-its own type, which is a subclass of <code>G_TYPE_FLAGS</code> or
-<code>G_TYPE_ENUM</code>.  Types that describe information stored in a typed
-pointer, such as native <code>struct</code>, each have their own type that
-is a subclass of <code>G_TYPE_BOXED</code>.
+types: <code class="code">char</code> has <code class="code">G_TYPE_CHAR</code>, <code class="code">int</code> has
+<code class="code">G_TYPE_INT</code>, etc.  Each enumerated type or collection of flags has
+its own type, which is a subclass of <code class="code">G_TYPE_FLAGS</code> or
+<code class="code">G_TYPE_ENUM</code>.  Types that describe information stored in a typed
+pointer, such as native <code class="code">struct</code>, each have their own type that
+is a subclass of <code class="code">G_TYPE_BOXED</code>.
 </p>
 <p>And, most importantly for GTK, there are types that descend from
-<code>G_TYPE_OBJECT</code>. As we&rsquo;ll discuss in the next section, GObject is
+<code class="code">G_TYPE_OBJECT</code>. As we&rsquo;ll discuss in the next section, GObject is
 the fundamental type providing the common attributes and methods for all
 object types in GTK+, Pango, and other libraries based on GObject.
 </p>
 </div>
-<div class="footnote">
+<div class="footnotes-segment">
 <hr>
 <h4 class="footnotes-heading">Footnotes</h4>
 
-<h5><a id="FOOT1" href="#DOCF1">(1)</a></h5>
+<h5 class="footnote-body-heading"><a id="FOOT1" href="#DOCF1">(1)</a></h5>
 <p>The GLib Dynamic Type System is sometimes called
 GType for short, but, since the word GType is used for other things,
-we&rsquo;ll keep using the full name <em>ad nauseum</em>.</p>
+we&rsquo;ll keep using the full name <em class="emph">ad nauseum</em>.</p>
 </div>
 <hr>
-<div class="header">
+<div class="nav-panel">
 <p>
 Next: <a href="The-GObject-Class.html">The GObject Class</a>, Up: <a href="The-Concept-of-Operations.html">The Concept of Operations</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>

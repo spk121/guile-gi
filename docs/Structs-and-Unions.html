@@ -1,9 +1,9 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE html>
 <html>
-<!-- Created by GNU Texinfo 6.8, https://www.gnu.org/software/texinfo/ -->
+<!-- Created by GNU Texinfo 7.1, https://www.gnu.org/software/texinfo/ -->
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<!-- Copyright (C) 2018, 2019, 2020 Michael L. Gran
+<!-- Copyright © 2018, 2019, 2020 Michael L. Gran
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3
@@ -28,21 +28,9 @@ Free Documentation License". -->
 <link href="Flags-and-Enums.html" rel="prev" title="Flags and Enums">
 <style type="text/css">
 <!--
-a.copiable-anchor {visibility: hidden; text-decoration: none; line-height: 0em}
-a.summary-letter {text-decoration: none}
-blockquote.indentedblock {margin-right: 0em}
-div.display {margin-left: 3.2em}
+a.copiable-link {visibility: hidden; text-decoration: none; line-height: 0em}
 div.example {margin-left: 3.2em}
-kbd {font-style: oblique}
-pre.display {font-family: inherit}
-pre.format {font-family: inherit}
-pre.menu-comment {font-family: serif}
-pre.menu-preformatted {font-family: serif}
-span.nolinebreak {white-space: nowrap}
-span.roman {font-family: initial; font-weight: normal}
-span.sansserif {font-family: sans-serif; font-weight: normal}
-span:hover a.copiable-anchor {visibility: visible}
-ul.no-bullet {list-style: none}
+span:hover a.copiable-link {visibility: visible}
 -->
 </style>
 <link rel="stylesheet" type="text/css" href="document-1.0.1.css">
@@ -51,15 +39,15 @@ ul.no-bullet {list-style: none}
 </head>
 
 <body lang="en">
-<div class="subsection" id="Structs-and-Unions">
-<div class="header">
+<div class="subsection-level-extent" id="Structs-and-Unions">
+<div class="nav-panel">
 <p>
 Next: <a href="GObjects.html" accesskey="n" rel="next">GObjects</a>, Previous: <a href="Flags-and-Enums.html" accesskey="p" rel="prev">Flags and Enums</a>, Up: <a href="Categories-of-Typelib-Bindings.html" accesskey="u" rel="up">Categories of Typelib Bindings</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>
 <hr>
-<span id="Structs-and-Unions-1"></span><h4 class="subsection">2.3.3 Structs and Unions</h4>
+<h4 class="subsection" id="Structs-and-Unions-1"><span>2.3.3 Structs and Unions<a class="copiable-link" href="#Structs-and-Unions-1"> &para;</a></span></h4>
 
-<p>In C, a <code>struct</code> or <code>union</code> is named type of a collection of
+<p>In C, a <code class="code">struct</code> or <code class="code">union</code> is named type of a collection of
 member objects.
 </p>
 <p>The unions and structs are handled in Guile-GI by creating a GOOPS type
@@ -67,10 +55,10 @@ that wraps a native pointer.  Typically, a library provides methods to
 operate on structs and unions, and Guile-GI wraps those methods as GOOPS
 generic functions.  If a typelib does not provide an explicit
 constructor for a struct or union, an empty instance can be created by
-using <code>make</code>.
+using <code class="code">make</code>.
 </p>
 <div class="example">
-<pre class="example">(use-modules (gi))
+<pre class="example-preformatted">(use-modules (gi))
 (use-typelibs (&quot;GLib&quot; &quot;2.0&quot;))
 ;; Create a new empty &lt;GDate&gt; using 'make'
 (write (make &lt;GDate&gt;))
@@ -85,6 +73,56 @@ using <code>make</code>.
 
 </pre></div>
 
+<a class="index-entry-id" id="index-fields"></a>
+<p>The public fields of structs, unions and objects have getters named
+after the type and the field, such as <code class="code">rgba:red</code> for the
+<code class="code">red</code> field of a <code class="code">GdkRGBA</code>.  Getters return copies of strings,
+structs and arrays.  Fields of plain data &ndash; numbers, booleans, enums,
+flags, and structs made only of those &ndash; can also be set when the
+typelib allows it, either with <code class="code">set!</code> on the getter or with a
+setter such as <code class="code">rgba:set-red!</code>.  Fields that hold other pointers,
+such as strings, are read-only, because the typelib does not say who
+would own a new value.  A field gets no getter if a method of its type
+already has that name, and structs with bitfields, which typelibs
+describe incorrectly, get no field accessors at all.
+</p>
+<div class="example">
+<pre class="example-preformatted">(rgba:red color)              &rArr; 1.0
+(set! (rgba:alpha color) 0.5)
+(point:x (rect:origin rect))  ; rect:origin returns a copy
+</pre></div>
+
+<p>Structs that have no GType usually can&rsquo;t be bound, because Guile-GI
+can&rsquo;t know how to copy or free them.  A few that GTK, GSK and GDK
+need are wrapped specially: <code class="code">GskRoundedRect</code>,
+<code class="code">GskColorStop</code>, <code class="code">GskShadow</code>, <code class="code">GskParseLocation</code>,
+<code class="code">GtkCssLocation</code>, <code class="code">GdkKeymapKey</code>, <code class="code">GdkTimeCoord</code>,
+<code class="code">GtkPageRange</code>, <code class="code">GtkRequestedSize</code>, <code class="code">GtkRecentData</code>
+and <code class="code">GtkPadActionEntry</code>.  For each, loading its typelib entry
+defines its class, a constructor that takes the values of its fields
+in order, all optional, and a getter and a setter for each field.  The
+library&rsquo;s functions that take or return these structs work too, as do
+arrays of them, given as lists or vectors and returned as vectors.
+These structs are copied when they come from C, so changing one in
+Scheme does not change the library&rsquo;s copy.
+</p>
+<div class="example">
+<pre class="example-preformatted">(make-color-stop 0.5 red)      ; a &lt;GskColorStop&gt;
+(color-stop:offset stop)       &rArr; 0.5
+(color-stop:set-offset! stop 0.25)
+</pre></div>
+
+<p><code class="code">GdkToplevelSize</code>, <code class="code">GdkDragSurfaceSize</code> and
+<code class="code">GtkBuildableParseContext</code> are opaque and only valid while the
+library lends them, for example during a signal.  Signal handlers
+receive them as pointers; <code class="code">pointer-&gt;toplevel-size</code> and the like
+wrap a pointer for the struct&rsquo;s methods.
+</p>
+</div>
+<hr>
+<div class="nav-panel">
+<p>
+Next: <a href="GObjects.html">GObjects</a>, Previous: <a href="Flags-and-Enums.html">Flags and Enums</a>, Up: <a href="Categories-of-Typelib-Bindings.html">Categories of Typelib Bindings</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>
 
 

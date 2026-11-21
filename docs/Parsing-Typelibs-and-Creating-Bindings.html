@@ -1,9 +1,9 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE html>
 <html>
-<!-- Created by GNU Texinfo 6.8, https://www.gnu.org/software/texinfo/ -->
+<!-- Created by GNU Texinfo 7.1, https://www.gnu.org/software/texinfo/ -->
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<!-- Copyright (C) 2018, 2019, 2020 Michael L. Gran
+<!-- Copyright © 2018, 2019, 2020 Michael L. Gran
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3
@@ -27,21 +27,9 @@ Free Documentation License". -->
 <link href="Generating-Documentation-from-Typelibs.html" rel="next" title="Generating Documentation from Typelibs">
 <style type="text/css">
 <!--
-a.copiable-anchor {visibility: hidden; text-decoration: none; line-height: 0em}
-a.summary-letter {text-decoration: none}
-blockquote.indentedblock {margin-right: 0em}
-div.display {margin-left: 3.2em}
+a.copiable-link {visibility: hidden; text-decoration: none; line-height: 0em}
 div.example {margin-left: 3.2em}
-kbd {font-style: oblique}
-pre.display {font-family: inherit}
-pre.format {font-family: inherit}
-pre.menu-comment {font-family: serif}
-pre.menu-preformatted {font-family: serif}
-span.nolinebreak {white-space: nowrap}
-span.roman {font-family: initial; font-weight: normal}
-span.sansserif {font-family: sans-serif; font-weight: normal}
-span:hover a.copiable-anchor {visibility: visible}
-ul.no-bullet {list-style: none}
+span:hover a.copiable-link {visibility: visible}
 -->
 </style>
 <link rel="stylesheet" type="text/css" href="document-1.0.1.css">
@@ -50,76 +38,76 @@ ul.no-bullet {list-style: none}
 </head>
 
 <body lang="en">
-<div class="section" id="Parsing-Typelibs-and-Creating-Bindings">
-<div class="header">
+<div class="section-level-extent" id="Parsing-Typelibs-and-Creating-Bindings">
+<div class="nav-panel">
 <p>
 Next: <a href="Generating-Documentation-from-Typelibs.html" accesskey="n" rel="next">Generating Documentation from Typelibs</a>, Up: <a href="Tutorial.html" accesskey="u" rel="up">Tutorial</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>
 <hr>
-<span id="Parsing-Typelibs-and-Creating-Bindings-1"></span><h3 class="section">2.1 Parsing Typelibs and Creating Bindings</h3>
+<h3 class="section" id="Parsing-Typelibs-and-Creating-Bindings-1"><span>2.1 Parsing Typelibs and Creating Bindings<a class="copiable-link" href="#Parsing-Typelibs-and-Creating-Bindings-1"> &para;</a></span></h3>
 
 <p>When Guile-GI is used, it creates procedures, variables, and types
-according to the instructions in the <code>typelib</code> files.  These are
-created <em>at runtime</em> as Guile loads them from the <code>typelib</code>
+according to the instructions in the <code class="code">typelib</code> files.  These are
+created <em class="emph">at runtime</em> as Guile loads them from the <code class="code">typelib</code>
 file.
 </p>
 <p>To create the bindings, you must load a typelib through Guile-GI in one
 form or another.  You can choose one of three basic strategies.
 </p>
-<ul class="section-toc">
-<li><a href="#use_002dtypelibs" accesskey="1"><code>use-typelibs</code></a></li>
-<li><a href="#require-and-load_002dby_002dname" accesskey="2"><code>require</code> and <code>load-by-name</code></a></li>
-<li><a href="#typelib_002d_003emodule" accesskey="3"><code>typelib-&gt;module</code></a></li>
+<ul class="mini-toc">
+<li><a href="#use_002dtypelibs" accesskey="1"><code class="code">use-typelibs</code></a></li>
+<li><a href="#require-and-load_002dby_002dname" accesskey="2"><code class="code">require</code> and <code class="code">load-by-name</code></a></li>
+<li><a href="#typelib_002d_003emodule" accesskey="3"><code class="code">typelib-&gt;module</code></a></li>
 </ul>
-<div class="subsection" id="use_002dtypelibs">
-<h4 class="subsection">2.1.1 <code>use-typelibs</code></h4>
+<div class="subsection-level-extent" id="use_002dtypelibs">
+<h4 class="subsection"><span>2.1.1 <code class="code">use-typelibs</code><a class="copiable-link" href="#use_002dtypelibs"> &para;</a></span></h4>
 
-<p>The easiest way of doing so is <code>use-typelibs</code>, as shown below.
+<p>The easiest way of doing so is <code class="code">use-typelibs</code>, as shown below.
 </p>
 <div class="example">
-<pre class="example">(use-modules (gi))
+<pre class="example-preformatted">(use-modules (gi))
 (use-typelibs (&quot;GLib&quot; &quot;2.0&quot;) (&quot;Gtk&quot; &quot;3.0&quot;))
 </pre></div>
 
-<p><code>use-typelibs</code> works quite similar to <code>use-modules</code> and is in
+<p><code class="code">use-typelibs</code> works quite similar to <code class="code">use-modules</code> and is in
 fact implemented in terms of it. The only difference in syntax is, that
 instead of a list of symbols describing a module, you have a list of
 exactly two strings, the first being the name of the typelib and the
 second being the version.
 </p>
-<p>Semantically, however, the difference to <code>use-modules</code> is bigger.
+<p>Semantically, however, the difference to <code class="code">use-modules</code> is bigger.
 Internally, Guile-GI creates modules for the typelibs as needed &ndash; in
-this example these modules would be <code>(%gi GLib-2.0)</code> and <code>(%gi
+this example these modules would be <code class="code">(%gi GLib-2.0)</code> and <code class="code">(%gi
 Gtk-3.0)</code> &ndash; and loads the entire typelib into them.
 </p>
 <p>This approach has two major drawbacks.
-</p><ol>
+</p><ol class="enumerate">
 <li> Guile-GI has to load the entire typelib. For large typelibs, such as
 GTK, this takes a lot of time.
 
 </li><li> Even though Guile-GI internally uses modules, these modules are not
 available to the user in any meaningful way.  Even another
-<code>use-modules</code> on them actually leads to undefined behaviour.  It
+<code class="code">use-modules</code> on them actually leads to undefined behaviour.  It
 may load the module if it has already been defined somewhere else, but
 it might also throw an error, claiming that no code for the module could
 be found.  This is to be expected, given that the modules are not backed
 by actual files.
 </li></ol>
 
-<p><code>use-typelibs</code> is a simple interface for Guile scripts not broken
+<p><code class="code">use-typelibs</code> is a simple interface for Guile scripts not broken
 into multiple modules.
 </p>
 </div>
-<div class="subsection" id="require-and-load_002dby_002dname">
-<h4 class="subsection">2.1.2 <code>require</code> and <code>load-by-name</code></h4>
+<div class="subsection-level-extent" id="require-and-load_002dby_002dname">
+<h4 class="subsection"><span>2.1.2 <code class="code">require</code> and <code class="code">load-by-name</code><a class="copiable-link" href="#require-and-load_002dby_002dname"> &para;</a></span></h4>
 
 <p>For efficiency&rsquo;s sake, you may want to only load parts, e.g. just
 GtkApplication and GtkWindow to significantly speed up loading.  By
-targeted use of <code>require</code> and <code>load-by-name</code>, you can load
-only the procedures you intend to use.  <code>(gi repository)</code> has
-primitives to facilitate exactly that. See <a href="Typelib-Introspection.html">Typelib Introspection</a>.
+targeted use of <code class="code">require</code> and <code class="code">load-by-name</code>, you can load
+only the procedures you intend to use.  <code class="code">(gi repository)</code> has
+primitives to facilitate exactly that. See <a class="xref" href="Typelib-Introspection.html">Typelib Introspection</a>.
 </p><div class="example">
-<pre class="example">(define-module (doc ex-load-by-name)
+<pre class="example-preformatted">(define-module (doc ex-load-by-name)
   #:use-module (gi)
   #:use-module (gi repository))
 (require &quot;GLib&quot; &quot;2.0&quot;)
@@ -133,21 +121,21 @@ primitives to facilitate exactly that. See <a href="Typelib-Introspection.html">
 </pre></div>
 
 </div>
-<div class="subsection" id="typelib_002d_003emodule">
-<h4 class="subsection">2.1.3 <code>typelib-&gt;module</code></h4>
+<div class="subsection-level-extent" id="typelib_002d_003emodule">
+<h4 class="subsection"><span>2.1.3 <code class="code">typelib-&gt;module</code><a class="copiable-link" href="#typelib_002d_003emodule"> &para;</a></span></h4>
 
 <p>If you don&rsquo;t care much about waiting times &ndash; perhaps you only have
 a set of small dependencies, or you really need everything from a library &ndash;
 but you need the ability to refer to a module specifically through
-<code>use-modules</code>, you will have to provide your own module.
-However, writing all the <code>require</code> and <code>load-by-name</code>s when you
+<code class="code">use-modules</code>, you will have to provide your own module.
+However, writing all the <code class="code">require</code> and <code class="code">load-by-name</code>s when you
 don&rsquo;t care about granularity is tedious and error-prone.
 </p>
-<p>As a convenience <code>(gi repository)</code> also contains <code>typelib-&gt;module</code>.
+<p>As a convenience <code class="code">(gi repository)</code> also contains <code class="code">typelib-&gt;module</code>.
 This procedure loads a typelib into the current module and also adds all
 functionality loaded in the process to the public inferface.
 </p><div class="example">
-<pre class="example">(define-module (gi gtk-3)
+<pre class="example-preformatted">(define-module (gi gtk-3)
   #:use-module (gi)
   #:use-module (gi repository))
 
@@ -157,14 +145,14 @@ functionality loaded in the process to the public inferface.
 </pre></div>
 <p>You may use it to create one such module per dependency, or one module for all
 dependencies.  Together with Guile&rsquo;s module system, you can even do some
-advanced operations, like loading all of Gtk under the prefix <code>gtk::</code>
-together with all of Gstreamer under the prefix <code>gst::</code>.
-See <a data-manual="guile" href="https://www.gnu.org/software/guile/manual/html_node/Modules.html#Modules">Modules</a> in <cite>The Guile reference manual</cite>.
+advanced operations, like loading all of Gtk under the prefix <code class="code">gtk::</code>
+together with all of Gstreamer under the prefix <code class="code">gst::</code>.
+See <a data-manual="guile" href="https://www.gnu.org/software/guile/manual/html_node/Modules.html#Modules">Modules</a> in <cite class="cite">The Guile reference manual</cite>.
 </p>
 </div>
 </div>
 <hr>
-<div class="header">
+<div class="nav-panel">
 <p>
 Next: <a href="Generating-Documentation-from-Typelibs.html">Generating Documentation from Typelibs</a>, Up: <a href="Tutorial.html">Tutorial</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>

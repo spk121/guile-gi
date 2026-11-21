@@ -1,9 +1,9 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE html>
 <html>
-<!-- Created by GNU Texinfo 6.8, https://www.gnu.org/software/texinfo/ -->
+<!-- Created by GNU Texinfo 7.1, https://www.gnu.org/software/texinfo/ -->
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<!-- Copyright (C) 2018, 2019, 2020 Michael L. Gran
+<!-- Copyright © 2018, 2019, 2020 Michael L. Gran
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3
@@ -28,21 +28,10 @@ Free Documentation License". -->
 <link href="GObject-Methods.html" rel="prev" title="GObject Methods">
 <style type="text/css">
 <!--
-a.copiable-anchor {visibility: hidden; text-decoration: none; line-height: 0em}
-a.summary-letter {text-decoration: none}
-blockquote.indentedblock {margin-right: 0em}
-div.display {margin-left: 3.2em}
+a.copiable-link {visibility: hidden; text-decoration: none; line-height: 0em}
 div.example {margin-left: 3.2em}
-kbd {font-style: oblique}
-pre.display {font-family: inherit}
-pre.format {font-family: inherit}
-pre.menu-comment {font-family: serif}
-pre.menu-preformatted {font-family: serif}
-span.nolinebreak {white-space: nowrap}
-span.roman {font-family: initial; font-weight: normal}
-span.sansserif {font-family: sans-serif; font-weight: normal}
-span:hover a.copiable-anchor {visibility: visible}
-ul.no-bullet {list-style: none}
+span:hover a.copiable-link {visibility: visible}
+strong.def-name {font-family: monospace; font-weight: bold; font-size: larger}
 -->
 </style>
 <link rel="stylesheet" type="text/css" href="document-1.0.1.css">
@@ -51,25 +40,25 @@ ul.no-bullet {list-style: none}
 </head>
 
 <body lang="en">
-<div class="subsection" id="GObject-Signals">
-<div class="header">
+<div class="subsection-level-extent" id="GObject-Signals">
+<div class="nav-panel">
 <p>
 Next: <a href="GObject-Properties.html" accesskey="n" rel="next">GObject Properties</a>, Previous: <a href="GObject-Methods.html" accesskey="p" rel="prev">GObject Methods</a>, Up: <a href="Working-with-GObjects.html" accesskey="u" rel="up">Working with GObjects</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>
 <hr>
-<span id="GObject-Signals-1"></span><h4 class="subsection">2.5.3 GObject Signals</h4>
-<span id="index-signals"></span>
+<h4 class="subsection" id="GObject-Signals-1"><span>2.5.3 GObject Signals<a class="copiable-link" href="#GObject-Signals-1"> &para;</a></span></h4>
+<a class="index-entry-id" id="index-signals"></a>
 
 <p>GObjects have a functionality for defining and calling callback
-procedures that it calls <em>signals</em>.  Note that these signals have
-nothing to do with Unix signals like <code>SIGTERM</code>.
+procedures that it calls <em class="emph">signals</em>.  Note that these signals have
+nothing to do with Unix signals like <code class="code">SIGTERM</code>.
 </p>
-<span id="index-connect"></span>
+<a class="index-entry-id" id="index-connect"></a>
 <p>To hook a callback procedure to an object&rsquo;s signal, use the
-<code>connect</code> procedure. Consider the following example.
+<code class="code">connect</code> procedure. Consider the following example.
 </p>
 <div class="example">
-<pre class="example">(define (activate app)
+<pre class="example-preformatted">(define (activate app)
    ...
    )
 
@@ -81,33 +70,33 @@ nothing to do with Unix signals like <code>SIGTERM</code>.
 </pre></div>
 
 <p>In that example, the caller is attaching a procedure named
-<code>activate</code> to the object <code>app</code>&rsquo;s &ldquo;activate&rdquo; signal.  When
+<code class="code">activate</code> to the object <code class="code">app</code>&rsquo;s &ldquo;activate&rdquo; signal.  When
 the gobject object calls all the callback procedures attached to its
-&ldquo;activate&rdquo; signal it will call this <code>activate</code> procedure.
+&ldquo;activate&rdquo; signal it will call this <code class="code">activate</code> procedure.
 </p>
 <p>When a callback procedure is called it may receive some arguments
-from the caller and some from user data.  In the example, <code>activate</code>
+from the caller and some from user data.  In the example, <code class="code">activate</code>
 is supposed to take a single argument.
-This argument &ndash; <code>app</code> &ndash; is supplied by the caller, as are all
+This argument &ndash; <code class="code">app</code> &ndash; is supplied by the caller, as are all
 arguments to signals.
 </p>
-<dl class="def">
-<dt id="index-connect-1"><span class="category">Procedure: </span><span><strong>connect</strong> <em>obj (signal &lt;signal&gt;) (handler &lt;procedure&gt;) #:key after? detail</em><a href='#index-connect-1' class='copiable-anchor'> &para;</a></span></dt>
-<dt id="index-connect-2"><span class="category">Procedure: </span><span><strong>connect</strong> <em>obj (signal &lt;signal&gt;) (detail &lt;symbol&gt;) (handler &lt;procedure&gt;) ...</em><a href='#index-connect-2' class='copiable-anchor'> &para;</a></span></dt>
-<dt id="index-connect_002dafter"><span class="category">Procedure: </span><span><strong>connect-after</strong> <em>obj (signal &lt;signal&gt;) (handler &lt;procedure&gt;) ...</em><a href='#index-connect_002dafter' class='copiable-anchor'> &para;</a></span></dt>
-<dt id="index-connect_002dafter-1"><span class="category">Procedure: </span><span><strong>connect-after</strong> <em>obj (signal &lt;signal&gt;) (detail &lt;symbol&gt;) (handler &lt;procedure&gt;) ...</em><a href='#index-connect_002dafter-1' class='copiable-anchor'> &para;</a></span></dt>
-<dd><p>Hooks <var>handler</var> to emissions of <var>signal</var>.  If <var>detail</var> is
+<dl class="first-deffn">
+<dt class="deffn" id="index-connect-1"><span class="category-def">Procedure: </span><span><strong class="def-name">connect</strong> <var class="def-var-arguments">obj (signal &lt;signal&gt;) (handler &lt;procedure&gt;) #:key after? detail</var><a class="copiable-link" href="#index-connect-1"> &para;</a></span></dt>
+<dt class="deffnx def-cmd-deffn" id="index-connect-2"><span class="category-def">Procedure: </span><span><strong class="def-name">connect</strong> <var class="def-var-arguments">obj (signal &lt;signal&gt;) (detail &lt;symbol&gt;) (handler &lt;procedure&gt;) ...</var><a class="copiable-link" href="#index-connect-2"> &para;</a></span></dt>
+<dt class="deffnx def-cmd-deffn" id="index-connect_002dafter"><span class="category-def">Procedure: </span><span><strong class="def-name">connect-after</strong> <var class="def-var-arguments">obj (signal &lt;signal&gt;) (handler &lt;procedure&gt;) ...</var><a class="copiable-link" href="#index-connect_002dafter"> &para;</a></span></dt>
+<dt class="deffnx def-cmd-deffn" id="index-connect_002dafter-1"><span class="category-def">Procedure: </span><span><strong class="def-name">connect-after</strong> <var class="def-var-arguments">obj (signal &lt;signal&gt;) (detail &lt;symbol&gt;) (handler &lt;procedure&gt;) ...</var><a class="copiable-link" href="#index-connect_002dafter-1"> &para;</a></span></dt>
+<dd><p>Hooks <var class="var">handler</var> to emissions of <var class="var">signal</var>.  If <var class="var">detail</var> is
 supplied, only emissions in which the detail matches it are considered.
 </p>
-<p><code>connect-after</code> works like <code>connect</code>, except that the handler
-is run <em>after</em> the main handling code.  The same can be achieved by
-setting <code>after?</code> to <code>#t</code>.
+<p><code class="code">connect-after</code> works like <code class="code">connect</code>, except that the handler
+is run <em class="emph">after</em> the main handling code.  The same can be achieved by
+setting <code class="code">after?</code> to <code class="code">#t</code>.
 </p>
-<p>Note, that <var>signal</var> may expect <var>handler</var> to have multiple output
-arguments.  Each bit set in its <code>output-mask</code> corresponds to
+<p>Note, that <var class="var">signal</var> may expect <var class="var">handler</var> to have multiple output
+arguments.  Each bit set in its <code class="code">output-mask</code> corresponds to
 one additional value in the output.
-If the <code>return-type</code> is <code>G_TYPE_NONE</code>, the number of expected
-outputs is the number of bits set in <code>output-mask</code>.  Otherwise,
+If the <code class="code">return-type</code> is <code class="code">G_TYPE_NONE</code>, the number of expected
+outputs is the number of bits set in <code class="code">output-mask</code>.  Otherwise,
 an additional (first) value is required for the return value of the signal
 itself.
 </p></dd></dl>
@@ -118,60 +107,60 @@ When using objects of types that you did define, you should only emit
 the signals that you defined for that object (and perhaps the &ldquo;notify&rdquo;
 signal when using explicit notification).
 </p>
-<dl class="def">
-<dt id="index-_0028signal-_003csignal_003e_0029"><span class="category">Special Form: </span><span><strong><em>(signal &lt;signal&gt;)</em></strong> <em>obj [detail] [args...]</em><a href='#index-_0028signal-_003csignal_003e_0029' class='copiable-anchor'> &para;</a></span></dt>
-<dd><p>Emits the <var>signal</var> signal of <var>obj</var> with <var>detail</var> and
-<var>args</var>.  Note, that the interpretation of <var>detail</var> depends on
-whether or not <var>signal</var> is detailed.  If it is, <var>detail</var> needs
+<dl class="first-deffn first-defspec-alias-first-deffn">
+<dt class="deffn defspec-alias-deffn" id="index-_0028signal-_003csignal_003e_0029"><span class="category-def">Special Form: </span><span><strong class="def-name"><em class="emph">(signal &lt;signal&gt;)</em></strong> <var class="def-var-arguments">obj [detail] [args...]</var><a class="copiable-link" href="#index-_0028signal-_003csignal_003e_0029"> &para;</a></span></dt>
+<dd><p>Emits the <var class="var">signal</var> signal of <var class="var">obj</var> with <var class="var">detail</var> and
+<var class="var">args</var>.  Note, that the interpretation of <var class="var">detail</var> depends on
+whether or not <var class="var">signal</var> is detailed.  If it is, <var class="var">detail</var> needs
 to be a symbol, that will be translated to the detail of the emission.
 If it is not, it is considered the first argument and will be consed
-with <var>args</var> to form an argument list.
+with <var class="var">args</var> to form an argument list.
 </p></dd></dl>
 
 <p>Signals have several slots, that can be bound on creation time (and
 reassigned freely, since they are proper GOOPS objects).  When
-connecting signals, only <var>name</var> needs to be supplied.  When using
-them as proper signals, at least <var>return-type</var> needs to be given as
+connecting signals, only <var class="var">name</var> needs to be supplied.  When using
+them as proper signals, at least <var class="var">return-type</var> needs to be given as
 well.
 </p>
-<dl class="def">
-<dt id="index-name"><span class="category">Slot: </span><span><strong>name</strong><a href='#index-name' class='copiable-anchor'> &para;</a></span></dt>
+<dl class="first-defvr">
+<dt class="defvr" id="index-name"><span class="category-def">Slot: </span><span><strong class="def-name">name</strong><a class="copiable-link" href="#index-name"> &para;</a></span></dt>
 <dd><p>The name of the signal.
 A string.
 </p></dd></dl>
-<dl class="def">
-<dt id="index-return_002dtype"><span class="category">Slot: </span><span><strong>return-type</strong><a href='#index-return_002dtype' class='copiable-anchor'> &para;</a></span></dt>
+<dl class="first-defvr">
+<dt class="defvr" id="index-return_002dtype"><span class="category-def">Slot: </span><span><strong class="def-name">return-type</strong><a class="copiable-link" href="#index-return_002dtype"> &para;</a></span></dt>
 <dd><p>The return type of the signal.
-A <code>&lt;GType&gt;</code> or integer, such as <code>G_TYPE_INT</code>.
+A <code class="code">&lt;GType&gt;</code> or integer, such as <code class="code">G_TYPE_INT</code>.
 </p></dd></dl>
-<dl class="def">
-<dt id="index-param_002dtypes"><span class="category">Slot: </span><span><strong>param-types</strong><a href='#index-param_002dtypes' class='copiable-anchor'> &para;</a></span></dt>
+<dl class="first-defvr">
+<dt class="defvr" id="index-param_002dtypes"><span class="category-def">Slot: </span><span><strong class="def-name">param-types</strong><a class="copiable-link" href="#index-param_002dtypes"> &para;</a></span></dt>
 <dd><p>The parameter types of the signal.
-A list of <code>&lt;GType&gt;</code>s or integers.
+A list of <code class="code">&lt;GType&gt;</code>s or integers.
 </p></dd></dl>
-<dl class="def">
-<dt id="index-accumulator"><span class="category">Slot: </span><span><strong>accumulator</strong><a href='#index-accumulator' class='copiable-anchor'> &para;</a></span></dt>
-<dd><p>An optional signal accumulator procedure. See <a href="Signal-Accumulators.html">Signal Accumulators</a>.
+<dl class="first-defvr">
+<dt class="defvr" id="index-accumulator"><span class="category-def">Slot: </span><span><strong class="def-name">accumulator</strong><a class="copiable-link" href="#index-accumulator"> &para;</a></span></dt>
+<dd><p>An optional signal accumulator procedure. See <a class="xref" href="Signal-Accumulators.html">Signal Accumulators</a>.
 </p></dd></dl>
-<dl class="def">
-<dt id="index-flags"><span class="category">Slot: </span><span><strong>flags</strong><a href='#index-flags' class='copiable-anchor'> &para;</a></span></dt>
+<dl class="first-defvr">
+<dt class="defvr" id="index-flags"><span class="category-def">Slot: </span><span><strong class="def-name">flags</strong><a class="copiable-link" href="#index-flags"> &para;</a></span></dt>
 <dd><p>Signal flags, a logical or of one or more of
-<code>SIGNAL_RUN_FIRST</code>, <code>SIGNAL_RUN_LAST</code>,
-<code>SIGNAL_RUN_CLEANUP</code>, <code>SIGNAL_NO_RECURSE</code>, etc.
+<code class="code">SIGNAL_RUN_FIRST</code>, <code class="code">SIGNAL_RUN_LAST</code>,
+<code class="code">SIGNAL_RUN_CLEANUP</code>, <code class="code">SIGNAL_NO_RECURSE</code>, etc.
 </p></dd></dl>
-<dl class="def">
-<dt id="index-output_002dmask"><span class="category">Slot: </span><span><strong>output-mask</strong><a href='#index-output_002dmask' class='copiable-anchor'> &para;</a></span></dt>
+<dl class="first-defvr">
+<dt class="defvr" id="index-output_002dmask"><span class="category-def">Slot: </span><span><strong class="def-name">output-mask</strong><a class="copiable-link" href="#index-output_002dmask"> &para;</a></span></dt>
 <dd><p>A bitmask, describing which argument should be returned to the user when
 calling the signal as a procedure.
 </p></dd></dl>
 
 
-<ul class="section-toc">
+<ul class="mini-toc">
 <li><a href="Signal-Accumulators.html" accesskey="1">Signal Accumulators</a></li>
 </ul>
 </div>
 <hr>
-<div class="header">
+<div class="nav-panel">
 <p>
 Next: <a href="GObject-Properties.html">GObject Properties</a>, Previous: <a href="GObject-Methods.html">GObject Methods</a>, Up: <a href="Working-with-GObjects.html">Working with GObjects</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>

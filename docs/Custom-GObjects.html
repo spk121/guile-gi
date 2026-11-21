@@ -1,9 +1,9 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE html>
 <html>
-<!-- Created by GNU Texinfo 6.8, https://www.gnu.org/software/texinfo/ -->
+<!-- Created by GNU Texinfo 7.1, https://www.gnu.org/software/texinfo/ -->
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<!-- Copyright (C) 2018, 2019, 2020 Michael L. Gran
+<!-- Copyright © 2018, 2019, 2020 Michael L. Gran
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3
@@ -27,21 +27,10 @@ Free Documentation License". -->
 <link href="GObject-Properties.html" rel="prev" title="GObject Properties">
 <style type="text/css">
 <!--
-a.copiable-anchor {visibility: hidden; text-decoration: none; line-height: 0em}
-a.summary-letter {text-decoration: none}
-blockquote.indentedblock {margin-right: 0em}
-div.display {margin-left: 3.2em}
+a.copiable-link {visibility: hidden; text-decoration: none; line-height: 0em}
 div.example {margin-left: 3.2em}
-kbd {font-style: oblique}
-pre.display {font-family: inherit}
-pre.format {font-family: inherit}
-pre.menu-comment {font-family: serif}
-pre.menu-preformatted {font-family: serif}
-span.nolinebreak {white-space: nowrap}
-span.roman {font-family: initial; font-weight: normal}
-span.sansserif {font-family: sans-serif; font-weight: normal}
-span:hover a.copiable-anchor {visibility: visible}
-ul.no-bullet {list-style: none}
+span:hover a.copiable-link {visibility: visible}
+strong.def-name {font-family: monospace; font-weight: bold; font-size: larger}
 -->
 </style>
 <link rel="stylesheet" type="text/css" href="document-1.0.1.css">
@@ -50,21 +39,21 @@ ul.no-bullet {list-style: none}
 </head>
 
 <body lang="en">
-<div class="subsection" id="Custom-GObjects">
-<div class="header">
+<div class="subsection-level-extent" id="Custom-GObjects">
+<div class="nav-panel">
 <p>
 Previous: <a href="GObject-Properties.html" accesskey="p" rel="prev">GObject Properties</a>, Up: <a href="Working-with-GObjects.html" accesskey="u" rel="up">Working with GObjects</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>
 <hr>
-<span id="Defining-new-GObject-classes"></span><h4 class="subsection">2.5.5 Defining new GObject classes</h4>
-<span id="index-GObjects"></span>
-<span id="index-classes_002c-GObject"></span>
+<h4 class="subsection" id="Defining-new-GObject-classes"><span>2.5.5 Defining new GObject classes<a class="copiable-link" href="#Defining-new-GObject-classes"> &para;</a></span></h4>
+<a class="index-entry-id" id="index-GObjects"></a>
+<a class="index-entry-id" id="index-classes_002c-GObject"></a>
 
-<span id="index-register_002dtype"></span>
+<a class="index-entry-id" id="index-register_002dtype"></a>
 <p>Usually any GObjects you use will be created by procedures such as
-<code>window:new</code>, and those GObject types will have been predefined in
+<code class="code">window:new</code>, and those GObject types will have been predefined in
 the typelib. But, it is possible to make custom GObject object classes
-using the <code>register-type</code> procedure.
+using the <code class="code">register-type</code> procedure.
 </p>
 <p>Bear in mind, that while Guile-GI internally uses GOOPS, GObjects
 implemented in it are not quite as flexible. For instance, you cannot
@@ -74,27 +63,78 @@ of the GObject infrastructure, such as signals.
 </p>
 <p>Defining a new GObject class is rather complicated.
 </p>
-<dl class="def">
-<dt id="index-register_002dtype-1"><span class="category">Procedure: </span><span><strong>register-type</strong> <em>type-name parent-type [list-of-properties] [list-of-signals]</em><a href='#index-register_002dtype-1' class='copiable-anchor'> &para;</a></span></dt>
-<dd><p>This procedure creates and returns a new <code>&lt;GType&gt;</code> of a GObject
+<dl class="first-deffn">
+<dt class="deffn" id="index-register_002dtype-1"><span class="category-def">Procedure: </span><span><strong class="def-name">register-type</strong> <var class="def-var-arguments">type-name parent-type [list-of-properties] [list-of-signals]          [#:vfuncs overrides] [#:interfaces interfaces]</var><a class="copiable-link" href="#index-register_002dtype-1"> &para;</a></span></dt>
+<dd><p>This procedure creates and returns a new <code class="code">&lt;GType&gt;</code> of a GObject
 object.
 </p>
-<p><var>type-name</var> is the string name of the new type. Note, that it will
+<p><var class="var">type-name</var> is the string name of the new type. Note, that it will
 be turned into a symbol internally.
 </p>
-<p><var>parent-type</var> is the <code>&lt;GType&gt;</code> of the parent class to this
-class.  The parent class needs to be <code>&lt;GObject&gt;</code> or a GObject class
+<p><var class="var">parent-type</var> is the <code class="code">&lt;GType&gt;</code> of the parent class to this
+class.  The parent class needs to be <code class="code">&lt;GObject&gt;</code> or a GObject class
 that descends from it.
 </p>
-<p><var>list-of-properties</var> is a list of parameter specifications.  These
-parameter specifications can be created using the <code>param-spec-TYPE</code>
-methods found in the <code>GObject</code> typelib.
+<p><var class="var">list-of-properties</var> is a list of parameter specifications.  These
+parameter specifications can be created using the <code class="code">param-spec-TYPE</code>
+methods found in the <code class="code">GObject</code> typelib.
 </p>
-<p><var>list-of-signals</var> is a list of signal specifications. See <a href="GObject-Signals.html">GObject Signals</a>.
+<p><var class="var">list-of-signals</var> is a list of signal specifications. See <a class="xref" href="GObject-Signals.html">GObject Signals</a>.
+</p>
+<p><var class="var">overrides</var> is a list of pairs <code class="code">(<var class="var">name</var> . <var class="var">procedure</var>)</code>
+that override virtual functions.  <var class="var">name</var> is a symbol or string,
+such as <code class="code">snapshot</code> or <code class="code">size-allocate</code>, naming a virtual
+function of <var class="var">parent-type</var>, one of its ancestors, or one of
+<var class="var">interfaces</var>.  <var class="var">procedure</var> takes the instance and then the
+virtual function&rsquo;s arguments, and returns its return value and output
+arguments, as multiple values if there are several.  If the virtual
+function can fail with a <code class="code">GError</code>, a Scheme error raised by
+<var class="var">procedure</var> becomes that error.  GObject&rsquo;s <code class="code">finalize</code>,
+<code class="code">constructor</code>, <code class="code">set_property</code> and <code class="code">get_property</code> can&rsquo;t be
+overridden.
+</p>
+<p><var class="var">interfaces</var> is a list of interface classes, such as
+<code class="code">&lt;GListModel&gt;</code>, for the new type to implement.  The parent type
+must not already implement them.
 </p></dd></dl>
 
-<p>To then make instances of your custom GObject type, use <code>make</code>.
+<p>To then make instances of your custom GObject type, use <code class="code">make</code>.
 </p>
+<a class="index-entry-id" id="index-virtual-functions"></a>
+<p>Each virtual function of a class or interface also has a procedure to
+call it, named after the class and the virtual function, such as
+<code class="code">widget:do-snapshot</code>.  Its first argument is the class whose
+implementation to use, then the instance and the virtual function&rsquo;s
+arguments.  Passing the parent class from inside an override chains up
+to the parent&rsquo;s implementation.
+</p>
+<div class="example">
+<pre class="example-preformatted">(define &lt;Swatch&gt;
+  (register-type &quot;Swatch&quot; &lt;GtkWidget&gt;
+    #:vfuncs
+    `((snapshot . ,(lambda (self snapshot)
+                     (snapshot:append-color snapshot color bounds)))
+      (measure . ,(lambda (self orientation for-size)
+                    ;; minimum, natural, and their baselines
+                    (values 100 200 -1 -1)))
+      (unrealize . ,(lambda (self)
+                      ;; chain up
+                      (widget:do-unrealize &lt;GtkWidget&gt; self))))))
+
+(define &lt;NumberList&gt;
+  (register-type &quot;NumberList&quot; &lt;GObject&gt;
+    #:interfaces (list &lt;GListModel&gt;)
+    #:vfuncs
+    `((get-item-type . ,(lambda (self) (get-gtype &lt;GObject&gt;)))
+      (get-n-items . ,(lambda (self) (length items)))
+      (get-item . ,(lambda (self i) (list-ref items i))))))
+</pre></div>
+
+</div>
+<hr>
+<div class="nav-panel">
+<p>
+Previous: <a href="GObject-Properties.html">GObject Properties</a>, Up: <a href="Working-with-GObjects.html">Working with GObjects</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>
 
 

@@ -192,7 +192,8 @@ th {
     font-size: small;
 }
 
-.header {
+/* The navigation bar: "header" up to Texinfo 6, "nav-panel" since 7. */
+.header, .nav-panel {
     background-color: #F2F2F2;
     font-size: small;
     padding: 0.2em 1em;

@@ -1,9 +1,9 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE html>
 <html>
-<!-- Created by GNU Texinfo 6.8, https://www.gnu.org/software/texinfo/ -->
+<!-- Created by GNU Texinfo 7.1, https://www.gnu.org/software/texinfo/ -->
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<!-- Copyright (C) 2018, 2019, 2020 Michael L. Gran
+<!-- Copyright © 2018, 2019, 2020 Michael L. Gran
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3
@@ -27,21 +27,10 @@ Free Documentation License". -->
 <link href="Booleans.html" rel="next" title="Booleans">
 <style type="text/css">
 <!--
-a.copiable-anchor {visibility: hidden; text-decoration: none; line-height: 0em}
-a.summary-letter {text-decoration: none}
-blockquote.indentedblock {margin-right: 0em}
-div.display {margin-left: 3.2em}
+a.copiable-link {visibility: hidden; text-decoration: none; line-height: 0em}
 div.example {margin-left: 3.2em}
-kbd {font-style: oblique}
-pre.display {font-family: inherit}
-pre.format {font-family: inherit}
-pre.menu-comment {font-family: serif}
-pre.menu-preformatted {font-family: serif}
-span.nolinebreak {white-space: nowrap}
-span.roman {font-family: initial; font-weight: normal}
-span.sansserif {font-family: sans-serif; font-weight: normal}
-span:hover a.copiable-anchor {visibility: visible}
-ul.no-bullet {list-style: none}
+span:hover a.copiable-link {visibility: visible}
+ul.mark-bullet {list-style-type: disc}
 -->
 </style>
 <link rel="stylesheet" type="text/css" href="document-1.0.1.css">
@@ -50,55 +39,55 @@ ul.no-bullet {list-style: none}
 </head>
 
 <body lang="en">
-<div class="subsection" id="Function-Parameters-Arity-and-Return-Values">
-<div class="header">
+<div class="subsection-level-extent" id="Function-Parameters-Arity-and-Return-Values">
+<div class="nav-panel">
 <p>
 Next: <a href="Booleans.html" accesskey="n" rel="next">Booleans</a>, Up: <a href="Argument-Conversion.html" accesskey="u" rel="up">Argument Conversion</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>
 <hr>
-<span id="Function-Parameters_002c-Arity_002c-and-Return-Values"></span><h4 class="subsection">2.4.1 Function Parameters, Arity, and Return Values</h4>
-<span id="index-arity"></span>
-<span id="index-return-values"></span>
-<span id="index-function-parameters"></span>
+<h4 class="subsection" id="Function-Parameters_002c-Arity_002c-and-Return-Values"><span>2.4.1 Function Parameters, Arity, and Return Values<a class="copiable-link" href="#Function-Parameters_002c-Arity_002c-and-Return-Values"> &para;</a></span></h4>
+<a class="index-entry-id" id="index-arity"></a>
+<a class="index-entry-id" id="index-return-values"></a>
+<a class="index-entry-id" id="index-function-parameters"></a>
 
 <p>When using Guile-GI, the Scheme versions of introspected native
 functions and callbacks will not always have the same number of input,
 output, and return parameters as the native functions do.  The GObject
 Introspection information designates the parameters to native functions
-as either <em>in</em>, <em>in/out</em> or <em>out</em> parameters. The
-<em>in/out</em> and <em>out</em> parameters are native pointers, so that the
+as either <em class="emph">in</em>, <em class="emph">in/out</em> or <em class="emph">out</em> parameters. The
+<em class="emph">in/out</em> and <em class="emph">out</em> parameters are native pointers, so that the
 C function may return data by reference.  To understand how they will
 appear in the Scheme mapping, a few rules must be understood.
 </p>
 <p>The basic rules as follows:
-</p><ul>
-<li> If the native function has an input parameter, the Scheme binding will
+</p><ul class="itemize mark-bullet">
+<li>If the native function has an input parameter, the Scheme binding will
 have an input parameter.
-</li><li> If the native function has a return value that is not <code>void</code>, the
+</li><li>If the native function has a return value that is not <code class="code">void</code>, the
 Scheme binding will return a value.
-</li><li> If the native function has an in/out parameter, the Scheme binding will
+</li><li>If the native function has an in/out parameter, the Scheme binding will
 take an input parameter and return the output value.
-</li><li> If the native function has an out parameter, the Scheme binding will not
+</li><li>If the native function has an out parameter, the Scheme binding will not
 have it as an input parameter but will return it as an output value.
 </li></ul>
 
-<p>By these rules, if the native function returns <code>void</code> and has no
-<em>out</em> or <em>in/out</em> parameters, the return value of the Scheme
-procedure is <code>*unspecified*</code>.
+<p>By these rules, if the native function returns <code class="code">void</code> and has no
+<em class="emph">out</em> or <em class="emph">in/out</em> parameters, the return value of the Scheme
+procedure is <code class="code">*unspecified*</code>.
 </p>
-<p>If a native function returns a non-void value and has zero <em>out</em> or
-<em>in/out</em> parameters, or if a native function returns <code>void</code>
-and has a single <em>out</em> or <em>in/out</em> parameter, the Scheme
+<p>If a native function returns a non-void value and has zero <em class="emph">out</em> or
+<em class="emph">in/out</em> parameters, or if a native function returns <code class="code">void</code>
+and has a single <em class="emph">out</em> or <em class="emph">in/out</em> parameter, the Scheme
 binding will return a value.
 </p>
 <p>Otherwise, the Scheme binding will return multiple values, as with the
-Guile procedures <code>values</code> and <code>receive</code>.
+Guile procedures <code class="code">values</code> and <code class="code">receive</code>.
 </p>
-<span id="index-values"></span>
-<span id="index-receive"></span>
+<a class="index-entry-id" id="index-values"></a>
+<a class="index-entry-id" id="index-receive"></a>
 
 <div class="example">
-<pre class="example">;; In C, the declaration of g_unix_mount_at is
+<pre class="example-preformatted">;; In C, the declaration of g_unix_mount_at is
 ;; GUnixMountEntry *g_unix_mount_at(const char *path,  /*in*/
 ;;                                  guint64 *time_read /*out*/)
 (receive (mount-entry time-read)
@@ -107,7 +96,7 @@ Guile procedures <code>values</code> and <code>receive</code>.
 
 </div>
 <hr>
-<div class="header">
+<div class="nav-panel">
 <p>
 Next: <a href="Booleans.html">Booleans</a>, Up: <a href="Argument-Conversion.html">Argument Conversion</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>
