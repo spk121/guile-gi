@@ -333,8 +333,25 @@
 (define %name
   (xpath:sxpath `(@ name *text*)))
 
-(define %args
-  (xpath:sxpath `(argument @ name *text*)))
+(define %optional
+  (xpath:sxpath `(@ optional *text*)))
+
+;; The argument names of a procedure, with "#:optional" before the first
+;; argument the procedure may be called without.
+(define (%args node)
+  (let loop ((args ((xpath:sxpath `(argument)) node))
+             (optional? #f)
+             (names '()))
+    (if (null? args)
+        (reverse names)
+        (let* ((arg (car args))
+               (name (car (%name arg)))
+               (opt (and (not optional?) (not (null? (%optional arg))))))
+          (loop (cdr args)
+                (or optional? opt)
+                (if opt
+                    (cons* name "#:optional" names)
+                    (cons name names)))))))
 
 (define %returns
   (xpath:sxpath `(return @ name *text*)))
@@ -458,7 +475,11 @@
            (ppfn
             (lambda (name args returns)
               (let ((name (string->symbol name))
-                    (args (map string->symbol args))
+                    (args (map (lambda (arg)
+                                 (if (string=? arg "#:optional")
+                                     #:optional
+                                     (string->symbol arg)))
+                               args))
                     (returns (map string->symbol returns)))
                 (%pp `(define-values ,returns (,name ,@args))))))
 
@@ -695,9 +716,7 @@
                      `(informalexample
                        (programlisting
                         ,(ppfn ln
-                               (append-map
-                                %name
-                                ((xpath:sxpath `(argument)) node))
+                               (%args node)
                                (append-map
                                 %name
                                 ((xpath:sxpath `(return)) node))))))

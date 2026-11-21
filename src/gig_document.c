@@ -18,6 +18,7 @@
 #include "type.h"
 #include "func.h"
 #include "gig_repository.h"
+#include "func/gig_arg_map_priv.h"
 
 static void do_document(GIBaseInfo *info, const char *parent);
 GIG_API void gig_init_document(void);
@@ -52,11 +53,12 @@ document_nested(GIBaseInfo *parent)
 }
 
 static void
-document_arg_entry(const char *kind, GigArgMapEntry *entry)
+document_arg_entry(const char *kind, GigArgMapEntry *entry, bool optional)
 {
     char *name = make_scm_name(entry->name);
     scm_dynwind_free(name);
-    scm_printf(SCM_UNDEFINED, "<%s name=\"%s\" c:name=\"%s\">", kind, name, entry->name);
+    scm_printf(SCM_UNDEFINED, "<%s name=\"%s\" c:name=\"%s\"%s>", kind, name, entry->name,
+               optional ? " optional=\"1\"" : "");
     scm_printf(SCM_UNDEFINED, "</%s>", kind);
 }
 
@@ -105,16 +107,25 @@ do_document(GIBaseInfo *info, const char *_namespace)
             scm_printf(SCM_UNDEFINED, "<argument name=\"self\">");
             scm_printf(SCM_UNDEFINED, "</argument>");
         }
+        // These must describe the procedure that src/func builds from
+        // the same argument map: the Scheme inputs in order, of which
+        // the trailing OPT may be omitted...
         for (int i = 0; i < req + opt; i++) {
             GigArgMapEntry *entry = gig_amap_get_input_entry_by_s(arg_map, i);
-            document_arg_entry("argument", entry);
+            document_arg_entry("argument", entry, i >= req);
         }
+        // ...and its values: the return value, unless void, then each C
+        // output that is also a Scheme output, as convert_output_args
+        // does.  Outputs that only give an array's length are not.
         if (arg_map->return_val.meta.gtype != G_TYPE_NONE)
-            document_arg_entry("return", &arg_map->return_val);
+            document_arg_entry("return", &arg_map->return_val, false);
 
         for (int i = 0; i < out; i++) {
+            int s_output_pos;
+            if (!gig_amap_output_c2s(arg_map, i, &s_output_pos))
+                continue;
             GigArgMapEntry *entry = gig_amap_get_output_entry_by_c(arg_map, i);
-            document_arg_entry("return", entry);
+            document_arg_entry("return", entry, false);
         }
         scm_printf(SCM_UNDEFINED, "</procedure></scheme>");
 

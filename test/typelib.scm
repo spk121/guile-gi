@@ -3,7 +3,7 @@
              (gi repository)
              (srfi srfi-64))
 
-(use-modules (ice-9 peg) (sxml simple) (sxml xpath))
+(use-modules (ice-9 peg) (sxml simple) (sxml xpath) (srfi srfi-1))
 
 (define %markdown-sample
   "Some text.\n\n# A heading\n\nMore text.\n\n```txt\n# a comment\n[group]\n```\n\nThe end.\n")
@@ -73,6 +73,32 @@
          (member "Note heading" (titles '(// td para emphasis *text*)))
          (null? ((sxpath '(// td // refsect2)) tree))
          (null? ((sxpath '(// refsect2 refsect2)) tree)))))
+
+(define (documented-procedure lib type long-name)
+  ;; The <procedure> element %document emits for LONG-NAME.
+  (let* ((xml (with-output-to-string
+                (lambda () ((@@ (gi documentation) %document) (info lib type)))))
+         (tree (xml->sxml (string-append "<r xmlns:c=\"urn:c\">" xml "</r>")
+                          #:namespaces '((c . "urn:c")))))
+    (find (lambda (proc)
+            (equal? ((sxpath '(@ long-name *text*)) proc) (list long-name)))
+          ((sxpath '(// procedure)) tree))))
+
+(test-equal "documented returns omit array-length outputs"
+  ;; g_bytes_get_data's size output only sizes the returned array; the
+  ;; procedure returns just the data, so the documentation must too.
+  '("%return")
+  ((sxpath '(return @ name *text*))
+   (documented-procedure "GLib" "Bytes" "bytes:get-data")))
+
+(test-equal "documented optional arguments"
+  ;; The trailing nullable arguments may be omitted.
+  '(("self" ()) ("uri" ()) ("name" ("1")) ("exec" ("1")))
+  (map (lambda (arg)
+         (list (car ((sxpath '(@ name *text*)) arg))
+               ((sxpath '(@ optional *text*)) arg)))
+       ((sxpath '(argument))
+        (documented-procedure "GLib" "BookmarkFile" "bookmark-file:add-application"))))
 
 (test-assert "typelib->module without a version"
   ;; The version defaulted to #f, which require rejects.
