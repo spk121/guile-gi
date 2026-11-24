@@ -200,6 +200,63 @@ struct callback_binding_args
     GigCallback *gcb;
 };
 
+// A struct that C lent to a callback by pointer.  Scheme gets a copy,
+// since it may keep its object longer than C keeps the struct, so
+// what the callback did to the copy is carried back afterwards.
+typedef struct
+{
+    void *c_struct;
+    SCM s_struct;
+    size_t size;
+    bool is_value;
+} LentStruct;
+
+// True if ENTRY is a struct passed by pointer that a callback may be
+// meant to fill in or modify: a caller-allocated output, like the
+// GtkTreeIter of GtkTreeModel's get_iter, or an input, like the one
+// its iter_next advances.
+static bool
+is_lent_struct(GigArgMapEntry *entry)
+{
+    GigTypeMeta *meta = &entry->meta;
+    GType gtype = meta->gtype;
+    bool preallocated = (entry->s_direction == GIG_ARG_DIRECTION_PREALLOCATED_OUTPUT);
+    if (entry->s_direction != GIG_ARG_DIRECTION_INPUT && !preallocated)
+        return false;
+    // The typelib doesn't count a caller-allocated output as a pointer.
+    if (!(meta->is_ptr || preallocated) || G_TYPE_FUNDAMENTAL(gtype) != G_TYPE_BOXED)
+        return false;
+    if (gtype == G_TYPE_ARRAY || gtype == G_TYPE_BYTE_ARRAY || gtype == G_TYPE_PTR_ARRAY
+        || gtype == G_TYPE_HASH_TABLE)
+        return false;
+    if (gtype == G_TYPE_VALUE)
+        // An input GValue is usually const.
+        return preallocated;
+    return meta->item_size > 0 && meta->transfer == GI_TRANSFER_NOTHING;
+}
+
+static void
+return_lent_structs(LentStruct *lent, unsigned n)
+{
+    for (unsigned i = 0; i < n; i++) {
+        void *copy = gig_type_peek_object(lent[i].s_struct);
+        if (copy == NULL)
+            continue;
+        if (lent[i].is_value) {
+            GValue *src = copy, *dest = lent[i].c_struct;
+            if (G_VALUE_TYPE(src) != G_TYPE_INVALID) {
+                if (G_VALUE_TYPE(dest) != G_TYPE_INVALID)
+                    g_value_unset(dest);
+                g_value_init(dest, G_VALUE_TYPE(src));
+                g_value_copy(src, dest);
+            }
+        }
+        // Write only what changed: an input may be read-only.
+        else if (memcmp(lent[i].c_struct, copy, lent[i].size) != 0)
+            memcpy(lent[i].c_struct, copy, lent[i].size);
+    }
+}
+
 static SCM
 apply_body(void *data)
 {
@@ -287,6 +344,10 @@ callback_binding_inner(struct callback_binding_args *args)
     scm_dynwind_begin(0);
     scm_dynwind_free(callback_name);
 
+    // Scanned by the garbage collector, which keeps the copies alive.
+    LentStruct *lent = scm_gc_malloc(sizeof(LentStruct) * (n_args + 1), "callback structs");
+    unsigned n_lent = 0;
+
     // Do the two-step conversion from libffi arguments to GIArgument
     // to SCM arguments.
     for (unsigned i = 0; i < n_args; i++) {
@@ -306,6 +367,22 @@ callback_binding_inner(struct callback_binding_args *args)
                                           &giarg);
         gig_argument_c_to_scm(callback_name, i, &amap->pdata[i].meta, &giarg, &s_entry, -1);
         s_args = scm_cons(s_entry, s_args);
+
+        if (giarg.v_pointer != NULL && SCM_INSTANCEP(s_entry) && is_lent_struct(&amap->pdata[i])) {
+            void *copy = gig_type_peek_object(s_entry);
+            bool is_value = (amap->pdata[i].meta.gtype == G_TYPE_VALUE);
+            size_t size = amap->pdata[i].meta.item_size;
+            // Bytes can only be carried back to a struct whose copy
+            // is its bytes, not one that owns what it points to.
+            if (copy != NULL && copy != giarg.v_pointer
+                && (is_value || memcmp(giarg.v_pointer, copy, size) == 0)) {
+                lent[n_lent].c_struct = giarg.v_pointer;
+                lent[n_lent].s_struct = s_entry;
+                lent[n_lent].size = size;
+                lent[n_lent].is_value = is_value;
+                n_lent++;
+            }
+        }
     }
     s_args = scm_reverse_x(s_args, SCM_EOL);
     size_t length = scm_c_length(s_args);
@@ -346,7 +423,10 @@ callback_binding_inner(struct callback_binding_args *args)
     else
         s_ret = scm_apply_0(gcb->s_func, s_args);
 
-    // Return values and output arguments start here.
+    return_lent_structs(lent, n_lent);
+
+    // Return values and output arguments start here.  A caller-allocated
+    // output is not among them: the callback filled in its argument.
     if (scm_is_false(s_ret))
         *(ffi_arg *)ret = FALSE;
     else {
@@ -375,14 +455,20 @@ callback_binding_inner(struct callback_binding_args *args)
             }
         }
 
+        int n_preallocated = 0;
         for (int c_output_pos = 0; c_output_pos < out; c_output_pos++) {
             GigArgMapEntry *entry = gig_amap_get_output_entry_by_c(amap, c_output_pos);
             if (!entry->is_s_output)
                 continue;
+            if (entry->s_direction == GIG_ARG_DIRECTION_PREALLOCATED_OUTPUT) {
+                n_preallocated++;
+                continue;
+            }
             int real_cpos = entry - amap->pdata;
-            if (entry->s_output_pos >= n_values)
+            int s_output_pos = entry->s_output_pos - n_preallocated;
+            if (s_output_pos + start >= n_values)
                 scm_misc_error(callback_name, "too few return values", SCM_EOL);
-            SCM real_value = scm_c_value_ref(s_ret, entry->s_output_pos + start);
+            SCM real_value = scm_c_value_ref(s_ret, s_output_pos + start);
             gig_argument_scm_to_c(callback_name, real_cpos, &entry->meta, real_value, NULL, &giarg,
                                   &size);
             // ffi_args is indexed by position in the callback's

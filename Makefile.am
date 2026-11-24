@@ -497,6 +497,7 @@ TESTS = \
   test/main-loop.scm \
   test/application.scm \
   test/gtk.scm \
+  test/gtk-tree-model.scm \
   test/gtk4-cclosure.scm \
   test/gtk4-structs.scm \
   test/grilo.scm \

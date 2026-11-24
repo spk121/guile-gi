@@ -20,7 +20,10 @@
 // copied, objects get a new reference.  Setters are limited to fields
 // the typelib marks writable that hold plain data -- numbers, booleans,
 // enums, flags, and embedded structs made only of those -- because for
-// pointers the typelib doesn't say who would own the new value.
+// pointers the typelib doesn't say who would own the new value.  The
+// exception is the untyped pointer, gpointer, such as the user_data
+// fields of a GtkTreeIter: it is stored as it is, and what it points to
+// is the caller's business, as it is in C.
 
 #include <string.h>
 #include <glib-object.h>
@@ -216,6 +219,13 @@ gig_field_is_readable(GIFieldInfo *fi)
     return true;
 }
 
+// A gpointer: a pointer to nothing in particular.
+static bool
+is_untyped_pointer(GigTypeMeta *m)
+{
+    return m->gtype == G_TYPE_POINTER && m->pointer_type == GIG_DATA_VOID;
+}
+
 bool
 gig_field_is_writable(GIFieldInfo *fi)
 {
@@ -225,6 +235,8 @@ gig_field_is_writable(GIFieldInfo *fi)
     bool writable = false;
     if (f.kind == KIND_VALUE)
         writable = (f.meta.gtype != G_TYPE_GTYPE);
+    else if (f.kind == KIND_POINTER)
+        writable = is_untyped_pointer(&f.meta);
     else if (f.kind == KIND_INLINE && G_TYPE_FUNDAMENTAL(f.meta.gtype) == G_TYPE_BOXED) {
         GITypeInfo *ti = g_field_info_get_type(fi);
         GIBaseInfo *iface = g_type_info_get_interface(ti);
@@ -338,6 +350,15 @@ field_set(SCM data, SCM obj, SCM value)
         memset(&arg, 0, sizeof(arg));
         gig_argument_scm_to_c(f->setter_name, SCM_ARG2, &meta, value, NULL, &arg, &size);
         memcpy(p, &arg, f->size);
+    }
+    else if (f->kind == KIND_POINTER) {
+        // An untyped pointer.
+        void *ptr = NULL;
+        if (scm_is_pointer(value))
+            ptr = scm_to_pointer(value);
+        else if (scm_is_true(value))
+            scm_wrong_type_arg_msg(f->setter_name, SCM_ARG2, value, "a pointer or #f");
+        *(void **)p = ptr;
     }
     else {
         // A plain embedded struct: copy its bytes.

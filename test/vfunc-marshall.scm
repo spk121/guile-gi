@@ -31,6 +31,9 @@
      (vfunc-return-object-transfer-none
       . ,(lambda (self) (set! received (make <GObject>)) received))
      (vfunc-in-object-transfer-full . ,(lambda (self obj) (set! received obj)))
+     ;; A caller-allocated output is an argument to fill in.
+     (vfunc-caller-allocated-out-parameter
+      . ,(lambda (self value) (set! (value G_TYPE_STRING) "filled in")))
      (vfunc-meth-with-err . ,(lambda (self x) (error "failed with" x)))
      ;; The callback's closure data is passed along, as for callbacks.
      (vfunc-with-callback . ,(lambda (self callback data) (set! received (callback 41 data))))
@@ -84,5 +87,11 @@
   (begin
     (object:do-method-with-default-implementation <MarshallObject> o 5)
     (object:int o)))
+
+(test-equal "caller-allocated out parameter"
+  "filled in"
+  (let ((value (make <GValue>)))
+    (object:vfunc-caller-allocated-out-parameter! o value)
+    (value)))
 
 (test-end "vfunc-marshall")

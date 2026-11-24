@@ -479,7 +479,11 @@ after the type and the field, such as @code{rgba:red} for the
 structs and arrays.  Fields of plain data -- numbers, booleans, enums,
 flags, and structs made only of those -- can also be set when the
 typelib allows it, either with @code{set!} on the getter or with a
-setter such as @code{rgba:set-red!}.  Fields that hold other pointers,
+setter such as @code{rgba:set-red!}.  So can a field that holds an
+untyped pointer (@code{gpointer}), such as the @code{user_data} of a
+@code{GtkTreeIter}: its setter takes a pointer from @code{(system
+foreign)}, or @code{#f} for @code{NULL}, and stores it as it is.
+Fields that hold other pointers,
 such as strings, are read-only, because the typelib does not say who
 would own a new value.  A field gets no getter if a method of its type
 already has that name, and structs with bitfields, which typelibs
@@ -1099,7 +1103,13 @@ such as @code{snapshot} or @code{size-allocate}, naming a virtual
 function of @var{parent-type}, one of its ancestors, or one of
 @var{interfaces}.  @var{procedure} takes the instance and then the
 virtual function's arguments, and returns its return value and output
-arguments, as multiple values if there are several.  If the virtual
+arguments, as multiple values if there are several.  An output argument
+that the caller allocates, such as the @code{GtkTreeIter} of
+@code{GtkTreeModel}'s @code{get-iter} or the @code{GValue} of its
+@code{get-value}, is not returned: it is passed to @var{procedure},
+which fills it in.  Likewise, what @var{procedure} does to the fields of
+a struct argument, such as the iter that @code{iter-next} advances, is
+seen by the caller.  If the virtual
 function can fail with a @code{GError}, a Scheme error raised by
 @var{procedure} becomes that error.  GObject's @code{finalize},
 @code{constructor}, @code{set_property} and @code{get_property} can't be
@@ -1140,6 +1150,46 @@ to the parent's implementation.
     `((get-item-type . ,(lambda (self) (get-gtype <GObject>)))
       (get-n-items . ,(lambda (self) (length items)))
       (get-item . ,(lambda (self i) (list-ref items i))))))
+@end example
+
+A tree model for GTK 3's @code{GtkTreeView} can be written the same way.
+Its iters are structs that the model fills in to say which row they
+refer to; here, the row number goes in the @code{user_data} field.
+
+@example
+(use-modules (system foreign))
+
+(define rows #("one" "two" "three"))
+
+(define (row iter)
+  (pointer-address (or (tree-iter:user-data iter) %null-pointer)))
+
+(define (point-at! iter n)
+  (tree-iter:set-user-data! iter (make-pointer n))
+  (< n (vector-length rows)))
+
+(define <RowModel>
+  (register-type "RowModel" <GObject>
+    #:interfaces (list <GtkTreeModel>)
+    #:vfuncs
+    `((get-flags . ,(lambda (self) (list->tree-model-flags '(list-only))))
+      (get-n-columns . ,(lambda (self) 1))
+      (get-column-type . ,(lambda (self column) G_TYPE_STRING))
+      (get-iter . ,(lambda (self iter path)
+                     (point-at! iter (s32vector-ref (tree-path:get-indices path) 0))))
+      (get-path . ,(lambda (self iter)
+                     (tree-path:new-from-indices (s32vector (row iter)))))
+      (get-value . ,(lambda (self iter column value)
+                      (set! (value G_TYPE_STRING) (vector-ref rows (row iter)))))
+      (iter-next . ,(lambda (self iter) (point-at! iter (1+ (row iter)))))
+      (iter-children . ,(lambda (self iter parent)
+                          (and (not parent) (point-at! iter 0))))
+      (iter-has-child . ,(lambda (self iter) #f))
+      (iter-n-children . ,(lambda (self iter)
+                            (if iter 0 (vector-length rows))))
+      (iter-nth-child . ,(lambda (self iter parent n)
+                           (and (not parent) (point-at! iter n))))
+      (iter-parent . ,(lambda (self iter child) #f)))))
 @end example
 
 @node Sample Applications

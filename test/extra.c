@@ -301,3 +301,66 @@ extra_skip_bool(void)
 {
     return TRUE;
 }
+
+G_DEFINE_BOXED_TYPE(ExtraCursor, extra_cursor, extra_cursor_copy, extra_cursor_free)
+
+ExtraCursor *
+extra_cursor_copy(const ExtraCursor *cursor)
+{
+    ExtraCursor *copy = g_new(ExtraCursor, 1);
+    *copy = *cursor;
+    return copy;
+}
+
+void
+extra_cursor_free(ExtraCursor *cursor)
+{
+    g_free(cursor);
+}
+
+/**
+ * extra_call_callback_fill_cursor:
+ * @func: (scope call): fills in a cursor that this function allocates
+ * @index: passed to @func
+ * @data: (out): the data @func stored in the cursor
+ *
+ * Returns: the index @func stored in the cursor, or -1 if it returned
+ *   %FALSE
+ */
+gint
+extra_call_callback_fill_cursor(ExtraCallbackFillCursor func, gint index, gpointer *data)
+{
+    ExtraCursor cursor = { -2, GINT_TO_POINTER(-2) };
+    gboolean ok = func(&cursor, index);
+    *data = cursor.data;
+    return ok ? cursor.index : -1;
+}
+
+/**
+ * extra_call_callback_advance_cursor:
+ * @func: (scope call): moves a cursor in place
+ * @index: where the cursor starts
+ *
+ * Returns: the cursor's index after @func, or -1 if it returned %FALSE
+ */
+gint
+extra_call_callback_advance_cursor(ExtraCallbackAdvanceCursor func, gint index)
+{
+    ExtraCursor cursor = { index, NULL };
+    return func(&cursor) ? cursor.index : -1;
+}
+
+/**
+ * extra_call_callback_new_cursor:
+ * @func: (scope call): returns a cursor, which this function frees
+ *
+ * Returns: the index of the cursor @func returned
+ */
+gint
+extra_call_callback_new_cursor(ExtraCallbackNewCursor func)
+{
+    ExtraCursor *cursor = func();
+    gint index = cursor->index;
+    extra_cursor_free(cursor);
+    return index;
+}

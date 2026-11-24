@@ -343,4 +343,55 @@
   (and (defined? 'skip-bool)
        (not (defined? 'skip-bool?))))
 
+;; Structs that C lends to a callback: Scheme gets a copy, and what the
+;; callback does to it is carried back to the caller's struct.
+
+(test-equal "callback fills in a caller-allocated struct"
+  '(7 42)
+  (receive (index data)
+      (call-callback-fill-cursor
+       (lambda (cursor index)
+         (cursor:set-index! cursor index)
+         (cursor:set-data! cursor (make-pointer 42))
+         #t)
+       7)
+    (list index (pointer-address data))))
+
+(test-equal "callback fills in a caller-allocated struct and returns #f"
+  -1
+  (call-callback-fill-cursor (lambda (cursor index) #f) 7))
+
+(test-equal "callback modifies a struct argument in place"
+  6
+  (call-callback-advance-cursor
+   (lambda (cursor)
+     (cursor:set-index! cursor (1+ (cursor:index cursor)))
+     #t)
+   5))
+
+(test-equal "callback returns a boxed struct, transfer full"
+  '(11 11)
+  (let* ((kept #f)
+         (index (call-callback-new-cursor
+                 (lambda ()
+                   (set! kept (make <ExtraCursor>))
+                   (cursor:set-index! kept 11)
+                   kept))))
+    ;; C freed its copy; ours is intact.
+    (gc)
+    (list index (cursor:index kept))))
+
+(test-equal "untyped pointer field"
+  '(#f 99 #f)
+  (let* ((cursor (make <ExtraCursor>))
+         (before (cursor:data cursor)))
+    (set! (cursor:data cursor) (make-pointer 99))
+    (let ((address (pointer-address (cursor:data cursor))))
+      (cursor:set-data! cursor #f)
+      (list before address (cursor:data cursor)))))
+
+(test-error "untyped pointer field, wrong type"
+  #t
+  (cursor:set-data! (make <ExtraCursor>) "string"))
+
 (test-end "extra")

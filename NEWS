@@ -80,6 +80,17 @@ Bug fixes
    another <GValue>.
  - equal? is true of two Scheme objects that refer to the same GObject
    (#123).
+ - Scheme callbacks and virtual functions can fill in structs that
+   their caller allocates and modify structs they are passed, so that
+   a GtkTreeModel can be implemented in Scheme (#94).  A
+   caller-allocated output is now an argument for the procedure to
+   fill in, not a value for it to return; returning one used to
+   overwrite the caller's struct with a pointer.
+ - Boxed values passed to C with transfer full, including those that
+   Scheme callbacks return, such as the GtkTreePath of GtkTreeModel's
+   get_path, are copied; C used to free the Scheme object's own.
+ - Fields that hold an untyped pointer (gpointer), such as a
+   GtkTreeIter's user_data, have setters.
 
 Thanks to
  - Maxim Cournoyer <apteryks>
