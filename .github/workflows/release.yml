@@ -5,6 +5,9 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: write
+
 env:
   DEBIAN_FRONTEND: noninteractive
   TZ: America/Los_Angeles
