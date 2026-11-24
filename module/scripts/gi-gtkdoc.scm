@@ -38,6 +38,9 @@
 ;;                               By default, a new temporary directory
 ;;                               is created and used, which may not be
 ;;                               what you want.
+;;   -d, --deprecated            Also document what the namespace marks
+;;                               deprecated, which is only bound when
+;;                               the typelib is loaded with #:deprecated?.
 ;;   -s, --skip-gir              Skip reading of the .gir XML files.
 ;;                               Doing so will only document functions,
 ;;                               that can be documented from the typelib
@@ -60,6 +63,7 @@
   '((namespace (single-char #\n) (value #t))
     (version   (single-char #\v) (value #t))
     (skip-gir  (single-char #\s))
+    (deprecated (single-char #\d))
     (output    (single-char #\o) (value #t))
     (format    (single-char #\f) (value #t))
     (help      (single-char #\h))))
@@ -82,6 +86,7 @@
           (namespace (option-ref p 'namespace #f))
           (version (option-ref p 'version #f))
           (skip-gir? (option-ref p 'skip-gir #f))
+          (deprecated? (option-ref p 'deprecated #f))
           (fmt (option-ref p 'format "html")))
       (cond
        ((or help-wanted? (not namespace) (not version))
@@ -120,7 +125,8 @@
 
           (chdir output)
 
-          (call-with-port (typelib namespace version) add-documentation!)
+          (call-with-port (typelib namespace version #:deprecated? deprecated?)
+            add-documentation!)
           (unless skip-gir?
             (call-with-port (gir namespace version) add-documentation!))
 

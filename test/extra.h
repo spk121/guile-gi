@@ -194,4 +194,65 @@ _GI_TEST_EXTERN
 gboolean
 extra_skip_bool(void);
 
+/* A struct that callbacks fill in, modify and return, as
+   GtkTreeModel's virtual functions do with GtkTreeIter and
+   GtkTreePath. */
+
+typedef struct _ExtraCursor ExtraCursor;
+
+/**
+ * ExtraCursor:
+ * @index: a position
+ * @data: whatever the cursor's user stores
+ */
+struct _ExtraCursor
+{
+    gint index;
+    gpointer data;
+};
+
+_GI_TEST_EXTERN
+GType
+extra_cursor_get_type(void) G_GNUC_CONST;
+
+_GI_TEST_EXTERN
+ExtraCursor *
+extra_cursor_copy(const ExtraCursor *cursor);
+
+_GI_TEST_EXTERN
+void
+extra_cursor_free(ExtraCursor *cursor);
+
+/**
+ * ExtraCallbackFillCursor:
+ * @cursor: (out caller-allocates): the cursor to fill in
+ * @index: where to point it
+ */
+typedef gboolean (* ExtraCallbackFillCursor) (ExtraCursor *cursor, gint index);
+
+_GI_TEST_EXTERN
+gint
+extra_call_callback_fill_cursor(ExtraCallbackFillCursor func, gint index, gpointer *data);
+
+/**
+ * ExtraCallbackAdvanceCursor:
+ * @cursor: the cursor to move
+ */
+typedef gboolean (* ExtraCallbackAdvanceCursor) (ExtraCursor *cursor);
+
+_GI_TEST_EXTERN
+gint
+extra_call_callback_advance_cursor(ExtraCallbackAdvanceCursor func, gint index);
+
+/**
+ * ExtraCallbackNewCursor:
+ *
+ * Returns: (transfer full): a new cursor
+ */
+typedef ExtraCursor *(* ExtraCallbackNewCursor) (void);
+
+_GI_TEST_EXTERN
+gint
+extra_call_callback_new_cursor(ExtraCallbackNewCursor func);
+
 #endif /* _EXTRA_H_ */

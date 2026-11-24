@@ -48,10 +48,20 @@ require(SCM lib, SCM version)
     return SCM_UNSPECIFIED;
 }
 
+// The top-level infos of LIB.  DEPRECATED says what to do with
+// deprecated ones: leave them out (#f, the default), include them
+// (true), or return nothing else (the symbol only).
 static SCM
-infos(SCM lib)
+infos(SCM lib, SCM deprecated)
 {
     SCM_ASSERT_TYPE(scm_is_string(lib), lib, SCM_ARG1, "infos", "string");
+    bool want_current = true, want_deprecated = false;
+    if (scm_is_eq(deprecated, scm_from_utf8_symbol("only"))) {
+        want_current = false;
+        want_deprecated = true;
+    }
+    else if (!SCM_UNBNDP(deprecated) && scm_is_true(deprecated))
+        want_deprecated = true;
 
     scm_dynwind_begin(0);
     char *_lib = scm_dynfree(scm_to_utf8_string(lib));
@@ -60,7 +70,7 @@ infos(SCM lib)
 
     for (int i = 0; i < n; i++) {
         GIBaseInfo *info = g_irepository_get_info(NULL, _lib, i);
-        if (g_base_info_is_deprecated(info)) {
+        if (!(g_base_info_is_deprecated(info) ? want_deprecated : want_current)) {
             g_base_info_unref(info);
             continue;
         }
@@ -477,7 +487,7 @@ void
 gig_init_repository()
 {
     scm_c_define_gsubr("require", 1, 1, 0, require);
-    scm_c_define_gsubr("infos", 1, 0, 0, infos);
+    scm_c_define_gsubr("infos", 1, 1, 0, infos);
     scm_c_define_gsubr("info", 2, 0, 0, info);
     scm_c_define_gsubr("%load-info", 1, 1, 0, load);
     scm_c_define_gsubr("get-search-path", 0, 0, 0, get_search_path);

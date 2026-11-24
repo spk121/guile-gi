@@ -69,7 +69,24 @@
                                                             (syntax->datum version)))))
       #`(#,module #,@params)))))
 
-(define (%gi->module-def form subform lib version)
+;; Split the options of a use-typelibs clause into the value of
+;; #:deprecated?, as syntax, and the options that are for use-modules.
+(define (%split-typelib-options form subform params)
+  (let loop ((params params)
+             (deprecated #'#f)
+             (rest '()))
+    (syntax-case params ()
+      (() (values deprecated (reverse rest)))
+      ((key value . more)
+       (eq? (syntax->datum #'key) #:deprecated?)
+       (loop #'more #'value rest))
+      ((key)
+       (eq? (syntax->datum #'key) #:deprecated?)
+       (syntax-violation #f "#:deprecated? needs a value" form subform))
+      ((param . more)
+       (loop #'more deprecated (cons #'param rest))))))
+
+(define (%gi->module-def form subform lib version deprecated)
   (cond
    ((not (string? (syntax->datum lib)))
     (syntax-violation #f "unexpected library (not a string)"
@@ -81,8 +98,11 @@
     (let ((module (datum->syntax form (%typelib-module-name (syntax->datum lib)
                                                             (syntax->datum version)))))
 
-      #`(unless (resolve-module '#,module #:ensure #f)
-          (typelib->module '#,module #,lib #,version))))))
+      ;; A module that exists may still lack what is deprecated.
+      #`(let ((deprecated? #,deprecated))
+          (when (or deprecated? (not (resolve-module '#,module #:ensure #f)))
+            (typelib->module '#,module #,lib #,version
+                             #:deprecated? deprecated?)))))))
 
 (define-syntax use-typelibs
   (lambda (x)
@@ -93,9 +113,12 @@
                (lambda (lib)
                  (syntax-case lib ()
                    ((typelib version)
-                    (%gi->module-def x lib #'typelib #'version))
-                   (((typelib version) _ ...)
-                    (%gi->module-def x lib #'typelib #'version))))
+                    (%gi->module-def x lib #'typelib #'version #'#f))
+                   (((typelib version) param ...)
+                    (call-with-values
+                        (lambda () (%split-typelib-options x lib #'(param ...)))
+                      (lambda (deprecated params)
+                        (%gi->module-def x lib #'typelib #'version deprecated))))))
                #'(lib ...)))
              (module-uses
               (map
@@ -104,7 +127,10 @@
                    ((typelib version)
                     (%gi->module-use x lib #'typelib #'version '()))
                    (((typelib version) param ...)
-                    (%gi->module-use x lib #'typelib #'version #'(param ...)))))
+                    (call-with-values
+                        (lambda () (%split-typelib-options x lib #'(param ...)))
+                      (lambda (deprecated params)
+                        (%gi->module-use x lib #'typelib #'version params))))))
                #'(lib ...))))
          #`(eval-when (expand load eval)
              #,@module-defs

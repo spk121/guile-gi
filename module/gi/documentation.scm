@@ -198,7 +198,7 @@
   (let ((doc (with-output-to-string (lambda () (%document info)))))
     doc))
 
-(define* (typelib lib #:optional version #:key (require? #t))
+(define* (typelib lib #:optional version #:key (require? #t) (deprecated? #f))
   ;; require takes a version string or nothing; it doesn't accept #f.
   (when require?
     (if version
@@ -206,7 +206,9 @@
         (require lib)))
   (open-input-string
    (format #f "<repository><namespace name=~s>~a</namespace></repository>" lib
-           (string-join (map %info (infos lib)) ""))))
+           ;; Like typelib->module, leave out what is deprecated unless
+           ;; asked, so that the documentation matches the bindings.
+           (string-join (map %info (infos lib (and deprecated? #t))) ""))))
 
 (define (find-gir lib version)
   (or

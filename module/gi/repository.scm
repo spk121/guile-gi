@@ -44,7 +44,12 @@
 (define* (load-by-name lib name #:optional (flags LOAD_EVERYTHING))
   (load (info lib name) flags))
 
-(define* (typelib->module module lib #:optional version)
+;; What typelib->module has loaded into each module: an alist from a
+;; library's name to #t if that included its deprecated infos, and to
+;; #f if it did not.
+(define %loaded-typelibs (make-weak-key-hash-table))
+
+(define* (typelib->module module lib #:optional version #:key (deprecated? #f))
   ;; require takes a version string or nothing; it doesn't accept #f.
   (if version
       (require lib version)
@@ -63,9 +68,20 @@
       (set-module-kind! interface 'interface)
       (set-module-public-interface! module interface)))
 
-  (save-module-excursion
-   (lambda ()
-     (set-current-module module)
-     (module-export! module (append-map! load (infos lib)))))
+  (let* ((loaded (hashq-ref %loaded-typelibs module '()))
+         (previous (assoc lib loaded))
+         ;; A module that has the rest of LIB only needs what is
+         ;; deprecated added to it.
+         (which (cond ((not deprecated?) #f)
+                      ((and previous (not (cdr previous))) 'only)
+                      (else #t))))
+    (save-module-excursion
+     (lambda ()
+       (set-current-module module)
+       (module-export! module (append-map! load (infos lib which)))))
+    (hashq-set! %loaded-typelibs module
+                (acons lib
+                       (and (or deprecated? (and previous (cdr previous))) #t)
+                       (if previous (delete previous loaded) loaded))))
 
   module)

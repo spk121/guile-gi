@@ -87,7 +87,8 @@ dist_example_DATA = \
   examples/builder-manual.scm \
   examples/cairo.scm \
   examples/editor.scm \
-  examples/gtk4-robustness.scm
+  examples/gtk4-robustness.scm \
+  examples/tree-model.scm
 
 dist_emptywindow_DATA = \
   examples/empty-window/main.scm \
@@ -499,6 +500,7 @@ TESTS = \
   test/gtk.scm \
   test/gtk4-cclosure.scm \
   test/gtk4-structs.scm \
+  test/gtk4-tree-model.scm \
   test/grilo.scm \
   test/oop.scm \
   test/value.scm \

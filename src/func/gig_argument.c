@@ -554,8 +554,15 @@ scm_to_c_boxed(S2C_ARG_DECL)
                        "passing object ~S by value to a c function is not supported",
                        scm_list_1(scm_from_utf8_string(g_type_name(meta->gtype))));
 
-    else
+    else {
         arg->v_pointer = gig_type_peek_object(object);
+        // The receiver, e.g. the caller of a callback that returns a
+        // new GtkTreePath, frees what it is given; the Scheme object
+        // keeps its own.
+        if (meta->transfer == GI_TRANSFER_EVERYTHING && arg->v_pointer != NULL
+            && G_TYPE_IS_BOXED(t) && !G_TYPE_IS_ABSTRACT(t))
+            arg->v_pointer = g_boxed_copy(t, arg->v_pointer);
+    }
 }
 
 static void
