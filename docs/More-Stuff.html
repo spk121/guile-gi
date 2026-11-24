@@ -57,9 +57,14 @@ Previous: <a href="Compatibility.html" accesskey="p" rel="prev">Compatibility</a
 <p>In most cases this is nothing to worry about. Guile-GI ensures, that
 the core binding is used as the default behaviour when the signature
 does not accidentally match that of a function in some typelib.
-However, this can still cause issues when Guile-GI overrides syntax.
-To protect your syntax (or other variables you deeply care about), use
-the <code class="code">protect</code> or <code class="code">protect*</code> renamer from <code class="code">(gi util)</code>.
+</p>
+<p>Guile&rsquo;s syntax is never overridden by the short name of a method, signal
+or property: one that is called <code class="code">begin</code> or <code class="code">delay</code> is only
+bound under its long name, such as <code class="code">gesture:begin</code>.
+See <a class="xref" href="GObject-Methods.html">GObject Methods</a>.  A function that is not a method can still
+override syntax.  To protect your syntax from that (or other variables
+you deeply care about), use the <code class="code">protect</code> or <code class="code">protect*</code> renamer
+from <code class="code">(gi util)</code>.
 </p>
 </div>
 <div class="subsection-level-extent" id="Help_0021-Guile_002dGI-bindings-conflict-with-each-other">
@@ -78,6 +83,11 @@ resolved, file a bug detailing it.  As a workaround, you may also rename
 either binding, which is probably the best way to resolve a duplicate.
 </p>
 </div>
+</div>
+<hr>
+<div class="nav-panel">
+<p>
+Previous: <a href="Compatibility.html">Compatibility</a>, Up: <a href="Reference-Guide.html">Reference Guide</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>
 
 

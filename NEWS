@@ -1,6 +1,14 @@
 2026-11-21: version 0.4.0
 
 Incompatible changes
+ - A method, signal or property whose name is syntax in Guile no
+   longer gets its short name, which replaced that syntax in every
+   module that imported the typelib: loading all of GTK 4 made (begin
+   ...) an error.  Use the long name instead.  In GLib and GTK this
+   affects begin (now only gesture:begin), delay (settings:delay) and
+   export (dbus-interface-skeleton:export? and
+   dbus-object-manager-server:export).  The generated documentation
+   lists them under their long names.
  - Return values and out parameters annotated (skip) are no longer
    returned.  This changes the results of every such function; in
    GLib, for example, uri:split no longer returns a leading #t.  A

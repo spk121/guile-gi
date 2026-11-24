@@ -709,10 +709,15 @@ gig_property_define(GType type, GIPropertyInfo *info, const char *_namespace)
         if (!SCM_UNBNDP(def))
             defs = scm_cons(def, defs);
         gig_debug_load("%s - bound to property %s.%s", long_name, g_type_name(type), name);
-        def = do_define_property(name, s_prop, self_type, top_type);
-        if (!SCM_UNBNDP(def))
-            defs = scm_cons(def, defs);
-        gig_debug_load("%s - shorthand for %s", name, long_name);
+        // No shorthand that would replace Guile's syntax.
+        if (scm_is_core_syntax_name(name))
+            gig_debug_load("%s - no shorthand %s, which is Guile syntax", long_name, name);
+        else {
+            def = do_define_property(name, s_prop, self_type, top_type);
+            if (!SCM_UNBNDP(def))
+                defs = scm_cons(def, defs);
+            gig_debug_load("%s - shorthand for %s", name, long_name);
+        }
     }
     else
         gig_warning_load("Missing property %s", long_name);

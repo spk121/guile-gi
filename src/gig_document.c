@@ -218,6 +218,10 @@ do_document(GIBaseInfo *info, const char *_namespace)
         if (is_vfunc)
             scm_printf(SCM_UNDEFINED, "<scheme><procedure name=\"%s:do-%s\">",
                        _namespace, scm_dynfree(make_scm_name(g_base_info_get_name(info))));
+        else if (g_callable_info_is_method(info) && scm_is_core_syntax_name(scheme_name))
+            // It has no shorthand, which would replace Guile's syntax.
+            scm_printf(SCM_UNDEFINED, "<scheme><procedure name=\"%s:%s\">", _namespace,
+                       scheme_name);
         else if (g_callable_info_is_method(info))
             scm_printf(SCM_UNDEFINED, "<scheme><procedure name=\"%s\" long-name=\"%s:%s\">",
                        scheme_name, _namespace, scheme_name);

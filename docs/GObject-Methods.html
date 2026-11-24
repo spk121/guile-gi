@@ -64,6 +64,39 @@ This comes from a Scheme naming convention for &ldquo;destructive&rdquo; functio
 i.e. functions, which may modify their inputs in-place.
 </li></ol>
 
+<a class="index-entry-id" id="index-syntax_002c-names-that-are"></a>
+<a class="index-entry-id" id="index-reserved-names"></a>
+<p>There is one exception to the short format.  A method, signal or
+property whose name is syntax in Guile is bound only as
+<code class="code">type:method</code>, because the short name would replace that syntax in
+every module that imports the typelib, and break ordinary code there.
+Among the libraries of GLib and GTK, these are
+</p><dl class="table">
+<dt><code class="code">begin</code></dt>
+<dd><p>the signal of <code class="code">GtkGesture</code>, bound only as <code class="code">gesture:begin</code>;
+</p></dd>
+<dt><code class="code">delay</code></dt>
+<dd><p>the method of <code class="code">GSettings</code>, bound only as <code class="code">settings:delay</code>;
+</p></dd>
+<dt><code class="code">export</code></dt>
+<dd><p>the methods of <code class="code">GDBusInterfaceSkeleton</code> and
+<code class="code">GDBusObjectManagerServer</code>, bound only as
+<code class="code">dbus-interface-skeleton:export?</code> and
+<code class="code">dbus-object-manager-server:export</code>.
+</p></dd>
+</dl>
+<p>The rule covers whatever is syntax in the running Guile, so the same
+goes for a method named, say, <code class="code">if</code>, <code class="code">do</code>, <code class="code">case</code>,
+<code class="code">define</code> or <code class="code">when</code> in another library.  The generated
+documentation of a typelib gives such methods under their one name.
+</p>
+<p>The names of procedures in Guile are not treated this way: a method
+named <code class="code">format</code> or <code class="code">write</code> is added to a generic function that
+still does what it did for other arguments.  Neither is <code class="code">load</code>,
+which Guile-GI itself makes a generic function, for loading parts of
+typelibs.  Functions that are not methods have no longer name to fall
+back on, and are bound whatever they are called.
+</p>
 <p>Use whichever bindings you prefer or alternatively rename them using the
 <code class="code">#:rename</code> argument to <code class="code">use-modules</code> or <code class="code">use-typelibs</code>
 respectively. Note that Guile currently warns if a binding is imported
@@ -71,6 +104,11 @@ from multiple libraries (e.g. both GLib and Gtk), but this should not
 concern you in most cases, as both internally specialize the same
 generic method.
 </p>
+</div>
+<hr>
+<div class="nav-panel">
+<p>
+Next: <a href="GObject-Signals.html">GObject Signals</a>, Previous: <a href="GType.html">GType</a>, Up: <a href="Working-with-GObjects.html">Working with GObjects</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>
 
 
