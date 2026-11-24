@@ -466,7 +466,9 @@ test/Extra-1.0.gir: test/libextra-1.0.la $(test_libextra_1_0_la_SOURCES)
 
 EVERYTHING_TESTS = \
   test/everything.scm \
+  test/gir-coverage.scm \
   test/marshall.scm \
+  test/marshall-arrays.scm \
   test/vfunc-marshall.scm \
   test/field-marshall.scm \
   test/extra.scm
@@ -576,6 +578,7 @@ EXTRA_DIST = \
   tools/lcov.sh.in \
   tools/valgrind.sh.in \
   tools/valgrind.supp \
+  test/gir.scm \
   $(TESTS) \
   $(noinst_DATA) \
   docs

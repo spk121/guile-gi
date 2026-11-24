@@ -26,6 +26,8 @@ New features
  - Fundamental instance types that libraries introduce, such as Gtk4's
    GtkExpression, can be passed to and returned from functions and
    stored in properties and <GValue>s.
+ - Scheme lists can be passed where C expects a GList or a GSList,
+   including as in/out arguments.  They could only be returned.
  - Deprecated entries of a typelib, such as GTK 4's tree widgets, can
    be loaded in bulk: use-typelibs takes #:deprecated? #t after a
    typelib, typelib->module takes #:deprecated?, and infos takes an
@@ -98,6 +100,18 @@ Bug fixes
    get_path, are copied; C used to free the Scheme object's own.
  - Fields that hold an untyped pointer (gpointer), such as a
    GtkTreeIter's user_data, have setters.
+ - An output array, GArray, GPtrArray or GByteArray that a function
+   leaves unset, as one that fails may, is returned as an empty array
+   instead of crashing.
+ - A GPtrArray of boxed structs is read as an array of pointers; its
+   elements used to be read as structs stored in the array, which
+   crashed.
+ - Scheme callbacks and virtual functions that receive a C array with
+   a separate length argument get an array of that length.
+ - The tests of the Everything library are generated from its GIR
+   (#36), a new test checks how much of each test library is bound,
+   and test/marshall-arrays.scm tests every array and list function of
+   GIMarshallingTests and checks itself against the GIR (#54).
 
 Thanks to
  - Maxim Cournoyer <apteryks>

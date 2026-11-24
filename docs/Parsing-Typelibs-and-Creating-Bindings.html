@@ -80,6 +80,21 @@ Internally, Guile-GI creates modules for the typelibs as needed &ndash; in
 this example these modules would be <code class="code">(%gi GLib-2.0)</code> and <code class="code">(%gi
 Gtk-3.0)</code> &ndash; and loads the entire typelib into them.
 </p>
+<p>What a library has deprecated is left out, unless the typelib is
+followed by <code class="code">#:deprecated? #t</code>.  GTK 4, for example, deprecates
+its tree and combo box widgets, which still work.
+</p>
+<div class="example">
+<pre class="example-preformatted">(use-typelibs ((&quot;Gtk&quot; &quot;4.0&quot;) #:deprecated? #t))
+</pre></div>
+
+<p>This applies to what the typelib marks deprecated at its top level &ndash;
+classes, interfaces, structs, enumerations, functions and constants.
+The deprecated methods of a class that is not itself deprecated are
+always loaded.  Since every use of a typelib shares one module, once
+anything has asked for its deprecated entries, they are there for the
+other users of that typelib as well.
+</p>
 <p>This approach has two major drawbacks.
 </p><ol class="enumerate">
 <li> Guile-GI has to load the entire typelib. For large typelibs, such as

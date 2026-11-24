@@ -55,7 +55,10 @@ some documentation. See <a class="xref" href="Typelib-Documentation.html">Typeli
 </p>
 <p>Upon installation of Guile-GI, we install a script called
 <code class="code">gi-gtkdoc</code>, that can be invoked through <code class="code">guild</code>.  Running the
-script will create HTML documentation for a typelib file.
+script will create HTML documentation for a typelib file.  Like
+<code class="code">use-typelibs</code>, it leaves out what the typelib marks deprecated;
+its <code class="code">--deprecated</code> option includes it, for use with
+<code class="code">#:deprecated? #t</code>.
 </p>
 <p>You may also want to create a <samp class="file">guile-procedures.txt</samp> file for use
 in the REPL.  We currently have no script for that, but one can easily

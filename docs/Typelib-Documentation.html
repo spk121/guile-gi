@@ -48,11 +48,13 @@ Next: <a href="GType-Constants-and-Operations.html" accesskey="n" rel="next">GTy
 <h3 class="section" id="Typelib-Documentation-1"><span>3.2 Typelib Documentation<a class="copiable-link" href="#Typelib-Documentation-1"> &para;</a></span></h3>
 
 <dl class="first-deffn">
-<dt class="deffn" id="index-typelib"><span class="category-def">Procedure: </span><span><strong class="def-name">typelib</strong> <var class="def-var-arguments">lib [version] [#:require?=#t]</var><a class="copiable-link" href="#index-typelib"> &para;</a></span></dt>
+<dt class="deffn" id="index-typelib"><span class="category-def">Procedure: </span><span><strong class="def-name">typelib</strong> <var class="def-var-arguments">lib [version] [#:require?=#t] [#:deprecated?=#f]</var><a class="copiable-link" href="#index-typelib"> &para;</a></span></dt>
 <dd><p>Open a new input port, whose contents describe the runtime bindings created
 for <var class="var">lib</var>. If <var class="var">version</var> is given, use that version of the typelib,
 otherwise the latest. If <var class="var">require?</var> is true (the default), require
-it first.
+it first.  What <var class="var">lib</var> marks deprecated is described only if
+<var class="var">deprecated?</var> is true, as <code class="code">typelib-&gt;module</code> and
+<code class="code">use-typelibs</code> bind it only on request.
 </p></dd></dl>
 
 <dl class="first-deffn">
