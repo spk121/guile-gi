@@ -5,6 +5,11 @@
 This is a library for [GNU Guile](https://gnu.org/software/guile) to
 create language bindings via [GObject Introspection](https://gi.readthedocs.io).
 
+**⚠️ Important: This is not the canonical Guile binding for GNOME or GTK.
+This is a personal project that you probably shouldn't use. The canonical
+binding for GNU Guile is [GNU G-Golf](https://www.gnu.org/software/g-golf).
+For serious work, use that one, which is actually maintained.**
+
 GNU Guile is an implementation of Scheme, which is a Lisp-like language.
 This library allows Guile to use GObject-based libraries -- such as GTK+3,
 GLib, and WebKit2 -- by generating a Scheme API from the GObject Introspection
