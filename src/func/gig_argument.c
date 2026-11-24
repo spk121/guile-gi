@@ -846,9 +846,11 @@ static void
 scm_to_c_native_boolean_array(S2C_ARG_DECL)
 {
     TRACE_S2C();
-    // For booleans, we expect a vector of booleans
+    // For booleans, we expect a vector or list of booleans
+    if (scm_is_true(scm_list_p(object)))
+        object = scm_vector(object);
     if (!scm_is_vector(object))
-        scm_wrong_type_arg_msg(subr, argpos, object, "vector of booleans");
+        scm_wrong_type_arg_msg(subr, argpos, object, "vector or list of booleans");
     *size = scm_c_vector_length(object);
     if (meta->is_zero_terminated) {
         arg->v_pointer = xmalloc(sizeof(gboolean) * (*size + 1));
@@ -925,8 +927,32 @@ scm_to_c_native_immediate_array(S2C_ARG_DECL)
 
         }
     }
+    else if (scm_is_true(scm_list_p(object)) || scm_is_vector(object)) {
+        // The slow path: a list or vector of numbers, each converted
+        // and checked as an argument of the element's type would be.
+        if (scm_is_vector(object))
+            object = scm_vector_to_list(object);
+        size_t length = scm_c_length(object);
+        GigTypeMeta item_meta = meta->params[0];
+        // One more element than asked for ends a zero-terminated array.
+        char *array = xcalloc(length + 1, item_size);
+        scm_dynwind_begin(0);
+        scm_dynwind_unwind_handler(free, array, 0);
+        SCM iter = object;
+        for (size_t i = 0; i < length; i++, iter = scm_cdr(iter)) {
+            GIArgument _arg;
+            size_t _size;
+            memset(&_arg, 0, sizeof(_arg));
+            gig_argument_scm_to_c(subr, argpos, &item_meta, scm_car(iter), NULL, &_arg, &_size);
+            // Every member of a GIArgument starts at its beginning.
+            memcpy(array + i * item_size, &_arg, item_size);
+        }
+        scm_dynwind_end();
+        *size = length;
+        arg->v_pointer = LATER_FREE_CONTAINER(array);
+    }
     else
-        scm_wrong_type_arg_msg(subr, argpos, object, "bytevector");
+        scm_wrong_type_arg_msg(subr, argpos, object, "bytevector, list or vector of numbers");
 #undef FUNC_NAME
 }
 
@@ -2169,9 +2195,13 @@ c_pointer_to_scm(C2S_ARG_DECL)
 {
     TRACE_C2S();
     if (meta->gtype == G_TYPE_PRIV_C_ARRAY) {
-        if (meta->has_size)
-            meta->length = size;
-        c_native_array_to_scm(C2S_ARGS);
+        // The length of this array is this call's.  META describes the
+        // argument for every call, so it must not be changed: a length
+        // left in it would be required of the next array passed in.
+        GigTypeMeta _meta = *meta;
+        if (_meta.has_size)
+            _meta.length = size;
+        c_native_array_to_scm(subr, argpos, &_meta, arg, object, size);
     }
     else if (meta->gtype == G_TYPE_GTYPE)
         *object = scm_from_gtype(arg->v_size);

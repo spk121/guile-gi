@@ -34,6 +34,9 @@ New features
  - Fundamental instance types that libraries introduce, such as Gtk4's
    GtkExpression, can be passed to and returned from functions and
    stored in properties and <GValue>s.
+ - A list or vector of numbers can be passed where C expects an array
+   of numbers; only bytevectors were accepted (#89).  A list of
+   booleans can be passed for an array of booleans.
  - Scheme lists can be passed where C expects a GList or a GSList,
    including as in/out arguments.  They could only be returned.
  - Arrays of arrays, such as an array of GStrv, are passed as a vector
@@ -121,6 +124,12 @@ Bug fixes
    crashed.
  - Scheme callbacks and virtual functions that receive a C array with
    a separate length argument get an array of that length.
+ - A function with an in/out array whose length is another argument
+   can be called more than once.  The length of the array that came
+   back was required of the next array passed in.
+ - An optional in/out argument that is left out comes back as #f, as
+   it does when #f is passed for it, instead of as an unspecified
+   value.
  - The tests of the Everything library are generated from its GIR
    (#36), a new test checks how much of each test library is bound,
    and test/marshall-arrays.scm tests every array and list function of

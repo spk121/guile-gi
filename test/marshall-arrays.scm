@@ -189,6 +189,13 @@
   '(-2 -1 0 1 2)
   (int-vector->list (array-inout! (list->int-vector ints))))
 
+(test-equal "array-inout twice"
+  ;; The length of the array that came back, five, used to be required
+  ;; of the next array passed in.
+  '((-2 -1 0 1 2) (-2 -1 0 1 2))
+  (list (int-vector->list (array-inout! (list->int-vector ints)))
+        (int-vector->list (array-inout! (list->int-vector ints)))))
+
 (test-equal "array-inout-etc"
   '((-3 -1 0 1 4) 1)
   (receive (array sum) (array-inout-etc! -3 (list->int-vector ints) 4)
@@ -200,8 +207,14 @@
 (test-equal "array-unichar-out"
   CONSTANT_UTF8 (array-unichar-out))
 
-(test-assert "init-function, without arguments"
-  (car (values->list (init-function!))))
+(test-equal "init-function, without arguments"
+  ;; An optional in/out argument that is left out comes back as #f.
+  '(#t #f)
+  (values->list (init-function!)))
+
+(test-equal "init-function, with #f"
+  '(#t #f)
+  (values->list (init-function! #f)))
 
 (test-equal "init-function, one argument"
   '(#t #f)
@@ -222,6 +235,61 @@
   (catch #t
     (lambda () (gerror-array-in (list->int-vector '(1 2 3 0))) #f)
     (lambda (key subr message args . rest) (car args))))
+
+;;; Lists and vectors in place of bytevectors
+;;;
+;;; An array of numbers that is passed to C can be a list or a vector of
+;;; numbers, which are checked and converted one by one.
+
+(test-call "array-in, from a list" (array-in ints))
+(test-call "array-in, from a vector" (array-in (list->vector ints)))
+(test-call "array-fixed-int-in, from a list" (array-fixed-int-in ints))
+(test-call "array-fixed-short-in, from a list" (array-fixed-short-in ints))
+(test-call "array-int64-in, from a list" (array-int64-in ints))
+(test-call "array-uint64-in, from a list"
+  (array-uint64-in (list #xFFFFFFFFFFFFFFFF 0 1 2)))
+(test-call "array-uint8-in, from a list of integers"
+  (array-uint8-in (map char->integer (string->list "abcd"))))
+(test-call "array-uint8-in, from a list of characters"
+  (array-uint8-in (string->list "abcd")))
+(test-call "array-in-len-zero-terminated, from a list"
+  (array-in-len-zero-terminated ints))
+(test-call "array-in-len-before, from a list" (array-in-len-before ints))
+(test-call "garray-int-none-in, from a list" (garray-int-none-in ints))
+(test-call "garray-uint64-none-in, from a list"
+  (garray-uint64-none-in (list 0 #xFFFFFFFFFFFFFFFF)))
+(test-call "array-bool-in, from a list" (array-bool-in '(#t #f #t #t)))
+
+(test-equal "array-inout, from a list"
+  ;; What comes back is a bytevector all the same.
+  '(-2 -1 0 1 2)
+  (int-vector->list (array-inout! ints)))
+
+(test-equal "array-fixed-inout, from a list"
+  '(2 1 0 -1)
+  (int-vector->list (array-fixed-inout! ints)))
+
+(test-error "a list with too few elements for a fixed-size array"
+  #t (array-fixed-int-in '(1 2)))
+
+(test-error "a list with an element that is not a number"
+  #t (array-in '(-1 0 1 "two")))
+
+(test-error "a list with an element out of range"
+  #t (array-in (list -1 0 1 (expt 2 40))))
+
+(test-error "a list with an element out of range for a short"
+  #t (array-fixed-short-in '(-1 0 1 70000)))
+
+(test-error "an improper list" #t (array-in '(-1 0 1 . 2)))
+
+(test-error "neither a bytevector nor a list" #t (array-in 'four))
+
+(test-assert "the arrays made from lists are released"
+  (begin
+    (do ((i 0 (1+ i))) ((= i 1000)) (array-in ints))
+    (gc)
+    #t))
 
 ;;; Methods
 

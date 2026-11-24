@@ -759,8 +759,21 @@ expected for GObject procedures that native arrays varies depending on
 the type required.
 
 Typically, for simple native arrays of numerical types -- integers,
-floating points, etc -- a Guile bytevector needs to be used.  For these
-bytevectors, always use native-endianness.
+floating points, etc -- a Guile bytevector is used.  For these
+bytevectors, always use native-endianness.  Uniform numeric vectors,
+such as @code{#s32(1 2 3)}, are bytevectors.
+
+When passing such an array to a procedure, a list or a vector of
+numbers can be used in place of the bytevector.  Each number is checked
+against the type of the array's elements and converted, which is slower
+than a bytevector, whose contents are used as they are, but convenient
+for short arrays such as the column numbers of
+@code{tree-store:set}.  Arrays of numbers are always returned as
+bytevectors.
+
+@example
+(tree-store:set store iter '(0 1) (vector name-value age-value))
+@end example
 
 When a native array of @code{gunichar} values is expected, a Guile
 string can be used.
@@ -776,7 +789,9 @@ provide that automatically.  There is no need to add you own zero.
 
 Some GObject procedures write output information into preallocated
 arrays.  For those procedures, the Guile caller will need to create
-and pass in a bytevector of the appropriate size.
+and pass in a bytevector of the appropriate size.  The procedure fills
+it in and also returns it.  If a list is passed instead, the output is
+only returned: the list itself is not changed.
 
 GLib's own array types follow the same rules.  A @code{GArray} or a
 @code{GPtrArray} is passed and returned as the bytevector or vector that
