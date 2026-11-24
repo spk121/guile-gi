@@ -386,14 +386,14 @@ callback_binding_inner(struct callback_binding_args *args)
         if (giarg.v_pointer != NULL && SCM_INSTANCEP(s_entry) && is_lent_struct(&amap->pdata[i])) {
             void *copy = gig_type_peek_object(s_entry);
             bool is_value = (amap->pdata[i].meta.gtype == G_TYPE_VALUE);
-            size_t size = amap->pdata[i].meta.item_size;
+            size_t struct_size = amap->pdata[i].meta.item_size;
             // Bytes can only be carried back to a struct whose copy
             // is its bytes, not one that owns what it points to.
             if (copy != NULL && copy != giarg.v_pointer
-                && (is_value || memcmp(giarg.v_pointer, copy, size) == 0)) {
+                && (is_value || memcmp(giarg.v_pointer, copy, struct_size) == 0)) {
                 lent[n_lent].c_struct = giarg.v_pointer;
                 lent[n_lent].s_struct = s_entry;
-                lent[n_lent].size = size;
+                lent[n_lent].size = struct_size;
                 lent[n_lent].is_value = is_value;
                 n_lent++;
             }
