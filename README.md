@@ -1,6 +1,7 @@
 # Guile GI
 
-[![Build Status](https://travis-ci.com/spk121/guile-gi.svg?branch=master)](https://travis-ci.com/spk121/guile-gi)
+[![Ubuntu 24.04 / Guile 3.0](https://github.com/spk121/guile-gi/actions/workflows/ubuntu-24.04-guile-3.0.yml/badge.svg)](https://github.com/spk121/guile-gi/actions/workflows/ubuntu-24.04-guile-3.0.yml)
+[![Ubuntu 26.04 / Guile 3.0](https://github.com/spk121/guile-gi/actions/workflows/ubuntu-26.04-guile-3.0.yml/badge.svg)](https://github.com/spk121/guile-gi/actions/workflows/ubuntu-26.04-guile-3.0.yml)
 
 This is a library for [GNU Guile](https://gnu.org/software/guile) to
 create language bindings via [GObject Introspection](https://gi.readthedocs.io).
