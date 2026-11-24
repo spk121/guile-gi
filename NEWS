@@ -78,6 +78,8 @@ Bug fixes
    such as GtkDropTarget:value, or a NULL GString, returns #f instead
    of crashing.  A <GValue> holding a GValue can be set to #f or to
    another <GValue>.
+ - equal? is true of two Scheme objects that refer to the same GObject
+   (#123).
 
 Thanks to
  - Maxim Cournoyer <apteryks>
