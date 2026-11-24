@@ -531,6 +531,13 @@ class."
   (and (equal? (class-of enum1) (class-of enum2))
        (= (slot-ref enum1 'value) (slot-ref enum2 'value))))
 
+;;; Object identity
+
+;; Each time C hands us an object, it gets a fresh Scheme wrapper, so two
+;; wrappers of one GObject are never eq?.  They are equal?.
+(define-method (equal? (object1 <GObject>) (object2 <GObject>))
+  (equal? (slot-ref object1 'value) (slot-ref object2 'value)))
+
 ;;; Flag equality
 
 (define-method (= (flags <GFlags>) (number <number>))

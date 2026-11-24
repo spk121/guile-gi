@@ -808,6 +808,15 @@ Guile-GI re-exports.
 ;; => #t
 @end example
 
+Guile-GI makes a new Scheme object each time C returns a GObject, so
+two Scheme objects for the same GObject are not @code{eq?}.  Compare
+them with @code{equal?}, which is true when both refer to the same
+GObject.
+
+@example
+(equal? (get-focus-child container) (get-start-child container))
+@end example
+
 Each GObject struct, union, or object has a place in the GObject
 single-inheritance class structure.  A @code{RadioButton} is a type of
 @code{Button} is a type of @code{Widget}, for example.

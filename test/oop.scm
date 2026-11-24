@@ -147,6 +147,23 @@
 
 (if (false-if-exception (require "Gio" "2.0"))
     (begin
+      (load-by-name "Gio" "ListModel")
+      (load-by-name "Gio" "ListStore")
+      (load-by-name "Gio" "SimpleAction")
+
+      (let ((store (list-store:new (get-gtype <GSimpleAction>)))
+            (action (simple-action:new "one" #f))
+            (other (simple-action:new "two" #f)))
+        (list-store:append store action)
+        (list-store:append store other)
+        (test-assert "wrappers of the same object are equal?"
+          (let ((a (list-model:get-item store 0))
+                (b (list-model:get-item store 0)))
+            (and (equal? a b) (equal? a action))))
+        (test-assert "wrappers of different objects are not equal?"
+          (not (equal? (list-model:get-item store 0)
+                       (list-model:get-item store 1)))))
+
       (test-assert "interface"
         (begin
           ;; Test that Applications are ActionMaps, which they should be
@@ -154,7 +171,7 @@
           (load-by-name "Gio" "Application")
           (memq <GActionMap> (class-precedence-list <GApplication>)))))
     (begin
-      (test-skip "interface")
+      (test-skip 3)
       (test-assert "interface" #f)))
 
 (test-end "oop")
