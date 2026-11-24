@@ -389,7 +389,10 @@ some documentation. @xref{Typelib Documentation}.
 
 Upon installation of Guile-GI, we install a script called
 @code{gi-gtkdoc}, that can be invoked through @code{guild}.  Running the
-script will create HTML documentation for a typelib file.
+script will create HTML documentation for a typelib file.  Like
+@code{use-typelibs}, it leaves out what the typelib marks deprecated;
+its @code{--deprecated} option includes it, for use with
+@code{#:deprecated? #t}.
 
 You may also want to create a @file{guile-procedures.txt} file for use
 in the REPL.  We currently have no script for that, but one can easily
@@ -1611,11 +1614,13 @@ Throws an error, if the library could not be found or loaded.
 @node Typelib Documentation
 @section Typelib Documentation
 
-@deffn Procedure typelib lib [version] [#:require?=#t]
+@deffn Procedure typelib lib [version] [#:require?=#t] [#:deprecated?=#f]
 Open a new input port, whose contents describe the runtime bindings created
 for @var{lib}. If @var{version} is given, use that version of the typelib,
 otherwise the latest. If @var{require?} is true (the default), require
-it first.
+it first.  What @var{lib} marks deprecated is described only if
+@var{deprecated?} is true, as @code{typelib->module} and
+@code{use-typelibs} bind it only on request.
 @end deffn
 
 @deffn Procedure gir lib version

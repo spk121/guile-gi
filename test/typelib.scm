@@ -169,4 +169,19 @@
             (module-defined? deprecated 'gobject/<GValueArray>)
             (module-defined? deprecated 'gobject/<GBinding>)))))
 
+;; The documentation describes what the same option would bind.
+(test-equal "documentation leaves out what is deprecated, unless asked"
+  '(#f #t #t #t)
+  (let ((documents?
+         (lambda (name . options)
+           (let* ((port (apply typelib "GObject" "2.0" options))
+                  (text (with-output-to-string
+                          (lambda () (->docbook (parse port '()))))))
+             (close port)
+             (and (string-contains text name) #t)))))
+    (list (documents? "value-array:append")
+          (documents? "value-array:append" #:deprecated? #t)
+          (documents? "binding:unbind")
+          (documents? "binding:unbind" #:deprecated? #t))))
+
 (test-end "typelib")

@@ -29,7 +29,9 @@ New features
  - Deprecated entries of a typelib, such as GTK 4's tree widgets, can
    be loaded in bulk: use-typelibs takes #:deprecated? #t after a
    typelib, typelib->module takes #:deprecated?, and infos takes an
-   optional argument.  They are still left out by default.
+   optional argument.  They are still left out by default.  The
+   documentation generators match: typelib in (gi documentation) takes
+   #:deprecated?, and gi-gtkdoc takes --deprecated.
  - Field accessors.  The public fields of structs, unions and objects
    have getters such as rgba:red, and fields of plain data that the
    typelib marks writable also have setters, rgba:set-red! or set! on
