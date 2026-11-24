@@ -34,7 +34,6 @@
 ;;; Code:
 
 (use-modules (gi)
-             (gi repository)
              (gi types)
              (gi util)
              (oop goops)
@@ -44,15 +43,10 @@
 (use-typelibs
  (("GObject" "2.0") #:select ())
  (("Gio" "2.0") #:renamer (protect* '(application:new)))
- ("Gtk" "4.0"))
-
-;; GTK deprecated its tree widgets in version 4.10, in favor of
-;; GtkListView and GtkColumnView, and loading a whole typelib leaves
-;; out what is deprecated.  They still work; ask for them by name.
-(for-each (lambda (name) (load-by-name "Gtk" name))
-          '("TreeModel" "TreeModelFlags" "TreeIter" "TreePath"
-            "TreeView" "TreeViewColumn" "TreeSelection"
-            "CellLayout" "CellRendererText"))
+ ;; GTK deprecated its tree widgets in version 4.10, in favor of
+ ;; GtkListView and GtkColumnView.  They still work, but what is
+ ;; deprecated is only loaded on request.
+ (("Gtk" "4.0") #:deprecated? #t))
 
 ;;; The data: a Scheme expression, flattened into numbered nodes.
 
@@ -236,7 +230,9 @@
     (add-text-column! view "Datum" 0)
     (add-text-column! view "Kind" 1)
     (tree-view:expand-all view)
-    (connect (tree-view:get-selection view) changed show-selection)
+    ;; Gio and Gtk both have signals named "changed"; the name with the
+    ;; class in it says which is meant.
+    (connect (tree-view:get-selection view) tree-selection:changed show-selection)
     (scrolled-window:set-child scrolled view)
     (window:set-title window "A tree model in Scheme")
     (window:set-default-size window 560 460)

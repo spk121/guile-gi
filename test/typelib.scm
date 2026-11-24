@@ -108,4 +108,65 @@
   ;; The version defaulted to #f, which require rejects.
   (module? (typelib->module '(test typelib->module no-version) "GLib")))
 
+;; GValueArray has been deprecated since GLib 2.32.
+
+(test-assert "infos leaves out what is deprecated"
+  (begin
+    (require "GObject" "2.0")
+    (let ((current (length (infos "GObject")))
+          (all (length (infos "GObject" #t)))
+          (only (length (infos "GObject" 'only))))
+      (and (positive? only) (= all (+ current only))))))
+
+(test-equal "typelib->module leaves out what is deprecated"
+  '(#t #f)
+  (let ((module (typelib->module '(test typelib->module current) "GObject" "2.0")))
+    (list (module-defined? module '<GBinding>)
+          (module-defined? module '<GValueArray>))))
+
+(test-equal "typelib->module #:deprecated?"
+  '(#t #t)
+  (let ((module (typelib->module '(test typelib->module deprecated) "GObject" "2.0"
+                                 #:deprecated? #t)))
+    (list (module-defined? module '<GBinding>)
+          (module-defined? module '<GValueArray>))))
+
+(test-assert "typelib->module #:deprecated? without a version"
+  (module-defined? (typelib->module '(test typelib->module deprecated no-version) "GObject"
+                                    #:deprecated? #t)
+                   '<GValueArray>))
+
+(test-equal "typelib->module #:deprecated? adds to a module"
+  '(#f #t)
+  (let* ((module (typelib->module '(test typelib->module added) "GObject" "2.0"))
+         (before (module-defined? module '<GValueArray>)))
+    (typelib->module module "GObject" "2.0" #:deprecated? #t)
+    (list before (module-defined? (module-public-interface module) '<GValueArray>))))
+
+(test-equal "use-typelibs #:deprecated?"
+  '(#f #t #t)
+  (begin
+    (save-module-excursion
+     (lambda ()
+       (eval
+        '(begin
+           (define-module (test use-typelibs current)
+             #:use-module (gi))
+           (use-typelibs ("GObject" "2.0"))
+           (define before (defined? '<GValueArray>)))
+        (interaction-environment))
+       ;; Separately, since the modules of typelibs are shared and
+       ;; use-typelibs loads them when it is expanded.
+       (eval
+        '(begin
+           (define-module (test use-typelibs deprecated)
+             #:use-module (gi))
+           ;; The other options still go to use-modules.
+           (use-typelibs (("GObject" "2.0") #:deprecated? #t #:prefix gobject/)))
+        (interaction-environment))))
+    (let ((deprecated (resolve-module '(test use-typelibs deprecated))))
+      (list (module-ref (resolve-module '(test use-typelibs current)) 'before)
+            (module-defined? deprecated 'gobject/<GValueArray>)
+            (module-defined? deprecated 'gobject/<GBinding>)))))
+
 (test-end "typelib")
