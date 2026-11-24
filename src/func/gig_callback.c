@@ -365,7 +365,22 @@ callback_binding_inner(struct callback_binding_args *args)
         else
             convert_ffi_arg_to_giargument(ffi_args[i], arg_types[i], amap->pdata[i].meta.is_ptr,
                                           &giarg);
-        gig_argument_c_to_scm(callback_name, i, &amap->pdata[i].meta, &giarg, &s_entry, -1);
+        // An array whose length is another argument.
+        size_t size = GIG_ARRAY_SIZE_UNKNOWN;
+        GigArgMapEntry *size_entry = amap->pdata[i].child;
+        if (amap->pdata[i].meta.has_size && size_entry != NULL
+            && size_entry->s_direction == GIG_ARG_DIRECTION_INPUT) {
+            GIArgument size_arg;
+            SCM s_size = SCM_BOOL_F;
+            int k = size_entry->i;
+            convert_ffi_arg_to_giargument(ffi_args[k], arg_types[k], size_entry->meta.is_ptr,
+                                          &size_arg);
+            gig_argument_c_to_scm(callback_name, k, &size_entry->meta, &size_arg, &s_size, -1);
+            if (scm_is_unsigned_integer(s_size, 0, SIZE_MAX))
+                size = scm_to_size_t(s_size);
+        }
+
+        gig_argument_c_to_scm(callback_name, i, &amap->pdata[i].meta, &giarg, &s_entry, size);
         s_args = scm_cons(s_entry, s_args);
 
         if (giarg.v_pointer != NULL && SCM_INSTANCEP(s_entry) && is_lent_struct(&amap->pdata[i])) {
