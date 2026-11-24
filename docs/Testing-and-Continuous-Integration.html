@@ -47,11 +47,8 @@ Previous: <a href="Application-Deployment.html" accesskey="p" rel="prev">Applica
 <a class="index-entry-id" id="index-testing"></a>
 <a class="index-entry-id" id="index-continuous-integration"></a>
 
-<p>The distribution does contain a couple of scripts that should enable it
-to be built by Travis-CI.  In the root directory, there is a
-<code class="code">.travis.yml</code> and a <code class="code">Dockerfile</code> that work together.  The
-docker container pulls the latest version of Ubuntu, and the YML file
-builds the project and runs <code class="code">make distcheck</code>.
+<p>GitHub Actions workflows build and test the project on Ubuntu.  The
+workflows are defined in the <code class="code">.github/workflows</code> directory.
 </p>
 </div>
 

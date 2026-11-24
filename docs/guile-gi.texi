@@ -1524,11 +1524,8 @@ and exporting it as a typelib instead.
 @cindex testing
 @cindex continuous integration
 
-The distribution does contain a couple of scripts that should enable it
-to be built by Travis-CI.  In the root directory, there is a
-@code{.travis.yml} and a @code{Dockerfile} that work together.  The
-docker container pulls the latest version of Ubuntu, and the YML file
-builds the project and runs @code{make distcheck}.
+GitHub Actions workflows build and test the project on Ubuntu.  The
+workflows are defined in the @file{.github/workflows} directory.
 
 @node Reference Guide
 @chapter Reference Guide
