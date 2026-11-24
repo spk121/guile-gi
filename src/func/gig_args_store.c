@@ -282,10 +282,12 @@ convert_output_args(GigArgMap *amap, const char *func_name, GIArgument *in, GIAr
 
         GIArgument *arg;
         arg = find_output_arg(entry, in, out);
-        if (arg == NULL)        // an INOUT argument has been eaten
-        {
+        if (arg == NULL) {
+            // An optional in/out argument that the caller left out, so
+            // that C was passed NULL for it.  Its output is what the
+            // caller would have got for passing #f.
             if (returned)
-                output = scm_cons(SCM_UNSPECIFIED, output);
+                output = scm_cons(entry->meta.is_nullable ? SCM_BOOL_F : SCM_UNSPECIFIED, output);
             continue;
         }
 

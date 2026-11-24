@@ -29,6 +29,7 @@ Free Documentation License". -->
 <style type="text/css">
 <!--
 a.copiable-link {visibility: hidden; text-decoration: none; line-height: 0em}
+div.example {margin-left: 3.2em}
 span:hover a.copiable-link {visibility: visible}
 -->
 </style>
@@ -51,9 +52,22 @@ expected for GObject procedures that native arrays varies depending on
 the type required.
 </p>
 <p>Typically, for simple native arrays of numerical types &ndash; integers,
-floating points, etc &ndash; a Guile bytevector needs to be used.  For these
-bytevectors, always use native-endianness.
+floating points, etc &ndash; a Guile bytevector is used.  For these
+bytevectors, always use native-endianness.  Uniform numeric vectors,
+such as <code class="code">#s32(1 2 3)</code>, are bytevectors.
 </p>
+<p>When passing such an array to a procedure, a list or a vector of
+numbers can be used in place of the bytevector.  Each number is checked
+against the type of the array&rsquo;s elements and converted, which is slower
+than a bytevector, whose contents are used as they are, but convenient
+for short arrays such as the column numbers of
+<code class="code">tree-store:set</code>.  Arrays of numbers are always returned as
+bytevectors.
+</p>
+<div class="example">
+<pre class="example-preformatted">(tree-store:set store iter '(0 1) (vector name-value age-value))
+</pre></div>
+
 <p>When a native array of <code class="code">gunichar</code> values is expected, a Guile
 string can be used.
 </p>
@@ -68,7 +82,9 @@ provide that automatically.  There is no need to add you own zero.
 </p>
 <p>Some GObject procedures write output information into preallocated
 arrays.  For those procedures, the Guile caller will need to create
-and pass in a bytevector of the appropriate size.
+and pass in a bytevector of the appropriate size.  The procedure fills
+it in and also returns it.  If a list is passed instead, the output is
+only returned: the list itself is not changed.
 </p>
 <p>GLib&rsquo;s own array types follow the same rules.  A <code class="code">GArray</code> or a
 <code class="code">GPtrArray</code> is passed and returned as the bytevector or vector that
