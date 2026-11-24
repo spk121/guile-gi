@@ -521,6 +521,137 @@
   ;; The library returns no file names.
   (null? (filename-list-return)))
 
+;;; Functions of newer versions of the library
+;;;
+;;; GIMarshallingTests keeps growing.  These functions are tested where
+;;; the library has them, so that the test passes against older
+;;; versions and is still complete against newer ones.
+
+;; The procedure for the function called BASE, or #f if this version of
+;; the library doesn't have it.
+(define (newer base)
+  (any (lambda (suffix)
+         (let ((name (string->symbol (string-append base suffix))))
+           (and (defined? name) (module-ref (current-module) name))))
+       '("" "!" "?")))
+
+(define-syntax-rule (test-newer base (proc) expected expr)
+  (let ((proc (newer base)))
+    (when proc
+      (test-equal base expected expr))))
+
+;; Arrays of strings, of each kind and with each kind of ownership.
+(define utf8-in (vector (string (integer->char #x1F170)) "β" "c" "d"))
+(define utf8-out (vector "a" "b" "¢" (string (integer->char #x1F520))))
+
+;; Arrays of GStrv: arrays of arrays of strings.
+(define gstrv-in #(#("0" "1" "2") #("3" "4" "5") #("6" "7" "8")))
+(define gstrv-inout-fixed
+  #(#("-1" "0" "1" "2") #("-1" "3" "4" "5") #("-1" "6" "7" "8")))
+(define gstrv-inout
+  #(#("-1" "0" "1" "2") #("-1" "3" "4" "5") #("-1" "6" "7" "8") #("-1" "9" "10" "11")))
+
+(for-each
+ (lambda (kind)
+   (for-each
+    (lambda (transfer)
+      (let ((utf8 (string-append kind "-array-utf8-" transfer))
+            (gstrv (string-append kind "-array-of-gstrv-transfer-" transfer)))
+        (test-newer (string-append utf8 "-in") (proc)
+          #t (begin (proc utf8-in) #t))
+        (test-newer (string-append utf8 "-return") (proc)
+          utf8-out (proc))
+        (test-newer (string-append utf8 "-out") (proc)
+          utf8-out (proc))
+        (test-newer (string-append utf8 "-inout") (proc)
+          utf8-out (proc utf8-in))
+
+        (test-newer (string-append gstrv "-in") (proc)
+          #t (begin (proc gstrv-in) #t))
+        (test-newer (string-append gstrv "-return") (proc)
+          gstrv-in (proc))
+        (test-newer (string-append gstrv "-out") (proc)
+          gstrv-in (proc))
+        (test-newer (string-append gstrv "-inout") (proc)
+          (if (string=? kind "fixed") gstrv-inout-fixed gstrv-inout)
+          (proc gstrv-in))))
+    '("none" "container" "full")))
+ '("fixed" "length" "zero-terminated"))
+
+(let ((proc (newer "length-array-of-gstrv-transfer-none-in")))
+  (when proc
+    (test-assert "an array of arrays from lists"
+      (begin (proc (map vector->list (vector->list gstrv-in))) #t))
+    (test-error "an array of arrays from something else" #t (proc 42))))
+
+(test-newer "length-array-utf8-optional-inout" (proc)
+  ;; An empty array comes back with two strings, a full one replaced.
+  (list #("a" "b") utf8-out)
+  (list (proc #()) (proc utf8-in)))
+
+;; Arrays that the callee owns and whose callers hand them over.
+(test-newer "garray-utf8-container-in" (proc) #t (begin (proc strings) #t))
+(test-newer "garray-utf8-full-in" (proc) #t (begin (proc strings) #t))
+(test-newer "gptrarray-utf8-container-in" (proc) #t (begin (proc strings) #t))
+(test-newer "gptrarray-utf8-full-in" (proc) #t (begin (proc strings) #t))
+(test-newer "glist-utf8-container-in" (proc) #t (begin (proc '("0" "1" "2")) #t))
+(test-newer "glist-utf8-full-in" (proc) #t (begin (proc '("0" "1" "2")) #t))
+(test-newer "gslist-utf8-container-in" (proc) #t (begin (proc '("0" "1" "2")) #t))
+(test-newer "gslist-utf8-full-in" (proc) #t (begin (proc '("0" "1" "2")) #t))
+
+(test-newer "bytearray-full-out" (proc) bytes (proc))
+(test-newer "bytearray-full-inout" (proc) #vu8(104 101 108 0 255) (proc bytes))
+
+(test-newer "garray-enum-none-return" (proc)
+  '(value1 value2 value3)
+  ;; The library has an enum->symbol of its own, for another enum.
+  (map (@ (gi types) enum->symbol) (vector->list (proc))))
+
+(test-newer "array-struct-full-in" (proc)
+  '(1 2 3)
+  (let ((structs (map make-boxed-struct '(1 2 3))))
+    (proc (list->vector structs))
+    (gc)
+    (map boxed-struct-long structs)))
+
+(test-newer "array-zero-terminated-return-sequential-struct" (proc)
+  ;; structs stored one after another, ended by one that is all zeros
+  '(42 43 44)
+  (map boxed-struct-long (vector->list (proc))))
+
+;; Arrays that don't start on a multiple of their element's alignment.
+;; Each byte holds the low bits of its own address.
+(define unaligned (map (lambda (i) (modulo (1+ i) 8)) (iota 32)))
+
+(test-newer "array-fixed-out-unaligned" (proc) unaligned (u8vector->list (proc)))
+(test-newer "array-fixed-return-unaligned" (proc) unaligned (u8vector->list (proc)))
+(test-newer "array-out-unaligned" (proc) unaligned (u8vector->list (proc)))
+(test-newer "array-return-unaligned" (proc) unaligned (u8vector->list (proc)))
+(test-newer "array-zero-terminated-out-unaligned" (proc)
+  '(1 2 3 4 5 6 7) (u8vector->list (proc)))
+(test-newer "array-zero-terminated-return-unaligned" (proc)
+  '(1 2 3 4 5 6 7) (u8vector->list (proc)))
+
+(let ((cleanup (newer "cleanup-unaligned-buffer")))
+  (when cleanup (cleanup)))
+
+;; Accessor methods of properties that hold arrays and lists.
+(when (defined? '<MarshallPropertiesAccessorsObject>)
+  (let ((accessors (make (module-ref (current-module)
+                                     '<MarshallPropertiesAccessorsObject>))))
+    (test-newer "properties-accessors-object:set-strv" (proc)
+      #("a" "b")
+      (begin (proc accessors #("a" "b"))
+             ((newer "properties-accessors-object:get-strv") accessors)))
+    (test-newer "properties-accessors-object:set-boxed-glist" (proc)
+      '(1 2 3)
+      (begin (proc accessors '(1 2 3))
+             ((newer "properties-accessors-object:get-boxed-glist") accessors)))
+    (test-newer "properties-accessors-object:set-byte-array" (proc)
+      #vu8(1 2 3)
+      (begin (proc accessors #vu8(1 2 3))
+             ((newer "properties-accessors-object:get-byte-array") accessors)))))
+
 ;;; Lists and arrays survive a collection
 
 (test-equal "results don't depend on what the callee freed"

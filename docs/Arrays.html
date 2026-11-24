@@ -79,6 +79,13 @@ with <code class="code">bytes:new-take</code>.
 <p>A <code class="code">GList</code> or a <code class="code">GSList</code> is passed and returned as a Guile
 list.
 </p>
+<p>An array whose elements are arrays themselves, such as an array of
+<code class="code">GStrv</code>, is a vector of what each of its elements would be on its
+own: for an array of <code class="code">GStrv</code>, a vector of vectors of strings.
+Lists are accepted in place of the vectors.
+</p>
+<p>Arrays of enums and flags are returned as vectors.
+</p>
 <p>An array or list that a procedure outputs but leaves unset, as a
 procedure that fails may, is returned as an empty one.
 </p>

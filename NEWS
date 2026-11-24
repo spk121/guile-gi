@@ -28,6 +28,11 @@ New features
    stored in properties and <GValue>s.
  - Scheme lists can be passed where C expects a GList or a GSList,
    including as in/out arguments.  They could only be returned.
+ - Arrays of arrays, such as an array of GStrv, are passed as a vector
+   or list of what each inner array is made from, and returned as a
+   vector of vectors.  Functions that use one used to abort.
+ - Arrays of enums and flags can be returned and output, as vectors.
+   They could only be passed.
  - Deprecated entries of a typelib, such as GTK 4's tree widgets, can
    be loaded in bulk: use-typelibs takes #:deprecated? #t after a
    typelib, typelib->module takes #:deprecated?, and infos takes an
