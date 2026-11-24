@@ -1,0 +1,55 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+env:
+  DEBIAN_FRONTEND: noninteractive
+  TZ: America/Los_Angeles
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgirepository1.0-dev guile-3.0-dev autoconf automake libtool gettext texinfo gnulib texlive
+
+      - name: Bootstrap
+        run: ./bootstrap
+
+      - name: Configure
+        run: ./configure
+
+      - name: Make distcheck
+        run: make distcheck
+
+      - name: Make distribution tarball
+        run: make dist
+
+      - name: Generate checksums
+        run: |
+          for tarball in guile_gi-*.tar.gz; do
+            sha256sum "$tarball" > "$tarball.sha256"
+          done
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v3.0.4
+        with:
+          files: |
+            guile_gi-*.tar.gz
+            guile_gi-*.tar.gz.sha256
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
