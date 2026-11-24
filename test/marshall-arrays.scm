@@ -40,6 +40,29 @@
            (lambda (name args)
              (hash-set! called (strip-suffix name) #t)))
 
+;;; What the GIR says the library has
+
+;; The array and list types of GIR, other than the C arrays, which it
+;; describes with an element of their own.
+(define array-types
+  '("GLib.Array" "GLib.PtrArray" "GLib.ByteArray" "GLib.Bytes"
+    "GLib.Strv" "GLib.List" "GLib.SList"))
+
+(define gir (find-gir "Marshall" "1.0"))
+
+(test-assert "Marshall-1.0.gir was found" gir)
+
+(define array-callables
+  (if gir
+      (filter (cut callable-mentions-type? <> array-types) (gir-callables gir))
+      '()))
+
+;; The description of the function that guile-gi calls NAME, less any
+;; ? or !, or #f if the library doesn't have it.
+(define (described name)
+  (find (lambda (callable) (string=? name (callable-scheme-name callable)))
+        array-callables))
+
 ;; Call a function whose C side checks what it is given.
 (define-syntax-rule (test-call name expr)
   (test-assert name (begin expr #t)))
@@ -535,10 +558,36 @@
            (and (defined? name) (module-ref (current-module) name))))
        '("" "!" "?")))
 
+;; Functions that this version of the library annotates wrongly, which
+;; no binding can call correctly.
+(define misannotated '())
+
+;; The functions named after the ownership they transfer, such as
+;; length-array-utf8-container-inout, do what their names say.  Version
+;; 1.86 of the library describes two of them as transferring nothing
+;; although they free the array they are given, so that a caller that
+;; believes the description frees it a second time.
+(define (annotation-agrees? base)
+  (let ((callable (described base))
+        (transfer (find (lambda (transfer)
+                          (string-contains base (string-append "-" transfer "-")))
+                        '("none" "container" "full"))))
+    (or (not callable)
+        (not transfer)
+        (every (lambda (value)
+                 (or (not (value-array? value))
+                     (equal? (value-transfer value) transfer)))
+               (cons (callable-return callable)
+                     (callable-parameters callable))))))
+
 (define-syntax-rule (test-newer base (proc) expected expr)
   (let ((proc (newer base)))
-    (when proc
-      (test-equal base expected expr))))
+    (cond
+     ((not proc) #f)
+     ((annotation-agrees? base)
+      (test-equal base expected expr))
+     (else
+      (set! misannotated (cons base misannotated))))))
 
 ;; Arrays of strings, of each kind and with each kind of ownership.
 (define utf8-in (vector (string (integer->char #x1F170)) "β" "c" "d"))
@@ -664,12 +713,6 @@
 
 ;;; Completeness
 
-;; The array and list types of GIR, other than the C arrays, which it
-;; describes with an element of their own.
-(define array-types
-  '("GLib.Array" "GLib.PtrArray" "GLib.ByteArray" "GLib.Bytes"
-    "GLib.Strv" "GLib.List" "GLib.SList"))
-
 ;; Functions that guile-gi doesn't bind, and why.  If one of them gets
 ;; bound, it needs a test above.
 (define unbound
@@ -679,20 +722,15 @@
     "array-fixed-out-struct"
     "array-fixed-caller-allocated-struct-out"))
 
-(define gir (find-gir "Marshall" "1.0"))
-
-(test-assert "Marshall-1.0.gir was found" gir)
-
-(define array-callables
-  (if gir
-      (filter (cut callable-mentions-type? <> array-types) (gir-callables gir))
-      '()))
-
 (format #t "Marshall: ~a functions and methods with arrays or lists in the GIR, ~a called~%"
         (length array-callables)
         (count (lambda (callable)
                  (hash-ref called (callable-scheme-name callable)))
                array-callables))
+
+(unless (null? misannotated)
+  (format #t "Marshall: not called, because the GIR contradicts their names: ~a~%"
+          misannotated))
 
 (test-assert "the GIR lists functions with arrays"
   (> (length array-callables) 100))
@@ -708,6 +746,7 @@
      (let ((name (callable-scheme-name callable)))
        (and (not (hash-ref called name))
             (not (member name unbound))
+            (not (member name misannotated))
             name)))
    array-callables))
 

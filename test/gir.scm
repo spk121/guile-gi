@@ -24,7 +24,7 @@
 
             value?
             value-name value-type value-c-type value-direction
-            value-caller-allocates? value-array?
+            value-caller-allocates? value-array? value-transfer
 
             find-binding
             strip-suffix))
@@ -61,14 +61,15 @@ in the directories of GI_TYPELIB_PATH."
 
 ;; A parameter or a return value.
 (define-record-type <value>
-  (make-value name type c-type direction caller-allocates? array?)
+  (make-value name type c-type direction caller-allocates? array? transfer)
   value?
   (name value-name)
   (type value-type)                     ; "gint", "utf8", "none", "GLib.List", ...
   (c-type value-c-type)                 ; "gint*", when the GIR has it
   (direction value-direction)           ; in, out or inout
   (caller-allocates? value-caller-allocates?)
-  (array? value-array?))
+  (array? value-array?)
+  (transfer value-transfer))            ; "none", "container" or "full"
 
 (define (attribute node name)
   (match ((sxpath `(@ ,name *text*)) node)
@@ -90,7 +91,8 @@ in the directories of GI_TYPELIB_PATH."
                 (and type (attribute type 'c:type))
                 (string->symbol (or (attribute node 'direction) "in"))
                 (equal? (attribute node 'caller-allocates) "1")
-                (and array #t))))
+                (and array #t)
+                (attribute node 'transfer-ownership))))
 
 (define (node->callable kind container node)
   (make-callable kind container (attribute node 'name)
