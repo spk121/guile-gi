@@ -89,8 +89,11 @@ advisable to put such directives at the start of a script.
 </p></dd></dl>
 
 <dl class="first-deffn">
-<dt class="deffn" id="index-infos"><span class="category-def">Procedure: </span><span><strong class="def-name">infos</strong> <var class="def-var-arguments">lib</var><a class="copiable-link" href="#index-infos"> &para;</a></span></dt>
-<dd><p>Fetches all top-level metadata entries of <var class="var">lib</var>.
+<dt class="deffn" id="index-infos"><span class="category-def">Procedure: </span><span><strong class="def-name">infos</strong> <var class="def-var-arguments">lib [deprecated]</var><a class="copiable-link" href="#index-infos"> &para;</a></span></dt>
+<dd><p>Fetches the top-level metadata entries of <var class="var">lib</var>.  Entries that are
+marked deprecated are left out if <var class="var">deprecated</var> is <code class="code">#f</code>, the
+default, and included if it is <code class="code">#t</code>.  If it is the symbol
+<code class="code">only</code>, the deprecated entries alone are returned.
 </p></dd></dl>
 
 <dl class="first-deffn">
@@ -117,9 +120,11 @@ By default, all of them are loaded.
 </p></dd></dl>
 
 <dl class="first-deffn">
-<dt class="deffn" id="index-typelib_002d_003emodule"><span class="category-def">Procedure: </span><span><strong class="def-name">typelib-&gt;module</strong> <var class="def-var-arguments">module lib [version]</var><a class="copiable-link" href="#index-typelib_002d_003emodule"> &para;</a></span></dt>
+<dt class="deffn" id="index-typelib_002d_003emodule"><span class="category-def">Procedure: </span><span><strong class="def-name">typelib-&gt;module</strong> <var class="def-var-arguments">module lib [version] [#:deprecated?=#f]</var><a class="copiable-link" href="#index-typelib_002d_003emodule"> &para;</a></span></dt>
 <dd><p>Loads all infos of <var class="var">lib</var> into <var class="var">module</var> and adds them to its public
-interface.
+interface.  Infos that are marked deprecated are only loaded if
+<var class="var">deprecated?</var> is true.  Calling it again with <var class="var">deprecated?</var> for
+a module that has the rest of <var class="var">lib</var> adds what is deprecated.
 </p>
 <p><var class="var">module</var> may be a module or a list of symbols. If the latter is given,
 it is resolved to a (potentially new) module. In either case, the resulting

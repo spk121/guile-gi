@@ -778,6 +778,29 @@ Some GObject procedures write output information into preallocated
 arrays.  For those procedures, the Guile caller will need to create
 and pass in a bytevector of the appropriate size.
 
+GLib's own array types follow the same rules.  A @code{GArray} or a
+@code{GPtrArray} is passed and returned as the bytevector or vector that
+a native array of its elements would be, and a @code{GByteArray} as a
+bytevector.  A @code{GBytes} is an object; make one from a bytevector
+with @code{bytes:new-take}.
+
+A @code{GList} or a @code{GSList} is passed and returned as a Guile
+list.
+
+An array whose elements are arrays themselves, such as an array of
+@code{GStrv}, is a vector of what each of its elements would be on its
+own: for an array of @code{GStrv}, a vector of vectors of strings.
+Lists are accepted in place of the vectors.
+
+Arrays of enums and flags are returned as vectors.
+
+An array or list that a procedure outputs but leaves unset, as a
+procedure that fails may, is returned as an empty one.
+
+A callback or virtual function written in Scheme that receives a native
+array with a separate length receives one array argument, of that
+length.
+
 @quotation Warning
 It is best not to use any of GLib's @code{Array} and @code{ByteArray}
 procedures directly.  Since arrays get converted to bytevectors, these

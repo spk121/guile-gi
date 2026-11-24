@@ -64,6 +64,15 @@ Guile-GI re-exports.
 ;; =&gt; #t
 </pre></div>
 
+<p>Guile-GI makes a new Scheme object each time C returns a GObject, so
+two Scheme objects for the same GObject are not <code class="code">eq?</code>.  Compare
+them with <code class="code">equal?</code>, which is true when both refer to the same
+GObject.
+</p>
+<div class="example">
+<pre class="example-preformatted">(equal? (get-focus-child container) (get-start-child container))
+</pre></div>
+
 <p>Each GObject struct, union, or object has a place in the GObject
 single-inheritance class structure.  A <code class="code">RadioButton</code> is a type of
 <code class="code">Button</code> is a type of <code class="code">Widget</code>, for example.

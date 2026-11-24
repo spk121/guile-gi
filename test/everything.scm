@@ -1,7 +1,18 @@
-(use-modules (gi)
+;;; Tests of the Everything library, generated from its GIR.
+;;;
+;;; Everything is the library that gobject-introspection generates from
+;;; a list of types: for each type it has a function that returns it, one
+;;; that takes it, one that outputs it and one that passes it through.
+;;; This walks the functions in Everything-1.0.gir and calls each one
+;;; with values chosen by the types the GIR gives its arguments, so that
+;;; nothing guile-gi fails to bind, or binds differently, is left out.
+
+(use-modules (gi) (gi types)
+             (test gir)
+             (ice-9 match)
              (rnrs bytevectors)
              (system foreign)
-
+             (srfi srfi-1)
              (srfi srfi-64))
 
 (test-begin "everything.scm")
@@ -10,205 +21,137 @@
 ;; if it does not
 (use-typelibs ("Everything" "1.0"))
 
-(test-assert "nullfunc" (begin (nullfunc) #t))
+(define (signed-samples bits)
+  (list 0 1 -1 (1- (expt 2 (1- bits))) (- (expt 2 (1- bits)))))
 
-(define-syntax-rule (const-ireturn type f)
-  (test-eqv (string-append "const-return-" type)
-    0 (f)))
+(define (unsigned-samples bits)
+  (list 0 1 (1- (expt 2 bits))))
 
-(define-syntax-rule (const-freturn type f)
-  (test-eqv (string-append "const-return-" type)
-    0.0 (f)))
+(define (bits-of type)
+  (* 8 (sizeof type)))
 
-(define-syntax-rule (const-sreturn type f)
-  (test-assert (string-append "const-return-" type)
-    (string-null? (f))))
+;; What Everything's functions return and output for each GIR type, and
+;; values to pass in.  Each sample is a pair of the value to pass and
+;; the value that should come back from a function that returns its
+;; argument.
+(define (type-zero type)
+  (match type
+    ((or "gfloat" "gdouble") 0.0)
+    ("gboolean" #f)
+    ("gunichar" #\nul)
+    ((or "utf8" "filename") "")
+    ("gpointer" #f)
+    (_ 0)))
 
-(const-ireturn "gchar" const-return-gchar)
-(const-ireturn "gshort" const-return-gshort)
-(const-ireturn "gint" const-return-gint)
-(const-ireturn "glong" const-return-glong)
-(const-ireturn "gint8" const-return-gint8)
-(const-ireturn "gint16" const-return-gint16)
-(const-ireturn "gint32" const-return-gint32)
-(const-ireturn "gint64" const-return-gint64)
-(const-ireturn "gintptr" const-return-gintptr)
+;; The one exception: const_return_GType returns G_TYPE_OBJECT, while
+;; one_outparam_GType outputs 0, which is no type.
+(define (type-return type)
+  (match type
+    ("GType" <GObject>)
+    (_ (type-zero type))))
 
-(const-ireturn "gushort" const-return-gshort)
-(const-ireturn "guint" const-return-guint)
-(const-ireturn "gulong" const-return-glong)
-(const-ireturn "guint8" const-return-guint8)
-(const-ireturn "guint16" const-return-guint16)
-(const-ireturn "guint32" const-return-guint32)
-(const-ireturn "guint64" const-return-guint64)
+(define (same . values)
+  (map (lambda (value) (cons value value)) values))
 
-(const-ireturn "gsize" const-return-gsize)
-(const-ireturn "gssize" const-return-gssize)
+(define (type-samples type)
+  (match type
+    ("gchar" (cons (cons #\A 65) (apply same (signed-samples 8))))
+    ("gint8" (apply same (signed-samples 8)))
+    ("guint8" (apply same (unsigned-samples 8)))
+    ("gint16" (apply same (signed-samples 16)))
+    ("guint16" (apply same (unsigned-samples 16)))
+    ("gint32" (apply same (signed-samples 32)))
+    ("guint32" (apply same (unsigned-samples 32)))
+    ("gint64" (apply same (signed-samples 64)))
+    ("guint64" (apply same (unsigned-samples 64)))
+    ("gshort" (apply same (signed-samples (bits-of short))))
+    ("gushort" (apply same (unsigned-samples (bits-of unsigned-short))))
+    ("gint" (apply same (signed-samples (bits-of int))))
+    ("guint" (apply same (unsigned-samples (bits-of unsigned-int))))
+    ("glong" (apply same (signed-samples (bits-of long))))
+    ("gulong" (apply same (unsigned-samples (bits-of unsigned-long))))
+    ("gssize" (apply same (signed-samples (bits-of ssize_t))))
+    ("gsize" (apply same (unsigned-samples (bits-of size_t))))
+    ("gintptr" (apply same (signed-samples (bits-of intptr_t))))
+    ("guintptr" (apply same (unsigned-samples (bits-of uintptr_t))))
+    ;; Their sizes vary between platforms; these fit everywhere.
+    ((or "off_t" "time_t") (same 0 1 (1- (expt 2 31))))
+    ("gfloat" (same 0.0 1.5 -0.25))
+    ("gdouble" (same 0.0 1.5 -0.25 1e300))
+    ("gboolean" (same #t #f))
+    ("gunichar" (same #\A #\あ))
+    ("utf8" (same "" "hello" "Việt Nam"))
+    ("filename" (same "temp.txt"))
+    ("gpointer" (same (bytevector->pointer (make-bytevector 8 0))))
+    ("GType" (list (cons G_TYPE_OBJECT <GObject>) (cons <GObject> <GObject>)))
+    (_ #f)))
 
-(const-freturn "gfloat" const-return-gfloat)
-(const-freturn "gdouble" const-return-gdouble)
+(define n-functions 0)
+(define n-unbound 0)
+(define n-unrecognized 0)
 
-(const-sreturn "utf8" const-return-utf8)
-(const-sreturn "filename" const-return-filename)
+;; Test one function.  What to expect of it follows from its shape.
+(define (test-function callable)
+  (define name (callable-name callable))
+  (define binding (find-binding (current-module) callable))
+  (define proc (and binding (module-ref (current-module) binding)))
+  (define return (value-type (callable-return callable)))
+  (define parameters (callable-parameters callable))
+  (define (unrecognized why)
+    (set! n-unrecognized (1+ n-unrecognized))
+    (test-assert (string-append name ": " why) #f))
 
-(test-assert "const-return-gboolean"
-  (not (const-return-gboolean?)))
+  (set! n-functions (1+ n-functions))
+  (cond
+   ((not proc)
+    (set! n-unbound (1+ n-unbound))
+    (test-assert (string-append name " is bound") #f))
+   (else
+    (match (map (lambda (p) (list (value-direction p) (value-type p))) parameters)
+      ;; Nothing in, nothing out.
+      (()
+       (if (string=? return "none")
+           (test-assert name (begin (proc) #t))
+           (test-equal name (type-return return) (proc))))
+      ;; An argument, which may be returned.
+      ((('in type))
+       (let ((samples (type-samples type)))
+         (cond
+          ((not samples)
+           (unrecognized (string-append "no values for type " type)))
+          ((string=? return "none")
+           (test-assert name
+             (begin (for-each (lambda (sample) (proc (car sample))) samples)
+                    #t)))
+          ((string=? return type)
+           (test-equal name
+             (map cdr samples)
+             (map (lambda (sample) (proc (car sample))) samples)))
+          (else
+           (unrecognized "returns another type than it takes")))))
+      ;; An output.
+      ((('out type))
+       (if (string=? return "none")
+           (test-equal name (type-zero type) (proc))
+           (unrecognized "has an output and a return value")))
+      (_
+       (unrecognized "has a shape this test doesn't know"))))))
 
-(test-assert "const-return-gpointer"
-  (not (const-return-gpointer)))
+(define gir (find-gir "Everything" "1.0"))
 
-(test-eq "const-return-gunichar"
-  #\null (const-return-gunichar))
+(test-assert "Everything-1.0.gir was found" gir)
 
-(test-eq "const-return-gtype"
-  <GObject> (const-return-gtype))
+(when gir
+  ;; The GIR describes the output of one_outparam_gchar, a gchar *, as
+  ;; a string, so the C function stores one byte where the binding
+  ;; expects a pointer.
+  (for-each test-function (gir-callables gir))
 
-(define-syntax-rule (one-iparam type f)
-  (test-assert (string-append "oneparam-" type)
-    (begin
-      (f 1)
-      #t)))
-
-(define-syntax-rule (one-fparam type f)
-  (test-assert (string-append "oneparam-" type)
-    (begin
-      (f 1.0)
-      #t)))
-
-(define-syntax-rule (one-sparam type f)
-  (test-assert (string-append "oneparam-" type)
-    (begin
-      (f "hello")
-      #t)))
-
-(one-iparam "gchar" oneparam-gchar)
-(test-assert "oneparam-gchar-from-char"
-  (begin
-    (oneparam-gchar #\A)
-    #t))
-
-(one-iparam "gshort" oneparam-gshort)
-(one-iparam "gint" oneparam-gint)
-(one-iparam "glong" oneparam-glong)
-(one-iparam "gint8" oneparam-gint8)
-(one-iparam "gint16" oneparam-gint16)
-(one-iparam "gint32" oneparam-gint32)
-(one-iparam "gint64" oneparam-gint64)
-(one-iparam "gintptr" oneparam-gintptr)
-
-(one-iparam "gushort" oneparam-gushort)
-(one-iparam "guint" oneparam-guint)
-(one-iparam "gulong" oneparam-gulong)
-(one-iparam "guint8" oneparam-guint8)
-(one-iparam "guint16" oneparam-guint16)
-(one-iparam "guint32" oneparam-guint32)
-(one-iparam "guint64" oneparam-guint64)
-(one-iparam "guintptr" oneparam-guintptr)
-
-(one-iparam "gsize" oneparam-gsize)
-(one-iparam "gssize" oneparam-gssize)
-
-(one-fparam "gfloat" oneparam-gfloat)
-(one-fparam "gdouble" oneparam-gdouble)
-
-(one-sparam "filename" oneparam-filename)
-(one-sparam "utf8" oneparam-utf8)
-
-(test-assert "oneparam-gboolean"
-  (begin
-    (oneparam-gboolean #t)
-    #t))
-
-(test-assert "oneparam-gpointer"
-  (let ((bv (make-bytevector 1 0)))
-    (oneparam-gpointer (bytevector->pointer bv))
-    #t))
-
-(test-assert "oneparam-gtype"
-  (begin
-    (oneparam-gtype G_TYPE_OBJECT)
-    #t))
-
-(test-assert "oneparam-gtype-from-class"
-  (begin
-    (oneparam-gtype <GObject>)
-    #t))
-
-(test-assert "oneparam-gunichar"
-  (begin
-    (oneparam-gunichar #\あ)
-    #t))
-
-(define-syntax-rule (oneout-iparam type f)
-  (test-eqv (string-append "one-outparam-" type)
-    0 (f)))
-
-(define-syntax-rule (oneout-fparam type f)
-  (test-eqv (string-append "one-outparam-" type)
-    0.0 (f)))
-
-(define-syntax-rule (oneout-sparam type f)
-  (test-assert (string-append "one-outparam-" type)
-    (string-null? (f))))
-
-(test-expect-fail "one-outparam-gchar-as-char")
-(test-assert "one-outparam-gchar-as-char"
-  (char=? #\null (one-outparam-gchar)))
-
-(oneout-iparam "gshort" one-outparam-gshort)
-(oneout-iparam "gint" one-outparam-gint)
-(oneout-iparam "glong" one-outparam-glong)
-(oneout-iparam "gint8" one-outparam-gint8)
-(oneout-iparam "gint16" one-outparam-gint16)
-(oneout-iparam "gint32" one-outparam-gint32)
-(oneout-iparam "gint64" one-outparam-gint64)
-(oneout-iparam "gintptr" one-outparam-gintptr)
-
-(oneout-iparam "gushort" one-outparam-gushort)
-(oneout-iparam "guint" one-outparam-guint)
-(oneout-iparam "gulong" one-outparam-gulong)
-(oneout-iparam "guint8" one-outparam-guint8)
-(oneout-iparam "guint16" one-outparam-guint16)
-(oneout-iparam "guint32" one-outparam-guint32)
-(oneout-iparam "guint64" one-outparam-guint64)
-(oneout-iparam "guintptr" one-outparam-guintptr)
-
-(oneout-iparam "gsize" one-outparam-gsize)
-(oneout-iparam "gssize" one-outparam-gssize)
-
-(oneout-fparam "gfloat" one-outparam-gfloat)
-(oneout-fparam "gdouble" one-outparam-gdouble)
-
-(oneout-sparam "filename" one-outparam-filename)
-(oneout-sparam "utf8" one-outparam-utf8)
-
-(test-assert "one-outparam-gboolean"
-  (not (one-outparam-gboolean)))
-
-(test-assert "one-outparam-gpointer"
-  (not (one-outparam-gpointer)))
-
-(test-eqv "passthrough-one-gintptr"
-  1 (passthrough-one-gintptr 1))
-
-(test-eqv "passthrough-one-guintptr"
-  1 (passthrough-one-guintptr 1))
-
-(test-eq "one-outparam-gunichar"
-  #\null (one-outparam-gunichar))
-
-(test-assert "passthrough-one-filename"
-  (let ((fn "temp.txt"))
-    (string=? fn (passthrough-one-filename (string-copy fn)))))
-
-(test-assert "passthrough-one-utf8"
-  (let ((str "Việt Nam"))
-    (string=? str (passthrough-one-utf8 (string-copy str)))))
-
-(test-assert "passthrough-one-gpointer"
-  (let* ((bv (make-bytevector 1))
-         (inptr (bytevector->pointer bv))
-         (outptr (passthrough-one-gpointer inptr)))
-    (equal? inptr outptr)))
+  ;; How much of the library the tests above cover.
+  (format #t "Everything: ~a functions in the GIR, ~a not bound, ~a not recognized~%"
+          n-functions n-unbound n-unrecognized)
+  (test-assert "the GIR lists functions" (> n-functions 100))
+  (test-equal "every function in the GIR is bound" 0 n-unbound)
+  (test-equal "every function in the GIR has a shape the test knows" 0 n-unrecognized))
 
 (test-end "everything.scm")

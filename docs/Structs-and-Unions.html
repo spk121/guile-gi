@@ -80,7 +80,11 @@ after the type and the field, such as <code class="code">rgba:red</code> for the
 structs and arrays.  Fields of plain data &ndash; numbers, booleans, enums,
 flags, and structs made only of those &ndash; can also be set when the
 typelib allows it, either with <code class="code">set!</code> on the getter or with a
-setter such as <code class="code">rgba:set-red!</code>.  Fields that hold other pointers,
+setter such as <code class="code">rgba:set-red!</code>.  So can a field that holds an
+untyped pointer (<code class="code">gpointer</code>), such as the <code class="code">user_data</code> of a
+<code class="code">GtkTreeIter</code>: its setter takes a pointer from <code class="code">(system
+foreign)</code>, or <code class="code">#f</code> for <code class="code">NULL</code>, and stores it as it is.
+Fields that hold other pointers,
 such as strings, are read-only, because the typelib does not say who
 would own a new value.  A field gets no getter if a method of its type
 already has that name, and structs with bitfields, which typelibs

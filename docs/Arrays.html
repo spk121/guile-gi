@@ -70,12 +70,40 @@ provide that automatically.  There is no need to add you own zero.
 arrays.  For those procedures, the Guile caller will need to create
 and pass in a bytevector of the appropriate size.
 </p>
+<p>GLib&rsquo;s own array types follow the same rules.  A <code class="code">GArray</code> or a
+<code class="code">GPtrArray</code> is passed and returned as the bytevector or vector that
+a native array of its elements would be, and a <code class="code">GByteArray</code> as a
+bytevector.  A <code class="code">GBytes</code> is an object; make one from a bytevector
+with <code class="code">bytes:new-take</code>.
+</p>
+<p>A <code class="code">GList</code> or a <code class="code">GSList</code> is passed and returned as a Guile
+list.
+</p>
+<p>An array whose elements are arrays themselves, such as an array of
+<code class="code">GStrv</code>, is a vector of what each of its elements would be on its
+own: for an array of <code class="code">GStrv</code>, a vector of vectors of strings.
+Lists are accepted in place of the vectors.
+</p>
+<p>Arrays of enums and flags are returned as vectors.
+</p>
+<p>An array or list that a procedure outputs but leaves unset, as a
+procedure that fails may, is returned as an empty one.
+</p>
+<p>A callback or virtual function written in Scheme that receives a native
+array with a separate length receives one array argument, of that
+length.
+</p>
 <blockquote class="quotation">
 <p><b class="b">Warning:</b> It is best not to use any of GLib&rsquo;s <code class="code">Array</code> and <code class="code">ByteArray</code>
 procedures directly.  Since arrays get converted to bytevectors, these
 procedures will likely fail to do anything sensible.
 </p></blockquote>
 
+</div>
+<hr>
+<div class="nav-panel">
+<p>
+Next: <a href="Null-Pointers-and-Optional-Arguments.html">Null Pointers and Optional Arguments</a>, Previous: <a href="Native-Pointers.html">Native Pointers</a>, Up: <a href="Argument-Conversion.html">Argument Conversion</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="The-Index.html" title="Index" rel="index">Index</a>]</p>
 </div>
 
 

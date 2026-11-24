@@ -64,10 +64,12 @@ static void scm_to_c_native_immediate_array(S2C_ARG_DECL);
 static void scm_to_c_native_string_array(S2C_ARG_DECL);
 static void scm_to_c_native_interface_array(S2C_ARG_DECL);
 static void scm_to_c_native_gtype_array(S2C_ARG_DECL);
+static void scm_to_c_native_array_array(S2C_ARG_DECL);
 static void scm_to_c_garray(S2C_ARG_DECL);
 static void scm_to_c_byte_array(S2C_ARG_DECL);
 static void scm_to_c_ptr_array(S2C_ARG_DECL);
 static void scm_to_c_ghashtable(S2C_ARG_DECL);
+static void scm_to_c_list(S2C_ARG_DECL);
 
 // Fundamental types
 static void c_interface_to_scm(C2S_ARG_DECL);
@@ -137,10 +139,15 @@ zero_terminated_array_length(GigTypeMeta *meta, GIArgument *arg)
 
     if (arg->v_pointer == NULL)
         return 0;
-    else if (G_TYPE_FUNDAMENTAL(meta->params[0].gtype) == G_TYPE_STRING)
+    else if (G_TYPE_FUNDAMENTAL(meta->params[0].gtype) == G_TYPE_STRING
+             || meta->params[0].gtype == G_TYPE_PRIV_C_ARRAY)
+        // an array of pointers, to strings or to arrays
         return strvlen((const char **)arg->v_pointer);
     else {
         size_t item_size = gig_meta_real_item_size(&meta->params[0]);
+        GType fundamental = G_TYPE_FUNDAMENTAL(meta->params[0].gtype);
+        if (fundamental == G_TYPE_ENUM || fundamental == G_TYPE_FLAGS)
+            item_size = sizeof(int);
 
         assert(item_size > 0);
 
@@ -525,12 +532,98 @@ scm_to_c_pointer(S2C_ARG_DECL)
     }
     else if (meta->gtype == G_TYPE_GTYPE)
         arg->v_size = scm_to_gtype_full(object, subr, argpos);
+    else if ((meta->pointer_type == GIG_DATA_LIST || meta->pointer_type == GIG_DATA_SLIST)
+             && scm_is_true(scm_list_p(object)))
+        scm_to_c_list(S2C_ARGS);
     else if (scm_is_pointer(object))
         arg->v_pointer = scm_to_pointer(object);
     else if (scm_is_bytevector(object))
         arg->v_pointer = SCM_BYTEVECTOR_CONTENTS(object);
     else
         scm_wrong_type_arg_msg(subr, argpos, object, "a pointer");
+}
+
+// A GList or GSList from a Scheme list.
+static void
+scm_to_c_list(S2C_ARG_DECL)
+{
+    TRACE_S2C();
+    bool is_double = (meta->pointer_type == GIG_DATA_LIST);
+    size_t length = scm_c_length(object);
+    GigTypeMeta item_meta = meta->params[0];
+    // The elements are the callee's only with transfer everything.
+    item_meta.transfer = (meta->transfer == GI_TRANSFER_EVERYTHING
+                          ? GI_TRANSFER_EVERYTHING : GI_TRANSFER_NOTHING);
+
+    void **data = xcalloc(length + 1, sizeof(void *));
+    SCM iter = object;
+    for (size_t i = 0; i < length; i++, iter = scm_cdr(iter)) {
+        GIArgument _arg;
+        size_t _size;
+        memset(&_arg, 0, sizeof(_arg));
+        gig_argument_scm_to_c(subr, argpos, &item_meta, scm_car(iter), must_free, &_arg, &_size);
+        // Integers are stored in the pointers themselves.
+        GType fundamental = G_TYPE_FUNDAMENTAL(item_meta.gtype);
+        if (item_meta.is_ptr)
+            data[i] = _arg.v_pointer;
+        else if (fundamental == G_TYPE_INT && item_meta.item_size == 1)
+            data[i] = GINT_TO_POINTER(_arg.v_int8);
+        else if (fundamental == G_TYPE_INT && item_meta.item_size == 2)
+            data[i] = GINT_TO_POINTER(_arg.v_int16);
+        else if (fundamental == G_TYPE_INT && item_meta.item_size == 4)
+            data[i] = GINT_TO_POINTER(_arg.v_int32);
+        else if (fundamental == G_TYPE_UINT && item_meta.item_size == 1)
+            data[i] = GUINT_TO_POINTER(_arg.v_uint8);
+        else if (fundamental == G_TYPE_UINT && item_meta.item_size == 2)
+            data[i] = GUINT_TO_POINTER(_arg.v_uint16);
+        else if (fundamental == G_TYPE_UINT && item_meta.item_size == 4)
+            data[i] = GUINT_TO_POINTER(_arg.v_uint32);
+        else if (fundamental == G_TYPE_BOOLEAN || fundamental == G_TYPE_ENUM
+                 || fundamental == G_TYPE_FLAGS)
+            data[i] = GINT_TO_POINTER(_arg.v_int);
+        else
+            data[i] = _arg.v_pointer;
+    }
+
+    if (length == 0)
+        arg->v_pointer = NULL;
+    else if (meta->transfer == GI_TRANSFER_NOTHING) {
+        // The list stays ours, so make its nodes in one block that
+        // can be released with free.
+        if (is_double) {
+            GList *nodes = xcalloc(length, sizeof(GList));
+            for (size_t i = 0; i < length; i++) {
+                nodes[i].data = data[i];
+                nodes[i].next = (i + 1 < length) ? &nodes[i + 1] : NULL;
+                nodes[i].prev = (i > 0) ? &nodes[i - 1] : NULL;
+            }
+            arg->v_pointer = LATER_FREE_CONTAINER(nodes);
+        }
+        else {
+            GSList *nodes = xcalloc(length, sizeof(GSList));
+            for (size_t i = 0; i < length; i++) {
+                nodes[i].data = data[i];
+                nodes[i].next = (i + 1 < length) ? &nodes[i + 1] : NULL;
+            }
+            arg->v_pointer = LATER_FREE_CONTAINER(nodes);
+        }
+    }
+    else {
+        // The callee frees the list, so GLib has to allocate it.
+        if (is_double) {
+            GList *list = NULL;
+            for (size_t i = length; i > 0; i--)
+                list = g_list_prepend(list, data[i - 1]);
+            arg->v_pointer = list;
+        }
+        else {
+            GSList *list = NULL;
+            for (size_t i = length; i > 0; i--)
+                list = g_slist_prepend(list, data[i - 1]);
+            arg->v_pointer = list;
+        }
+    }
+    free(data);
 }
 
 static void
@@ -685,7 +778,9 @@ scm_to_c_native_array(S2C_ARG_DECL)
     GType item_type = meta->params[0].gtype;
     GType fundamental_item_type = G_TYPE_FUNDAMENTAL(item_type);
 
-    if (item_type == G_TYPE_BOOLEAN)
+    if (item_type == G_TYPE_PRIV_C_ARRAY)
+        scm_to_c_native_array_array(S2C_ARGS);
+    else if (item_type == G_TYPE_BOOLEAN)
         scm_to_c_native_boolean_array(S2C_ARGS);
     else if (meta->params[0].is_unichar)
         scm_to_c_native_unichar_array(S2C_ARGS);
@@ -714,6 +809,37 @@ scm_to_c_native_array(S2C_ARG_DECL)
         scm_misc_error(subr, "array argument ~S has ~A elements, but ~A are required",
                        scm_list_3(object, scm_from_size_t(*size),
                                   scm_from_size_t(meta->length)));
+}
+
+// An array of pointers to arrays, such as an array of GStrv, from a
+// vector or list of what each of those arrays is made from.
+static void
+scm_to_c_native_array_array(S2C_ARG_DECL)
+{
+    TRACE_S2C();
+    if (scm_is_vector(object))
+        object = scm_vector_to_list(object);
+    if (!scm_is_true(scm_list_p(object)))
+        scm_wrong_type_arg_msg(subr, argpos, object, "vector or list of arrays");
+
+    size_t length = scm_c_length(object);
+    GigTypeMeta item_meta = meta->params[0];
+    // The inner arrays are the callee's only with transfer everything.
+    item_meta.transfer = (meta->transfer == GI_TRANSFER_EVERYTHING
+                          ? GI_TRANSFER_EVERYTHING : GI_TRANSFER_NOTHING);
+
+    // One more element than asked for ends a zero-terminated array.
+    void **array = xcalloc(length + 1, sizeof(void *));
+    SCM iter = object;
+    for (size_t i = 0; i < length; i++, iter = scm_cdr(iter)) {
+        GIArgument _arg;
+        size_t _size;
+        memset(&_arg, 0, sizeof(_arg));
+        gig_argument_scm_to_c(subr, argpos, &item_meta, scm_car(iter), must_free, &_arg, &_size);
+        array[i] = _arg.v_pointer;
+    }
+    arg->v_pointer = LATER_FREE_CONTAINER(array);
+    *size = length;
 }
 
 static void
@@ -1632,7 +1758,11 @@ c_native_array_to_scm(C2S_ARG_DECL)
     TRACE_C2S();
     size_t length;
 
-    if (meta->length != GIG_ARRAY_SIZE_UNKNOWN)
+    // A function that fails may leave an output array unset, and an
+    // empty array may be NULL: both are empty arrays.
+    if (arg->v_pointer == NULL)
+        length = 0;
+    else if (meta->length != GIG_ARRAY_SIZE_UNKNOWN)
         length = meta->length;
     else if (meta->is_zero_terminated)
         length = zero_terminated_array_length(meta, arg);
@@ -1659,6 +1789,48 @@ c_native_array_to_scm(C2S_ARG_DECL)
     GType item_type = meta->params[0].gtype;
     if (item_type == G_TYPE_PRIV_FOREIGN_STRUCT) {
         c_native_foreign_struct_array_to_scm(C2S_ARGS, length);
+        return;
+    }
+    if (item_type == G_TYPE_PRIV_C_ARRAY) {
+        // An array of pointers to arrays, such as an array of GStrv:
+        // a vector of what each of those arrays converts to.
+        GigTypeMeta item_meta = meta->params[0];
+        item_meta.transfer = (meta->transfer == GI_TRANSFER_EVERYTHING
+                              ? GI_TRANSFER_EVERYTHING : GI_TRANSFER_NOTHING);
+        *object = scm_c_make_vector(length, SCM_BOOL_F);
+        for (size_t k = 0; k < length; k++) {
+            GIArgument _arg;
+            SCM element = SCM_BOOL_F;
+            GigTypeMeta element_meta = item_meta;
+            _arg.v_pointer = ((void **)(arg->v_pointer))[k];
+            gig_argument_c_to_scm(subr, argpos, &element_meta, &_arg, &element,
+                                  GIG_ARRAY_SIZE_UNKNOWN);
+            scm_c_vector_set_x(*object, k, element);
+        }
+        if (meta->transfer != GI_TRANSFER_NOTHING && arg->v_pointer != NULL) {
+            free(arg->v_pointer);
+            arg->v_pointer = NULL;
+        }
+        return;
+    }
+    if (G_TYPE_FUNDAMENTAL(item_type) == G_TYPE_ENUM
+        || G_TYPE_FUNDAMENTAL(item_type) == G_TYPE_FLAGS) {
+        // Enums and flags are stored as ints.
+        GigTypeMeta item_meta = meta->params[0];
+        *object = scm_c_make_vector(length, SCM_BOOL_F);
+        for (size_t k = 0; k < length; k++) {
+            GIArgument _arg;
+            SCM element = SCM_BOOL_F;
+            memset(&_arg, 0, sizeof(_arg));
+            _arg.v_int = ((int *)(arg->v_pointer))[k];
+            gig_argument_c_to_scm(subr, argpos, &item_meta, &_arg, &element,
+                                  GIG_ARRAY_SIZE_UNKNOWN);
+            scm_c_vector_set_x(*object, k, element);
+        }
+        if (meta->transfer != GI_TRANSFER_NOTHING && arg->v_pointer != NULL) {
+            free(arg->v_pointer);
+            arg->v_pointer = NULL;
+        }
         return;
     }
     switch (G_TYPE_FUNDAMENTAL(item_type)) {
@@ -1837,6 +2009,11 @@ c_byte_array_to_scm(C2S_ARG_DECL)
 {
     TRACE_C2S();
     GByteArray *byte_array = arg->v_pointer;
+    if (byte_array == NULL) {
+        // An output that was left unset.
+        *object = scm_c_make_bytevector(0);
+        return;
+    }
     *object = scm_c_make_bytevector(byte_array->len);
     memcpy(SCM_BYTEVECTOR_CONTENTS(*object), byte_array->data, byte_array->len);
     // With transfer none the array still belongs to the callee.
@@ -1858,15 +2035,18 @@ c_garray_to_scm(C2S_ARG_DECL)
     GigTypeMeta _meta = *meta;
     GIArgument _arg;
     GArray *array = arg->v_pointer;
-    _arg.v_pointer = array->data;
+    // An output that was left unset is an empty array.
+    _arg.v_pointer = array ? array->data : NULL;
     _meta.gtype = G_TYPE_PRIV_C_ARRAY;
-    _meta.length = array->len;
+    _meta.length = array ? array->len : 0;
     // The GArray retains ownership of the conents.
     _meta.transfer = GI_TRANSFER_NOTHING;
 
-    size = array->len;
+    size = _meta.length;
 
     c_native_array_to_scm(subr, argpos, &_meta, &_arg, object, size);
+    if (array == NULL)
+        return;
 
     // Since the GArray retained ownership of the contents, we free as
     // necessary here.
@@ -1886,7 +2066,21 @@ c_gptrarray_to_scm(C2S_ARG_DECL)
     GigTypeMeta _meta = *meta;
     GIArgument _arg;
     GPtrArray *array = arg->v_pointer;
+    // The elements of a GPtrArray are pointers, whatever their type;
+    // the typelib only says so for some.
+    GigTypeMeta item_meta = meta->params[0];
+    if (G_TYPE_FUNDAMENTAL(item_meta.gtype) == G_TYPE_BOXED)
+        item_meta.is_ptr = true;
+    _meta.params = &item_meta;
     _meta.gtype = G_TYPE_PRIV_C_ARRAY;
+    if (array == NULL) {
+        // An output that was left unset is an empty array.
+        _arg.v_pointer = NULL;
+        _meta.length = 0;
+        _meta.transfer = GI_TRANSFER_NOTHING;
+        c_native_array_to_scm(subr, argpos, &_meta, &_arg, object, 0);
+        return;
+    }
     _meta.length = array->len;
 
     // Elements are ours only with transfer everything.
