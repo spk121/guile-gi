@@ -3,7 +3,7 @@
              (gi repository)
              (srfi srfi-64))
 
-(use-modules (ice-9 peg) (sxml simple) (sxml xpath) (srfi srfi-1))
+(use-modules (oop goops) (ice-9 peg) (sxml simple) (sxml xpath) (srfi srfi-1))
 
 (define %markdown-sample
   "Some text.\n\n# A heading\n\nMore text.\n\n```txt\n# a comment\n[group]\n```\n\nThe end.\n")
@@ -183,5 +183,55 @@
           (documents? "value-array:append" #:deprecated? #t)
           (documents? "binding:unbind")
           (documents? "binding:unbind" #:deprecated? #t))))
+
+;; Short names that are syntax in Guile would take that syntax away from
+;; whoever imports the typelib.  GSettings has a method called delay and
+;; GDBusObjectManagerServer one called export.
+(if (false-if-exception (require "Gio" "2.0"))
+    (let* ((module (typelib->module '(test typelib->module syntax) "Gio" "2.0"))
+           (interface (module-public-interface module)))
+      (test-equal "methods named after syntax have no short name"
+        '(#f #f)
+        (map (lambda (name) (module-defined? interface name)) '(delay export)))
+
+      (test-equal "methods named after syntax keep their long names"
+        '(#t #t #t)
+        (map (lambda (name) (module-defined? interface name))
+             '(settings:delay
+               dbus-object-manager-server:export
+               dbus-interface-skeleton:export?)))
+
+      (test-assert "other methods keep their short names"
+        (module-defined? interface 'revert))
+
+      (test-assert "load stays a generic function with the methods of typelibs"
+        ;; (gi repository) makes load generic itself.
+        (and (module-defined? interface 'loadable-icon:load)
+             (is-a? (module-ref interface 'load) <generic>)))
+
+      (test-equal "the syntax still works where the typelib is used"
+        '(2 #t)
+        (begin
+          (save-module-excursion
+           (lambda ()
+             (eval
+              '(begin
+                 (define-module (test use-typelibs syntax)
+                   #:use-module (gi))
+                 (use-typelibs ("Gio" "2.0"))
+                 (define results (list (begin 1 2) (promise? (delay 3)))))
+              (interaction-environment))))
+          (module-ref (resolve-module '(test use-typelibs syntax)) 'results)))
+
+      (test-equal "documentation gives them under their long names"
+        '(#t #f)
+        (let* ((port (typelib "Gio" "2.0"))
+               (text (with-output-to-string
+                       (lambda () (->docbook (parse port '()))))))
+          (close port)
+          ;; A method is listed under its short name if it has one.
+          (list (and (string-contains text "<title>settings:delay</title>") #t)
+                (and (string-contains text "<title>delay</title>") #t)))))
+    (test-skip 6))
 
 (test-end "typelib")

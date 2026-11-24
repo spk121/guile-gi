@@ -135,6 +135,28 @@ scm_current_module_definition(SCM name)
     return SCM_BOOL_F;
 }
 
+// True if NAME is syntax in Guile -- begin, delay, export -- that a
+// binding of that name would take away from every module that imports
+// it.  A name that guile-gi already makes a generic function, as it
+// does load, is not: adding methods to that changes nothing for anyone.
+bool
+scm_is_core_syntax_name(const char *name)
+{
+    SCM sym = scm_from_utf8_symbol(name);
+    SCM variable;
+
+    variable = scm_module_variable(scm_current_module(), sym);
+    if (scm_is_false(variable))
+        variable = scm_module_variable(scm_c_resolve_module("gi"), sym);
+    if (scm_is_true(variable) && scm_is_true(scm_variable_bound_p(variable))
+        && !scm_is_true(scm_macro_p(scm_variable_ref(variable))))
+        return false;
+
+    variable = scm_module_variable(scm_c_resolve_module("guile"), sym);
+    return (scm_is_true(variable) && scm_is_true(scm_variable_bound_p(variable))
+            && scm_is_true(scm_macro_p(scm_variable_ref(variable))));
+}
+
 SCM
 scm_drop_right_1(SCM lst)
 {

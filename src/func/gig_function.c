@@ -119,7 +119,15 @@ gig_function_define(GType type, GICallableInfo *info, const char *_namespace)
             goto end;
         }
         method_name = scm_dynfree(gig_callable_info_make_name(info, NULL));
-        gig_debug_load("%s - shorthand for %s", method_name, function_name);
+        // A shorthand such as begin, for GtkGesture's signal, would
+        // replace Guile's syntax in every module that imports it.
+        if (scm_is_core_syntax_name(method_name)) {
+            gig_debug_load("%s - no shorthand %s, which is Guile syntax", function_name,
+                           method_name);
+            method_name = NULL;
+        }
+        else
+            gig_debug_load("%s - shorthand for %s", method_name, function_name);
     }
 
     SCM proc = SCM_UNDEFINED;
@@ -141,7 +149,7 @@ gig_function_define(GType type, GICallableInfo *info, const char *_namespace)
                                           specializers);
     if (!SCM_UNBNDP(def))
         defs = scm_cons(def, defs);
-    if (is_method) {
+    if (is_method && method_name != NULL) {
         def =
             scm_define_methods_from_procedure(method_name, proc, optional_input_count, formals,
                                               specializers);

@@ -16,6 +16,7 @@
 #ifndef CORE_SCM_H
 #define CORE_SCM_H
 
+#include <stdbool.h>
 #include <libguile.h>
 
 #define HAVE_SCM_HOOKS \
@@ -57,6 +58,7 @@ SCM scm_keyword_to_string(SCM x);
 char *scm_to_utf8_symbol(SCM sym);
 
 SCM scm_default_definition(SCM name);
+bool scm_is_core_syntax_name(const char *name);
 
 #define SCM_UNBND_TO_BOOL_F(obj) \
     do {                         \

@@ -923,6 +923,36 @@ This comes from a Scheme naming convention for ``destructive'' functions --
 i.e. functions, which may modify their inputs in-place.
 @end enumerate
 
+@cindex syntax, names that are
+@cindex reserved names
+There is one exception to the short format.  A method, signal or
+property whose name is syntax in Guile is bound only as
+@code{type:method}, because the short name would replace that syntax in
+every module that imports the typelib, and break ordinary code there.
+Among the libraries of GLib and GTK, these are
+@table @asis
+@item @code{begin}
+the signal of @code{GtkGesture}, bound only as @code{gesture:begin};
+@item @code{delay}
+the method of @code{GSettings}, bound only as @code{settings:delay};
+@item @code{export}
+the methods of @code{GDBusInterfaceSkeleton} and
+@code{GDBusObjectManagerServer}, bound only as
+@code{dbus-interface-skeleton:export?} and
+@code{dbus-object-manager-server:export}.
+@end table
+The rule covers whatever is syntax in the running Guile, so the same
+goes for a method named, say, @code{if}, @code{do}, @code{case},
+@code{define} or @code{when} in another library.  The generated
+documentation of a typelib gives such methods under their one name.
+
+The names of procedures in Guile are not treated this way: a method
+named @code{format} or @code{write} is added to a generic function that
+still does what it did for other arguments.  Neither is @code{load},
+which Guile-GI itself makes a generic function, for loading parts of
+typelibs.  Functions that are not methods have no longer name to fall
+back on, and are bound whatever they are called.
+
 Use whichever bindings you prefer or alternatively rename them using the
 @code{#:rename} argument to @code{use-modules} or @code{use-typelibs}
 respectively. Note that Guile currently warns if a binding is imported
@@ -2092,9 +2122,14 @@ be freed manually using the correct @code{-destroy} function.
 In most cases this is nothing to worry about. Guile-GI ensures, that
 the core binding is used as the default behaviour when the signature
 does not accidentally match that of a function in some typelib.
-However, this can still cause issues when Guile-GI overrides syntax.
-To protect your syntax (or other variables you deeply care about), use
-the @code{protect} or @code{protect*} renamer from @code{(gi util)}.
+
+Guile's syntax is never overridden by the short name of a method, signal
+or property: one that is called @code{begin} or @code{delay} is only
+bound under its long name, such as @code{gesture:begin}.
+@xref{GObject Methods}.  A function that is not a method can still
+override syntax.  To protect your syntax from that (or other variables
+you deeply care about), use the @code{protect} or @code{protect*} renamer
+from @code{(gi util)}.
 
 @subsection Help! Guile-GI bindings conflict with each other
 @findex merge-generics
