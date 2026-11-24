@@ -82,7 +82,8 @@ Bug fixes
    (#123).
  - Scheme callbacks and virtual functions can fill in structs that
    their caller allocates and modify structs they are passed, so that
-   a GtkTreeModel can be implemented in Scheme (#94).  A
+   a GtkTreeModel can be implemented in Scheme (#94), as
+   examples/tree-model.scm does.  A
    caller-allocated output is now an argument for the procedure to
    fill in, not a value for it to return; returning one used to
    overwrite the caller's struct with a pointer.

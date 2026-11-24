@@ -1,13 +1,13 @@
-;;; A GtkTreeModel written in Scheme: its virtual functions fill in
-;;; caller-allocated iters and values, advance iters in place and
-;;; return new paths.
+;;; A GtkTreeModel written in Scheme, for GTK 4: its virtual functions
+;;; fill in caller-allocated iters and values, advance iters in place
+;;; and return new paths.  Only the last test needs a display.
 
 (use-modules (gi) (gi repository) (gi types) (gi util)
              (oop goops)
              (srfi srfi-64)
              (system foreign))
 
-(test-begin "gtk-tree-model")
+(test-begin "gtk4-tree-model")
 
 (define rows #("one" "two" "three"))
 (define n-values-read 0)
@@ -32,7 +32,7 @@
     (tree-model:get-value! model iter 0 value)
     (value)))
 
-(if (and (false-if-exception (require "Gtk" "3.0"))
+(if (and (false-if-exception (require "Gtk" "4.0"))
          (false-if-exception (require "GObject" "2.0")))
     (test-assert "register a tree model"
       (begin
@@ -111,11 +111,12 @@
       (tree-path:to-string path))))
 
 ;; With a display, let a GtkTreeView read the model.
-(when (and (false-if-exception (load-by-name "Gtk" "init_check"))
-           (false-if-exception (init-check!)))
+(when (and rows-model
+           (false-if-exception (load-by-name "Gtk" "init_check"))
+           (false-if-exception (init-check?)))
   (for-each (lambda (name) (load-by-name "Gtk" name))
             '("TreeView" "TreeViewColumn" "CellRendererText" "CellLayout"
-              "TreeSelection" "Window" "Container" "Widget"))
+              "TreeSelection" "Window" "Widget"))
   (require "GLib" "2.0")
   (load-by-name "GLib" "MainContext")
   (test-equal "a tree view shows the model"
@@ -127,8 +128,8 @@
       (cell-layout:pack-start column cell #t)
       (cell-layout:add-attribute column cell "text" 0)
       (tree-view:append-column view column)
-      (container:add window view)
-      (widget:show-all window)
+      (window:set-child window view)
+      (window:present window)
       (set! n-values-read 0)
       (do ((i 0 (1+ i)))
           ((or (= i 200) (not (main-context:iteration? (main-context:default) #f)))))
@@ -138,7 +139,7 @@
         (tree-selection:get-selected! selection selected)
         (gc)
         (let ((result (list (>= n-values-read (vector-length rows)) (row selected))))
-          (widget:destroy window)
+          (window:destroy window)
           result)))))
 
-(test-end "gtk-tree-model")
+(test-end "gtk4-tree-model")

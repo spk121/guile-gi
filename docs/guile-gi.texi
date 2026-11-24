@@ -1152,9 +1152,13 @@ to the parent's implementation.
       (get-item . ,(lambda (self i) (list-ref items i))))))
 @end example
 
-A tree model for GTK 3's @code{GtkTreeView} can be written the same way.
+A tree model for a @code{GtkTreeView} can be written the same way.
 Its iters are structs that the model fills in to say which row they
 refer to; here, the row number goes in the @code{user_data} field.
+This model is a flat list; @file{examples/tree-model.scm} is a complete
+GTK 4 program whose model has rows with children.  GTK 4 deprecates its
+tree widgets, so there they have to be loaded by name with
+@code{load-by-name}.
 
 @example
 (use-modules (system foreign))
